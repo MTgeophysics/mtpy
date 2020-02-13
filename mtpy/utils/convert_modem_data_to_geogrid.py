@@ -23,7 +23,10 @@ from scipy.interpolate import RegularGridInterpolator
 from mtpy.modeling.modem import Model, Data
 from mtpy.utils import gis_tools
 from mtpy.contrib.netcdf import nc
+from mtpy.utils.mtpylog import MtPyLog
 import mtpy.contrib.netcdf.modem_to_netCDF as modem2nc
+
+_logger = MtPyLog.get_mypy_logger(__name__)
 
 
 def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array, epsg_code=4283):
@@ -154,127 +157,95 @@ def modem2geotiff_notused(data_file, model_file, output_file, source_proj=None):
     return output_file
 
 
-# def create_geogrid(data_file, model_file, output_file, source_proj=None, depth_index=None):
-def create_geogrid(data_file, model_file, out_dir, user_options={}):
-    """
-    Generate an output geotiff file and ASCII grid file.
-    :param data_file: modem.dat  only used to get the grid center point (lat,long), even though it contains EDI files data
-    :param model_file: modem.rho resistivity data model, which are compulsory.
-    :param user_options: a dictionary specify 
-        source_proj: None by default. The UTM zone inferred from the grid centre lat-lon (WGS84 32755)
-        depth_index: a list of integers, eg, [0,2,4] of the depth slice's index to be output. all slices if None
-        center_lat:  The grid center_lat in degrees -38.32
-        center_lon:  The grod center longitude  138.77
-        output_grid_size:  the pixel size in meters, 8000  
-    :return:
-    """
+def create_geogrid(data_file, model_file, out_dir,
+                   xpad=6, ypad=6, zpad=10, grid_size=7500,
+                   center_lat=None, center_lon=None, epsg_code=None,
+                   depth_index=None):
+    """Generate an output geotiff file and ASCII grid file.
 
-    # First make sure the output directory exist, otherwise create it
+    Args:
+        data_file (str): Path to the ModEM .dat file. Used to get the
+            grid center point.
+        model_file (str): Path to the ModEM .rho file.
+        xpad (int): TODO
+        ypad (int): TODO
+        zpad (int): TODO
+        grid_size (int): Pixel resolution in meters.
+        epsg_code (int): EPSG code of the model CRS. By default is
+            inferred from the grid center point.
+        depth_index: A list of integers, eg, [0,2,4] of the depth
+            slice's index to be output. If None, all slices are
+            selected.
+        center_lat: Grid center latitude in degrees.
+        center_lon: Grid center longitude in degrees.
+    """
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
 
-    print("read inputs from Model Rho File")
-
-    # create a model object and read in model data
-    # model = Model(data_obj=data)  # no need of data_obj
     model = Model()
     model.read_model_file(model_fn=model_file)
 
-    # get grid centre from either data file or user-defined
-    # center = get_grid_center(data_file)
     data = Data()
     data.read_data_file(data_fn=data_file)
     center = data.center_point   # see data.py line1406
+    center_lat = center.lat.item() if center_lat is None else None
+    center_lon = center.lon.item() if center_lon is None else None
 
-    # source_proj = 28355   source_proj = 28353
-    source_proj = user_options.get("source_proj",None)
-    depth_index = user_options.get("depth_index",None)
-    
-    # get xyz-paddings
-    xpad = user_options.get("xpad", 6)
-    ypad = user_options.get("ypad",6)
-    zpad = user_options.get("zpad",20)
-    
-    # output geogrid size in UTM coord meters, usually can be the mean/medium value of the original ModeEM model grid
-    # Todo: cs = get_grid_size(model_file)
-    out_grid_size = user_options.get("grid_size",7000)
+    _logger.info("Grid center (lat, lon) = ({}, {})".format(center_lat, center_lon))
 
-    # user option to override the lat long found in file.dat
-    center_lat = user_options.get("center_lat", center.lat.item())
-    center_lon = user_options.get("center_lon", center.lon.item())
-
-    print ("The center (lat, lon) = (%s,%s)"%(center_lat, center_lon))
-
-    if source_proj is None:
+    if epsg_code is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center_lat, center_lon)
-        # source_proj = Proj('+proj=utm +zone=%d +%s +datum=%s' % (zone_number, 'north' if is_northern else 'south', 'WGS84'))
-
         epsg_code = gis_tools.get_epsg(center_lat, center_lon)
-        print("Input data epsg code is inferred as ", epsg_code)
-    else:
-        epsg_code = source_proj  # integer
+        _logger.info("Input data epsg code has been inferred as {}".format(epsg_code))
 
-    source_proj = Proj(init='epsg:' + str(epsg_code))
     # get the grid cells' centres (halfshift -cs/2?)
-    mgce, mgcn, mgcz = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [model.grid_east, model.grid_north, model.grid_z]]
+    mgce, mgcn, mgcz = [np.mean([arr[:-1], arr[1:]], axis=0)
+                        for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
-    # # get xyz-paddings
-    # xpad = 6
-    # ypad = 6
-    # zpad = 10
-    gce, gcn = mgce[xpad:-xpad], mgcn[ypad:-ypad]  # padding off big-sized edge cells
+    # Get X, y, Z paddings
+    # BM: @FZ can we get a better explanation of these abbreviations?
+    # padding off big-sized edge cells
+    gce, gcn = mgce[xpad:-xpad], mgcn[ypad:-ypad]
     gcz = mgcz[:-zpad]
-    # ge,gn = mObj.grid_east[6:-6],mObj.grid_north[6:-6]
 
-    print(gce)
-    print(gcn)
-    print(gcz)
+    _logger.info("E shape = {}, N shape = {}, Z shape = {}"
+                 .format(gce.shape, gcn.shape, gcz.shape))
 
-    print("The Shapes E, N Z =", gce.shape, gcn.shape, gcz.shape)
+    _logger.info("Data center (east, north) = ({}, {})".format(center.east, center.north))
 
-    # epsgcode= 4326 # 4326 output grid Coordinate systems: 4326 WGS84
-    # epsgcode = 28355  # 4283 https://spatialreference.org/ref/epsg/gda94/
-    grid_proj = source_proj  # output grid Coordinate system should be the same as the input modem's
-    # grid_proj = Proj(init='epsg:3112') # output grid Coordinate system 4326, 4283, 3112
-
-    print("The Data center point (center.east,center.north) =", center.east, center.north)
     #  May need to shift by half cellsize -cs/2
-    # [1]: -164848.1035642 -3750
+    # In [1]: -164848.1035642 -3750
     # Out[1]: -168598.1035642
-    #
     # In [2]: 5611364.73539792 - 3750
     # Out[2]: 5607614.73539792
-    origin = (gce[0] + center.east -0.5*out_grid_size, gcn[-1] + center.north-0.5*out_grid_size)
-    print("The Origin (UpperLeft Corner) =", origin)
+    origin = (gce[0] + center.east - 0.5 * grid_size, gcn[-1] + center.north - 0.5 * grid_size)
+    _logger.info("The Origin (UpperLeft Corner) =".format(origin))
 
-    pixel_width = out_grid_size
-    pixel_height = -out_grid_size  # This should be negative for geotiff spec, whose origin is at the Upper-Left corner of image.
+    pixel_width = grid_size
+    # This should be negative for geotiff spec, whose origin is at the
+    # upper-left corner of image.
+    pixel_height = -grid_size
 
-    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], out_grid_size),
-                                               np.arange(gcn[0], gcn[-1], out_grid_size))
+    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], grid_size),
+                                               np.arange(gcn[0], gcn[-1], grid_size))
 
-    # resgrid_nopad = model.res_model[::-1][xpad:-xpad, ypad:-ypad] # can this be simplified as below??
     resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, 0:-zpad]
 
-    if depth_index is None:
-        depth_indices = range(len(gcz))
-    else:
-        depth_indices = list(depth_index)
+    depth_index = range(len(gcz)) if depth_index is None else depth_index
 
-    print("The Depth Indeces =", depth_indices)
+    _logger.info("Depth indicies = {}".format(depth_index))
 
-    for di in depth_indices:
-        # for di in [0,1,2,3]:
-        output_file = 'DepthSlice%1im.tif' % (gcz[di])
-        output_file =os.path.join(out_dir, output_file)
+    for di in depth_index:
+        output_file = 'DepthSlice%1im.tif'.format(gcz[di])
+        output_file = os.path.join(out_dir, output_file)
         # define interpolation function (interpolate in log10 measure-space)
         # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
         interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
         # evaluate on the regular grid points, which to be output into geogrid formatted files
-        newgridres = 10 ** interpfunc(np.vstack([target_gridx.flatten(), target_gridy.flatten()]).T).reshape(
-            target_gridx.shape)
-
-        print("new interpolated resistivity grid shape at the index di: ", newgridres.shape, di)
+        newgridres = 10 ** interpfunc(np.vstack(
+            [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
+        _logger.info("New interpolated resistivity grid shape at index {}: {} "
+                     .format(di, newgridres.shape))
 
         # this original image may start from the lower left corner, if so must be flipped.
         # resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
@@ -283,7 +254,8 @@ def create_geogrid(data_file, model_file, out_dir, user_options={}):
 
     return output_file
 
-def get_user_input_params( user_option_file ):
+
+def get_user_input_params(user_option_file):
     """
     Get the user's input optional parameters from the input text file
     :param user_option_file: path to a file

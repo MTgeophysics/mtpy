@@ -24,26 +24,27 @@ from mtpy.utils.convert_modem_data_to_geogrid import create_geogrid
 # ---------------------------------------------
 if __name__ == "__main__":
 
-    if len(sys.argv)<4:
-        print ("USAGE: python %s dat_file rho_file out_dir"% sys.argv[0])
+    if len(sys.argv) < 4:
+        print("USAGE: python %s dat_file rho_file out_dir" % sys.argv[0])
         sys.exit(1)
 
     dat_file = sys.argv[1]
     rho_file = sys.argv[2]
-    out_dir =  sys.argv[3]
-    # Before calling the function create_geogrid(), a user should provide the right optional parameters.
+    out_dir = sys.argv[3]
+    # Before calling the function create_geogrid(), a user should
+    # provide the right optional parameters.
     # Otherwise, default parameters will be used, which may not make sense
-    user_option_dict = {
+    kwargs = {
         "xpad": 6,
         "ypad": 6,
         "zpad": 10,
-        "grid_size":7500,
-        # "center_lat":-19.0,  # to override what is found in the file.dat, which may be incorrect.
-        # "center_lon": 138.0,  # to override what is found in the file.dat, which may be incorrect.
-        # "source_proj":28353,
+        "grid_size": 7500,
+        "center_lat": None,  # to override what is found in the file.dat, which may be incorrect.
+        "center_lon": None,  # to override what is found in the file.dat, which may be incorrect.
+        "source_proj": None,
         "depth_index": None,  # slices [0,1,2,10] to be output
     }
 
-    print("User Options:", user_option_dict)
+    print("User Options:", kwargs)
 
-    create_geogrid(dat_file, rho_file, out_dir, user_options=user_option_dict)  # ,depth_index=[0,1,2,10])
+    create_geogrid(dat_file, rho_file, out_dir, **kwargs)  # ,depth_index=[0,1,2,10])
