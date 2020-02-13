@@ -9,7 +9,7 @@ numpydoc>=0.7.0
 pytest
 flake8
 pyyaml
-pyproj
+pyproj==1.9.6
 geopandas
 #obspy==1.1.0
 #networkx
