@@ -37,7 +37,7 @@ from mtpy.gui.SmartMT.gui.station_viewer import StationViewer
 from mtpy.gui.SmartMT.ui_asset.main_window import Ui_SmartMT_MainWindow
 from mtpy.gui.SmartMT.utils.file_handler import FileHandler, FileHandlingException
 from mtpy.gui.SmartMT.visualization.visualization_base import MPLCanvasWidget
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 _translate = QtCore.QCoreApplication.translate
