@@ -16,48 +16,69 @@ Revision History:
 import os
 import sys
 import argparse
+import math
 
 from pyproj import Proj
 import gdal
 import osr
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+from scipy import ndimage
 
 from mtpy.modeling.modem import Model, Data
 from mtpy.utils import gis_tools
-from mtpy.contrib.netcdf import nc
 from mtpy.utils.mtpylog import MtPyLog
-import mtpy.contrib.netcdf.modem_to_netCDF as modem2nc
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
-def array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array, epsg_code=4283):
-    cols = array.shape[1]
-    rows = array.shape[0]
-    originX = rasterOrigin[0]
-    originY = rasterOrigin[1]
+def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
+                         angle=None, epsg_code=4283, center=None, rotate_origin=False):
+    gt = [origin[0], pixel_width, 0, origin[1], 0, pixel_height]
 
+    # perform rotation
+    if angle:
+        rot = math.radians(angle)
+
+        if not rotate_origin:
+            if center is None:
+                raise ValueError("Cannot rotate about the center without center point")
+            else:
+                # BM: By default, rotation will be done about origin
+                # (upper left). To rotate about center we have to
+                # calculate a new origin by determining upper-left
+                # point as though it were rotated around center.
+                gt[0] = center.east + (origin[0] - center.east) * math.cos(rot) \
+                    + (origin[1] - center.north) * math.sin(rot)
+                gt[3] = center.north - (origin[0] - center.east) * math.sin(rot) \
+                    + (origin[1] - center.north) * math.cos(rot)
+
+        gt[1] = pixel_width * math.cos(rot)
+        gt[2] = pixel_width * -math.sin(rot)
+        gt[4] = pixel_height * math.sin(rot)
+        gt[5] = pixel_height * math.cos(rot)
+        filename = '{}_rotated_{}.tif'\
+                   .format(os.path.splitext(filename)[0], angle)
+
+    rows, cols = data.shape
     driver = gdal.GetDriverByName('GTiff')
-    # driver = gdal.GetDriverByName('AAIGrid')
-    outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Float32)
-    outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-    outband = outRaster.GetRasterBand(1)
-    outband.WriteArray(array)
-    outRasterSRS = osr.SpatialReference()
-    outRasterSRS.ImportFromEPSG(epsg_code)
-    outRaster.SetProjection(outRasterSRS.ExportToWkt())
-    outband.FlushCache()
+    out_raster = driver.Create(filename, cols, rows, 1, gdal.GDT_Float32)
+    out_raster.SetGeoTransform(gt)
+    out_band = out_raster.GetRasterBand(1)
+    out_band.SetNoDataValue(np.nan)
+    out_band.WriteArray(data)
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(epsg_code)
+    out_raster.SetProjection(srs.ExportToWkt())
+    out_band.FlushCache()
 
     # output to ascii format
-    format2 = 'AAIGrid'
-    if newRasterfn.endswith(".tif"):
-        _newRasterfn = newRasterfn[:-4]
-    newRasterfn2 = "%s.asc" % _newRasterfn
-    driver2 = gdal.GetDriverByName(format2)
-    dst_ds_new = driver2.CreateCopy(newRasterfn2, outRaster)
+    ascii_filename = "{}.asc".format(os.path.splitext(filename)[0])
+    driver2 = gdal.GetDriverByName('AAIGrid')
+    driver2.CreateCopy(ascii_filename, out_raster)
 
-    return newRasterfn
+    return filename, ascii_filename
+
 
 # TODO (BM): refactor this into test module
 def test_array2geotiff(newRasterfn, epsg):
@@ -98,7 +119,7 @@ def test_array2geotiff(newRasterfn, epsg):
 def create_geogrid(data_file, model_file, out_dir,
                    xpad=6, ypad=6, zpad=10, grid_size=7500,
                    center_lat=None, center_lon=None, epsg_code=None,
-                   depth_index=None):
+                   depth_index=None, angle=None, rotate_origin=False):
     """Generate an output geotiff file and ASCII grid file.
 
     Args:
@@ -185,10 +206,13 @@ def create_geogrid(data_file, model_file, out_dir,
         _logger.info("New interpolated resistivity grid shape at index {}: {} "
                      .format(di, newgridres.shape))
 
-        # this original image may start from the lower left corner, if so must be flipped.
-        # resis_data_flip = resis_data[::-1]  # flipped to ensure the image starts from the upper left corner
+        # This original image may start from the lower left corner, if
+        # so must be flipped.
+        # resis_data_flip = resis_data[::-1]
 
-        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres[::-1], epsg_code=epsg_code)
+        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres[::-1],
+                             epsg_code=epsg_code, angle=angle, center=center,
+                             rotate_origin=rotate_origin)
 
     return output_file
 
@@ -202,14 +226,18 @@ if __name__ == '__main__':
     parser.add_argument('--ypad', type=int, help='ypad value', default=6)
     parser.add_argument('--zpad', type=int, help='ypad value', default=10)
     parser.add_argument('--grid', type=int, help="pixel size in meters", default=7500)
+    parser.add_argument('--epsg', type=int, help="EPSG code for CRS of the model")
     parser.add_argument('--lat', type=float, help="grid center latitude in degrees")
     parser.add_argument('--lon', type=float, help="grid center longitude in degrees")
     parser.add_argument('--di', type=int, nargs='*', help="indicies for depth slices to convert, "
-                        "eg., [0, 2, 5, 9]")
-    parser.add_argument('--epsg', type=int, help="EPSG code for CRS of the model")
-
+                        "eg., '--di 0 2 5 9'")
+    parser.add_argument('--angle', type=float, help="angle in degrees to rotate image by")
+    parser.add_argument('--rotate-origin', action='store_true', default=False,
+                        help='rotate around the original origin (upper left corner), '
+                             'otherwise image will be rotated about center')
     args = parser.parse_args()
 
     create_geogrid(args.modem_data, args.modem_model, args.out_dir, xpad=args.xpad, ypad=args.ypad,
                    grid_size=args.grid, center_lat=args.lat, center_lon=args.lon,
-                   depth_index=args.di, epsg_code=args.epsg)
+                   depth_index=args.di, epsg_code=args.epsg, angle=args.angle,
+                   rotate_origin=args.rotate_origin)
