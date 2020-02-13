@@ -119,7 +119,8 @@ def test_array2geotiff(newRasterfn, epsg):
 def create_geogrid(data_file, model_file, out_dir,
                    xpad=6, ypad=6, zpad=10, grid_size=7500,
                    center_lat=None, center_lon=None, epsg_code=None,
-                   depth_index=None, angle=None, rotate_origin=False):
+                   depths=None, angle=None, rotate_origin=False,
+                   list_depths=False):
     """Generate an output geotiff file and ASCII grid file.
 
     Args:
@@ -167,6 +168,12 @@ def create_geogrid(data_file, model_file, out_dir,
     gce, gcn = mgce[xpad:-xpad], mgcn[ypad:-ypad]
     gcz = mgcz[:-zpad]
 
+    if list_depths:
+        with np.printoptions(precision=0, suppress=True):
+            print(gcz)
+            # _logger.info(gcz) # Need to fix logging
+        return
+
     _logger.info("E shape = {}, N shape = {}, Z shape = {}"
                  .format(gce.shape, gcn.shape, gcz.shape))
 
@@ -190,11 +197,31 @@ def create_geogrid(data_file, model_file, out_dir,
 
     resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, 0:-zpad]
 
-    depth_index = range(len(gcz)) if depth_index is None else depth_index
+    def _nearest(array, value):
+        """Get index for nearest element to value in an array.
 
-    _logger.info("Depth indicies = {}".format(depth_index))
+        Args:
+            array (np.ndarray): Array to get index for.
+            value (float): Value to search for.
 
-    for di in depth_index:
+        Returns:
+            int: Index of element closest to value.
+        """
+        idx = np.searchsorted(array, value, side="left")
+        if idx > 0 and (idx == len(array)
+                or math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+            return idx - 1
+        else:
+            return idx
+
+    if depths:
+        indicies = {_nearest(gcz, d) for d in depths}
+    else:
+        indicies = range(len(gcz))
+
+    _logger.info("Depth indicies = {}".format(indicies))
+
+    for di in indicies:
         output_file = 'DepthSlice{:.0f}m.tif'.format(gcz[di])
         output_file = os.path.join(out_dir, output_file)
         # define interpolation function (interpolate in log10 measure-space)
@@ -222,6 +249,8 @@ if __name__ == '__main__':
     parser.add_argument('modem_data', help="ModEM data file")
     parser.add_argument('modem_model', help="ModEM model file")
     parser.add_argument('out_dir', help="output directory")
+    parser.add_argument('--list-depths', action='store_true', default=False,
+                        help='list depth of every slice in model then exit')
     parser.add_argument('--xpad', type=int, help='xpad value', default=6)
     parser.add_argument('--ypad', type=int, help='ypad value', default=6)
     parser.add_argument('--zpad', type=int, help='ypad value', default=10)
@@ -229,8 +258,8 @@ if __name__ == '__main__':
     parser.add_argument('--epsg', type=int, help="EPSG code for CRS of the model")
     parser.add_argument('--lat', type=float, help="grid center latitude in degrees")
     parser.add_argument('--lon', type=float, help="grid center longitude in degrees")
-    parser.add_argument('--di', type=int, nargs='*', help="indicies for depth slices to convert, "
-                        "eg., '--di 0 2 5 9'")
+    parser.add_argument('--depths', type=int, nargs='*', help="depths for slices to convert (in "
+                        "meters) eg., '--di 3 22 105 782'")
     parser.add_argument('--angle', type=float, help="angle in degrees to rotate image by")
     parser.add_argument('--rotate-origin', action='store_true', default=False,
                         help='rotate around the original origin (upper left corner), '
@@ -239,5 +268,5 @@ if __name__ == '__main__':
 
     create_geogrid(args.modem_data, args.modem_model, args.out_dir, xpad=args.xpad, ypad=args.ypad,
                    grid_size=args.grid, center_lat=args.lat, center_lon=args.lon,
-                   depth_index=args.di, epsg_code=args.epsg, angle=args.angle,
-                   rotate_origin=args.rotate_origin)
+                   depths=args.depths, epsg_code=args.epsg, angle=args.angle,
+                   rotate_origin=args.rotate_origin, list_depths=args.list_depths)
