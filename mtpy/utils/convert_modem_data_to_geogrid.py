@@ -174,7 +174,7 @@ def create_geogrid(data_file, model_file, out_dir,
     _logger.info("Depth indicies = {}".format(depth_index))
 
     for di in depth_index:
-        output_file = 'DepthSlice%1im.tif'.format(gcz[di])
+        output_file = 'DepthSlice{:.0f}m.tif'.format(gcz[di])
         output_file = os.path.join(out_dir, output_file)
         # define interpolation function (interpolate in log10 measure-space)
         # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
@@ -198,9 +198,10 @@ if __name__ == '__main__':
     parser.add_argument('modem_data', help="ModEM data file")
     parser.add_argument('modem_model', help="ModEM model file")
     parser.add_argument('out_dir', help="output directory")
-    parser.add_argument('--xpad', type=int, help='xpad value')
-    parser.add_argument('--ypad', type=int, help='ypad value')
-    parser.add_argument('--grid_size', type=int, help="pixel size in meters")
+    parser.add_argument('--xpad', type=int, help='xpad value', default=6)
+    parser.add_argument('--ypad', type=int, help='ypad value', default=6)
+    parser.add_argument('--zpad', type=int, help='ypad value', default=10)
+    parser.add_argument('--grid', type=int, help="pixel size in meters", default=7500)
     parser.add_argument('--lat', type=float, help="grid center latitude in degrees")
     parser.add_argument('--lon', type=float, help="grid center longitude in degrees")
     parser.add_argument('--di', type=int, nargs='*', help="indicies for depth slices to convert, "
@@ -210,5 +211,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     create_geogrid(args.modem_data, args.modem_model, args.out_dir, xpad=args.xpad, ypad=args.ypad,
-                   grid_size=args.grid_size, center_lat=args.lat, center_lon=args.lon,
+                   grid_size=args.grid, center_lat=args.lat, center_lon=args.lon,
                    depth_index=args.di, epsg_code=args.epsg)
