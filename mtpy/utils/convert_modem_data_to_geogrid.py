@@ -8,11 +8,11 @@ CreationDate:   1/05/2019
 Developer:      fei.zhang@ga.gov.au
 
 Revision History:
-    LastUpdate:     1/05/2019   FZ
-    LastUpdate:     17/09/2019  FZ fix the geoimage coordinates, upside-down issues 
-    LastUpdate:     dd/mm/yyyy
+    LastUpdate:     01/05/2019  FZ
+    LastUpdate:     17/09/2019  FZ fix the geoimage coordinates, upside-down issues
+    LastUpdate:     14/02/2020  BM: cleanup, add rotation and indexing
+                                    by depth
 """
-
 import os
 import sys
 import argparse
@@ -36,7 +36,8 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
                          angle=None, epsg_code=4283, center=None, rotate_origin=False):
     gt = [origin[0], pixel_width, 0, origin[1], 0, pixel_height]
 
-    # perform rotation
+    # Apply rotation by tweaking geotransform. The data remains the
+    # same but will appear roated in a viewer e.g. ArcGIS.
     if angle:
         rot = math.radians(angle)
 
@@ -245,6 +246,15 @@ def create_geogrid(data_file, model_file, out_dir,
 
 
 if __name__ == '__main__':
+    """
+    Example usage:
+        python convert_modem_data_to_geogrid.py model.dat model.rho \
+                out_directory --grid 800 --depths 100 200 500 \
+                --angle 50.0
+
+    will output the slices closest to 100m, 200m and 500m at 800mx80m
+    resolution and rotate them 50 degrees about the center.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('modem_data', help="ModEM data file")
     parser.add_argument('modem_model', help="ModEM model file")
