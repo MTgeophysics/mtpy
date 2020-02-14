@@ -743,7 +743,7 @@ class NIMS(NIMSHeader):
             ts_obj.component = 'hx'
             ts_obj.data_logger = self.box_id
             ts_obj.instrument_id = self.mag_id
-            ts_obj.chn_num = 1
+            ts_obj.channel_number = 1
             ts_obj.sampling_rate = self.sampling_rate
             ts_obj.ts = pd.DataFrame({'data':self.ts.hx})
             return ts_obj
@@ -764,7 +764,7 @@ class NIMS(NIMSHeader):
             ts_obj.component = 'hy'
             ts_obj.data_logger = self.box_id
             ts_obj.instrument_id = self.mag_id
-            ts_obj.chn_num = 2
+            ts_obj.channel_number = 2
             ts_obj.sampling_rate = self.sampling_rate
             ts_obj.ts = pd.DataFrame({'data':self.ts.hy})
             return ts_obj
@@ -785,7 +785,7 @@ class NIMS(NIMSHeader):
             ts_obj.component = 'hz'
             ts_obj.data_logger = self.box_id
             ts_obj.instrument_id = self.mag_id
-            ts_obj.chn_num = 3
+            ts_obj.channel_number = 3
             ts_obj.sampling_rate = self.sampling_rate
             ts_obj.ts = pd.DataFrame({'data':self.ts.hz})
             return ts_obj
@@ -807,7 +807,7 @@ class NIMS(NIMSHeader):
             ts_obj.component = 'ex'
             ts_obj.data_logger = self.box_id
             ts_obj.instrument_id = 1
-            ts_obj.chn_num = 4
+            ts_obj.channel_number = 4
             ts_obj.sampling_rate = self.sampling_rate
             ts_obj.ts = pd.DataFrame({'data':self.ts.ex})
             return ts_obj
@@ -828,7 +828,7 @@ class NIMS(NIMSHeader):
             ts_obj.component = 'ey'
             ts_obj.data_logger = self.box_id
             ts_obj.instrument_id = 1
-            ts_obj.chn_num = 5
+            ts_obj.channel_number = 5
             ts_obj.sampling_rate = self.sampling_rate
             ts_obj.ts = pd.DataFrame({'data':self.ts.ey})
             return ts_obj

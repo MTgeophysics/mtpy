@@ -203,6 +203,10 @@ class Z3DHeader(object):
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
+            
+    @property
+    def data_logger(self):
+        return 'ZEN{0:03}'.format(int(self.box_number))
 
     def read_header(self, fn=None, fid=None):
         """
@@ -1234,14 +1238,14 @@ class Zen3D(object):
         self.ts_obj.lat = self.lat
         self.ts_obj.lon = self.lon
         self.ts_obj.datum = 'WGS84'
-        self.ts_obj.data_logger = 'Zonge Zen'
+        self.ts_obj.data_logger = self.header.data_logger
         self.ts_obj.elev = self.elev
         self.ts_obj.instrument_id = self.header.box_number
         self.ts_obj.calibration_fn = None
         self.ts_obj.declination = 0.0
         self.ts_obj.conversion = self._counts_to_mv_conversion
         self.ts_obj.gain = self.header.ad_gain
-        self.ts_obj.chn_num = self.metadata.ch_number
+        self.ts_obj.channel_number = int(self.header.channel)
         self.ts_obj.fn = os.path.basename(self.fn)
     
     #=================================================
@@ -1972,8 +1976,8 @@ class ZenSchedule(object):
             for lkey in list(self.light_dict.keys()):
                 sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
             sfid.close()
-            print('Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
-                                                  self.ch_cmp_dict[dname[-1]]))
+            # print('Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+            #                                       self.ch_cmp_dict[dname[-1]]))
 
             for dd in list(drive_names.keys()):
                 dname = drive_names[dd]
