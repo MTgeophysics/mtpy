@@ -269,7 +269,7 @@ if __name__ == '__main__':
     parser.add_argument('--lat', type=float, help="grid center latitude in degrees")
     parser.add_argument('--lon', type=float, help="grid center longitude in degrees")
     parser.add_argument('--depths', type=int, nargs='*', help="depths for slices to convert (in "
-                        "meters) eg., '--di 3 22 105 782'")
+                        "meters) eg., '--depths 3 22 105 782'")
     parser.add_argument('--angle', type=float, help="angle in degrees to rotate image by")
     parser.add_argument('--rotate-origin', action='store_true', default=False,
                         help='rotate around the original origin (upper left corner), '
