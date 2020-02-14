@@ -1567,6 +1567,8 @@ class MT(object):
             cfg_lines = fid.readlines()
 
         for line in cfg_lines:
+            if line[0] == '#':
+                continue
             line_list = line.strip().split('=')
             if len(line) < 2:
                 continue
