@@ -933,7 +933,7 @@ class Header(object):
                              'datum',
                              'project',
                              'survey',
-                             'units'
+                             'units']
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
