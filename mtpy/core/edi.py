@@ -1119,6 +1119,8 @@ class Header(object):
             if key == 'lon':
                 if longitude_format == 'LONG':
                     key = 'long'
+            if isinstance(value, list):
+                value = ','.join(value)
                     
             header_lines.append('{0}{1}={2}\n'.format(tab, key.upper(), value))
         header_lines.append('\n')

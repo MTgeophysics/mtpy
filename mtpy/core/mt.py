@@ -691,7 +691,7 @@ class MT(object):
             header.survey = ','.join(self.Site.survey)
         else:
             header.survey = self.Site.survey
-        header.units = self.Site.Location.elev_units
+        header.units = '[mV/km]/[nT]' 
         header.declination = self.Site.Location.declination
         header.progvers = 'MTpy'
         header.progdate = time.strftime('%Y-%m-%d', time.gmtime())
