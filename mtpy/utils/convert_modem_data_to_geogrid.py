@@ -134,11 +134,18 @@ def create_geogrid(data_file, model_file, out_dir,
         grid_size (int): Pixel resolution in meters.
         epsg_code (int): EPSG code of the model CRS. By default is
             inferred from the grid center point.
-        depth_index: A list of integers, eg, [0,2,4] of the depth
-            slice's index to be output. If None, all slices are
-            selected.
-        center_lat: Grid center latitude in degrees.
-        center_lon: Grid center longitude in degrees.
+        depths (list of int): A list of integers, eg, [0, 100, 500],
+            of the depth in metres of the slices to retrieve. Will
+            find the closest slice to each depth specified. If None,
+            all slices are selected.
+        center_lat (float): Grid center latitude in degrees.
+        center_lon (float): Grid center longitude in degrees.
+        angle (float): Angle in degrees to rotate image by.
+        rotate_origin (bool): If True, image will be rotated around the
+            origin (upper left point). If False, image will be rotated
+            around the center point.
+        list_depths (bool): If true, this function lists all deths in
+            the model to stdout and returns nothing.
     """
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
