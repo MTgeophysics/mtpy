@@ -21,14 +21,11 @@ from mtpy.utils.convert_modem_data_to_geogrid import create_geogrid
 
 if __name__ == "__main__":
     # Path to model .dat file
-    # dat_file = "/path/to/dat_file"
-    dat_file = '/home/bren/data_mtpy/3d_grid_800m/ETMT_1_1_cont5_NLCG_015.dat'
+    dat_file = "/path/to/dat_file"
     # Path to model .rho file
-    # rho_file = "/path/to/rho_file"
-    rho_file = '/home/bren/data_mtpy/3d_grid_800m/ETMT_1_1_cont5_NLCG_015.rho'
+    rho_file = "/path/to/rho_file"
     # Path to output dir, will be created if it does not exist
-    # out_dir = "/path/to/out_dir"
-    out_dir = '/home/bren/test'
+    out_dir = "/path/to/out_dir"
 
     kwargs = {
         # TODO: @FZ can we get an explanation of these padding params?
