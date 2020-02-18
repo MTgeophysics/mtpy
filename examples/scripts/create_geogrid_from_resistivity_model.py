@@ -54,7 +54,11 @@ if __name__ == "__main__":
         # Whether or not rotate around the origin. If 'False', the
         #  pivot for rotation is the center point. If 'True, the pivot
         #  is the origin (upper left point).
-        "rotate_origin": False
+        "rotate_origin": False,
+        # Whether or not to scale the data logarithmically. If True,
+        #  the log10 of the data will be taken. If False, the data will
+        #  be untouched.
+        'log_scale': False
     }
 
     create_geogrid(dat_file, rho_file, out_dir, **kwargs)

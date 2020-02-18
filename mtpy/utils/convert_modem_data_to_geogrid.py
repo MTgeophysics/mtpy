@@ -58,7 +58,7 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
         gt[2] = pixel_width * -math.sin(rot)
         gt[4] = pixel_height * math.sin(rot)
         gt[5] = pixel_height * math.cos(rot)
-        filename = '{}_rotated_{}.tif'\
+        filename = '{}_rot{}.tif'\
                    .format(os.path.splitext(filename)[0], angle)
 
     rows, cols = data.shape
@@ -121,7 +121,7 @@ def create_geogrid(data_file, model_file, out_dir,
                    xpad=6, ypad=6, zpad=10, grid_size=7500,
                    center_lat=None, center_lon=None, epsg_code=None,
                    depths=None, angle=None, rotate_origin=False,
-                   list_depths=False):
+                   list_depths=False, log_scale=False):
     """Generate an output geotiff file and ASCII grid file.
 
     Args:
@@ -144,8 +144,9 @@ def create_geogrid(data_file, model_file, out_dir,
         rotate_origin (bool): If True, image will be rotated around the
             origin (upper left point). If False, image will be rotated
             around the center point.
-        list_depths (bool): If true, this function lists all deths in
+        list_depths (bool): If True, this function lists all deths in
             the model to stdout and returns nothing.
+        log_scale (bool): If True, the data will be scaled using log10.
     """
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
@@ -230,14 +231,19 @@ def create_geogrid(data_file, model_file, out_dir,
     _logger.info("Depth indicies = {}".format(indicies))
 
     for di in indicies:
-        output_file = 'DepthSlice{:.0f}m.tif'.format(gcz[di])
-        output_file = os.path.join(out_dir, output_file)
         # define interpolation function (interpolate in log10 measure-space)
         # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
         interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
         # evaluate on the regular grid points, which to be output into geogrid formatted files
-        newgridres = 10 ** interpfunc(np.vstack(
+        newgridres = interpfunc(np.vstack(
             [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
+        if not log_scale:
+            newgridres **= 10
+            output_file = 'DepthSlice{:.0f}m.tif'.format(gcz[di])
+        else:
+            output_file = 'DepthSlice{:.0f}m_log10.tif'.format(gcz[di])
+        output_file = os.path.join(out_dir, output_file)
+
         _logger.info("New interpolated resistivity grid shape at index {}: {} "
                      .format(di, newgridres.shape))
 
@@ -281,9 +287,12 @@ if __name__ == '__main__':
     parser.add_argument('--rotate-origin', action='store_true', default=False,
                         help='rotate around the original origin (upper left corner), '
                              'otherwise image will be rotated about center')
+    parser.add_argument('--log-scale', action='store_true', default=False,
+                        help='scale the data by taking the log10 of data')
     args = parser.parse_args()
 
     create_geogrid(args.modem_data, args.modem_model, args.out_dir, xpad=args.xpad, ypad=args.ypad,
                    grid_size=args.grid, center_lat=args.lat, center_lon=args.lon,
                    depths=args.depths, epsg_code=args.epsg, angle=args.angle,
-                   rotate_origin=args.rotate_origin, list_depths=args.list_depths)
+                   rotate_origin=args.rotate_origin, list_depths=args.list_depths,
+                   log_scale=args.log_scale)
