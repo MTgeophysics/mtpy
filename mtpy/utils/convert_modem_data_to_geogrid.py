@@ -156,7 +156,7 @@ def create_geogrid(data_file, model_file, out_dir,
 
     data = Data()
     data.read_data_file(data_fn=data_file)
-    center = data.center_point   # see data.py line1406
+    center = data.center_point
     center_lat = center.lat.item() if center_lat is None else None
     center_lon = center.lon.item() if center_lon is None else None
 
@@ -167,44 +167,60 @@ def create_geogrid(data_file, model_file, out_dir,
         epsg_code = gis_tools.get_epsg(center_lat, center_lon)
         _logger.info("Input data epsg code has been inferred as {}".format(epsg_code))
 
-    # get the grid cells' centres (halfshift -cs/2?)
-    mgce, mgcn, mgcz = [np.mean([arr[:-1], arr[1:]], axis=0)
-                        for arr in [model.grid_east, model.grid_north, model.grid_z]]
+    # Get the center point of the model grid cells to use as points
+    #  in a resistivity grid.
+    ce, cn, cz = [np.mean([arr[:-1], arr[1:]], axis=0)
+                                       for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
     # Get X, y, Z paddings
-    # BM: @FZ can we get a better explanation of these abbreviations?
-    # padding off big-sized edge cells
-    gce, gcn = mgce[xpad:-xpad], mgcn[ypad:-ypad]
-    gcz = mgcz[:-zpad]
+    # BM: Why are we supplying paddings, grid size etc. when the model
+    #  contains these values?
+    # xpad = model.pad_east
+    # ypad = model.pad_north
+    # zpad = model.pad_z
+
+    # BM: Also there's a bug when trying to provide differing values
+    #  for x and y pad. Below will break when interpolation is run.
+    # xpad, ypad = 6, 5
+
+    # Remove padding cells from the grid
+    ce = ce[xpad:-xpad]
+    cn = cn[ypad:-ypad]
+    cz = cz[:-zpad]
 
     if list_depths:
         with np.printoptions(precision=0, suppress=True):
-            print(gcz)
-            # _logger.info(gcz) # Need to fix logging
+            print(cz)
+            # _logger.info(centers_z) # Need to fix logging
         return
 
-    _logger.info("E shape = {}, N shape = {}, Z shape = {}"
-                 .format(gce.shape, gcn.shape, gcz.shape))
+    # _logger.info("E shape = {}, N shape = {}, Z shape = {}"
+    #             .format(ce.shape, cn.shape, cz.shape))
+    print("E shape = {}, N shape = {}, Z shape = {}"
+          .format(ce.shape, cn.shape, cz.shape))
 
-    _logger.info("Data center (east, north) = ({}, {})".format(center.east, center.north))
+    # _logger.info("Data center (east, north) = ({}, {})".format(center.east, center.north))
+    print("Data center (east, north) = ({}, {})".format(center.east, center.north))
 
-    #  May need to shift by half cellsize -cs/2
-    # In [1]: -164848.1035642 -3750
-    # Out[1]: -168598.1035642
-    # In [2]: 5611364.73539792 - 3750
-    # Out[2]: 5607614.73539792
-    origin = (gce[0] + center.east - 0.5 * grid_size, gcn[-1] + center.north - 0.5 * grid_size)
-    _logger.info("The Origin (UpperLeft Corner) =".format(origin))
+    # BM: The cells have been defined by their center point for making
+    #  our grid and interpolating the resistivity model over it. For
+    #  display purposes, GDAL expects the origin to be the upper-left
+    #  corner of the image. So take the upper left-cell and shift it
+    #  half a cell west and north so we get the upper-left corner of
+    #  the grid as GDAL origin.
+    origin = (ce[0] + center.east - grid_size / 2, cn[-1] + center.north + grid_size / 2)
+    # _logger.info("The Origin (UpperLeft Corner) =".format(origin))
+    print("The Origin (UpperLeft Corner) = {}".format(origin))
 
     pixel_width = grid_size
     # This should be negative for geotiff spec, whose origin is at the
     # upper-left corner of image.
     pixel_height = -grid_size
 
-    (target_gridx, target_gridy) = np.meshgrid(np.arange(gce[0], gce[-1], grid_size),
-                                               np.arange(gcn[0], gcn[-1], grid_size))
+    target_gridx, target_gridy = np.meshgrid(np.arange(ce[0], ce[-1], grid_size),
+                                             np.arange(cn[0], cn[-1], grid_size))
 
-    resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, 0:-zpad]
+    resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, :-zpad]
 
     def _nearest(array, value):
         """Get index for nearest element to value in an array.
@@ -224,32 +240,28 @@ def create_geogrid(data_file, model_file, out_dir,
             return idx
 
     if depths:
-        indicies = {_nearest(gcz, d) for d in depths}
+        indicies = {_nearest(cz, d) for d in depths}
     else:
-        indicies = range(len(gcz))
+        indicies = range(len(cz))
 
-    _logger.info("Depth indicies = {}".format(indicies))
+    # _logger.info("Depth indicies = {}".format(indicies))
+    print("Depth indicies = {}".format(indicies))
 
     for di in indicies:
         # define interpolation function (interpolate in log10 measure-space)
-        # See https://docs.scipy.org/doc/scipy-0.16.0/reference/interpolate.html
-        interpfunc = RegularGridInterpolator((gce, gcn), np.log10(resgrid_nopad[:, :, di].T))
+        interpfunc = RegularGridInterpolator((ce, cn), np.log10(resgrid_nopad[:, :, di].T))
         # evaluate on the regular grid points, which to be output into geogrid formatted files
         newgridres = interpfunc(np.vstack(
             [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
         if not log_scale:
             newgridres **= 10
-            output_file = 'DepthSlice{:.0f}m.tif'.format(gcz[di])
+            output_file = 'DepthSlice{:.0f}m.tif'.format(cz[di])
         else:
-            output_file = 'DepthSlice{:.0f}m_log10.tif'.format(gcz[di])
+            output_file = 'DepthSlice{:.0f}m_log10.tif'.format(cz[di])
         output_file = os.path.join(out_dir, output_file)
 
-        _logger.info("New interpolated resistivity grid shape at index {}: {} "
-                     .format(di, newgridres.shape))
-
-        # This original image may start from the lower left corner, if
-        # so must be flipped.
-        # resis_data_flip = resis_data[::-1]
+        # _logger.info("New interpolated resistivity grid shape at index {}: {} "
+        #              .format(di, newgridres.shape))
 
         array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres[::-1],
                              epsg_code=epsg_code, angle=angle, center=center,
