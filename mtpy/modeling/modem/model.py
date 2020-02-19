@@ -2042,4 +2042,6 @@ class Model(object):
                 vals = np.log10(vals)
                 fmt[-1] = '%.3f'
             data = np.vstack([xp,yp,vals]).T
+
             np.savetxt(fname,data,fmt=fmt)
+
