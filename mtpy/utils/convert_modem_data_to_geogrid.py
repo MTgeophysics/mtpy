@@ -117,36 +117,69 @@ def test_array2geotiff(newRasterfn, epsg):
     return outfn
 
 
-def create_geogrid(data_file, model_file, out_dir,
-                   xpad=6, ypad=6, zpad=10, grid_size=7500,
-                   center_lat=None, center_lon=None, epsg_code=None,
-                   depths=None, angle=None, rotate_origin=False,
-                   list_depths=False, log_scale=False):
+def list_depths(model_file, zpad=None):
+    """
+    Return a list of available depth slices in the model.
+
+    Args:
+        model_file (str): Path to ModEM .rho file.
+        zpad (int, optional): Number of padding slices to remove from
+            bottom of model. If None, model pad_z value is used.
+
+    Returns:
+        list of float: A list of available depth slices.
+    """
+    model = Model()
+    model.read_model_file(model_fn=model_file)
+
+    cz = np.mean([model.grid_z[:-1], model.grid_z[1:]], axis=0)
+    zpad = model.pad_z if zpad is None else zpad
+    return cz[:-zpad]
+
+
+def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad=None,
+                   x_res=None, y_res=None, center_lat=None, center_lon=None, epsg_code=None,
+                   depths=None, angle=None, rotate_origin=False, log_scale=False):
     """Generate an output geotiff file and ASCII grid file.
 
     Args:
         data_file (str): Path to the ModEM .dat file. Used to get the
             grid center point.
         model_file (str): Path to the ModEM .rho file.
-        xpad (int): TODO
-        ypad (int): TODO
-        zpad (int): TODO
-        grid_size (int): Pixel resolution in meters.
-        epsg_code (int): EPSG code of the model CRS. By default is
-            inferred from the grid center point.
-        depths (list of int): A list of integers, eg, [0, 100, 500],
-            of the depth in metres of the slices to retrieve. Will
-            find the closest slice to each depth specified. If None,
-            all slices are selected.
-        center_lat (float): Grid center latitude in degrees.
-        center_lon (float): Grid center longitude in degrees.
-        angle (float): Angle in degrees to rotate image by.
-        rotate_origin (bool): If True, image will be rotated around the
-            origin (upper left point). If False, image will be rotated
-            around the center point.
-        list_depths (bool): If True, this function lists all deths in
-            the model to stdout and returns nothing.
-        log_scale (bool): If True, the data will be scaled using log10.
+        out_dir (str): Path to directory for storing output data. Will
+            be created if it does not exist.
+        x_pad (int, optional): Number of east-west padding cells. This
+            number of cells will be cropped from the east and west
+            sides of the grid. If None, pad_east attribute of model
+            will be used.
+        y_pad (int, optional): Number of north-south padding cells. This
+            number of cells will be cropped from the north and south
+            sides of the grid. If None, pad_north attribute of model
+            will be used.
+        z_pad (int, optional): Number of depth padding cells. This
+            number of cells (i.e. slices) will be cropped from the
+            bottom of the grid. If None, pad_z attribute of model
+            will be used.
+        x_res (int, optional): East-west cell size in meters. If None,
+            cell_size_east attribute of model will be used.
+        y_res (int, optional): North-south cell size in meters. If
+            None, cell_size_north of model will be used.
+        epsg_code (int, optional): EPSG code of the model CRS. If None,
+            is inferred from the grid center point.
+        depths (list of int, optional): A list of integers,
+            eg, [0, 100, 500], of the depth in metres of the slice to
+            retrieve. Will find the closes slice to each depth
+            specified. If None, all slices are selected.
+        center_lat (float, optional): Grid center latitude in degrees.
+            If None, the model's center point will be used.
+        center_lon (float, optional): Grid center longitude in degrees.
+            If None, the model's center point will be used.
+        angle (float, optional): Angle in degrees to rotate image by.
+            If None, no rotation is performed.
+        rotate_origin (bool, optional): If True, image will be rotated
+            around the origin (upper left point). If False, the image
+            will be rotated around the center point.
+        log_scale (bool, optional): If True, the data will be scaled using log10.
     """
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
@@ -157,8 +190,8 @@ def create_geogrid(data_file, model_file, out_dir,
     data = Data()
     data.read_data_file(data_fn=data_file)
     center = data.center_point
-    center_lat = center.lat.item() if center_lat is None else None
-    center_lon = center.lon.item() if center_lon is None else None
+    center_lat = center.lat.item() if center_lat is None else center_lat
+    center_lon = center.lon.item() if center_lon is None else center_lon
 
     _logger.info("Grid center (lat, lon) = ({}, {})".format(center_lat, center_lon))
 
@@ -170,29 +203,23 @@ def create_geogrid(data_file, model_file, out_dir,
     # Get the center point of the model grid cells to use as points
     #  in a resistivity grid.
     ce, cn, cz = [np.mean([arr[:-1], arr[1:]], axis=0)
-                                       for arr in [model.grid_east, model.grid_north, model.grid_z]]
+                  for arr in [model.grid_east, model.grid_north, model.grid_z]]
 
     # Get X, y, Z paddings
     # BM: Why are we supplying paddings, grid size etc. when the model
     #  contains these values?
-    # xpad = model.pad_east
-    # ypad = model.pad_north
-    # zpad = model.pad_z
+    x_pad = model.pad_east if x_pad is None else x_pad
+    y_pad = model.pad_north if y_pad is None else y_pad
+    z_pad = model.pad_z if z_pad is None else z_pad
 
     # BM: Also there's a bug when trying to provide differing values
     #  for x and y pad. Below will break when interpolation is run.
     # xpad, ypad = 6, 5
 
     # Remove padding cells from the grid
-    ce = ce[xpad:-xpad]
-    cn = cn[ypad:-ypad]
-    cz = cz[:-zpad]
-
-    if list_depths:
-        with np.printoptions(precision=0, suppress=True):
-            print(cz)
-            # _logger.info(centers_z) # Need to fix logging
-        return
+    ce = ce[x_pad:-x_pad]
+    cn = cn[y_pad:-y_pad]
+    cz = cz[:-z_pad]
 
     # _logger.info("E shape = {}, N shape = {}, Z shape = {}"
     #             .format(ce.shape, cn.shape, cz.shape))
@@ -202,25 +229,23 @@ def create_geogrid(data_file, model_file, out_dir,
     # _logger.info("Data center (east, north) = ({}, {})".format(center.east, center.north))
     print("Data center (east, north) = ({}, {})".format(center.east, center.north))
 
+    x_res = model.cell_size_east if x_res is None else x_res
+    y_res = model.cell_size_north if y_res is None else y_res
+
     # BM: The cells have been defined by their center point for making
     #  our grid and interpolating the resistivity model over it. For
     #  display purposes, GDAL expects the origin to be the upper-left
     #  corner of the image. So take the upper left-cell and shift it
     #  half a cell west and north so we get the upper-left corner of
     #  the grid as GDAL origin.
-    origin = (ce[0] + center.east - grid_size / 2, cn[-1] + center.north + grid_size / 2)
+    origin = (ce[0] + center.east - x_res / 2, cn[-1] + center.north + y_res / 2)
     # _logger.info("The Origin (UpperLeft Corner) =".format(origin))
     print("The Origin (UpperLeft Corner) = {}".format(origin))
 
-    pixel_width = grid_size
-    # This should be negative for geotiff spec, whose origin is at the
-    # upper-left corner of image.
-    pixel_height = -grid_size
+    target_gridx, target_gridy = np.meshgrid(np.arange(ce[0], ce[-1], x_res),
+                                             np.arange(cn[0], cn[-1], y_res))
 
-    target_gridx, target_gridy = np.meshgrid(np.arange(ce[0], ce[-1], grid_size),
-                                             np.arange(cn[0], cn[-1], grid_size))
-
-    resgrid_nopad = model.res_model[xpad:-xpad, ypad:-ypad, :-zpad]
+    resgrid_nopad = model.res_model[x_pad:-x_pad, y_pad:-y_pad, :-z_pad]
 
     def _nearest(array, value):
         """Get index for nearest element to value in an array.
@@ -263,7 +288,7 @@ def create_geogrid(data_file, model_file, out_dir,
         # _logger.info("New interpolated resistivity grid shape at index {}: {} "
         #              .format(di, newgridres.shape))
 
-        array2geotiff_writer(output_file, origin, pixel_width, pixel_height, newgridres[::-1],
+        array2geotiff_writer(output_file, origin, x_res, -y_res, newgridres[::-1],
                              epsg_code=epsg_code, angle=angle, center=center,
                              rotate_origin=rotate_origin)
 
@@ -286,10 +311,11 @@ if __name__ == '__main__':
     parser.add_argument('out_dir', help="output directory")
     parser.add_argument('--list-depths', action='store_true', default=False,
                         help='list depth of every slice in model then exit')
-    parser.add_argument('--xpad', type=int, help='xpad value', default=6)
-    parser.add_argument('--ypad', type=int, help='ypad value', default=6)
-    parser.add_argument('--zpad', type=int, help='ypad value', default=10)
-    parser.add_argument('--grid', type=int, help="pixel size in meters", default=7500)
+    parser.add_argument('--xpad', type=int, help='xpad value')
+    parser.add_argument('--ypad', type=int, help='ypad value')
+    parser.add_argument('--zpad', type=int, help='ypad value')
+    parser.add_argument('--xres', type=int, help="cell width in meters")
+    parser.add_argument('--yres', type=int, help="cell height in meters")
     parser.add_argument('--epsg', type=int, help="EPSG code for CRS of the model")
     parser.add_argument('--lat', type=float, help="grid center latitude in degrees")
     parser.add_argument('--lon', type=float, help="grid center longitude in degrees")
@@ -303,8 +329,11 @@ if __name__ == '__main__':
                         help='scale the data by taking the log10 of data')
     args = parser.parse_args()
 
-    create_geogrid(args.modem_data, args.modem_model, args.out_dir, xpad=args.xpad, ypad=args.ypad,
-                   grid_size=args.grid, center_lat=args.lat, center_lon=args.lon,
-                   depths=args.depths, epsg_code=args.epsg, angle=args.angle,
-                   rotate_origin=args.rotate_origin, list_depths=args.list_depths,
-                   log_scale=args.log_scale)
+    if args.list_depths:
+        with np.printoptions(suppress=True):
+            print(list_depths(args.modem_model, zpad=args.zpad))
+    else:
+        create_geogrid(args.modem_data, args.modem_model, args.out_dir, x_pad=args.xpad, y_pad=args.ypad,
+                       z_pad=args.zpad, x_res=args.xres, y_res=args.yres, center_lat=args.lat,
+                       center_lon=args.lon, depths=args.depths, epsg_code=args.epsg, angle=args.angle,
+                       rotate_origin=args.rotate_origin, log_scale=args.log_scale)
