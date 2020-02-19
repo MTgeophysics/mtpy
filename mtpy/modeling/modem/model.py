@@ -1411,9 +1411,9 @@ class Model(object):
 
         # get number of padding cells
         self.pad_east = np.where(self.nodes_east[0:int(self.nodes_east.size / 2)]
-                                 != self.cell_size_east)[0][-1]
-        self.north_pad = np.where(self.nodes_north[0:int(self.nodes_north.size / 2)]
-                                  != self.cell_size_north)[0][-1]
+                                 != self.cell_size_east)[0].size
+        self.pad_north = np.where(self.nodes_north[0:int(self.nodes_north.size / 2)]
+                                  != self.cell_size_north)[0].size
 
     def read_ws_model_file(self, ws_model_fn):
         """
