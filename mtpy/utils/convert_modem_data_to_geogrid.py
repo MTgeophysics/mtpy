@@ -245,7 +245,7 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     target_gridx, target_gridy = np.meshgrid(np.arange(ce[0], ce[-1], x_res),
                                              np.arange(cn[0], cn[-1], y_res))
 
-    resgrid_nopad = model.res_model[x_pad:-x_pad, y_pad:-y_pad, :-z_pad]
+    resgrid_nopad = model.res_model[y_pad:-y_pad, x_pad:-x_pad, :-z_pad]
 
     def _nearest(array, value):
         """Get index for nearest element to value in an array.
