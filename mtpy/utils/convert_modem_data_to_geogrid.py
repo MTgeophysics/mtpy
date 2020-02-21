@@ -137,6 +137,17 @@ def list_depths(model_file, zpad=None):
     return cz[:-zpad]
 
 
+def _get_centres(arr):
+    return np.mean([arr[:-1], arr[1:]], axis=0)
+
+
+def _strip_padding(arr, pad, keep_start=False):
+    if keep_start:
+        return arr[:-pad]
+    else:
+        return arr[pad:-pad]
+
+
 def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad=None,
                    x_res=None, y_res=None, center_lat=None, center_lon=None, epsg_code=None,
                    depths=None, angle=None, rotate_origin=False, log_scale=False):
@@ -202,24 +213,19 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
 
     # Get the center point of the model grid cells to use as points
     #  in a resistivity grid.
-    ce, cn, cz = [np.mean([arr[:-1], arr[1:]], axis=0)
-                  for arr in [model.grid_east, model.grid_north, model.grid_z]]
+    ce = _get_centres(model.grid_east)
+    cn = _get_centres(model.grid_north)
+    cz = _get_centres(model.grid_z)
 
-    # Get X, y, Z paddings
-    # BM: Why are we supplying paddings, grid size etc. when the model
-    #  contains these values?
+    # Get X, Y, Z paddings
     x_pad = model.pad_east if x_pad is None else x_pad
     y_pad = model.pad_north if y_pad is None else y_pad
     z_pad = model.pad_z if z_pad is None else z_pad
 
-    # BM: Also there's a bug when trying to provide differing values
-    #  for x and y pad. Below will break when interpolation is run.
-    # xpad, ypad = 6, 5
-
     # Remove padding cells from the grid
-    ce = ce[x_pad:-x_pad]
-    cn = cn[y_pad:-y_pad]
-    cz = cz[:-z_pad]
+    ce = _strip_padding(ce, x_pad)
+    cn = _strip_padding(cn, y_pad)
+    cz = _strip_padding(cz, z_pad, keep_start=True)
 
     # _logger.info("E shape = {}, N shape = {}, Z shape = {}"
     #             .format(ce.shape, cn.shape, cz.shape))
