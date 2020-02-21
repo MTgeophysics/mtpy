@@ -148,6 +148,18 @@ def _strip_padding(arr, pad, keep_start=False):
         return arr[pad:-pad]
 
 
+def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
+                     centers_north, north_cell_size, mesh_center_north):
+    # BM: The cells have been defined by their center point for making
+    #  our grid and interpolating the resistivity model over it. For
+    #  display purposes, GDAL expects the origin to be the upper-left
+    #  corner of the image. So take the upper left-cell and shift it
+    #  half a cell west and north so we get the upper-left corner of
+    #  the grid as GDAL origin.
+    return (centers_east[0] + mesh_center_east - east_cell_size / 2,
+            centers_north[-1] + mesh_center_north + north_cell_size / 2)
+
+
 def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad=None,
                    x_res=None, y_res=None, center_lat=None, center_lon=None, epsg_code=None,
                    depths=None, angle=None, rotate_origin=False, log_scale=False):
@@ -238,13 +250,8 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     x_res = model.cell_size_east if x_res is None else x_res
     y_res = model.cell_size_north if y_res is None else y_res
 
-    # BM: The cells have been defined by their center point for making
-    #  our grid and interpolating the resistivity model over it. For
-    #  display purposes, GDAL expects the origin to be the upper-left
-    #  corner of the image. So take the upper left-cell and shift it
-    #  half a cell west and north so we get the upper-left corner of
-    #  the grid as GDAL origin.
-    origin = (ce[0] + center.east - x_res / 2, cn[-1] + center.north + y_res / 2)
+    origin = _get_gdal_origin(ce, x_res, center.east, cn, y_res, center.north)
+
     # _logger.info("The Origin (UpperLeft Corner) =".format(origin))
     print("The Origin (UpperLeft Corner) = {}".format(origin))
 
