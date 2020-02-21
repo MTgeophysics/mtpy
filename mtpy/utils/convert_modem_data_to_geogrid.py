@@ -142,6 +142,11 @@ def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
             centers_north[-1] + mesh_center_north + north_cell_size / 2)
 
 
+def _build_target_grid(centers_east, cell_size_east, centers_north, cell_size_north):
+    return np.meshgrid(np.arange(centers_east[0], centers_east[-1], cell_size_east),
+                       np.arange(centers_north[0], centers_north[-1], cell_size_north))
+
+
 def list_depths(model_file, zpad=None):
     """
     Return a list of available depth slices in the model.
@@ -257,8 +262,7 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     # _logger.info("The Origin (UpperLeft Corner) =".format(origin))
     print("The Origin (UpperLeft Corner) = {}".format(origin))
 
-    target_gridx, target_gridy = np.meshgrid(np.arange(ce[0], ce[-1], x_res),
-                                             np.arange(cn[0], cn[-1], y_res))
+    target_gridx, target_gridy = _build_target_grid(ce, x_res, cn, y_res)
 
     resgrid_nopad = model.res_model[y_pad:-y_pad, x_pad:-x_pad, :-z_pad]
 

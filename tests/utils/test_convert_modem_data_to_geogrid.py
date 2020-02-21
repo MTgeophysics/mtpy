@@ -91,9 +91,17 @@ def test_gdal_origin(model_grid_e, model_grid_n, grid_center):
                                    grid_n, cell_size_n, grid_center[1])
     test_origin = (grid_e[0] + grid_center[0] - cell_size_e / 2,
                    grid_n[-1] + grid_center[1] + cell_size_n / 2)
-    print(origin, test_origin)
-    assert origin == test_origin
+    np.testing.assert_array_equal(origin, test_origin)
 
+
+def test_target_grid_generation(model_grid_e, model_grid_n):
+    ge, cse, _ = model_grid_e
+    gn, csn, _ = model_grid_n
+    target_grid_x, target_grid_y = conv._build_target_grid(ge, cse, gn, csn)
+    test_tgx, test_tgy = np.meshgrid(np.arange(ge[0], ge[-1], cse),
+                                     np.arange(gn[0], gn[-1], csn))
+    np.testing.assert_array_equal(target_grid_x, test_tgx)
+    np.testing.assert_array_equal(target_grid_y, test_tgy)
 
 #@pytest.fixture
 #def grid_centres():
