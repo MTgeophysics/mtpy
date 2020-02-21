@@ -117,32 +117,14 @@ def test_array2geotiff(newRasterfn, epsg):
     return outfn
 
 
-def list_depths(model_file, zpad=None):
-    """
-    Return a list of available depth slices in the model.
-
-    Args:
-        model_file (str): Path to ModEM .rho file.
-        zpad (int, optional): Number of padding slices to remove from
-            bottom of model. If None, model pad_z value is used.
-
-    Returns:
-        list of float: A list of available depth slices.
-    """
-    model = Model()
-    model.read_model_file(model_fn=model_file)
-
-    cz = np.mean([model.grid_z[:-1], model.grid_z[1:]], axis=0)
-    zpad = model.pad_z if zpad is None else zpad
-    return cz[:-zpad]
-
-
-def _get_centres(arr):
+def _get_centers(arr):
     return np.mean([arr[:-1], arr[1:]], axis=0)
 
 
 def _strip_padding(arr, pad, keep_start=False):
-    if keep_start:
+    if pad == 0:
+        return arr
+    elif keep_start:
         return arr[:-pad]
     else:
         return arr[pad:-pad]
@@ -158,6 +140,26 @@ def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
     #  the grid as GDAL origin.
     return (centers_east[0] + mesh_center_east - east_cell_size / 2,
             centers_north[-1] + mesh_center_north + north_cell_size / 2)
+
+
+def list_depths(model_file, zpad=None):
+    """
+    Return a list of available depth slices in the model.
+
+    Args:
+        model_file (str): Path to ModEM .rho file.
+        zpad (int, optional): Number of padding slices to remove from
+            bottom of model. If None, model pad_z value is used.
+
+    Returns:
+        list of float: A list of available depth slices.
+    """
+    model = Model()
+    model.read_model_file(model_fn=model_file)
+
+    cz = _get_centers(model.grid_z)
+    zpad = model.pad_z if zpad is None else zpad
+    return cz[:-zpad]
 
 
 def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad=None,
@@ -225,9 +227,9 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
 
     # Get the center point of the model grid cells to use as points
     #  in a resistivity grid.
-    ce = _get_centres(model.grid_east)
-    cn = _get_centres(model.grid_north)
-    cz = _get_centres(model.grid_z)
+    ce = _get_centers(model.grid_east)
+    cn = _get_centers(model.grid_north)
+    cz = _get_centers(model.grid_z)
 
     # Get X, Y, Z paddings
     x_pad = model.pad_east if x_pad is None else x_pad
