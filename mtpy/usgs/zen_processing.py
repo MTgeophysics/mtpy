@@ -9,15 +9,15 @@ Created on Fri Sep 16 14:29:43 2016
 @author: jpeacock
 """
 #==============================================================================
-from __future__ import unicode_literals
+#from __future__ import unicode_literals
 
 import numpy as np
 import time
 import datetime
 import os
 import sys
-#from io import StringIO
-from io import BytesIO
+from io import StringIO
+# from io import BytesIO
 
 
 import mtpy.utils.filehandling as mtfh
@@ -65,7 +65,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         super(BIRRP_processing, self).__init__(**kwargs)
 
         self.calibration_path = kwargs.pop('calibration_path',
-                                         r"d:\Peacock\MTData\Ant_calibrations")
+                                           r"c:\MT\Ant_calibrations")
         self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                 '2304', '2314', '2324', '2334', '2344',
                                 '2844', '2854']
@@ -959,7 +959,7 @@ class Z3D2EDI(object):
                 count = 1
             else:
                 count = 0
-        except mtts.MTTS_Error:
+        except mtts.MTTSError:
             print('  Skipped {0}'.format(fn))
             count = 0
 
@@ -1121,7 +1121,7 @@ class Z3D2EDI(object):
                             s_fn_birrp_arr['nread'][:] = min_nread
                         elif t_diff < 0:
                             #need to test if nskip is already there
-                            if s_fn_birrp_arr['nskip'][0] != 22:
+                            if s_fn_birrp_arr['nskip'][0] != 23:
                                 if n_skip > s_fn_birrp_arr['nskip'][0]:
                                     s_fn_birrp_arr['nskip'][:] = n_skip
                                     s_fn_birrp_arr['nread'][:] -= n_skip
@@ -1135,8 +1135,8 @@ class Z3D2EDI(object):
                         # if there was a remote referenc channel found
                         # append it to the array
                         if dt_arr is not None:
-                            if dt_arr['nskip'] < 22:
-                                dt_arr['nskip'] = 22
+                            if dt_arr['nskip'] < 23:
+                                dt_arr['nskip'] = 23
                             rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                         dt_arr)
 
@@ -1168,7 +1168,7 @@ class Z3D2EDI(object):
                         rr_min_read = rr_birrp_fn_arr['nread'].min()
                         for rr_b_arr in rr_birrp_fn_arr:
                             rr_n_skip = abs(rr_b_arr['nread']-rr_min_read)
-                            if rr_n_skip < 22:
+                            if rr_n_skip < 23:
                                 continue
                             if rr_b_arr['nread'] != rr_min_read:
                                 rr_b_arr['nskip'] = rr_n_skip
@@ -1208,7 +1208,7 @@ class Z3D2EDI(object):
         # fill array with data
         s_fn_birrp_arr['fn'][:] = fn_arr['fn']
         s_fn_birrp_arr['nread'][:] = fn_arr['npts'].min()
-        s_fn_birrp_arr['nskip'][:] = 22
+        s_fn_birrp_arr['nskip'][:] = 23
         s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
         s_fn_birrp_arr['comp'][:] = fn_arr['comp']
 
@@ -1777,8 +1777,8 @@ def get_remote_reference_schedule(survey_path, plot=True):
 class Capturing(list):
     def __enter__(self):
         self._stdout = sys.stdout
-#        sys.stdout = self._stringio = StringIO()
-        sys.stdout = self._stringio = BytesIO()
+        sys.stdout = self._stringio = StringIO()
+        # sys.stdout = self._stringio = BytesIO()
         return self
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
@@ -1864,7 +1864,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
 
     station_dir = os.path.join(survey_dir, station)
 
-    st = time.time()
+    st = datetime.datetime.now()
     #--> Copy data from files
     try:
         if copy_date is None:
@@ -1889,8 +1889,8 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                               notch_dict=notch_dict)
         except mtex.MTpyError_inputarguments:
             print('==> Data not good!! Did not produce a proper .edi file')
-            et = time.time()
-            print('--> took {0} seconds'.format(et-st))
+            et = datetime.datetime.now()
+            print('--> took {0} seconds'.format((et-st).total_seconds()))
             rp = None
 
     #--> write log file
