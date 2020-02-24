@@ -11,7 +11,7 @@ import numpy as np
 import os
 import time
 import warnings
-import dateutil, datetime
+from dateutil import parser as dt_parser
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -691,7 +691,7 @@ class MT(object):
             header.survey = ','.join(self.Site.survey)
         else:
             header.survey = self.Site.survey
-        header.units = self.Site.Location.elev_units
+        header.units = '[mV/km]/[nT]' 
         header.declination = self.Site.Location.declination
         header.progvers = 'MTpy'
         header.progdate = time.strftime('%Y-%m-%d', time.gmtime())
@@ -1567,6 +1567,8 @@ class MT(object):
             cfg_lines = fid.readlines()
 
         for line in cfg_lines:
+            if line[0] == '#':
+                continue
             line_list = line.strip().split('=')
             if len(line) < 2:
                 continue
@@ -2036,15 +2038,13 @@ class Site(object):
         if date_str in [None, 'None', 'none', 'NONE']:
             return None
         try:
-            return dateutil.parser.parse(date_str)
-        except dateutil.parser.ParserError:
+            return dt_parser.parse(date_str)
+        except dt_parser.ParserError:
             try:
-                return dateutil.parser.parse(date_str, dayfirst=True)
-            except dateutil.parser.ParserError as error:
+                return dt_parser.parse(date_str, dayfirst=True)
+            except dt_parser.ParserError as error:
                 raise ValueError(error)
-            
-
-
+        
 # ==============================================================================
 # Location class, be sure to put locations in decimal degrees, and note datum
 # ==============================================================================

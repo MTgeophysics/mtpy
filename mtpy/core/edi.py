@@ -35,9 +35,6 @@ tab = ' ' * 4
 # ==============================================================================
 # EDI Class
 # ==============================================================================
-
-tab = ' ' * 4
-
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
@@ -230,9 +227,9 @@ class Edi(object):
             elif self.Data_sect.nchan == 4:
                 c_list = ['hx', 'hy', 'ex', 'ey']
             elif self.Data_sect.nchan == 6:
-                c_list = ['hx', 'hy', 'ex', 'ey', 'hxr', 'rhy']
+                c_list = ['hx', 'hy', 'ex', 'ey', 'rhx', 'rhy']
             elif self.Data_sect.nchan == 7:
-                c_list = ['hx', 'hy', 'hz', 'ex', 'ey', 'hxr', 'rhy']
+                c_list = ['hx', 'hy', 'hz', 'ex', 'ey', 'rhx', 'rhy']
             self._read_spectra(lines, comp_list=c_list)
 
         elif self.Data_sect.data_type == 'z':
@@ -906,7 +903,7 @@ class Header(object):
         self.lat = None
         self.lon = None
         self.elev = None
-        self.units = 'M'
+        self.units = '[mV/km]/[nT]'
         self.empty = 1E32
         self.progvers = 'MTpy'
         self.progdate = datetime.datetime.utcnow().strftime('%Y-%m-%d')
@@ -935,7 +932,8 @@ class Header(object):
                              'declination',
                              'datum',
                              'project',
-                             'survey']
+                             'survey',
+                             'units']
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -1121,6 +1119,8 @@ class Header(object):
             if key == 'lon':
                 if longitude_format == 'LONG':
                     key = 'long'
+            if isinstance(value, list):
+                value = ','.join(value)
                     
             header_lines.append('{0}{1}={2}\n'.format(tab, key.upper(), value))
         header_lines.append('\n')
@@ -1551,7 +1551,7 @@ class DefineMeasurement(object):
         measurement_lines.append('\n')
 
         # need to write the >XMEAS type, but sort by channel number
-        m_key_list = [(kk, self.__dict__[kk].id) for kk in list(self.__dict__.keys())
+        m_key_list = [(kk.strip(), float(self.__dict__[kk].id)) for kk in list(self.__dict__.keys())
                       if kk.find('meas_') == 0]
         if len(m_key_list) == 0:
             self._logger.info('No XMEAS information.')
