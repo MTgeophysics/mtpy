@@ -122,12 +122,19 @@ def _get_centers(arr):
 
 
 def _strip_padding(arr, pad, keep_start=False):
-    if pad == 0:
-        return arr
-    elif keep_start:
-        return arr[:-pad]
+    if keep_start:
+        pad = slice(None) if pad == 0 else slice(None, -pad)
     else:
-        return arr[pad:-pad]
+        pad = slice(None) if pad == 0 else slice(pad, -pad)
+
+    return arr[pad]
+
+
+def _strip_resgrid(res_model, y_pad, x_pad, z_pad):
+    y_pad = slice(None) if y_pad == 0 else slice(y_pad, -y_pad)
+    x_pad = slice(None) if x_pad == 0 else slice(x_pad, -x_pad)
+    z_pad = slice(None) if z_pad == 0 else slice(None, -z_pad)
+    return res_model[y_pad, x_pad, z_pad]
 
 
 def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
@@ -145,6 +152,39 @@ def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
 def _build_target_grid(centers_east, cell_size_east, centers_north, cell_size_north):
     return np.meshgrid(np.arange(centers_east[0], centers_east[-1], cell_size_east),
                        np.arange(centers_north[0], centers_north[-1], cell_size_north))
+
+
+def _get_depth_indicies(centers_z, depths):
+    def _nearest(array, value):
+        """Get index for nearest element to value in an array.
+
+        Args:
+            array (np.ndarray): Array to get index for.
+            value (float): Value to search for.
+
+        Returns:
+            int: Index of element closest to value.
+        """
+        idx = np.searchsorted(array, value, side="left")
+        if idx > 0 and (idx == len(array)
+                or math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+            return idx - 1
+        else:
+            return idx
+
+    if depths:
+        return {_nearest(centers_z, d) for d in depths}
+    else:
+        return range(len(centers_z))
+
+
+def _interpolate_slice(ce, cn, resgrid, depth_index, target_gridx, target_gridy, log_scale):
+    interp_func = RegularGridInterpolator((ce, cn), np.log10(resgrid[:, :, depth_index].T))
+    res_slice = interp_func(np.vstack(
+        [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
+    if not log_scale:
+        res_slice **= 10
+    return res_slice
 
 
 def list_depths(model_file, zpad=None):
@@ -264,50 +304,22 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
 
     target_gridx, target_gridy = _build_target_grid(ce, x_res, cn, y_res)
 
-    resgrid_nopad = model.res_model[y_pad:-y_pad, x_pad:-x_pad, :-z_pad]
-
-    def _nearest(array, value):
-        """Get index for nearest element to value in an array.
-
-        Args:
-            array (np.ndarray): Array to get index for.
-            value (float): Value to search for.
-
-        Returns:
-            int: Index of element closest to value.
-        """
-        idx = np.searchsorted(array, value, side="left")
-        if idx > 0 and (idx == len(array)
-                or math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
-            return idx - 1
-        else:
-            return idx
-
-    if depths:
-        indicies = {_nearest(cz, d) for d in depths}
-    else:
-        indicies = range(len(cz))
+    resgrid_nopad = _strip_resgrid(model.res_model, y_pad, x_pad, z_pad)
+    
+    indicies = _get_depth_indicies(cz, depths)
 
     # _logger.info("Depth indicies = {}".format(indicies))
     print("Depth indicies = {}".format(indicies))
 
     for di in indicies:
-        # define interpolation function (interpolate in log10 measure-space)
-        interpfunc = RegularGridInterpolator((ce, cn), np.log10(resgrid_nopad[:, :, di].T))
-        # evaluate on the regular grid points, which to be output into geogrid formatted files
-        newgridres = interpfunc(np.vstack(
-            [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
-        if not log_scale:
-            newgridres **= 10
-            output_file = 'DepthSlice{:.0f}m.tif'.format(cz[di])
-        else:
+        data = _interpolate_slice(ce, cn, resgrid_nopad, di,
+                                  target_gridx, target_gridy, log_scale)
+        if log_scale:
             output_file = 'DepthSlice{:.0f}m_log10.tif'.format(cz[di])
+        else:
+            output_file = 'DepthSlice{:.0f}m.tif'.format(cz[di])
         output_file = os.path.join(out_dir, output_file)
-
-        # _logger.info("New interpolated resistivity grid shape at index {}: {} "
-        #              .format(di, newgridres.shape))
-
-        array2geotiff_writer(output_file, origin, x_res, -y_res, newgridres[::-1],
+        array2geotiff_writer(output_file, origin, x_res, -y_res, data[::-1],
                              epsg_code=epsg_code, angle=angle, center=center,
                              rotate_origin=rotate_origin)
 
