@@ -7,138 +7,71 @@ import numpy as np
 from mtpy.utils import convert_modem_data_to_geogrid as conv
 
 
-EAST_GRID_PARAMS = [
-    # (cell size, padding, start, end, direction)
-    # start and end do not include padding cells
-    (1., 5, -10., 10.),
-    (1., 0, -10., 10.),
-    (1., 2, -7., 7.)
-]
+def test_strip_padding():
+    grid_axis = [-2., -1., 0., 1., 2.]
+    test = conv._strip_padding(grid_axis, 1)
+    expected = [-1., 0., 1.]
+    np.testing.assert_array_equal(test, expected)
 
-NORTH_GRID_PARAMS = [
-    (1., 5, 15., 15.),
-    (1., 0, -15., 15.),
-    (1., 4, -8., 8.)
-]
+    # For 0 padding case, the array should come back untouched.
+    test = conv._strip_padding(grid_axis, 0)
+    expected = grid_axis
+    np.testing.assert_array_equal(test, expected)
 
-CENTER_POINTS = [
-    # (x, y)
-    (0., 0.),
-    (128312.123, -3289321.3)
-]
+    # When keep_start=True, padding should only be removed from the
+    #  end. This is used for stripping padding from Z-axis (only has
+    #  padding cells on the bottom).
+    test = conv._strip_padding(test, 1, keep_start=True)
+    expected = [-2., -1., 0., 1.]
+    np.testing.assert_array_equal(test, expected)
 
 
-def make_grid_axis(cell_size, padding, start, end):
-    # Build a test grid
-    grid = np.arange(start, end + cell_size, cell_size)
-    # Add padding. Increases exponentially. Rough approximation of
-    #  the mesh_tools.get_padding_cells method
-    for i in range(padding):
-        pcell = (cell_size * 1.2) ** i
-        start_pad = grid[0] - pcell
-        end_pad = grid[-1] + pcell
-        grid = np.insert(grid, 0, start_pad)
-        grid = np.append(grid, end_pad)
-    return grid, cell_size, padding
-
-
-@pytest.fixture(params=EAST_GRID_PARAMS)
-def model_grid_e(request):
-    cs, p, s, e = request.param
-    return make_grid_axis(cs, p, s, e)
-
-
-@pytest.fixture(params=NORTH_GRID_PARAMS)
-def model_grid_n(request):
-    cs, p, s, e = request.param
-    return make_grid_axis(cs, p, s, e)
-
-
-@pytest.fixture(params=CENTER_POINTS)
-def grid_center(request):
-    return request.param
-
-
-def test_get_center_points(model_grid_e):
-    grid, cs, _ = model_grid_e
-    ce = conv._get_centers(grid)
-    centers = np.mean([grid[1:], grid[:-1]], axis=0)
-
-    # Should have one less than center point than elements in grid.
-    #  last element of the grid is the terminating boundary so it has
-    #  no center pont.
-    assert len(ce) == len(grid) - 1
-    np.testing.assert_array_equal(ce, centers)
-
-
-def test_strip_padding(model_grid_e):
-    grid, _, padding = model_grid_e
-    stripped = conv._strip_padding(grid, padding)
-    if padding == 0:
-        test_stripped = grid
-    else:
-        test_stripped = grid[padding:-padding]
-
-    # Padding is removed from start and end.
-    assert len(stripped) == len(grid) - padding * 2
-    np.testing.assert_array_equal(stripped, test_stripped)
-
-
-def test_strip_padding_keep_start(model_grid_e):
-    grid, _, padding = model_grid_e
-    stripped = conv._strip_padding(grid, padding, keep_start=True)
-    if padding == 0:
-        test_stripped = grid
-    else:
-        test_stripped = grid[:-padding]
-
-    # Padding is only removed from end.
-    assert len(stripped) == len(grid) - padding
-    np.testing.assert_array_equal(stripped, test_stripped)
-
-
-def test_gdal_origin(model_grid_e, model_grid_n, grid_center):
-    grid_e, cell_size_e, _ = model_grid_e
-    grid_n, cell_size_n, _ = model_grid_n
-    origin = conv._get_gdal_origin(grid_e, cell_size_e, grid_center[0],
-                                   grid_n, cell_size_n, grid_center[1])
-
+def test_gdal_origin():
+    grid_east = [-2., -1., 0., 1., 2.]
+    grid_north = [-1.5, 0., 1.5]
+    # Center of the survey site, puts the grid into reference
+    center_point = 20., 150.
+    test = conv._get_gdal_origin(grid_east, 1., center_point[1],
+                                 grid_north, 1.5, center_point[0])
     # Origin should be upper-left, so western-most point shifted 1/2
-    #  cell west and northern-most point shifted 1/2 cell north
-    test_origin = (grid_e[0] + grid_center[0] - cell_size_e / 2,
-                   grid_n[-1] + grid_center[1] + cell_size_n / 2)
-    np.testing.assert_array_equal(origin, test_origin)
+    #  cell west and northern-most point shifted 1/2 cell north.
+    expected = [147.5, 22.25]
+
+    np.testing.assert_array_equal(test, expected)
 
 
-def test_target_grid_generation(model_grid_e, model_grid_n):
-    ge, cse, _ = model_grid_e
-    gn, csn, _ = model_grid_n
-    target_grid_x, target_grid_y = conv._build_target_grid(ge, cse, gn, csn)
-    test_tgx, test_tgy = np.meshgrid(np.arange(ge[0], ge[-1], cse),
-                                     np.arange(gn[0], gn[-1], csn))
+def test_target_grid_generation():
+    grid_east = [-2., -1., 0., 1., 2.]
+    grid_north = [-1.5, 0., 1.5]
+    test_grid_x, test_grid_y = conv._build_target_grid(grid_east, 1., grid_north, 1.5)
+    expected_x = np.array([
+        [-2., -1., 0., 1.],
+        [-2., -1., 0., 1.]
+    ])
+    expected_y = np.array([
+        [-1.5, -1.5, -1.5, -1.5],
+        [0., 0., 0., 0.]
+    ])
 
     # Testing to make sure the axes are in the correct order.
-    np.testing.assert_array_equal(target_grid_x, test_tgx)
-    np.testing.assert_array_equal(target_grid_y, test_tgy)
+    np.testing.assert_array_equal(test_grid_x, expected_x)
+    np.testing.assert_array_equal(test_grid_y, expected_y)
 
 
-def test_strip_resgrid(model_grid_e, model_grid_n):
-    grid_n, _, pad_n = model_grid_n
-    grid_e, _, pad_e = model_grid_e
-    grid_z, _, pad_z = model_grid_e
-    resgrid = np.zeros((grid_n.size, grid_e.size, grid_z.size))
-    resgrid_stripped = conv._strip_resgrid(resgrid, pad_n, pad_e, pad_z)
+def test_strip_resgrid():
+    resgrid = np.array([
+        [[100., 100., 100., 100., 100.], [150., 150., 150., 150., 150.], [100., 100., 100, 100., 100.]],
+        [[150., 150., 150., 150., 150.], [100., 100., 100., 100., 100.], [150., 150., 150., 150., 150.]],
+    ])
+    # Transpose to get [[Y], [X], [Z]]
+    resgrid = resgrid.T
+    test = conv._strip_resgrid(resgrid, 1, 1, 1)
+    # We're padding one cell off either side of X and Y, and one cell
+    #  off the end of Z. So we're left with the [150.] array in middle
+    #  of the top row, with two elements from either side removed.
+    expected = np.array([[[150., 150., 150.]]]).T  # Again, note the transpose.
 
-    # Resgrid is [[n], [e], [z]]. Need to make sure the correct padding is
-    #  bring stripped from the correct axis (this caused bugs in the
-    #  past).
-    assert resgrid_stripped.shape == (len(grid_n) - pad_n * 2,
-                                      len(grid_e) - pad_e * 2,
-                                      len(grid_z) - pad_z)
-    pad_n = slice(None) if pad_n == 0 else slice(pad_n, -pad_n)
-    pad_e = slice(None) if pad_e == 0 else slice(pad_e, -pad_e)
-    pad_z = slice(None) if pad_z == 0 else slice(None, -pad_z)
-    np.testing.assert_array_equal(resgrid_stripped, resgrid[pad_n, pad_e, pad_z])
+    np.testing.assert_array_equal(test, expected)
 
 
 def test_get_depth_indicies():
@@ -163,7 +96,6 @@ def test_interpolate_depth_slice():
     cse = 2.
     cn = np.array([-3., -1.5, 0., 1.5, 3.])
     csn = 1.5
-    cz = np.array([0., 10.])
     # Dummy resisitvity model
     resgrid = np.array([
         [[100., 100., 100., 100., 100.], [150., 150., 150., 150., 150.], [100., 100., 100, 100., 100.]],
@@ -173,7 +105,7 @@ def test_interpolate_depth_slice():
     resgrid = resgrid.T
     tgx, tgy = np.meshgrid(np.arange(ce[0], ce[-1], cse),
                            np.arange(cn[0], cn[-1], csn))
-    
+
     res_slice = conv._interpolate_slice(ce, cn, resgrid, 0, tgx, tgy, log_scale=True)
     expected = np.array([
         [2., 2.17609126],
@@ -191,4 +123,3 @@ def test_interpolate_depth_slice():
          [1024., 2381.063868]]
     )
     assert np.allclose(res_slice, expected)
-
