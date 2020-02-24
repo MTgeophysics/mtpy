@@ -14,16 +14,13 @@ Revision History:
                                     by depth
 """
 import os
-import sys
 import argparse
 import math
 
-from pyproj import Proj
 import gdal
 import osr
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
-from scipy import ndimage
 
 from mtpy.modeling.modem import Model, Data
 from mtpy.utils import gis_tools
@@ -61,6 +58,28 @@ def _rotate_transform(gt, angle, pivot_east, pivot_north):
 
 def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
                          angle=None, epsg_code=4283, center=None, rotate_origin=False):
+    """Writes a 2D array as a single band geotiff raster and ASCII grid.
+
+    Args:
+        filename (str): Name of tiff/asc grid. If rotated, this will be
+            appended to the filename as 'name_rot{degrees}.tif'.
+        origin (tuple of int): Upper-left origin of image as (X, Y).
+        pixel_wdith, pixel_height (float): Pixel resolutions in X and Y
+            dimensions respectively.
+        data (np.ndarray): The array to be written as an image.
+        angle (float): Angle in degrees to rotate by. If None or 0 is
+            given, no rotation will be performed.
+        epsg_code (int): The 4-digit EPSG code of the data CRS.
+        center (tuple): A tuple containing image center point as
+            (easting, northing).
+        rotate_origin (bool): If True, image will be rotated about the
+            upper-left origin. If False, will be rotated about center.
+            The `center` param must be provided if rotating about
+            center.
+
+    Returns:
+        str, str: Filename of the geotiff ([0]) and ASCII grid ([1]).
+    """
     gt = [origin[0], pixel_width, 0, origin[1], 0, pixel_height]
 
     # Apply rotation by tweaking geotransform. The data remains the
@@ -94,10 +113,35 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
 
 
 def _get_centers(arr):
+    """Get the centers from an array of cell boundaries.
+
+    Args:
+        arr (np.ndarray): An array of cell boundaries.
+
+    Returns:
+        np.ndarray: An array of cell centers.
+    """
     return np.mean([arr[:-1], arr[1:]], axis=0)
 
 
 def _strip_padding(arr, pad, keep_start=False):
+    """Strip padding cells from grid data. Padding cells occur at the
+    the start and end of north and east grid axes, and at the end of
+    grid depth axis.
+
+    Note we handle the special case of `pad=0` by returning the data
+    untouched (a `slice(None)` will do nothing when used as an index
+    slice).
+
+    Args:
+        arr (np.ndarray): Axis of grid data (east, north or depth).
+        pad (int): Number of padding cells being stripped.
+        keep_start (bool): If True, padding is only stripped from the
+            end of the data. Intended for use with depth axis.
+
+    Return:
+        np.ndarray: A copy of `arr` with padding cells removed.
+    """
     if keep_start:
         pad = slice(None) if pad == 0 else slice(None, -pad)
     else:
@@ -107,6 +151,10 @@ def _strip_padding(arr, pad, keep_start=False):
 
 
 def _strip_resgrid(res_model, y_pad, x_pad, z_pad):
+    """Similar to `_strip_padding` but handles the case of stripping
+    padding from a 3D resistivity model.
+
+    """
     y_pad = slice(None) if y_pad == 0 else slice(y_pad, -y_pad)
     x_pad = slice(None) if x_pad == 0 else slice(x_pad, -x_pad)
     z_pad = slice(None) if z_pad == 0 else slice(None, -z_pad)
@@ -115,31 +163,49 @@ def _strip_resgrid(res_model, y_pad, x_pad, z_pad):
 
 def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
                      centers_north, north_cell_size, mesh_center_north):
-    # BM: The cells have been defined by their center point for making
-    #  our grid and interpolating the resistivity model over it. For
-    #  display purposes, GDAL expects the origin to be the upper-left
-    #  corner of the image. So take the upper left-cell and shift it
-    #  half a cell west and north so we get the upper-left corner of
-    #  the grid as GDAL origin.
+    """Works out the upper left X, Y points of a grid.
+
+    Args:
+        centers_east, centers_north (np.ndarray): Arrays of cell
+            centers along respective axes.
+        cell_size_east, cell_size_north (float): Cell sizes in
+            respective directions.
+        mesh_center_east, mesh_center_north (float): Center point
+            of the survey area in some CRS system.
+
+    Return:
+        float, float: The upper left coordinate of the image in
+            relation to the survey center point. Used as GDAL origin.
+    """
     return (centers_east[0] + mesh_center_east - east_cell_size / 2,
             centers_north[-1] + mesh_center_north + north_cell_size / 2)
 
 
 def _build_target_grid(centers_east, cell_size_east, centers_north, cell_size_north):
+    """Creates grid that reisistivity model will be interpolated over.
+    Simply a wrapper around np.meshgrid to allow testing and to avoid
+    indexing mistakes.
+    """
     return np.meshgrid(np.arange(centers_east[0], centers_east[-1], cell_size_east),
                        np.arange(centers_north[0], centers_north[-1], cell_size_north))
 
 
 def _get_depth_indicies(centers_z, depths):
+    """Finds the indicies for the elements closest to those specified
+    in a given list of depths.
+
+    Args:
+        centers_z (np.ndarray): Grid centers along the Z axis (i.e.
+            available depths in our model).
+        depths (list of int): A list of depths to retrieve indicies
+            for. If None or empty, a list of all indicies is returned.
+
+    Returns:
+        set: A set of indicies closest to provided depths.
+        list: If `depths` is None or empty, a list of all indicies.
+    """
     def _nearest(array, value):
         """Get index for nearest element to value in an array.
-
-        Args:
-            array (np.ndarray): Array to get index for.
-            value (float): Value to search for.
-
-        Returns:
-            int: Index of element closest to value.
         """
         idx = np.searchsorted(array, value, side="left")
         if idx > 0 and (idx == len(array)
@@ -155,6 +221,22 @@ def _get_depth_indicies(centers_z, depths):
 
 
 def _interpolate_slice(ce, cn, resgrid, depth_index, target_gridx, target_gridy, log_scale):
+    """Interpolates the reisistivty model in log10 space across a grid.
+
+    Args:
+        ce, cn (np.ndarray): Grid centers in east and north directions.
+        resgrid (np.ndarray): 3D reisistivty grid from our model.
+        depth_index (int): Index of our desired depth slice for
+            retrieving from `resgrid`.
+        target_gridx, target_gridy (np.ndarray): Grid to interpolate
+            over.
+        log_scale (bool): If True, results will be left in log10 form.
+            If False, log10 is reversed.
+
+    Returns:
+        np.ndarray: A 2D slice of the resistivity model interpolated
+            over a grid.
+    """
     interp_func = RegularGridInterpolator((ce, cn), np.log10(resgrid[:, :, depth_index].T))
     res_slice = interp_func(np.vstack(
         [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
@@ -273,6 +355,12 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     x_res = model.cell_size_east if x_res is None else x_res
     y_res = model.cell_size_north if y_res is None else y_res
 
+    # BM: The cells have been defined by their center point for making
+    #  our grid and interpolating the resistivity model over it. For
+    #  display purposes, GDAL expects the origin to be the upper-left
+    #  corner of the image. So take the upper left-cell and shift it
+    #  half a cell west and north so we get the upper-left corner of
+    #  the grid as GDAL origin.
     origin = _get_gdal_origin(ce, x_res, center.east, cn, y_res, center.north)
 
     # _logger.info("The Origin (UpperLeft Corner) =".format(origin))
@@ -281,7 +369,7 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     target_gridx, target_gridy = _build_target_grid(ce, x_res, cn, y_res)
 
     resgrid_nopad = _strip_resgrid(model.res_model, y_pad, x_pad, z_pad)
-    
+
     indicies = _get_depth_indicies(cz, depths)
 
     # _logger.info("Depth indicies = {}".format(indicies))
