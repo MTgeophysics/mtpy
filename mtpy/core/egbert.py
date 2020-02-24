@@ -43,7 +43,7 @@ class EgbertHeader(object):
     
     @lon.setter
     def lon(self, lon):
-        self._lon = -180+gis_tools.assert_lon_value(lon)
+        self._lon = -180 + gis_tools.assert_lon_value(lon)
         
     def read_header(self, z_fn=None):
         """
@@ -192,7 +192,12 @@ class EgbertZ(EgbertHeader):
         p_list = period_block[0].strip().split(':')
         z_dict['period'] = float(p_list[1].split()[0].strip())
         
-        # get impedance
+        data_dict = {'tf':{}, 'sig':{}, 'res':{}}
+        key = 'tf'
+        # for line in period_block[2:]:
+        #     if line in 
+        
+        
         zx_list = [float(xx) for xx in period_block[3].strip().split()]
         zy_list = [float(yy) for yy in period_block[4].strip().split()]
         z_arr = np.zeros((2, 2), dtype=np.complex)
