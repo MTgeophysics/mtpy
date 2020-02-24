@@ -32,6 +32,31 @@ from mtpy.utils.mtpylog import MtPyLog
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
+def _rotate_transform(gt, angle, rotate_origin, center_east, center_north):
+    ox, pw, rrot, oy, crot, ph = gt
+    if angle:
+        rot = math.radians(angle)
+
+        if not rotate_origin:
+            if center_east is None or center_north is None:
+                raise ValueError("Cannot rotate about the center without center point")
+            else:
+                # BM: By default, rotation will be done about origin
+                # (upper left). To rotate about center we have to
+                # calculate a new origin by determining upper-left
+                # point as though it were rotated around center.
+                gt[0] = center_east + (ox - center_east) * math.cos(rot) \
+                    + (oy - center_north) * math.sin(rot)
+                gt[3] = center_north - (ox - center_east) * math.sin(rot) \
+                    + (oy - center_north) * math.cos(rot)
+
+    gt[1] = pw * math.cos(rot)
+    gt[2] = pw * -math.sin(rot)
+    gt[4] = ph * math.sin(rot)
+    gt[5] = ph * math.cos(rot)
+    return gt
+
+
 def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
                          angle=None, epsg_code=4283, center=None, rotate_origin=False):
     gt = [origin[0], pixel_width, 0, origin[1], 0, pixel_height]
@@ -39,25 +64,7 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
     # Apply rotation by tweaking geotransform. The data remains the
     # same but will appear roated in a viewer e.g. ArcGIS.
     if angle:
-        rot = math.radians(angle)
-
-        if not rotate_origin:
-            if center is None:
-                raise ValueError("Cannot rotate about the center without center point")
-            else:
-                # BM: By default, rotation will be done about origin
-                # (upper left). To rotate about center we have to
-                # calculate a new origin by determining upper-left
-                # point as though it were rotated around center.
-                gt[0] = center.east + (origin[0] - center.east) * math.cos(rot) \
-                    + (origin[1] - center.north) * math.sin(rot)
-                gt[3] = center.north - (origin[0] - center.east) * math.sin(rot) \
-                    + (origin[1] - center.north) * math.cos(rot)
-
-        gt[1] = pixel_width * math.cos(rot)
-        gt[2] = pixel_width * -math.sin(rot)
-        gt[4] = pixel_height * math.sin(rot)
-        gt[5] = pixel_height * math.cos(rot)
+        gt = _rotate_transform(gt, angle, rotate_origin, center.east, center.north)
         filename = '{}_rot{}.tif'\
                    .format(os.path.splitext(filename)[0], angle)
 
@@ -79,42 +86,6 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
     driver2.CreateCopy(ascii_filename, out_raster)
 
     return filename, ascii_filename
-
-
-# TODO (BM): refactor this into test module
-def test_array2geotiff(newRasterfn, epsg):
-    """
-    A  dummpy array of data to be written into a geotiff file. It looks like a image of "GDAL"
-    :param newRasterfn:
-    :param epsg: 4326, 4283
-    :return:
-    """
-    # rasterOrigin = (-123.25745,45.43013)
-    rasterOrigin = (149.298, -34.974)  # Longitude and Lattitude in Aussi continent
-    pixelWidth = 0.01
-    pixelHeight = -0.01  # this must be negative value, as a Geotiff image's origin is defined as the upper-left corner.
-
-    # Define an image 2D-array: The black=0 pixels trace out GDAL; the bright=1 pixels are white background
-    array = np.array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
-                      [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
-                      [1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
-                      [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
-                      [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1],
-                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-
-    random = np.random.rand(array.shape[0], array.shape[1])
-
-    array2 = 1000.0 * array + 10.0 * random
-    print(array2)
-
-    outfn = array2geotiff_writer(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array2,
-                                 epsg_code=epsg)  # write to a raster file
-
-    return outfn
 
 
 def _get_centers(arr):

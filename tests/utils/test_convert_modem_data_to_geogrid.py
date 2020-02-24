@@ -123,3 +123,22 @@ def test_interpolate_depth_slice():
          [1024., 2381.063868]]
     )
     assert np.allclose(res_slice, expected)
+
+
+def test_rotate_geotransform():
+    pixel_width, pixel_height = 5., 5.
+    origin_x, origin_y = 50., 100.
+    angle = 90.0
+    # GDAL transform:
+    #  upperleft X, pixel width, row rotation, upperleft Y, column rotation, pixel height
+    gt = [origin_x, pixel_width, 0, origin_y, 0, pixel_height]
+
+    # Rotate about the upper-left
+    test = conv._rotate_transform(gt, angle, True, None, None)
+    expected = [gt[0], 3.061616997868383e-16, -5., gt[3], 5., 3.061616997868383e-16]
+
+    assert test == expected
+
+    # Rotate about a center point of (0., 0.)
+    test = conv._rotate_transform(gt, angle, False, 0., 0.)
+    expected = [100.0, 3.061616997868383e-16, -5., -49.99999999999999, 5., 3.061616997868383e-16]
