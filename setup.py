@@ -76,6 +76,8 @@ setup_kwargs['install_requires'] = ['numpy>=1.8.1',
                                      'pyproj',
                                      'configparser']
 
+setup_kwargs['data_files'] = [('data', ['mtpy/utils/epsg.npy'])]
+
 setup(
 	name="mtpy",
 	version=mtpy.__version__,
