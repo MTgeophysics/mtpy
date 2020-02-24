@@ -32,26 +32,28 @@ from mtpy.utils.mtpylog import MtPyLog
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
-def _rotate_transform(gt, angle, rotate_origin, center_east, center_north):
+def _rotate_transform(gt, angle, pivot_east, pivot_north):
+    """Rotates a geotransform.
+
+    Args:
+        gt (tuple of float): A 6-tuple GDAL style geotransfrom
+            (upperleft X, pixel width, row rotation,
+             upperleft Y, column rotation, pixel height)
+        angle (float): Angle in degrees to rotate by.
+        pivot_east, pivot_north (float): The pivot point of rotation
+
+    Returns:
+        tuple of float: A rotated geotransform.
+    """
     ox, pw, rrot, oy, crot, ph = gt
-    if angle:
-        rot = math.radians(angle)
-
-        if not rotate_origin:
-            if center_east is None or center_north is None:
-                raise ValueError("Cannot rotate about the center without center point")
-            else:
-                # BM: By default, rotation will be done about origin
-                # (upper left). To rotate about center we have to
-                # calculate a new origin by determining upper-left
-                # point as though it were rotated around center.
-                gt[0] = center_east + (ox - center_east) * math.cos(rot) \
-                    + (oy - center_north) * math.sin(rot)
-                gt[3] = center_north - (ox - center_east) * math.sin(rot) \
-                    + (oy - center_north) * math.cos(rot)
-
+    rot = math.radians(angle)
+    gt[0] = pivot_east + (ox - pivot_east) * math.cos(rot) \
+        + (oy - pivot_north) * math.sin(rot)
     gt[1] = pw * math.cos(rot)
     gt[2] = pw * -math.sin(rot)
+    gt[3] = pivot_north - (ox - pivot_east) * math.sin(rot) \
+        + (oy - pivot_north) * math.cos(rot)
+
     gt[4] = ph * math.sin(rot)
     gt[5] = ph * math.cos(rot)
     return gt
@@ -64,7 +66,10 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
     # Apply rotation by tweaking geotransform. The data remains the
     # same but will appear roated in a viewer e.g. ArcGIS.
     if angle:
-        gt = _rotate_transform(gt, angle, rotate_origin, center.east, center.north)
+        if rotate_origin:
+            gt = _rotate_transform(gt, angle, origin[0], origin[1])
+        else:
+            gt = _rotate_transform(gt, angle, center.east, center.north)
         filename = '{}_rot{}.tif'\
                    .format(os.path.splitext(filename)[0], angle)
 

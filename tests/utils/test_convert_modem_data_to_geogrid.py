@@ -134,11 +134,11 @@ def test_rotate_geotransform():
     gt = [origin_x, pixel_width, 0, origin_y, 0, pixel_height]
 
     # Rotate about the upper-left
-    test = conv._rotate_transform(gt, angle, True, None, None)
+    test = conv._rotate_transform(gt, angle, origin_x, origin_y)
     expected = [gt[0], 3.061616997868383e-16, -5., gt[3], 5., 3.061616997868383e-16]
 
     assert test == expected
 
     # Rotate about a center point of (0., 0.)
-    test = conv._rotate_transform(gt, angle, False, 0., 0.)
+    test = conv._rotate_transform(gt, angle, 0., 0.)
     expected = [100.0, 3.061616997868383e-16, -5., -49.99999999999999, 5., 3.061616997868383e-16]
