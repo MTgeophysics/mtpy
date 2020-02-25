@@ -42,11 +42,17 @@ def concatenate_log_files(directory):
     all_lines = []
     for fn in files:
         with open(fn, 'r') as f:
-            all_lines.extend(f.readlines())
+            lines = f.readlines()
+            # Skip already joined logfiles
+            if lines[0] == 'Concatenated log files\n':
+                continue
+            else:
+                all_lines.extend(lines)
 
     new_logfile = os.path.basename(directory) + '.log'
     new_logfile = os.path.join(directory, new_logfile)
-    with open(new_logfile, 'w') as f:
+    all_lines.insert(0, 'Concatenated log files\n')
+    with open(new_logfile, 'w+') as f:
         f.writelines(all_lines)
     return new_logfile
 
@@ -67,24 +73,32 @@ def read(logfile):
     lf = open(logfile, 'r')
     lines = lf.readlines()
     value_lines = [l for l in lines if l.strip().startswith('with:')]
+    if not value_lines:
+        raise ValueError("Concatenated log file did not contain any readable values")
     value_lines = [l.strip().replace('   ', '').split() for l in value_lines]
-    print(len(value_lines))
     metrics = {'f': [], 'm2': [], 'rms': [], 'lambda': [], 'alpha': []}
     for line in value_lines:
         del line[0]  # Get rid of 'with:'
         for word in line:
             metric, value = word.split('=')
-            metrics[metric].append(value)
+            metrics[metric].append(float(value))
     return metrics
 
 
 def plot(metric, values):
-    FIGSIZE = 25, 12.5
+    FIGSIZE = 15, 7.5
     fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.set_title(metric.upper() + " Across Iterations")
     ax.set_xlabel('Iterations')
-    ax.set_ylabel(metric)
-    values = list(reversed(values))
-    ax.plot(np.arange(1, len(values) + 1), values)
+    ax.set_xticks(range(1, len(values) - 1, 2))
+    ax.set_xticks(range(0, len(values), 1), minor=True)
+    ax.set_ylabel(metric.upper())
+    interval = np.var(np.asarray(values))
+    ax.set_yticks(np.arange(min(values), max(values) + interval, interval))
+    ax.set_yticks(np.arange(min(values), max(values) + interval, interval / 2), minor=True)
+    ax.set_ylim(min(values), max(values) + interval)
+    ax.set_xmargin(0)
+    ax.plot(values, color='r', linewidth=2)
     return fig
 
 
