@@ -4,6 +4,10 @@ Description:
     Convert input MODEM data  and resistivity rho files into a georeferenced raster/grid format,
     such as geotiff format, which can be visualized by GIS software.
 
+Todo:
+    Need to replace the print statements in this module once loggin is
+    fixed.
+
 CreationDate:   1/05/2019
 Developer:      fei.zhang@ga.gov.au
 
@@ -215,8 +219,11 @@ def _get_depth_indicies(centers_z, depths):
             return idx
 
     if depths:
-        return {_nearest(centers_z, d) for d in depths}
+        res = {_nearest(centers_z, d) for d in depths}
+        print("Slices closest to requested depths: {}".format([centers_z[di] for di in res]))
+        return res
     else:
+        print("No depths provided, getting all slices...")
         return range(len(centers_z))
 
 
@@ -321,12 +328,12 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     center_lat = center.lat.item() if center_lat is None else center_lat
     center_lon = center.lon.item() if center_lon is None else center_lon
 
-    _logger.info("Grid center (lat, lon) = ({}, {})".format(center_lat, center_lon))
-
     if epsg_code is None:
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center_lat, center_lon)
         epsg_code = gis_tools.get_epsg(center_lat, center_lon)
         _logger.info("Input data epsg code has been inferred as {}".format(epsg_code))
+
+    print("Loaded model")
 
     # Get the center point of the model grid cells to use as points
     #  in a resistivity grid.
@@ -334,23 +341,23 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     cn = _get_centers(model.grid_north)
     cz = _get_centers(model.grid_z)
 
+    print("Grid shape with padding: E = {}, N = {}, Z = {}"
+          .format(ce.shape, cn.shape, cz.shape))
+
     # Get X, Y, Z paddings
     x_pad = model.pad_east if x_pad is None else x_pad
     y_pad = model.pad_north if y_pad is None else y_pad
     z_pad = model.pad_z if z_pad is None else z_pad
+
+    print("Stripping padding...")
 
     # Remove padding cells from the grid
     ce = _strip_padding(ce, x_pad)
     cn = _strip_padding(cn, y_pad)
     cz = _strip_padding(cz, z_pad, keep_start=True)
 
-    # _logger.info("E shape = {}, N shape = {}, Z shape = {}"
-    #             .format(ce.shape, cn.shape, cz.shape))
-    print("E shape = {}, N shape = {}, Z shape = {}"
+    print("Grid shape without padding: E = {}, N = {}, Z = {}"
           .format(ce.shape, cn.shape, cz.shape))
-
-    # _logger.info("Data center (east, north) = ({}, {})".format(center.east, center.north))
-    print("Data center (east, north) = ({}, {})".format(center.east, center.north))
 
     x_res = model.cell_size_east if x_res is None else x_res
     y_res = model.cell_size_north if y_res is None else y_res
@@ -363,19 +370,14 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     #  the grid as GDAL origin.
     origin = _get_gdal_origin(ce, x_res, center.east, cn, y_res, center.north)
 
-    # _logger.info("The Origin (UpperLeft Corner) =".format(origin))
-    print("The Origin (UpperLeft Corner) = {}".format(origin))
-
     target_gridx, target_gridy = _build_target_grid(ce, x_res, cn, y_res)
 
     resgrid_nopad = _strip_resgrid(model.res_model, y_pad, x_pad, z_pad)
 
     indicies = _get_depth_indicies(cz, depths)
 
-    # _logger.info("Depth indicies = {}".format(indicies))
-    print("Depth indicies = {}".format(indicies))
-
     for di in indicies:
+        print("Writing out slice {:.0f}m...".format(cz[di]))
         data = _interpolate_slice(ce, cn, resgrid_nopad, di,
                                   target_gridx, target_gridy, log_scale)
         if log_scale:
@@ -387,6 +389,8 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
                              epsg_code=epsg_code, angle=angle, center=center,
                              rotate_origin=rotate_origin)
 
+    print("Complete!")
+    print("Geotiffs are located in '{}'".format(os.path.dirname(output_file)))
     return output_file
 
 
