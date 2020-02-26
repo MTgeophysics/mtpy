@@ -4,6 +4,7 @@ plots the RMS across all iterations.
 
 Author: Bren Moushall
 """
+from __future__ import division
 import os
 import sys
 import glob
@@ -88,11 +89,13 @@ def read(logfile):
 
 
 def plot(metric, values, x_start=0, x_end=None, x_interval=1, y_start=None, y_end=None,
-         y_interval=None, fig_width=15., fig_height=7.5, minor_ticks=False):
-    fig_width = 15 if fig_width is None else fig_width
-    fig_height = 7.5 if fig_width is None else fig_height
-    figsize = fig_width, fig_height
-    fig, ax = plt.subplots(figsize=figsize)
+         y_interval=None, fig_width=1900, fig_height=1200, dpi=100, minor_ticks=True):
+    fig_width = 1900 if fig_width is None else fig_width
+    fig_height = 1200 if fig_height is None else fig_height
+    dpi = 100 if dpi is None else dpi
+    # Convert pixels to inches
+    figsize = 0.0104166667 * fig_width, 0.0104166667 * fig_height
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     ax.set_title(metric.upper() + "/Iteration")
 
     ax.set_xlabel('Iterations')
@@ -107,11 +110,17 @@ def plot(metric, values, x_start=0, x_end=None, x_interval=1, y_start=None, y_en
     y_start = min(values) if y_start is None else y_start
     y_end = max(values) if y_end is None else y_end
     y_interval = np.var(np.asarray(values)) if y_interval is None else y_interval
-    ax.set_yticks(np.arange(x_start, x_end, x_interval))
+    ax.set_yticks(np.arange(y_start, y_end, y_interval))
     if minor_ticks:
-        ax.set_yticks(np.arange(x_start, x_end, x_interval / 2), minor=True)
+        ax.set_yticks(np.arange(y_start, y_end, y_interval / 2), minor=True)
 
     ax.plot(values, color='r', linewidth=2)
+
+    # Set y-lim based on user limit and default padding
+    y_lim_bottom = y_start - abs(min(values) - ax.get_ylim()[0])
+    y_lim_top = y_end + abs(max(values) - ax.get_ylim()[1])
+    ax.set_ylim(y_lim_bottom, y_lim_top)
+
     return fig
 
 

@@ -19,38 +19,27 @@ from mtpy.modeling.modem.plot_rms_iterations import concatenate_log_files, read,
 
 if __name__ == "__main__":
     # Path to logfile directory
-    path = '/path/to/logfiles'
+    path = '/home/bren/data_mtpy/rms_logs'
     # Name of metric to plot. Available: 'f', 'm2', 'rms', 'lambda',
     #  'alpha'
     metric = 'rms'
-
     # Plotting arguments
     plot_kwargs = {
-        # Start of the x-axis. Default is 0.
-        'x_start': None,
-        # End of the x-axis. Default is len(iterations) - 1.
-        'x_end': None,
-        # Interval of x-axis ticks. Default is 1.
+        # Interval of x-axis ticks - default is 1
         'x_interval': None,
-        # Start (bottom) of the y-axis. Default is min(values).
-        'y_start': None,
-        # End of the y-axis. Default is max(values).
-        'y_end': None,
-        # Interval of y-axis ticks. Default is variance of the values.
+        # Interval of y-axis ticks - default is variance of the values
         'y_interval': None,
-        # Width of the figure in inches. Default is 15.
+        # Width of the figure in pixels - default is 1900
         'fig_width': None,
-        # Height of the figure in inches. Default is 7.5.
+        # Height of the figure in inches - default is 1200
         'fig_height': None,
-        # Whether or not to add a minor tick mark between each major
-        #  tick. Default is False.
-        'minor_ticks': False
-
+        # DPI of the figure - default is 100
+        'dpi': None
     }
 
     logfile = concatenate_log_files(path)
     metrics = read(logfile)
-    figure = plot(metric, metrics[metric])
+    figure = plot(metric, metrics[metric], **plot_kwargs)
     plotfile = metric + '.png'
     figure.savefig(plotfile)
     print("Complete!")
