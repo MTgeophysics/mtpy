@@ -1,6 +1,6 @@
 # Check for gdal availability at module level so we don't have to
 # do this every time a function in gis_tools is being called.
-from .decorator import gdal_data_check
+from .mtpy_decorator import gdal_data_check
 import os, re
 import numpy as np
 

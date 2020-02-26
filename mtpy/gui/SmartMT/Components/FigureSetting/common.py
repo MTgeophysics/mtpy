@@ -11,7 +11,7 @@
 from qtpy.QtWidgets import QGroupBox
 
 from mtpy.gui.SmartMT.ui_asset.groupbox_common import Ui_GroupBox_common_settings
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 
 
 @deprecated("no longer relevant, more detailed setting options are provided by other components")
