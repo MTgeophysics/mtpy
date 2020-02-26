@@ -34,14 +34,8 @@ def concatenate_log_files(directory):
     concatenated in. It is up to the user to ensure that the files are
     named correctly to achieve the desired order.
 
-    Files the begin with the line 'Concatenated log files\\n' will be
-    skipped.
-
     Args:
         directory (str):
-
-    Returns:
-        str: Path to the concatenated logfile.
     """
     directory = os.path.abspath(directory)
     files = _an_sort(glob.glob(os.path.join(directory, '*.log')))
@@ -140,4 +134,4 @@ if __name__ == '__main__':
     # TODO: Fix logging
     print("Complete!")
     print("Concatenated logfile: {}".format(logfile))
-    print("Plot: {}".format(os.path.abspath(plotfile)))
+    print("Plot: {}".format(plotfile))
