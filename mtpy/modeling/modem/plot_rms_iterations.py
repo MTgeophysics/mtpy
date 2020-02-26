@@ -8,10 +8,12 @@ import os
 import sys
 import glob
 import re
+import argparse
 
 import matplotlib 
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 def _an_sort(collection):
     """Alphanumeric sort.
@@ -103,8 +105,33 @@ def plot(metric, values):
 
 
 if __name__ == '__main__':
-    logfile = concatenate_log_files(sys.argv[1])
-    metrics = read(logfile)
-    figure = plot(sys.argv[2], metrics[sys.argv[2]])
-    figure.savefig(sys.argv[2] + '.png')
+    parser = argparse.ArgumentParser(description=
+        """
+        Provide a directory containing ModEm logfiles to have them
+        joined into a single file. This joint logfile is saved as
+        '{directory_name}.log'.
 
+        Logfiles are sorted alphanumerically before they are
+        joined, so ensure the files in the directory are named
+        correctly to achieve the desired ordering.
+
+        By default, the 'rms' value is plotted, but any value that
+        appears in the logfile per iteration as '{metric}={value}'
+        can be plotted by provind '-m {metric}'. Plot is saved as
+        '{metrc}.png'
+        """)
+    parser.add_argument('log_directory', help="Path to a directory containing logfiles (can be "
+                        "relative)")
+    parser.add_argument('--metric', '-m', help="Name of the metric to plot, avaialable are: "
+                        "'f', 'm2', 'rms', 'lambda', 'alpha' (default is 'rms')",
+                        default='rms')
+    args = parser.parse_args()
+    logfile = concatenate_log_files(args.log_directory)
+    metrics = read(logfile)
+    figure = plot(args.metric, metrics[args.metric])
+    plotfile = args.metric + '.png'
+    figure.savefig(plotfile)
+    # TODO: Fix logging
+    print("Complete!")
+    print("Concatenated logfile: {}".format(logfile))
+    print("Plot: {}".format(os.path.abspath(plotfile)))
