@@ -87,19 +87,30 @@ def read(logfile):
     return metrics
 
 
-def plot(metric, values):
-    FIGSIZE = 15, 7.5
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    ax.set_title(metric.upper() + " Across Iterations")
+def plot(metric, values, x_start=0, x_end=None, x_interval=1, y_start=None, y_end=None,
+         y_interval=None, fig_width=15., fig_height=7.5, minor_ticks=False):
+    fig_width = 15 if fig_width is None else fig_width
+    fig_height = 7.5 if fig_width is None else fig_height
+    figsize = fig_width, fig_height
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_title(metric.upper() + "/Iteration")
+
     ax.set_xlabel('Iterations')
-    ax.set_xticks(range(1, len(values) - 1, 2))
-    ax.set_xticks(range(0, len(values), 1), minor=True)
+    x_start = 0 if x_start is None else x_start
+    x_end = len(values) if x_end is None else x_end
+    x_interval = 1 if x_interval is None else x_interval
+    ax.set_xticks(np.arange(x_start, x_end, x_interval))
+    if minor_ticks:
+        ax.set_xticks(np.arange(x_start, x_end, x_interval / 2), minor=True)
+
     ax.set_ylabel(metric.upper())
-    interval = np.var(np.asarray(values))
-    ax.set_yticks(np.arange(min(values), max(values) + interval, interval))
-    ax.set_yticks(np.arange(min(values), max(values) + interval, interval / 2), minor=True)
-    ax.set_ylim(min(values), max(values) + interval)
-    ax.set_xmargin(0)
+    y_start = min(values) if y_start is None else y_start
+    y_end = max(values) if y_end is None else y_end
+    y_interval = np.var(np.asarray(values)) if y_interval is None else y_interval
+    ax.set_yticks(np.arange(x_start, x_end, x_interval))
+    if minor_ticks:
+        ax.set_yticks(np.arange(x_start, x_end, x_interval / 2), minor=True)
+
     ax.plot(values, color='r', linewidth=2)
     return fig
 

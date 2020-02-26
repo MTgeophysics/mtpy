@@ -24,6 +24,30 @@ if __name__ == "__main__":
     #  'alpha'
     metric = 'rms'
 
+    # Plotting arguments
+    plot_kwargs = {
+        # Start of the x-axis. Default is 0.
+        'x_start': None,
+        # End of the x-axis. Default is len(iterations) - 1.
+        'x_end': None,
+        # Interval of x-axis ticks. Default is 1.
+        'x_interval': None,
+        # Start (bottom) of the y-axis. Default is min(values).
+        'y_start': None,
+        # End of the y-axis. Default is max(values).
+        'y_end': None,
+        # Interval of y-axis ticks. Default is variance of the values.
+        'y_interval': None,
+        # Width of the figure in inches. Default is 15.
+        'fig_width': None,
+        # Height of the figure in inches. Default is 7.5.
+        'fig_height': None,
+        # Whether or not to add a minor tick mark between each major
+        #  tick. Default is False.
+        'minor_ticks': False
+
+    }
+
     logfile = concatenate_log_files(path)
     metrics = read(logfile)
     figure = plot(metric, metrics[metric])
