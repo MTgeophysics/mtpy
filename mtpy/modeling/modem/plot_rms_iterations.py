@@ -149,7 +149,7 @@ if __name__ == '__main__':
     logfile = concatenate_log_files(args.log_directory)
     metrics = read(logfile)
     figure = plot(args.metric, metrics[args.metric])
-    plotfile = args.metric + '.png'
+    plotfile = os.path.join(args.log_directory, args.metric + '.png')
     figure.savefig(plotfile)
     # TODO: Fix logging
     print("Complete!")

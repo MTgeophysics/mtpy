@@ -15,6 +15,8 @@ can be plotted'. Plot is saved as '{metrc}.png'.
 See 'mtpy.modeling.modem.plot_rms_iterations' for implementation
 and a command line interface.
 """
+import os
+
 from mtpy.modeling.modem.plot_rms_iterations import concatenate_log_files, read, plot
 
 if __name__ == "__main__":
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     logfile = concatenate_log_files(path)
     metrics = read(logfile)
     figure = plot(metric, metrics[metric], **plot_kwargs)
-    plotfile = metric + '.png'
+    plotfile = os.path.join(path, metric + '.png')
     figure.savefig(plotfile)
     print("Complete!")
     print("Concatenated logfile: {}".format(logfile))
