@@ -31,7 +31,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from shapely.geometry import Point, Polygon, LineString, LinearRing
 
 from mtpy.core.edi_collection import EdiCollection
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.edi_folders import recursive_glob
 

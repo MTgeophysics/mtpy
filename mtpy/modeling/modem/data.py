@@ -22,7 +22,7 @@ from mtpy.core import mt as mt
 from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
