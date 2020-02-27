@@ -90,8 +90,8 @@ def read(logfile):
 
 def plot(metric, values, x_start=0, x_end=None, x_interval=1, y_start=None, y_end=None,
          y_interval=None, fig_width=1900, fig_height=1200, dpi=100, minor_ticks=True):
-    fig_width = 1900 if fig_width is None else fig_width
-    fig_height = 1200 if fig_height is None else fig_height
+    fig_width = 800 if fig_width is None else fig_width
+    fig_height = 800 if fig_height is None else fig_height
     dpi = 100 if dpi is None else dpi
     # Convert pixels to inches
     figsize = 0.0104166667 * fig_width, 0.0104166667 * fig_height
