@@ -27,14 +27,15 @@ if __name__ == "__main__":
     metric = 'rms'
     # Plotting arguments
     plot_kwargs = {
+        # Set as None to use default values.
         # Interval of x-axis ticks - default is 1
-        'x_interval': None,
+        'x_interval': 5.,
         # Interval of y-axis ticks - default is variance of the values
-        'y_interval': None,
-        # Width of the figure in pixels - default is 1900
-        'fig_width': None,
-        # Height of the figure in inches - default is 1200
-        'fig_height': None,
+        'y_interval': 0.5,
+        # Width of the figure in pixels - default is 800
+        'fig_width': 800,
+        # Height of the figure in inches - default is 800
+        'fig_height': 800,
         # DPI of the figure - default is 100
         'dpi': None
     }

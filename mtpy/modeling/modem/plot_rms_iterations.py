@@ -110,17 +110,16 @@ def plot(metric, values, x_start=0, x_end=None, x_interval=1, y_start=None, y_en
     y_start = min(values) if y_start is None else y_start
     y_end = max(values) if y_end is None else y_end
     y_interval = np.var(np.asarray(values)) if y_interval is None else y_interval
-    ax.set_yticks(np.arange(y_start, y_end, y_interval))
+    ax.set_yticks(np.arange(1, y_end, y_interval))
     if minor_ticks:
-        ax.set_yticks(np.arange(y_start, y_end, y_interval / 2), minor=True)
+        ax.set_yticks(np.arange(1, y_end, y_interval / 2), minor=True)
 
     ax.plot(values, color='r', linewidth=2)
 
     # Set y-lim based on user limit and default padding
-    y_lim_bottom = y_start - abs(min(values) - ax.get_ylim()[0])
+    y_lim_bottom = 1 - abs(min(values) - ax.get_ylim()[0])
     y_lim_top = y_end + abs(max(values) - ax.get_ylim()[1])
     ax.set_ylim(y_lim_bottom, y_lim_top)
-
     return fig
 
 
