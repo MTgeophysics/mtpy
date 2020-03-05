@@ -92,7 +92,11 @@ def read(logfile):
         del line[0]  # Get rid of 'with:'
         for word in line:
             metric, value = word.split('=')
-            metrics[metric].append(float(value))
+            try:
+                value = float(value)
+            except ValueError:
+                value = None
+            metrics[metric].append(value)
     return metrics
 
 
@@ -133,7 +137,7 @@ def plot(metric, values, x_start=0, x_end=None, x_interval=1, y_start=None, y_en
 
 if __name__ == "__main__":
     # Path to logfile directory
-    path = '/home/bren/data_mtpy/rms_logs'
+    path = '/path/to/directory'
     # Name of metric to plot. Available: 'f', 'm2', 'rms', 'lambda',
     #  'alpha'
     metric = 'rms'
