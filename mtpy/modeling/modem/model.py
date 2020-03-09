@@ -166,21 +166,6 @@ class Model(object):
     ==================== ======================================================
     Methods              Description
     ==================== ======================================================
-    add_topography       if air_layers is non-zero, will add topo: read in
-                         topograph file, make a surface model. Call
-                         project_stations_on_topography in the end, which will
-                         re-write the .dat file.
-                         If n_airlayers is zero, then cannot add topo data,
-                         only bathymetry is needed.
-    add_topography_to_mesh    For a given mesh grid, use the topofile data to
-                              define resistivity model. No new air layers will
-                              be added. Just identify the max elev height as
-                              the ref point
-                              read in topograph file, make a surface model.
-                              Call project_stations_on_topography in the end,
-                              which will re-write the .dat file.
-    add_topography_to_model   Add topography to an existing model from a dem
-                              in ascii format.
     add_topography_to_model2    if air_layers is non-zero, will add topo: read
                                 in topograph file, make a surface model.
                                 Call project_stations_on_topography in the end,
@@ -216,11 +201,6 @@ class Model(object):
                          station locations on a cell-index N-E map
     print_mesh_params    print out the mesh-related paramas
     print_model_file_summary    print out the summary of the model file
-    project_stations_on_topography  This method is used in add_topography().
-                                    It will Re-write the data file to change
-                                    the elevation column. And update
-                                    covariance mask according topo elevation
-                                    model.
     project_surface      project a surface to the model grid and add resulting
                          elevation data to a dictionary called surface_dict.
                          Assumes the surface is in lat/long coordinates (wgs84),
