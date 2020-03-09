@@ -196,7 +196,6 @@ class Model(object):
                                             project_surface)
     get_parameters       get important model parameters to write to a file for
                          documentation later.
-    interpolate_elevation   interpolate the elevation onto the model grid.
     interpolate_elevation2  project a surface to the model grid and add
                             resulting elevation data to a dictionary called
                             surface_dict. Assumes the surface is in lat/long
@@ -1761,7 +1760,9 @@ class Model(object):
 
         # add surface to a dictionary of surface elevation data
         self.surface_dict[surfacename] = elev_mg
-
+        print("==== ELEVATION ====")
+        from pprint import pprint
+        pprint(self.surface_dict['topography'])
         return
 
     
