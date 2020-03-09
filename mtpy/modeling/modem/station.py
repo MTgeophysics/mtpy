@@ -80,7 +80,6 @@ class Stations(object):
     def rel_north(self):
         return self.station_locations['rel_north']
 
-    # BM: Does not seem to be calculated anywhere in Station class?
     @property
     def rel_elev(self):
         return self.station_locations['rel_elev']
@@ -194,6 +193,14 @@ class Stations(object):
 
         self.station_locations['rel_east'] = self.east - east_center
         self.station_locations['rel_north'] = self.north - north_center
+        
+        # BM: Before topograhy is applied to the model, the station
+        #  elevation isn't relative to anything (according to 
+        #  Data.project_stations_on_topography, station elevation is
+        #  relevant to topography). So rel_elev and elev are the same.
+        #  Once topography has been applied, rel_elev can be calcuated
+        #  by calling Data.project_stations_on_topography.
+        self.station_locations['rel_elev'] = self.elev
 
     # make center point a get method, can't set it.
     @property
