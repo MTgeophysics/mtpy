@@ -130,7 +130,6 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
         x, y, elev = mtfh.read_surface_ascii(surfacefile)
     elif surface:
         x, y, elev = surface
-        print("mesh tools x", x)
     else:
         raise ValueError("'surfacefile' or 'surface' must be provided")
 
