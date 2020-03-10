@@ -1048,18 +1048,10 @@ class Data(object):
                 raise NotImplementedError("inv_mode {} is not supported yet".format(inv_mode))
 
             d_lines.append('> 0\n')  # orientation, need to add at some point
-            # BM: Fix for center_point not currently having 'elev' property.
-            if hasattr(self.center_point, 'elev'):
-                d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
-                                self.center_point.lat[0],
-                                self.center_point.lon[0],
-                                self.center_point.elev[0]))
-                # Raise an exception when it gets implemented so this gets cleaned up
-                raise Exception("'elev' attribute on center point is now implemented, please "
-                                "remove this 'hasattr' check")
-            else:
-                d_lines.append('> {0:>10.6f} {1:>10.6f}\n'.format(
-                    self.center_point.lat[0], self.center_point.lon[0]))
+            d_lines.append('> {0:>10.6f} {1:>10.6f} {2:>10.2f}\n'.format(
+                            self.center_point.lat[0],
+                            self.center_point.lon[0],
+                            self.center_point.elev[0]))
             d_lines.append('> {0} {1}\n'.format(n_per, n_sta))
 
             if compute_error:
@@ -1770,8 +1762,7 @@ class Data(object):
             
     def project_stations_on_topography(self, model_object, air_resistivity=1e12):
         """
-        This method is used in add_topography().
-        It will Re-write the data file to change the elevation column.
+        Re-write the data file to change the elevation column.
         And update covariance mask according topo elevation model.
         :param model_object:
         :param air_resistivity:
@@ -1818,6 +1809,11 @@ class Data(object):
             # ====================== ====================================================
             # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
             self.data_array['rel_elev'][ss] = topoval + 0.001
+
+        # BM: After applying topography, center point of grid becomes
+        #  highest point of surface model.
+        self.center_point.elev = model_object.grid_z[0]
+
         # logger.debug("Re-write data file after adding topo")
         self.write_data_file(fn_basename=os.path.basename(self.data_fn)[:-4]+'topo.dat',
                              fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
