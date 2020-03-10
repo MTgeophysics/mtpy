@@ -1689,21 +1689,6 @@ class Model(object):
         if not hasattr(self, 'surface_dict'):
             self.surface_dict = {}
 
-#        # read the surface data in from ascii if surface not provided
-#        if surface is None:
-#            surface = mtfh.read_surface_ascii(surfacefile)
-#
-#        x, y, elev = surface
-#
-#        # if lat/lon provided as a 1D list, convert to a 2d grid of points
-#        if len(x.shape) == 1:
-#            x, y = np.meshgrid(x, y)
-#
-#        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-#                                                           epsg=self.station_locations.model_epsg,
-#                                                           utm_zone=self.station_locations.model_utm_zone
-#                                                           )
-
         # get centre position of model grid in real world coordinates
         x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
 
@@ -1723,7 +1708,7 @@ class Model(object):
                                                        method=method)
 
 
-        print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
+        print("Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
         # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
@@ -1740,13 +1725,7 @@ class Model(object):
 
         # add surface to a dictionary of surface elevation data
         self.surface_dict[surfacename] = elev_mg
-        print("==== ELEVATION ====")
-        from pprint import pprint
-        pprint(self.surface_dict['topography'])
         return
-
-    
-    
 
 
     def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
