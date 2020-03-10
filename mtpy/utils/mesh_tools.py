@@ -76,6 +76,11 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
                                   surfacefile=None, surface=None, method='linear',
                                   fast=True):
     """
+    # Note: this documentation is outdated and seems to be copied from
+    #  model.interpolate_elevation2. It needs to be updated. This
+    #  funciton does not update a dictionary but returns an array of
+    #  elevation data.
+
     project a surface to the model grid and add resulting elevation data
     to a dictionary called surface_dict. Assumes the surface is in lat/long
     coordinates (wgs84)
@@ -119,15 +124,13 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
     method = interpolation method. Default is 'nearest', if model grid is
     dense compared to surface points then choose 'linear' or 'cubic'
-
     """
-
     # read the surface data in from ascii if surface not provided
     if surface is None:
         surface = mtfh.read_surface_ascii(surfacefile)
 
     x, y, elev = surface
-
+    
     # if lat/lon provided as a 1D list, convert to a 2d grid of points
     if len(x.shape) == 1:
         x, y = np.meshgrid(x, y)
