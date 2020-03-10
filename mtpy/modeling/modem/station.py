@@ -218,6 +218,7 @@ class Stations(object):
                  ('lon', np.float),
                  ('east', np.float),
                  ('north', np.float),
+                 ('elev', np.float),
                  ('zone', 'S4')]
         center_location = np.recarray(1, dtype=dtype)
         #        AK - using the mean here but in get_relative_locations used (max + min)/2, why???
@@ -248,6 +249,14 @@ class Stations(object):
 
         center_location['lat'] = center_ll[0]
         center_location['lon'] = center_ll[1]
+        # BM: Because we are now writing center_point.elev to ModEm
+        #  data file, we need to provide it.
+        #  The center point elevation is the highest point of the
+        #  model. Before topography is applied, this is the highest
+        #  station. After it's applied, it's the highest point
+        #  point of the surface model (this will be set by calling
+        #  Data.project_stations_on_topography).
+        center_location['elev'] = self.elev.max()
 
         return center_location
 
