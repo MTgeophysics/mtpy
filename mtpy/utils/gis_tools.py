@@ -10,7 +10,7 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 
 from mtpy.utils import HAS_GDAL, EPSG_DICT
-from mtpy.utils.decorator import gdal_data_check, deprecated
+from mtpy.utils.mtpy_decorator import gdal_data_check, deprecated
 import numpy as np
 from mtpy.utils.mtpylog import MtPyLog
 
