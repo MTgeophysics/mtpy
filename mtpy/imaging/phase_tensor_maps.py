@@ -22,7 +22,7 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.analysis.pt as MTpt
 from mtpy.utils.mtpylog import MtPyLog
-from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axis
+from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
@@ -961,9 +961,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                       self.plot_yarr[self.plot_xarr != 0.].max() + self.xpad)
 
         # BM: Now that we have the bounds of the axis, we can plot a
-        # background image for the map.
+        # background image on the map.
         if self.background_image:
-            plot_geotiff_on_axis(self.background_image, lpax,
+            plot_geotiff_on_axes(self.background_image, lpax,
                                  epsg_code=4326, band_number=self.bimg_band,
                                  cmap=self.bimg_cmap)
 

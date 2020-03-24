@@ -10,7 +10,7 @@ from osgeo import gdal, osr
 from gdalconst import GA_ReadOnly
 
 
-def plot_geotiff_on_axis(geotiff, axes, extents=None, epsg_code=None,
+def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
                          band_number=None, cmap='viridis'):
     """
     Plot a geotiff on a prexisting matplotlib axis that represents a
@@ -64,7 +64,7 @@ def plot_geotiff_on_axis(geotiff, axes, extents=None, epsg_code=None,
     band_number = ds.RasterCount if band_number is None else band_number
     data = []
     for i in range(1, band_number + 1):
-        band = ds.GetRasterBand(band_number + 1)
+        band = ds.GetRasterBand(band_number)
         gt = ds.GetGeoTransform()
         x0, y0, xsize, ysize = gt[0], gt[3], gt[1], gt[5]
         r1 = int((t - y0) / ysize)
@@ -76,8 +76,7 @@ def plot_geotiff_on_axis(geotiff, axes, extents=None, epsg_code=None,
         data = data[0]
     else:
         data = np.stack(data, axis=2)
-    print(data.shape)
-    # Need extents back in axis CRS for plotting.
+    # Need extents back in axes CRS for plotting.
     l, b, r, t = extents
     axes.imshow(data, cmap=cmap, origin='upper', extent=(l, r, b, t))
 
