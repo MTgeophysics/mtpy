@@ -6,26 +6,25 @@ Revision History:
     Created by @author: jpeacock-pr on Thu May 30 18:20:04 2013
     Modified by Fei.Zhang@ga.gov.au 2017-03:
 """
-
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import glob
+
+import numpy as np
 from matplotlib.ticker import FormatStrFormatter
-import mtpy.utils.gis_tools as gis_tools
+import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
-# import mtpy.utils.conversions as utm2ll
-from mtpy.utils.mtpylog import MtPyLog
-import mtpy.analysis.pt as MTpt
 import matplotlib.tri as tri
 
-# get a logger object for this module, using the utility class MtPyLog to
-# config the logger
-# _logger = MtPyLog.get_mtpy_logger(__name__)
+import mtpy.utils.gis_tools as gis_tools
+import mtpy.imaging.mtcolors as mtcl
+import mtpy.imaging.mtplottools as mtpl
+import mtpy.analysis.pt as MTpt
+from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axis
+
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # ==============================================================================
@@ -365,8 +364,6 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         """
         super(PlotPhaseTensorMaps, self).__init__(**kwargs)
 
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
-
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
         tipper_object_list = kwargs.pop('tipper_object_list', None)
@@ -386,6 +383,10 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         self.interpolate = kwargs.pop('interpolate', True)
         # read in map scale
         self.mapscale = kwargs.pop('mapscale', 'deg')
+        # map background image
+        self.background_image = kwargs.pop('background_image', None)
+        self.bimg_band = kwargs.pop('bimg_band', 1)
+        self.bimg_cmap = kwargs.pop('bimg_cmap', 'viridis')
 
         # --> set the ellipse properties -------------------
         # set default size to 2
@@ -596,7 +597,6 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             lpfig = fig
         # end if
 
-        # make an axes instance
         lpax = lpfig.add_subplot(1, 1, 1, aspect='equal')
 
         # plt.locator_params(axis='x', nbins=3)  # control number of ticks in axis (nbins ticks)
@@ -926,7 +926,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
             # ==> print a message if couldn't find the freq
             else:
-                self._logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station))
+                _logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station))
 
         # --> set axes properties depending on map scale------------------------
         if self.mapscale == 'deg':
@@ -959,6 +959,13 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                       self.plot_xarr[self.plot_xarr != 0.].max() + self.xpad)
         lpax.set_ylim(self.plot_yarr[self.plot_yarr != 0.].min() - self.xpad,
                       self.plot_yarr[self.plot_xarr != 0.].max() + self.xpad)
+
+        # BM: Now that we have the bounds of the axis, we can plot a
+        # background image for the map.
+        if self.background_image:
+            plot_geotiff_on_axis(self.background_image, lpax,
+                                 epsg_code=4326, band_number=self.bimg_band,
+                                 cmap=self.bimg_cmap)
 
         # --> set tick label format
         lpax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
@@ -1221,7 +1228,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
             file_format = save_fn.split('.')[-1]
             if file_format is None or file_format not in ['png', 'jpg']:
-                self._logger.error(
+                _logger.error(
                     "Error: output file name is not correctly provided:",
                     save_fn)
                 raise Exception(
@@ -1240,7 +1247,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             pass
 
         self.fig_fn = save_fn
-        self._logger.debug('Saved figure to: %s', self.fig_fn)
+        _logger.debug('Saved figure to: %s', self.fig_fn)
 
     def update_plot(self):
         """
@@ -1284,7 +1291,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # create a save path for files
         if save_path is None:
-            self._logger.info("No save_path provided. ")
+            _logger.info("No save_path provided. ")
             return None
             # try:
             #     svpath = os.path.join(os.path.dirname(self.mt_list[0].fn),
@@ -1364,7 +1371,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (mt1.lon, mt1.lat, mt1.freq[j2])
             except IndexError:
-                self._logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
+                _logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
 
         # ----------------------write files-------------------------------------
         svfn = 'Map_{0:.6g}Hz'.format(self.plot_freq)
@@ -1483,7 +1490,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         tablefid.write('\n')
 
-        self._logger.info('Wrote files to {}'.format(svpath))
+        _logger.info('Wrote files to {}'.format(svpath))
 
         return svpath
 

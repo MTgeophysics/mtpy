@@ -1,41 +1,90 @@
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
-import pytest
-
-
-def demo():
-    delta = 0.025
-    x = y = np.arange(-3.0, 3.0, delta)
-    X, Y = np.meshgrid(x, y)
-    Z1 = mlab.bivariate_normal(X, Y, 1.0, 1.0, 0.0, 0.0)
-    Z2 = mlab.bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
-
-    Z = Z2 - Z1  # difference of Gaussians
-
-    my_extent = (-5, 5, -5, 5)
-    im = plt.imshow(Z, interpolation='bilinear', cmap=cm.RdYlGn,
-                    origin='lower', extent=my_extent,
-                    vmax=abs(Z).max(), vmin=-abs(Z).max())
-
-    plt.show()
-
-
 import sys
 import os
 
-from osgeo import gdal, osr
-
-from gdalconst import *
+import matplotlib.cm as cm
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 import numpy as np
+import pyproj
+from osgeo import gdal, osr
+from gdalconst import GA_ReadOnly
 
 
-# import cartopy.crs as ccrs
+def plot_geotiff_on_axis(geotiff, axes, extents=None, epsg_code=None,
+                         band_number=None, cmap='viridis'):
+    """
+    Plot a geotiff on a prexisting matplotlib axis that represents a
+    georeferenced map. Doesn't return anything - the plotting is done
+    on the axis in-place.
+
+    Parameters
+    ----------
+    geotiff : str
+        Full path to the geotiff file to display.
+    axes : matplotlib.axes
+        The axes to display the image on.
+    extents : tuple of float, optional
+        Bounding box within which to draw the image of format
+        (left, bottom, right, top). *Must be in the same CRS as the
+        axes*. The geotiff will be cropped using these extents and then
+        displayed within the same extents. If not provided, extents
+        will be retrieved from the axes x and y limits, i.e. the image
+        will fill the entire axes.
+    epsg_code : int, optional
+        EPSG code of the axes map CRS. Must be provided if the axes and
+        image CRS are different. This is used to reproject the given
+        extents to the image CRS, so the extents can be used to crop the
+        image. If not provided, it's assumed the CRS of the axes and
+        image are the same.
+    band_number : int, optional
+        The band to display. If None, then all bands will be read.
+        Leave as None to display RGB/A rasters.
+    cmap : str or matplotlib.colors.Colormap, optional
+        Used to color the image data. Defaults to 'viridis'.
+    """
+    ds = gdal.Open(geotiff, GA_ReadOnly)
+    # By default, the image will fill up the entire axis.
+    if extents is None:
+        xmin, xmax = axes.get_xlim()
+        ymin, ymax = axes.get_ylim()
+        extents = xmin, ymin, xmax, ymax
+    # Reproject extents to those of geotiff
+    if epsg_code is not None:
+        ax_crs = pyproj.CRS(epsg_code)
+        img_crs = pyproj.CRS(ds.GetProjection())
+        if ax_crs.to_epsg() != img_crs.to_epsg():
+            l, b, r, t = extents
+            l, b = pyproj.transform(ax_crs, img_crs, l, b, always_xy=True, errcheck=True)
+            r, t = pyproj.transform(ax_crs, img_crs, r, t, always_xy=True, errcheck=True)
+    # Otherwise just unpack the tuple without reprojecting.
+    else:
+        l, b, r, t = extents
+
+    # Get a window of the image to display
+    band_number = ds.RasterCount if band_number is None else band_number
+    data = []
+    for i in range(1, band_number + 1):
+        band = ds.GetRasterBand(band_number + 1)
+        gt = ds.GetGeoTransform()
+        x0, y0, xsize, ysize = gt[0], gt[3], gt[1], gt[5]
+        r1 = int((t - y0) / ysize)
+        c1 = int((l - x0) / xsize)
+        r2 = int((b - y0) / ysize)
+        c2 = int((r - x0) / xsize)
+        data.append(band.ReadAsArray(c1, r1, c2 - c1 + 1, r2 - r1 + 1))
+    if len(data) == 1:
+        data = data[0]
+    else:
+        data = np.stack(data, axis=2)
+    print(data.shape)
+    # Need extents back in axis CRS for plotting.
+    l, b, r, t = extents
+    axes.imshow(data, cmap=cmap, origin='upper', extent=(l, r, b, t))
 
 
 def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True):
     if not os.path.isfile(geofile):
-        pytest.skip("file not found {}".format(geofile))
+        raise FileNotFoundError("Geotiff not found: {}".format(geofile))
     # Register drivers
     gdal.AllRegister()
 
@@ -49,7 +98,6 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     rows = ds.RasterYSize
     cols = ds.RasterXSize
     numbands = ds.RasterCount
-
 
     #     print 'rows= %s, cols= %s, number of bands = %s' %(str(rows), str(cols), str(numbands))
     #     print ("********************")
@@ -68,13 +116,11 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     # projection = ccrs.epsg(projcs)
     # print(projection)
 
-
     transform = ds.GetGeoTransform()
     xOrigin = transform[0]
     yOrigin = transform[3]
     pixelWidth = transform[1]
     pixelHeight = transform[5]
-
 
     #my_ext = (119.967, 121.525, -28.017, -26.955)
 
@@ -100,8 +146,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
 
     # ax.imshow(numarray[0]) # no georef info, just a gridded image origin is upper
 
-
-    my_cmap = 'jet' # cm.RdYlGn
+    my_cmap = 'jet'  # cm.RdYlGn
 
     # ValueError: Possible values are:
     # Accent, Accent_r, Blues, Blues_r, BrBG, BrBG_r, BuGn, BuGn_r, BuPu, BuPu_r,
@@ -125,7 +170,6 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     ax.imshow(numarray[0], extent=my_ext, cmap=my_cmap)
     ax.set_title('%s\n' % ('Image ' + geofile))
 
-
     if show is True:
         plt.show()
 
@@ -133,8 +177,8 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
 
 
 #############################################################
-# python examples/sandpit/plot_geotiff_imshow.py 
-# python examples/sandpit/plot_geotiff_imshow.py /e/Data/Dexport/CleanImages_LakeGorge_2015-10-02T100000.tiff 
+# python examples/sandpit/plot_geotiff_imshow.py
+# python examples/sandpit/plot_geotiff_imshow.py /e/Data/Dexport/CleanImages_LakeGorge_2015-10-02T100000.tiff
 
 
 if __name__ == "__main__":
