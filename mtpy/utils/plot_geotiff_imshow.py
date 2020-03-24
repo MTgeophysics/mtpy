@@ -5,8 +5,7 @@ import matplotlib.cm as cm
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import numpy as np
-import pyproj
-from osgeo import gdal, osr
+from osgeo import gdal, osr, ogr
 from gdalconst import GA_ReadOnly
 
 
@@ -48,17 +47,24 @@ def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
         xmin, xmax = axes.get_xlim()
         ymin, ymax = axes.get_ylim()
         extents = xmin, ymin, xmax, ymax
-    # Reproject extents to those of geotiff
+    l, b, r, t = extents
     if epsg_code is not None:
-        ax_crs = pyproj.CRS(epsg_code)
-        img_crs = pyproj.CRS(ds.GetProjection())
-        if ax_crs.to_epsg() != img_crs.to_epsg():
-            l, b, r, t = extents
-            l, b = pyproj.transform(ax_crs, img_crs, l, b, always_xy=True, errcheck=True)
-            r, t = pyproj.transform(ax_crs, img_crs, r, t, always_xy=True, errcheck=True)
-    # Otherwise just unpack the tuple without reprojecting.
-    else:
-        l, b, r, t = extents
+        # Reproject extents to those of geotiff
+        ax_srs = osr.SpatialReference()
+        ax_srs.ImportFromEPSG(epsg_code)
+        img_srs = osr.SpatialReference()
+        img_srs.ImportFromWkt(ds.GetProjection())
+        ctr = osr.CoordinateTransformation(ax_srs, img_srs)
+
+        p1 = ogr.Geometry(ogr.wkbPoint)
+        p1.AddPoint(l, b)
+        p1.Transform(ctr)
+        l, b = p1.GetX(), p1.GetY()
+
+        p2 = ogr.Geometry(ogr.wkbPoint)
+        p2.AddPoint(r, t)
+        p2.Transform(ctr)
+        r, t = p2.GetX(), p2.GetY()
 
     # Get a window of the image to display
     band_number = ds.RasterCount if band_number is None else band_number
