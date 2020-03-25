@@ -67,10 +67,11 @@ def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
         r, t = p2.GetX(), p2.GetY()
 
     # Get a window of the image to display
-    band_number = ds.RasterCount if band_number is None else band_number
+    band_range = range(1, ds.RasterCount + 1) if band_number is None \
+        else range(band_number, band_number + 1)
     data = []
-    for i in range(1, band_number + 1):
-        band = ds.GetRasterBand(band_number)
+    for i in band_range:
+        band = ds.GetRasterBand(i)
         gt = ds.GetGeoTransform()
         x0, y0, xsize, ysize = gt[0], gt[3], gt[1], gt[5]
         r1 = int((t - y0) / ysize)

@@ -385,7 +385,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         self.mapscale = kwargs.pop('mapscale', 'deg')
         # map background image
         self.background_image = kwargs.pop('background_image', None)
-        self.bimg_band = kwargs.pop('bimg_band', 1)
+        self.bimg_band = kwargs.pop('bimg_band', None)
         self.bimg_cmap = kwargs.pop('bimg_cmap', 'viridis')
 
         # --> set the ellipse properties -------------------
