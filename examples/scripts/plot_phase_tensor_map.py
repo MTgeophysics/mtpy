@@ -1,25 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Nov 22 07:29:58 2013
+Plots phase tensor ellipses as a map for a given frequency.
 
+Created on Fri Nov 22 07:29:58 2013
 @author: Alison Kirkby
 
-plots phase tensor ellipses as a map for a given frequency
+Revision History:
+    brenainn.moushall@ga.gov.au 26/03/2020: Add plotting of geotiff
+        as basemap background.
 """
 import os
 import os.path as op
 
-os.chdir(r'C:\mtpywin\mtpy')  # change to your path to mtpy installation to ensure correct version is used
 import mtpy.imaging.phase_tensor_maps as pptmaps
 
 # directory containing edis
-edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
+#edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
+edipath = '/home/bren/data_mtpy/phase_tensor_map/MT086_Edited_EDIs'
 
 # whether or not to save the figure to file
-save = False
+save = True
 
 # full path to file to save to
-savepath = r'C:/tmp'
+savepath = '/tmp'
 
 # frequency to plot
 plot_freq = 1e-2
@@ -55,8 +58,8 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list=elst,
                                 arrow_head_length=0.002,
                                 #ellipse_cmap='mt_seg_bl2wh2rd'
                                 station_dict={'id': (5, 7)},
-                                #background_image='/full/path/to/geotiff.tif',
-                                #bimg_band=None, #  Optional, set to None by default
+                                background_image='/home/bren/data_mtpy/phase_tensor_map/gravity_Sept2017_Complete_Bouguer_focus_area1_10000_residual_he_ness.tif'
+ #                               bimg_band=1, #  Optional, set to None by default
                                 #bimg_cmap='viridis'  # Optional, set to 'viridis' by default
                                 )
 
@@ -64,4 +67,6 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list=elst,
 if save:
     m.save_figure(op.join(savepath, image_fn),
                   fig_dpi=400)  # change to your preferred file resolution
-
+    print("Complete! Figure saved to {}".format(op.join(savepath, image_fn)))
+else:
+    print("Complete!")

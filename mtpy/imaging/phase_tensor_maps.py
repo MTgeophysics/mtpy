@@ -5,6 +5,8 @@ Plot phase tensor map in Lat-Lon Coordinate System
 Revision History:
     Created by @author: jpeacock-pr on Thu May 30 18:20:04 2013
     Modified by Fei.Zhang@ga.gov.au 2017-03:
+    brenainn.moushall 26-03-2020: Add plotting of geotiff as basemap
+        background.
 """
 import os
 import glob
