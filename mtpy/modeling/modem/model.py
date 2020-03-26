@@ -166,21 +166,6 @@ class Model(object):
     ==================== ======================================================
     Methods              Description
     ==================== ======================================================
-    add_topography       if air_layers is non-zero, will add topo: read in
-                         topograph file, make a surface model. Call
-                         project_stations_on_topography in the end, which will
-                         re-write the .dat file.
-                         If n_airlayers is zero, then cannot add topo data,
-                         only bathymetry is needed.
-    add_topography_to_mesh    For a given mesh grid, use the topofile data to
-                              define resistivity model. No new air layers will
-                              be added. Just identify the max elev height as
-                              the ref point
-                              read in topograph file, make a surface model.
-                              Call project_stations_on_topography in the end,
-                              which will re-write the .dat file.
-    add_topography_to_model   Add topography to an existing model from a dem
-                              in ascii format.
     add_topography_to_model2    if air_layers is non-zero, will add topo: read
                                 in topograph file, make a surface model.
                                 Call project_stations_on_topography in the end,
@@ -196,7 +181,6 @@ class Model(object):
                                             project_surface)
     get_parameters       get important model parameters to write to a file for
                          documentation later.
-    interpolate_elevation   interpolate the elevation onto the model grid.
     interpolate_elevation2  project a surface to the model grid and add
                             resulting elevation data to a dictionary called
                             surface_dict. Assumes the surface is in lat/long
@@ -217,11 +201,6 @@ class Model(object):
                          station locations on a cell-index N-E map
     print_mesh_params    print out the mesh-related paramas
     print_model_file_summary    print out the summary of the model file
-    project_stations_on_topography  This method is used in add_topography().
-                                    It will Re-write the data file to change
-                                    the elevation column. And update
-                                    covariance mask according topo elevation
-                                    model.
     project_surface      project a surface to the model grid and add resulting
                          elevation data to a dictionary called surface_dict.
                          Assumes the surface is in lat/long coordinates (wgs84),
@@ -1661,8 +1640,8 @@ class Model(object):
         print("FZ:***3 sea_level = ", self.sea_level)
 
 
-    def interpolate_elevation2(self, surfacefile=None, surface=None, surfacename=None,
-                               method='nearest'):
+    def interpolate_elevation2(self, surfacefile=None, surface=None, get_surfacename=False,
+                               method='nearest', fast=True):
         """
         project a surface to the model grid and add resulting elevation data
         to a dictionary called surface_dict. Assumes the surface is in lat/long
@@ -1700,7 +1679,6 @@ class Model(object):
         as elevation array containing longitude and latitude of each point.
 
         other inputs:
-        surfacename = name of surface for putting into dictionary
         surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
         method = interpolation method. Default is 'nearest', if model grid is
         dense compared to surface points then choose 'linear' or 'cubic'
@@ -1709,21 +1687,6 @@ class Model(object):
         # initialise a dictionary to contain the surfaces
         if not hasattr(self, 'surface_dict'):
             self.surface_dict = {}
-
-#        # read the surface data in from ascii if surface not provided
-#        if surface is None:
-#            surface = mtfh.read_surface_ascii(surfacefile)
-#
-#        x, y, elev = surface
-#
-#        # if lat/lon provided as a 1D list, convert to a 2d grid of points
-#        if len(x.shape) == 1:
-#            x, y = np.meshgrid(x, y)
-#
-#        xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-#                                                           epsg=self.station_locations.model_epsg,
-#                                                           utm_zone=self.station_locations.model_utm_zone
-#                                                           )
 
         # get centre position of model grid in real world coordinates
         x0, y0 = self.station_locations.center_point.east[0], self.station_locations.center_point.north[0]
@@ -1737,19 +1700,26 @@ class Model(object):
                                    self.mesh_rotation_angle,
                                    return_centre = True)
         
-        elev_mg = mtmesh.interpolate_elevation_to_grid(xg,yg,
-                                                       surfacefile=surfacefile,
-                                                       epsg=self.station_locations.model_epsg,
-                                                       utm_zone=self.station_locations.model_utm_zone,
-                                                       method=method)
+        if surfacefile:
+            elev_mg = mtmesh.interpolate_elevation_to_grid(
+                    xg,yg, surfacefile=surfacefile, epsg=self.station_locations.model_epsg,
+                    utm_zone=self.station_locations.model_utm_zone, method=method, fast=fast)
+        elif surface:
+            # Always use fast=False when reading from EDI data because
+            #  we're already providing a subset of the grid.
+            elev_mg = mtmesh.interpolate_elevation_to_grid(
+                    xg, yg, surface=surface, epsg=self.station_locations.model_epsg,
+                    utm_zone=self.station_locations.model_utm_zone,
+                    method=method, fast=False)
+        else:
+            raise ValueError("'surfacefile' or 'surface' must be provided")
 
-
-        print(" Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
+        print("Elevation data type and shape  *** ", type(elev_mg), elev_mg.shape, len(yg), len(xg))
         # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
         # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
         # get a name for surface
-        if surfacename is None:
+        if get_surfacename:
             if surfacefile is not None:
                 surfacename = os.path.basename(surfacefile)
             else:
@@ -1758,17 +1728,45 @@ class Model(object):
                 while surfacename in list(self.surface_dict.keys()):
                     ii += 1
                     surfacename = 'surface%01i' % ii
-
-        # add surface to a dictionary of surface elevation data
-        self.surface_dict[surfacename] = elev_mg
-
-        return
-
-    
-    
+            return elev_mg, surfacename
+        else:
+            return elev_mg
 
 
-    def add_topography_to_model2(self, topographyfile=None, topographyarray=None,
+    def add_topography_from_data(self, data_object, interp_method='nearest', air_resistivity=1e12,
+                                 topography_buffer=None, airlayer_type='log_up'):
+        """
+        Wrapper around add_topography_to_model2 that allows creating
+        a surface model from EDI data. The Data grid and station 
+        elevations will be used to make a 'surface' tuple that will
+        be passed to add_topography_to_model2 so a surface model
+        can be interpolated from it.
+
+        The surface tuple is of format (lon, lat, elev) containing
+        station locations.
+
+        Args:
+            data_object (mtpy.modeling.ModEM.data.Data): A ModEm data
+                object that has been filled with data from EDI files.
+            interp_method (str, optional): Same as 
+                add_topography_to_model2.
+            air_resistivity (float, optional): Same as 
+                add_topography_to_model2.
+            topography_buffer (float): Same as 
+                add_topography_to_model2.
+            airlayer_type (str, optional): Same as 
+                add_topography_to_model2.
+        """
+        lon = self.station_locations.lon
+        lat = self.station_locations.lat
+        elev = self.station_locations.elev
+        surface = lon, lat, elev
+        self.add_topography_to_model2(
+            surface=surface, interp_method=interp_method, air_resistivity=air_resistivity,
+            topography_buffer=topography_buffer, airlayer_type=airlayer_type)
+
+
+    def add_topography_to_model2(self, topographyfile=None, surface=None, topographyarray=None, 
                                  interp_method='nearest', air_resistivity=1e12,
                                  topography_buffer=None, airlayer_type = 'log_up'):
         """
@@ -1784,15 +1782,18 @@ class Model(object):
         :param topography_buffer: buffer around stations to calculate minimum and maximum topography value to use for meshing
         :param airlayer_type: how to set air layer thickness - options are 'constant' for constant air layer thickness,
                               or 'log', for logarithmically increasing air layer thickness upward
-        
         """
         # first, get surface data
-        if topographyfile is not None:
-            self.interpolate_elevation2(surfacefile=topographyfile,
-                                        surfacename='topography',
-                                        method=interp_method)
-        if topographyarray is not None:
+        if topographyfile:
+            self.surface_dict['topography'] = self.interpolate_elevation2(
+                surfacefile=topographyfile, method=interp_method)
+        elif surface:
+            self.surface_dict['topography'] = self.interpolate_elevation2(
+                surface=surface, method=interp_method)
+        elif topographyarray:
             self.surface_dict['topography'] = topographyarray
+        else:
+            raise ValueError("'topographyfile', 'surface' or 'topographyarray' must be provided")
 
         if self.n_air_layers is None or self.n_air_layers == 0:
             self._logger.warn("No air layers specified, so will not add air/topography !!!")
@@ -1829,7 +1830,8 @@ class Model(object):
                 # topographic elevation and grid parameters
                 gcz = (self.grid_z[1:] + self.grid_z[:-1])/2.
                 if self.n_air_layers != sum(gcz<0):
-                    self._logger.warn("Number of air layers updated from {} to {}. airlayer_type log_increasing_down does not allow changing of number of air layers".format(self.n_air_layers, sum(gcz<0)))
+                    self._logger.warn("Number of air layers updated from {} to {}. airlayer_type "
+                                      "log_increasing_down does not allow changing of number of air layers".format(self.n_air_layers, sum(gcz<1)))
 
                 self.n_air_layers = sum(gcz<0)
                 self.n_layers -= self.n_air_layers
