@@ -41,51 +41,69 @@ def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
     cmap : str or matplotlib.colors.Colormap, optional
         Used to color the image data. Defaults to 'viridis'.
     """
+    def transform_point(src_srs, dst_srs, x, y):
+        ctr = osr.CoordinateTransformation(src_srs, dst_srs)
+        point = ogr.Geometry(ogr.wkbPoint)
+        point.AddPoint(x, y)
+        point.Transform(ctr)
+        return point.GetX(), point.GetY()
+
     ds = gdal.Open(geotiff, GA_ReadOnly)
-    # By default, the image will fill up the entire axis.
+
+    # By default, will fill up as much of the grid axes as possible.
     if extents is None:
         xmin, xmax = axes.get_xlim()
         ymin, ymax = axes.get_ylim()
         extents = xmin, ymin, xmax, ymax
     l, b, r, t = extents
+
     if epsg_code is not None:
         # Reproject extents to those of geotiff
         ax_srs = osr.SpatialReference()
         ax_srs.ImportFromEPSG(epsg_code)
         img_srs = osr.SpatialReference()
         img_srs.ImportFromWkt(ds.GetProjection())
-        ctr = osr.CoordinateTransformation(ax_srs, img_srs)
+        l, b = transform_point(ax_srs, img_srs, l, b)
+        r, t = transform_point(ax_srs, img_srs, r, t)
 
-        p1 = ogr.Geometry(ogr.wkbPoint)
-        p1.AddPoint(l, b)
-        p1.Transform(ctr)
-        l, b = p1.GetX(), p1.GetY()
+    # Work out geotiff extent.
+    gt = ds.GetGeoTransform()
+    x0, y0, x_pixel_size, y_pixel_size = gt[0], gt[3], gt[1], gt[5]
+    cols = ds.RasterXSize
+    rows = ds.RasterYSize
+    gt_l = x0
+    gt_b = y0 + (y_pixel_size * rows)
+    gt_r = x0 + (x_pixel_size * cols)
+    gt_t = y0
 
-        p2 = ogr.Geometry(ogr.wkbPoint)
-        p2.AddPoint(r, t)
-        p2.Transform(ctr)
-        r, t = p2.GetX(), p2.GetY()
+    # Crop the geotiff on edges that extend beyond the grid bounds.
+    crop_l = min(l, gt_l)
+    crop_b = min(b, gt_b)
+    crop_r = min(r, gt_r)
+    crop_t = min(t, gt_t)
+    r1 = int((crop_t - y0) / y_pixel_size)
+    c1 = int((crop_l - x0) / x_pixel_size)
+    r2 = int((crop_b - y0) / y_pixel_size)
+    c2 = int((crop_r - x0) / x_pixel_size)
 
-    # Get a window of the image to display
     band_range = range(1, ds.RasterCount + 1) if band_number is None \
         else range(band_number, band_number + 1)
     data = []
+
     for i in band_range:
         band = ds.GetRasterBand(i)
-        gt = ds.GetGeoTransform()
-        x0, y0, xsize, ysize = gt[0], gt[3], gt[1], gt[5]
-        r1 = int((t - y0) / ysize)
-        c1 = int((l - x0) / xsize)
-        r2 = int((b - y0) / ysize)
-        c2 = int((r - x0) / xsize)
-        data.append(band.ReadAsArray(c1, r1, c2 - c1 + 1, r2 - r1 + 1))
+        data.append(band.ReadAsArray(c1, r1, c2 - c1, r2 - r1))
+
     if len(data) == 1:
         data = data[0]
     else:
         data = np.stack(data, axis=2)
-    # Need extents back in axes CRS for plotting.
-    l, b, r, t = extents
-    axes.imshow(data, cmap=cmap, origin='upper', extent=(l, r, b, t))
+
+    if epsg_code is not None:
+        crop_l, crop_b = transform_point(img_srs, ax_srs, crop_l, crop_b)
+        crop_r, crop_t = transform_point(img_srs, ax_srs, crop_r, crop_t)
+
+    axes.imshow(data, cmap=cmap, origin='upper', extent=(crop_l, crop_r, crop_b, crop_t))
 
 
 def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True):
