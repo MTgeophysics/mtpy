@@ -9,8 +9,10 @@ Developer:      fei.zhang@ga.gov.au
 
 Revision History:
     LastUpdate:     1/11/2018   FZ
-    LastUpdate:     27/03/2020  BM - create interface for drawing
-                                     shapefiles from EDI data.
+    brenainn.moushall@ga.gov.au 27-03-2020 17:34:34 AEDT:  
+        Rename script, change description and add interface for creating 
+        shapefiles from EDI data. Plotting as image not working but left
+        as commented code.
 """
 # Change working directory if running on windows and mtpy is not
 # installed as a package.

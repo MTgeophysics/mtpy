@@ -11,9 +11,9 @@ Revision History:
     LastUpdate:     10/11/2017   FZ fix bugs after the big merge
     LastUpdate:     20/11/2017   change from freq to period filenames, allow to specify a period
     LastUpdate:     30/10/2018   combine ellipses and tippers together, refactorings
-    LastUpdate:     27/03/2020   BM - Fix outfile/directory issue (see
-                                      commit messages)
 
+    brenainn.moushall@ga.gov.au 27-03-2020 17:33:23 AEDT:
+        Fix outfile/directory issue (see commit messages)
 """
 import glob
 import logging
