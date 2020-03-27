@@ -153,6 +153,11 @@ class PlotRMSMaps(object):
         self.plot_yn = kwargs.pop('plot_yn', 'y')
 
         self.bimg = kwargs.pop('bimg', None)
+        if self.bimg and self.model_epsg is None:
+            _logger.warning("You have provided a geotiff as a background image but model_epsg is "
+                            "not set. It's assumed that the CRS of the model and the CRS of the "
+                            "geotiff are the same. If this is not the case, please provide "
+                            "model_epsg to PlotRMSMaps.")
         self.bimg_band = kwargs.pop('bimg_band', None)
         self.bimg_cmap = kwargs.pop('bimg_cmap', 'viridis')
 
@@ -244,6 +249,7 @@ class PlotRMSMaps(object):
         plt.rcParams['figure.subplot.hspace'] = self.subplot_vspace
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
+        print(self.plot_z_list)
         for p_dict in self.plot_z_list:
             ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
 
@@ -365,14 +371,7 @@ class PlotRMSMaps(object):
                         self.residual.residual_array['lat'].max() + self.pad_y)
 
             if self.bimg:
-                if self.model_epsg is None:
-                    _logger.warning("Displaying a map background image but `model_epsg` has not "
-                                    "been set. Assuming EPSG is 4326. If this is not correct, "
-                                    "please provide `model_epsg` to `PlotRMSMaps`.")
-                    epsg_code = 4326
-                else:
-                    epsg_code = self.model_epsg
-                plot_geotiff_on_axes(self.bimg, ax, epsg_code=epsg_code,
+                plot_geotiff_on_axes(self.bimg, ax, epsg_code=self.model_epsg,
                                      band_number=self.bimg_band, cmap=self.bimg_cmap)
 
             ax.xaxis.set_major_locator(MultipleLocator(self.tick_locator))
