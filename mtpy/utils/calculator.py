@@ -100,7 +100,7 @@ def get_period_list(period_min,period_max,periods_per_decade,include_outside_ran
     else:
         stop_period = log_period_max        
         
-    return np.logspace(start_period,stop_period,(stop_period-start_period)*periods_per_decade + 1)
+    return np.logspace(start_period,stop_period,int((stop_period-start_period)*periods_per_decade + 1))
 
 
 def nearest_index(val,array):
