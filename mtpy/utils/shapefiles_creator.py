@@ -13,9 +13,6 @@ Revision History:
     LastUpdate:     30/10/2018   combine ellipses and tippers together, refactorings
 
 """
-
-
-
 import glob
 import logging
 import os
@@ -162,7 +159,7 @@ class ShapeFilesCreator(EdiCollection):
         path2shp = os.path.join(self.outdir, shp_fname)
         self._logger.debug("To write to ESRI shp file %s", path2shp)
         geopdf.to_file(path2shp, driver='ESRI Shapefile')
-
+        self._logger.info("Saved shapefile to %s", path2shp)
         self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
 
         if export_fig is True:
@@ -315,7 +312,7 @@ class ShapeFilesCreator(EdiCollection):
         return (geopdf, path2shp)
 
 
-def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
+def plot_phase_tensor_ellipses_and_tippers(edi_dir, out_dir, iperiod=0):
     """
     plot phase tensor ellipses and tipers into one figure.
     :param edi_dir: edi directory
@@ -323,12 +320,14 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
     :param iperiod: the index of periods
     :return: saved figure file
     """
+    if not isinstance(out_dir, str):
+        raise TypeError("'out_dir' must be string containing path to output file")
 
     edifiles = recursive_glob(edi_dir)
 
     print("Number of EDI files found = %s" % len(edifiles))
 
-    myobj = ShapeFilesCreator(edifiles, "c:/temp")
+    myobj = ShapeFilesCreator(edifiles, out_dir)
 
     allper = myobj.all_unique_periods
 
@@ -337,8 +336,6 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
     gpd_retip = myobj.create_tipper_real_shp(allper[iperiod], export_fig=False)[0]
 
     gpd_imtip = myobj.create_tipper_imag_shp(allper[iperiod], export_fig=False)[0]
-
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
     # composing two layers in a map
     f, ax = plt.subplots(1, figsize=(20, 12))
@@ -353,11 +350,9 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
     gpd_retip.plot(ax=ax, color='red', linewidth=4)
     gpd_imtip.plot(ax=ax, color='blue', linewidth=4)
 
-    if outfile is not None:
-        plt.savefig(outfile)  # ( 'C:/temp/phase_tensor_tippers.png')
-
-    # Display
-    # plt.show()
+    outfile = os.path.join(out_dir, "phase_tensor_tipper_{}.png".format(iperiod))
+    if out_dir is not None:
+        plt.savefig(outfile)
 
     return outfile
 
@@ -367,6 +362,8 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, outfile=None, iperiod=0):
 #   http://toblerity.org/shapely/manual.html#polygons
 #   https://geohackweek.github.io/vector/04-geopandas-intro/
 # ===================================================================
+
+
 def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
     """
     create phase tensor ellipse geometry from a csv file. This function needs csv file as its input.
@@ -680,13 +677,11 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
     return
 
 
-
 #############################################################################
 # ==================================================================
 # python mtpy/utils/shapefiles_creator.py data/edifiles /e/tmp
 # ==================================================================
 #############################################################################
-
 if __name__ == "__main__OLD_V0":
 
     edidir = sys.argv[1]
@@ -784,7 +779,7 @@ if __name__ == "__main__d":
 # ===================================================
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i', '--input', type=str,
-              default='examples/data/edi_files_2', \
+              default='examples/data/edi_files_2',
               help='input edi files dir ')
 @click.option('-c', '--code', type=int, default=3112,
               help='epsg code [3112, 4326, 4283, 32754, 32755, 28353, 28354, 28355]')
