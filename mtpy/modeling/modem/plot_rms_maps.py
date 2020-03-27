@@ -151,6 +151,7 @@ class PlotRMSMaps(object):
         self.pad_y = kwargs.pop('pad_y', None)
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.what_to_plot = kwargs.pop('what_to_plot', 'both')
 
         self.bimg = kwargs.pop('bimg', None)
         if self.bimg and self.model_epsg is None:
@@ -187,12 +188,21 @@ class PlotRMSMaps(object):
                                                            self.rms_cmap_dict,
                                                            256)
 
-        self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
-                            {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
-                            {'label': r'$Z_{yx}$', 'index': (1, 0), 'plot_num': 3},
-                            {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4},
-                            {'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
-                            {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
+        if self.what_to_plot == 'both':
+            self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
+                                {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
+                                {'label': r'$Z_{yx}$', 'index': (1, 0), 'plot_num': 3},
+                                {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4},
+                                {'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
+                                {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
+        elif self.what_to_plot == 'impedance':
+            self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
+                                {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
+                                {'label': r'$Z_{yx}$', 'index': (1, 0), 'plot_num': 3},
+                                {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4}]
+        elif self.what_to_plot == 'tippers':
+            self.plot_z_list = [{'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
+                                {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
 
         self.read_residual_fn()
 
@@ -249,7 +259,6 @@ class PlotRMSMaps(object):
         plt.rcParams['figure.subplot.hspace'] = self.subplot_vspace
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
-        print(self.plot_z_list)
         for p_dict in self.plot_z_list:
             ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
 
