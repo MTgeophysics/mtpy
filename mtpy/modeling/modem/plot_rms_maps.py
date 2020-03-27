@@ -16,11 +16,13 @@ from matplotlib import colors as colors, pyplot as plt, colorbar as mcb, cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mtpy.utils import basemap_tools
+from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
+from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.gis_tools import epsg_project
 from mtpy.modeling.modem import Data, Residual
 
 __all__ = ['PlotRMSMaps']
-
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 class PlotRMSMaps(object):
     """
@@ -81,6 +83,12 @@ class PlotRMSMaps(object):
                         *default* is .01
     tick_locator        increment for x and y major ticks. *default* is
                         limits/5
+    bimg                path to a geotiff to display as background of
+                        plotted maps
+    bimg_band           band of bimg to plot. *default* is None, which 
+                        will plot all available bands
+    bimg_cmap           cmap for bimg. *default* is 'viridis'. Ignored 
+                        if bimg is RBG/A
     =================== =======================================================
 
     =================== =======================================================
@@ -144,6 +152,10 @@ class PlotRMSMaps(object):
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
 
+        self.bimg = kwargs.pop('bimg', None)
+        self.bimg_band = kwargs.pop('bimg_band', None)
+        self.bimg_cmap = kwargs.pop('bimg_cmap', 'viridis')
+
         # colormap for rms, goes white to black from 0 to rms max and
         # red below 1 to show where the data is being over fit
 
@@ -181,6 +193,13 @@ class PlotRMSMaps(object):
 
         if self.plot_yn == 'y':
             self.plot()
+
+    def _fig_title(self, font_size, font_weight):
+        if self.period_index == 'all':
+            title = 'All periods'
+        else:
+            title = 'period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index])
+        self.fig.suptitle(title, fontdict={'size': font_size, 'weight': font_weight})
 
     def read_residual_fn(self):
         if self.residual is None:
@@ -345,6 +364,17 @@ class PlotRMSMaps(object):
             ax.set_ylim(self.residual.residual_array['lat'].min() - self.pad_y,
                         self.residual.residual_array['lat'].max() + self.pad_y)
 
+            if self.bimg:
+                if self.model_epsg is None:
+                    _logger.warning("Displaying a map background image but `model_epsg` has not "
+                                    "been set. Assuming EPSG is 4326. If this is not correct, "
+                                    "please provide `model_epsg` to `PlotRMSMaps`.")
+                    epsg_code = 4326
+                else:
+                    epsg_code = self.model_epsg
+                plot_geotiff_on_axes(self.bimg, ax, epsg_code=epsg_code,
+                                     band_number=self.bimg_band, cmap=self.bimg_cmap)
+
             ax.xaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.xaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
@@ -360,11 +390,11 @@ class PlotRMSMaps(object):
 
         color_bar.set_label('RMS', fontdict=self.font_dict)
 
-        print(self.period_index, type(self.period_index))
-        self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
-                          fontdict={'size': self.font_size + 3, 'weight': 'bold'})
+        self._fig_title(font_size=self.font_size + 3, font_weight='bold')
         self.fig.show()
 
+    # BM: Is this still in use? `Residual` has no attribute `data_array`
+    # which breaks this function.
     def plot_map(self):
         """
         plot the misfit as a map instead of points
@@ -506,8 +536,7 @@ class PlotRMSMaps(object):
 
         color_bar.set_label('RMS', fontdict=self.font_dict)
 
-        self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
-                          fontdict={'size': self.font_size + 3, 'weight': 'bold'})
+        self._fig_title(font_size=self.font_size + 3, font_weight='bold')
         self.fig.show()
 
     def basemap_plot(self, datatype='all', tick_interval=None, save=False,
@@ -535,7 +564,6 @@ class PlotRMSMaps(object):
                                  and these will be passed to the map.
 
         """
-
         if self.model_epsg is None:
             print("No projection information provided, please provide the model epsg code relevant to your model")
             return
@@ -564,7 +592,7 @@ class PlotRMSMaps(object):
         self.residual.station_locations.station_locations['lat'] = slat
 
         # initialise a basemap with extents, projection etc calculated from data
-        # if not provided in basemap_kwargs
+        # if not provided in basemap_kwargs # BM: todo? 
         self.bm = basemap_tools.initialise_basemap(self.residual.station_locations, **basemap_kwargs)
         basemap_tools.add_basemap_frame(self.bm, tick_interval=tick_interval)
 
