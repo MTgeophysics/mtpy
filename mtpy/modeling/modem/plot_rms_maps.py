@@ -136,7 +136,7 @@ class PlotRMSMaps(object):
         self.rms_max = kwargs.pop('rms_max', 5)
         self.rms_min = kwargs.pop('rms_min', 0)
 
-        self.model_epsg = kwargs.pop('model_epsg',None)
+        self.model_epsg = kwargs.pop('model_epsg', None)
 
         self.tick_locator = kwargs.pop('tick_locator', None)
         self.pad_x = kwargs.pop('pad_x', None)
@@ -146,7 +146,7 @@ class PlotRMSMaps(object):
 
         # colormap for rms, goes white to black from 0 to rms max and
         # red below 1 to show where the data is being over fit
-        
+
         self.rms_cmap_dict = {'red': ((0.0, 1.0, 1.0),
                                       (0.2, 1.0, 1.0),
                                       (1.0, 0.0, 0.0)),
@@ -156,7 +156,7 @@ class PlotRMSMaps(object):
                               'blue': ((0.0, 0.0, 0.0),
                                        (0.2, 1.0, 1.0),
                                        (1.0, 0.0, 0.0))}
-    
+
         self.rms_cmap = None
         if 'rms_cmap' in list(kwargs.keys()):
             # check if it is a valid matplotlib color stretch
@@ -164,8 +164,7 @@ class PlotRMSMaps(object):
                 self.rms_cmap = cm.get_cmap(kwargs['rms_cmap'])
             else:
                 print("provided rms_cmap invalid, using default colormap")
-                
-            
+
         if self.rms_cmap is None:
             self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap',
                                                            self.rms_cmap_dict,
@@ -182,7 +181,6 @@ class PlotRMSMaps(object):
 
         if self.plot_yn == 'y':
             self.plot()
-
 
     def read_residual_fn(self):
         if self.residual is None:
@@ -236,7 +234,7 @@ class PlotRMSMaps(object):
 #            for r_arr in self.residual.residual_array:
             rms = np.zeros(self.residual.residual_array.shape[0])
             for ridx in range(len(self.residual.residual_array)):
-                
+
                 if self.period_index == 'all':
                     r_arr = self.residual.rms_array[ridx]
                     if p_dict['plot_num'] < 5:
@@ -245,15 +243,15 @@ class PlotRMSMaps(object):
                         rms[ridx] = r_arr['rms_tip']
                 else:
                     r_arr = self.residual.residual_array[ridx]
-                    
+
                     # calulate the rms self.residual/error
                     if p_dict['plot_num'] < 5:
                         rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-                              r_arr['z_err'][self.period_index, ii, jj].real
-    
+                            r_arr['z_err'][self.period_index, ii, jj].real
+
                     else:
                         rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-                              r_arr['tip_err'][self.period_index, ii, jj].real
+                            r_arr['tip_err'][self.period_index, ii, jj].real
 #
 #                # color appropriately
 #                if np.nan_to_num(rms) == 0.0:
@@ -289,28 +287,28 @@ class PlotRMSMaps(object):
 #                        zorder=3)
             lon = self.residual.residual_array['lon']
             lat = self.residual.residual_array['lat']
-            
+
             filt = np.nan_to_num(rms).astype(bool)
-            
+
             plt.scatter(lon[filt],
                         lat[filt],
                         c=rms[filt],
                         marker=self.marker,
-#                        marker_size=self.marker_size,
-                        edgecolors = (0, 0, 0),
+                        #                        marker_size=self.marker_size,
+                        edgecolors=(0, 0, 0),
                         cmap=self.rms_cmap,
                         norm=colors.Normalize(vmin=self.rms_min,
-                                           vmax=self.rms_max),                        
+                                              vmax=self.rms_max),
                         )
             if not np.all(filt):
-                filt2 = (1-filt).astype(bool)
+                filt2 = (1 - filt).astype(bool)
                 plt.plot(lon[filt2],
-                            lat[filt2],
-                            '.',
-                            ms=0.1,
-                            mec=(0,0,0),
-                            mfc=(1,1,1)
-                            )
+                         lat[filt2],
+                         '.',
+                         ms=0.1,
+                         mec=(0, 0, 0),
+                         mfc=(1, 1, 1)
+                         )
 
             if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
                 ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
@@ -362,10 +360,11 @@ class PlotRMSMaps(object):
 
         color_bar.set_label('RMS', fontdict=self.font_dict)
 
+        print(self.period_index, type(self.period_index))
         self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
                           fontdict={'size': self.font_size + 3, 'weight': 'bold'})
         self.fig.show()
-        
+
     def plot_map(self):
         """
         plot the misfit as a map instead of points
@@ -397,34 +396,34 @@ class PlotRMSMaps(object):
         plt.rcParams['figure.subplot.wspace'] = self.subplot_hspace
         plt.rcParams['figure.subplot.hspace'] = self.subplot_vspace
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
-        
+
         lat_arr = self.residual.data_array['lat']
         lon_arr = self.residual.data_array['lon']
         data_points = np.array([lon_arr, lat_arr])
-        
+
         interp_lat = np.linspace(lat_arr.min(),
                                  lat_arr.max(),
-                                 3*self.residual.data_array.size)
-        
+                                 3 * self.residual.data_array.size)
+
         interp_lon = np.linspace(lon_arr.min(),
                                  lon_arr.max(),
-                                 3*self.residual.data_array.size)
-        
+                                 3 * self.residual.data_array.size)
+
         grid_x, grid_y = np.meshgrid(interp_lon, interp_lat)
-        
+
         # calculate rms
         z_err = self.residual.data_array['z_err'].copy()
         z_err[np.where(z_err == 0.0)] = 1.0
         z_rms = np.abs(self.residual.data_array['z']) / z_err.real
-        
+
         t_err = self.residual.data_array['tip_err'].copy()
         t_err[np.where(t_err == 0.0)] = 1.0
         t_rms = np.abs(self.residual.data_array['tip']) / t_err.real
 
-        ## --> plot maps
+        # --> plot maps
         for p_dict in self.plot_z_list:
             ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
-                           
+
             if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
                 ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
                 plt.setp(ax.get_xticklabels(), visible=False)
@@ -464,8 +463,8 @@ class PlotRMSMaps(object):
             ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.xaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
             ax.yaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
-            
-            ### -----------------------------
+
+            # -----------------------------
             ii = p_dict['index'][0]
             jj = p_dict['index'][1]
 
@@ -474,24 +473,24 @@ class PlotRMSMaps(object):
                 rms = z_rms[:, self.period_index, ii, jj]
             else:
                 rms = t_rms[:, self.period_index, ii, jj]
-        
+
             # check for non zeros
             nz = np.nonzero(rms)
             data_points = np.array([lon_arr[nz], lat_arr[nz]])
             rms = rms[nz]
             if len(rms) < 5:
                 continue
-            
+
             # interpolate onto a grid
             rms_map = interpolate.griddata(data_points.T,
                                            rms,
                                            (grid_x, grid_y),
                                            method='cubic')
             # plot the grid
-            im = ax.pcolormesh(grid_x, 
-                               grid_y, 
+            im = ax.pcolormesh(grid_x,
+                               grid_y,
                                rms_map,
-                               cmap=self.rms_map_cmap, 
+                               cmap=self.rms_map_cmap,
                                vmin=self.rms_min,
                                vmax=self.rms_max,
                                zorder=3)
@@ -510,14 +509,13 @@ class PlotRMSMaps(object):
         self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]),
                           fontdict={'size': self.font_size + 3, 'weight': 'bold'})
         self.fig.show()
-    
-    
-    def basemap_plot(self, datatype='all', tick_interval=None, save=False, 
-                     savepath=None, new_figure=True, mesh_rotation_angle=0., 
+
+    def basemap_plot(self, datatype='all', tick_interval=None, save=False,
+                     savepath=None, new_figure=True, mesh_rotation_angle=0.,
                      show_topography=False, **basemap_kwargs):
         """
         plot RMS misfit on a basemap using basemap modules in matplotlib
-        
+
         :param datatype: type of data to plot misfit for, either 'z', 'tip', or
                          'all' to plot overall RMS
         :param tick_interval: tick interval on map in degrees, if None it is 
@@ -535,7 +533,7 @@ class PlotRMSMaps(object):
                                  instance (e.g. projection etc - see 
                                  https://basemaptutorial.readthedocs.io/en/latest/basemap.html)
                                  and these will be passed to the map.
-        
+
         """
 
         if self.model_epsg is None:
@@ -545,79 +543,75 @@ class PlotRMSMaps(object):
         if new_figure:
             self.fig = plt.figure()
 
-        
         # rotate stations
         if mesh_rotation_angle != 0:
-            if hasattr(self,'mesh_rotation_angle'):
+            if hasattr(self, 'mesh_rotation_angle'):
                 angle_to_rotate = self.mesh_rotation_angle - mesh_rotation_angle
             else:
                 angle_to_rotate = -mesh_rotation_angle
-                
+
             self.mesh_rotation_angle = mesh_rotation_angle
 
             self.residual.station_locations.rotate_stations(angle_to_rotate)
-            
+
         # get relative locations
-        seast,snorth = self.residual.station_locations.rel_east + self.residual.station_locations.center_point['east'],\
-                       self.residual.station_locations.rel_north + self.residual.station_locations.center_point['north']
-        
+        seast, snorth = self.residual.station_locations.rel_east + self.residual.station_locations.center_point['east'],\
+            self.residual.station_locations.rel_north + self.residual.station_locations.center_point['north']
+
         # project station location eastings and northings to lat/long
-        slon,slat = epsg_project(seast,snorth,self.model_epsg,4326)
+        slon, slat = epsg_project(seast, snorth, self.model_epsg, 4326)
         self.residual.station_locations.station_locations['lon'] = slon
-        self.residual.station_locations.station_locations['lat'] = slat    
+        self.residual.station_locations.station_locations['lat'] = slat
 
-
-        # initialise a basemap with extents, projection etc calculated from data 
+        # initialise a basemap with extents, projection etc calculated from data
         # if not provided in basemap_kwargs
-        self.bm = basemap_tools.initialise_basemap(self.residual.station_locations,**basemap_kwargs)
-        basemap_tools.add_basemap_frame(self.bm,tick_interval=tick_interval)
+        self.bm = basemap_tools.initialise_basemap(self.residual.station_locations, **basemap_kwargs)
+        basemap_tools.add_basemap_frame(self.bm, tick_interval=tick_interval)
 
-        
         # project to basemap coordinates
-        sx,sy = self.bm(slon,slat)
-        
+        sx, sy = self.bm(slon, slat)
+
         # make scatter plot
         if datatype == 'all':
             if self.period_index == 'all':
                 rms = self.residual.rms_array['rms']
             else:
-                rms = self.residual.rms_array['rms_period'][:,self.period_index]
-        elif datatype in ['z','tip']:
+                rms = self.residual.rms_array['rms_period'][:, self.period_index]
+        elif datatype in ['z', 'tip']:
             if self.period_index == 'all':
                 rms = self.residual.rms_array['rms_{}'.format(datatype)]
             else:
-                rms = self.residual.rms_array['rms_{}_period'.format(datatype)][:,self.period_index]            
-            
+                rms = self.residual.rms_array['rms_{}_period'.format(datatype)][:, self.period_index]
+
         filt = np.nan_to_num(rms).astype(bool)
-        
+
         self.bm.scatter(sx[filt], sy[filt],
                         c=rms[filt],
                         marker=self.marker,
-                        edgecolors = (0, 0, 0),
+                        edgecolors=(0, 0, 0),
                         cmap=self.rms_cmap,
                         norm=colors.Normalize(vmin=self.rms_min,
-                                              vmax=self.rms_max)                     
+                                              vmax=self.rms_max)
                         )
-                        
+
         if not np.all(filt):
-            filt2 = (1-filt).astype(bool)
-            self.bm.plot(sx[filt2],sy[filt2],'k.')
-            
+            filt2 = (1 - filt).astype(bool)
+            self.bm.plot(sx[filt2], sy[filt2], 'k.')
+
         color_bar = plt.colorbar(cmap=self.rms_cmap,
-                                 shrink = 0.6,
+                                 shrink=0.6,
                                  norm=colors.Normalize(vmin=self.rms_min,
                                                        vmax=self.rms_max),
                                  orientation='vertical')
 
         color_bar.set_label('RMS')
-        
-        title_dict = {'all':'Z + Tipper','z':'Z','tip':'Tipper'}
-        
+
+        title_dict = {'all': 'Z + Tipper', 'z': 'Z', 'tip': 'Tipper'}
+
         if self.period_index == 'all':
-            plt.title('RMS misfit over all periods for '+title_dict[datatype])
-        else:            
-            plt.title('RMS misfit for period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]))        
-    
+            plt.title('RMS misfit over all periods for ' + title_dict[datatype])
+        else:
+            plt.title('RMS misfit for period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]))
 
     def redraw_plot(self):
         plt.close(self.fig)
@@ -638,8 +632,8 @@ class PlotRMSMaps(object):
                 save_fn_basename = 'RMS_AllPeriods.{}'.format(fig_format)
             else:
                 save_fn_basename = '{0:02}_RMS_{1:.5g}_s.{2}'.format(self.period_index,
-                                                                 self.residual.period_list[self.period_index],
-                                                                 fig_format)
+                                                                     self.residual.period_list[self.period_index],
+                                                                     fig_format)
         save_fn = os.path.join(self.save_path, save_fn_basename)
 
         if save_fig_dpi is not None:
@@ -654,7 +648,7 @@ class PlotRMSMaps(object):
     def plot_loop(self, fig_format='png', style='point'):
         """
         loop over all periods and save figures accordingly
-        
+
         :param: style [ 'point' | 'map' ]
         """
 
@@ -666,6 +660,7 @@ class PlotRMSMaps(object):
             elif style == 'map':
                 self.plot_map()
                 self.save_figure(fig_format=fig_format)
+
 
 # ==================================================================================
 # FZ: add example usage code
@@ -683,7 +678,6 @@ if __name__ == "__main__":
 
     # directory to save to
     save_path = NEW_TEMP_DIR
-
 
     # period index to plot (0 plots the first (shortest) period, 1 for the second, etc)
     period_index = 0
