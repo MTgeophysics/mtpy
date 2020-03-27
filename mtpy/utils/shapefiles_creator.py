@@ -11,6 +11,8 @@ Revision History:
     LastUpdate:     10/11/2017   FZ fix bugs after the big merge
     LastUpdate:     20/11/2017   change from freq to period filenames, allow to specify a period
     LastUpdate:     30/10/2018   combine ellipses and tippers together, refactorings
+    LastUpdate:     27/03/2020   BM - Fix outfile/directory issue (see
+                                      commit messages)
 
 """
 import glob
@@ -40,7 +42,7 @@ _logger = MtPyLog.get_mtpy_logger(__name__)  # logger inside this file/module
 _logger.setLevel(logging.DEBUG)  # set your logger level
 
 
-class ShapeFilesCreator(EdiCollection):
+class ShapefilesCreator(EdiCollection):
     """ Extend the EdiCollection parent class,
     create phase tensor and tipper shapefiles for a list of edifiles
 
@@ -49,16 +51,14 @@ class ShapeFilesCreator(EdiCollection):
     :param orig_crs = {'init': 'epsg:4283'}  # GDA94
     """
 
-    def __init__(self, edifile_list, outdir, orig_crs={'init': 'epsg:4283'}):
+    def __init__(self, edifile_list, outdir, epsg_code=4326):
         """
         loop through a list of edi files, create required shapefiles
         :param edifile_list: [path2edi,...]
         :param outdir: path2output dir, where the shp file will be written.
-        :param orig_crs = {'init': 'epsg:4283'}  # GDA94
-        # {'init': 'epsg:4326'}  # WGS84
+        :param epsg_code: epsg code of the EDI data CRS.
         """
-
-        self.orig_crs = orig_crs
+        self.orig_crs = {'init': 'epsg:{}'.format(epsg_code)}
 
         # ensure that outdir is specified, and be created if not there.
         if outdir is None:
@@ -69,7 +69,7 @@ class ShapeFilesCreator(EdiCollection):
         self.outdir = outdir
 
         # call the super constructor
-        super(ShapeFilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
+        super(ShapefilesCreator, self).__init__(edilist=edifile_list, outdir=outdir)
         # python-3 syntax: super().__init__(edilist=edifile_list, outdir=outdir)
 
         self.stations_distances = self.get_stations_distances_stats()
@@ -80,7 +80,45 @@ class ShapeFilesCreator(EdiCollection):
         # 10% may result more double countings of freq/periods than 5%.
         # eg: E:\Data\MT_Datasets\WenPingJiang_EDI 18528 rows vs 14654 rows
 
-        return
+    def _export_shapefiles(self, gpdf, element_type, epsg_code, period, export_fig):
+        """
+        Convenience function for saving shapefiles.
+
+        Parameters
+        ----------
+        gpdf : geopandas.GeoDataFrame
+            Dataframe containg shapefile data.
+        element_type : str
+            Name of the element type, e.g. 'Phase_Tensor'.
+        epsg_code : int
+            EPSG code for CRS of the shapefile.
+        period : float
+            The period of the data.
+        export_fig : bool
+            Whether or not to export the shapefile as an image.
+
+        Returns
+        -------
+        str
+            Path to the shapefile.
+        """
+        filename = '{}_EPSG_{}_Period_{}.shp'.format(element_type, epsg_code, period)
+        directory = os.path.join(self.outdir, 'Period_{}'.format(period))
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        outpath = os.path.join(directory, filename)
+        gpdf.to_file(outpath, driver='ESRI Shapefile')
+        self._logger.info("Saved shapefile to %s", outpath)
+
+        if export_fig is True:
+            # this bbox ensures that the whole MT-stations area is covered independent of periods
+            bbox_dict = self.get_bounding_box(epsgcode=epsg_code)
+            path2jpg = outpath.replace(".shp", ".jpg")
+            export_geopdf_to_image(gpdf, bbox_dict, path2jpg, colorby='phi_max',
+                                   colormap='nipy_spectral_r')
+            self._logger.info("Saved image to %s", outpath)
+
+        return outpath
 
     def create_phase_tensor_shp(self, period, ellipsize=None, target_epsg_code=4283, export_fig=False):
         """
@@ -115,10 +153,7 @@ class ShapeFilesCreator(EdiCollection):
         # make  pt_ellispes using polygons
         phi_max_v = geopdf['phi_max'].max()  # the max of this group of ellipse
 
-        print(phi_max_v)
-
         # points to trace out the polygon-ellipse
-
         theta = np.arange(0, 2 * np.pi, np.pi / 30.)
 
         azimuth = -np.deg2rad(geopdf['azimuth'])
@@ -154,21 +189,8 @@ class ShapeFilesCreator(EdiCollection):
             # world = world.to_crs({'init': 'epsg:3395'})
             # world.to_crs(epsg=3395) would also work
 
-        # to shape file
-        shp_fname = 'Phase_Tensor_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
-        path2shp = os.path.join(self.outdir, shp_fname)
-        self._logger.debug("To write to ESRI shp file %s", path2shp)
-        geopdf.to_file(path2shp, driver='ESRI Shapefile')
-        self._logger.info("Saved shapefile to %s", path2shp)
-        self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
-
-        if export_fig is True:
-            bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            # this bbox ensures that the whole MT-stations area is covered independent of periods
-            print(bbox_dict)
-            path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max',
-                                   colormap='nipy_spectral_r')  # showfig=True)
+        path2shp = \
+            self._export_shapefiles(geopdf, 'Phase_Tensor', target_epsg_code, period, export_fig)
 
         return (geopdf, path2shp)
 
@@ -221,22 +243,8 @@ class ShapeFilesCreator(EdiCollection):
             # world = world.to_crs({'init': 'epsg:3395'})
             # world.to_crs(epsg=3395) would also work
 
-        # to shape file
-        shp_fname = 'Tipper_Real_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
-        path2shp = os.path.join(self.outdir, shp_fname)
-        self._logger.debug("To write to ESRI shp file %s", path2shp)
-        geopdf.to_file(path2shp, driver='ESRI Shapefile')
-
-        self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
-
-        if export_fig is True:
-            bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            # this bbox_dict ensures that we can set a consistent display area cover all ground stations,
-            # not just this period-dependent geopdf
-            self._logger.debug("All MT stations area bounding box %s", bbox_dict)
-            path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max',
-                                   colormap='nipy_spectral_r')  # showfig=True)
+        path2shp = \
+            self._export_shapefiles(geopdf, 'Tipper_Real', target_epsg_code, period, export_fig)
 
         return (geopdf, path2shp)
 
@@ -290,26 +298,42 @@ class ShapeFilesCreator(EdiCollection):
             # world = world.to_crs({'init': 'epsg:3395'})
             # world.to_crs(epsg=3395) would also work
 
-        # to shape file
-        shp_fname = 'Tipper_Imag_EPSG_%s_Period_%ss.shp' % (target_epsg_code, period)
-        path2shp = os.path.join(self.outdir, shp_fname)
-        self._logger.debug("To write to ESRI shp file %s", path2shp)
-        geopdf.to_file(path2shp, driver='ESRI Shapefile')
-
-        self._logger.info("Geopandas Dataframe CRS: %s", geopdf.crs)
-
-        if export_fig is True:
-            bbox_dict = self.get_bounding_box(epsgcode=target_epsg_code)
-            # this bbox_dict ensures that we can set a consistent display area cover all ground stations,
-            # not just this period-dependent geopdf
-
-            self._logger.debug("All MT stations area bounding box %s", bbox_dict)
-
-            path2jpg = path2shp.replace(".shp", ".jpg")
-            export_geopdf_to_image(geopdf, bbox_dict, path2jpg, colorby='phi_max',
-                                   colormap='nipy_spectral_r')  # showfig=True)
+        path2shp = \
+            self._export_shapefiles(geopdf, 'Tipper_Imag', target_epsg_code, period, export_fig)
 
         return (geopdf, path2shp)
+
+
+def create_tensor_tipper_shapefiles(edi_dir, out_dir,
+                                    src_epsg=4326, dst_epsg=4326, period_indicies=[0]):
+    """
+    Interface for creating and saving phase tensor and tipper
+    shapefiles.
+
+    Parameters
+    ----------
+    edi_dir : str
+        Path to directory containing .edi data files.
+    out_dir : str
+        Path to directory to save resulint shapefiles.
+    src_epsg : int
+        EPSG code of the EDI data CRS. Defaults 4326 (WGS84).
+    dst_epsg : int
+        EPSG code of the output (i.e. same CRS as the geotiff you will
+        be displaying on). Defaults 4326 (WGS84).
+    period_indicies : list of int. Defaults [0].
+        List of period_indicies to create shapefiles for.
+    """
+    if not isinstance(out_dir, str):
+        raise TypeError("'out_dir' must be string containing path to output file")
+
+    edifiles = recursive_glob(edi_dir)
+    sfc = ShapefilesCreator(edifiles, out_dir, epsg_code=src_epsg)
+    all_periods = sfc.all_unique_periods
+    for pi in period_indicies:
+        sfc.create_phase_tensor_shp(all_periods[pi])
+        sfc.create_tipper_real_shp(all_periods[pi])
+        sfc.create_tipper_imag_shp(all_periods[pi])
 
 
 def plot_phase_tensor_ellipses_and_tippers(edi_dir, out_dir, iperiod=0):
@@ -325,9 +349,7 @@ def plot_phase_tensor_ellipses_and_tippers(edi_dir, out_dir, iperiod=0):
 
     edifiles = recursive_glob(edi_dir)
 
-    print("Number of EDI files found = %s" % len(edifiles))
-
-    myobj = ShapeFilesCreator(edifiles, out_dir)
+    myobj = ShapefilesCreator(edifiles, out_dir)
 
     allper = myobj.all_unique_periods
 
@@ -383,8 +405,6 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
 
     # make  pt_ellispes using polygons
     phi_max_v = pdf['phi_max'].max()  # the max of this group of ellipse
-
-    print(phi_max_v)
 
     # points to trace out the polygon-ellipse
     theta = np.arange(0, 2 * np.pi, np.pi / 30.)
@@ -653,9 +673,6 @@ def process_csv_folder(csv_folder, bbox_dict, target_epsg_code=4283):
 
     csvfiles = glob.glob(csv_folder + '/*Hz.csv')  # phase_tensor_tipper_0.004578Hz.csv
 
-    # filter the csv files if you do not want to plot all of them
-    print(len(csvfiles))
-
     # for acsv in csvfiles[:2]:
     for acsv in csvfiles:
         tip_re_gdf = create_tipper_real_shp_from_csv(acsv, line_length=0.02, target_epsg_code=target_epsg_code)
@@ -695,7 +712,7 @@ if __name__ == "__main__OLD_V0":
 
     # filter the edi files here if desired, to get a subset:
     # edifiles2 = edifiles[0:-1:2]
-    shp_maker = ShapeFilesCreator(edifiles, path2out)
+    shp_maker = ShapefilesCreator(edifiles, path2out)
     # ptdic = shp_maker.create_csv_files_deprecated()  # dest_dir=path2out)    #  create csv files E:/temp1
     ptdic = shp_maker.create_phase_tensor_csv(path2out)  # compare csv in E:/temp2
 
@@ -745,7 +762,7 @@ if __name__ == "__main__d":
     # Filter the edi files to get a subset:
     everysite = 1  # every 1,2,3,4, 5
     edi_list = edifiles[::everysite]  # subset of the edi files
-    shp_maker = ShapeFilesCreator(edi_list, path2out)
+    shp_maker = ShapefilesCreator(edi_list, path2out)
 
     station_distance_stats = shp_maker.get_stations_distances_stats()
 
@@ -798,7 +815,7 @@ def generate_shape_files(input, output, code):
     # Filter the edi files to get a subset:
     everysite = 1  # every 1,2,3,4, 5
     edi_list = edifiles[::everysite]  # subset of the edi files
-    shp_maker = ShapeFilesCreator(edi_list, output)
+    shp_maker = ShapefilesCreator(edi_list, output)
 
     # station_distance_stats= shp_maker.get_stations_distances_stats()
 
