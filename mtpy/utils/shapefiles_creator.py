@@ -331,9 +331,9 @@ def create_tensor_tipper_shapefiles(edi_dir, out_dir,
     sfc = ShapefilesCreator(edifiles, out_dir, epsg_code=src_epsg)
     all_periods = sfc.all_unique_periods
     for pi in period_indicies:
-        sfc.create_phase_tensor_shp(all_periods[pi])
-        sfc.create_tipper_real_shp(all_periods[pi])
-        sfc.create_tipper_imag_shp(all_periods[pi])
+        sfc.create_phase_tensor_shp(all_periods[pi], target_epsg_code=dst_epsg)
+        sfc.create_tipper_real_shp(all_periods[pi], target_epsg_code=dst_epsg)
+        sfc.create_tipper_imag_shp(all_periods[pi], target_epsg_code=dst_epsg)
 
 
 def plot_phase_tensor_ellipses_and_tippers(edi_dir, out_dir, iperiod=0):
