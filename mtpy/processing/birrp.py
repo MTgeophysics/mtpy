@@ -269,8 +269,9 @@ class BIRRP_Parameters(object):
 
         cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(save_fn))
 
+        station = os.path.basename(save_fn)
         birrp_dict = self._get_parameters()
-        mtcfg.write_dict_to_configfile(birrp_dict, cfg_fn)
+        mtcfg.write_dict_to_configfile({station:birrp_dict}, cfg_fn)
         print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
 #==============================================================================
 # Error classes
@@ -756,7 +757,7 @@ def run(birrp_exe, script_file):
 #==============================================================================
 # Write edi file from birrp outputs
 #==============================================================================
-class J_To_Edi(object):
+class J2Edi(object):
     """
     Read in BIRRP out puts, in this case the .j file and convert that into
     an .edi file using the survey_config_fn parameters.

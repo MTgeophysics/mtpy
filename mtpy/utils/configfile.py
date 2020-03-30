@@ -514,12 +514,12 @@ def write_dict_to_configfile(dictionary, output_filename):
                 sectionhead = key
                 if not configobject.has_section(sectionhead):
                     configobject.add_section(sectionhead)
-                configobject.set(sectionhead, subkey, subval)
+                configobject.set(sectionhead, subkey, str(subval))
 
-        except:
+        except KeyError:
             #if not configobject.has_section('DEFAULT'):
             #    configobject.add_section('')
-            configobject.set('',key,val)
+            configobject.set('',key, str(val))
 
 
     with open(output_filename, 'w') as F:

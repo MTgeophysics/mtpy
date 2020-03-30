@@ -11,7 +11,7 @@ Created on Tue Jun 11 10:53:23 2013
 """
 
 #==============================================================================
-from __future__ import unicode_literals
+#from __future__ import unicode_literals
 
 import time
 import datetime
@@ -1565,13 +1565,13 @@ class Zen3D(object):
             return
 
         # read in time series data if haven't yet.
-        if not hasattr(self.ts_obj.ts, 'data'):
+        if len(self.ts_obj.ts) <=1:
             self.read_z3d()
 
         # decimate the data.  try resample at first, see how that goes
         # make the attribute time series equal to the decimated data.
         if dec > 1:
-            self.ts_obj.ts, self.ts_obj.sampling_rate = self.ts_obj.decimate(dec)
+            self.ts_obj.decimate(dec)
 
         # apply notch filter if desired
         if notch_dict is not None:
@@ -2207,6 +2207,24 @@ def get_drive_names():
         return None
     return drive_dict
 
+def split_station(station):
+    """
+    split station name into name and number
+    """
+    
+    for ii, ss in enumerate(station):
+        try:
+            int(ss)
+            find = ii
+            break
+        except ValueError:
+            continue
+        
+    name = station[0:find]
+    number = station[find:]
+    
+    return (name, number)
+
 #==============================================================================
 # copy files from SD cards
 #==============================================================================
@@ -2243,7 +2261,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
         >>> import mtpy.usgs.zen as zen
         >>> fn_list = zen.copy_from_sd('mt01', save_path=r"/home/mt/survey_1")
     """
-
+    s_name, s_int = split_station(station)
     drive_names = get_drive_names()
     if drive_names is None:
         raise IOError('No drives to copy from.')
@@ -2274,7 +2292,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                     #zt.read_metadata()
                     schedule_date = '{0}'.format(zt.schedule.Date)
 
-                    if zt.metadata.rx_xyz0.find(station[2:]) >= 0:
+                    if zt.metadata.station.find(s_int) >= 0:
                         fn_find = True
                         if copy_date is not None:
                             cp_date = int(''.join(copy_date.split('-')))

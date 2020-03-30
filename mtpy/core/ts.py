@@ -117,7 +117,7 @@ class MTTS(object):
         self.instrument_id = None
         self.calibration_fn = None
         self.declination = 0.0
-        self._ts = pd.DataFrame() 
+        self._ts = pd.DataFrame({'data':[0]}) 
         self.fn = None
         self.conversion = None
         self.gain = None
@@ -162,16 +162,15 @@ class MTTS(object):
         if setting ts with a pandas data frame, make sure the data is in a 
         column name 'data'
         """
-        if type(ts_arr) is np.ndarray:
+        if isinstance(ts_arr, np.ndarray):
             self._ts = pd.DataFrame({'data':ts_arr})
-            if self.start_time_utc is not None or \
-               type(self._ts.index[0]) in ['int']:
-                self._set_dt_index(self.start_time_utc)
+            self._set_dt_index(self.start_time_utc, self.sampling_rate)
                 
-        elif type(ts_arr) is pd.core.frame.DataFrame:
+        elif isinstance(ts_arr, pd.core.frame.DataFrame):
             try:
                 ts_arr['data']
                 self._ts = ts_arr
+                self._set_dt_index(self.start_time_utc, self.sampling_rate)
                     
             except AttributeError:
                 raise MTTSError('Data frame needs to have a column named "data" '+\
@@ -244,10 +243,13 @@ class MTTS(object):
     def sampling_rate(self):
         """sampling rate in samples/second"""
         if self._check_for_index():
-            sr = 1E9/self._ts.index[0].freq.nanos
+            if isinstance(self._ts.index[0], int):
+                sr = self._sampling_rate
+            else:
+                sr = 1E9/self._ts.index[0].freq.nanos
         else:
             sr = self._sampling_rate
-        return sr
+        return np.round(sr, 0)
     
     @sampling_rate.setter
     def sampling_rate(self, sampling_rate):
@@ -295,6 +297,7 @@ class MTTS(object):
         Resets how the ts data frame is indexed, setting the starting time to
         the new start time.
         """
+        
         if not isinstance(start_time, datetime.datetime):
             start_time = dateutil.parser.parse(start_time)
         
@@ -309,6 +312,7 @@ class MTTS(object):
         
         # make a time series that the data can be indexed by
         else:
+            
             raise MTTSError('No Data to set start time for, set data first')
         
     ## epoch seconds
@@ -335,11 +339,15 @@ class MTTS(object):
         try:
             epoch_sec = float(epoch_sec)
         except ValueError:
-            raise MTTSError("Need to input epoch_sec as a float not {0}".format(type(epoch_sec)))
+            raise MTTSError("Need to input epoch_sec as a float not {0} {1".format(type(epoch_sec), self.fn_ascii))
         
         dt_struct = datetime.datetime.utcfromtimestamp(epoch_sec)
         # these should be self cosistent
-        if self.ts.index[0] != dt_struct:
+        try:
+            if self.ts.index[0] != dt_struct:
+                self.start_time_utc = dt_struct
+        except IndexError:
+            print('setting time')
             self.start_time_utc = dt_struct
             
     @property
@@ -373,6 +381,8 @@ class MTTS(object):
         :param start_time: start time in time format
         :type start_time: string
         """
+        if len(self.ts) == 0:
+            return
         
         if start_time is None:
             print('Start time is None, skipping calculating index')
@@ -436,8 +446,11 @@ class MTTS(object):
         dec_factor = int(dec_factor)
         
         if dec_factor > 1:
-            self.ts = signal.decimate(self.ts.data, dec_factor, n=8)
+            decimated_data = signal.decimate(self.ts.data, dec_factor, n=8)
+            start_time = str(self.start_time_utc)
+            self.ts = decimated_data
             self.sampling_rate /= float(dec_factor)
+            self._set_dt_index(start_time, self.sampling_rate)
             
     def low_pass_filter(self, low_pass_freq=15, cutoff_freq=55):
         """
@@ -546,7 +559,7 @@ class MTTS(object):
         st = datetime.datetime.utcnow()
 
         # get the number of chunks to write        
-        chunks = self.ts.shape[0]/chunk_size
+        chunks = int(self.ts.shape[0]/chunk_size)
             
         # make header lines
         header_lines = ['# *** MT time series text file for {0} ***'.format(self.station)]
@@ -567,7 +580,7 @@ class MTTS(object):
                 # a list of strings with 22 places to incorporate exponential
                 # form
                 ts_lines = np.array(self.ts.data[cc*chunk_size:(cc+1)*chunk_size],
-                                    dtype='S22')
+                                    dtype='U22')
 
                 fid.write('\n'.join(list(ts_lines)))
                 # be sure to write a new line after each chunk otherwise
@@ -576,7 +589,7 @@ class MTTS(object):
              
             # be sure to write the last little bit
             fid.write('\n'.join(list(np.array(self.ts.data[(cc+1)*chunk_size:],
-                                              dtype='S22'))))
+                                              dtype='U22'))))
 
                 
         # get an estimation of how long it took to write the file    
@@ -615,7 +628,9 @@ class MTTS(object):
                     try:
                         setattr(self, key, value)
                     except AttributeError:
-                        if key not in ['n_samples', 'start_time_epoch_sec']:
+                        if key not in ['n_samples', 
+                                       'start_time_epoch_sec',
+                                       'start_time_utc']:
                             print('Could not set {0} to {1}'.format(key, value))
                 # skip the header lines
                 elif line.find('***') > 0:
@@ -651,12 +666,15 @@ class MTTS(object):
         
         self.read_ascii_header(fn_ascii)
         
+        start_time = self.start_time_utc
+        
         self.ts = pd.read_csv(self.fn, 
                               sep='\n', 
                               skiprows=self._end_header_line,
                               memory_map=True,
                               names=['data'])
-        
+        self._set_dt_index(start_time, self.sampling_rate)
+        print(self.start_time_utc)
         print('Read in {0}'.format(self.fn))
         
     def plot_spectra(self, spectra_type='welch', **kwargs):

@@ -24,7 +24,7 @@ import mtpy
 import mtpy.modeling.occam2d_rewrite as occam2d
 from .imaging_base import ImagingBase, ParameterError, ImagingError
 from mtpy.core import mt as mt
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to

@@ -38,7 +38,7 @@ class JFile(object):
         if not os.path.isfile(self.j_fn):
             raise NameError('Could not find {0}, check path'.format(self.j_fn))
         
-        with open(self.j_fn, 'r') as fid:
+        with open(self.j_fn, 'r', errors='replace') as fid: 
             j_lines = fid.readlines()
         
         for variable in ['lat', 'lon', 'elev']:

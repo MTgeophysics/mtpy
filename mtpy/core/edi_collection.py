@@ -23,7 +23,7 @@ from shapely.geometry import Point  # , Polygon, LineString, LinearRing
 
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
 import mtpy.analysis.pt as MTpt
