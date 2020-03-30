@@ -123,6 +123,8 @@ class PlotRMSMaps(object):
 
         self.period_index = kwargs.pop('period_index', 0)
 
+        self.plot_elements = kwargs.pop('plot_elements', 'both')
+
         self.subplot_left = kwargs.pop('subplot_left', .1)
         self.subplot_right = kwargs.pop('subplot_right', .9)
         self.subplot_top = kwargs.pop('subplot_top', .95)
@@ -151,7 +153,6 @@ class PlotRMSMaps(object):
         self.pad_y = kwargs.pop('pad_y', None)
 
         self.plot_yn = kwargs.pop('plot_yn', 'y')
-        self.what_to_plot = kwargs.pop('what_to_plot', 'both')
 
         self.bimg = kwargs.pop('bimg', None)
         if self.bimg and self.model_epsg is None:
@@ -188,21 +189,24 @@ class PlotRMSMaps(object):
                                                            self.rms_cmap_dict,
                                                            256)
 
-        if self.what_to_plot == 'both':
+        if self.plot_elements == 'both':
             self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
                                 {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
                                 {'label': r'$Z_{yx}$', 'index': (1, 0), 'plot_num': 3},
                                 {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4},
                                 {'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
                                 {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
-        elif self.what_to_plot == 'impedance':
+        elif self.plot_elements == 'impedance':
             self.plot_z_list = [{'label': r'$Z_{xx}$', 'index': (0, 0), 'plot_num': 1},
                                 {'label': r'$Z_{xy}$', 'index': (0, 1), 'plot_num': 2},
                                 {'label': r'$Z_{yx}$', 'index': (1, 0), 'plot_num': 3},
                                 {'label': r'$Z_{yy}$', 'index': (1, 1), 'plot_num': 4}]
-        elif self.what_to_plot == 'tippers':
-            self.plot_z_list = [{'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 5},
-                                {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 6}]
+        elif self.plot_elements == 'tippers':
+            self.plot_z_list = [{'label': r'$T_{x}$', 'index': (0, 0), 'plot_num': 1},
+                                {'label': r'$T_{y}$', 'index': (0, 1), 'plot_num': 2}]
+        else:
+            raise ValueError("'plot_elements' value '{}' is not recognised. Please set "
+                             "'plot_elements' to 'impedance', 'tippers' or 'both'.")
 
         self.read_residual_fn()
 
@@ -229,10 +233,6 @@ class PlotRMSMaps(object):
         """
         plot rms in map view
         """
-
-        font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
-        rms_1 = 1. / self.rms_max
-
         if self.tick_locator is None:
             x_locator = np.round((self.residual.residual_array['lon'].max() -
                                   self.residual.residual_array['lon'].min()) / 5, 2)
@@ -241,7 +241,6 @@ class PlotRMSMaps(object):
 
             if x_locator > y_locator:
                 self.tick_locator = x_locator
-
             elif x_locator < y_locator:
                 self.tick_locator = y_locator
 
@@ -249,6 +248,16 @@ class PlotRMSMaps(object):
             self.pad_x = self.tick_locator / 2
         if self.pad_y is None:
             self.pad_y = self.tick_locator / 2
+
+        # Get number of rows based on what is being plotted.
+        sp_rows, sp_cols = len(self.plot_z_list) / 2, 2
+        # Adjust dimensions based on number of rows.
+        # Hardcoded - having issues getting the right spacing between
+        # labels and subplots.
+        if sp_rows == 1:
+            self.fig_size[1] = 3.
+        elif sp_rows == 2:
+            self.fig_size[1] = 5.6
 
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = self.subplot_left
@@ -260,18 +269,17 @@ class PlotRMSMaps(object):
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
         for p_dict in self.plot_z_list:
-            ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
+            ax = self.fig.add_subplot(sp_rows, sp_cols, p_dict['plot_num'], aspect='equal')
 
             ii = p_dict['index'][0]
             jj = p_dict['index'][1]
 
-#            for r_arr in self.residual.residual_array:
             rms = np.zeros(self.residual.residual_array.shape[0])
             for ridx in range(len(self.residual.residual_array)):
 
                 if self.period_index == 'all':
                     r_arr = self.residual.rms_array[ridx]
-                    if p_dict['plot_num'] < 5:
+                    if p_dict['label'].startswith('$Z'):
                         rms[ridx] = r_arr['rms_z']
                     else:
                         rms[ridx] = r_arr['rms_tip']
@@ -279,46 +287,14 @@ class PlotRMSMaps(object):
                     r_arr = self.residual.residual_array[ridx]
 
                     # calulate the rms self.residual/error
-                    if p_dict['plot_num'] < 5:
+                    if p_dict['label'].startswith('$Z'):
                         rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
                             r_arr['z_err'][self.period_index, ii, jj].real
 
                     else:
                         rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
                             r_arr['tip_err'][self.period_index, ii, jj].real
-#
-#                # color appropriately
-#                if np.nan_to_num(rms) == 0.0:
-#                    marker_color = (1, 1, 1)
-#                    marker = '.'
-#                    marker_size = .1
-#                    marker_edge_color = (1, 1, 1)
-#                if rms > self.rms_max:
-#                    marker_color = (0, 0, 0)
-#                    marker = self.marker
-#                    marker_size = self.marker_size
-#                    marker_edge_color = (0, 0, 0)
-#
-#                elif 1 <= rms <= self.rms_max:
-#                    r_color = 1 - rms / self.rms_max + rms_1
-#                    marker_color = (r_color, r_color, r_color)
-#                    marker = self.marker
-#                    marker_size = self.marker_size
-#                    marker_edge_color = (0, 0, 0)
-#
-#                elif rms < 1:
-#                    r_color = 1 - rms / self.rms_max
-#                    marker_color = (1, r_color, r_color)
-#                    marker = self.marker
-#                    marker_size = self.marker_size
-#                    marker_edge_color = (0, 0, 0)
-#
-#                ax.plot(r_arr['lon'], r_arr['lat'],
-#                        marker=marker,
-#                        ms=marker_size,
-#                        mec=marker_edge_color,
-#                        mfc=marker_color,
-#                        zorder=3)
+
             lon = self.residual.residual_array['lon']
             lat = self.residual.residual_array['lat']
 
@@ -328,7 +304,6 @@ class PlotRMSMaps(object):
                         lat[filt],
                         c=rms[filt],
                         marker=self.marker,
-                        #                        marker_size=self.marker_size,
                         edgecolors=(0, 0, 0),
                         cmap=self.rms_cmap,
                         norm=colors.Normalize(vmin=self.rms_min,
@@ -344,21 +319,17 @@ class PlotRMSMaps(object):
                          mfc=(1, 1, 1)
                          )
 
-            if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
-                ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
-                plt.setp(ax.get_xticklabels(), visible=False)
-
-            elif p_dict['plot_num'] == 2 or p_dict['plot_num'] == 4:
-                plt.setp(ax.get_xticklabels(), visible=False)
+            # Hide y-ticks on subplots in column 2.
+            if p_dict['plot_num'] in (2, 4, 6):
                 plt.setp(ax.get_yticklabels(), visible=False)
-
-            elif p_dict['plot_num'] == 6:
-                plt.setp(ax.get_yticklabels(), visible=False)
-                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
-
             else:
-                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
                 ax.set_ylabel('Latitude (deg)', fontdict=self.font_dict)
+
+            # Only show x-ticks in final row.
+            if p_dict['plot_num'] in (sp_rows * 2 - 1, sp_rows * 2):
+                ax.set_xlabel('Longitude (deg)', fontdict=self.font_dict)
+            else:
+                plt.setp(ax.get_xticklabels(), visible=False)
 
             ax.text(self.residual.residual_array['lon'].min() + .005 - self.pad_x,
                     self.residual.residual_array['lat'].max() - .005 + self.pad_y,
@@ -370,8 +341,6 @@ class PlotRMSMaps(object):
 
             ax.tick_params(direction='out')
             ax.grid(zorder=0, color=(.75, .75, .75))
-
-            # [line.set_zorder(3) for line in ax.lines]
 
             ax.set_xlim(self.residual.residual_array['lon'].min() - self.pad_x,
                         self.residual.residual_array['lon'].max() + self.pad_x)
@@ -388,7 +357,6 @@ class PlotRMSMaps(object):
             ax.xaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
             ax.yaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
 
-        # cb_ax = mcb.make_axes(ax, orientation='vertical', fraction=.1)
         cb_ax = self.fig.add_axes([self.subplot_right + .02, .225, .02, .45])
         color_bar = mcb.ColorbarBase(cb_ax,
                                      cmap=self.rms_cmap,
