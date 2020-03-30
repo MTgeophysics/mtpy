@@ -26,13 +26,14 @@ out_dir = '/path/to/output/directory'
 # EPSG code of the EDI data.
 src_epsg = 4326
 # EPSG code of the output (i.e. same CRS as the tiff you will be
-# displaying on.
+# displaying on).
 dst_epsg = 4326
-# List of indicies for periods to plot
-periods = [0, 1, 2]
+# List of periods in seconds to plot. Can also provide a single value.
+# The nearest available period will be selected.
+periods = [0., 100.]
 
 # Create and save shapefiles.
-create_tensor_tipper_shapefiles(edi_dir, out_dir, src_epsg, dst_epsg, period_indicies=periods)
+create_tensor_tipper_shapefiles(edi_dir, out_dir, periods, src_epsg, dst_epsg)
 
 # Plots the shapefiles as .png. Currently not working due to absence
 # of 'descartes' library.

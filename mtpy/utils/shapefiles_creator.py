@@ -128,7 +128,7 @@ class ShapefilesCreator(EdiCollection):
 
         if ellipsize is None:  # automatically decide suitable ellipse size.
             ellipsize = self.stations_distances.get("Q1PERCENT") / 2  # a half or a third of the min_distance?
-            self._logger.info("Automatically Selected Max-Ellispse Size = %s", ellipsize)
+            self._logger.debug("Automatically Selected Max-Ellispse Size = %s", ellipsize)
 
         pt = self.get_phase_tensor_tippers(period)
 
@@ -304,8 +304,8 @@ class ShapefilesCreator(EdiCollection):
         return (geopdf, path2shp)
 
 
-def create_tensor_tipper_shapefiles(edi_dir, out_dir,
-                                    src_epsg=4326, dst_epsg=4326, period_indicies=[0]):
+def create_tensor_tipper_shapefiles(edi_dir, out_dir, periods,
+                                    src_epsg=4326, dst_epsg=4326):
     """
     Interface for creating and saving phase tensor and tipper
     shapefiles.
@@ -321,19 +321,27 @@ def create_tensor_tipper_shapefiles(edi_dir, out_dir,
     dst_epsg : int
         EPSG code of the output (i.e. same CRS as the geotiff you will
         be displaying on). Defaults 4326 (WGS84).
-    period_indicies : list of int. Defaults [0].
-        List of period_indicies to create shapefiles for.
+    period_indicies : float or list of float. Defaults to 0.0.
+        List of periods in seconds to create shapefiles for. The nearest
+        period to each value will be selected.
     """
+    if not isinstance(edi_dir, str):
+        raise TypeError("'edi_dir' must be string containg path to EDI files")
     if not isinstance(out_dir, str):
         raise TypeError("'out_dir' must be string containing path to output file")
 
     edifiles = recursive_glob(edi_dir)
     sfc = ShapefilesCreator(edifiles, out_dir, epsg_code=src_epsg)
     all_periods = sfc.all_unique_periods
-    for pi in period_indicies:
-        sfc.create_phase_tensor_shp(all_periods[pi], target_epsg_code=dst_epsg)
-        sfc.create_tipper_real_shp(all_periods[pi], target_epsg_code=dst_epsg)
-        sfc.create_tipper_imag_shp(all_periods[pi], target_epsg_code=dst_epsg)
+    periods = [periods] if not isinstance(periods, list) else periods
+    for p in periods:
+        # Find closest period.
+        index = np.argmin(np.fabs(np.asarray(all_periods) - p))
+        nearest = all_periods[index]
+        _logger.info("Found nearest period {}s for selected period {}s".format(nearest, p))
+        sfc.create_phase_tensor_shp(all_periods[index], target_epsg_code=dst_epsg)
+        sfc.create_tipper_real_shp(all_periods[index], target_epsg_code=dst_epsg)
+        sfc.create_tipper_imag_shp(all_periods[index], target_epsg_code=dst_epsg)
 
 
 def plot_phase_tensor_ellipses_and_tippers(edi_dir, out_dir, iperiod=0):
