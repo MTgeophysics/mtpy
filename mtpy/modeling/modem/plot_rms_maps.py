@@ -8,10 +8,20 @@ ModEM
 # revised by JP 2017
 # revised by AK 2017 to bring across functionality from ak branch
 
+Revision History:
+    brenainn.moushall@ga.gov.au 31-03-2020 13:38:10 AEDT:
+        - Add ability to plot on background geotiff
+        - Add ability to write RMS map as shapefile
+        - Add 'plot_elements' attribute for selecting whether to plot
+          impedance, tippers or both
+        - Allow selection of period by providing period in seconds
 """
 import os
+import logging
 
 import numpy as np
+import geopandas as gpd
+from shapely.geometry import Point, Polygon
 from matplotlib import colors as colors, pyplot as plt, colorbar as mcb, cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
@@ -119,9 +129,20 @@ class PlotRMSMaps(object):
         self._residual_fn = None
         self.residual = None
         self.residual_fn = residual_fn
+        self.model_epsg = kwargs.pop('model_epsg', None)
+        self.read_residual_fn()
+
         self.save_path = kwargs.pop('save_path', os.path.dirname(self.residual_fn))
 
-        self.period_index = kwargs.pop('period_index', 0)
+        self.period = kwargs.pop('period', None)
+        if self.period is not None:
+            # Get period index closest to provided period
+            index = np.argmin(np.fabs(self.residual.period_list - self.period))
+            _logger.info("Plotting nearest available period ({}s) for selected period ({}s)"
+                         .format(self.residual.period_list[index], self.period))
+            self.period_index = index
+        else:
+            self.period_index = kwargs.pop('period_index', 0)
 
         self.plot_elements = kwargs.pop('plot_elements', 'both')
 
@@ -145,8 +166,6 @@ class PlotRMSMaps(object):
 
         self.rms_max = kwargs.pop('rms_max', 5)
         self.rms_min = kwargs.pop('rms_min', 0)
-
-        self.model_epsg = kwargs.pop('model_epsg', None)
 
         self.tick_locator = kwargs.pop('tick_locator', None)
         self.pad_x = kwargs.pop('pad_x', None)
@@ -208,8 +227,6 @@ class PlotRMSMaps(object):
             raise ValueError("'plot_elements' value '{}' is not recognised. Please set "
                              "'plot_elements' to 'impedance', 'tippers' or 'both'.")
 
-        self.read_residual_fn()
-
         if self.plot_yn == 'y':
             self.plot()
 
@@ -220,6 +237,42 @@ class PlotRMSMaps(object):
             title = 'period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index])
         self.fig.suptitle(title, fontdict={'size': font_size, 'weight': font_weight})
 
+    def _calculate_rms(self, plot_dict):
+        ii = plot_dict['index'][0]
+        jj = plot_dict['index'][1]
+
+        rms = np.zeros(self.residual.residual_array.shape[0])
+        for ridx in range(len(self.residual.residual_array)):
+
+            if self.period_index == 'all':
+                r_arr = self.residual.rms_array[ridx]
+                if plot_dict['label'].startswith('$Z'):
+                    rms[ridx] = r_arr['rms_z']
+                else:
+                    rms[ridx] = r_arr['rms_tip']
+            else:
+                r_arr = self.residual.residual_array[ridx]
+                # calulate the rms self.residual/error
+                if plot_dict['label'].startswith('$Z'):
+                    rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
+                        r_arr['z_err'][self.period_index, ii, jj].real
+
+                else:
+                    rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
+                        r_arr['tip_err'][self.period_index, ii, jj].real
+
+        filt = np.nan_to_num(rms).astype(bool)
+
+        if len(rms[filt]) == 0:
+            _logger.warning("No RMS available for component {}"
+                            .format(self._normalize_label(plot_dict['label'])))
+
+        return rms, filt
+
+    @staticmethod
+    def _normalize_label(label):
+        return label.replace('$', '').replace('{', '').replace('}', '').replace('_', '')
+
     def read_residual_fn(self):
         if self.residual is None:
             self.residual = Residual(residual_fn=self.residual_fn,
@@ -228,6 +281,62 @@ class PlotRMSMaps(object):
             self.residual.get_rms()
         else:
             pass
+
+    def create_shapefiles(self, dst_epsg, save_path=None):
+        """
+        Creates RMS map elements as shapefiles which can displayed in a
+        GIS viewer. Intended to be called as part of the 'plot' 
+        function.
+
+        The points to plot defined by `lons` and `lats` are the centre 
+        of the rectangular markers.
+
+        If `model_epsg` hasn't been set on class, then 4326 is assumed.
+
+        Parameters
+        ----------
+        dst_epsg : int
+            EPSG code of the CRS that Shapefiles will be projected to.
+            Make this the same as the CRS of the geotiff you intend to
+            display on.
+        marker_width : float
+             Radius of the circular markers. Units are defined by
+             `model_epsg`.
+        """
+        if save_path is None:
+            save_path = self.save_path
+        lon = self.residual.residual_array['lon']
+        lat = self.residual.residual_array['lat']
+        if self.model_epsg is None:
+            _logger.warning("model_epsg has not been provided. Model EPSG is assumed to be 4326. "
+                            "If this is not correct, please provide model_epsg to PlotRMSMaps. "
+                            "Otherwise, shapefiles may have projection errors.")
+            src_epsg = 4326
+        else:
+            src_epsg = self.model_epsg
+        src_epsg = {'init': 'epsg:{}'.format(src_epsg)}
+        for p_dict in self.plot_z_list:
+            rms, _ = self._calculate_rms(p_dict)
+            markers = []
+            for x, y in zip(lon, lat):
+                markers.append(Point(x, y))
+
+            df = gpd.GeoDataFrame({'lon': lon, 'lat': lat, 'rms': rms},
+                                  crs=src_epsg, geometry=markers)
+            df.to_crs(epsg=dst_epsg, inplace=True)
+
+            if self.period_index == 'all':
+                period = 'all'
+            else:
+                period = self.residual.period_list[self.period_index]
+            filename = '{}_EPSG_{}_Period_{}.shp'.format(self._normalize_label(p_dict['label']),
+                                                         dst_epsg, period)
+            directory = os.path.join(self.save_path, 'shapefiles_for_period_{}s'.format(period))
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            outpath = os.path.join(directory, filename)
+            df.to_file(outpath, driver='ESRI Shapefile')
+            print("Saved shapefiles to %s", outpath)
 
     def plot(self):
         """
@@ -268,37 +377,13 @@ class PlotRMSMaps(object):
         plt.rcParams['figure.subplot.hspace'] = self.subplot_vspace
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
+        lon = self.residual.residual_array['lon']
+        lat = self.residual.residual_array['lat']
+
         for p_dict in self.plot_z_list:
+            rms, filt = self._calculate_rms(p_dict)
+
             ax = self.fig.add_subplot(sp_rows, sp_cols, p_dict['plot_num'], aspect='equal')
-
-            ii = p_dict['index'][0]
-            jj = p_dict['index'][1]
-
-            rms = np.zeros(self.residual.residual_array.shape[0])
-            for ridx in range(len(self.residual.residual_array)):
-
-                if self.period_index == 'all':
-                    r_arr = self.residual.rms_array[ridx]
-                    if p_dict['label'].startswith('$Z'):
-                        rms[ridx] = r_arr['rms_z']
-                    else:
-                        rms[ridx] = r_arr['rms_tip']
-                else:
-                    r_arr = self.residual.residual_array[ridx]
-
-                    # calulate the rms self.residual/error
-                    if p_dict['label'].startswith('$Z'):
-                        rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-                            r_arr['z_err'][self.period_index, ii, jj].real
-
-                    else:
-                        rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-                            r_arr['tip_err'][self.period_index, ii, jj].real
-
-            lon = self.residual.residual_array['lon']
-            lat = self.residual.residual_array['lat']
-
-            filt = np.nan_to_num(rms).astype(bool)
 
             plt.scatter(lon[filt],
                         lat[filt],
@@ -309,6 +394,7 @@ class PlotRMSMaps(object):
                         norm=colors.Normalize(vmin=self.rms_min,
                                               vmax=self.rms_max),
                         )
+
             if not np.all(filt):
                 filt2 = (1 - filt).astype(bool)
                 plt.plot(lon[filt2],
