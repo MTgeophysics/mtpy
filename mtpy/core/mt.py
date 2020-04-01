@@ -20,6 +20,7 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 import mtpy.core.jfile as MTj
 import mtpy.core.mt_xml as MTxml
+import mtpy.core.zmm as MTzmm
 
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -369,6 +370,8 @@ class MT(object):
             self._read_j_file(fn)
         elif file_type.lower() == 'xml':
             self._read_xml_file(fn)
+        elif file_type.lower() == 'zmm':
+            self._read_zmm_file(fn)
         else:
             raise MT_Error('File type not supported yet')
 
@@ -939,6 +942,21 @@ class MT(object):
         self.Site.Location.elevation = j_obj.metadata_dict['elevation']
 
         self.Notes.info_dict = j_obj.header_dict
+        
+    def _read_zmm_file(self, zmm_fn):
+        """
+        read zmm file
+        """
+        
+        zmm_obj = MTzmm.ZMM(zmm_fn)
+        zmm_obj.read_file()
+        
+        self.Z = zmm_obj.Z
+        self.Tipper = zmm_obj.Tipper
+        
+        self.Site.Location.latitude = zmm_obj.lat
+        self.Site.Location.longitude = zmm_obj.lon
+        self.Site.Location.declination = zmm_obj.declination
 
     def _read_xml_file(self, xml_fn):
         """
