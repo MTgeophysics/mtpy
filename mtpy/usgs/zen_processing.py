@@ -652,7 +652,7 @@ class Z3D2EDI(object):
 
             # get the maximum number of remote reference time series
             # multiply by 3 just to be safe
-            num_ref = (len(fn_arr)/self.num_comp)*4*len(self.rr_station_dir)
+            num_ref = (len(fn_arr)/self.num_comp)*6*len(self.rr_station_dir)
             rr_fn_arr = self._make_empty_fn_arr(num_ref)
             rr = 0
             for rr_dir in self.rr_station_dir:
