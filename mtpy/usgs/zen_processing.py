@@ -438,6 +438,7 @@ class Z3D2EDI(object):
         self.df_list = [4096, 256, 16]
         self.max_blocks = 3
         self._max_nread = 20000000
+        self._nskip = 23 ## number of lines for birrp to skip in file ts header
 
         # data types for different aspects of getting information
         if sys.version_info[0] == 2:
@@ -567,7 +568,7 @@ class Z3D2EDI(object):
         self.calibration_dict = calibration_dict
 
     def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None,
-                              notch_dict={4096:{}, 256:None, 16:None},
+                              notch_dict={4096:{}, 256:None, 16:None, 4:None},
                               df_list=None, max_blocks=None,
                               ex=50., ey=50., coil_cal_path=None):
         """
@@ -638,6 +639,16 @@ class Z3D2EDI(object):
                         fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
                                                                 df_notch_dict,
                                                                 16)
+                    elif fn_arr[jj]['df'] == 256 and 8 in self.df_list:
+                        jj += 1
+                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
+                                                                df_notch_dict,
+                                                                32)
+                    elif fn_arr[jj]['df'] == 256 and 4 in self.df_list:
+                        jj += 1
+                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
+                                                                df_notch_dict,
+                                                                64)
                     jj += 1
         # get only the non zero entries
         fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]
@@ -678,6 +689,18 @@ class Z3D2EDI(object):
                                                                            df_notch_dict,
                                                                            dec=16,
                                                                            remote=True)
+                            elif rr_fn_arr[rr]['df'] == 256 and 8 in self.df_list:
+                                rr += 1
+                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
+                                                                           df_notch_dict,
+                                                                           dec=32,
+                                                                           remote=True)
+                            elif rr_fn_arr[rr]['df'] == 256 and 4 in self.df_list:
+                                rr += 1
+                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
+                                                                           df_notch_dict,
+                                                                           dec=64,
+                                                                           remote=True)
                             rr += 1
 
             # change the time series directory to reflect where the time series
@@ -716,7 +739,10 @@ class Z3D2EDI(object):
             for date_key in list(fn_dict[df_key].keys()):
                 # in case there is decimation, then we need to double the
                 # number of 256 files
-                if df_key == 256 and 16 in self.df_list:
+                if df_key == 256:
+                    if 16 in self.df_list or \
+                        8 in self.df_list or \
+                        4 in self.df_list:
                     num_files += len(fn_dict[df_key][date_key])*2
                 else:
                     num_files += len(fn_dict[df_key][date_key])
@@ -1091,7 +1117,7 @@ class Z3D2EDI(object):
                                                                  remote=True)
                                 rr_station_find.append(f_find)
 
-                        elif df == 16:
+                        elif df == 16 or df == 8 or df == 4:
                             # if the difference is more than 3 minutes
                             if abs(t_diff) > 5*3600:
                                 continue
@@ -1121,7 +1147,7 @@ class Z3D2EDI(object):
                             s_fn_birrp_arr['nread'][:] = min_nread
                         elif t_diff < 0:
                             #need to test if nskip is already there
-                            if s_fn_birrp_arr['nskip'][0] != 23:
+                            if s_fn_birrp_arr['nskip'][0] != self._nskip:
                                 if n_skip > s_fn_birrp_arr['nskip'][0]:
                                     s_fn_birrp_arr['nskip'][:] = n_skip
                                     s_fn_birrp_arr['nread'][:] -= n_skip
@@ -1135,8 +1161,8 @@ class Z3D2EDI(object):
                         # if there was a remote referenc channel found
                         # append it to the array
                         if dt_arr is not None:
-                            if dt_arr['nskip'] < 23:
-                                dt_arr['nskip'] = 23
+                            if dt_arr['nskip'] < self._nskip:
+                                dt_arr['nskip'] = self._nskip
                             rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                         dt_arr)
 
@@ -1168,7 +1194,7 @@ class Z3D2EDI(object):
                         rr_min_read = rr_birrp_fn_arr['nread'].min()
                         for rr_b_arr in rr_birrp_fn_arr:
                             rr_n_skip = abs(rr_b_arr['nread']-rr_min_read)
-                            if rr_n_skip < 23:
+                            if rr_n_skip < self._nskip:
                                 continue
                             if rr_b_arr['nread'] != rr_min_read:
                                 rr_b_arr['nskip'] = rr_n_skip
@@ -1208,7 +1234,7 @@ class Z3D2EDI(object):
         # fill array with data
         s_fn_birrp_arr['fn'][:] = fn_arr['fn']
         s_fn_birrp_arr['nread'][:] = fn_arr['npts'].min()
-        s_fn_birrp_arr['nskip'][:] = 23
+        s_fn_birrp_arr['nskip'][:] = self._nskip
         s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
         s_fn_birrp_arr['comp'][:] = fn_arr['comp']
 
@@ -1899,3 +1925,4 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     log_fid.close()
 
     return rp
+

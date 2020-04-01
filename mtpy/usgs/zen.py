@@ -965,7 +965,7 @@ class Zen3D(object):
             self._gps_bytes = self._gps_stamp_length/4
             self._gps_flag_0 = -1
             self._block_len = int(self._gps_stamp_length+self.df*4)
-            self.gps_flag = self._gps_flag_0.tostring()
+            self.gps_flag = self._gps_f0
 
         else:
             return
@@ -1039,11 +1039,11 @@ class Zen3D(object):
 
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            dt_str = self.header.schedule.replace(b'T', b',')
-            self.schedule.Date = dt_str.split(b',')[0]
-            self.schedule.Time = dt_str.split(b',')[1]
-            year, month, day = [int(dd) for dd in self.schedule.Date.split(b'-')]
-            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(b':')]
+            dt_str = self.header.schedule.replace('T', ',')
+            self.schedule.Date = dt_str.split(',')[0]
+            self.schedule.Time = dt_str.split(',')[1]
+            year, month, day = [int(dd) for dd in self.schedule.Date.split('-')]
+            hour, minute, second = [int(dd) for dd in self.schedule.Time.split(':')]
             self.schedule.datetime = datetime.datetime(year, month, day,
                                                        hour, minute, second)
 
