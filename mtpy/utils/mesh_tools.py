@@ -69,13 +69,18 @@ def rotate_mesh(grid_east,grid_north,origin,
     xg = (new_coords[0] + x0).reshape(len(gcn),len(gce))
     yg = (new_coords[1] + y0).reshape(len(gcn),len(gce))
     
-    return xg,yg
+    return xg, yg
 
 
-def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
+def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=None,
                                   surfacefile=None, surface=None, method='linear',
                                   fast=True):
     """
+    # Note: this documentation is outdated and seems to be copied from
+    #  model.interpolate_elevation2. It needs to be updated. This
+    #  funciton does not update a dictionary but returns an array of
+    #  elevation data.
+
     project a surface to the model grid and add resulting elevation data
     to a dictionary called surface_dict. Assumes the surface is in lat/long
     coordinates (wgs84)
@@ -119,24 +124,35 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
     method = interpolation method. Default is 'nearest', if model grid is
     dense compared to surface points then choose 'linear' or 'cubic'
-
     """
-
     # read the surface data in from ascii if surface not provided
-    if surface is None:
-        surface = mtfh.read_surface_ascii(surfacefile)
-
-    x, y, elev = surface
+    if surfacefile:
+        x, y, elev = mtfh.read_surface_ascii(surfacefile)
+    elif surface:
+        x, y, elev = surface
+    else:
+        raise ValueError("'surfacefile' or 'surface' must be provided")
 
     # if lat/lon provided as a 1D list, convert to a 2d grid of points
     if len(x.shape) == 1:
-        x, y = np.meshgrid(x, y)
-        
+        # BM: There seems to be an issue using dense grids (X and Y
+        #  become arrays of (N, N)), and get flattened to 1D array
+        #  of N^2 in point projection below.
+        #  Interpolation then can't be performed because
+        #  there's a dimension mismatch between lon/lat and elev.
+        #  This issue doesn't happen when using 'fast' method below, so
+        #  when not using fast, get a sparse grid instead.
+        if fast:
+            x, y = np.meshgrid(x, y)
+        else:
+            x, y = np.meshgrid(x, y, sparse=True)
+            x = x.T
+
     if len(grid_east.shape) == 1:
-        grid_east,grid_north=np.meshgrid(grid_east,grid_north)
+        grid_east, grid_north = np.meshgrid(grid_east, grid_north)
 
     if(fast):
-        buffer = 1 # use a buffer of 1 degree around mesh-bounds
+        buffer = 1  # use a buffer of 1 degree around mesh-bounds
         mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), grid_north.min(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
@@ -145,19 +161,16 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
-        subsetIndices = (x >= mlonmin-buffer) & \
-                        (x <= mlonmax+buffer) & \
-                        (y >= mlatmin-buffer) & \
-                        (y <= mlatmax+buffer)
+        subsetIndices = (x >= mlonmin - buffer) & \
+                        (x <= mlonmax + buffer) & \
+                        (y >= mlatmin - buffer) & \
+                        (y <= mlatmax + buffer)
         x = x[subsetIndices]
         y = y[subsetIndices]
         elev = elev[subsetIndices]
+
     # end if
-
-    xs, ys, utm_zone = gis_tools.project_points_ll2utm(y, x,
-                                                       epsg=epsg,
-                                                       utm_zone=utm_zone)
-
+    xs, ys, _ = gis_tools.project_points_ll2utm(y, x, epsg=epsg, utm_zone=utm_zone)
     # elevation in model grid
     # first, get lat,lon points of surface grid
     points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
@@ -172,8 +185,7 @@ def interpolate_elevation_to_grid(grid_east,grid_north,epsg=None,utm_zone=None,
     return elev_mg
 
 
-
-def get_nearest_index(array,value):
+def get_nearest_index(array, value):
     """
     Return the index of the nearest value to the provided value in an array:
     
