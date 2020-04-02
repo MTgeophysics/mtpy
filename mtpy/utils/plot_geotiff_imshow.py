@@ -1,3 +1,12 @@
+"""
+Displays geotiffs on matplotlib axes as basemap background images.
+
+Revision History:
+    brenainn.moushall@ga.gov.au 26-03-2020 15:06:38 AEDT:
+        Add function for plotting a geotiff image on a prexisting,
+        georefernced axes.
+"""
+
 import sys
 import os
 
