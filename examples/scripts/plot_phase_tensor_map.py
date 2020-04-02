@@ -6,8 +6,8 @@ Created on Fri Nov 22 07:29:58 2013
 @author: Alison Kirkby
 
 Revision History:
-    brenainn.moushall@ga.gov.au 26/03/2020: Add plotting of geotiff
-        as basemap background.
+    brenainn.moushall@ga.gov.au 26-03-2020 15:05:46 AEDT:
+        Add plotting of geotiff as basemap background.
 """
 import os
 import os.path as op

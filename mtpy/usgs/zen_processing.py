@@ -438,6 +438,7 @@ class Z3D2EDI(object):
         self.df_list = [4096, 256, 16]
         self.max_blocks = 3
         self._max_nread = 20000000
+        self._nskip = 23 ## number of lines for birrp to skip in file ts header
 
         # data types for different aspects of getting information
         if sys.version_info[0] == 2:
@@ -567,7 +568,7 @@ class Z3D2EDI(object):
         self.calibration_dict = calibration_dict
 
     def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None,
-                              notch_dict={4096:{}, 256:None, 16:None},
+                              notch_dict={4096:{}, 256:None, 16:None, 4:None},
                               df_list=None, max_blocks=None,
                               ex=50., ey=50., coil_cal_path=None):
         """
@@ -638,6 +639,16 @@ class Z3D2EDI(object):
                         fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
                                                                 df_notch_dict,
                                                                 16)
+                    elif fn_arr[jj]['df'] == 256 and 8 in self.df_list:
+                        jj += 1
+                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
+                                                                df_notch_dict,
+                                                                32)
+                    elif fn_arr[jj]['df'] == 256 and 4 in self.df_list:
+                        jj += 1
+                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
+                                                                df_notch_dict,
+                                                                64)
                     jj += 1
         # get only the non zero entries
         fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]
@@ -678,6 +689,18 @@ class Z3D2EDI(object):
                                                                            df_notch_dict,
                                                                            dec=16,
                                                                            remote=True)
+                            elif rr_fn_arr[rr]['df'] == 256 and 8 in self.df_list:
+                                rr += 1
+                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
+                                                                           df_notch_dict,
+                                                                           dec=32,
+                                                                           remote=True)
+                            elif rr_fn_arr[rr]['df'] == 256 and 4 in self.df_list:
+                                rr += 1
+                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
+                                                                           df_notch_dict,
+                                                                           dec=64,
+                                                                           remote=True)
                             rr += 1
 
             # change the time series directory to reflect where the time series
@@ -716,8 +739,9 @@ class Z3D2EDI(object):
             for date_key in list(fn_dict[df_key].keys()):
                 # in case there is decimation, then we need to double the
                 # number of 256 files
-                if df_key == 256 and 16 in self.df_list:
-                    num_files += len(fn_dict[df_key][date_key])*2
+                if df_key == 256:
+                    if 16 in self.df_list or 8 in self.df_list or 4 in self.df_list:
+                        num_files += len(fn_dict[df_key][date_key]) * 2
                 else:
                     num_files += len(fn_dict[df_key][date_key])
                 num_comp.append(len(fn_dict[df_key][date_key]))
@@ -1091,7 +1115,7 @@ class Z3D2EDI(object):
                                                                  remote=True)
                                 rr_station_find.append(f_find)
 
-                        elif df == 16:
+                        elif df == 16 or df == 8 or df == 4:
                             # if the difference is more than 3 minutes
                             if abs(t_diff) > 5*3600:
                                 continue
@@ -1121,7 +1145,7 @@ class Z3D2EDI(object):
                             s_fn_birrp_arr['nread'][:] = min_nread
                         elif t_diff < 0:
                             #need to test if nskip is already there
-                            if s_fn_birrp_arr['nskip'][0] != 23:
+                            if s_fn_birrp_arr['nskip'][0] != self._nskip:
                                 if n_skip > s_fn_birrp_arr['nskip'][0]:
                                     s_fn_birrp_arr['nskip'][:] = n_skip
                                     s_fn_birrp_arr['nread'][:] -= n_skip
@@ -1135,8 +1159,8 @@ class Z3D2EDI(object):
                         # if there was a remote referenc channel found
                         # append it to the array
                         if dt_arr is not None:
-                            if dt_arr['nskip'] < 23:
-                                dt_arr['nskip'] = 23
+                            if dt_arr['nskip'] < self._nskip:
+                                dt_arr['nskip'] = self._nskip
                             rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
                                                         dt_arr)
 
@@ -1168,7 +1192,7 @@ class Z3D2EDI(object):
                         rr_min_read = rr_birrp_fn_arr['nread'].min()
                         for rr_b_arr in rr_birrp_fn_arr:
                             rr_n_skip = abs(rr_b_arr['nread']-rr_min_read)
-                            if rr_n_skip < 23:
+                            if rr_n_skip < self._nskip:
                                 continue
                             if rr_b_arr['nread'] != rr_min_read:
                                 rr_b_arr['nskip'] = rr_n_skip
@@ -1208,7 +1232,7 @@ class Z3D2EDI(object):
         # fill array with data
         s_fn_birrp_arr['fn'][:] = fn_arr['fn']
         s_fn_birrp_arr['nread'][:] = fn_arr['npts'].min()
-        s_fn_birrp_arr['nskip'][:] = 23
+        s_fn_birrp_arr['nskip'][:] = self._nskip
         s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
         s_fn_birrp_arr['comp'][:] = fn_arr['comp']
 
@@ -1899,3 +1923,120 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     log_fid.close()
 
     return rp
+
+def get_z3d_info(z3d_path):
+    """
+    get information on z3d files
+    """
+    if not isinstance(z3d_path, Path):
+        z3d_path = Path(z3d_path)
+    ### need to get all the files for one channel
+    fn_dict = dict([(key, []) for key in ['ex', 'ey', 'hx', 'hy', 'hz']])
+    ### get all z3d files within a given folder, will look through recursively
+    fn_list = [fn_path for fn_path in z3d_path.rglob('*') 
+               if fn_path.suffix in ['.z3d', '.Z3D']]
+    ### loop over files, read just the metadata and get important information
+    for fn in fn_list:
+        z_obj = zen.Zen3D(fn)
+        z_obj.read_all_info()
+        fn_dict[z_obj.component].append({'start':z_obj.zen_schedule.isoformat(), 
+                                         'df':z_obj.df,
+                                         'fn':z_obj.fn})
+        
+    return fn_dict
+
+def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600): 
+    """
+    Combine all z3d files for a given station and given component for 
+    processing and getting the long period estimations.
+    
+    :param str z3d_path: full path to z3d files
+    :param str component: component to combine
+    :param int new_sampling_rate: new sampling rate of the data
+    :param int t_buffer: buffer for the last time series, should be length
+                         of longest schedule chunk
+    """
+    st = datetime.datetime.now()
+    attr_list = ['station', 'channel_number', 'component', 'coordinate_system',
+                 'dipole_length', 'azimuth', 'units', 'lat', 'lon', 'elev',
+                 'datum', 'data_logger', 'instrument_id', 'calibration_fn',
+                 'declination',  'fn', 'conversion', 'gain']
+
+    fn_df = get_z3d_info(z3d_path)
+    
+    return_fn_list = []
+    for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
+        if len(fn_df[comp]) == 0:
+            print('Warning: Skipping {0} because no Z3D files found.'.format(comp))
+            continue
+        comp_df = pd.DataFrame(fn_df[comp])
+        ### sort the data frame by date
+        comp_df = comp_df.sort_values('start')
+       
+        ### get start date and end at last start date, get time difference
+        start_dt = datetime.datetime.fromisoformat(comp_df.start.min())
+        end_dt = datetime.datetime.fromisoformat(comp_df.start.max())
+        t_diff = (end_dt - start_dt).total_seconds()
+        
+        ### make a new MTTS object that will have a length that is buffered 
+        ### at the end to make sure there is room for the data, will trimmed
+        new_ts = ts.MTTS()
+        new_ts.ts = np.zeros(int((t_diff + t_buffer) * sampling_rate))
+        new_ts.sampling_rate = sampling_rate
+        new_ts.start_time_utc = start_dt
+        
+        ### make an attribute dictionary that can be used to fill in the new
+        ### MTTS object
+        attr_dict = dict([(key, []) for key in attr_list])
+        ### loop over each z3d file for the given component
+        for index, row in comp_df.iterrows():
+            z_obj = zen.Zen3D(row['fn'])
+            z_obj.read_z3d()
+            t_obj = z_obj.ts_obj
+            ### decimate to the required sampling rate
+            t_obj.decimate(int(z_obj.df/sampling_rate))
+            ### fill the new time series with the data at the appropriate times
+            new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) & 
+                            (new_ts.ts.index <= t_obj.ts.index[-1])] = t_obj.ts.data
+            ### get the end date as the last z3d file
+            end_date = z_obj.ts_obj.ts.index[-1]
+            ### fill attribute data frame
+            for attr in attr_list:
+                attr_dict[attr].append(getattr(t_obj, attr))
+            
+        ### need to trim the data
+        new_ts.ts = new_ts.ts.data[(new_ts.ts.index >= start_dt) & 
+                                   (new_ts.ts.index <= end_date)].to_frame()
+        
+        ### fill gaps with forwards or backwards values, this seems to work
+        ### better than interpolation and is faster than regression.  
+        ### The gaps should be max 13 seconds if everything went well
+        new_ts.ts.data[new_ts.ts.data == 0] = np.nan
+        new_ts.ts.data.fillna(method='ffill', inplace=True)
+        
+        ### fill the new MTTS with the appropriate metadata
+        attr_df = pd.DataFrame(attr_dict)
+        for attr in attr_list:
+            try:
+                attr_series = attr_df[attr][attr_df[attr] != 0]
+                try:
+                    setattr(new_ts, attr, attr_series.median())
+                except TypeError:
+                    setattr(new_ts, attr, attr_series.mode()[0])
+            except ValueError:
+                print('Warning: could not set {0}'.format(attr))
+                
+        
+        ascii_fn = '{0}_combined_{1}.{2}'.format(new_ts.station,
+                                                 int(new_ts.sampling_rate),
+                                                 new_ts.component)
+        
+        sv_fn_ascii = z3d_path.joinpath(ascii_fn)
+        new_ts.write_ascii_file(sv_fn_ascii.absolute())
+        
+        return_fn_list.append(sv_fn_ascii)
+        
+    et = datetime.datetime.now()
+    compute_time = (et - st).total_seconds()
+    print('   Combining took {0:.2f} seconds'.format(compute_time))    
+    return return_fn_list

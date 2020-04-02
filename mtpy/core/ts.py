@@ -446,7 +446,18 @@ class MTTS(object):
         dec_factor = int(dec_factor)
         
         if dec_factor > 1:
-            decimated_data = signal.decimate(self.ts.data, dec_factor, n=8)
+            if dec_factor > 8:
+                n_dec = np.log2(dec_factor)/np.log2(8)
+                dec_list = [8] * int(n_dec) + [int(2**(3 * n_dec % 1))]
+                decimated_data = signal.decimate(self.ts.data, 8, n=8)
+                for dec in dec_list[1:]:
+                    if dec == 0:
+                        break
+                    decimated_data = signal.decimate(decimated_data, 
+                                                     dec,
+                                                     n=8)
+            else:
+                decimated_data = signal.decimate(self.ts.data, dec_factor, n=8)
             start_time = str(self.start_time_utc)
             self.ts = decimated_data
             self.sampling_rate /= float(dec_factor)
