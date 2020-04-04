@@ -839,7 +839,7 @@ class J2Edi(object):
 
         # read in survey information
         print(self.survey_config_fn, self.station)
-        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[self.station.upper()]
+        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[self.station]
 
     def get_birrp_config_fn(self):
         """

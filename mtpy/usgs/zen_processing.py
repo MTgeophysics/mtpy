@@ -17,6 +17,8 @@ import datetime
 import os
 import sys
 from io import StringIO
+from pathlib import Path
+import pandas as pd
 # from io import BytesIO
 
 
@@ -370,6 +372,27 @@ class Survey_Config(object):
         #('Wrote survey config file to {0}'.format(fn))
 
         return fn
+    
+    def read_survey_config_file(self, survey_cfg_fn, station):
+        """
+        Parameters
+        ----------
+        survey_dfg_fn : TYPE
+            DESCRIPTION.
+        station : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        survey_cfg_dict = mtcfg.read_survey_configfile(survey_cfg_fn)[station]
+        
+        for key, value in survey_cfg_dict.items():
+            setattr(self, key, value)
+
 
 #==============================================================================
 # Z3D files to EDI using BIRRP
@@ -379,10 +402,10 @@ class Z3D2EDI(object):
     go from z3d files to .edi using BIRRP as the processing code
     Arguments
     ---------------
-        **station_dir** : string
+        **station_z3d_dir** : string
                           full path to station directory where the Z3D files
                           to be processed are.
-        **rr_station_dir** : string
+        **rr_station_z3d_dir** : string
                             full path to remote reference directory where
                             Z3D files exist.
         **birrp_exe** : string
@@ -415,18 +438,20 @@ class Z3D2EDI(object):
     ------------
         >>> import mtpy.usgs.zen_processing as zp
         >>> zp_obj = zp.Z3D2EDI()
-        >>> zp_obj.station_dir = r"/home/data/mt01"
-        >>> zp_obj.rr_station_dir = r"/home/data/mt02"
+        >>> zp_obj.station_z3d_dir = r"/home/data/mt01"
+        >>> zp_obj.rr_station_z3d_dir = r"/home/data/mt02"
         >>> zp_obj.birrp_exe = r"/home/bin/birrp52"
         >>> zp_obj.coil_cal_path = r"/home/data/ant_calibration"
         >>> plot_obj, comb_edi = zp_obj.process_data(df_list=[4096, 256, 16])
     """
 
-    def __init__(self, station_dir=None, **kwargs):
+    def __init__(self, station_z3d_dir=None, **kwargs):
 
-        self.station_dir = station_dir
-        self.rr_station_dir = kwargs.pop('rr_station_dir', None)
-        self.survey_config = Survey_Config(save_path=self.station_dir)
+        self.station_z3d_dir = station_z3d_dir
+        self.station_ts_dir = kwargs.pop('station_ts_dir', None)
+        self.rr_station_z3d_dir = kwargs.pop('rr_station_z3d_dir', None)
+        self.rr_station_ts_dir = kwargs.pop('rr_station_ts_dir', None)
+        self.survey_config = Survey_Config(save_path=self.station_z3d_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
         self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
@@ -493,7 +518,7 @@ class Z3D2EDI(object):
 
         self.survey_config_fn = self.survey_config.write_survey_config_file()
 
-    def get_z3d_fn_blocks(self, station_dir, remote=False,
+    def get_z3d_fn_blocks(self, station_z3d_dir, remote=False,
                           df_list=None, max_blocks=None):
         """
         get z3d file names in an array of blocks
@@ -507,10 +532,10 @@ class Z3D2EDI(object):
 
         fn_block_dict = dict([(df, {}) for df in self.df_list])
         fn_count = 0
-        for fn in os.listdir(station_dir):
+        for fn in os.listdir(station_z3d_dir):
             if fn.lower().endswith('.z3d'):
 
-                z3d_fn = os.path.join(station_dir, fn)
+                z3d_fn = os.path.join(station_z3d_dir, fn)
                 z3d_obj = zen.Zen3D(z3d_fn)
                 z3d_obj.read_all_info()
                 if remote is True:
@@ -525,10 +550,10 @@ class Z3D2EDI(object):
 
 
         if fn_count == 0:
-            raise ValueError('No Z3D files found for in {0}'.format(station_dir))
+            raise ValueError('No Z3D files found for in {0}'.format(station_z3d_dir))
         else:
             pass
-            #print('Found {0} Z3D files in {1}'.format(fn_count, station_dir))
+            #print('Found {0} Z3D files in {1}'.format(fn_count, station_z3d_dir))
 
         # check for maximum number of blocks
         for df_key in list(fn_block_dict.keys()):
@@ -537,7 +562,7 @@ class Z3D2EDI(object):
             if len(dates) == 0:
                 pass
                 print('No Z3D files found for {0} in {1}'.format(str(df_key),
-                                                                 station_dir))
+                                                                 station_z3d_dir))
 
             if len(dates) > self.max_blocks:
                 for pop_date in dates[-(len(dates)-self.max_blocks):]:
@@ -567,7 +592,7 @@ class Z3D2EDI(object):
 
         self.calibration_dict = calibration_dict
 
-    def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None,
+    def make_mtpy_ascii_files(self, station_z3d_dir=None, rr_station_z3d_dir=None,
                               notch_dict={4096:{}, 256:None, 16:None, 4:None},
                               df_list=None, max_blocks=None,
                               ex=50., ey=50., coil_cal_path=None):
@@ -587,15 +612,15 @@ class Z3D2EDI(object):
             >>> mtpy_fn = zen.make_mtpy_files(fn_list, station_name='mt')
         """
 
-        if station_dir is not None:
-            self.station_dir = station_dir
+        if station_z3d_dir is not None:
+            self.station_z3d_dir = station_z3d_dir
 
-        if rr_station_dir is not None:
-            self.rr_station_dir = rr_station_dir
+        if rr_station_z3d_dir is not None:
+            self.rr_station_z3d_dir = rr_station_z3d_dir
 
-        # make rr_station_dir a list so we can loop over it later
-        if type(self.rr_station_dir) is str:
-                self.rr_station_dir = [self.rr_station_dir]
+        # make rr_station_z3d_dir a list so we can loop over it later
+        if type(self.rr_station_z3d_dir) is str:
+                self.rr_station_z3d_dir = [self.rr_station_z3d_dir]
 
         if df_list is not None:
             self.df_list = df_list
@@ -611,7 +636,7 @@ class Z3D2EDI(object):
 
         #-------------------------------------------------
         # make station z3d's into mtpy ts
-        fn_dict = self.get_z3d_fn_blocks(self.station_dir)
+        fn_dict = self.get_z3d_fn_blocks(self.station_z3d_dir)
 
         # make an empty array to put things
         n_files, n_comps = self._get_num_files(fn_dict)
@@ -655,18 +680,18 @@ class Z3D2EDI(object):
 
         #--------------------------------------------------
         # Remote Reference z3d's into mtpy ts
-        if rr_station_dir is not None:
-            self.rr_station_dir = rr_station_dir
+        if rr_station_z3d_dir is not None:
+            self.rr_station_z3d_dir = rr_station_z3d_dir
 
-        if self.rr_station_dir is not None:
+        if self.rr_station_z3d_dir is not None:
             print('*** Tranforming remote reference Z3D to mtpy format ***')
 
             # get the maximum number of remote reference time series
             # multiply by 3 just to be safe
-            num_ref = (len(fn_arr)/self.num_comp)*6*len(self.rr_station_dir)
+            num_ref = (len(fn_arr)/self.num_comp)*8*len(self.rr_station_z3d_dir)
             rr_fn_arr = self._make_empty_fn_arr(num_ref)
             rr = 0
-            for rr_dir in self.rr_station_dir:
+            for rr_dir in self.rr_station_z3d_dir:
                 rr_fn_dict = self.get_z3d_fn_blocks(rr_dir, remote=True)
 
                 for df_key in self.df_list:
@@ -705,16 +730,16 @@ class Z3D2EDI(object):
 
             # change the time series directory to reflect where the time series
             # are.
-            self.rr_station_dir = [os.path.join(rr_dir, 'TS') for rr_dir in
-                                   self.rr_station_dir]
+            self.rr_station_ts_dir = [os.path.join(rr_dir, 'TS') for rr_dir in
+                                   self.rr_station_z3d_dir]
 
             # get only the non-empty time series
             rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
         else:
             rr_fn_arr = None
         # change directories to be associated with where the mtpy ts are
-        self.station_dir = os.path.join(self.station_dir, 'TS')
-        self.survey_config.save_path = self.station_dir
+        self.station_ts_dir = os.path.join(self.station_z3d_dir, 'TS')
+        self.survey_config.save_path = self.station_ts_dir
 
         # write survey configuration file
         self.survey_config_fn = self.survey_config.write_survey_config_file()
@@ -883,19 +908,20 @@ class Z3D2EDI(object):
 
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
                                   df_list=None, max_blocks=None,
-                                  use_blocks_dict={4096:'all', 256:'all', 16:'all'}):
+                                  use_blocks_dict={4096:'all', 256:'all',
+                                                   16:'all', 4:'all'}):
         """
         get the birrp fn list from a directory of TS files
         """
 
         if station_ts_dir is not None:
-            self.station_dir = station_ts_dir
+            self.station_ts_dir = station_ts_dir
 
         if rr_ts_dir is not None:
-            self.rr_station_dir = rr_ts_dir
+            self.rr_station_ts_dir = rr_ts_dir
 
-        if type(self.rr_station_dir) is str:
-            self.rr_station_dir = [self.rr_station_dir]
+        if type(self.rr_station_ts_dir) is str:
+            self.rr_station_ts_dir = [self.rr_station_ts_dir]
 
         if df_list is not None:
             self.df_list = df_list
@@ -903,15 +929,15 @@ class Z3D2EDI(object):
         if max_blocks is not None:
             self.max_blocks = max_blocks
 
-        if not os.path.isdir(self.station_dir):
-            print('{0} is not a valid directory, check path.'.format(self.station_dir))
+        if not os.path.isdir(self.station_ts_dir):
+            print('{0} is not a valid directory, check path.'.format(self.station_ts_dir))
             return None
 
-        fn_arr = np.zeros(len(os.listdir(self.station_dir)),
+        fn_arr = np.zeros(len(os.listdir(self.station_ts_dir)),
                           dtype=self._ts_fn_dtype)
         fn_count = 0
-        for fn in os.listdir(self.station_dir):
-            fn = os.path.join(self.station_dir, fn)
+        for fn in os.listdir(self.station_ts_dir):
+            fn = os.path.join(self.station_ts_dir, fn)
             f_arr, count = self._make_ts_arr_entry(fn)
             if f_arr is None:
                 continue
@@ -923,13 +949,13 @@ class Z3D2EDI(object):
 
         #--------------------------------------------------------
         # get remote reference filenames
-        if self.rr_station_dir is not None:
-            n_rr = int((len(fn_arr)/self.num_comp)*10*len(self.rr_station_dir))
+        if self.rr_station_ts_dir is not None:
+            n_rr = int((len(fn_arr)/self.num_comp)*10*len(self.rr_station_ts_dir))
             rr_fn_arr = np.zeros(n_rr, dtype=self._ts_fn_dtype)
 
             rr_count = 0
 
-            for rr_dir in self.rr_station_dir:
+            for rr_dir in self.rr_station_ts_dir:
                 for rr_fn in os.listdir(rr_dir):
                     rr_fn = os.path.join(rr_dir, rr_fn)
                     rr_arr, count = self._make_ts_arr_entry(rr_fn, remote=True)
@@ -1273,7 +1299,7 @@ class Z3D2EDI(object):
 
         # make save path
         if save_path is None:
-            save_path = os.path.join(self.station_dir, 'BF')
+            save_path = os.path.join(self.station_ts_dir, 'BF')
         if not os.path.exists(save_path):
             os.mkdir(save_path)
 
@@ -1300,6 +1326,9 @@ class Z3D2EDI(object):
             if df_key == 16:
                 birrp_params_dict['nfft'] = 2**16
                 birrp_params_dict['nsctmax'] = 11
+            if df_key == 4:
+                birrp_params_dict['nfft'] = 2**16
+                birrp_params_dict['nsctmax'] = 12
 
             # make a script object passing on the desired birrp parameters
             birrp_script_obj = birrp.ScriptFile(**birrp_params_dict)
@@ -1321,7 +1350,7 @@ class Z3D2EDI(object):
         """
 
         if save_path is None:
-            save_path = os.path.join(self.station_dir, 'BF')
+            save_path = os.path.join(self.station_ts_dir, 'BF')
         if not os.path.exists(save_path):
             os.mkdir(save_path)
 
@@ -1339,7 +1368,7 @@ class Z3D2EDI(object):
             pro_obj.deltat = -float(df)
 
             # for advanced processing
-            if self.rr_station_dir is not None:
+            if self.rr_station_ts_dir is not None:
                 pro_obj.ilev = 1
                 pro_obj.tbw = 3
                 pro_obj.nar = 9
@@ -1551,8 +1580,15 @@ class Z3D2EDI(object):
 
 
         # make files into mtpy files
-        z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(notch_dict=notch_dict)
+        if 256 in self.df_list or 4096 in self.df_list or 1024 in self.df_list:
+            z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(notch_dict=notch_dict)
 
+        if 4 in self.df_list:
+            fn_list = combine_z3d_files(self.station_z3d_dir)
+            if self.rr_station_z3d_dir is not None:
+                for rr_dir in self.rr_station_z3d_dir:
+                    rr_fn_list = combine_z3d_files(rr_dir)
+            
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn_from_dir(use_blocks_dict=use_blocks_dict)
 
@@ -1560,7 +1596,7 @@ class Z3D2EDI(object):
         sfn_list = self.write_script_files(schedule_dict,
                                            birrp_params_dict=birrp_param_dict,
                                            **kwargs)
-
+            
         # run birrp
         self.run_birrp(sfn_list)
 
@@ -1589,13 +1625,13 @@ class Z3D2EDI(object):
         for now just a simple cutoff
         """
 
-        if type(edi_fn_list) is str:
+        if isinstance(edi_fn_list, str):
             print('Only one edi file, skipping combining')
-            return
+            return edi_fn_list
 
-        if type(edi_fn_list) is list and len(edi_fn_list) == 1:
+        if len(edi_fn_list) == 1:
             print('Only one edi file, skipping combining')
-            return
+            return edi_fn_list[0]
 
         data_arr = np.zeros(100,
                             dtype=[('freq', np.float),
@@ -1606,14 +1642,10 @@ class Z3D2EDI(object):
 
         count = 0
         for edi_fn in edi_fn_list:
+            if not isinstance(edi_fn, Path):
+                edi_fn = Path(edi_fn)
             # get sampling rate from file name
-            fn_list = edi_fn[edi_fn.find('BF'):].split(os.path.sep)
-            for ss in fn_list:
-                try:
-                    sr_key = int(ss)
-                    break
-                except ValueError:
-                    pass
+            sr_key = int(edi_fn.parts[-2])
             if sr_key in list(sr_dict.keys()):
                 try:
                     edi_obj = mtedi.Edi(edi_fn)
@@ -1667,8 +1699,10 @@ class Z3D2EDI(object):
         edi_obj.Tipper = new_t
         edi_obj.Data_sect.nfreq = new_z.z.shape[0]
 
-        n_edi_fn = os.path.join(self.station_dir,
-                                '{0}_comb.edi'.format(os.path.basename(self.station_dir)))
+        n_edi_fn = Path.joinpath(self.station_ts_dir,
+                                 '{0}_comb.edi'.format(Path(self.station_ts_dir).name))
+        # n_edi_fn = os.path.join(self.station_z3d_dir,
+        #                         '{0}_comb.edi'.format(os.path.basename(self.station_z3d_dir)))
         n_edi_fn = edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
 
         return n_edi_fn
@@ -1886,7 +1920,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                     process_df_list=[1024, 256])
     """
 
-    station_dir = os.path.join(survey_dir, station)
+    station_z3d_dir = os.path.join(survey_dir, station)
 
     st = datetime.datetime.now()
     #--> Copy data from files
@@ -1899,12 +1933,12 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     except IOError:
         pass
         print('No files copied from SD cards')
-        print('Looking in  {0} for Z3D files'.format(station_dir))
+        print('Looking in  {0} for Z3D files'.format(station_z3d_dir))
 
     #--> process data
 
     with Capturing() as output:
-        z2edi = Z3D2EDI(station_dir)
+        z2edi = Z3D2EDI(station_z3d_dir)
         z2edi.birrp_exe = birrp_exe
         z2edi.coil_cal_path = ant_calibrations
         try:
@@ -1918,7 +1952,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
             rp = None
 
     #--> write log file
-    log_fid = open(os.path.join(station_dir, 'Processing.log'), 'w')
+    log_fid = open(os.path.join(station_z3d_dir, 'Processing.log'), 'w')
     log_fid.write('\n'.join(output))
     log_fid.close()
 
@@ -1963,9 +1997,17 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
                  'declination',  'fn', 'conversion', 'gain']
 
     fn_df = get_z3d_info(z3d_path)
+    sv_path = Path.joinpath(Path(z3d_path), 'TS')
+    if not sv_path.exists():
+        sv_path.mkdir()
     
     return_fn_list = []
     for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
+        if len(list(sv_path.glob('*combined_4.{0}'.format(comp)))) == 1:
+            comp_fn = list(sv_path.glob('*combined_4.{0}'.format(comp)))[0]
+            print('  --- skipping {0} already exists'.format(comp_fn))
+            return_fn_list.append(comp_fn)
+            continue
         if len(fn_df[comp]) == 0:
             print('Warning: Skipping {0} because no Z3D files found.'.format(comp))
             continue
@@ -1980,9 +2022,9 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
         
         ### make a new MTTS object that will have a length that is buffered 
         ### at the end to make sure there is room for the data, will trimmed
-        new_ts = ts.MTTS()
-        new_ts.ts = np.zeros(int((t_diff + t_buffer) * sampling_rate))
-        new_ts.sampling_rate = sampling_rate
+        new_ts = mtts.MTTS()
+        new_ts.ts = np.zeros(int((t_diff + t_buffer) * new_sampling_rate))
+        new_ts.sampling_rate = new_sampling_rate
         new_ts.start_time_utc = start_dt
         
         ### make an attribute dictionary that can be used to fill in the new
@@ -1993,8 +2035,13 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
             z_obj = zen.Zen3D(row['fn'])
             z_obj.read_z3d()
             t_obj = z_obj.ts_obj
+            if t_obj.component in ['ex', 'ey']:
+                t_obj.ts.data /= (t_obj.dipole_length/1000)
+                t_obj.units = 'mV/km'
+                print('Using scales {0} = {1} m'.format(t_obj.component,
+                                                        t_obj.dipole_length))
             ### decimate to the required sampling rate
-            t_obj.decimate(int(z_obj.df/sampling_rate))
+            t_obj.decimate(int(z_obj.df/new_sampling_rate))
             ### fill the new time series with the data at the appropriate times
             new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) & 
                             (new_ts.ts.index <= t_obj.ts.index[-1])] = t_obj.ts.data
@@ -2031,8 +2078,8 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
                                                  int(new_ts.sampling_rate),
                                                  new_ts.component)
         
-        sv_fn_ascii = z3d_path.joinpath(ascii_fn)
-        new_ts.write_ascii_file(sv_fn_ascii.absolute())
+        sv_fn_ascii = sv_path.joinpath(ascii_fn)
+        new_ts.write_ascii_file(sv_fn_ascii.as_posix())
         
         return_fn_list.append(sv_fn_ascii)
         

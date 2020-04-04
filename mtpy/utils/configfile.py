@@ -238,14 +238,14 @@ def read_survey_configfile(filename):
     for station in configobject_dict:
         #read in the sub-dictionary for the current station - bringing all keys
         #to lowercase!
-        temp_dict_in = dict((k.lower(),v.lower()) 
+        temp_dict_in = dict((k.lower(), v) 
                             for k, v in list(configobject_dict[station].items()))
 
         #initialise output sub-directory for current station 
         stationdict = temp_dict_in
 
         #stationnames are uppercase in MTpy
-        stationname = station.upper()
+        stationname = station
         if stationname in ['GLOBAL','MAIN','DEFAULT','GENERAL']:
             stationname = 'GLOBAL'
 
@@ -484,9 +484,7 @@ def read_survey_configfile(filename):
             except:
                 continue
             if answer == 'n':
-                print()
-                sys.exit()
-    print() 
+                sys.exit() 
     return config_dict
 
 #=================================================================
