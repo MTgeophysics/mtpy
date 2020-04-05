@@ -1580,11 +1580,9 @@ class Zen3D(object):
         # convert counts to mV and scale accordingly
         # self.convert_counts() #--> data is already converted to mV
         # calibrate electric channels should be in mV/km
-        # I have no idea why this works but it does
         if self.component in ['ex', 'ey']:
             e_scale = float(self.dipole_len)
             self.ts_obj.ts.data /= e_scale/1000.
-#            self.ts_obj.ts.data /= ((e_scale/100)*2*np.pi)
             print('Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
                                                     e_scale))
             self.ts_obj.units = 'mV/km'

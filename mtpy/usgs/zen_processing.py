@@ -354,7 +354,8 @@ class Survey_Config(object):
     def from_mtts(self, mtts_obj):
         pass
 
-    def from_z3d_obj()
+    def from_z3d_obj(self):
+        pass
 
     def write_survey_config_file(self, save_path=None):
         """
@@ -876,26 +877,57 @@ class Z3D2EDI(object):
 
         return ''.join(cfg_list)
     
-    def convert_z3d_to_mtts(self, station_z3d_dir, rr_z3d_dir=None, 
-                            df_list=None, max_blocks=None,
-                            use_blocks_dict={4096:'all', 256:'all',
-                                             16:'all', 4:'all'},
-                            overwrite=False, combine=True, notch_dict=None, 
+    def convert_z3d_to_mtts(self, station_z3d_dir, rr_z3d_dir=None,
+                            use_blocks_dict=None, overwrite=False, 
+                            combine=True, notch_dict=None, 
                             combine_sampling_rate=4):
         """
-        Convert z3d files to ascii files
-        """
         
-        zc_obj = zc.Z3DCollection(station_z3d_dir)
-        z3d_fn_list = zc_obj.get_z3d_fn_list()
-        z3d_df = zc_obj.convert_to_mtts(zc_obj.get_z3d_info(z3d_fn_list))
-        z3d_df.to_csv(Path(station_z3d_dir).joinpath('{0}_info.csv'.format()))
+        :param station_z3d_dir: DESCRIPTION
+        :type station_z3d_dir: TYPE
         
-        if rr_z3d_dir is not None:
-            if not isinstance(rr_z3d_dir, list):    
-                
+        :param rr_z3d_dir: DESCRIPTION, defaults to None
+        :type rr_z3d_dir: TYPE, optional
         
+        :param use_blocks_dict: DESCRIPTION, defaults to None 
+        :type use_blocks_dict: Dictionary of blocks to use 
+                               ex. {4096:[0, 2], 256:[2, 3]}
+        :param overwrite: DESCRIPTION, defaults to False
+        :type overwrite: TYPE, optional
+        
+        :param notch_dict: DESCRIPTION, defaults to None
+        :type notch_dict: TYPE, optional
+        
+        :param combine: DESCRIPTION, defaults to True
+        :type combine: TYPE, optional
+        
+        :param combine_sampling_rate: DESCRIPTION, defaults to 4
+        :type combine_sampling_rate: TYPE, optional
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
 
+        """
+        kw_dict = {'block_dict': use_blocks_dict, 'notch_dict': notch_dict, 
+                   'overwrite': overwrite, 'combine': combine, 
+                   'combine_sampling_rate': combine_sampling_rate}
+        
+        zc_obj = zc.Z3DCollection()
+        station_df, station_csv = zc_obj.from_dir_to_mtts(station_z3d_dir,
+                                                          **kw_dict)
+        if rr_z3d_dir is not None:
+            kw_dict['remote'] = True
+            if not isinstance(rr_z3d_dir, list):    
+                rr_z3d_dir = [rr_z3d_dir]
+            for rr_path in rr_z3d_dir:
+                rr_df, rr_csv = zc_obj.from_dir_to_mtts(rr_path,**kw_dict)
+                station_df = station_df.append(rr_df)
+                
+        processing_csv = Path(station_z3d_dir).joinpath('processing_df.csv')
+        station_df.to_csv(processing_csv)
+                
+        return station_df, processing_csv
+                
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
                                   df_list=None, max_blocks=None,
                                   use_blocks_dict={4096:'all', 256:'all',
