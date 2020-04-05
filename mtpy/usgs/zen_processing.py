@@ -9,8 +9,6 @@ Created on Fri Sep 16 14:29:43 2016
 @author: jpeacock
 """
 #==============================================================================
-#from __future__ import unicode_literals
-
 import numpy as np
 import time
 import datetime
@@ -19,8 +17,6 @@ import sys
 from io import StringIO
 from pathlib import Path
 import pandas as pd
-# from io import BytesIO
-
 
 import mtpy.utils.filehandling as mtfh
 import mtpy.processing.birrp as birrp
@@ -31,13 +27,11 @@ import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
 import mtpy.core.edi as mtedi
 import mtpy.core.ts as mtts
+from mtpy.usgs import z3d_collection as zc
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MultipleLocator
-
-#==============================================================================
-
 
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
@@ -75,8 +69,6 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-
-
 
     def get_calibrations(self, calibration_path=None):
         """
@@ -359,6 +351,11 @@ class Survey_Config(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+    def from_mtts(self, mtts_obj):
+        pass
+
+    def from_z3d_obj()
+
     def write_survey_config_file(self, save_path=None):
         """
         write a survey config file to save path
@@ -372,7 +369,7 @@ class Survey_Config(object):
         #('Wrote survey config file to {0}'.format(fn))
 
         return fn
-    
+
     def read_survey_config_file(self, survey_cfg_fn, station):
         """
         Parameters
@@ -387,12 +384,11 @@ class Survey_Config(object):
         None.
 
         """
-        
+
         survey_cfg_dict = mtcfg.read_survey_configfile(survey_cfg_fn)[station]
-        
+
         for key, value in survey_cfg_dict.items():
             setattr(self, key, value)
-
 
 #==============================================================================
 # Z3D files to EDI using BIRRP
@@ -463,12 +459,11 @@ class Z3D2EDI(object):
         self.df_list = [4096, 256, 16]
         self.max_blocks = 3
         self._max_nread = 20000000
-        self._nskip = 23 ## number of lines for birrp to skip in file ts header
+        # number of lines for birrp to skip in file ts header
+        self._nskip = 23
 
         # data types for different aspects of getting information
         if sys.version_info[0] == 2:
-            print(np.version.version)
-            #self._ts_fn_dtype = np.dtype([('a', np.float)])
             self._ts_fn_dtype = np.dtype([(u'station','S6'),
                                           (u'npts', np.int),
                                           (u'df', np.int),
@@ -509,7 +504,6 @@ class Z3D2EDI(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-
 
     def make_survey_config_file(self, survey_config_dict=None):
         """
@@ -664,16 +658,6 @@ class Z3D2EDI(object):
                         fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
                                                                 df_notch_dict,
                                                                 16)
-                    elif fn_arr[jj]['df'] == 256 and 8 in self.df_list:
-                        jj += 1
-                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
-                                                                df_notch_dict,
-                                                                32)
-                    elif fn_arr[jj]['df'] == 256 and 4 in self.df_list:
-                        jj += 1
-                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
-                                                                df_notch_dict,
-                                                                64)
                     jj += 1
         # get only the non zero entries
         fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]
@@ -713,18 +697,6 @@ class Z3D2EDI(object):
                                 rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
                                                                            df_notch_dict,
                                                                            dec=16,
-                                                                           remote=True)
-                            elif rr_fn_arr[rr]['df'] == 256 and 8 in self.df_list:
-                                rr += 1
-                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
-                                                                           df_notch_dict,
-                                                                           dec=32,
-                                                                           remote=True)
-                            elif rr_fn_arr[rr]['df'] == 256 and 4 in self.df_list:
-                                rr += 1
-                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
-                                                                           df_notch_dict,
-                                                                           dec=64,
                                                                            remote=True)
                             rr += 1
 
@@ -904,7 +876,17 @@ class Z3D2EDI(object):
             cfg_list.append('    decimated to {0:.0f} samples/s'.format(fn_arr['df']))
 
         return ''.join(cfg_list)
-
+    
+    def convert_z3d_to_mtts(self, station_ts_dir, rr_ts_dir=None, 
+                            df_list=None, max_blocks=None,
+                            use_blocks_dict={4096:'all', 256:'all',
+                                             16:'all', 4:'all'},
+                            overwrite=False, combine=True, 
+                            combine_sampling_rate=4):
+        """
+        Convert z3d files to ascii files
+        """
+        pass
 
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
                                   df_list=None, max_blocks=None,
@@ -1343,70 +1325,6 @@ class Z3D2EDI(object):
 
         return script_fn_list
 
-    def write_script_files_old(self, fn_birrp_dict, save_path=None,
-                               birrp_params_dict={}, **kwargs):
-        """
-        write a script file from a generic processing dictionary
-        """
-
-        if save_path is None:
-            save_path = os.path.join(self.station_ts_dir, 'BF')
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-
-        s_keys = list(fn_birrp_dict.keys())
-        script_fn_list = []
-        for df in s_keys:
-            bf_path = os.path.join(save_path, '{0:.0f}'.format(df))
-            fn_birrp_arr = fn_birrp_dict[df]
-            pro_obj = BIRRP_processing()
-            if df == 16:
-                pro_obj.nfft = 2**16
-                pro_obj.nsctmax = 11
-            pro_obj.calibration_path = self.coil_cal_path
-            pro_obj.station = self.survey_config.station
-            pro_obj.deltat = -float(df)
-
-            # for advanced processing
-            if self.rr_station_ts_dir is not None:
-                pro_obj.ilev = 1
-                pro_obj.tbw = 3
-                pro_obj.nar = 9
-                pro_obj.c2threshb = .35
-                pro_obj.c2threshe = .45
-                pro_obj.c2threshe1 = .45
-                pro_obj.nf1 = 4
-                pro_obj.nfinc = 2
-                pro_obj.nsctinc = 2
-                pro_obj.nfsect = 2
-                pro_obj.ainlin = .0001
-            for b_key in list(birrp_params_dict.keys()):
-                setattr(pro_obj, b_key, birrp_params_dict[b_key])
-
-            pro_dict = pro_obj.get_processing_dict(fn_birrp_arr,
-                                                   hx=self.survey_config.hx,
-                                                   hy=self.survey_config.hy,
-                                                   hz=self.survey_config.hz,
-                                                   **kwargs)
-
-
-            #write script file using mtpy.processing.birrp
-            script_fn, birrp_dict = birrp.write_script_file(pro_dict,
-                                                            save_path=bf_path)
-
-            script_fn_list.append(script_fn)
-
-            cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(
-                                                                 script_fn[:-7]))
-
-            mtcfg.write_dict_to_configfile({os.path.basename(birrp_dict['ofil']):
-                                                             birrp_dict}, cfg_fn)
-            print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
-
-            self.birrp_config_fn = cfg_fn
-
-        return script_fn_list
-
     def run_birrp(self, script_fn_list=None, birrp_exe=None):
         """
         run birrp given the specified files
@@ -1453,6 +1371,7 @@ class Z3D2EDI(object):
                 for fn in os.listdir(ts_dir):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
+                        self.survey_config.read_survey_config_file()
 
         #print(self.survey_config_fn)
 
@@ -1588,7 +1507,7 @@ class Z3D2EDI(object):
             if self.rr_station_z3d_dir is not None:
                 for rr_dir in self.rr_station_z3d_dir:
                     rr_fn_list = combine_z3d_files(rr_dir)
-            
+
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn_from_dir(use_blocks_dict=use_blocks_dict)
 
@@ -1596,7 +1515,7 @@ class Z3D2EDI(object):
         sfn_list = self.write_script_files(schedule_dict,
                                            birrp_params_dict=birrp_param_dict,
                                            **kwargs)
-            
+
         # run birrp
         self.run_birrp(sfn_list)
 
@@ -1857,7 +1776,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     converted to .edi files and plotted.
     You need 2 things to run this code:
         * mtpy --> a Python package for MT and can be found at
-    	           https://github.com/geophysics/mtpy
+                   https://github.com/geophysics/mtpy
         * BIRRP executable --> you can get this from Alan Chave at WHOI
                                if you are using it for non-commercial projects.
     ..note:: This code is quite specific to my setup, so let me know what
@@ -1967,23 +1886,23 @@ def get_z3d_info(z3d_path):
     ### need to get all the files for one channel
     fn_dict = dict([(key, []) for key in ['ex', 'ey', 'hx', 'hy', 'hz']])
     ### get all z3d files within a given folder, will look through recursively
-    fn_list = [fn_path for fn_path in z3d_path.rglob('*') 
+    fn_list = [fn_path for fn_path in z3d_path.rglob('*')
                if fn_path.suffix in ['.z3d', '.Z3D']]
     ### loop over files, read just the metadata and get important information
     for fn in fn_list:
         z_obj = zen.Zen3D(fn)
         z_obj.read_all_info()
-        fn_dict[z_obj.component].append({'start':z_obj.zen_schedule.isoformat(), 
+        fn_dict[z_obj.component].append({'start':z_obj.zen_schedule.isoformat(),
                                          'df':z_obj.df,
                                          'fn':z_obj.fn})
-        
+
     return fn_dict
 
-def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600): 
+def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
     """
-    Combine all z3d files for a given station and given component for 
+    Combine all z3d files for a given station and given component for
     processing and getting the long period estimations.
-    
+
     :param str z3d_path: full path to z3d files
     :param str component: component to combine
     :param int new_sampling_rate: new sampling rate of the data
@@ -2000,7 +1919,7 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
     sv_path = Path.joinpath(Path(z3d_path), 'TS')
     if not sv_path.exists():
         sv_path.mkdir()
-    
+
     return_fn_list = []
     for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
         if len(list(sv_path.glob('*combined_4.{0}'.format(comp)))) == 1:
@@ -2014,19 +1933,19 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
         comp_df = pd.DataFrame(fn_df[comp])
         ### sort the data frame by date
         comp_df = comp_df.sort_values('start')
-       
+
         ### get start date and end at last start date, get time difference
         start_dt = datetime.datetime.fromisoformat(comp_df.start.min())
         end_dt = datetime.datetime.fromisoformat(comp_df.start.max())
         t_diff = (end_dt - start_dt).total_seconds()
-        
-        ### make a new MTTS object that will have a length that is buffered 
+
+        ### make a new MTTS object that will have a length that is buffered
         ### at the end to make sure there is room for the data, will trimmed
         new_ts = mtts.MTTS()
         new_ts.ts = np.zeros(int((t_diff + t_buffer) * new_sampling_rate))
         new_ts.sampling_rate = new_sampling_rate
         new_ts.start_time_utc = start_dt
-        
+
         ### make an attribute dictionary that can be used to fill in the new
         ### MTTS object
         attr_dict = dict([(key, []) for key in attr_list])
@@ -2043,24 +1962,24 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
             ### decimate to the required sampling rate
             t_obj.decimate(int(z_obj.df/new_sampling_rate))
             ### fill the new time series with the data at the appropriate times
-            new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) & 
+            new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) &
                             (new_ts.ts.index <= t_obj.ts.index[-1])] = t_obj.ts.data
             ### get the end date as the last z3d file
             end_date = z_obj.ts_obj.ts.index[-1]
             ### fill attribute data frame
             for attr in attr_list:
                 attr_dict[attr].append(getattr(t_obj, attr))
-            
+
         ### need to trim the data
-        new_ts.ts = new_ts.ts.data[(new_ts.ts.index >= start_dt) & 
+        new_ts.ts = new_ts.ts.data[(new_ts.ts.index >= start_dt) &
                                    (new_ts.ts.index <= end_date)].to_frame()
-        
+
         ### fill gaps with forwards or backwards values, this seems to work
-        ### better than interpolation and is faster than regression.  
+        ### better than interpolation and is faster than regression.
         ### The gaps should be max 13 seconds if everything went well
         new_ts.ts.data[new_ts.ts.data == 0] = np.nan
         new_ts.ts.data.fillna(method='ffill', inplace=True)
-        
+
         ### fill the new MTTS with the appropriate metadata
         attr_df = pd.DataFrame(attr_dict)
         for attr in attr_list:
@@ -2072,18 +1991,18 @@ def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
                     setattr(new_ts, attr, attr_series.mode()[0])
             except ValueError:
                 print('Warning: could not set {0}'.format(attr))
-                
-        
+
+
         ascii_fn = '{0}_combined_{1}.{2}'.format(new_ts.station,
                                                  int(new_ts.sampling_rate),
                                                  new_ts.component)
-        
+
         sv_fn_ascii = sv_path.joinpath(ascii_fn)
         new_ts.write_ascii_file(sv_fn_ascii.as_posix())
-        
+
         return_fn_list.append(sv_fn_ascii)
-        
+
     et = datetime.datetime.now()
     compute_time = (et - st).total_seconds()
-    print('   Combining took {0:.2f} seconds'.format(compute_time))    
+    print('   Combining took {0:.2f} seconds'.format(compute_time))
     return return_fn_list
