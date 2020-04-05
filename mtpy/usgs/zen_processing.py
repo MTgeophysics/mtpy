@@ -716,7 +716,6 @@ class Z3D2EDI(object):
         # write survey configuration file
         self.survey_config_fn = self.survey_config.write_survey_config_file()
 
-
         log_lines = []
         for f_arr in fn_arr:
             log_lines += [self._make_config_lines(f_arr)]
@@ -877,16 +876,25 @@ class Z3D2EDI(object):
 
         return ''.join(cfg_list)
     
-    def convert_z3d_to_mtts(self, station_ts_dir, rr_ts_dir=None, 
+    def convert_z3d_to_mtts(self, station_z3d_dir, rr_z3d_dir=None, 
                             df_list=None, max_blocks=None,
                             use_blocks_dict={4096:'all', 256:'all',
                                              16:'all', 4:'all'},
-                            overwrite=False, combine=True, 
+                            overwrite=False, combine=True, notch_dict=None, 
                             combine_sampling_rate=4):
         """
         Convert z3d files to ascii files
         """
-        pass
+        
+        zc_obj = zc.Z3DCollection(station_z3d_dir)
+        z3d_fn_list = zc_obj.get_z3d_fn_list()
+        z3d_df = zc_obj.convert_to_mtts(zc_obj.get_z3d_info(z3d_fn_list))
+        z3d_df.to_csv(Path(station_z3d_dir).joinpath('{0}_info.csv'.format()))
+        
+        if rr_z3d_dir is not None:
+            if not isinstance(rr_z3d_dir, list):    
+                
+        
 
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
                                   df_list=None, max_blocks=None,
