@@ -1008,6 +1008,8 @@ class Z3D2EDI(object):
         if not os.path.isdir(self.station_ts_dir):
             print('{0} is not a valid directory, check path.'.format(self.station_ts_dir))
             return None
+        
+        self.get_calibrations()
 
         fn_arr = np.zeros(len(os.listdir(self.station_ts_dir)),
                           dtype=self._ts_fn_dtype)
@@ -1082,6 +1084,11 @@ class Z3D2EDI(object):
                 return_fn_arr['end_dt'] = time.strftime(datetime_fmt,
                                                 time.localtime(start_sec+\
                                                 num_sec))
+                try:
+                    cal_fn = self.calibration_dict[ts_obj.instrument_id]
+                    return_fn_arr['calibration_fn'] = cal_fn
+                except KeyError:
+                    pass
                 count = 1
             else:
                 count = 0
