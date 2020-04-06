@@ -548,6 +548,8 @@ class Z3D2EDI(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+             
+        self.get_calibrations()
 
     def make_survey_config_file(self, survey_config_dict=None):
         """
@@ -668,10 +670,7 @@ class Z3D2EDI(object):
 
         if coil_cal_path is not None:
             self.coil_cal_path = coil_cal_path
-
-        # get coil calibrations
-        self.get_calibrations()
-
+            self.get_calibrations()
         #-------------------------------------------------
         # make station z3d's into mtpy ts
         fn_dict = self.get_z3d_fn_blocks(self.station_z3d_dir)
@@ -1085,6 +1084,8 @@ class Z3D2EDI(object):
                                                 time.localtime(start_sec+\
                                                 num_sec))
                 try:
+                    if isinstance(ts_obj.instrument_id, (float, int)):
+                        ts_obj.instrument_id = '{0:.0f}'.format(ts_obj.instrument_id)
                     cal_fn = self.calibration_dict[ts_obj.instrument_id]
                     return_fn_arr['calibration_fn'] = cal_fn
                 except KeyError:
@@ -1344,15 +1345,12 @@ class Z3D2EDI(object):
         s_fn_birrp_arr['nskip'][:] = self._nskip
         s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
         s_fn_birrp_arr['comp'][:] = fn_arr['comp']
+        s_fn_birrp_arr['calibration_fn'][:] = fn_arr['calibration_fn']
 
-        # be sure to fill in calibration file for station mags
-        for sfb_arr in s_fn_birrp_arr:
-            if sfb_arr['comp'] in ['hx', 'hy', 'hz'] and remote == False:
-                try:
-                    sfb_arr['calibration_fn'] = getattr(self.survey_config,
-                                                        '{0}_cal_fn'.format(sfb_arr['comp']))
-                except AttributeError:
-                    sfb_arr['calibration_fn'] = None
+        # # be sure to fill in calibration file for station mags
+        # for sfb_arr in s_fn_birrp_arr:
+        #     if sfb_arr['comp'] in ['hx', 'hy', 'hz'] and remote == False:
+        #         sfb_arr['calibration_fn'] = fn_arr['calibration_fn']
 
         if remote == True:
             s_fn_birrp_arr['rr'] = True
