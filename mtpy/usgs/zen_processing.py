@@ -267,7 +267,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
 #==============================================================================
 # Survey configuration file
 #==============================================================================
-class Survey_Config(object):
+class SurveyConfig(object):
     """
     survey config class
     will setup a survey configuration file that has the form of:
@@ -351,11 +351,54 @@ class Survey_Config(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
-    def from_mtts(self, mtts_obj):
-        pass
+    def from_df(self, z3d_df):
+        """
+        
+        :param z3d_df: DESCRIPTION
+        :type z3d_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-    def from_z3d_obj(self):
-        pass
+        """
+        s_df = z3d_df[z3d_df.remote == False]
+        
+        self.b_xaxis_azimuth = s_df[s_df.component == 'hx'].azimuth.mode()[0]
+        self.b_yaxis_azimuth = s_df[s_df.component == 'hy'].azimuth.mode()[0]
+        self.box = s_df.zen_num.mode()[0]
+        self.date = s_df.start.min().isoformat()
+        self.e_instrument_type = 'Ag-Agcl electrodes'
+        self.e_logger_type = 'zen'
+        self.e_xaxis_azimuth = s_df[s_df.component == 'ex'].azimuth.mode()[0]
+        self.e_xaxis_length = s_df[s_df.component == 'ex'].dipole_length.mode()[0]
+        self.e_yaxis_azimuth = s_df[s_df.component == 'ey'].azimuth.mode()[0]
+        self.e_yaxis_length = s_df[s_df.component == 'hx'].dipole_length.mode()[0]
+        self.elevation = s_df.elevation.median()
+        self.hx = s_df[s_df.component == 'hx'].coil_number.mode()[0]
+        self.hy = s_df[s_df.component == 'hy'].coil_number.mode()[0]
+        self.hz = s_df[s_df.component == 'hz'].coil_number.mode()[0]
+        self.lat = s_df.latitude.median()
+        self.location = 'Earth'
+        self.lon = s_df.longitude.median()
+        self.network = 'USGS'
+        self.notes = 'Generic config file'
+        self.sampling_interval = 'all'
+        self.station = s_df.station.mode()[0]
+        self.station_type = 'mt'
+
+        rr_df = z3d_df[z3d_df.remote == True]
+        if len(rr_df) > 0:
+            self.rr_lat = []
+            self.rr_lon = []
+            self.rr_station = []
+            self.rr_date = []
+            self.rr_box = []
+            for station in rr_df.station.unique():
+                rdf = rr_df[rr_df.station == station]
+                self.rr_lat.append(rdf.latitude.median())
+                self.rr_lon.append(rdf.longitude.median())
+                self.rr_station.append(rdf.station.mode()[0])
+                self.rr_date.append(rdf.start.min().isoformat())
+                self.rr_box.append(rdf.zen_num.mode()[0])
 
     def write_survey_config_file(self, save_path=None):
         """
@@ -448,7 +491,7 @@ class Z3D2EDI(object):
         self.station_ts_dir = kwargs.pop('station_ts_dir', None)
         self.rr_station_z3d_dir = kwargs.pop('rr_station_z3d_dir', None)
         self.rr_station_ts_dir = kwargs.pop('rr_station_ts_dir', None)
-        self.survey_config = Survey_Config(save_path=self.station_z3d_dir)
+        self.survey_config = SurveyConfig(save_path=self.station_z3d_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
         self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
@@ -877,7 +920,7 @@ class Z3D2EDI(object):
 
         return ''.join(cfg_list)
     
-    def convert_z3d_to_mtts(self, station_z3d_dir, rr_z3d_dir=None,
+    def convert_z3d_to_mtts(self, station_z3d_dir, rr_station_z3d_dir=None,
                             use_blocks_dict=None, overwrite=False, 
                             combine=True, notch_dict=None, 
                             combine_sampling_rate=4):
@@ -886,8 +929,8 @@ class Z3D2EDI(object):
         :param station_z3d_dir: DESCRIPTION
         :type station_z3d_dir: TYPE
         
-        :param rr_z3d_dir: DESCRIPTION, defaults to None
-        :type rr_z3d_dir: TYPE, optional
+        :param rr_station_z3d_dir: DESCRIPTION, defaults to None
+        :type rr_station_z3d_dir: TYPE, optional
         
         :param use_blocks_dict: DESCRIPTION, defaults to None 
         :type use_blocks_dict: Dictionary of blocks to use 
@@ -908,6 +951,9 @@ class Z3D2EDI(object):
         :rtype: TYPE
 
         """
+        self.station_z3d_dir = station_z3d_dir
+        self.rr_station_z3d_dir = rr_station_z3d_dir
+        
         kw_dict = {'block_dict': use_blocks_dict, 'notch_dict': notch_dict, 
                    'overwrite': overwrite, 'combine': combine, 
                    'combine_sampling_rate': combine_sampling_rate}
@@ -915,16 +961,24 @@ class Z3D2EDI(object):
         zc_obj = zc.Z3DCollection()
         station_df, station_csv = zc_obj.from_dir_to_mtts(station_z3d_dir,
                                                           **kw_dict)
-        if rr_z3d_dir is not None:
+        if self.rr_station_z3d_dir is not None:
             kw_dict['remote'] = True
-            if not isinstance(rr_z3d_dir, list):    
-                rr_z3d_dir = [rr_z3d_dir]
-            for rr_path in rr_z3d_dir:
+            if not isinstance(self.rr_station_z3d_dir, list):    
+                rr_z3d_dir = [self.rr_station_z3d_dir]
+            self.rr_station_ts_dir = []
+            for rr_path in self.rr_station_z3d_dir:
                 rr_df, rr_csv = zc_obj.from_dir_to_mtts(rr_path,**kw_dict)
                 station_df = station_df.append(rr_df)
-                
+                self.rr_station_ts_dir.append(Path(rr_path).joinpath('TS'))
         processing_csv = Path(station_z3d_dir).joinpath('processing_df.csv')
         station_df.to_csv(processing_csv)
+        
+        self.station_ts_dir = Path(station_z3d_dir).joinpath('TS')
+        
+        # write configuration file for edi, this should be deprecated later
+        self.survey_config.from_df(station_df)
+        self.survey_config.save_path = self.station_ts_dir
+        self.survey_config_fn = self.survey_config.write_survey_config_file()
                 
         return station_df, processing_csv
                 
@@ -1338,7 +1392,13 @@ class Z3D2EDI(object):
             birrp_fn_arr = np.array(birrp_arr_dict[df_key])
 
             # get station name
-            station = os.path.basename(birrp_fn_arr[0][0]['fn'])
+            try:
+                station = os.path.basename(birrp_fn_arr[0][0]['fn'])
+            except IndexError:
+                print(df_key)
+                print(birrp_fn_arr.shape)
+                print(birrp_fn_arr)
+                raise IndexError('Fuck!')
             station = os.path.splitext(station)[0]
             station = station.split('_')[0]
 
@@ -1539,14 +1599,17 @@ class Z3D2EDI(object):
 
 
         # make files into mtpy files
-        if 256 in self.df_list or 4096 in self.df_list or 1024 in self.df_list:
-            z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(notch_dict=notch_dict)
+        z3d_df, df_csv_fn = self.convert_z3d_to_mtts(self.station_z3d_dir,
+                                                     self.rr_station_z3d_dir,
+                                                     use_blocks_dict=use_blocks_dict)
+        # if 256 in self.df_list or 4096 in self.df_list or 1024 in self.df_list:
+        #     z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(notch_dict=notch_dict)
 
-        if 4 in self.df_list:
-            fn_list = combine_z3d_files(self.station_z3d_dir)
-            if self.rr_station_z3d_dir is not None:
-                for rr_dir in self.rr_station_z3d_dir:
-                    rr_fn_list = combine_z3d_files(rr_dir)
+        # if 4 in self.df_list:
+        #     fn_list = combine_z3d_files(self.station_z3d_dir)
+        #     if self.rr_station_z3d_dir is not None:
+        #         for rr_dir in self.rr_station_z3d_dir:
+        #             rr_fn_list = combine_z3d_files(rr_dir)
 
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn_from_dir(use_blocks_dict=use_blocks_dict)
@@ -1571,7 +1634,7 @@ class Z3D2EDI(object):
         et = time.time()
         print('--> Processing took {0:02.0f}:{1:02.0f} minutes'.format((et-st)//60, (et-st)%60))
 
-        return r_plot, comb_edi_fn
+        return r_plot, comb_edi_fn, 
 
     def combine_edi_files(self, edi_fn_list,
                           sr_dict={4096:(1000., 4),
