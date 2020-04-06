@@ -1397,13 +1397,7 @@ class Z3D2EDI(object):
             birrp_fn_arr = np.array(birrp_arr_dict[df_key])
 
             # get station name
-            try:
-                station = os.path.basename(birrp_fn_arr[0][0]['fn'])
-            except IndexError:
-                print(df_key)
-                print(birrp_fn_arr.shape)
-                print(birrp_fn_arr)
-                raise IndexError('Fuck!')
+            station = os.path.basename(birrp_fn_arr[0][0]['fn'])
             station = os.path.splitext(station)[0]
             station = station.split('_')[0]
 
@@ -1414,8 +1408,12 @@ class Z3D2EDI(object):
                 birrp_params_dict['nfft'] = 2**16
                 birrp_params_dict['nsctmax'] = 11
             if df_key == 4:
-                birrp_params_dict['nfft'] = 2**16
-                birrp_params_dict['nsctmax'] = 12
+                if birrp_fn_arr['nread'].sum(axis=0)[0] / 2**16 < 6: 
+                    birrp_params_dict['nfft'] = 2**15
+                    birrp_params_dict['nsctmax'] = 11
+                else:
+                    birrp_params_dict['nfft'] = 2**16
+                    birrp_params_dict['nsctmax'] = 12
 
             # make a script object passing on the desired birrp parameters
             birrp_script_obj = birrp.ScriptFile(**birrp_params_dict)
@@ -1726,7 +1724,7 @@ class Z3D2EDI(object):
         edi_obj.Tipper = new_t
         edi_obj.Data_sect.nfreq = new_z.z.shape[0]
 
-        n_edi_fn = Path.joinpath(self.station_ts_dir,
+        n_edi_fn = Path.joinpath(Path(self.station_ts_dir),
                                  '{0}_comb.edi'.format(Path(self.station_ts_dir).name))
         # n_edi_fn = os.path.join(self.station_z3d_dir,
         #                         '{0}_comb.edi'.format(os.path.basename(self.station_z3d_dir)))

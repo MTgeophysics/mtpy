@@ -1240,7 +1240,7 @@ class Zen3D(object):
         self.ts_obj.datum = 'WGS84'
         self.ts_obj.data_logger = self.header.data_logger
         self.ts_obj.elev = self.elev
-        self.ts_obj.instrument_id = int(self.coil_num)
+        self.ts_obj.instrument_id = self.coil_num
         self.ts_obj.calibration_fn = None
         self.ts_obj.declination = 0.0
         self.ts_obj.conversion = self._counts_to_mv_conversion
