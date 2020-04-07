@@ -1844,6 +1844,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 tmax = 1.0
                             if np.isnan(tmin):
                                 tmin = -1.0
+                            tmin = max([-1, tmin])
+                            tmax = min([1, tmax])
                             self.tipper_limits = (tmin - .1, tmax + .1)
                         else:
                             tmax = max([tyr.max(), tyi.max(), self.tipper_limits[1] - .1]) + .1
@@ -1852,6 +1854,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 tmax = 1.0
                             if np.isnan(tmin):
                                 tmin = -1.0
+                            tmin = max([-1, tmin])
+                            tmax = min([1, tmax])
                             self.tipper_limits = (tmin, tmax)
 
                         # --> plot real arrows

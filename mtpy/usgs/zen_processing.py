@@ -360,7 +360,8 @@ class SurveyConfig(object):
         :rtype: TYPE
 
         """
-        s_df = z3d_df[z3d_df.remote == False]
+        z3d_df.remote = z3d_df.remote.astype(str)
+        s_df = z3d_df[z3d_df.remote == 'False']
         
         self.b_xaxis_azimuth = s_df[s_df.component == 'hx'].azimuth.mode()[0]
         self.b_yaxis_azimuth = s_df[s_df.component == 'hy'].azimuth.mode()[0]
@@ -385,7 +386,7 @@ class SurveyConfig(object):
         self.station = s_df.station.mode()[0]
         self.station_type = 'mt'
 
-        rr_df = z3d_df[z3d_df.remote == True]
+        rr_df = z3d_df[z3d_df.remote == 'True']
         if len(rr_df) > 0:
             self.rr_lat = []
             self.rr_lon = []
@@ -1507,7 +1508,8 @@ class Z3D2EDI(object):
                     raise ValueError('No good .edi files where produced')
             resp_plot = plotnresponses.PlotMultipleResponses(fn_list=self.edi_fn,
                                                          plot_style='compare',
-                                                         plot_tipper='yri')
+                                                         plot_tipper='yri',
+                                                         tipper_limits=(-1, 1))
         elif type(self.edi_fn) is str:
             if os.path.getsize(self.edi_fn) < 3000:
                 raise ValueError('No good .edi files where produced')
@@ -1524,8 +1526,7 @@ class Z3D2EDI(object):
                               256:(3.99, .126),
                               16:(.125, .0001)},
                      use_blocks_dict={4096:'all', 256:'all', 16:'all'},
-                     birrp_param_dict={},
-                     **kwargs):
+                     birrp_param_dict={}, plot=True, **kwargs):
         """
         process_data is a convinience function that will process Z3D files
         and output an .edi file.  The workflow is to convert Z3D files to
@@ -1632,7 +1633,10 @@ class Z3D2EDI(object):
             self.edi_fn.append(comb_edi_fn)
 
         # plot the output
-        r_plot = self.plot_responses()
+        if plot:
+            r_plot = self.plot_responses()
+        else:
+            r_plot = None
 
         et = time.time()
         print('--> Processing took {0:02.0f}:{1:02.0f} minutes'.format((et-st)//60, (et-st)%60))
