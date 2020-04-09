@@ -329,19 +329,18 @@ class Z3DCollection(object):
                 # check to see if the file already exists
                 # need to skip looking for seconds because of GPS difference
                 fn_ascii = entry.fn_ascii
+                sv_date = entry.start.strftime('%Y%m%d')
+                sv_time = entry.start.strftime('%H%M')
+                station = self.z3d_path.name
+                sv_path = self.z3d_path.joinpath('TS')
                 if fn_ascii == 'None':
-                    station = self.z3d_path.name
-                    sv_path = self.z3d_path.joinpath('TS')
-                    sv_date = entry.start.strftime('%Y%m%d')
-                    sv_time = entry.start.strftime('%H%M')
                     fn_test = '{0}_{1}_{2}*'.format(station, sv_date, sv_time)
-                    sv_ext = '{0}.{1}'.format(entry.sampling_rate,
+                    sv_ext = '{0}.{1}'.format(int(entry.sampling_rate),
                                               entry.component.upper())
                     try:
                         fn_ascii = [p for p in sv_path.glob(fn_test)
                                     if sv_ext in p.name][0]
                     except IndexError:
-                        sv_time = entry.start.strftime('%H%M%S')
                         fn_ascii = sv_path.joinpath('{0}_{1}_{2}_{3}.{4}'.format(
                                                     station,
                                                     sv_date,
@@ -420,7 +419,7 @@ class Z3DCollection(object):
         else:
             comp_list = ['ex', 'ey', 'hx', 'hy', 'hz']
         for comp in comp_list:
-            cal_fn = z3d_df[z3d_df.component == 'hx'].cal_fn.mode()[0]
+            cal_fn = z3d_df[z3d_df.component == comp].cal_fn.mode()[0]
             # check to see if file exists check for upper and lower case
             suffix_list = ['.{0}'.format(cc) for cc in [comp.lower(),
                                                         comp.upper()]]
@@ -457,7 +456,7 @@ class Z3DCollection(object):
             # sort out files for the given component
             comp_df = z3d_df[z3d_df.component == comp].copy()
             if len(comp_df) == 0:
-                print('Warning: Skipping {0} because no Z3D files found.'.format(comp))
+                print('WARNING:  Skipping {0} because no Z3D files found.'.format(comp))
                 continue
 
             # sort the data frame by date
@@ -489,7 +488,7 @@ class Z3DCollection(object):
                 if row.component in ['ex', 'ey']:
                     t_obj.ts.data /= (row.dipole_length/1000)
                     t_obj.units = 'mV/km'
-                    print('Using scales {0} = {1} m'.format(row.component,
+                    print('INFO: Using scales {0} = {1} m'.format(row.component,
                                                             row.dipole_length))
                 # decimate to the required sampling rate
                 t_obj.decimate(int(z_obj.df/new_sampling_rate))
@@ -522,7 +521,7 @@ class Z3DCollection(object):
                     except TypeError:
                         setattr(new_ts, attr, attr_series.mode()[0])
                 except ValueError:
-                    print('Warning: could not set {0}'.format(attr))
+                    print('WARNING: could not set {0}'.format(attr))
 
             ascii_fn = '{0}_combined_{1}.{2}'.format(new_ts.station,
                                                      int(new_ts.sampling_rate),
@@ -585,8 +584,11 @@ class Z3DCollection(object):
         station = self.z3d_path.name
         csv_fn = self.z3d_path.joinpath('{0}_info.csv'.format(station))
 
-        kw_dict = {'block_dict': block_dict, 'notch_dict': notch_dict,
-                   'overwrite': overwrite, 'combine': combine, 'remote':remote,
+        kw_dict = {'notch_dict': notch_dict,
+                   'block_dict': block_dict,
+                   'overwrite': overwrite, 
+                   'combine': combine,
+                   'remote':remote,
                    'combine_sampling_rate': combine_sampling_rate}
 
         z3d_fn_list = self.get_z3d_fn_list()

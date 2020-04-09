@@ -28,7 +28,8 @@ import mtpy.core.ts as mtts
 try:
     import win32api
 except ImportError:
-    print("Cannot find win32api, will not be able to detect drive names")
+    print("WARNING: Cannot find win32api, will not be able to detect"+
+          " drive names")
 
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
@@ -219,7 +220,7 @@ class Z3DHeader(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print('no file to read')
+            print('WARNING: No file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(0)
@@ -377,7 +378,7 @@ class Z3DSchedule(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print(u'no file to read')
+            print('WARNING: No file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_len)
@@ -528,7 +529,7 @@ class Z3DMetadata(object):
             self.fid = fid
 
         if self.fn is None and self.fid is None:
-            print(u'no file to read')
+            print('WARNING: No file to read')
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_length+self._schedule_metadata_len)
@@ -655,7 +656,7 @@ class Z3DMetadata(object):
                 self.station = self.rx_stn
             except AttributeError:
                 self.station = None
-                print("Need to input station name")
+                print("WARNING: Need to input station name")
 
 #==============================================================================
 #
@@ -1201,7 +1202,7 @@ class Zen3D(object):
 
         # time it
         et = time.time()
-        print('--> Reading data took: {0:.3f} seconds'.format(et-st))
+        print('INFO: --> Reading data took: {0:.3f} seconds'.format(et-st))
 
     #=================================================
     def _fill_ts_obj(self, ts_data):
@@ -1327,7 +1328,7 @@ class Zen3D(object):
         if len(bad_times) > 0:
             print('-'*50)
             for bb in bad_times:
-                print('bad time at index {0} > 0.5 s'.format(bb))
+                print('WARNING: bad time at index {0} > 0.5 s'.format(bb))
 
     #===================================================
     def validate_time_blocks(self):
@@ -1344,9 +1345,9 @@ class Zen3D(object):
                 self.gps_stamps = self.gps_stamps[bad_blocks[-1]:]
                 self.time_series = self.time_series[ts_skip:]
 
-                print('{0}Skipped the first {1} seconds'.format(' '*4,
-                                                                bad_blocks[-1]))
-                print('{0}Skipped first {1} poins in time series'.format(' '*4,
+                print('WARNING: Skipped the first {0} seconds'.format(
+                    bad_blocks[-1]))
+                print('WARNING: Skipped first {0} poins in time series'.format(
                                                                       ts_skip))
 
     #==================================================
@@ -1531,7 +1532,7 @@ class Zen3D(object):
             self.read_all_info()
 
         if dec > 1:
-            print('Decimating data by factor of {0}'.format(dec))
+            print('INFO: Decimating data by factor of {0}'.format(dec))
             self.df = self.df/dec
 
         # make a new file name to save to that includes the meta information
@@ -1552,11 +1553,11 @@ class Zen3D(object):
             self.fn_mt_ascii = save_fn
         # if the file already exists skip it
         if os.path.isfile(self.fn_mt_ascii) == True:
-            print('   ************')
-            print('    mtpy file already exists for {0} --> {1}'.format(self.fn,
+            print('\t************')
+            print('\tmtpy file already exists for {0} --> {1}'.format(self.fn,
                                                                     self.fn_mt_ascii))
-            print('    skipping')
-            print('   ************')
+            print('\tskipping')
+            print('\t************')
             # if there is a decimation factor need to read in the time
             # series data to get the length.
             c = self.ts_obj.read_ascii_header(self.fn_mt_ascii)
@@ -1583,13 +1584,13 @@ class Zen3D(object):
         if self.component in ['ex', 'ey']:
             e_scale = float(self.dipole_len)
             self.ts_obj.ts.data /= e_scale/1000.
-            print('Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
+            print('INFO: Using scales {0} = {1} m'.format(self.metadata.ch_cmp.upper(),
                                                     e_scale))
             self.ts_obj.units = 'mV/km'
 
         self.ts_obj.write_ascii_file(fn_ascii=self.fn_mt_ascii)
 
-        print('Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii))
+        print('INFO: Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii))
 
     #==================================================
     def plot_time_series(self, fig_num=1):
@@ -2337,8 +2338,6 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
 
                     else:
                         pass
-                        #print(u'{0} '.format(full_path_fn)+\
-                        #       'not copied due to bad data.')
 #
                         log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
                                       'not copied due to bad data.\n\n')
