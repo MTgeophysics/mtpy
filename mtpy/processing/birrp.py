@@ -16,7 +16,6 @@ import subprocess
 import time
 from datetime import datetime
 
-
 import mtpy.core.z as mtz
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.filehandling as mtfh
@@ -24,7 +23,7 @@ import mtpy.utils.exceptions as mtex
 import mtpy.core.mt as mt
 
 #==============================================================================
-class BIRRP_Parameters(object):
+class BIRRPParameters(object):
     """
     class to hold and produce the appropriate parameters given the input
     parameters.
@@ -181,11 +180,11 @@ class BIRRP_Parameters(object):
             print('  --> setting uin to 0, if you don\'t want that change it back')
 
         if self.imode not in [0, 1, 2, 3]:
-            raise BIRRP_Parameter_Error('Invalid number for time series mode,'
+            raise BIRRPParameterError('Invalid number for time series mode,'
                                        'imode, {0}, should be 0, 1, 2, or 3'.format(self.imode))
 
         if self.jmode not in [0, 1]:
-            raise BIRRP_Parameter_Error('Invalid number for time mode,'
+            raise BIRRPParameterError('Invalid number for time mode,'
                                        'imode, {0}, should be 0, or 1'.format(self.imode))
         if self.ilev == 1:
             if self.nsctinc != 2:
@@ -207,7 +206,7 @@ class BIRRP_Parameters(object):
 
             if self.nprej != 0:
                 if self.prej is None or type(self.prej) is not list:
-                    raise BIRRP_Parameter_Error('Need to input a prejudice list if nprej != 0'+
+                    raise BIRRPParameterError('Need to input a prejudice list if nprej != 0'+
                                      '\nInput as a list of frequencies' )
 
             if self.nrr not in [0, 1]:
@@ -220,10 +219,10 @@ class BIRRP_Parameters(object):
 
             if self.c2threshe != 0 or self.c2threshb != 0:
                 if not self.perhi:
-                    raise BIRRP_Parameter_Error('Need to input a high period (s) threshold as perhi')
+                    raise BIRRPParameterError('Need to input a high period (s) threshold as perhi')
 
                 if not self.perlo:
-                    raise BIRRP_Parameter_Error('Need to input a low period (s) threshold as perlo')
+                    raise BIRRPParameterError('Need to input a low period (s) threshold as perlo')
 
         if len(self.thetae) != 3:
             print('Electric rotation angles not input properly {0}'.format(self.thetae))
@@ -276,16 +275,16 @@ class BIRRP_Parameters(object):
 #==============================================================================
 # Error classes
 #==============================================================================
-class BIRRP_Parameter_Error(Exception):
+class BIRRPParameterError(Exception):
     pass
 
-class Script_File_Error(Exception):
+class ScriptFileError(Exception):
     pass
 
 #==============================================================================
 # write script file
 #==============================================================================
-class ScriptFile(BIRRP_Parameters):
+class ScriptFile(BIRRPParameters):
     """
     class to read and write script file
 
@@ -307,6 +306,10 @@ class ScriptFile(BIRRP_Parameters):
         calibration_fn      calibration file path/name        string
         rr                  a remote reference channel        [ True | False ]
         rr_num              remote reference pair number      int
+        start               start time iso format             Timestamp
+        stop                stop time iso format              Timestamp
+        station             station name                      string
+        sampling_rate       sampling rate                     int
         =================== ================================= =================
 
 
@@ -393,15 +396,17 @@ class ScriptFile(BIRRP_Parameters):
         self._comp_list = None
         self.deltat = None
         
-        self._fn_dtype = np.dtype([('fn', 'S100'),
+        self._fn_dtype = np.dtype([('fn', 'U100'),
                                    ('nread', np.int),
                                    ('nskip', np.int),
-                                   ('comp', 'S2'),
-                                   ('calibration_fn', 'S100'),
+                                   ('comp', 'U2'),
+                                   ('calibration_fn', 'U100'),
                                    ('rr', np.bool),
                                    ('rr_num', np.int),
-                                   ('start_dt', 'S19'),
-                                   ('end_dt', 'S19')])
+                                   ('start', 'U19'),
+                                   ('stop', 'U19'),
+                                   ('sampling_rate', np.int),
+                                   ('station', 'U10')])
 
         if self.fn_arr is not None:
             self._validate_fn_arr()
@@ -415,18 +420,20 @@ class ScriptFile(BIRRP_Parameters):
         """
 
         if type(self.fn_arr[0]) is not np.ndarray:
-            raise Script_File_Error('Input fn_arr elements should be numpy arrays'
+            raise ScriptFileError('Input fn_arr elements should be numpy arrays'
                                     'with dtype {0}'.format(self._fn_dtype))
 
-        if self.fn_arr[0].dtype is not self._fn_dtype:
-            raise Script_File_Error('fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
+        names = list(self.fn_arr[0].dtype.names)
+        if 'index' in names:
+            names.remove('index')
+        if not sorted(names) == sorted(self._fn_dtype.names):
+            raise ScriptFileError('fn_arr.dtype needs to be {0}'.format(self._fn_dtype))
 
-        print(self.fn_arr)
 
     @property
     def nout(self):
         if self.fn_arr is not None:
-            self._nout = len(np.where(self.fn_arr[0]['rr']==False)[0])-2
+            self._nout = len(np.where(self.fn_arr[0]['rr'] == False)[0])-2
         else:
             print('fn_arr is None, set nout to 0')
             self._nout = 0
@@ -457,7 +464,7 @@ class ScriptFile(BIRRP_Parameters):
     
     @property
     def comp_list(self):
-        num_comp = self.ninp+self.nout
+        num_comp = self.ninp + self.nout
         if num_comp == 4:
             self._comp_list = ['ex', 'ey', 'hx', 'hy']
         elif num_comp == 5:

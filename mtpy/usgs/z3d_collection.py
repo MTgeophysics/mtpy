@@ -335,10 +335,11 @@ class Z3DCollection(object):
                     sv_date = entry.start.strftime('%Y%m%d')
                     sv_time = entry.start.strftime('%H%M')
                     fn_test = '{0}_{1}_{2}*'.format(station, sv_date, sv_time)
-                    sv_ext = '.{0}'.format(entry.component.upper())
+                    sv_ext = '{0}.{1}'.format(entry.sampling_rate,
+                                              entry.component.upper())
                     try:
                         fn_ascii = [p for p in sv_path.glob(fn_test)
-                                    if p.suffix == sv_ext][0]
+                                    if sv_ext in p.name][0]
                     except IndexError:
                         sv_time = entry.start.strftime('%H%M%S')
                         fn_ascii = sv_path.joinpath('{0}_{1}_{2}_{3}.{4}'.format(
