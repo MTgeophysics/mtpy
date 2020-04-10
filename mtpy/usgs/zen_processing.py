@@ -260,9 +260,9 @@ class Z3D2EDI(object):
         self._station_ts_dir = None
         self._rr_station_z3d_dir = None
         self._rr_station_ts_dir = None
-        
+
         self.station_z3d_dir = station_z3d_dir
-        
+
         self.survey_config = SurveyConfig(save_path=self.station_z3d_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
@@ -324,22 +324,22 @@ class Z3D2EDI(object):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-            
+
     @property
     def station_z3d_dir(self):
         return self._station_z3d_dir
-    
+
     @station_z3d_dir.setter
     def station_z3d_dir(self, station_z3d_dir):
         if station_z3d_dir in [None, 'None']:
             self._station_z3d_dir = None
         else:
             self._station_z3d_dir = Path(station_z3d_dir)
-            
+
     @property
     def rr_station_z3d_dir(self):
         return self._rr_station_z3d_dir
-    
+
     @rr_station_z3d_dir.setter
     def rr_station_z3d_dir(self, rr_station_z3d_dir):
         if rr_station_z3d_dir in [None, 'None']:
@@ -348,22 +348,29 @@ class Z3D2EDI(object):
             self._rr_station_z3d_dir = [Path(rr_station_z3d_dir)]
         elif isinstance(rr_station_z3d_dir, list):
             self._rr_station_z3d_dir = [Path(r) for r in rr_station_z3d_dir]
-            
+
     @property
     def station_ts_dir(self):
-        return self._station_ts_dir
-    
+        if self._station_ts_dir is None:
+            return self.station_z3d_dir.joinpath('TS')
+        else:
+            return self._station_ts_dir
+
     @station_ts_dir.setter
     def station_ts_dir(self, station_ts_dir):
         if station_ts_dir in [None, 'None']:
             self._station_ts_dir = None
         else:
             self._station_ts_dir = Path(station_ts_dir)
-            
+
     @property
     def rr_station_ts_dir(self):
-        return self._rr_station_ts_dir
-    
+        if self._rr_station_ts_dir is None and \
+            self._rr_station_z3d_dir is not None:
+            return [p.joinpath('TS') for p in self.rr_station_z3d_dir]
+        else:
+            return self._rr_station_ts_dir
+
     @rr_station_ts_dir.setter
     def rr_station_ts_dir(self, rr_station_ts_dir):
         if rr_station_ts_dir in [None, 'None']:
@@ -375,7 +382,12 @@ class Z3D2EDI(object):
 
     def get_calibrations(self, calibration_path):
         """
-        get coil calibrations
+        Get coil calibration file names from a given directory
+        
+        :param calibration_path: path to calibration files
+        :type calibration_path: string or Path
+        
+        :return: sets calibration_dict internally for use later
         """
         self.calibration_path = calibration_path
         if self.calibration_path is None:
@@ -400,30 +412,65 @@ class Z3D2EDI(object):
                             combine=True, notch_dict=None,
                             combine_sampling_rate=4, calibration_path=None):
         """
+        Convert Z3D files into MTTS objects and write ascii files for input
+        into BIRRP.  Will write a survey configuration file that can be read
+        in when making EDI files. Writes the DataFrame to a .csv file in the
+        Z3D directory.
 
-        :param station_z3d_dir: DESCRIPTION
-        :type station_z3d_dir: TYPE
+        :param station_z3d_dir: path to station z3d folder.  Will be
+                                converted to a Path object on setting.
+        :type station_z3d_dir: string or Path object
 
-        :param rr_station_z3d_dir: DESCRIPTION, defaults to None
-        :type rr_station_z3d_dir: TYPE, optional
+        :param rr_station_z3d_dir: path to remote station z3d folder.  Will be
+                                converted to a Path object on setting.
+        :type rr_station_z3d_dir: string or Path object, optional
 
-        :param use_blocks_dict: DESCRIPTION, defaults to None
-        :type use_blocks_dict: Dictionary of blocks to use
-                               ex. {4096:[0, 2], 256:[2, 3]}
-        :param overwrite: DESCRIPTION, defaults to False
-        :type overwrite: TYPE, optional
+        :param use_blocks_dict: Dictionary of blocks to use.  If None is input
+                                then will use all blocks. Keys are sampling
+                                rates, values are a list of block numbers
+                                --> {256:[0, 1, 3], 4:[0]}
+        :type use_blocks_dict: dictionary , optional
 
-        :param notch_dict: DESCRIPTION, defaults to None
+        :param overwrite: Overwrite existing ascii files, defaults to False
+        :type overwrite: [ True | False ], optional
+
+        :param combine: combine all Z3D files for each component into a single
+                        file samples at combine_sampling_rate.
+                        defaults to True
+        :type combine: [ True | False ], optional
+
+        :param notch_dict: dictionary of notches to filter out. Can be useful
+                           for data with 60 Hz. Keys are sampling rates,
+                           values are notch frequency and width. If an empty
+                           dictionary is entered 60 Hz and harmonics will be
+                           filtered out. defaults to None
         :type notch_dict: TYPE, optional
 
-        :param combine: DESCRIPTION, defaults to True
-        :type combine: TYPE, optional
+        :param combine_sampling_rate: sampling rate for combined file,
+                                      defaults to 4
+        :type combine_sampling_rate: int, optional
 
-        :param combine_sampling_rate: DESCRIPTION, defaults to 4
-        :type combine_sampling_rate: TYPE, optional
+        :param calibration_path: path to calibration files, defaults to None
+        :type calibration_path: string or Path, optional
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: dataframe containing information on Z3D files to be used
+                 later
+        :rtype: pandas.DataFrame
+
+        :return: path to csv file
+        :rtype: string
+
+        :Example: ::
+
+            >>> zp_obj = zp.Z3D2EDI()
+            >>> rr_z3d_station_dir = ['/home/mt02', '/home/mt03']
+            >>> use_blocks_dict = {4096: [0, 1, 2], 256: [1, 2], 4:[0]}
+            >>> notch_dict = {4096: {}, 256: None, 4: None}
+            >>> kw_dict = {'rr_station_z3d_dir': rr_station_z3d_dir,
+                           'use_blocks_dict': use_blocks_dict,
+                           'notch_dict': notch_dict}
+            >>> z3d_df, z3d_csv = zp_obj.convert_z3d_to_mtts(r"/home/mt01",
+                                                             **kw_dict)
 
         """
         if calibration_path is not None:
@@ -467,17 +514,22 @@ class Z3D2EDI(object):
 
     def make_block_entry(self, entry, nskip, nread, rr_num=0):
         """
-
-        :param entry: DESCRIPTION
-        :type entry: TYPE
-        :param nkip: DESCRIPTION
-        :type nkip: TYPE
-        :param nread: DESCRIPTION
-        :type nread: TYPE
-        :param rr_num: DESCRIPTION, defaults to 1
-        :type rr_num: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Make a block entry from a given entry and parameters
+        
+        :param entry: dataframe row entry 
+        :type entry: pandas.DataFrame
+        
+        :param nkip: number of points to skip
+        :type nkip: int
+        
+        :param nread: number of points to read
+        :type nread: int
+        
+        :param rr_num: remote reference number, defaults to 0
+        :type rr_num: int, optional
+        
+        :return: dictionary of the required values
+        :rtype: dictionary
 
         """
 
@@ -496,13 +548,21 @@ class Z3D2EDI(object):
 
     def compare_times(self, entry, start, stop):
         """
-
-        :param entry_01: DESCRIPTION
-        :type entry_01: TYPE
-        :param entry_02: DESCRIPTION
-        :type entry_02: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Compare start and stop time from a given row entry.  Calculates the
+        number of points to skip and read.
+        
+        :param entry: row entry from z3d DataFrame
+        :type entry: pandas.DataFrame
+        
+        :param start: maximum start time for a given block
+        :type start: pandas.Timestamp
+        
+        :param stop: minimum stop time for a given block
+        :type stop: pandas.Timestamp
+        
+        :return: dictionary that includes the number of points to skip, read
+                 and time difference at the beginning and end
+        :rtype: dictionary.
 
         """
 
@@ -531,11 +591,15 @@ class Z3D2EDI(object):
 
     def make_block_df(self, block_list):
         """
-
-        :param block_list: DESCRIPTION
-        :type block_list: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        convert a given block list into a DataFrame with the appropriate 
+        data types specifically for the start and stop.
+        
+        :param block_list: list of entries from make_block_entry for a given 
+                           schedule block
+        :type block_list: list
+        
+        :return: DataFrame with the appropriate data types
+        :rtype: pandas.DataFrame
 
         """
 
@@ -548,11 +612,14 @@ class Z3D2EDI(object):
 
     def align_block(self, block_df):
         """
-
-        :param block_df: DESCRIPTION
-        :type block_df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Align a given block DataFrame such that the start and stop times are
+        the same for each component.  Uses compare_times to align.
+        
+        :param block_df: block data frame from make_block_df
+        :type block_df: pandas.DataFrame
+        
+        :return: aligned data frame
+        :rtype: pandas.DataFrame
 
         """
 
@@ -570,13 +637,29 @@ class Z3D2EDI(object):
     def get_birrp_dict(self, df, df_list=[4096, 256, 4],
                        use_blocks_dict=None):
         """
-
-        :param station_df: DESCRIPTION
-        :type station_df: TYPE
-        :param remote_df: DESCRIPTION
-        :type remote_df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Make a dictionary that can be used to write script files for birrp.  
+        This will align each schedule block.
+        
+        :param df: z3d data frame 
+        :type df: pandas.DataFrame
+        
+        :param df_list: list of sampling rates to process,
+                        defaults to [4096, 256, 4]
+        :type df_list: list
+        
+        :param use_blocks_dict: dictionary of blocks to use for each sampling
+                                rate.  defaults to None which uses all blocks
+                                possible.
+        :type use_blocks_dict: dictionary
+        
+        :return: an array of rec arrays for each block
+        :rtype: dictionary{sampling_rate:numpy.recarray}
+        
+        :Example: ::
+            
+            >>> b_dict = zp_obj.get_birrp_dict(df, df_list=[256, 4], 
+                                               use_blocks_dict={256:[0, 2],
+                                                                '4':[0]})
 
         """
         zc_obj = zc.Z3DCollection()
@@ -660,7 +743,7 @@ class Z3D2EDI(object):
                     print('WARNING: reached maximum points to read' +
                           ' {0}. \nCutting last block to {1}.'.format(
                           self._max_nread, block_birrp_df.nread.mean()))
-                    
+
             birrp_dict[sr] = np.array([a_df.to_records(index=False) for a_df
                                        in sr_list])
 
@@ -669,7 +752,34 @@ class Z3D2EDI(object):
     def write_script_files(self, birrp_arr_dict, save_path=None,
                            birrp_params_dict={}, **kwargs):
         """
-        write script files in the new method
+        Write BIRRP script files for each sampling rate in the given
+        dictionary.  This will sort the appropriate parameters from the given
+        data. 
+        
+        :param birrp_arr_dict: dictionary with keys as sampling rates and 
+                               values as arrays of recarrays for each schedule
+                               block.
+        :type birrp_arr_dict: dictionary{sampling_rate:numpy.ndarray(
+                                                       numpy.recarray)}
+        
+        :param save_path: path to save script file, defaults to 
+                          station_ts_dir/BF/sampling_rate/station.script
+        :type save_path: string or Path
+        
+        :param birrp_params_dict: dictionary of birrp parameters, default is
+                                  an empty dictionary that will use default
+                                  parameters that work well in most cases.
+                                  
+        .. seealso:: mtpy.processing.birrp
+        
+        :return: list of script file paths
+        :rtype: list
+        
+        :Example: ::
+            
+            >>> sfn_list = zp_obj.write_script_files(birrp_dict, 
+                                                     birrp_params={'tbw':2})
+            
         """
 
         # make save path
@@ -731,6 +841,12 @@ class Z3D2EDI(object):
     def run_birrp(self, script_fn_list=None, birrp_exe=None):
         """
         run birrp given the specified files
+        
+        :param script_fn_list: list of script file paths
+        :type script_fn_list: list
+        
+        :param birrp_exe: path to BIRRP executable
+        :type birrp_exe: string
         """
 
         if script_fn_list is None:
@@ -760,12 +876,23 @@ class Z3D2EDI(object):
     def write_edi_file(self, birrp_output_path, survey_config_fn=None,
                        birrp_config_fn=None):
         """
-        write an edi file from outputs of birrp
+        Write an edi file from outputs of BIRRP
+        
+        :param birrp_output_path: full path to directory with BIRRP outputs
+        :type birrp_output_path: string
+        
+        :param survey_config_fn: path to survey configuration file
+        :type survey_config_fn: string
+        
+        :param birrp_config_fn: path to BIRRP configuration file
+        :type birrp_config_fn: string
+        
+        :return: path to edi file
+        :rtype: string
+        
         """
         if self.survey_config_fn is not None:
             self.survey_config_fn = survey_config_fn
-
-
 
         if self.survey_config_fn is None:
             ts_find = birrp_output_path.find('TS')
@@ -788,6 +915,21 @@ class Z3D2EDI(object):
     def plot_responses(self, edi_fn_list=None):
         """
         plot all the edi files that were created.
+        
+        :param edi_fn_list: list of EDI file paths to plot
+        :type edi_fn_list: list
+        
+        :return: plot object
+        :rtype: mtpy.imaging.plotnresponse.PlotMultipleResponses
+        
+        :Example: ::
+            
+            >>> rp = zp_obj.plot_responses(["/home/mt01/TS/BF/4096/mt01edi",
+                                            "/home/mt01/TS/BF/256/mt01.edi",
+                                            "/home/mt01/TS/BF/4/mt01.edi"])
+            >>> rp.tipper_limits = (-.5, .5)
+            >>> rp.res_limits = (.1, 1000)
+            >>> rp.redraw_plot()
         """
         if edi_fn_list is not None:
             self.edi_fn = edi_fn_list
@@ -824,66 +966,91 @@ class Z3D2EDI(object):
         MTpy ascii format, apply a notch filter if desired, decimate if
         desired.  Do the same for a remote reference if specified.  Make a
         BIRRP script file for each sampling rate, process data, take outputs
-        and write an edi file and plot resutl.  The whole process will take
+        and write an edi file and plot result.  The whole process will take
         a few minutes so be patient.
-        Arguments
-        ---------------
-            **df_list** : list of sampling rates
-                          list of sampling rates (int) to process, options are
-                          - 4096
-                          - 1024
-                          - 256
-                          - 16
-            **max_blocks** : int
-                            maximum number of blocks to process, this cannot
-                            exceed the number of blocks that BIRRP was
-                            compiled with.  *default* is 3
-            **notch_dict** : dict(sampling_rate: notches to filter)
-                            dictionary of notches to filter for each sampling
-                            rate.  Keys are sampling rates (int) and values
-                            are dictionary of notches to filter
-                            ex. {4096:{60, 120, 180}} to filter out 60 Hz noise
-                            *default* is {} which filters out 60 Hz noise and
-                            harmonics.
-            **sr_dict** : dict(sampling_rate: (max_freq, max_freq))
-                          dictionary of min and max frequencies to use for
-                          each sampling rate when making an .edi file.  The
-                          defaults usually work well, but check the plot
-                          to see if there is a better frequency range for
-                          each sampling rate.
-                          *default* is
-                              {4096:(1000., 4),
-                              1024:(3.99, 1.),
-                              256:(3.99, .126),
-                              16:(.125, .0001)}
-            **use_blocks_dict** : dict(sampling_rate: list of blocks to use)
-                                  dictionary with sampling rate as keys and
-                                  list of which blocks to use as values
-                                  ex. {4096: [0, 2]} to skip the second block
-                                  use value 'all' to use all blocks
-                                  *default* is
-                                      {4096:'all', 256:'all', 16:'all'}
-            **birrp_param_dict** : dict(birrp_param: value)
-                                   dictionary of birrp parameters where the
-                                   key is the birrp parameter and value is
-                                   what you want that parameter to be.  See
-                                   mtpy.processing.birrp.write_script_file
-                                   or the BIRRP manual for details on birrp
-                                   parameters
-                                   ex. {'nar':5}
-                                   *default* is {}
-        Returns
-        -------------
-            **plot_obj** : plot_response object
-            **comb_edi_fn** : string
-                              full path to combined edi file
+        
+        :param df_fn: path to existing dataframe that was used for processing
+                      useful if changing parameters to a previously processed
+                      station.  
+        :type df_fn: string
+        
+        :param df_list: list of sampling rates
+        :type df_list: list, defaults to [4096, 256, 4]
+        
+        :param notch_dict: dict(sampling_rate: notches to filter)
+                           dictionary of notches to filter for each sampling
+                           rate.  Keys are sampling rates (int) and values
+                           are dictionary of notches to filter
+                           ex. {4096:{60, 120, 180}} to filter out 60 Hz noise
+                           *default* is {} which filters out 60 Hz noise and
+                           harmonics.
+        :type notch_dict: dictionary
+                           
+        :param sr_dict: dict(sampling_rate: (max_freq, max_freq))
+                        dictionary of min and max frequencies to use for
+                        each sampling rate when making an .edi file.  The
+                        defaults usually work well, but check the plot
+                        to see if there is a better frequency range for
+                        each sampling rate.
+                        *default* is
+                          {4096:(1000., 4),
+                          1024:(3.99, 1.),
+                          256:(3.99, .126),
+                          16:(.125, .0001)}
+        :type sr_dict: dictionary
+                          
+        :param use_blocks_dict: dict(sampling_rate: list of blocks to use)
+                               dictionary with sampling rate as keys and
+                               list of which blocks to use as values
+                               ex. {4096: [0, 2]} to skip the second block
+                               use value 'all' to use all blocks
+                               *default* is None which will use all blocks
+        :type use_blocks_dict: dictionary
+                               
+        :param birrp_param_dict: dict(birrp_param: value)
+                                 dictionary of birrp parameters where the
+                                 key is the birrp parameter and value is
+                                 what you want that parameter to be.  See
+                                 mtpy.processing.birrp.write_script_file
+                                 or the BIRRP manual for details on birrp
+                                 parameters
+                                 ex. {'nar':5}
+                                 *default* is {}
+        :type birrp_param_dict: dictionary
+
+        :return: plot_response object
+        :rtype: mtpy.imaging.plotnresponse.PlotMultipleResponses
+        
+        :return: full path to combined EDI file
+        :rtype: string
+        
+        :return: processing dataframe
+        :rtype: pandas.DataFrame
+        
+        :Example: ::
+            
+            >>> b_param_dict = {'ilev': ilev,
+                                'c2threshb': .35,
+                                'c2threshe': .35,
+                                'c2thresh1': .35,
+                                'ainuin': .95,
+                                'ainlin': .05,
+                                'nar': 11,
+                                'tbw': 2}
+            >>> zp_obj = zp.Z3D2EDI(station_z3d_dir='/home/mt01')
+            >>> zp_obj.rr_station_z3d_dir = ['/home/mt02',  '/home/mt03']
+            >>> zp_obj.birrp_exe = '/home/bin/birrp52.exe'
+            >>> zp_obj.calibration_path = '/home/mt/calibrations'
+            >>> plot_obj, comb_edi_fn, zdf = zp_obj.process_data(
+                                                 birrp_param_dict=b_param_dict)
+            
         """
         if df_list is not None:
             self.df_list = df_list
 
         # get start time
         st = datetime.datetime.now()
-        
+
         # make files into mtpy files
         if df_fn is not None:
             zc_obj = zc.Z3DCollection()
@@ -934,8 +1101,27 @@ class Z3D2EDI(object):
                                    4:(.125, .00001)}):
         """
         combine the different edi files that are computed for each sampling
-        rate.
-        for now just a simple cutoff
+        rate. For now just a simple cutoff
+        
+        :param edi_fn_list: list of EDI files to combine
+        :dtype edi_fn_list: list
+        
+        :param sr_dict: dictionary of frequency limits for each sampling rate
+                        {4096:(1000., 4), 256:(3.99, .126), 4:(.125, .00001)}
+        :dtype sr_dict: dictionary
+        
+        :return: full path to combined edi file
+        :rtype: string
+        
+        :example: ::
+            
+            >>> zp_obj.combine_edi_files(["/home/mt01/TS/BF/4096/mt01edi",
+                                          "/home/mt01/TS/BF/256/mt01.edi",
+                                          "/home/mt01/TS/BF/4/mt01.edi"],
+                                         sr_dict={4096:(1000., 50), 
+                                                  256:(49.99, .0625),
+                                                  4:(.0624, .00001)})
+            
         """
 
         if isinstance(edi_fn_list, str):
@@ -1107,7 +1293,7 @@ def get_remote_reference_schedule(survey_path, plot=True):
         for k_index, key in enumerate(sorted(date_dict.keys())):
             y_labels.append(key)
             for ii, k_arr in enumerate(date_dict[key]):
-                x_date_0 = datetime.datetime.strptime(k_arr['start_dt'], 
+                x_date_0 = datetime.datetime.strptime(k_arr['start_dt'],
                                                       datetime_fmt)
                 try:
                     x_date_1 = datetime.datetime.strptime(date_dict[key]['start_dt'][ii+1],
@@ -1269,133 +1455,3 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     log_fid.close()
 
     return rp
-
-def get_z3d_info(z3d_path):
-    """
-    get information on z3d files
-    """
-    if not isinstance(z3d_path, Path):
-        z3d_path = Path(z3d_path)
-    ### need to get all the files for one channel
-    fn_dict = dict([(key, []) for key in ['ex', 'ey', 'hx', 'hy', 'hz']])
-    ### get all z3d files within a given folder, will look through recursively
-    fn_list = [fn_path for fn_path in z3d_path.rglob('*')
-               if fn_path.suffix in ['.z3d', '.Z3D']]
-    ### loop over files, read just the metadata and get important information
-    for fn in fn_list:
-        z_obj = zen.Zen3D(fn)
-        z_obj.read_all_info()
-        fn_dict[z_obj.component].append({'start':z_obj.zen_schedule.isoformat(),
-                                         'df':z_obj.df,
-                                         'fn':z_obj.fn})
-
-    return fn_dict
-
-def combine_z3d_files(z3d_path, new_sampling_rate=4, t_buffer=8*3600):
-    """
-    Combine all z3d files for a given station and given component for
-    processing and getting the long period estimations.
-
-    :param str z3d_path: full path to z3d files
-    :param str component: component to combine
-    :param int new_sampling_rate: new sampling rate of the data
-    :param int t_buffer: buffer for the last time series, should be length
-                         of longest schedule chunk
-    """
-    st = datetime.datetime.now()
-    attr_list = ['station', 'channel_number', 'component', 'coordinate_system',
-                 'dipole_length', 'azimuth', 'units', 'lat', 'lon', 'elev',
-                 'datum', 'data_logger', 'instrument_id', 'calibration_fn',
-                 'declination',  'fn', 'conversion', 'gain']
-
-    fn_df = get_z3d_info(z3d_path)
-    sv_path = Path.joinpath(Path(z3d_path), 'TS')
-    if not sv_path.exists():
-        sv_path.mkdir()
-
-    return_fn_list = []
-    for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
-        if len(list(sv_path.glob('*combined_4.{0}'.format(comp)))) == 1:
-            comp_fn = list(sv_path.glob('*combined_4.{0}'.format(comp)))[0]
-            print('INFO: skipping {0} already exists'.format(comp_fn))
-            return_fn_list.append(comp_fn)
-            continue
-        if len(fn_df[comp]) == 0:
-            print('WARNING: Skipping {0} because no Z3D files found.'.format(comp))
-            continue
-        comp_df = pd.DataFrame(fn_df[comp])
-        ### sort the data frame by date
-        comp_df = comp_df.sort_values('start')
-
-        ### get start date and end at last start date, get time difference
-        start_dt = datetime.datetime.fromisoformat(comp_df.start.min())
-        end_dt = datetime.datetime.fromisoformat(comp_df.start.max())
-        t_diff = (end_dt - start_dt).total_seconds()
-
-        ### make a new MTTS object that will have a length that is buffered
-        ### at the end to make sure there is room for the data, will trimmed
-        new_ts = mtts.MTTS()
-        new_ts.ts = np.zeros(int((t_diff + t_buffer) * new_sampling_rate))
-        new_ts.sampling_rate = new_sampling_rate
-        new_ts.start_time_utc = start_dt
-
-        ### make an attribute dictionary that can be used to fill in the new
-        ### MTTS object
-        attr_dict = dict([(key, []) for key in attr_list])
-        ### loop over each z3d file for the given component
-        for index, row in comp_df.iterrows():
-            z_obj = zen.Zen3D(row['fn'])
-            z_obj.read_z3d()
-            t_obj = z_obj.ts_obj
-            if t_obj.component in ['ex', 'ey']:
-                t_obj.ts.data /= (t_obj.dipole_length/1000)
-                t_obj.units = 'mV/km'
-                print('INFO: Using scales {0} = {1} m'.format(t_obj.component,
-                                                        t_obj.dipole_length))
-            ### decimate to the required sampling rate
-            t_obj.decimate(int(z_obj.df/new_sampling_rate))
-            ### fill the new time series with the data at the appropriate times
-            new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) &
-                            (new_ts.ts.index <= t_obj.ts.index[-1])] = t_obj.ts.data
-            ### get the end date as the last z3d file
-            end_date = z_obj.ts_obj.ts.index[-1]
-            ### fill attribute data frame
-            for attr in attr_list:
-                attr_dict[attr].append(getattr(t_obj, attr))
-
-        ### need to trim the data
-        new_ts.ts = new_ts.ts.data[(new_ts.ts.index >= start_dt) &
-                                   (new_ts.ts.index <= end_date)].to_frame()
-
-        ### fill gaps with forwards or backwards values, this seems to work
-        ### better than interpolation and is faster than regression.
-        ### The gaps should be max 13 seconds if everything went well
-        new_ts.ts.data[new_ts.ts.data == 0] = np.nan
-        new_ts.ts.data.fillna(method='ffill', inplace=True)
-
-        ### fill the new MTTS with the appropriate metadata
-        attr_df = pd.DataFrame(attr_dict)
-        for attr in attr_list:
-            try:
-                attr_series = attr_df[attr][attr_df[attr] != 0]
-                try:
-                    setattr(new_ts, attr, attr_series.median())
-                except TypeError:
-                    setattr(new_ts, attr, attr_series.mode()[0])
-            except ValueError:
-                print('WARNING:  could not set {0}'.format(attr))
-
-
-        ascii_fn = '{0}_combined_{1}.{2}'.format(new_ts.station,
-                                                 int(new_ts.sampling_rate),
-                                                 new_ts.component)
-
-        sv_fn_ascii = sv_path.joinpath(ascii_fn)
-        new_ts.write_ascii_file(sv_fn_ascii.as_posix())
-
-        return_fn_list.append(sv_fn_ascii)
-
-    et = datetime.datetime.now()
-    compute_time = (et - st).total_seconds()
-    print('INFO: Combining took {0:.2f} seconds'.format(compute_time))
-    return return_fn_list
