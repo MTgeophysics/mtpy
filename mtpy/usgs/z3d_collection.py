@@ -419,6 +419,9 @@ class Z3DCollection(object):
         else:
             comp_list = ['ex', 'ey', 'hx', 'hy', 'hz']
         for comp in comp_list:
+            # sometimes there is no HZ and skip
+            if not comp in list(z3d_df.component.unique()):
+                continue
             cal_fn = z3d_df[z3d_df.component == comp].cal_fn.mode()[0]
             # check to see if file exists check for upper and lower case
             suffix_list = ['.{0}'.format(cc) for cc in [comp.lower(),
