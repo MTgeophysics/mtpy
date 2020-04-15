@@ -355,7 +355,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # end if
 
     for ii in range(lat.size):
-        point = ll2utm(lon[ii], lat[ii])
+        point = ll2utm(lat[ii], lon[ii])
         projected_point['easting'][ii] = point[0]
         projected_point['northing'][ii] = point[1]
         if(HAS_GDAL): projected_point['elev'][ii] = point[2]
@@ -462,7 +462,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     # end if
 
     # be sure to round out the numbers to remove computing with floats
-    return round(ll_point[1], 6), round(ll_point[0], 6)
+    return round(ll_point[0], 6), round(ll_point[1], 6)
 
 
 def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
@@ -576,11 +576,11 @@ def project_points_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     
     if HAS_GDAL:
         ll2utm = osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoints
-        easting, northing, elev = np.array(ll2utm(np.array([lon, lat]).T)).T
+        easting, northing, elev = np.array(ll2utm(np.array([lat, lon]).T)).T
 
     else:
         ll2utm = pp
-        easting, northing = ll2utm(lon, lat)
+        easting, northing = ll2utm(lat, lon)
     # end if
 
     projected_point = (easting, northing, utm_zone)

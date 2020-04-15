@@ -1534,7 +1534,7 @@ class Data(object):
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elev = self.center_point.elev+dd[6]
+                data_dict[dd[1]].elev = self.center_point.elev + dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values
@@ -1719,8 +1719,7 @@ class Data(object):
             self.data_array[s_index]['rel_east'] = mid_east
             self.data_array[s_index]['rel_north'] = mid_north
 
-    def change_data_elevation(self, model_obj, data_fn=None,
-                              res_air=1e12):
+    def change_data_elevation(self, model_obj, data_fn=None, res_air=1e12):
         """
         At each station in the data file rewrite the elevation, so the station is
         on the surface, not floating in air.

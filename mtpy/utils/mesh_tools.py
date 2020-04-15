@@ -153,11 +153,13 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
 
     if(fast):
         buffer = 1  # use a buffer of 1 degree around mesh-bounds
-        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(), grid_north.min(),
+        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(),
+                                                          grid_north.min(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
-        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), grid_north.max(),
+        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), 
+                                                          grid_north.max(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
@@ -170,7 +172,8 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
         elev = elev[subsetIndices]
 
     # end if
-    xs, ys, _ = gis_tools.project_points_ll2utm(y, x, epsg=epsg, utm_zone=utm_zone)
+    xs, ys, _ = gis_tools.project_points_ll2utm(y, x, epsg=epsg,
+                                                utm_zone=utm_zone)
     # elevation in model grid
     # first, get lat,lon points of surface grid
     points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
@@ -202,7 +205,8 @@ def get_nearest_index(array, value):
     
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
+def make_log_increasing_array(z1_layer, target_depth, n_layers, 
+                              increment_factor=0.9):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
