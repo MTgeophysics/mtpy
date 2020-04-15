@@ -73,7 +73,7 @@ class Z3DCollection(object):
                            'stop': 'stop',
                            'sampling_rate': 'df',
                            'component': 'component',
-                           'fn_z3d':'fn',
+                           'fn_z3d': 'fn',
                            'azimuth': 'azimuth',
                            'dipole_length': 'dipole_len',
                            'coil_number': 'coil_num',
@@ -193,6 +193,9 @@ class Z3DCollection(object):
             >>> z3d_df.to_csv(r"/home/z3d_files/z3d_info.csv")
 
         """
+        if len(z3d_fn_list) < 1:
+            raise ValueError('No Z3D files found')
+
         cal_dict = self.get_calibrations(calibration_path)
         z3d_info_list = []
         for z3d_fn in z3d_fn_list:
@@ -589,9 +592,9 @@ class Z3DCollection(object):
 
         kw_dict = {'notch_dict': notch_dict,
                    'block_dict': block_dict,
-                   'overwrite': overwrite, 
+                   'overwrite': overwrite,
                    'combine': combine,
-                   'remote':remote,
+                   'remote': remote,
                    'combine_sampling_rate': combine_sampling_rate}
 
         z3d_fn_list = self.get_z3d_fn_list()
@@ -601,3 +604,107 @@ class Z3DCollection(object):
         z3d_df.to_csv(csv_fn)
 
         return z3d_df, csv_fn
+
+    def summarize_survey(self, survey_path, calibration_path=None):
+        """
+
+        :param survey_path: DESCRIPTION
+        :type survey_path: TYPE
+        :param calibration_path: DESCRIPTION, defaults to None
+        :type calibration_path: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not isinstance(survey_path, Path):
+            survey_path = Path(survey_path)
+
+        df_list = []
+
+        for station in survey_path.glob('*'):
+            station_path = survey_path.joinpath(station)
+            if not station_path.exists():
+                continue
+            if not station_path.is_dir():
+                continue
+
+            z3d_fn_list = self.get_z3d_fn_list(station_path)
+            if len(z3d_fn_list) < 1:
+                print('WARNING: Skipping directory {0}'.format(station_path))
+                print('REASON: No Z3D files found')
+                continue
+            df_list.append(self.get_z3d_info(z3d_fn_list,
+                                             calibration_path=calibration_path))
+
+        survey_df = pd.concat(df_list)
+        
+        info_df = self.locate_remote_reference_blocks(survey_df)
+        loop_df = self.make_processing_loop_df(info_df)
+        
+        return survey_df, info_df, loop_df
+    
+    def locate_remote_reference_blocks(self, survey_df):
+        """
+        
+        :param survey_df: DESCRIPTION
+        :type survey_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_df['start'] = pd.to_datetime(survey_df.start)
+        
+        info_list = []
+        for station in survey_df.station.unique():
+            station_df = survey_df[survey_df.station == station]
+            for sr in station_df.sampling_rate.unique():
+                sr_df = station_df[station_df.sampling_rate == sr]
+                for start in sr_df.start.unique():
+                    block = int(sr_df[sr_df.start == start].block.median())
+                    s_dict = {'station':station,
+                              'sampling_rate': sr,
+                              'block': block,
+                              'start': start}
+                    
+                    s1 = start - pd.Timedelta(self._tol_dict[sr]['s_diff'])
+                    s2 = start + pd.Timedelta(self._tol_dict[sr]['s_diff'])
+                    rr_df = survey_df[(survey_df.start >= s1) & 
+                                      (survey_df.start <= s2) & 
+                                      (survey_df.station != station)]
+                    s_dict['rr_station'] = rr_df.station.unique().tolist()
+                    info_list.append(s_dict)
+                    
+        return pd.DataFrame(info_list)
+    
+    def make_processing_loop_df(self, info_df):
+        """
+        
+        :param info_df: DESCRIPTION
+        :type info_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        info_df.rr_station = info_df.rr_station.astype(str)
+
+        processing_list = []
+        for station in info_df.station.unique():
+            station_df = info_df[info_df.station == station]
+            rr_list = station_df.rr_station.mode()[0]
+            station_entry = {'station':station,
+                             'rr_station': rr_list,
+                             'block_4096': None,
+                             'block_256': None,
+                             'block_4':[0]}
+            
+            for sr in station_df.sampling_rate.unique():
+                sr_df = station_df[(station_df.sampling_rate == sr) & 
+                                   (station_df.rr_station == rr_list)]
+                
+                station_entry['block_{0:.0f}'.format(sr)] = sr_df.block.unique().tolist()
+                
+            processing_list.append(station_entry)
+            
+        return pd.DataFrame(processing_list)

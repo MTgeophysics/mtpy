@@ -282,7 +282,7 @@ class Z3D2EDI(object):
                                       'min_points': 2**18},
                                256: {'s_diff': 3 * 3600 * 256,
                                      'min_points': 2**19},
-                               4: {'s_diff': 3 * 3600 * 4,
+                               4: {'s_diff': 4 * 3600 * 4,
                                    'min_points': 2**14}}
 
         # data types for different aspects of getting information
@@ -386,10 +386,10 @@ class Z3D2EDI(object):
     def get_calibrations(self, calibration_path):
         """
         Get coil calibration file names from a given directory
-        
+
         :param calibration_path: path to calibration files
         :type calibration_path: string or Path
-        
+
         :return: sets calibration_dict internally for use later
         """
         self.calibration_path = calibration_path
@@ -518,19 +518,19 @@ class Z3D2EDI(object):
     def make_block_entry(self, entry, nskip, nread, rr_num=0):
         """
         Make a block entry from a given entry and parameters
-        
-        :param entry: dataframe row entry 
+
+        :param entry: dataframe row entry
         :type entry: pandas.DataFrame
-        
+
         :param nkip: number of points to skip
         :type nkip: int
-        
+
         :param nread: number of points to read
         :type nread: int
-        
+
         :param rr_num: remote reference number, defaults to 0
         :type rr_num: int, optional
-        
+
         :return: dictionary of the required values
         :rtype: dictionary
 
@@ -553,16 +553,16 @@ class Z3D2EDI(object):
         """
         Compare start and stop time from a given row entry.  Calculates the
         number of points to skip and read.
-        
+
         :param entry: row entry from z3d DataFrame
         :type entry: pandas.DataFrame
-        
+
         :param start: maximum start time for a given block
         :type start: pandas.Timestamp
-        
+
         :param stop: minimum stop time for a given block
         :type stop: pandas.Timestamp
-        
+
         :return: dictionary that includes the number of points to skip, read
                  and time difference at the beginning and end
         :rtype: dictionary.
@@ -594,13 +594,13 @@ class Z3D2EDI(object):
 
     def make_block_df(self, block_list):
         """
-        convert a given block list into a DataFrame with the appropriate 
+        convert a given block list into a DataFrame with the appropriate
         data types specifically for the start and stop.
-        
-        :param block_list: list of entries from make_block_entry for a given 
+
+        :param block_list: list of entries from make_block_entry for a given
                            schedule block
         :type block_list: list
-        
+
         :return: DataFrame with the appropriate data types
         :rtype: pandas.DataFrame
 
@@ -617,10 +617,10 @@ class Z3D2EDI(object):
         """
         Align a given block DataFrame such that the start and stop times are
         the same for each component.  Uses compare_times to align.
-        
+
         :param block_df: block data frame from make_block_df
         :type block_df: pandas.DataFrame
-        
+
         :return: aligned data frame
         :rtype: pandas.DataFrame
 
@@ -640,27 +640,27 @@ class Z3D2EDI(object):
     def get_birrp_dict(self, df, df_list=[4096, 256, 4],
                        use_blocks_dict=None):
         """
-        Make a dictionary that can be used to write script files for birrp.  
+        Make a dictionary that can be used to write script files for birrp.
         This will align each schedule block.
-        
-        :param df: z3d data frame 
+
+        :param df: z3d data frame
         :type df: pandas.DataFrame
-        
+
         :param df_list: list of sampling rates to process,
                         defaults to [4096, 256, 4]
         :type df_list: list
-        
+
         :param use_blocks_dict: dictionary of blocks to use for each sampling
                                 rate.  defaults to None which uses all blocks
                                 possible.
         :type use_blocks_dict: dictionary
-        
+
         :return: an array of rec arrays for each block
         :rtype: dictionary{sampling_rate:numpy.recarray}
-        
+
         :Example: ::
-            
-            >>> b_dict = zp_obj.get_birrp_dict(df, df_list=[256, 4], 
+
+            >>> b_dict = zp_obj.get_birrp_dict(df, df_list=[256, 4],
                                                use_blocks_dict={256:[0, 2],
                                                                 '4':[0]})
 
@@ -675,6 +675,7 @@ class Z3D2EDI(object):
             sr_list = []
             sr_df = df[(df.sampling_rate == sr) & (df.remote == 'False')]
             rr_df = df[(df.sampling_rate == sr) & (df.remote == 'True')]
+
             rr_stations = dict([(rr, ii) for ii, rr in
                                 enumerate(rr_df.station.unique())])
 
@@ -712,10 +713,12 @@ class Z3D2EDI(object):
                 rr_block_list = []
                 for rr_entry in rr_df.itertuples():
                     if rr_entry.start > stop:
+                        print('INFO: Skipping {0} starts after station'.format(
+                              rr_entry.station))
                         continue
                     t_diff = abs((rr_entry.start - start).total_seconds()) * sr
                     # check to see if the difference is within given tolerance
-                    if t_diff < self._tol_dict[sr]['s_diff']:
+                    if t_diff <= self._tol_dict[sr]['s_diff']:
                         # check number of samples
                         rr_samples = rr_entry.n_samples - t_diff
                         if rr_samples < self._tol_dict[sr]['min_points']:
@@ -730,7 +733,7 @@ class Z3D2EDI(object):
                                                  0,
                                                  rr_entry.n_samples,
                                                  rr_stations[rr_entry.station]))
-
+                            
                 # check to make sure there are remote references
                 if len(rr_block_list) > 1:
                     rr_block_birrp_df = self.make_block_df(rr_block_list)
@@ -757,32 +760,32 @@ class Z3D2EDI(object):
         """
         Write BIRRP script files for each sampling rate in the given
         dictionary.  This will sort the appropriate parameters from the given
-        data. 
-        
-        :param birrp_arr_dict: dictionary with keys as sampling rates and 
+        data.
+
+        :param birrp_arr_dict: dictionary with keys as sampling rates and
                                values as arrays of recarrays for each schedule
                                block.
         :type birrp_arr_dict: dictionary{sampling_rate:numpy.ndarray(
                                                        numpy.recarray)}
-        
-        :param save_path: path to save script file, defaults to 
+
+        :param save_path: path to save script file, defaults to
                           station_ts_dir/BF/sampling_rate/station.script
         :type save_path: string or Path
-        
+
         :param birrp_params_dict: dictionary of birrp parameters, default is
                                   an empty dictionary that will use default
                                   parameters that work well in most cases.
-                                  
+
         .. seealso:: mtpy.processing.birrp
-        
+
         :return: list of script file paths
         :rtype: list
-        
+
         :Example: ::
-            
-            >>> sfn_list = zp_obj.write_script_files(birrp_dict, 
+
+            >>> sfn_list = zp_obj.write_script_files(birrp_dict,
                                                      birrp_params={'tbw':2})
-            
+
         """
 
         # make save path
@@ -844,10 +847,10 @@ class Z3D2EDI(object):
     def run_birrp(self, script_fn_list=None, birrp_exe=None):
         """
         run birrp given the specified files
-        
+
         :param script_fn_list: list of script file paths
         :type script_fn_list: list
-        
+
         :param birrp_exe: path to BIRRP executable
         :type birrp_exe: string
         """
@@ -862,14 +865,20 @@ class Z3D2EDI(object):
         if type(script_fn_list) is list:
             self.edi_fn = []
             for script_fn in script_fn_list:
-                birrp.run(self.birrp_exe, script_fn)
+                out_str = birrp.run(self.birrp_exe, script_fn)
+                print('INFO: BIRRP Processing \n {0}'.format(out_str))
 
                 output_path = os.path.dirname(script_fn)
-                self.edi_fn.append(self.write_edi_file(output_path,
-                                   survey_config_fn=self.survey_config_fn,
-                                   birrp_config_fn=self.birrp_config_fn))
+                try:
+                    self.edi_fn.append(self.write_edi_file(output_path,
+                                       survey_config_fn=self.survey_config_fn,
+                                       birrp_config_fn=self.birrp_config_fn))
+                except Exception as error:
+                    print('ERROR: {0} did not run properly'.format(script_fn))
+                    print('ERROR: {0}'.format(error))
+
         elif type(script_fn_list) is str:
-            birrp.run(self.birrp_exe, script_fn_list)
+            out_str = birrp.run(self.birrp_exe, script_fn_list)
 
             output_path = os.path.dirname(script_fn_list)
             self.edi_fn = self.write_edi_file(output_path,
@@ -880,19 +889,19 @@ class Z3D2EDI(object):
                        birrp_config_fn=None):
         """
         Write an edi file from outputs of BIRRP
-        
+
         :param birrp_output_path: full path to directory with BIRRP outputs
         :type birrp_output_path: string
-        
+
         :param survey_config_fn: path to survey configuration file
         :type survey_config_fn: string
-        
+
         :param birrp_config_fn: path to BIRRP configuration file
         :type birrp_config_fn: string
-        
+
         :return: path to edi file
         :rtype: string
-        
+
         """
         if self.survey_config_fn is not None:
             self.survey_config_fn = survey_config_fn
@@ -904,7 +913,9 @@ class Z3D2EDI(object):
                 for fn in os.listdir(ts_dir):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
-                        self.survey_config.read_survey_config_file()
+                        self.survey_config.read_survey_config_file(
+                            self.survey_config_fn, 
+                            self.station_z3d_dir.name)
 
         j2edi_obj = birrp.J2Edi(station=self.survey_config.station,
                                 survey_config_fn=self.survey_config_fn,
@@ -918,15 +929,15 @@ class Z3D2EDI(object):
     def plot_responses(self, edi_fn_list=None):
         """
         plot all the edi files that were created.
-        
+
         :param edi_fn_list: list of EDI file paths to plot
         :type edi_fn_list: list
-        
+
         :return: plot object
         :rtype: mtpy.imaging.plotnresponse.PlotMultipleResponses
-        
+
         :Example: ::
-            
+
             >>> rp = zp_obj.plot_responses(["/home/mt01/TS/BF/4096/mt01edi",
                                             "/home/mt01/TS/BF/256/mt01.edi",
                                             "/home/mt01/TS/BF/4/mt01.edi"])
@@ -971,15 +982,15 @@ class Z3D2EDI(object):
         BIRRP script file for each sampling rate, process data, take outputs
         and write an edi file and plot result.  The whole process will take
         a few minutes so be patient.
-        
+
         :param df_fn: path to existing dataframe that was used for processing
                       useful if changing parameters to a previously processed
-                      station.  
+                      station.
         :type df_fn: string
-        
+
         :param df_list: list of sampling rates
         :type df_list: list, defaults to [4096, 256, 4]
-        
+
         :param notch_dict: dict(sampling_rate: notches to filter)
                            dictionary of notches to filter for each sampling
                            rate.  Keys are sampling rates (int) and values
@@ -988,7 +999,7 @@ class Z3D2EDI(object):
                            *default* is {} which filters out 60 Hz noise and
                            harmonics.
         :type notch_dict: dictionary
-                           
+
         :param sr_dict: dict(sampling_rate: (max_freq, max_freq))
                         dictionary of min and max frequencies to use for
                         each sampling rate when making an .edi file.  The
@@ -1001,7 +1012,7 @@ class Z3D2EDI(object):
                           256:(3.99, .126),
                           16:(.125, .0001)}
         :type sr_dict: dictionary
-                          
+
         :param use_blocks_dict: dict(sampling_rate: list of blocks to use)
                                dictionary with sampling rate as keys and
                                list of which blocks to use as values
@@ -1009,7 +1020,7 @@ class Z3D2EDI(object):
                                use value 'all' to use all blocks
                                *default* is None which will use all blocks
         :type use_blocks_dict: dictionary
-                               
+
         :param birrp_param_dict: dict(birrp_param: value)
                                  dictionary of birrp parameters where the
                                  key is the birrp parameter and value is
@@ -1023,15 +1034,15 @@ class Z3D2EDI(object):
 
         :return: plot_response object
         :rtype: mtpy.imaging.plotnresponse.PlotMultipleResponses
-        
+
         :return: full path to combined EDI file
         :rtype: string
-        
+
         :return: processing dataframe
         :rtype: pandas.DataFrame
-        
+
         :Example: ::
-            
+
             >>> b_param_dict = {'ilev': ilev,
                                 'c2threshb': .35,
                                 'c2threshe': .35,
@@ -1046,7 +1057,7 @@ class Z3D2EDI(object):
             >>> zp_obj.calibration_path = '/home/mt/calibrations'
             >>> plot_obj, comb_edi_fn, zdf = zp_obj.process_data(
                                                  birrp_param_dict=b_param_dict)
-            
+
         """
         if df_list is not None:
             self.df_list = df_list
@@ -1105,26 +1116,26 @@ class Z3D2EDI(object):
         """
         combine the different edi files that are computed for each sampling
         rate. For now just a simple cutoff
-        
+
         :param edi_fn_list: list of EDI files to combine
         :dtype edi_fn_list: list
-        
+
         :param sr_dict: dictionary of frequency limits for each sampling rate
                         {4096:(1000., 4), 256:(3.99, .126), 4:(.125, .00001)}
         :dtype sr_dict: dictionary
-        
+
         :return: full path to combined edi file
         :rtype: string
-        
+
         :example: ::
-            
+
             >>> zp_obj.combine_edi_files(["/home/mt01/TS/BF/4096/mt01edi",
                                           "/home/mt01/TS/BF/256/mt01.edi",
                                           "/home/mt01/TS/BF/4/mt01.edi"],
-                                         sr_dict={4096:(1000., 50), 
+                                         sr_dict={4096:(1000., 50),
                                                   256:(49.99, .0625),
                                                   4:(.0624, .00001)})
-            
+
         """
 
         if isinstance(edi_fn_list, str):
@@ -1215,6 +1226,7 @@ class Z3D2EDI(object):
 class Capturing(list):
     def __enter__(self):
         self._stdout = sys.stdout
+        self._stderr = sys.stderr
         sys.stdout = self._stringio = StringIO()
         # sys.stdout = self._stringio = BytesIO()
         return self

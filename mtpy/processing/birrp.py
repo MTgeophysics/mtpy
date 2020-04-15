@@ -771,6 +771,8 @@ def run(birrp_exe, script_file):
     print('\n{0} DONE !!! {0}'.format('='*20))
     print('\tTook {0:02}:{1:02} minutes:seconds'.format(int(t_diff // 60),
                                                         int(t_diff % 60)))
+    
+    return birrp_process.communicate()[0]
 
 #==============================================================================
 # Write edi file from birrp outputs
