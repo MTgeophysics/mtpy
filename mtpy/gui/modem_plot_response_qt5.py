@@ -350,6 +350,7 @@ class PlotResponses(QtWidgets.QWidget):
         #make a widget that will be the station list
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.itemClicked.connect(self.get_station)
+        self.list_widget.currentItemChanged.connect(self.get_station)
         self.list_widget.setMaximumWidth(150)
         
         self.save_edits_button = QtWidgets.QPushButton()
@@ -404,17 +405,20 @@ class PlotResponses(QtWidgets.QWidget):
         """
         get the station name from the clicked station 
         """
-        self.station = str(widget_item.text()) 
+        try:
+            self.station = str(widget_item.text()) 
+        except AttributeError:
+            print('Error: Widget is None')
+            
         self.plot()
         
     def file_changed_dfn(self):
         """
         data file changed outside the program reload it
         """
-
+        
         print('{0} changed'.format(self.data_fn))
-        self.data_fn = self._data_fn
-
+        self.data_fn = os.path.abspath(self._data_fn)
         
     def save_edits(self):
         """

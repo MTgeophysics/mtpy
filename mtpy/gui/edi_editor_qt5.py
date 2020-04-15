@@ -225,7 +225,7 @@ class PlotWidget(QtWidgets.QWidget):
         # this will set the minimum width of the mpl plot, important to 
         # resize everything
         screen = QtWidgets.QDesktopWidget().screenGeometry()
-        self.mpl_widget.setMinimumWidth(screen.width()*(int(1600./1920)))
+        self.mpl_widget.setMinimumWidth(screen.width()*(1600./1920))
         
         # be able to edit the data
         self.mpl_widget.mpl_connect('pick_event', self.on_pick)
