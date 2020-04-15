@@ -35,9 +35,9 @@ class Z3DCollection(object):
         Key              Type      Description
         ================ ========= ===========================================
         'station'        string    station name
-        'start'          string    start time in isoformat (converted to
+        'start'          Timestamp start time in isoformat (converted to
                                    pandas.Timestamp internally)
-        'stop'           string    stop time in isoformat (converted to
+        'stop'           Timestamp stop time in isoformat (converted to
                                    pandas.Timestamp internally)
         'sampling_rate'  float     samping rate in samples/second
         'component'      string    [ ex | ey | hx | hy | hz ]
@@ -73,7 +73,7 @@ class Z3DCollection(object):
                            'stop': 'stop',
                            'sampling_rate': 'df',
                            'component': 'component',
-                           'fn_z3d':'fn',
+                           'fn_z3d': 'fn',
                            'azimuth': 'azimuth',
                            'dipole_length': 'dipole_len',
                            'coil_number': 'coil_num',
@@ -193,6 +193,9 @@ class Z3DCollection(object):
             >>> z3d_df.to_csv(r"/home/z3d_files/z3d_info.csv")
 
         """
+        if len(z3d_fn_list) < 1:
+            raise ValueError('No Z3D files found')
+
         cal_dict = self.get_calibrations(calibration_path)
         z3d_info_list = []
         for z3d_fn in z3d_fn_list:
@@ -419,6 +422,9 @@ class Z3DCollection(object):
         else:
             comp_list = ['ex', 'ey', 'hx', 'hy', 'hz']
         for comp in comp_list:
+            # sometimes there is no HZ and skip
+            if not comp in list(z3d_df.component.unique()):
+                continue
             cal_fn = z3d_df[z3d_df.component == comp].cal_fn.mode()[0]
             # check to see if file exists check for upper and lower case
             suffix_list = ['.{0}'.format(cc) for cc in [comp.lower(),
@@ -586,9 +592,9 @@ class Z3DCollection(object):
 
         kw_dict = {'notch_dict': notch_dict,
                    'block_dict': block_dict,
-                   'overwrite': overwrite, 
+                   'overwrite': overwrite,
                    'combine': combine,
-                   'remote':remote,
+                   'remote': remote,
                    'combine_sampling_rate': combine_sampling_rate}
 
         z3d_fn_list = self.get_z3d_fn_list()
@@ -598,3 +604,180 @@ class Z3DCollection(object):
         z3d_df.to_csv(csv_fn)
 
         return z3d_df, csv_fn
+
+    def summarize_survey(self, survey_path, calibration_path=None,
+                         write=True, names=['survey_summary', 'block_info',
+                                            'processing_loop']):
+        """
+        Summarize survey from z3d files.
+            * 'survey_summary' --> dataframe that contains information for
+                                   each channel measured.
+            * 'block_info' --> dataframe that contains information about each
+                               schedule action for each station
+            * 'processing_loop' --> dataframe that contains information on
+                                    which schedule actions line up and
+                                    can be used for processing.
+
+        :param survey_path: full path to survey directory
+        :type survey_path: string or Path
+
+        :param calibration_path: path to calibration files, defaults to None
+        :type calibration_path: string or Path, optional
+
+        :param write: boolean to write csv files of each dataframe, defaults
+                      to True which will write files to survey_path with name
+                      as in names
+        :type write: [ True | False ], optional
+
+        :param names: name of each file in order as listed above
+        :type names: list of strings, optional
+
+        :return: dictionary containing the dataframes and file names if
+                 written, with keys as names
+
+                 {'survey_df': survey_df,
+                  'block_info_df': info_df,
+                  'processing_loop_df': loop_df}
+
+        :rtype: dictionary
+
+        :Example: ::
+
+            >>> from mtpy.usgs import z3d_collection as zc
+            >>> collection_object = zc.Z3DCollection()
+            >>> info_dict = collection_object.summarize_survey('/home/mt')
+
+        ..note:: If you are using the processing_loop for processing be sure
+                 to confirm the blocks used.  There is no test for length
+                 of each block yet.
+        """
+        if not isinstance(survey_path, Path):
+            survey_path = Path(survey_path)
+
+        df_list = []
+
+        # loop over folders in the given directory
+        for station in survey_path.glob('*'):
+            station_path = survey_path.joinpath(station)
+            if not station_path.exists():
+                continue
+            if not station_path.is_dir():
+                continue
+
+            z3d_fn_list = self.get_z3d_fn_list(station_path)
+            if len(z3d_fn_list) < 1:
+                print('WARNING: Skipping directory {0}'.format(station_path))
+                print('REASON: No Z3D files found')
+                continue
+            df_list.append(self.get_z3d_info(z3d_fn_list,
+                                             calibration_path=calibration_path))
+
+        survey_df = pd.concat(df_list)
+
+        info_df = self.locate_remote_reference_blocks(survey_df)
+        loop_df = self.get_processing_loop_df(info_df)
+
+        return_dict = {'survey_df': survey_df,
+                       'block_info_df': info_df,
+                       'processing_loop_df': loop_df}
+
+        if write:
+            for df, name in zip([survey_df, info_df, loop_df], names):
+                csv_fn = survey_path.joinpath('{0}.csv'.format(name))
+                df.to_csv(csv_fn, index=False)
+                return_dict[name] = csv_fn
+        else:
+            for name in names:
+                return_dict[name] = None
+
+        return return_dict
+
+    def locate_remote_reference_blocks(self, survey_df):
+        """
+        Pick out stations that can be used as remote references by comparing
+        start times.  If the times are within _tol_dict['s_diff'] then they
+        can potentially be used.
+
+        :param survey_df: DataFrame of the survey each row describes a single
+                          channel collected. DataFrame is from get_z3d_info.
+        :type survey_df: pandas.DataFrame
+
+        :return: DataFrame containing information on each schedule block
+        :rtype: pandas.DataFrame
+
+        """
+
+        survey_df['start'] = pd.to_datetime(survey_df.start)
+
+        info_list = []
+        for station in survey_df.station.unique():
+            # get data from for a single station
+            station_df = survey_df[survey_df.station == station]
+
+            # loop over sampling rates to get the different schedule blocks
+            for sr in station_df.sampling_rate.unique():
+                # get sampling rate data
+                sr_df = station_df[station_df.sampling_rate == sr]
+
+                # loop over start times to find remote references
+                for start in sr_df.start.unique():
+                    block = int(sr_df[sr_df.start == start].block.median())
+                    s_dict = {'station': station,
+                              'sampling_rate': sr,
+                              'block': block,
+                              'start': start}
+                    # make a time tolerance to look for
+                    s1 = start - pd.Timedelta(self._tol_dict[sr]['s_diff'])
+                    s2 = start + pd.Timedelta(self._tol_dict[sr]['s_diff'])
+
+                    # Find remote reference stations
+                    rr_df = survey_df[(survey_df.start >= s1) &
+                                      (survey_df.start <= s2) &
+                                      (survey_df.station != station)]
+                    s_dict['rr_station'] = rr_df.station.unique().tolist()
+                    info_list.append(s_dict)
+
+        return pd.DataFrame(info_list)
+
+    def get_processing_loop_df(self, info_df):
+        """
+        Produce a DataFrame that has information on which remote references
+        can be used and which blocks can be used.
+
+        :param info_df: DataFrame from locate_remote_reference_blocks.
+        :type info_df: pandas.DataFrame
+
+        :return: DataFrame with columns:
+                    * 'station' --> station name
+                    * 'rr_station' --> remote station list
+                    * 'block_4096' --> list of blocks to use for 4096
+                    * 'block_256' --> list of blocks to use for 256
+                    * 'block_4' --> list of blocks to use for 4
+        :rtype: pandas.DataFrame
+
+        """
+
+        info_df.rr_station = info_df.rr_station.astype(str)
+
+        processing_list = []
+        for station in info_df.station.unique():
+            # get station dataframe
+            station_df = info_df[info_df.station == station]
+
+            # get remote reference station list as the mode
+            rr_list = station_df.rr_station.mode()[0]
+            station_entry = {'station': station,
+                             'rr_station': rr_list,
+                             'block_4096': None,
+                             'block_256': None,
+                             'block_4': [0]}
+
+            for sr in station_df.sampling_rate.unique():
+                sr_df = station_df[(station_df.sampling_rate == sr) &
+                                   (station_df.rr_station == rr_list)]
+
+                station_entry['block_{0:.0f}'.format(sr)] = sr_df.block.unique().tolist()
+
+            processing_list.append(station_entry)
+
+        return pd.DataFrame(processing_list)
