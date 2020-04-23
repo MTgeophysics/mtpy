@@ -154,14 +154,21 @@ class ZMM(ZMMHeader):
         
         self.z_fn = z_fn
         self._header_count = 0
-        self.Z = None
-        self.Tipper = None
+        self.Z = mtz.Z()
+        self.Tipper = mtz.Tipper()
         self.transfer_functions = None
         self.sigma_e = None
         self.sigma_s = None
+        self.period = None
         
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    @property
+    def frequency(self):
+        if self.period is None:
+            return None
+        return 1./self.period
             
     def initialize_arrays(self):
         """
@@ -187,7 +194,7 @@ class ZMM(ZMMHeader):
         #    this dimension is hard-coded
         self.sigma_s = np.zeros((self.num_freq, 2, 2), dtype=np.complex64)
                   
-    def read_file(self, z_fn=None):
+    def read_zmm_file(self, z_fn=None):
         """
         Read in Egbert zrr file
         """
@@ -207,13 +214,13 @@ class ZMM(ZMMHeader):
             self._fill_res_array_from_block(data_block['res'], ii)
             
         ### make Z and Tipper
-        z_arr, z_err_arr = self.calculate_impedance()
-        self.Z = mtz.Z(z_arr, z_err_arr, 1./self.period)
+        self.Z = self.calculate_impedance()
+         
         
         try:
-            t_arr, t_err_arr = self.calculate_tippers()
-            self.Tipper = mtz.Tipper(t_arr, t_err_arr, 1./self.period)
+            self.Tipper = self.calculate_tippers()
         except ZMMError:
+            self.Tipper = mtz.Tipper()
             print('*** No HZ found cannot calculate induction vectors. ***')
         
     def _get_period_blocks(self):
@@ -258,7 +265,7 @@ class ZMM(ZMMHeader):
             elif 'signal' in line.lower():
                 key = 'sig'
                 continue
-            elif 'covariance' in line.lower():
+            elif 'residual' in line.lower():
                 key = 'res'
                 continue
             
@@ -324,7 +331,7 @@ class ZMM(ZMMHeader):
         
         # check to see if there are actually electric fields in the TFs
         if not hasattr(self, 'ex') or not hasattr(self, 'ey'):
-            raise ZmmError("Cannot return apparent resistivity and phase "
+            raise ZMMError("Cannot return apparent resistivity and phase "
                              "data because these TFs do not contain electric "
                              "fields as a predicted channel.")
 
@@ -377,7 +384,8 @@ class ZMM(ZMMHeader):
 
         error = np.sqrt(var)
 
-        return z, error
+        z_object = mtz.Z(z, error, self.frequency)
+        return z_object
     
     def calculate_tippers(self, angle=0.):
         """
@@ -386,7 +394,7 @@ class ZMM(ZMMHeader):
         
         # check to see if there is a vertical magnetic field in the TFs
         if not hasattr(self, 'hz'):
-            raise ZmmError("Cannot return tipper data because the TFs do not "
+            raise ZMMError("Cannot return tipper data because the TFs do not "
                              "contain the vertical magnetic field as a "
                              "predicted channel.")
 
@@ -428,6 +436,8 @@ class ZMM(ZMMHeader):
         
         tipper = tipper.reshape((self.num_freq, 1, 2))
         error = error.reshape((self.num_freq, 1, 2))
+        
+        tipper_obj = mtz.Tipper(tipper, error, self.frequency)
 
-        return tipper, error
+        return tipper_obj
 

@@ -12,6 +12,7 @@ import os
 import time
 import warnings
 from dateutil import parser as dt_parser
+from pathlib import Path
 
 import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz
@@ -373,7 +374,7 @@ class MT(object):
         elif file_type.lower() == 'zmm':
             self._read_zmm_file(fn)
         else:
-            raise MT_Error('File type not supported yet')
+            raise MTError('File type not supported yet')
 
     def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi',
                       new_Z_obj=None, new_Tipper_obj=None, longitude_format='LON',
@@ -428,7 +429,7 @@ class MT(object):
                 fn_basename = '{0}.{1}'.format(fn_basename, ext)
                 file_type = ext
             else:
-                raise MT_Error('File type {0} not supported yet.'.format(ext))
+                raise MTError('File type {0} not supported yet.'.format(ext))
         else:
             fn_basename = '{0}.{1}'.format(self.station, file_type)
 
@@ -454,7 +455,7 @@ class MT(object):
 
         """
         if not os.path.isfile(edi_fn):
-            raise MT_Error('Could not find {0}, check path.'.format(edi_fn))
+            raise MTError('Could not find {0}, check path.'.format(edi_fn))
 
         self.save_dir = os.path.dirname(edi_fn)
 
@@ -869,12 +870,13 @@ class MT(object):
                     key,
                     getattr(self.FieldNotes.Magnetometer_hy, key))
 
-        if np.all(self.Tipper.tipper == 0) == False:
-            define_meas.meas_hz = MTedi.HMeasurement()
-            for key in define_meas.meas_hz._kw_list:
-                setattr(define_meas.meas_hz,
-                        key,
-                        getattr(self.FieldNotes.Magnetometer_hz, key))
+        if self.Tipper is not None:
+            if np.all(self.Tipper.tipper == 0) == False:
+                define_meas.meas_hz = MTedi.HMeasurement()
+                for key in define_meas.meas_hz._kw_list:
+                    setattr(define_meas.meas_hz,
+                            key,
+                            getattr(self.FieldNotes.Magnetometer_hz, key))
 
         return define_meas
 
@@ -947,16 +949,24 @@ class MT(object):
         """
         read zmm file
         """
-        
+        if not isinstance(zmm_fn, Path):
+            zmm_fn = Path(zmm_fn)
+            
         zmm_obj = MTzmm.ZMM(zmm_fn)
-        zmm_obj.read_file()
+        zmm_obj.read_zmm_file()
         
+        self.save_dir = zmm_fn.parent
         self.Z = zmm_obj.Z
         self.Tipper = zmm_obj.Tipper
         
+        # set location
         self.Site.Location.latitude = zmm_obj.lat
         self.Site.Location.longitude = zmm_obj.lon
         self.Site.Location.declination = zmm_obj.declination
+        
+        # set station name
+        self.Site.id = zmm_obj.station
+        
 
     def _read_xml_file(self, xml_fn):
         """
@@ -964,7 +974,7 @@ class MT(object):
         """
 
         if not os.path.isfile(xml_fn):
-            raise MT_Error('Could not find {0}, check path.'.format(xml_fn))
+            raise MTError('Could not find {0}, check path.'.format(xml_fn))
 
         self.save_dir = os.path.dirname(xml_fn)
 
@@ -2498,5 +2508,5 @@ class Software(object):
 # ==============================================================================
 
 
-class MT_Error(Exception):
+class MTError(Exception):
     pass
