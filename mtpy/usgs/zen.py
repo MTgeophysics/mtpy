@@ -546,15 +546,16 @@ class Z3DMetadata(object):
         self.coil_cal = []
         self.count = 0
         m_list = []
+        cal_find = False
         while self.find_metadata == True:
             try:
                 test_str = self.fid.read(self._metadata_length).decode().lower()
             except UnicodeDecodeError:
                 self.find_metadata = False
                 break
-            if test_str.lower().find('metadata record') > 0:
+            
+            if 'metadata' in test_str:
                 self.count += 1
-                cal_find = False
                 test_str = test_str.strip().split('record')[1].strip()
                 if test_str.count('|') > 1:
                     for t_str in test_str.split('|'):
@@ -585,7 +586,7 @@ class Z3DMetadata(object):
                             t_value = t_list[1].strip()
                             setattr(self, t_key.lower(), t_value)
 
-                elif test_str.lower().find('cal.brd') >= 0:
+                elif 'cal.brd' in test_str:
                     t_list = test_str.split(',')
                     t_key = t_list[0].strip().replace('.', '_')
                     setattr(self, t_key.lower(), t_list[1])
@@ -600,31 +601,24 @@ class Z3DMetadata(object):
                 # some times the coil calibration does not start on its own line
                 # so need to parse the line up and I'm not sure what the calibration
                 # version is for so I have named it odd
-                elif test_str.lower().find('cal.ant') >= 0:
+                elif 'cal.ant' in test_str:
                     # check to see if the coil calibration exists
                     cal_find = True
-                    if test_str.find('|') > 0:
-                        odd_str = test_str.split('|')[0]
-                        odd_list = odd_str.split(',')
-                        odd_key = odd_list[0].strip().replace('.', '_')
-                        setattr(self, odd_key.lower(), odd_list[1].strip())
-
-                        #this may be for a specific case so should test this
-                        test_str = test_str.split('|')[1]
-                        test_list = test_str.split(',')
-                        if test_list[0].lower().find('cal.ant') >= 0:
-                            m_list = test_list[0].split('=')
-                            m_key = m_list[0].strip().replace('.', '_')
-                            setattr(self, m_key.lower(), m_list[1].strip())
-                        else:
-                            for t_str in test_list[1:]:
-                                self.coil_cal.append([float(tt.strip())
-                                                      for tt in t_str.split(':')])
-                elif cal_find:
+                    test_list = test_str.split(',')
+                    coil_num = test_list[1].split('|')[1]
+                    coil_key, coil_value = coil_num.split('=')
+                    setattr(self, coil_key.replace('.', '_').lower(),
+                            coil_value.strip())
+                    for t_str in test_list[2:]:
+                        if '\x00' in t_str:
+                            break
+                        self.coil_cal.append([float(tt.strip())
+                                              for tt in t_str.split(':')])
+                elif cal_find and self.count > 3:
                     t_list = test_str.split(',')
                     for t_str in t_list:
-                        if t_str.find('\x00') >= 0:
-                            pass
+                        if '\x00' in t_str:
+                            break
                         else:
                             self.coil_cal.append([float(tt.strip())
                                                   for tt in t_str.strip().split(':')])
@@ -633,18 +627,16 @@ class Z3DMetadata(object):
                 self.find_metadata = False
                 # need to go back to where the meta data was found so
                 # we don't skip a gps time stamp
-                self.m_tell = self.fid.tell()-self._metadata_length
+                self.m_tell = self.fid.tell() - self._metadata_length
 
         # make coil calibration and board calibration structured arrays
         if len(self.coil_cal) > 0:
             self.coil_cal = np.core.records.fromrecords(self.coil_cal,
-                                                        names='frequency, amplitude, phase',
-                                                        formats='f8, f8, f8')
+                                                        names='frequency, amplitude, phase')
         if len(self.board_cal) > 0:
             try:
                 self.board_cal = np.core.records.fromrecords(self.board_cal,
-                                                             names='frequency, rate, amplitude, phase',
-                                                             formats='f8, f8, f8, f8')
+                                                             names='frequency, rate, amplitude, phase')
             except ValueError:
                 self.board_cal = None
 
