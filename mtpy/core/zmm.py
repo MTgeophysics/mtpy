@@ -70,6 +70,11 @@ class ZMMHeader(object):
         self.num_freq = None
         self._header_count = 0
         self._component_dict = None
+        self.ex = None
+        self.ey = None
+        self.hx = None
+        self.hy = None
+        self.hz = None
         
     @property
     def lat(self):
@@ -134,10 +139,12 @@ class ZMMHeader(object):
                 line_list = line.strip().split()
                 comp = line_list[-1].lower()
                 channel_dict = {'channel':comp}
-                channel_dict['chn_num'] = int(line_list[0])
+                channel_dict['chn_num'] = int(line_list[0]) % self.num_channels
                 channel_dict['azm'] = float(line_list[1])
                 channel_dict['tilt'] = float(line_list[2])
                 channel_dict['dl'] = line_list[3]
+                if channel_dict['chn_num'] == 0:
+                    channel_dict['chn_num'] = self.num_channels
                 setattr(self, comp, Channel(channel_dict))
     
 
@@ -393,7 +400,7 @@ class ZMM(ZMMHeader):
         """
         
         # check to see if there is a vertical magnetic field in the TFs
-        if not hasattr(self, 'hz'):
+        if self.hz is None:
             raise ZMMError("Cannot return tipper data because the TFs do not "
                              "contain the vertical magnetic field as a "
                              "predicted channel.")

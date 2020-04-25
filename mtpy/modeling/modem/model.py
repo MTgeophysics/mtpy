@@ -712,6 +712,7 @@ class Model(object):
 
         line_color = kwargs.pop('line_color', 'k')
         line_width = kwargs.pop('line_width', .5)
+        plot_names = kwargs.pop('plot_names', False)
 
         plt.rcParams['figure.subplot.hspace'] = .3
         plt.rcParams['figure.subplot.wspace'] = .3
@@ -743,7 +744,12 @@ class Model(object):
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
-
+        if plot_names:
+            for s_arr in self.station_locations.station_locations:
+                ax1.text(s_arr['rel_east'], s_arr['rel_north']+.05,
+                         s_arr['station'], ha='center', va='baseline',
+                         clip_on=True)
+                
         east_line_xlist = []
         east_line_ylist = []
         north_min = self.grid_north.min()
@@ -824,7 +830,7 @@ class Model(object):
 
         # --> plot stations
         ax2.scatter(plot_east,
-                    [self.grid_z.min()] * self.station_locations.station.size,
+                    self.station_locations.rel_elev,
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
