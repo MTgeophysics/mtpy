@@ -498,28 +498,6 @@ class Model(object):
             except IndexError:
                 continue
 
-        # --> make depth grid
-#        if self.z_mesh_method == 'original':
-#            log_z = np.logspace(np.log10(self.z1_layer),
-#                                np.log10(self.z_target_depth - np.logspace(np.log10(self.z1_layer),
-#                                                                           np.log10(self.z_target_depth),
-#                                                                           num=self.n_layers)[-2]),
-#                                num=self.n_layers - self.pad_z)
-#    
-#            z_nodes = np.array([np.round(zz, -int(np.floor(np.log10(zz)) - 1)) for zz in
-#                                log_z])
-#
-#            # padding cells in the vertical
-#            z_padding = mtmesh.get_padding_cells(z_nodes[-1],
-#                                                 self.z_bottom - z_nodes.sum(),
-#                                                 self.pad_z,
-#                                                 self.pad_stretch_v)
-#            # make the blocks into nodes as oppose to total width
-#            z_padding = np.array([z_padding[ii + 1] - z_padding[ii]
-#                                  for ii in range(z_padding.size - 1)])
-#            
-#            self.nodes_z = np.append(z_nodes, z_padding)
-
         if self.z_mesh_method == 'custom':
             if self.grid_z is None:
                 self.z_mesh_method = 'new'
@@ -528,7 +506,11 @@ class Model(object):
         if self.z_mesh_method == 'custom':
                 self.nodes_z, z_grid = self.grid_z[1:]-self.grid_z[:-1], self.grid_z
         elif self.z_mesh_method == 'new':
-            self.nodes_z,z_grid = self.make_z_mesh_new()
+            self.nodes_z, z_grid = self.make_z_mesh_new(self.z1_layer, 
+                                                        self.z_target_depth,
+                                                        self.n_layers,
+                                                        self.pad_z,
+                                                        self.pad_stretch_v)
         else:
             raise NameError("Z mesh method \"{}\" is not supported".format(self.z_mesh_method))
 
@@ -572,17 +554,17 @@ class Model(object):
         print('-' * 15, file=file)
 
 
-    def make_z_mesh_new(self):
+    def make_z_mesh_new(self, z1_layer, target_depth, n_layers, n_pad,
+                        pad_stretch=1.2):
         """
         new version of make_z_mesh. make_z_mesh and M
         """
 
         # --> make depth grid
         # if n_airlayers < 0; set to 0
-        nair = max(0, self.n_air_layers)
-
-        log_z = mtcc.make_log_increasing_array(self.z1_layer, self.z_target_depth,
-                                               self.n_layers - self.pad_z - nair)
+        log_z = mtcc.make_log_increasing_array(z1_layer, 
+                                               target_depth,
+                                               n_layers)
 
         if self.z_layer_rounding is not None:
             z_nodes = np.around(log_z, decimals=self.z_layer_rounding)
@@ -595,24 +577,25 @@ class Model(object):
                                                    decimals=-2))
 
         # index of top of padding
-        itp = len(z_nodes) - 1
+        #itp = len(z_nodes) - 1
 
         # padding cells in the vertical direction
-        for ii in range(1, self.pad_z + 1):
-            z_0 = np.float(z_nodes[itp])
-            pad_d = np.round(z_0 * self.pad_stretch_v ** ii, -2)
+        for ii in range(1, n_pad + 1):
+            z_0 = np.float(z_nodes[-1])
+            pad_d = np.round(z_0 * pad_stretch ** ii, -2)
             z_nodes = np.append(z_nodes, pad_d)
 
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
-        z_nodes = np.hstack([[self.z1_layer] * self.n_air_layers, z_nodes])
+        # z_nodes = np.hstack([[z1_layer] * n_air, z_nodes])
 
         # make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
         return z_nodes, z_grid
   
-    def add_layers_to_mesh(self,n_add_layers=None,layer_thickness=None,where='top'):
+    def add_layers_to_mesh(self, n_add_layers=None, layer_thickness=None,
+                           where='top'):
         """
         Function to add constant thickness layers to the top or bottom of mesh.
         Note: It is assumed these layers are added before the topography. If 
@@ -1051,10 +1034,10 @@ class Model(object):
         ax.scatter(self.station_locations.rel_east,
                    self.station_locations.rel_north, 
                    marker='v', c='b', s=2)
-        ax.set_xlim((np.floor(self.station_locations.rel_east.min()), 
-                     np.ceil(self.station_locations.rel_east.max())))
-        ax.set_ylim((np.floor(self.station_locations.rel_north.min()), 
-                     np.ceil(self.station_locations.rel_north.max())))
+        ax.set_xlim((np.floor(self.station_locations.rel_east.min()) - 1000, 
+                     np.ceil(self.station_locations.rel_east.max()) + 1000))
+        ax.set_ylim((np.floor(self.station_locations.rel_north.min()) - 1000, 
+                     np.ceil(self.station_locations.rel_north.max()) + 1000))
 
 
         plt.show()
@@ -1770,15 +1753,17 @@ class Model(object):
         lat = self.station_locations.lat
         elev = self.station_locations.elev
         surface = lon, lat, elev
-        self.add_topography_to_model2( 
-            surface=surface, interp_method=interp_method, air_resistivity=air_resistivity,
-            topography_buffer=topography_buffer, airlayer_type=airlayer_type)
+        self.add_topography_to_model2(surface=surface, 
+                                      interp_method=interp_method,
+                                      air_resistivity=air_resistivity,
+                                      topography_buffer=topography_buffer,
+                                      airlayer_type=airlayer_type)
 
 
     def add_topography_to_model2(self, topographyfile=None, surface=None, 
                                  topographyarray=None, interp_method='nearest',
                                  air_resistivity=1e12, topography_buffer=None,
-                                 airlayer_type = 'log_up'):
+                                 airlayer_type = 'log_up', max_elev=None):
         """
         if air_layers is non-zero, will add topo: read in topograph file,
         make a surface model.
@@ -1839,23 +1824,24 @@ class Model(object):
                                                                  topo_core.max() - topo_core_min,
                                                                  self.n_air_layers,
                                                                  increment_factor=0.999)[::-1]
-            elif airlayer_type == 'log_increasing_down':
+            elif airlayer_type == 'log_down':
                 # increase the number of layers
                 self.n_layers += self.n_air_layers
                 # make a new mesh
-                self.nodes_z, z_grid = self.make_z_mesh_new()
-                # adjust level
-                self.grid_z -= topo_core.max() #- topo_core_min
-                # adjust number of air layers. This is pre-determined by
-                # topographic elevation and grid parameters
-                # gcz = (self.grid_z[1:] + self.grid_z[:-1])/2.
-                # print(gcz)
-                # if self.n_air_layers != sum(gcz<0):
-                #     self._logger.warn("Number of air layers updated from {} to {}. airlayer_type "
-                #                       "log_increasing_down does not allow changing of number of air layers".format(self.n_air_layers, sum(gcz<1)))
-
-                # self.n_air_layers = sum(gcz<0)
-                # self.n_layers -= self.n_air_layers
+                n_layers = self.n_layers + self.n_air_layers
+                self.nodes_z, z_grid = self.make_z_mesh_new(self.z1_layer, 
+                                                            self.z_target_depth,
+                                                            n_layers,
+                                                            self.pad_z,
+                                                            self.pad_stretch_v)
+                # adjust level to topography min
+                if max_elev is not None:
+                    self.grid_z -= max_elev
+                    ztops = np.where(self.surface_dict['topography'] > max_elev)
+                    self.surface_dict['topography'][ztops] = max_elev
+                else:
+                    self.grid_z -= topo_core.max() 
+                    
                                 
             elif airlayer_type == 'constant':
                 air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)

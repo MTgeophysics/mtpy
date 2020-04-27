@@ -1820,7 +1820,7 @@ class Data(object):
         self.center_point.elev = model_object.grid_z[0]
 
         # logger.debug("Re-write data file after adding topo")
-        self.write_data_file(fn_basename=os.path.basename(self.data_fn)[:-4]+'topo.dat',
+        self.write_data_file(fn_basename=os.path.basename(self.data_fn)[:-4]+'_topo.dat',
                              fill=False, elevation=True)  # (Xi, Yi, Zi) of each station-i may be shifted
 
         # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
