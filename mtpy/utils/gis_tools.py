@@ -355,7 +355,10 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     # end if
 
     for ii in range(lat.size):
-        point = ll2utm(lat[ii], lon[ii])
+        if(HAS_GDAL):
+            point = ll2utm(lon[ii], lat[ii])
+        else:
+            point = ll2utm(lat[ii], lon[ii])
         projected_point['easting'][ii] = point[0]
         projected_point['northing'][ii] = point[1]
         if(HAS_GDAL): projected_point['elev'][ii] = point[2]
