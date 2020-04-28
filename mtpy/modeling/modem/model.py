@@ -2007,7 +2007,7 @@ class Model(object):
 
         # make depth indices into a list
         if depth_index == 'all':
-            depthindices = list(range(len(z)))
+            depthindices = list(range(z.shape[2]))
         elif np.iterable(depth_index):
             depthindices = np.array(depth_index).astype(int)
         else:
@@ -2016,7 +2016,8 @@ class Model(object):
 
         
         for k in depthindices:
-            fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
+            fname = os.path.join(savepath,outfile_basename+'_%03i_%1im.xyz' %
+                                 (k,self.grid_z[k]))
             
             # get relevant depth slice
             vals = resvals[:,:,k].flatten()
