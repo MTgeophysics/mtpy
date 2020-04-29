@@ -639,7 +639,7 @@ class ModelWidget(QtWidgets.QWidget):
         self.initialize_vectors()
         
         ## --> make map axes 
-        self.map_ax = self.map_figure.add_subplot(1, 1, 1, aspect='equal')
+        self.map_ax = self.map_figure.add_subplot(1, 1, 1)
         self.map_ax.set_xlabel('Easting {0}'.format(self.units))
         self.map_ax.set_ylabel('Northing {0}'.format(self.units))
         self.map_ax.set_aspect('equal')
@@ -668,7 +668,7 @@ class ModelWidget(QtWidgets.QWidget):
                            color='k')
         self.north_ax.set_xlabel('Easting {0}'.format(self.units))
         self.north_ax.set_ylabel('Depth {0}'.format(self.units))
-        self.north_ax.set_aspect('equal')
+        #self.north_ax.set_aspect('equal')
         self.redraw_north()
         # need to reverse the depth limits to plot properly
         z_lim = self.north_ax.get_ylim()
@@ -691,13 +691,11 @@ class ModelWidget(QtWidgets.QWidget):
                           color='k')
         self.east_ax.set_xlabel('Northing {0}'.format(self.units))
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
-        self.east_ax.set_aspect('equal')
+        #self.east_ax.set_aspect('equal')
         self.redraw_east()
         
         ## plot the location grid
-        self.location_ax = self.location_figure.add_subplot(1, 1, 1, 
-                                                            sharex=self.map_ax,
-                                                            sharey=self.map_ax,
+        self.location_ax = self.location_figure.add_subplot(1, 1, 1,
                                                             aspect='equal')
         self.location_ax.set_xlabel('Easting {0}'.format(self.units))
         self.location_ax.set_ylabel('Northing {0}'.format(self.units))
@@ -712,6 +710,11 @@ class ModelWidget(QtWidgets.QWidget):
                               lw=.25,
                               color='k',
                               picker=3)
+        
+        self.location_ax.set_xlim((self.model_obj.grid_east[self.model_obj.pad_east]/self.scale,
+                                   self.model_obj.grid_east[-self.model_obj.pad_east]/self.scale))
+        self.location_ax.set_ylim((self.model_obj.grid_north[self.model_obj.pad_north]/self.scale,
+                                   self.model_obj.grid_north[-self.model_obj.pad_north]/self.scale))
 
         # make lines that can move around
         self.east_line = self.location_ax.plot([self.model_obj.grid_east[self.east_index]/self.scale,
@@ -900,30 +903,102 @@ class ModelWidget(QtWidgets.QWidget):
         """
         redraw east view
         """
+        xlim = self.east_ax.get_xlim()
+        ylim = self.east_ax.get_ylim()
+        print(xlim, ylim)
+        
+        self.east_ax.cla()
+        self.east_ax.plot(self.east_north_line_xlist,
+                          self.east_north_line_ylist,
+                          lw=.25,
+                          color='k')
+        self.east_ax.plot(self.east_z_line_xlist,
+                          self.east_z_line_ylist,
+                          lw=.25,
+                          color='k')
         self.east_ax.pcolormesh(self.plot_north_z,
                                self.plot_z_north,
                                np.log10(self.new_res_model[:, self.east_index, :]),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+        
+        line = self.get_stations_east()
+        if line is not None:
+            self.east_ax.scatter(line['rel_north']/self.scale, 
+                                 line['rel_elev']/self.scale,
+                                 marker='v',  c='cyan', s=50,
+                                 edgecolors='k')
 
+            self.location_ax.scatter(line['rel_east']/self.scale, 
+                                     line['rel_north']/self.scale,
+                                     marker='v',  c='k', s=30,
+                                     edgecolors='cyan')
+            self.location_canvas.draw()
+
+            for ss in line:
+                self.east_ax.text(ss['rel_north']/self.scale,
+                                  ss['rel_elev']/self.scale - .2,
+                                  ss['station'],
+                                  va='bottom', ha='center',
+                                  fontdict={'weight':'bold',
+                                            'size':10},
+                                  clip_on=True,
+                                  bbox={'boxstyle':"square",
+                                        'ec':'k',
+                                        'fc':'w'})
+                
+        self.east_ax.set_xlabel('Northing {0}'.format(self.units))
+        self.east_ax.set_ylabel('Depth {0}'.format(self.units))
+        self.east_ax.set_ylim(ylim)
+        self.east_ax.set_xlim(xlim)
         self.east_canvas.draw()
         
     def redraw_location(self):
         """
         redraw the location map with the indication lines on it
         """
-        self.east_line.set_xdata([self.model_obj.grid_east[self.east_index]/self.scale,
-                                  self.model_obj.grid_east[self.east_index]/self.scale])
-        
-        self.north_line.set_ydata([self.model_obj.grid_north[self.north_index]/self.scale,
-                                  self.model_obj.grid_north[self.north_index]/self.scale])
+
+        self.location_ax.cla()
+        self.location_ax.plot(self.map_east_line_xlist,
+                              self.map_east_line_ylist,
+                              lw=.25,
+                              color='k',
+                              picker=3)
+        self.location_ax.plot(self.map_north_line_xlist,
+                              self.map_north_line_ylist,
+                              lw=.25,
+                              color='k',
+                              picker=3)
+        # make lines that can move around
+        self.east_line = self.location_ax.plot([self.model_obj.grid_east[self.east_index]/self.scale,
+                                                self.model_obj.grid_east[self.east_index]/self.scale],
+                                                [self.model_obj.grid_north.min()/self.scale,
+                                                 self.model_obj.grid_north.max()/self.scale],
+                                                 'g',
+                                                 lw=2)[0]
+        self.north_line = self.location_ax.plot([self.model_obj.grid_east.min()/self.scale,
+                                                self.model_obj.grid_east.max()/self.scale],
+                                                [self.model_obj.grid_north[self.north_index]/self.scale,
+                                                 self.model_obj.grid_north[self.north_index]/self.scale],
+                                                 'b',
+                                                 lw=2)[0]
         if self.data_fn is not None:
             self.location_ax.scatter(self.data_obj.station_locations.rel_east/self.scale,
                                      self.data_obj.station_locations.rel_north/self.scale,
                                      marker='v',
                                      c='k',
-                                     s=10)
+                                     edgecolors='k',
+                                     s=30)
+            
+        self.location_ax.set_xlabel('Easting {0}'.format(self.units))
+        self.location_ax.set_ylabel('Northing {0}'.format(self.units))
+        
+        self.location_ax.set_xlim((self.model_obj.grid_east[self.model_obj.pad_east]/self.scale,
+                                   self.model_obj.grid_east[-self.model_obj.pad_east]/self.scale))
+        self.location_ax.set_ylim((self.model_obj.grid_north[self.model_obj.pad_north]/self.scale,
+                                   self.model_obj.grid_north[-self.model_obj.pad_north]/self.scale))
+
         self.location_canvas.draw()
 
     def set_north_index(self):
@@ -939,6 +1014,17 @@ class ModelWidget(QtWidgets.QWidget):
         """
         redraw north view
         """
+        ylim = self.north_ax.get_ylim()
+        xlim = self.north_ax.get_xlim()
+        self.north_ax.cla()
+        self.north_ax.plot(self.north_east_line_xlist,
+                           self.north_east_line_ylist,
+                           lw=.25,
+                           color='k')
+        self.north_ax.plot(self.north_z_line_xlist,
+                           self.north_z_line_ylist,
+                           lw=.25,
+                           color='k')
         self.north_ax.pcolormesh(self.plot_east_z,
                                  self.plot_z_east,
                                  np.log10(self.new_res_model[self.north_index, :, :]),
@@ -946,7 +1032,76 @@ class ModelWidget(QtWidgets.QWidget):
                                  vmin=self.res_limits[0],
                                  vmax=self.res_limits[1])
 
+        line = self.get_stations_north()
+        
+        if line is not None:
+            self.north_ax.scatter(line['rel_east']/self.scale, 
+                                  line['rel_elev']/self.scale,
+                                  marker='v',  c='cyan', s=50,
+                                  edgecolors='k')
+            self.location_ax.scatter(line['rel_east']/self.scale, 
+                                     line['rel_north']/self.scale,
+                                     marker='v',  c='k', s=30,
+                                     edgecolors='cyan')
+            self.location_canvas.draw()
+            
+            for ss in line:
+                self.north_ax.text(ss['rel_east']/self.scale,
+                                   ss['rel_elev']/self.scale - .2,
+                                   ss['station'],
+                                   va='bottom', ha='center',
+                                   fontdict={'weight':'bold',
+                                            'size':10},
+                                  clip_on=True,
+                                  bbox={'boxstyle':"square",
+                                        'ec':'k',
+                                        'fc':'w'})
+       
+        self.north_ax.set_xlabel('Easting {0}'.format(self.units))
+        self.north_ax.set_ylabel('Elevation {0}'.format(self.units))
+        self.north_ax.set_ylim(ylim)
+        self.north_ax.set_xlim(xlim)
         self.north_canvas.draw()
+        
+    def get_stations_north(self):
+        """
+        get stations close to the line north
+        Returns
+        -------
+        None.
+
+        """
+        ymin = self.model_obj.grid_north[self.north_index] - \
+                self.model_obj.cell_size_north
+        ymax = self.model_obj.grid_north[self.north_index] + \
+                self.model_obj.cell_size_north
+        if self.data_fn is not None:
+            s_find = np.where((self.data_obj.data_array['rel_north'] >= ymin) &
+                              (self.data_obj.data_array['rel_north'] <= ymax))
+            return self.data_obj.data_array[s_find[0]]
+            
+        else:
+            return None
+        
+    def get_stations_east(self):
+        """
+        get stations close to the line east
+        Returns
+        -------
+        None.
+
+        """
+        ymin = self.model_obj.grid_east[self.east_index] - \
+                self.model_obj.cell_size_east
+        ymax = self.model_obj.grid_east[self.east_index] + \
+                self.model_obj.cell_size_east
+        if self.data_fn is not None:
+            s_find = np.where((self.data_obj.data_array['rel_east'] >= ymin) &
+                              (self.data_obj.data_array['rel_east'] <= ymax))
+            return self.data_obj.data_array[s_find[0]]
+            
+        else:
+            return None
         
     def redraw_cb(self):
         """

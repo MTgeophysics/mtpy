@@ -1534,7 +1534,7 @@ class Data(object):
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elev = self.center_point.elev + dd[6]
+                data_dict[dd[1]].elev = dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values
@@ -1798,10 +1798,10 @@ class Data(object):
             # otherwise place station at the top of the model
             else:
                 szi = 0
-
+            
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
-
+            
             station_index_x.append(sxi)
             station_index_y.append(syi)
 
@@ -1814,6 +1814,12 @@ class Data(object):
             # ====================== ====================================================
             # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
             self.data_array['rel_elev'][ss] = topoval + 0.001
+            
+            print('{0} at E={1}, N={2}, z={3}, model_z={4}'.format(sname,
+                                                                   sxi,
+                                                                   syi,
+                                                                   topoval,
+                                                                   self.data_array['rel_elev'][ss]))
 
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
