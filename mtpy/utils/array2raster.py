@@ -395,16 +395,16 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
 
-    utm_cs, utm_point = gis_tools.transform_ll_to_utm(origin[0], origin[1], projection)
-    
+    utm_point = gis_tools.project_point_ll2utm(origin[1], origin[0],
+                                                datum=projection)
     origin_east = utm_point[0]
     origin_north = utm_point[1]
+    utm_zone = utm_point[2]
     
     # set drive to make a geo tiff
     driver = gdal.GetDriverByName('GTiff')
 
     # make a raster with the shape of the array to be written 
-    print(raster_fn, ncols, nrows)
     out_raster = driver.Create(raster_fn, ncols, nrows, 1, gdal.GDT_Float32)
     
     # geotransform:
@@ -435,6 +435,11 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     # geo reference the raster
     #out_raster_georef = osr.SpatialReference()
     #out_raster_georef.ImportFromEPSG(4326)
+    utm_cs = osr.SpatialReference()
+    zone_number = int(utm_zone[0:-1])
+    is_northern = True if utm_zone[-1].lower() > 'n' else False
+    utm_cs.SetUTM(zone_number, is_northern)
+    
     out_raster.SetProjection(utm_cs.ExportToWkt())
     
     # be sure to flush the data  
