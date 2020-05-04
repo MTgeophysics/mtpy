@@ -218,10 +218,9 @@ class PlotStrike(object):
         only a single value is allowed
         """
         for ii, mt in enumerate(self.mt_list):
-            # JP: need to set the rotation angle negative for plotting
-            # I think its because the way polar plots work by measuring 
-            # counter clockwise
-            mt.rotation_angle = -1 * value
+            mt.rotation_angle = value
+            
+        self._rotation_angle = value
             
         self.make_strike_array()
     

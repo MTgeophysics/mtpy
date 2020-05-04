@@ -480,7 +480,7 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
 
 
     try:
-        degreeangle = angle%360
+        degreeangle = angle % 360
     except:
         raise MTex.MTpyError_inputarguments('"Angle" must be a valid number (in degrees)')
 
@@ -489,34 +489,32 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.array([[ cphi,sphi],[-sphi,cphi] ])
-    rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),np.linalg.inv(rotmat)  ) 
-    #print rotmat
-
-    #print inmatrix
-    #print rotated_matrix
-    #sys.exit()
+    rotmat = np.array([[ cphi, -sphi], [sphi, cphi]])
+    rotated_matrix = np.dot(np.dot(rotmat, inmatrix), np.linalg.inv(rotmat))
+    # rotated_matrix = np.dot(rotmat, inmatrix)
 
     errmat  = None
     if (inmatrix_err is not None) :
         err_orig = np.real(inmatrix_err) 
         errmat = np.zeros_like(inmatrix_err)
 
-        # squared propagation of errors
-        # z_err_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * z_err_orig[0,0])**2 + cphi**2 * sphi**2 * ( (z_err_orig[0,1])**2 + (z_err_orig[1,0])**2) + (sphi**2 * z_err_orig[1,1])**2)
-
-        # z_err_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * z_err_orig[0,1])**2 + cphi**2 * sphi**2 * ( (z_err_orig[1,1])**2 + (z_err_orig[0,0])**2) + (sphi**2 * z_err_orig[1,0])**2) 
-
-        # z_err_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * z_err_orig[1,0])**2 + cphi**2 * sphi**2 * ( (z_err_orig[1,1])**2 + (z_err_orig[0,0])**2) + (sphi**2 * z_err_orig[0,1])**2) 
-
-        # z_err_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * z_err_orig[0,0])**2 + cphi**2 * sphi**2 * ( (z_err_orig[0,1])**2 + (z_err_orig[1,0])**2) + (cphi**2 * z_err_orig[1,1])**2) 
-
         # standard propagation of errors:
-
-        errmat[0,0] = np.sqrt( (cphi**2 * err_orig[0,0])**2 + (cphi * sphi * err_orig[0,1])**2 + (cphi * sphi * err_orig[1,0])**2 + (sphi**2 * err_orig[1,1])**2 )
-        errmat[0,1] = np.sqrt( (cphi**2 * err_orig[0,1])**2 + (cphi * sphi * err_orig[1,1])**2 + (cphi * sphi * err_orig[0,0])**2 + (sphi**2 * err_orig[1,0])**2 )
-        errmat[1,0] = np.sqrt( (cphi**2 * err_orig[1,0])**2 + (cphi * sphi * err_orig[1,1])**2 + (cphi * sphi * err_orig[0,0])**2 + (sphi**2 * err_orig[0,1])**2 )
-        errmat[1,1] = np.sqrt( (cphi**2 * err_orig[1,1])**2 + (cphi * sphi * err_orig[0,1])**2 + (cphi * sphi * err_orig[1,0])**2 + (sphi**2 * err_orig[0,0])**2 )
+        errmat[0,0] = np.sqrt( (cphi**2 * err_orig[0,0])**2 + \
+                              (cphi * sphi * err_orig[0,1])**2 + \
+                                  (cphi * sphi * err_orig[1,0])**2 + \
+                                      (sphi**2 * err_orig[1,1])**2 )
+        errmat[0,1] = np.sqrt( (cphi**2 * err_orig[0,1])**2 + \
+                              (cphi * sphi * err_orig[1,1])**2 + \
+                                  (cphi * sphi * err_orig[0,0])**2 + \
+                                      (sphi**2 * err_orig[1,0])**2 )
+        errmat[1,0] = np.sqrt( (cphi**2 * err_orig[1,0])**2 + \
+                              (cphi * sphi * err_orig[1,1])**2 +\
+                                  (cphi * sphi * err_orig[0,0])**2 + \
+                                      (sphi**2 * err_orig[0,1])**2 )
+        errmat[1,1] = np.sqrt( (cphi**2 * err_orig[1,1])**2 + \
+                              (cphi * sphi * err_orig[0,1])**2 + \
+                                  (cphi * sphi * err_orig[1,0])**2 + \
+                                      (sphi**2 * err_orig[0,0])**2 )
 
     return rotated_matrix, errmat
 
@@ -542,7 +540,7 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
 
     rotmat = np.array([[ cphi,sphi],[-sphi,cphi] ])
 
-    if invector.shape == (1,2):
+    if invector.shape == (1, 2):
         rotated_vector = np.dot( invector, np.linalg.inv(rotmat) )
     else:
         rotated_vector = np.dot( rotmat, invector )
@@ -550,13 +548,12 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
     
     errvec = None
     if (invector_err is not None) :   
-        err_orig = np.real(invector_err)
         errvec = np.zeros_like(invector_err)
 
-        if invector_err.shape == (1,2):
-            errvec = np.dot( invector_err, np.abs(np.linalg.inv(rotmat) ))
+        if invector_err.shape == (1, 2):
+            errvec = np.dot(invector_err, np.abs(np.linalg.inv(rotmat)))
         else:
-            errvec = np.dot( np.abs(rotmat), invector_err )
+            errvec = np.dot(np.abs(rotmat), invector_err )
 
 
     return rotated_vector, errvec
