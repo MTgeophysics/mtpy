@@ -250,9 +250,19 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         only a single value is allowed
         """
         
-        self.pt.rotation_angle = value
+        self.pt.rotate(value)
+        self._mt.rotation_angle = value
             
         self._rotation_angle = value
+
+    def fold_strike(self, strike):
+        """
+        
+        """
+        strike = strike % 180
+        strike[np.where(strike > 90)] = 90 - strike[np.where(strike > 90)]
+        
+        return strike
 
     def plot(self):
         """
@@ -302,7 +312,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         elif self.ellipse_colorby == 'ellipticity':
             colorarray = self.pt.ellipticity
         elif self.ellipse_colorby in ['strike', 'azimuth']:
-                colorarray = (self.pt.azimuth % 180)
+                colorarray = self.fold_strike(self.pt.azimuth)
 
         else:
             raise NameError(self.ellipse_colorby + ' is not supported')
@@ -374,7 +384,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                       which='major',
                       color=(.25, .25, .25),
                       lw=.25)
-
+        self.ax1.set_axisbelow(True)
         plt.setp(self.ax1.get_yticklabels(), visible=False)
         # add colorbar for PT
         self.cbax = self.fig.add_axes(self.cb_position)
@@ -417,7 +427,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
 
         #---------------plotStrikeAngle-----------------------------------
         self.ax2 = self.fig.add_subplot(3, 2, 3)
-        az = self.pt.azimuth % 180
+        az = self.fold_strike(self.pt.azimuth)
         az_err = self.pt.azimuth_err
 
         stlist = []
@@ -440,7 +450,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         stlist.append(ps2[0])
         stlabel.append('PT')
         try:
-            strike = self.zinv.strike % 180
+            strike = self.fold_strike(self.zinv.strike)
             strike_err = np.nan_to_num(self.zinv.strike_err)
 
             # plot invariant strike
@@ -465,7 +475,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         if self._mt.Tipper.tipper is not None:
             # strike from tipper
             tp = self._mt.Tipper
-            s3 = (tp.angle_real % 180)
+            s3 = self.fold_strike(tp.angle_real)
 
             # plot strike with error bars
             ps3 = self.ax2.errorbar(self._mt.period,
@@ -500,7 +510,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         plt.setp(ltext, fontsize=6)    # the legend text fontsize
 
         if self.strike_limits is None:
-            self.strike_limits = (-4, 184)
+            self.strike_limits = (-94, 94)
 
         self.ax2.set_yscale('linear')
         self.ax2.set_xscale('log', nonposx='clip')
