@@ -489,12 +489,7 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    # JP: Changed the rotation matrix to be formulated to rotate
-    # counter clockwise, I cannot find a good reason for this except that 
-    # when you plot the strike and phase tensors the look correct with this
-    # formulation.
     rotmat = np.array([[ cphi, sphi], [-sphi, cphi]])
-    # rotmat = np.array([[ cphi, -sphi], [sphi, cphi]])
     rotated_matrix = np.dot(np.dot(rotmat, inmatrix), np.linalg.inv(rotmat))
 
     errmat  = None
@@ -541,13 +536,8 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
     
     cphi = np.cos(phi)
     sphi = np.sin(phi)
-
-    # JP: Changed the rotation matrix to be formulated to rotate
-    # counter clockwise, I cannot find a good reason for this except that 
-    # when you plot the strike and phase tensors the look correct with this
-    # formulation.
+    
     rotmat = np.array([[ cphi, sphi],[-sphi, cphi]])
-    # rotmat = np.array([[ cphi, -sphi],[sphi, cphi]])
 
     if invector.shape == (1, 2):
         rotated_vector = np.dot( invector, np.linalg.inv(rotmat) )

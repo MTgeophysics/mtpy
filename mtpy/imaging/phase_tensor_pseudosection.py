@@ -112,16 +112,9 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                         start and stop of station name indicies.
                         ex: for MT01dr station_id=(0,4) will be MT01
 
-        **rotz** : float or np.ndarray
+        **rotation_angle** : float or np.ndarray
                    angle in degrees to rotate the data clockwise positive.
-                   Can be an array of angle to individually rotate stations or
-                   periods or both.
-                       - If rotating each station by a constant
-                         angle the array needs to have a shape of
-                         (# of stations)
-                        - If rotating by period needs to have shape
-                           # of periods
-                        - If rotating both individually shape=(ns, nf)
+                   a single number for all input files.
                   *Default* is 0
 
         **title** : string
@@ -131,7 +124,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                   dots per inch of the resolution. *default* is 300
 
 
-        **fignum** : int
+        **fig_num** : int
                      figure number.  *Default* is 1
 
         **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
@@ -394,19 +387,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         if 'text_offset_y' not in list(self.scale_arrow_dict.keys()):
             self.scale_arrow_dict['text_offset_y'] = 0.
 
-        self._rot_z = kwargs.pop('rot_z', 0)
-        if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
-            self._rot_z = np.array([self._rot_z] * len(self.mt_list))
-
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(self._rot_z, np.ndarray):
-            if self._rot_z.shape[0] != len(self.mt_list):
-                self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
-
-        else:
-            pass
-
         # --> set induction arrow properties -------------------------------
         self.plot_tipper = kwargs.pop('plot_tipper', 'n')
 
@@ -434,9 +414,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         only a single value is allowed
         """
         for ii, mt in enumerate(self.mt_list):
-            # JP: need to set the rotation angle negative for plotting
-            # I think its because the way polar plots work by measuring 
-            # counter clockwise
             mt.rotation_angle = value
             
         self._rotation_angle = value
@@ -532,7 +509,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             azimuth = pt.azimuth[::-1]
 
             # if there are induction arrows, flip them as pt
-            if self.plot_tipper.find('y') == 0:
+            if 'y' in self.plot_tipper:
                 tip = mt.Tipper
                 if tip.mag_real is not None:
                     tmr = tip.mag_real[::-1]
@@ -596,14 +573,17 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
                 # create an ellipse scaled by phimin and phimax and orient
                 # the ellipse so that north is up and east is right
-                # need to add 90 to do so instead of subtracting
+                # Ellipse patch assumes the angle measure counterclockwise
+                # therefore need to multiply the azimuth by -1 because
+                # it is measured clockwise positive and subtract 90 to put
+                # it in a coordinate system of N=0, E=90
                 ellipd = patches.Ellipse((offset * self.xstretch,
                                           np.log10(ff) * self.ystretch),
                                          width=ewidth,
                                          height=eheight,
                                          edgecolor='k',
                                          lw=0.5,
-                                         angle=azimuth[jj] + 90)
+                                         angle=90 - azimuth[jj])
 
                 # get ellipse color
                 if cmap.find('seg') > 0:
@@ -683,10 +663,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self._plot_periodlist = plot_periodlist
         n = len(plot_periodlist)
 
-        # calculate minimum period and maximum period with a stretch factor
-        #        pmin = np.log10(plot_periodlist.min())*self.ystretch
-        #        pmax = np.log10(plot_periodlist.max())*self.ystretch
-
         pmin = int(np.floor(np.log10(plot_periodlist.min())))
         pmax = int(np.ceil(np.log10(plot_periodlist.max())))
 
@@ -698,28 +674,17 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         self.offsetlist = offset_sort['offset']
         self.stationlist = offset_sort['station']
-        #        if self.offsetlist[0] > 0:
-        #            print 'rotating'
-        #            print self.stationlist
-        #            self.stationlist = self.stationlist[::-1]
 
         # set y-ticklabels
         if self.tscale == 'period':
             yticklabels = [mtpl.labeldict[ii]
                            for ii in range(pmin, pmax + 1, 1)]
-            #            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[ll]))
-            #                            for ll in np.arange(0, n, self.ystep)]+\
-            #                        ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[-1]))]
 
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size + 2,
                                fontweight='bold')
 
         elif self.tscale == 'frequency':
-            #            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[ll]))
-            #                            for ll in np.arange(0, n, self.ystep)]+\
-            #                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[-1]))]
-            #
             yticklabels = [mtpl.labeldict[-ii]
                            for ii in range(pmin, pmax + 1, 1)]
             self.ax.set_ylabel('Frequency (Hz)',
@@ -732,15 +697,10 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         # --> set tick locations and labels
         # set y-axis major ticks
-        #        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch
-        #                             for ll in np.arange(0, n, self.ystep)]):
         self.ax.yaxis.set_ticks(np.arange(pmin * self.ystretch,
                                           (pmax + 1) * self.ystretch,
                                           self.ystretch))
 
-        # set y-axis minor ticks
-        #        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch
-        #                             for ll in np.arange(0, n, 1)],minor=True)
         # set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
 

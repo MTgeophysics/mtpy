@@ -240,15 +240,12 @@ class PlotStrike(object):
             
             if mt.period.size > nt:
                 nt = mt.period.size
-            #-----------get strike angle from invariants-----------------------
+            #-----------get strike angle from invariants----------------------
             zinv = Zinvariants(mt.Z)
 
-            # add 90 degrees because invariants assume 0 is north, but plotting
-            # assumes that 90 is north and measures clockwise, thus the negative
-            # because the strike angle from invariants is measured
-            # counter-clockwise
-
-            zs = 90 - zinv.strike
+            # subtract 90 because polar plot assumes 0 is on the x an 90 is 
+            # on the y
+            zs = zinv.strike - 90
 
             # fold so the angle goes from 0 to 180
             if self.fold == True:
@@ -264,9 +261,11 @@ class PlotStrike(object):
             mdictinv = dict([(ff, jj) for ff, jj in zip(mt.period, zs)])
             inv_list.append(mdictinv)
 
-            #------------get strike from phase tensor strike angle-------------
+            #------------get strike from phase tensor strike angle------------
+            # subtract 90 because polar plot assumes 0 is on the x an 90 is 
+            # on the y
             pt = mt.pt
-            az = 90 - pt.azimuth
+            az = pt.azimuth - 90
             az_err = pt.azimuth_err
             az[pt.phimax == 0] = np.nan
 
@@ -296,8 +295,9 @@ class PlotStrike(object):
                                               dtype='complex')
                 tip.compute_components()
 
-            # needs to be negative because measures clockwise
-            tipr = -tip.angle_real
+            # # subtract 90 because polar plot assumes 0 is on the x an 90 is 
+            # on the y
+            tipr = tip.angle_real + 90
 
             tipr[np.where(tipr == 180.)] = 0.0
 
@@ -316,8 +316,10 @@ class PlotStrike(object):
             tip_list.append(tiprdict)
 
         #--> get min and max period
-        self.max_per = np.amax([np.max(list(mm.keys())) for mm in inv_list], axis=0)
-        self.min_per = np.amin([np.min(list(mm.keys())) for mm in pt_list], axis=0)
+        self.max_per = np.amax([np.max(list(mm.keys())) for mm in inv_list],
+                               axis=0)
+        self.min_per = np.amin([np.min(list(mm.keys())) for mm in pt_list],
+                               axis=0)
 
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
