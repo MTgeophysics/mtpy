@@ -35,7 +35,9 @@ ckdict = {'phiminang': r'$\Phi_{min}$ (deg)',
           'ellipticity': r'Ellipticity',
           'skew_seg': r'Skew (deg)',
           'normalized_skew_seg': r'Normalized Skew (deg)',
-          'geometric_mean': r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$'}
+          'geometric_mean': r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$',
+          'strike': r'Azimuth (deg)',
+          'azimuth': r'Azimuth (deg)'}
 
 labeldict = dict([(ii, '$10^{' + str(ii) + '}$') for ii in range(-20, 21)])
 

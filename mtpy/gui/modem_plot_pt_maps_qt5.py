@@ -28,6 +28,7 @@ from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import matplotlib.colors as colors
+from matplotlib import cm
 
 import mtpy.modeling.modem as modem
 import mtpy.imaging.mtplottools as mtplottools
@@ -1006,7 +1007,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                                y1*self.cb_res_pad, .35*bb[2], .02)
                 cbax = self.figure.add_axes(cb_position)
                 cb_res = mcb.ColorbarBase(cbax, 
-                                      cmap=self.res_cmap,
+                                      cmap=cm.get_cmap(self.res_cmap),
                                       norm=Normalize(vmin=self.res_limits[0],
                                                      vmax=self.res_limits[1]),
                                       orientation='horizontal')

@@ -411,11 +411,16 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         self._arrow_dict = kwargs.pop('arrow_dict', {})
         self._read_arrow_dict(self._arrow_dict)
-
-        # This is a constructor of object. It's better not to call plot method here!!
-        # self.plot_yn = kwargs.pop('plot_yn', 'y')
-        # if self.plot_yn == 'y':
-        #     self.plot()
+        
+        self.subplot_left = .10
+        self.subplot_right = .90
+        self.subplot_bottom = .2
+        self.subplot_top = 0.9
+        self.subplot_wspace = .05
+        self.subplot_hspace = .05
+        
+        for key, value in kwargs:
+            setattr(self, key, value)
 
         # ---need to rotate data on setting rotz
 
@@ -454,12 +459,12 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         """
 
         plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .10
-        plt.rcParams['figure.subplot.right'] = .90
-        plt.rcParams['figure.subplot.bottom'] = .2
-        plt.rcParams['figure.subplot.top'] = 0.9
-        plt.rcParams['figure.subplot.wspace'] = .70
-        plt.rcParams['figure.subplot.hspace'] = .70
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace
+        plt.rcParams['figure.subplot.hspace'] = self.subplot_hspace
 
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -574,6 +579,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
             elif self.ellipse_colorby == 'ellipticity':
                 colorarray = pt.ellipticity[::-1]
+            elif self.ellipse_colorby in ['strike', 'azimuth']:
+                colorarray = pt.azimuth[::-1] % 180
             else:
                 raise NameError(self.ellipse_colorby + ' is not supported')
 
@@ -694,7 +701,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         pmax = int(np.ceil(np.log10(plot_periodlist.max())))
 
         # need to sort the offsets and station labels so they plot correctly
-        sdtype = [('offset', np.float), ('station', '|S10')]
+        sdtype = [('offset', np.float), ('station', 'U10')]
         slist = np.array([(oo, ss) for oo, ss in zip(self.offsetlist,
                                                      self.stationlist)], dtype=sdtype)
         offset_sort = np.sort(slist, order='offset')
@@ -1276,7 +1283,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             >>> pt1.redraw_plot()
         """
 
-        #plt.close(self.fig)
+        self.fig.clf()
         self.plot()
 
     def __str__(self):
