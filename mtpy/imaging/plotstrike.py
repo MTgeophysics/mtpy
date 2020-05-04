@@ -135,6 +135,7 @@ class PlotStrike(object):
         z_object_list = kwargs.pop('z_object_list', None)
         tipper_object_list = kwargs.pop('tipper_object_list', None)
         mt_object_list = kwargs.pop('mt_object_list', None)
+        self._rotation_angle = 0
 
         #------Set attributes of the class-----------------
 
@@ -207,35 +208,22 @@ class PlotStrike(object):
             self.plot()
 
     #---need to rotate data on setting rotz
-    def _set_rot_z(self, rot_z):
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+    
+    @rotation_angle.setter
+    def rotation_angle(self, value):
         """
-        need to rotate data when setting z
+        only a single value is allowed
         """
-
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            self._rot_z = np.array([rot_z] * len(self.mt_list))
-
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                self._rot_z = np.repeat(rot_z, len(self.mt_list))
-
-        else:
-            pass
-
         for ii, mt in enumerate(self.mt_list):
-            mt.rotation_angle = rot_z
+            # JP: need to set the rotation angle negative for plotting
+            # I think its because the way polar plots work by measuring 
+            # counter clockwise
+            mt.rotation_angle = -1 * value
             
         self.make_strike_array()
-
-    def _get_rot_z(self):
-        return self._rot_z
-
-    rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
-                     doc="""rotation angle(s)""")
     
     def make_strike_array(self):
         """
