@@ -227,7 +227,7 @@ class PlotStrike(object):
             pass
 
         for ii, mt in enumerate(self.mt_list):
-            mt.rot_z = self._rot_z[ii]
+            mt.rotation_angle = rot_z
             
         self.make_strike_array()
 
@@ -250,6 +250,7 @@ class PlotStrike(object):
         kk = 0
         
         for dd, mt in enumerate(self.mt_list):
+            
             if mt.period.size > nt:
                 nt = mt.period.size
             #-----------get strike angle from invariants-----------------------
