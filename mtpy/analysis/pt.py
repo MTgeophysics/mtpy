@@ -741,14 +741,13 @@ class PhaseTensor(object):
         if self.pt is None:
             return None
 
-#        return self._pi2()[0] + self._pi1()[0]
         return np.degrees(np.arctan(self._pi2()[0] + self._pi1()[0]))
 
     @property
     def phimax_err(self):
         phimaxerr = None
         if self.pt_err is not None:
-            phimaxerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
+            phimaxerr = np.sqrt(self._pi2()[1]**2 + self._pi1()[1]**2)
  
             return np.degrees(np.arctan(phimaxerr))
         else:
@@ -756,14 +755,12 @@ class PhaseTensor(object):
 
     def rotate(self, alpha):
         """
-            Rotate PT array. Change the rotation angles attribute respectively.
+        Rotate PT array. Change the rotation angles attribute respectively.
 
-            Rotation angle must be given in degrees. All angles are referenced to 
-			geographic North, positive in clockwise direction. 
-			(Mathematically negative!)
+        Rotation angle must be given in degrees. All angles are referenced to 
+        North, positive in clockwise direction. (Mathematically negative!)
 
-            In non-rotated state, X refs to North and Y to East direction.
-
+        In non-rotated state, X refs to North and Y to East direction.
 
         """
 
@@ -820,9 +817,14 @@ class PhaseTensor(object):
                 angle = 0.
 
             if self.pt_err is not None:
-                pt_rot[idx_freq], pt_err_rot[idx_freq] = MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pt_err[idx_freq,:,:])
+                pt_rot[idx_freq], pt_err_rot[idx_freq] = \
+                    MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:],
+                                                  -angle,
+                                                  self.pt_err[idx_freq,:,:])
             else:
-                pt_rot[idx_freq], pt_err_rot = MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle)
+                pt_rot[idx_freq], pt_err_rot = \
+                    MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:],
+                                                  -angle)
 
         # --> set the rotated tensors as the current attributes
         self._pt = pt_rot
