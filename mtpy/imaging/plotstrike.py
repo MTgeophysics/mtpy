@@ -504,7 +504,7 @@ class PlotStrike(object):
                 plot_pt = self.get_plot_array(self.med_pt[bin_list, :])
                 
                 if self.plot_tipper:
-                    tr = self.get_plot_array(self.med_tip[binlist, :])
+                    tr = self.get_plot_array(self.med_tip[bin_list, :])
                     # compute the historgram for the tipper strike
                     tr_hist = np.histogram(tr[np.nonzero(tr)].flatten(),
                                               bins=int(360/bw),
