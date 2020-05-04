@@ -571,7 +571,7 @@ class PhaseTensor(object):
     @property
     def azimuth_err(self):
         if self.pt_err is not None:
-            az_err = np.sqrt(self.alpha+self.beta)
+            az_err = np.sqrt(self.alpha + self.beta)
         else:
             az_err = None
 
