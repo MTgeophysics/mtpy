@@ -491,7 +491,6 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
 
     rotmat = np.array([[ cphi, -sphi], [sphi, cphi]])
     rotated_matrix = np.dot(np.dot(rotmat, inmatrix), np.linalg.inv(rotmat))
-    # rotated_matrix = np.dot(rotmat, inmatrix)
 
     errmat  = None
     if (inmatrix_err is not None) :
