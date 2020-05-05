@@ -66,7 +66,7 @@ def convert_position_str2float(position_str):
     """
     Convert a position string in the format of DD:MM:SS to decimal degrees
     
-    :type position_str: string ('DD:MM:SS.ms')
+    :type position_str: string [ 'DD:MM:SS.ms' | 'DD.degrees' ]
     :param position_str: degrees of latitude or longitude
         
     :rtype: float
@@ -74,29 +74,34 @@ def convert_position_str2float(position_str):
                           
     :Example: ::
 
-        >>> import mtpy.utils.gis_tools as gis_tools
+        >>> from mtpy.utils import gis_tools
         >>> gis_tools.convert_position_str2float('-118:34:56.3')
+        -118.58230555555555
         
     """
 
     if position_str in [None, 'None']:
         return None
     
-    p_list = position_str.split(':')
-    if len(p_list) != 3:
-        raise ValueError('{0} not correct format, should be DD:MM:SS'.format(position_str))
+    if ':' in position_str:
+        if position_str.count(':') != 2:
+            msg = '{0} not correct format.\n'.format(position_str) +\
+                  'Position needs to be DD:MM:SS.ms'
+            raise GISError(msg)
+        p_list = position_str.split(':')
+        deg = float(p_list[0])
+        minutes = _assert_minutes(float(p_list[1]))
+        sec = _assert_seconds(float(p_list[2]))
+        sign = np.sign(deg)
 
-    deg = float(p_list[0])
-    minutes = _assert_minutes(float(p_list[1]))
-    sec = _assert_seconds(float(p_list[2]))
-
-    # get the sign of the position so that when all are added together the
-    # position is in the correct place
-    sign = 1
-    if deg < 0:
-        sign = -1
-
-    position_value = sign * (abs(deg) + minutes / 60. + sec / 3600.)
+        position_value = sign * (abs(deg) + minutes / 60. + sec / 3600.)
+    else:
+        try:
+            position_value = float(position_str)
+        except ValueError:
+            msg = '{0} not correct format.\n'.format(position_str) +\
+                  'Position needs to be DD.decimal_degrees'
+            raise GISError(msg)
 
     return position_value
 
@@ -163,32 +168,25 @@ def convert_position_float2str(position):
     """
     convert position float to a string in the format of DD:MM:SS
     
-    Arguments
-    -------------
-        **position** : float
-                       decimal degrees of latitude or longitude
-                       
-    Returns
-    --------------
-        **position_str** : string
-                          latitude or longitude in format of DD:MM:SS.ms
+    :type position: float
+    :param position: decimal degrees of latitude or longitude
+        
+    :rtype: float
+    :return: latitude or longitude in DD:MM.SS.ms 
                           
-    Example
-    -------------
+    :Example: ::
         >>> import mtpy.utils.gis_tools as gis_tools
         >>> gis_tools.convert_position_float2str(-118.34563)
+        '-118:34:56.30'
         
     """
 
-    assert type(position) is float, 'Given value is not a float'
+    if not isinstance(position, float):
+        raise GISError('Given value is not a float')
 
     deg = int(position)
-    sign = 1
-    if deg < 0:
-        sign = -1
 
-    deg = abs(deg)
-    minutes = (abs(position) - deg) * 60.
+    minutes = (abs(position) - abs(deg)) * 60.
     # need to round seconds to 4 decimal places otherwise machine precision
     # keeps the 60 second roll over and the string is incorrect.
     sec = np.round((minutes - int(minutes)) * 60., 4)
@@ -200,11 +198,8 @@ def convert_position_float2str(position):
         deg += 1
         minutes = 0
         
-    position_str = '{0}:{1:02.0f}:{2:05.2f}'.format(sign * int(deg),
-                                                    int(minutes),
-                                                    sec)
+    return '{0:.0f}:{1:02.0f}:{2:05.2f}'.format(deg, int(minutes), sec)
 
-    return position_str
 
 # ==============================================================================
 # Project a point

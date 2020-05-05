@@ -2,13 +2,13 @@ from unittest import TestCase
 import numpy as np
 import pytest
 
-import gis_tools
-
+from mtpy.utils import gis_tools
 
 class TestGisTools(TestCase):
     def setUp(self):
         self.lat = -34.299442
         self.lon = 149.201031
+
 
         self.zone = '55H'
         self.easting = 702562.773
@@ -24,7 +24,7 @@ class TestGisTools(TestCase):
         print((zone, easting, northing))
 
 
-        if isinstance(zone, np.bytes_) or (zone, np.unicode_):
+        if isinstance(zone, (np.bytes_, bytes)):
             zone = zone.decode('UTF-8')
 
         self.assertTrue(zone == self.zone)
@@ -51,3 +51,45 @@ class TestGisTools(TestCase):
 
         self.assertTrue(np.isclose(self.lat, new_lat))
         self.assertTrue(np.isclose(self.lon, new_lon))
+        
+class TestConvertStr2Float(TestCase):
+    
+    def setUp(self):
+        self.position_hhmmss = '-118:34:56.3'
+        self.position_str = '-118.582305'
+        self.position_fail = '-118:58.2305'
+        
+    def test_convert_hhmmss(self):
+        position_d = gis_tools.convert_position_str2float(self.position_hhmmss)
+        
+        self.assertIsInstance(position_d, float)
+        self.assertTrue(np.isclose(position_d, -118.582305))
+        
+    def test_convert_str(self):
+        position_d = gis_tools.convert_position_str2float(self.position_str)
+        
+        self.assertIsInstance(position_d, float)
+        self.assertTrue(np.isclose(position_d, -118.582305))
+        
+    def test_convert_fail(self):
+        with pytest.raises(gis_tools.GISError) as error:
+            gis_tools.convert_position_str2float(self.position_fail)
+            
+class TestConvertFloat2Str(TestCase):
+    
+    def setUp(self):
+        self.position_d = -118.582305
+        self.position_fail = '-118:58.2305'
+        
+    def test_convert_hhmmss(self):
+        position_str = gis_tools.convert_position_float2str(self.position_d)
+        
+        self.assertIsInstance(position_str, str)
+        self.assertEqual(position_str, '-118:34:56.30')
+           
+    def test_convert_fail(self):
+        with pytest.raises(gis_tools.GISError) as error:
+            gis_tools.convert_position_float2str(self.position_fail)
+        
+        
+        
