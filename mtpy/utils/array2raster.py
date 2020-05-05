@@ -90,10 +90,10 @@ class ModEM_to_Raster(object):
         
         if model_center:                                      
             center_east, center_north, center_zone = gis_tools.project_point_ll2utm( 
-                                                                    model_center[1],
-                                                                    model_center[0]) 
+                                                                    model_center[0],
+                                                                    model_center[1]) 
                                              
-                                             
+            print(center_east, center_north, center_zone)                                 
             lower_left_east = center_east+model_obj.grid_center[1]+\
                                 model_obj.nodes_east[0:pad_east].sum()-\
                                 model_obj.nodes_east[pad_east]/2
@@ -103,7 +103,7 @@ class ModEM_to_Raster(object):
             
             ll_lat, ll_lon = gis_tools.project_point_utm2ll(lower_left_east, 
                                                             lower_left_north,
-                                                            center_zone)
+                                                            str(center_zone))
             
             print('Lower Left Coordinates should be ({0:.5f}, {1:.5f})'.format(ll_lon, ll_lat))
             return (ll_lon, ll_lat)
@@ -144,8 +144,6 @@ class ModEM_to_Raster(object):
         print('Pad north = {0}'.format(self.pad_north))    
         print('Pad east  = {0}'.format(self.pad_east)) 
 
-
-
         new_east = np.arange(model_obj.grid_east[self.pad_east],
                              model_obj.grid_east[-self.pad_east-2],
                              self.cell_size_east)
@@ -169,13 +167,15 @@ class ModEM_to_Raster(object):
             new_res_arr[:, :, z_index] = interpolate.griddata(
                                          (model_n.ravel(), model_e.ravel()),
                                          res.ravel(), 
-                                         (new_north[:, None], new_east[None, :]))
+                                         (new_north[:, None],
+                                          new_east[None, :]))
             
 
         self.res_array = new_res_arr
         
     def write_raster_files(self, save_path=None, pad_east=None, 
-                           pad_north=None, cell_size=None, rotation_angle=None):
+                           pad_north=None, cell_size=None,
+                           rotation_angle=None):
         """
         write a raster file for each layer
         
@@ -202,7 +202,7 @@ class ModEM_to_Raster(object):
                          self.lower_left_corner, 
                          self.cell_size_east, 
                          self.cell_size_north, 
-                         np.log10(self.res_array[:,:,ii]),
+                         np.log10(self.res_array[:, :, ii]),
                          projection=self.projection,
                          rotation_angle=self.rotation_angle)   
 
@@ -395,8 +395,10 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
 
-    utm_point = gis_tools.project_point_ll2utm(origin[1], origin[0],
+    print(origin[0], origin[1])
+    utm_point = gis_tools.project_point_ll2utm(origin[0], origin[1],
                                                 datum=projection)
+    print(utm_point)
     origin_east = utm_point[0]
     origin_north = utm_point[1]
     utm_zone = utm_point[2]
