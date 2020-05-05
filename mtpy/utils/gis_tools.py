@@ -24,7 +24,7 @@ else:
 _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
-class GIS_ERROR(Exception):
+class GISError(Exception):
     pass
 #==============================================================================
 # Make sure lat and lon are in decimal degrees
@@ -264,18 +264,35 @@ def get_gdal_coordinate_system(datum):
     if isinstance(datum, int):
         ogrerr = ll_cs.ImportFromEPSG(datum)
         if ogrerr != OGRERR_NONE:
-            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+            raise GISError("GDAL/osgeo ogr error code: {}".format(ogrerr))
     elif isinstance(datum, str):
         ogrerr = ll_cs.SetWellKnownGeogCS(datum)
         if ogrerr != OGRERR_NONE:
-            raise GIS_ERROR("GDAL/osgeo ogr error code: {}".format(ogrerr))
+            raise GISError("GDAL/osgeo ogr error code: {}".format(ogrerr))
     else:
-        raise GIS_ERROR("""datum {0} not understood, needs to be EPSG as int
+        raise GISError("""datum {0} not understood, needs to be EPSG as int
                            or a well known datum as a string""".format(datum))
 
     return ll_cs
 
-def _get_gdal_projection_ll2utm(datum='WGS84', utm_zone, epsg=None):
+def validate_epsg(epsg):
+    """
+    Make sure epsg is an integer
+
+    :param epsg: DESCRIPTION
+    :type epsg: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    if not isinstance(epsg, int):
+        try:
+            epsg = int(epsg):
+        except ValueError:
+            raise GIS
+
+def _get_gdal_projection_ll2utm(datum, utm_zone, epsg=None):
     """
     project point using GDAL
     """
@@ -290,8 +307,33 @@ def _get_gdal_projection_ll2utm(datum='WGS84', utm_zone, epsg=None):
         utm_cs = get_gdal_coordinate_system(datum)
 
         zone_number, is_northern = split_utm_zone(utm_zone)
-            utm_cs.SetUTM(zone_number, is_northern)
+        utm_cs.SetUTM(zone_number, is_northern)
 
+    return osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoint
+
+def _get_pyproj_projection_ll2utm(datum, utm_zone, epsg=None):
+    """
+    
+    :param datum: DESCRIPTION
+    :type datum: TYPE
+    :param utm_zone: DESCRIPTION
+    :type utm_zone: TYPE
+    :param epsg: DESCRIPTION, defaults to None
+    :type epsg: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    if isinstance(epsg, int):
+        pp = pyproj.Proj('+init=EPSG:%d' % (epsg))
+    
+    elif epsg is None:
+        zone_number, is_northern = split_utm_zone(utm_zone)
+        projstring = '+proj=utm +zone=%d +%s +datum=%s' % \
+                         (zone_number, 'north' if is_northern else 'south', datum)
+        pp = pyproj.Proj(projstring)
+
+    return pp
 
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
@@ -334,9 +376,14 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     else:
         lat = np.array([assert_lat_value(lat)])
         lon = np.array([assert_lon_value(lon)])
+        
+    if utm_zone in [None, 'none', 'None']:
+            # get the UTM zone in the datum coordinate system, otherwise
+            zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(),
+                                                              lon.mean())
 
     if HAS_GDAL:
-        ll_cs = get_gdal_coordinate_system(datum)
+        ll_cs = _get_gdal_projection_ll2utm(datum, utm_zone, epsg)
         
 
     # project point on to EPSG coordinate system if given
@@ -431,11 +478,11 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     try:
         easting = float(easting)
     except ValueError:
-        raise GIS_ERROR("easting is not a float")
+        raise GISError("easting is not a float")
     try:
         northing = float(northing)
     except ValueError:
-        raise GIS_ERROR("northing is not a float")
+        raise GISError("northing is not a float")
 
     if HAS_GDAL:
         # set utm coordinate system
