@@ -1,6 +1,23 @@
 # -*- coding: utf-8 -*-
 """
+GIS_TOOLS
+==================
+
+This module contains tools to help project between coordinate systems.  The 
+module will first use GDAL if installed.  If GDAL is not installed then 
+pyproj is used. A test has been made for new versions of GDAL which swap the
+input lat and lon when using transferPoint, so the user should not have to 
+worry about which version they have. 
+
+Main functions are:
+    
+    * project_point_ll2utm
+    * project_point_utm2ll
+    
+These can take in a point or an array or list of points to project.
+
 Created on Fri Apr 14 14:47:48 2017
+Revised: 5/2020 JP 
 
 @author: jrpeacock
 """
@@ -8,18 +25,20 @@ Created on Fri Apr 14 14:47:48 2017
 # ==============================================================================
 # Imports
 # ==============================================================================
-
-from mtpy.utils import HAS_GDAL, EPSG_DICT
-from mtpy.utils.mtpy_decorator import gdal_data_check, deprecated
 import numpy as np
 from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils import HAS_GDAL, EPSG_DICT, NEW_GDAL
+
 if HAS_GDAL:
     from osgeo import osr
     from osgeo.ogr import OGRERR_NONE
+
 else:
     import pyproj
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
+if NEW_GDAL:
+    _logger.info('INFO: GDAL version 3 detected')
 
 # =============================================================================
 # GIS Error container
@@ -47,20 +66,17 @@ def convert_position_str2float(position_str):
     """
     Convert a position string in the format of DD:MM:SS to decimal degrees
     
-    Arguments
-    -------------
-        **position_str** : string ('DD:MM:SS.ms')
-                           degrees of latitude or longitude
-                       
-    Returns
-    --------------
-        **position** : float
-                       latitude or longitude in decimal degrees
+    :type position_str: string ('DD:MM:SS.ms')
+    :param position_str: degrees of latitude or longitude
+        
+    :rtype: float
+    :return: latitude or longitude in decimal degrees
                           
-    Example
-    -------------
+    :Example: ::
+
         >>> import mtpy.utils.gis_tools as gis_tools
         >>> gis_tools.convert_position_str2float('-118:34:56.3')
+        
     """
 
     if position_str in [None, 'None']:
@@ -210,7 +226,8 @@ def utm_zone_to_epsg(zone_number, is_northern):
     """
     for key in list(EPSG_DICT.keys()):
         val = EPSG_DICT[key]
-        if ('+zone={:<2}'.format(zone_number) in val) and ('+datum=WGS84' in val):
+        if ('+zone={:<2}'.format(zone_number) in val) and \
+            ('+datum=WGS84' in val):
             if is_northern:
                 if '+south' not in val:
                     return key
@@ -219,9 +236,9 @@ def utm_zone_to_epsg(zone_number, is_northern):
                     return key
                 
 def _utm_letter_designator(lat):
-    # This routine determines the correct UTM letter designator for the given latitude
-    # returns 'Z' if latitude is outside the UTM limits of 84N to 80S
-    # Written by Chuck Gantz- chuck.gantz@globalstar.com
+    # This routine determines the correct UTM letter designator for the 
+    # given latitude returns 'Z' if latitude is outside the UTM limits of 
+    # 84N to 80S Written by Chuck Gantz- chuck.gantz@globalstar.com
 
     if 84 >= lat >= 72:
         return 'X'
@@ -297,9 +314,9 @@ def get_epsg(latitude, longitude):
     get epsg code for the utm projection (WGS84 datum) of a given latitude
     and longitude pair
     """  
-    zone_no,is_northern,utm_str = get_utm_zone(latitude, longitude)
+    zone_number, is_northern, utm_str = get_utm_zone(latitude, longitude)
     
-    return utm_zone_to_epsg(zone_no,is_northern)
+    return utm_zone_to_epsg(zone_number, is_northern)
 
 def get_gdal_coordinate_system(datum):
     """
@@ -448,7 +465,7 @@ def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
     return osr.CoordinateTransformation(utm_cs, ll_cs).TransformPoint
         
 
-def _get_pyproj_projection_ll2utm(datum, utm_zone, epsg):
+def _get_pyproj_projection(datum, utm_zone, epsg):
     """
     
     :param datum: DESCRIPTION
@@ -472,31 +489,6 @@ def _get_pyproj_projection_ll2utm(datum, utm_zone, epsg):
                                                          datum)
         pp = pyproj.Proj(proj_str)
 
-    return pp
-
-def _get_pyproj_projection_utm2ll(datum, utm_zone, epsg):
-    """
-    
-    :param datum: DESCRIPTION
-    :type datum: TYPE
-    :param utm_zone: DESCRIPTION
-    :type utm_zone: TYPE
-    :param epsg: DESCRIPTION
-    :type epsg: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
-
-    """
-    zone_number, is_northern = split_utm_zone(utm_zone)
-    if epsg is not None:
-        # pp = pyproj.Proj('+init=EPSG:%d'%(epsg))
-        pp = pyproj.Proj('EPSG:%d'%(epsg))
-    else:
-        zone = 'north' if is_northern else 'south'
-        proj_str = '+proj=utm +zone=%d +%s +datum=%s' % (zone_number,
-                                                         zone, datum)
-        pp = pyproj.Proj(proj_str)
-    
     return pp
     
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
@@ -544,7 +536,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     if HAS_GDAL:
         ll2utm = _get_gdal_projection_ll2utm(datum, utm_zone, epsg)
     else:
-        ll2utm = _get_pyproj_projection_ll2utm(datum, utm_zone, epsg)        
+        ll2utm = _get_pyproj_projection(datum, utm_zone, epsg)        
 
     # return different results depending on if lat/lon are iterable
     projected_point = np.zeros_like(lat, dtype=[('easting', np.float),
@@ -553,11 +545,10 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
                                                 ('utm_zone', 'U3')])
 
     for ii in range(lat.size):
-        point = ll2utm(lon[ii], lat[ii])
-        # check if something went wrong and lat and lon are switched
-        if point[0] in [np.inf, np.nan]:
-            print('INFO: Newer GDAL detected')
+        if NEW_GDAL:
             point = ll2utm(lat[ii], lon[ii])
+        else:
+            point = ll2utm(lon[ii], lat[ii])
             
         projected_point['easting'][ii] = point[0]
         projected_point['northing'][ii] = point[1]
@@ -609,7 +600,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     if HAS_GDAL:
         utm2ll = _get_gdal_projection_utm2ll(datum, utm_zone, epsg)
     else:
-        utm2ll = _get_pyproj_projection_utm2ll(datum, utm_zone, epsg)
+        utm2ll = _get_pyproj_projection(datum, utm_zone, epsg)
         
     # return different results depending on if lat/lon are iterable
     projected_point = np.zeros_like(easting,
@@ -692,21 +683,9 @@ def utm_wgs84_conv(lat, lon):
 #=================================================================
 if __name__ == "__main__":
 
-    mylat=-35.0
-    mylon=149.5
-    utm = project_point_ll2utm(mylat, mylon)
-    print ("project_point_ll2utm(mylat, mylon) =:  ", utm)
-
-    if HAS_GDAL:
-        utm2 = transform_ll_to_utm(mylon, mylat)
-        print ("The transform_ll_to_utm(mylon, mylat) results lat, long, elev =: ", utm2[1])
-
-        spref_obj=utm2[0]
-        print("The spatial ref string =:", str(spref_obj))
-        print("The spatial ref WKT format =:", spref_obj.ExportToWkt())
-        print("*********  Details of the spatial reference object ***************")
-        print ("spref.GetAttrValue('projcs')", spref_obj.GetAttrValue('projcs'))
-        print( "spref.GetUTMZone()", spref_obj.GetUTMZone())
-    # end if
+    my_lat= -35.0
+    my_lon= 149.5
+    utm_point = project_point_ll2utm(my_lat, my_lon)
+    print ("project_point_ll2utm(mylat, mylon) =:  ", utm_point)
 
 

@@ -395,10 +395,9 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
 
-    print(origin[0], origin[1])
-    utm_point = gis_tools.project_point_ll2utm(origin[0], origin[1],
+    utm_point = gis_tools.project_point_ll2utm(origin[1], origin[0],
                                                 datum=projection)
-    print(utm_point)
+
     origin_east = utm_point[0]
     origin_north = utm_point[1]
     utm_zone = utm_point[2]
