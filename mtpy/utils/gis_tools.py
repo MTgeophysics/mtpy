@@ -226,10 +226,21 @@ def split_utm_zone(utm_zone):
     :rtype: TYPE
 
     """
+    utm_zone = validate_utm_zone(utm_zone)
     
-    zone_number = int(utm_zone[0:-1])
-    is_northern = True if utm_zone[-1].lower() > 'n' else False
+    if isinstance(utm_zone, int):
+        # std UTM code returned by gdal
+        is_northern = False if utm_zone < 0 else True
+        zone_number = abs(utm_zone)
+    elif isinstance(utm_zone, str):
+        zone_number = int(utm_zone[0:-1])
+        is_northern = True if utm_zone[-1].lower() > 'n' else False
     
+    else:
+        msg = "utm_zone type {0}, {1} not supported".format(type(utm_zone),
+                                                            str(utm_zone))
+        raise NotImplementedError(msg)
+
     return zone_number, is_northern
     
 def get_epsg(latitude, longitude):
@@ -282,7 +293,27 @@ def validate_epsg(epsg):
             epsg = int(epsg)
             return epsg
         except ValueError:
-            raise GISError('EPSG must be an integer')   
+            raise GISError('EPSG must be an integer')  
+
+def validate_utm_zone(utm_zone):
+    """
+    Make sure utm zone is a valid string
+    
+    :param utm_zone: DESCRIPTION
+    :type utm_zone: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    #JP: if its unicode then its already a valid string in python 3
+    if isinstance(utm_zone, (np.bytes_, bytes)):
+        utm_zone = utm_zone.decode('UTF-8')
+    elif isinstance(utm_zone, (float, int)):
+        utm_zone = int(utm_zone)
+    else:
+        utm_zone = str(utm_zone)
+
+    return utm_zone
             
 def validate_input_values(values, location_type=None):
     """
@@ -342,6 +373,31 @@ def _get_gdal_projection_ll2utm(datum, utm_zone, epsg):
         utm_cs.SetUTM(zone_number, is_northern)
 
     return osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoint
+
+def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
+    """
+    
+    :param datum: DESCRIPTION
+    :type datum: TYPE
+    :param utm_zone: DESCRIPTION
+    :type utm_zone: TYPE
+    :param epsg: DESCRIPTION
+    :type epsg: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    zone_number, is_northern = split_utm_zone(utm_zone)
+    
+    if epsg is not None:
+        utm_cs = get_gdal_coordinate_system(epsg)
+    else:
+        utm_cs = get_gdal_coordinate_system(datum)
+        utm_cs.SetUTM(zone_number, is_northern)
+    
+    ll_cs = utm_cs.CloneGeogCS()
+    return osr.CoordinateTransformation(utm_cs, ll_cs).TransformPoint
+        
 
 def _get_pyproj_projection_ll2utm(datum, utm_zone, epsg=None):
     """
@@ -474,6 +530,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     """
     easting = validate_input_values(easting)
     northing = validate_input_values(northing)
+    epsg = validate_epsg(epsg)
 
     if HAS_GDAL:
         # set utm coordinate system
@@ -499,14 +556,16 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         except ValueError:
             raise ValueError('Zone number {0} is not a number'.format(utm_zone[0:-1]))
         is_northern = True if zone_letter.lower() >= 'n' else False
+    
     elif isinstance(utm_zone, int):
         # std UTM code returned by gdal
         is_northern = False if utm_zone < 0 else True
         zone_number = abs(utm_zone)
+    
     else:
-        print("epsg and utm_zone", str(epsg), str(utm_zone))
-
-        raise NotImplementedError("utm_zone type (%s, %s) not supported"%(type(utm_zone), str(utm_zone)))
+        msg = "utm_zone type {0}, {1} not supported".format(type(utm_zone),
+                                                            str(utm_zone))
+        raise NotImplementedError(msg)
     
     if epsg is None:
         if HAS_GDAL:
