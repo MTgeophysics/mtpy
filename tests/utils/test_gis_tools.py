@@ -110,8 +110,21 @@ class TestGisTools(TestCase):
         self.assertEqual(epsg_number, self.zone_epsg, 'epsg number')
         
     def test_utm_letter_designation(self):
-        utm_letter = gis_tools._utm_letter_designator(self.lat_hhmmss)
+        utm_letter = gis_tools.utm_letter_designator(self.lat_hhmmss)
         
         self.assertEqual(utm_letter, self.utm_letter, 'UTM letter')
+        
+    def test_validate_input_values(self):
+        values = gis_tools.validate_input_values(self.lat_hhmmss,
+                                                 location_type='lat')
+        
+        self.assertIsInstance(values, np.ndarray)
+        self.assertEqual(values.dtype.type, np.float64)
+        
+        values = gis_tools.validate_input_values(self.lon_hhmmss,
+                                                 location_type='lon')
+        
+        self.assertIsInstance(values, np.ndarray)
+        self.assertEqual(values.dtype.type, np.float64)
         
     

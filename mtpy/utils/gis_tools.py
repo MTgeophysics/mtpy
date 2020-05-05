@@ -435,12 +435,15 @@ def validate_utm_zone(utm_zone):
     """
     Make sure utm zone is a valid string
     
-    :param utm_zone: DESCRIPTION
-    :type utm_zone: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    :param utm_zone: UTM zone as {0-9}{0-9}{C-X} or {+, -}{0-9}{0-9}
+    :type utm_zone: [ int | string ]
+    :return: valid UTM zone
+    :rtype: [ int | string ]
 
     """
+    
+    if utm_zone is None:
+        return None
     #JP: if its unicode then its already a valid string in python 3
     if isinstance(utm_zone, (np.bytes_, bytes)):
         utm_zone = utm_zone.decode('UTF-8')
@@ -458,10 +461,16 @@ def validate_input_values(values, location_type=None):
     
     can input a string as a comma separated list
     
-    :param values: DESCRIPTION
-    :type values: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    :param values: values to project, can be given as:
+        * float
+        * string of a single value or a comma separate string '34.2, 34.5'
+        * list of floats or string
+        * numpy.ndarray
+        
+    :type values: [ float | string | list | numpy.ndarray ]
+    
+    :return: array of floats
+    :rtype: numpy.ndarray(dtype=float)
 
     """
     if isinstance(values, (int, float)):
@@ -470,7 +479,7 @@ def validate_input_values(values, location_type=None):
         values = np.array(values, dtype=np.float)
     elif isinstance(values, str):
         values = [ss.strip() for ss in values.strip().split(',')]
-        values = np.array(values, dtype=np.float)
+        values = np.array(values)
     elif isinstance(values, np.ndarray):
         values = values.astype(np.float)
         
@@ -481,6 +490,7 @@ def validate_input_values(values, location_type=None):
             except GISError as error:
                 raise GISError('{0}\n Bad input value at index {1}'.format(
                                error, ii))
+        values = values.astype(np.float)
             
     if location_type in ['lon', 'longitude']:
         for ii, value in enumerate(values):
@@ -489,21 +499,41 @@ def validate_input_values(values, location_type=None):
             except GISError as error:
                 raise GISError('{0}\n Bad input value at index {1}'.format(
                                error, ii)) 
+        values = values.astype(np.float)
             
     return values
 
 def _get_gdal_projection_ll2utm(datum, utm_zone, epsg):
     """
-    project point using GDAL
+    Get the GDAL transfrom point function for given datum, utm_zone, epsg to
+    transform a latitude and longitude point to UTM coordinates.
+    
+    ..note:: Have to input either UTM zone or EPSG number
+    
+    :param datum: well known datum
+    :type datum: string
+    
+    :param utm_zone: utm_zone {0-9}{0-9}{C-X} or {+, -}{0-9}{0-9}
+    :type utm_zone: [ string | int ]
+    
+    :param epsg: EPSG number
+    :type epsg: [ int | string ]
+    
+    :return: tranform point function
+    :rtype: osr.TransformPoint function
+    
     """
-    ll_cs = get_gdal_coordinate_system(datum)
+    if utm_zone is None and epsg is None:
+        raise GISError('Need to input either UTM zone or EPSG number')
+        
+    ll_cs = _get_gdal_coordinate_system(datum)
     
     # project point on to EPSG coordinate system if given
     if isinstance(epsg, int):
-        utm_cs = get_gdal_coordinate_system(epsg)
+        utm_cs = _get_gdal_coordinate_system(validate_epsg(epsg))
     # otherwise project onto given datum
     elif epsg is None:
-        utm_cs = get_gdal_coordinate_system(datum)
+        utm_cs = _get_gdal_coordinate_system(datum)
 
         zone_number, is_northern = split_utm_zone(utm_zone)
         utm_cs.SetUTM(zone_number, is_northern)
@@ -512,23 +542,33 @@ def _get_gdal_projection_ll2utm(datum, utm_zone, epsg):
 
 def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
     """
+    Get the GDAL transfrom point function for given datum, utm_zone, epsg to
+    transform a UTM point to latitude and longitude.
     
-    :param datum: DESCRIPTION
-    :type datum: TYPE
-    :param utm_zone: DESCRIPTION
-    :type utm_zone: TYPE
-    :param epsg: DESCRIPTION
-    :type epsg: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    ..note:: Have to input either UTM zone or EPSG number
+    
+    :param datum: well known datum
+    :type datum: string
+    
+    :param utm_zone: utm_zone {0-9}{0-9}{C-X} or {+, -}{0-9}{0-9}
+    :type utm_zone: [ string | int ]
+    
+    :param epsg: EPSG number
+    :type epsg: [ int | string ]
+    
+    :return: tranform point function
+    :rtype: osr.TransformPoint function
 
     """
+    if utm_zone is None and epsg is None:
+        raise GISError('Need to input either UTM zone or EPSG number')
+        
     zone_number, is_northern = split_utm_zone(utm_zone)
     
     if epsg is not None:
-        utm_cs = get_gdal_coordinate_system(epsg)
+        utm_cs = _get_gdal_coordinate_system(validate_epsg(epsg))
     else:
-        utm_cs = get_gdal_coordinate_system(datum)
+        utm_cs = _get_gdal_coordinate_system(datum)
         utm_cs.SetUTM(zone_number, is_northern)
     
     ll_cs = utm_cs.CloneGeogCS()
@@ -538,17 +578,28 @@ def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
 def _get_pyproj_projection(datum, utm_zone, epsg):
     """
     
-    :param datum: DESCRIPTION
-    :type datum: TYPE
-    :param utm_zone: DESCRIPTION
-    :type utm_zone: TYPE
-    :param epsg: DESCRIPTION, defaults to None
-    :type epsg: TYPE, optional
-    :return: DESCRIPTION
-    :rtype: TYPE
+    Get the pyproj transfrom point function for given datum, utm_zone, epsg to
+    transform either a UTM point to latitude and longitude, or latitude
+    and longitude point to UTM.
+    
+    ..note:: Have to input either UTM zone or EPSG number
+    
+    :param datum: well known datum
+    :type datum: string
+    
+    :param utm_zone: utm_zone {0-9}{0-9}{C-X} or {+, -}{0-9}{0-9}
+    :type utm_zone: [ string | int ]
+    
+    :param epsg: EPSG number
+    :type epsg: [ int | string ]
+    
+    :return: pyproj transform function
+    :rtype: pyproj.Proj function
 
     """
-
+    if utm_zone is None and epsg is None:
+        raise GISError('Need to input either UTM zone or EPSG number')
+        
     if isinstance(epsg, int):
         pp = pyproj.Proj('+init=EPSG:%d' % (epsg))
     
@@ -563,32 +614,48 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
     
 def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
     """
-    Project a point that is in Lat, Lon (will be converted to decimal degrees)
-    into UTM coordinates.
+    Project a point that is in latitude and longitude to the specified
+    UTM coordinate system.
+    
+    :param latitude: latitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type latitude: [ string | float ]
+    
+    :param longitude: longitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type longitude: [ string | float ]
+    
+    :param datum: well known datum
+    :type datum: string
+    
+    :param utm_zone: utm_zone {0-9}{0-9}{C-X} or {+, -}{0-9}{0-9}
+    :type utm_zone: [ string | int ]
+    
+    :param epsg: EPSG number defining projection
+                (see http://spatialreference.org/ref/ for moreinfo)
+                Overrides utm_zone if both are provided
+    :type epsg: [ int | string ]
 
-    Arguments:
-    ---------------
-        **lat** : float or string (DD:MM:SS.ms)
-                  latitude of point
-
-        **lon** : float or string (DD:MM:SS.ms)
-                  longitude of point
-
-        **datum** : string
-                    well known datum ex. WGS84, NAD27, NAD83, etc.
-
-        **utm_zone** : string
-                       zone number and 'S' or 'N' e.g. '55S'
-
-        **epsg** : int
-                   epsg number defining projection (see
-                   http://spatialreference.org/ref/ for moreinfo)
-                   Overrides utm_zone if both are provided
-
-    Returns:
-    --------------
-        **proj_point**: tuple(easting, northing, zone)
-                        projected point in UTM in Datum
+    :return: project point(s)
+    :rtype: tuple if a single point, np.recarray if multiple points
+        * tuple is (easting, northing,utm_zone)
+        * recarray has attributes (easting, northing, utm_zone, elevation)
+        
+    :Single Point: ::
+        
+        >>> gis_tools.project_point_ll2utm('-34:17:57.99', '149.2010301')
+        (702562.6911014864, 6202448.5654573515, '55H')
+        
+    :Multiple Points: ::
+        
+        >>> lat = np.arange(20, 40, 5)
+        >>> lon = np.arange(-110, -90, 5)
+        >>> gis_tools.project_point_ll2utm(lat, lon, datum='NAD27')
+        rec.array([( -23546.69921068, 2219176.82320353, 0., '13R'),
+                   ( 500000.        , 2764789.91224626, 0., '13R'),
+                   ( 982556.42985037, 3329149.98905941, 0., '13R'),
+                   (1414124.6019547 , 3918877.48599922, 0., '13R')],
+                  dtype=[('easting', '<f8'), ('northing', '<f8'),
+                         ('elev', '<f8'), ('utm_zone', '<U3')])
+        
 
     """
     if lat is None or lon is None:
@@ -638,29 +705,48 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
 
 def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
     """
-    Project a point that is in Lat, Lon (will be converted to decimal degrees)
-    into UTM coordinates.
+    Project a point that is in UTM to the specified geographic coordinate 
+    system.
     
-    Arguments:
-    ---------------
-        **easting** : float
-                    easting coordinate in meters
-                    
-        **northing** : float
-                    northing coordinate in meters
+    :param easting: easting in meters
+    :type easting: float 
+    
+    :param northing: northing in meters
+    :type northing: float
+    
+    :param datum: well known datum
+    :type datum: string
+    
+    :param utm_zone: utm_zone {0-9}{0-9}{C-X} or {+, -}{0-9}{0-9}
+    :type utm_zone: [ string | int ]
+    
+    :param epsg: EPSG number defining projection
+                (see http://spatialreference.org/ref/ for moreinfo)
+                Overrides utm_zone if both are provided
+    :type epsg: [ int | string ]
+
+    :return: project point(s)
+    :rtype: tuple if a single point, np.recarray if multiple points
+        * tuple is (easting, northing,utm_zone)
+        * recarray has attributes (easting, northing, utm_zone, elevation)
         
-        **utm_zone** : string (##N or ##S)
-                      utm zone in the form of number and North or South
-                      hemisphere, 10S or 03N
+    :Single Point: ::
         
-        **datum** : string
-                    well known datum ex. WGS84, NAD27, etc.
-                    
-    Returns:
-    --------------
-        **proj_point**: tuple(lat, lon)
-                        projected point in lat and lon in Datum, as decimal
-                        degrees.
+        >>> gis_tools.project_point_utm2ll(670804.18810336,
+        ...                                4429474.30215206,
+        ...                                datum='WGS84',
+        ...                                utm_zone='11T',
+        ...                                epsg=26711)
+        (40.000087, -114.999128)
+        
+    :Multiple Points: ::
+        
+        >>> gis_tools.project_point_utm2ll([670804.18810336, 680200],
+        ...                                [4429474.30215206, 4330200], 
+        ...                                datum='WGS84', utm_zone='11T',
+        ...                                epsg=26711)
+        rec.array([(40.000087, -114.999128), (39.104208, -114.916058)],
+                  dtype=[('latitude', '<f8'), ('longitude', '<f8')])
                     
     """
     easting = validate_input_values(easting)
