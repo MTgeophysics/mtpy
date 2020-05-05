@@ -16,6 +16,11 @@ Main functions are:
     
 These can take in a point or an array or list of points to project.
 
+latitude and longitude can be input as:
+    * 'DD:mm:ss.ms'
+    * 'DD.decimal_degrees'
+    * float(DD.decimal_degrees)
+
 Created on Fri Apr 14 14:47:48 2017
 Revised: 5/2020 JP 
 
@@ -185,8 +190,8 @@ def convert_position_float2str(position):
         raise GISError('Given value is not a float')
 
     deg = int(position)
-
     minutes = (abs(position) - abs(deg)) * 60.
+    
     # need to round seconds to 4 decimal places otherwise machine precision
     # keeps the 60 second roll over and the string is incorrect.
     sec = np.round((minutes - int(minutes)) * 60., 4)
@@ -207,85 +212,100 @@ def convert_position_float2str(position):
 def get_utm_zone(latitude, longitude):
     """
     Get utm zone from a given latitude and longitude
+    
+    :param latitude: latitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type latitude: [ string | float ]
+    
+    :param longitude: longitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type longitude: [ string | float ]
+    
+    :return: zone number
+    :rtype: int
+    
+    :return: is northern
+    :rtype: [ True | False ]
+    
+    :return: UTM zone
+    :rtype: string
+    
+    :Example: ::
+        
+        >>> lat, lon = ('-34:17:57.99', 149.2010301)
+        >>> zone_number, is_northing, utm_zone = gis_tools.get_utm_zone(lat, lon)
+        >>> print(zone_number, is_northing, utm_zone)
+        (55, False, '55H')
     """
+    latitude = assert_lat_value(latitude)
+    longitude = assert_lon_value(longitude)
+    
     zone_number = (int(1 + (longitude + 180.0) / 6.0))
     is_northern = bool(latitude >= 0)
-    n_str = _utm_letter_designator(latitude)
+    n_str = utm_letter_designator(latitude)
 
     return zone_number, is_northern, '{0:02.0f}{1}'.format(zone_number, n_str)
-
-def utm_zone_to_epsg(zone_number, is_northern):
-    """
-    get epsg code (WGS84 datum) for a given utm zone
-    
-    """
-    for key in list(EPSG_DICT.keys()):
-        val = EPSG_DICT[key]
-        if ('+zone={:<2}'.format(zone_number) in val) and \
-            ('+datum=WGS84' in val):
-            if is_northern:
-                if '+south' not in val:
-                    return key
-            else:
-                if '+south' in val:
-                    return key
                 
-def _utm_letter_designator(lat):
-    # This routine determines the correct UTM letter designator for the 
-    # given latitude returns 'Z' if latitude is outside the UTM limits of 
-    # 84N to 80S Written by Chuck Gantz- chuck.gantz@globalstar.com
 
-    if 84 >= lat >= 72:
-        return 'X'
-    elif 72 > lat >= 64:
-        return 'W'
-    elif 64 > lat >= 56:
-        return 'V'
-    elif 56 > lat >= 48:
-        return 'U'
-    elif 48 > lat >= 40:
-        return 'T'
-    elif 40 > lat >= 32:
-        return 'S'
-    elif 32 > lat >= 24:
-        return 'R'
-    elif 24 > lat >= 16:
-        return 'Q'
-    elif 16 > lat >= 8:
-        return 'P'
-    elif 8 > lat >= 0:
-        return 'N'
-    elif 0 > lat >= -8:
-        return 'M'
-    elif -8 > lat >= -16:
-        return 'L'
-    elif -16 > lat >= -24:
-        return 'K'
-    elif -24 > lat >= -32:
-        return 'J'
-    elif -32 > lat >= -40:
-        return 'H'
-    elif -40 > lat >= -48:
-        return 'G'
-    elif -48 > lat >= -56:
-        return 'F'
-    elif -56 > lat >= -64:
-        return 'E'
-    elif -64 > lat >= -72:
-        return 'D'
-    elif -72 > lat >= -80:
-        return 'C'
-    else:
-        return 'Z'  # if the Latitude is outside the UTM limits
+def utm_letter_designator(latitude):
+    """
+    Get the UTM zone letter designation for a given latitude
+    
+    :param latitude: latitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type latitude: [ string | float ]
+    
+    :return: UTM zone letter designation
+    :rtype: string
+    
+    :Example: ::
+        
+        >>> gis_utils.utm_letter_designator('-34:17:57.99')
+        H
+    """
+    latitude = assert_lat_value(latitude)
+    
+    letter_dict = {'C': (-80, -72),
+                   'D': (-72, -64),
+                   'E': (-64, -56),
+                   'F': (-56, -48),
+                   'G': (-48, -40),
+                   'H': (-40, -32),
+                   'J': (-32, -24),
+                   'K': (-24, -16),
+                   'L': (-16, -8),
+                   'M': (-8, 0),
+                   'N': (0, 8),
+                   'P': (8, 16),
+                   'Q': (16, 24),
+                   'R': (24, 32),
+                   'S': (32, 40),
+                   'T': (40, 48),
+                   'U': (48, 56),
+                   'V': (56, 64),
+                   'W': (64, 72),
+                   'X': (72, 84)}
+    
+    for key, value in letter_dict.items():
+        if value[1] >= latitude >= value[0]:
+            return key
+    
+    return 'Z'
                 
 def split_utm_zone(utm_zone):
     """
+    Split utme zone into zone number and is northing
     
-    :param utm_zone: DESCRIPTION
-    :type utm_zone: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    :param utm_zone: utm zone string as {0-9}{0-9}{C-X} or {+,-}{0-9}{0-9}
+    :type utm_zone: [ string | int ]
+    
+    :return: utm zone number
+    :rtype: int
+    
+    :return: is_northern
+    :rtype: boolean [ True | False ]
 
+    :Example: ::
+        
+        >>> gis_tools.split_utm_zone('11S')
+        11, True
     """
     utm_zone = validate_utm_zone(utm_zone)
     
@@ -303,44 +323,99 @@ def split_utm_zone(utm_zone):
         raise NotImplementedError(msg)
 
     return zone_number, is_northern
+
+def utm_zone_to_epsg(zone_number, is_northern):
+    """
+    get epsg code (WGS84 datum) for a given utm zone
+    
+    :param zone_number: UTM zone number
+    :type zone_number: int
+    
+    :param is_northing: Boolean of UTM is in northern hemisphere
+    :type is_northing: [ True | False ]
+    
+    :return: EPSG number
+    :rtype: int
+    
+    :Example: ::
+        
+        >>> gis_tools.utm_zone_to_epsg(55, False)
+        32755
+    
+    """
+    for key in list(EPSG_DICT.keys()):
+        val = EPSG_DICT[key]
+        if ('+zone={:<2}'.format(zone_number) in val) and \
+            ('+datum=WGS84' in val):
+            if is_northern:
+                if '+south' not in val:
+                    return key
+            else:
+                if '+south' in val:
+                    return key
     
 def get_epsg(latitude, longitude):
     """
     get epsg code for the utm projection (WGS84 datum) of a given latitude
     and longitude pair
+    
+    :param latitude: latitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type latitude: [ string | float ]
+    
+    :param longitude: longitude in [ 'DD:mm:ss.ms' | 'DD.decimal' | float ]
+    :type longitude: [ string | float ]
+    
+    :return: EPSG number
+    :rtype: int
+    
+    :Example: ::
+        
+        >>> gis_tools.get_epsg(-34.299442, '149:12:03.71')
+        32755
+        
     """  
     zone_number, is_northern, utm_str = get_utm_zone(latitude, longitude)
     
     return utm_zone_to_epsg(zone_number, is_northern)
 
-def get_gdal_coordinate_system(datum):
+
+def _get_gdal_coordinate_system(datum):
     """
-    Get coordinate function from GDAL
+    Get coordinate function from GDAL give a datum or EPSG number
+    
+    :param datum: can be a well know datum or an EPSG number
+    :type: [ int | string ]
+    
+    :return: spatial reference coordinate system
+    :rtype: osr.SpatialReference
+    
     """
     # set lat lon coordinate system
-    ll_cs = osr.SpatialReference()
+    cs = osr.SpatialReference()
     if isinstance(datum, int):
-        ogrerr = ll_cs.ImportFromEPSG(datum)
+        ogrerr = cs.ImportFromEPSG(datum)
         if ogrerr != OGRERR_NONE:
             raise GISError("GDAL/osgeo ogr error code: {}".format(ogrerr))
     elif isinstance(datum, str):
-        ogrerr = ll_cs.SetWellKnownGeogCS(datum)
+        ogrerr = cs.SetWellKnownGeogCS(datum)
         if ogrerr != OGRERR_NONE:
             raise GISError("GDAL/osgeo ogr error code: {}".format(ogrerr))
     else:
         raise GISError("""datum {0} not understood, needs to be EPSG as int
                            or a well known datum as a string""".format(datum))
 
-    return ll_cs
+    return cs
+
 
 def validate_epsg(epsg):
     """
     Make sure epsg is an integer
 
-    :param epsg: DESCRIPTION
-    :type epsg: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    :param epsg: EPSG number
+    :type epsg: [ int | str ]
+    
+    :return: EPSG number
+    :rtype: int
 
     """
     if isinstance(epsg, int):
