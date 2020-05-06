@@ -563,11 +563,12 @@ def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
     if utm_zone is None and epsg is None:
         raise GISError('Need to input either UTM zone or EPSG number')
         
-    zone_number, is_northern = split_utm_zone(utm_zone)
+    # zone_number, is_northern = split_utm_zone(utm_zone)
     
     if epsg is not None:
         utm_cs = _get_gdal_coordinate_system(validate_epsg(epsg))
     else:
+        zone_number, is_northern = split_utm_zone(utm_zone)
         utm_cs = _get_gdal_coordinate_system(datum)
         utm_cs.SetUTM(zone_number, is_northern)
     

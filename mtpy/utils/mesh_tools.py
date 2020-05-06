@@ -171,7 +171,7 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
         elev = elev[subsetIndices]
 
     # end if
-    xs, ys, _ = gis_tools.project_points_ll2utm(y, x, epsg=epsg,
+    xs, ys, _ = gis_tools.project_point_ll2utm(y, x, epsg=epsg,
                                                 utm_zone=utm_zone)
     # elevation in model grid
     # first, get lat,lon points of surface grid
