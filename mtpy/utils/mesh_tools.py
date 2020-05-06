@@ -153,12 +153,12 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
 
     if(fast):
         buffer = 1  # use a buffer of 1 degree around mesh-bounds
-        mlonmin, mlatmin = gis_tools.project_point_utm2ll(grid_east.min(),
+        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(),
                                                           grid_north.min(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
 
-        mlonmax, mlatmax = gis_tools.project_point_utm2ll(grid_east.max(), 
+        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), 
                                                           grid_north.max(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
