@@ -127,14 +127,14 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
     """
     # read the surface data in from ascii if surface not provided
     if surfacefile:
-        x, y, elev = mtfh.read_surface_ascii(surfacefile)
+        lon, lat, elev = mtfh.read_surface_ascii(surfacefile)
     elif surface:
-        x, y, elev = surface
+        lon, lat, elev = surface
     else:
         raise ValueError("'surfacefile' or 'surface' must be provided")
 
     # if lat/lon provided as a 1D list, convert to a 2d grid of points
-    if len(x.shape) == 1:
+    if len(lon.shape) == 1:
         # BM: There seems to be an issue using dense grids (X and Y
         #  become arrays of (N, N)), and get flattened to 1D array
         #  of N^2 in point projection below.
@@ -143,10 +143,10 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
         #  This issue doesn't happen when using 'fast' method below, so
         #  when not using fast, get a sparse grid instead.
         if fast:
-            x, y = np.meshgrid(x, y)
+            lon, lat = np.meshgrid(lon, lat)
         else:
-            x, y = np.meshgrid(x, y, sparse=True)
-            x = x.T
+            lon, lat = np.meshgrid(lon, lat, sparse=True)
+            lat = lat.T
 
     if len(grid_east.shape) == 1:
         grid_east, grid_north = np.meshgrid(grid_east, grid_north)
@@ -162,27 +162,29 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
                                                           grid_north.max(),
                                                           epsg=epsg,
                                                           utm_zone=utm_zone)
-        subsetIndices = (x >= mlonmin - buffer) & \
-                        (x <= mlonmax + buffer) & \
-                        (y >= mlatmin - buffer) & \
-                        (y <= mlatmax + buffer)
-        x = x[subsetIndices]
-        y = y[subsetIndices]
+        subsetIndices = (lon >= mlonmin - buffer) & \
+                        (lon <= mlonmax + buffer) & \
+                        (lat >= mlatmin - buffer) & \
+                        (lat <= mlatmax + buffer)
+        lon = lon[subsetIndices]
+        lat = lat[subsetIndices]
         elev = elev[subsetIndices]
 
     # end if
-    xs, ys, _ = gis_tools.project_point_ll2utm(y, x, epsg=epsg,
-                                                utm_zone=utm_zone)
+    projected_points = gis_tools.project_point_ll2utm(lat, lon, epsg=epsg,
+                                                      utm_zone=utm_zone)
+    print(projected_points)
     # elevation in model grid
     # first, get lat,lon points of surface grid
-    points = np.vstack([arr.flatten() for arr in [xs, ys]]).T
+    points = np.vstack([arr.flatten() for arr in [projected_points.easting,
+                                                  projected_points.northing]]).T
     # corresponding surface elevation points
     values = elev.flatten()
     # xi, the model grid points to interpolate to
     xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
     # elevation on the centre of the grid nodes
-    elev_mg = spi.griddata(
-        points, values, xi, method=method).reshape(grid_north.shape)
+    elev_mg = spi.griddata(points, values, xi, 
+                           method=method).reshape(grid_north.shape)
 
     return elev_mg
 
