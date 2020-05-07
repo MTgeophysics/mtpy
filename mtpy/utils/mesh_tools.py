@@ -173,7 +173,6 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
     # end if
     projected_points = gis_tools.project_point_ll2utm(lat, lon, epsg=epsg,
                                                       utm_zone=utm_zone)
-    print(projected_points)
     # elevation in model grid
     # first, get lat,lon points of surface grid
     points = np.vstack([arr.flatten() for arr in [projected_points.easting,
