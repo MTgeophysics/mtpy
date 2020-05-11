@@ -833,7 +833,7 @@ class EdiCollection(object):
         print(len(self.all_frequencies),
               'unique frequencies (Hz)', self.all_frequencies)
 
-        myper = obj.get_periods_by_stats(percentage=20)
+        myper = self.get_periods_by_stats(percentage=20)
 
         print(myper)
 
