@@ -532,8 +532,15 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             mt.rotation_angle = value
             
         self._rotation_angle = value
-            
-        self.make_strike_array()
+        
+    def fold_strike(self, strike):
+        """
+        
+        """
+        strike = strike % 180
+        strike[np.where(strike > 90)] -= 180
+        
+        return strike
 
     # -----------------------------------------------
     # The main plot method for this module
@@ -565,14 +572,6 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         plt.rcParams['figure.subplot.top'] = .93
         plt.rcParams['figure.subplot.wspace'] = .55
         plt.rcParams['figure.subplot.hspace'] = .70
-        # FZ: tweaks to make plot positioned better
-        # plt.rcParams['font.size']=self.font_size
-        # plt.rcParams['figure.subplot.left']=.1
-        # plt.rcParams['figure.subplot.right']=.90
-        # plt.rcParams['figure.subplot.bottom']=.2
-        # plt.rcParams['figure.subplot.top']=.90
-        # plt.rcParams['figure.subplot.wspace']=.70
-        # plt.rcParams['figure.subplot.hspace']=.70
 
         lpfig = None
         lpax = None
@@ -804,6 +803,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 elif self.ellipse_colorby == 'ellipticity':
                     colorarray = pt.ellipticity[jj]
+                    
+                elif self.ellipse_colorby in ['strike', 'azimuth']:
+                    colorarray = self.fold_strike(self.pt.azimuth)
 
                 else:
                     raise NameError(self.ellipse_colorby + ' is not supported')
@@ -1256,7 +1258,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         use this function if you updated some attributes and want to re-plot.
         """
 
-        plt.close(self.fig)
+        self.fig.clf()
         self.plot()
 
     def export_params_to_file(self, save_path=None):
