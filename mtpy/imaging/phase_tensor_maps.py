@@ -518,34 +518,22 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             self.plot()
             # self.save_figure(self.save_fn, file_format='png')
 
-    # ---need to rotate data on setting rotz
-    def _set_rot_z(self, rot_z):
+    #---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+    
+    @rotation_angle.setter
+    def rotation_angle(self, value):
         """
-        need to rotate data when setting z
+        only a single value is allowed
         """
-
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            self._rot_z = np.array([rot_z] * len(self.mt_list))
-
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                self._rot_z = np.repeat(rot_z, len(self.mt_list))
-
-        else:
-            pass
-
         for ii, mt in enumerate(self.mt_list):
-            mt.rot_z = self._rot_z[ii]
-
-    def _get_rot_z(self):
-        return self._rot_z
-
-    rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
-                     doc="""rotation angle(s)""")
+            mt.rotation_angle = value
+            
+        self._rotation_angle = value
+            
+        self.make_strike_array()
 
     # -----------------------------------------------
     # The main plot method for this module

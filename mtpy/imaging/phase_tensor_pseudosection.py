@@ -435,6 +435,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        self.fig.clf()
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
 
         # FZ: control tick rotation=30 not that good
@@ -528,26 +529,27 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
             # get the properties to color the ellipses by
             if self.ellipse_colorby == 'phimin':
-                colorarray = pt.phimin[::-1]
+                color_array = pt.phimin[::-1]
 
             elif self.ellipse_colorby == 'phimax':
-                colorarray = pt.phimin[::-1]
+                color_array = pt.phimin[::-1]
 
             elif self.ellipse_colorby == 'phidet':
-                colorarray = np.sqrt(abs(pt.det[::-1])) * (180 / np.pi)
+                color_array = np.sqrt(abs(pt.det[::-1])) * (180 / np.pi)
 
             elif self.ellipse_colorby == 'skew' or \
                     self.ellipse_colorby == 'skew_seg':
-                colorarray = pt.beta[::-1]
+                color_array = pt.beta[::-1]
 
             elif self.ellipse_colorby == 'normalized_skew' or \
                     self.ellipse_colorby == 'normalized_skew_seg':
-                colorarray = 2 * pt.beta[::-1]
+                color_array = 2 * pt.beta[::-1]
 
             elif self.ellipse_colorby == 'ellipticity':
-                colorarray = pt.ellipticity[::-1]
+                color_array = pt.ellipticity[::-1]
             elif self.ellipse_colorby in ['strike', 'azimuth']:
-                colorarray = pt.azimuth[::-1] % 180
+                color_array = pt.azimuth[::-1] % 180
+                color_array[color_array > 90] -= 180                
             else:
                 raise NameError(self.ellipse_colorby + ' is not supported')
 
@@ -562,8 +564,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     plot_periodlist = periodlist
 
             # get min and max of the color array for scaling later
-            minlist.append(min(colorarray))
-            maxlist.append(max(colorarray))
+            minlist.append(min(color_array))
+            maxlist.append(max(color_array))
 
             for jj, ff in enumerate(periodlist):
 
@@ -587,14 +589,14 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
                 # get ellipse color
                 if cmap.find('seg') > 0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[jj],
                                                              self.ellipse_colorby,
                                                              cmap,
                                                              ckmin,
                                                              ckmax,
                                                              bounds=bounds))
                 else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[jj],
                                                              self.ellipse_colorby,
                                                              cmap,
                                                              ckmin,
@@ -1159,45 +1161,45 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             tpiazlines.append(tpiazline + '\n')
 
         # write files
-        skfid = file(os.path.join(svpath, 'PseudoSection.skew'), 'w')
+        skfid = open(os.path.join(svpath, 'PseudoSection.skew'), 'w')
         skfid.writelines(sklines)
         skfid.close()
 
-        phiminfid = file(os.path.join(svpath, 'PseudoSection.phimin'), 'w')
+        phiminfid = open(os.path.join(svpath, 'PseudoSection.phimin'), 'w')
         phiminfid.writelines(phiminlines)
         phiminfid.close()
 
-        phimaxfid = file(os.path.join(svpath, 'PseudoSection.phimax'),
+        phimaxfid = open(os.path.join(svpath, 'PseudoSection.phimax'),
                          'w')
         phimaxfid.writelines(phimaxlines)
         phimaxfid.close()
 
-        ellipfid = file(os.path.join(svpath, 'PseudoSection.ellipticity'),
+        ellipfid = open(os.path.join(svpath, 'PseudoSection.ellipticity'),
                         'w')
         ellipfid.writelines(elliplines)
         ellipfid.close()
 
-        azfid = file(os.path.join(svpath, 'PseudoSection.azimuth'),
+        azfid = open(os.path.join(svpath, 'PseudoSection.azimuth'),
                      'w')
         azfid.writelines(azimlines)
         azfid.close()
 
-        tprfid = file(os.path.join(svpath, 'PseudoSection.tipper_mag_real'),
+        tprfid = open(os.path.join(svpath, 'PseudoSection.tipper_mag_real'),
                       'w')
         tprfid.writelines(tprlines)
         tprfid.close()
 
-        tprazfid = file(os.path.join(svpath, 'PseudoSection.tipper_ang_real'),
+        tprazfid = open(os.path.join(svpath, 'PseudoSection.tipper_ang_real'),
                         'w')
         tprazfid.writelines(tprazlines)
         tprazfid.close()
 
-        tpifid = file(os.path.join(svpath, 'PseudoSection.tipper_mag_imag'),
+        tpifid = open(os.path.join(svpath, 'PseudoSection.tipper_mag_imag'),
                       'w')
         tpifid.writelines(tpilines)
         tpifid.close()
 
-        tpiazfid = file(os.path.join(svpath, 'PseudoSection.tipper_ang_imag'),
+        tpiazfid = open(os.path.join(svpath, 'PseudoSection.tipper_ang_imag'),
                         'w')
         tpiazfid.writelines(tpiazlines)
         tpiazfid.close()

@@ -16,8 +16,6 @@ from mtpy.analysis.zinvariants import Zinvariants
 import mtpy.imaging.mtplottools as mtpl
 
 #==============================================================================
-
-
 class PlotStrike(object):
     """
     PlotStrike will plot the strike estimated from the invariants, phase tensor
@@ -1288,9 +1286,9 @@ class PlotStrike(object):
             slisttip[kk + 2].append(tpmed)
             slisttip[kk + 3].append(tpmode)
 
-        invfid = file(os.path.join(svpath, 'Strike.invariants'), 'w')
-        ptfid = file(os.path.join(svpath, 'Strike.pt'), 'w')
-        tpfid = file(os.path.join(svpath, 'Strike.tipper'), 'w')
+        invfid = open(os.path.join(svpath, 'Strike.invariants'), 'w')
+        ptfid = open(os.path.join(svpath, 'Strike.pt'), 'w')
+        tpfid = open(os.path.join(svpath, 'Strike.tipper'), 'w')
 
         #---> write strike from the invariants
         # == > mean
