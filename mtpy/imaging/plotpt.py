@@ -260,7 +260,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         
         """
         strike = strike % 180
-        strike[np.where(strike > 90)] = 90 - strike[np.where(strike > 90)]
+        strike[np.where(strike > 90)] -= 180
         
         return strike
 

@@ -184,6 +184,7 @@ class PlotStrike(object):
         self.font_size = 7
         self.text_pad = 0.6
         self.text_size = self.font_size
+        self.polar_limits = (np.deg2rad(-180), np.deg2rad(180))
             
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -227,6 +228,12 @@ class PlotStrike(object):
     def make_strike_array(self):
         """
         make strike array
+        
+        ..note:: Polar plots assume the azimuth is an angle measured 
+                counterclockwise positive from x = 0.  Therefore all angles
+                are calculated as 90 - angle to make them conform to the
+                polar plot convention.
+                
         """
         inv_list = []
         pt_list = []
@@ -245,7 +252,7 @@ class PlotStrike(object):
 
             # subtract 90 because polar plot assumes 0 is on the x an 90 is 
             # on the y
-            zs = zinv.strike - 90
+            zs = 90 - zinv.strike 
 
             # fold so the angle goes from 0 to 180
             if self.fold == True:
@@ -265,7 +272,7 @@ class PlotStrike(object):
             # subtract 90 because polar plot assumes 0 is on the x an 90 is 
             # on the y
             pt = mt.pt
-            az = pt.azimuth - 90
+            az = 90 - pt.azimuth
             az_err = pt.azimuth_err
             az[pt.phimax == 0] = np.nan
 
@@ -297,7 +304,7 @@ class PlotStrike(object):
 
             # # subtract 90 because polar plot assumes 0 is on the x an 90 is 
             # on the y
-            tipr = tip.angle_real + 90
+            tipr = 90 - tip.angle_real
 
             tipr[np.where(tipr == 180.)] = 0.0
 
@@ -352,8 +359,7 @@ class PlotStrike(object):
         self.med_inv = medinv
         self.med_pt = medpt
         self.med_tip = medtipr
-        
-        
+             
     def get_mean(self, st_array):
         """
         get mean value
@@ -589,13 +595,14 @@ class PlotStrike(object):
 
                     # make a light grid
                     axh.grid(alpha=.25, zorder=0)
+                    axh.set_xlim(self.polar_limits)
 
                     # properties for the invariants
                     if aa == 0:
                         # limits need to be rotate 90 counter clockwise because
                         # we already rotated by 90 degrees so the range is
                         # from -90 to 270 with -90 being east
-                        axh.set_xlim(-90 * np.pi / 180, 270 * np.pi / 180)
+                        
 
                         # label the plot with the mode value of strike
                         # need to subtract 90 again because the histogram is
@@ -632,7 +639,7 @@ class PlotStrike(object):
                     elif aa == 1:
                         # limits go from -180 to 180 as that is how the angle
                         # is calculated
-                        axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
+                        #axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
                         
                         pt_median, pt_mode, pt_mean = self.get_stats(plot_pt,
                                                                      pt_hist,
@@ -650,7 +657,7 @@ class PlotStrike(object):
                     # set tipper axes properties
                     elif aa == 2:
                         # limits go from -180 to 180
-                        axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
+                        #axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
 
                         tr_median, tr_mode, tr_mean = self.get_stats(tr,
                                                                      tr_hist,

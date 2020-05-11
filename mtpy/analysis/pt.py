@@ -818,12 +818,12 @@ class PhaseTensor(object):
 
             if self.pt_err is not None:
                 pt_rot[idx_freq], pt_err_rot[idx_freq] = \
-                    MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:],
+                    MTcc.rotate_matrix_with_errors(self.pt[idx_freq,:,:],
                                                   -angle,
                                                   self.pt_err[idx_freq,:,:])
             else:
                 pt_rot[idx_freq], pt_err_rot = \
-                    MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:],
+                    MTcc.rotate_matrix_with_errors(self.pt[idx_freq,:,:],
                                                   -angle)
 
         # --> set the rotated tensors as the current attributes

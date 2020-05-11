@@ -604,12 +604,12 @@ class Z(ResPhase):
 
             if self.z_err is not None:
                 z_rot[idx_freq], z_err_rot[idx_freq] = \
-                    MTcc.rotatematrix_incl_errors(self.z[idx_freq, :, :],
+                    MTcc.rotate_matrix_with_errors(self.z[idx_freq, :, :],
                                                   angle,
                                                   self.z_err[idx_freq, :, :])
             else:
                 z_rot[idx_freq], z_err_rot = \
-                    MTcc.rotatematrix_incl_errors(self.z[idx_freq, :, :],
+                    MTcc.rotate_matrix_with_errors(self.z[idx_freq, :, :],
                                                   angle)
 
         self.z = z_rot
@@ -1512,12 +1512,12 @@ class Tipper(object):
 
             if self.tipper_err is not None:
                 tipper_rot[idx_freq], tipper_err_rot[idx_freq] = \
-                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq, :, :],
+                    MTcc.rotate_vector_with_errors(self.tipper[idx_freq, :, :],
                                                   angle,
                                                   self.tipper_err[idx_freq, :, :])
             else:
                 tipper_rot[idx_freq], tipper_err_rot = \
-                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq, :, :],
+                    MTcc.rotate_vector_with_errors(self.tipper[idx_freq, :, :],
                                                   angle)
 
         self.tipper = tipper_rot
