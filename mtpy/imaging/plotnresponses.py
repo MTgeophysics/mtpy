@@ -309,23 +309,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         self.plot_style = kwargs.pop('plot_style', '1')
         self.plot_title = kwargs.pop('plot_title', None)
 
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        self._rot_z = kwargs.pop('rot_z', 0)
-        if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
-            self._rot_z = np.array([self._rot_z] * len(self.mt_list))
-
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(self._rot_z, np.ndarray):
-            if self._rot_z.shape[0] != len(self.mt_list):
-                self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
-
-        else:
-            pass
-
-        self._set_rot_z(self._rot_z)
-
         # set plot limits
         self.xlimits = kwargs.pop('xlimits', None)
         self.res_limits = kwargs.pop('res_limits', None)
@@ -385,34 +368,20 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         if self.plot_yn == 'y':
             self.plot()
 
-    # ---rotate data on setting rot_z
-    def _set_rot_z(self, rot_z):
+    #---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+    
+    @rotation_angle.setter
+    def rotation_angle(self, value):
         """
-        need to rotate data when setting z
+        only a single value is allowed
         """
-
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            self._rot_z += np.array([rot_z] * len(self.mt_list))
-
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                self._rot_z += np.repeat(rot_z, len(self.mt_list))
-
-        else:
-            pass
-
         for ii, mt in enumerate(self.mt_list):
-            mt.rot_z = self._rot_z[ii]
-
-    def _get_rot_z(self):
-        return self._rot_z
-
-    rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
-                     doc="""rotation angle(s)""")
+            mt.rotation_angle = value
+            
+        self._rotation_angle = value
 
     # --> on setting plot_ make sure to update the order and list
     def _set_plot_tipper(self, plot_tipper):
@@ -500,86 +469,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
         # set height ratios of the subplots
         hr = [2, 1.5] + [1] * (len(list(pdict.keys())) - 2)
-
-        #        if self.plot_style == '1':
-        #            self.plotlist = []
-        #
-        #            #--> plot from edi's if given, don't need to rotate because
-        #            #    data has already been rotated by the funcion _set_rot_z
-        ##            if self.fig_size is None:
-        ##                self.fig_size = [6, 6]
-        #            for ii, mt in enumerate(self.mt_list, 1):
-        #                p1 = plotresponse(mt_object=mt,
-        #                                  fig_num=ii,
-        #                                  fig_size=self.fig_size,
-        #                                  plot_num=self.plot_num,
-        #                                  fig_dpi=self.fig_dpi,
-        #                                  plot_yn='n',
-        #                                  plot_tipper=self._plot_tipper,
-        #                                  plot_strike=self._plot_strike,
-        #                                  plot_skew=self._plot_skew,
-        #                                  plot_pt=self._plot_pt)
-        #
-        #                #make sure all the properties are set to match the users
-        #                #line style between points
-        #                p1.xy_ls = self.xy_ls
-        #                p1.yx_ls = self.yx_ls
-        #                p1.det_ls = self.det_ls
-        #
-        #                #outline color
-        #                p1.xy_color = self.xy_color
-        #                p1.yx_color = self.yx_color
-        #                p1.det_color = self.det_color
-        #
-        #                #face color
-        #                p1.xy_mfc = self.xy_mfc
-        #                p1.yx_mfc = self.yx_mfc
-        #                p1.det_mfc = self.det_mfc
-        #
-        #                #maker
-        #                p1.xy_marker = self.xy_marker
-        #                p1.yx_marker = self.yx_marker
-        #                p1.det_marker = self.det_marker
-        #
-        #                #size
-        #                p1.marker_size = 2
-        #
-        #                #set plot limits
-        #                p1.xlimits = self.xlimits
-        #                p1.res_limits = self.res_limits
-        #                p1.phase_limits = self.phase_limits
-        #
-        #                #set font parameters
-        #                p1.font_size = self.font_size
-        #
-        #                #set arrow properties
-        #                p1.arrow_lw = self.arrow_lw
-        #                p1.arrow_head_width = self.arrow_head_width
-        #                p1.arrow_head_length = self.arrow_head_length
-        #                p1.arrow_color_real = self.arrow_color_real
-        #                p1.arrow_color_imag = self.arrow_color_imag
-        #                p1.arrow_direction = self.arrow_direction
-        #                p1.tipper_limits = self.tipper_limits
-        #
-        #                #skew properties
-        #                p1.skew_color = self.skew_color
-        #                p1.skew_marker = self.skew_marker
-        #
-        #                #strike properties
-        #                p1.strike_inv_marker = self.strike_inv_marker
-        #                p1.strike_inv_color = self.strike_inv_color
-        #
-        #                p1.strike_pt_marker = self.strike_pt_marker
-        #                p1.strike_pt_color = self.strike_pt_color
-        #
-        #                p1.strike_tip_marker = self.strike_tip_marker
-        #                p1.strike_tip_color = self.strike_tip_color
-        #
-        #                #--> plot the apparent resistivity and phase
-        #                self.plotlist.append(p1)
-        #
-        #                p1.plot()
-        #
 
         # -----Plot All in one figure with each plot as a subfigure------------
         if self.plot_style == 'all':
@@ -802,28 +691,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     pymin = min(0, min([min(rp.phase_xy), min(rp.phase_yx)]))
                     pymax = max(89.9, max([max(rp.phase_xy), max(rp.phase_yx)]))
                     self.phase_limits = (pymin, pymax)
-                #     self.phase_limits = (pymin, pymax)
-                # else:
-                #     self.phase_limits = (min(self.phase_limits[0], pymin),
-                #                          max(self.phase_limits[1], pymax))
-                # if self.phase_limits is None:
-                #     if min(rp.phasexy) < 0 or min(rp.phase_yx) < 0:
-                #         pymin = min([min(rp.phase_xy),
-                #                      min(rp.phase_yx)])
-                #         if pymin > 0:
-                #             pymin = 0
-                #     else:
-                #         pymin = 0
-                #
-                #     if max(rp.phasexy) > 90 or max(rp.phase_yx) > 90:
-                #         pymax = min([max(rp.phase_xy),  # YG: should use max instead ??
-                #                      max(rp.phase_yx)])
-                #         if pymax < 91:
-                #             pymax = 89.9  # YG: why??
-                #     else:
-                #         pymax = 89.9
-                #
-                #     self.phase_limits = (pymin, pymax)
 
                 # --> set axes properties
                 if ii == 0:
@@ -1182,6 +1049,11 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     elif self.ellipse_colorby == 'ellipticity':
                         colorarray = pt.ellipticity
+                    elif self.ellipse_colorby in ['strike', 'azimuth']:
+                        colorarray = self.fold_strike(pt.azimuth)
+                        self.ellipse_range = (-90, 90)
+                        ckmin = self.ellipse_range[0]
+                        ckmax = self.ellipse_range[1]
 
                     else:
                         raise NameError(self.ellipse_colorby + ' is not supported')
@@ -1887,31 +1759,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # ------plot strike angles----------------------------------------------
                 if self._plot_strike.find('y') == 0:
-
-                    #                    if self._plot_strike.find('i') > 0:
-                    #                        #strike from invariants
-                    #                        zinv = mt.Z.invariants
-                    #                        s1 = zinv.strike
-                    #
-                    #                        #fold angles so go from -90 to 90
-                    #                        s1[np.where(s1>90)] -= -180
-                    #                        s1[np.where(s1<-90)] += 180
-                    #
-                    #                        #plot strike with error bars
-                    #                        ps1 = self.axst.errorbar(mt.period,
-                    #                                                s1,
-                    #                                                marker=mxy[ii % len(mxy)],
-                    #                                                ms=self.marker_size,
-                    #                                                mfc=cst[ii],
-                    #                                                mec=cst[ii],
-                    #                                                mew=self.marker_lw,
-                    #                                                ls='none',
-                    #                                                yerr=zinv.strike_err,
-                    #                                                ecolor=cst[ii],
-                    #                                                capsize=self.marker_size,
-                    #                                                elinewidth=self.marker_lw)
-                    #
-                    #                        stlist.append(ps1[0])
 
                     if self._plot_strike.find('p') > 0:
                         # strike from phase tensor
