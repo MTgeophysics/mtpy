@@ -474,16 +474,24 @@ def rotate_matrix_with_errors(in_matrix, angle, error=None):
     
     Rotate a matrix including errors clockwise given an angle in degrees.
     
+    :param in_matrix: A n x 2 x 2  matrix to rotate 
+    :type inmatrix: np.ndarray
     
-    :param inmatrix: DESCRIPTION
-    :type inmatrix: TYPE
-    :param angle: DESCRIPTION
-    :type angle: TYPE
-    :param inmatrix_err: DESCRIPTION, defaults to None
-    :type inmatrix_err: TYPE, optional
-    :raises MTex: DESCRIPTION
-    :return: DESCRIPTION
-    :rtype: TYPE
+    :param angle: Angle to rotate by assuming clockwise positive from
+                 0 = north
+    :type angle: float
+    
+    :param error: A n x 2 x 2 matrix of associated errors,
+                        defaults to None
+    :type error: np.ndarray, optional
+    
+    :raises MTex: If input array is incorrect
+    
+    :return: rotated matrix
+    :rtype: np.ndarray
+    
+    :return: rotated matrix errors
+    :rtype: np.ndarray
 
     """
    
@@ -534,14 +542,37 @@ def rotate_matrix_with_errors(in_matrix, angle, error=None):
 
 
 def rotate_vector_with_errors(in_vector, angle, error=None):
-    #check for row or column vector 
+    """
+    
+    Rotate a vector including errors clockwise given an angle in degrees.
+    
+    :param in_matrix: A n x 1 x 2  vector to rotate 
+    :type invector: np.ndarray
+    
+    :param angle: Angle to rotate by assuming clockwise positive from
+                 0 = north
+    :type angle: float
+    
+    :param error: A n x 1 x 2 vector of associated errors,
+                        defaults to None
+    :type error: np.ndarray, optional
+    
+    :raises MTex: If input array is incorrect
+    
+    :return: rotated vector
+    :rtype: np.ndarray
+    
+    :return: rotated vector errors
+    :rtype: np.ndarray
+
+    """
     
     if in_vector is None:
         raise MTex.MTpyError_inputarguments('Vector AND error-vector must'+
                                             ' be defined')
 
     if (error is not None) and (in_vector.shape != error.shape):
-        msg = 'matricies are not the same shape in_matrix={0}, err={1}'.format(
+        msg = 'matricies are not the same shape in_vector={0}, err={1}'.format(
                in_vector.shape, error.shape)
         raise MTex.MTpyError_inputarguments(msg)
     
