@@ -805,7 +805,12 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     colorarray = pt.ellipticity[jj]
                     
                 elif self.ellipse_colorby in ['strike', 'azimuth']:
-                    colorarray = self.fold_strike(self.pt.azimuth)
+                    colorarray = pt.azimuth[jj] % 180
+                    if colorarray > 90:
+                        colorarray -= 180
+                    self.ellipse_range = (-90, 90)
+                    ckmin = float(self.ellipse_range[0])
+                    ckmax = float(self.ellipse_range[1])
 
                 else:
                     raise NameError(self.ellipse_colorby + ' is not supported')

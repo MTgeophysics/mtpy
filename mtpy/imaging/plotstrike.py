@@ -304,7 +304,8 @@ class PlotStrike(object):
             # on the y
             tipr = 90 - tip.angle_real
 
-            tipr[np.where(tipr == 180.)] = 0.0
+            tipr[np.where(abs(tipr) == 180.)] = np.nan
+            tipr[np.where(abs(tipr) == 0)] = np.nan
 
             # fold so the angle goes from 0 to 180
             if self.fold == True:

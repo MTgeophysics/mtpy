@@ -615,7 +615,7 @@ class PlotResponse(mtpl.PlotSettings):
         #phase_yx: Note add 180 to place it in same quadrant as phase_xy
         self.ebyxp = mtpl.plot_errorbar(self.axp, 
                                        self.mt.period, 
-                                       self.mt.Z.phase_yx+180*self.phase_quadrant, 
+                                       self.mt.Z.phase_yx + 180*self.phase_quadrant, 
                                        marker=self.yx_marker, 
                                        ms=self.marker_size,  
                                        color=self.yx_color, 
@@ -626,14 +626,14 @@ class PlotResponse(mtpl.PlotSettings):
 
         #check the phase to see if any point are outside of [0:90]
         if self.phase_limits == None:
-            if min(self.mt.Z.phase_xy)<0 or min(self.mt.Z.phase_yx)<0:
+            if min(self.mt.Z.phase_xy) < 0 or min(self.mt.Z.phase_yx) < 0:
                 pymin = min([min(self.mt.Z.phase_xy), min(self.mt.Z.phase_yx)])
                 if pymin > 0:
                    pymin = 0
             else:
                 pymin = 0
             
-            if max(self.mt.Z.phase_xy)>90 or max(self.mt.Z.phase_yx)>90:
+            if max(self.mt.Z.phase_xy) > 90 or max(self.mt.Z.phase_yx) > 90:
                 pymax = min([max(self.mt.Z.phase_xy), max(self.mt.Z.phase_yx)])
                 if pymax < 91:
                     pymax = 89.9
@@ -817,8 +817,8 @@ class PlotResponse(mtpl.PlotSettings):
                 s2 = self.mt.pt.azimuth
                 s2_err = self.mt.pt.azimuth_err
                 #fold angles to go from -90 to 90
-                s2[np.where(s2>90)] -= 180
-                s2[np.where(s2<-90)] += 180
+                s2[np.where(s2 > 90)] -= 180
+                s2[np.where(s2 < -90)] += 180
                 
                 #plot strike with error bars
                 ps2 = mtpl.plot_errorbar(self.axst, 
@@ -839,7 +839,7 @@ class PlotResponse(mtpl.PlotSettings):
             
             if self._plot_strike.find('t') > 0:
                 #strike from tipper
-                s3 = self.mt.Tipper.angle_real+90
+                s3 = self.mt.Tipper.angle_real + 90
                 
                 #fold to go from -90 to 90
                 s3[np.where(s3 > 90)] -= 180

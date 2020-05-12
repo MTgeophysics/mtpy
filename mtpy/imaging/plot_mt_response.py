@@ -476,7 +476,9 @@ class PlotMTResponse(PlotSettings):
                   'ellipticity': r'Ellipticity',
                   'skew_seg': r'Skew (deg)',
                   'normalized_skew_seg': r'Normalized Skew (deg)',
-                  'geometric_mean': r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$'}
+                  'geometric_mean': r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$',
+                  'strike': r"Strike (deg)",
+                  'azimuth': r"Strike (deg)"}
 
         if self.plot_tipper.find('y') == 0:
             if self.Tipper is None or np.all(self.Tipper.tipper == 0 + 0j):
@@ -542,6 +544,7 @@ class PlotMTResponse(PlotSettings):
 
         # make figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        self.fig.clf()
 
         # --> make figure for xy,yx components
         if self.plot_num == 1 or self.plot_num == 3:
@@ -762,15 +765,15 @@ class PlotMTResponse(PlotSettings):
         # -----plot tipper----------------------------------------------------
         if self.plot_tipper.find('y') == 0:
 
-            txr = self.Tipper.mag_real * np.sin(self.Tipper.angle_real * np.pi / 180 + \
-                                                np.pi * self.arrow_direction)
-            tyr = self.Tipper.mag_real * np.cos(self.Tipper.angle_real * np.pi / 180 + \
-                                                np.pi * self.arrow_direction)
+            txr = self.Tipper.mag_real * \
+                    np.cos(np.deg2rad(self.Tipper.angle_real))
+            tyr = self.Tipper.mag_real * \
+                    np.sin(np.deg2rad(self.Tipper.angle_real))
 
-            txi = self.Tipper.mag_imag * np.sin(self.Tipper.angle_imag * np.pi / 180 + \
-                                                np.pi * self.arrow_direction)
-            tyi = self.Tipper.mag_imag * np.cos(self.Tipper.angle_imag * np.pi / 180 + \
-                                                np.pi * self.arrow_direction)
+            txi = self.Tipper.mag_imag * \
+                    np.cos(np.deg2rad(self.Tipper.angle_imag))
+            tyi = self.Tipper.mag_imag * \
+                    np.sin(np.deg2rad(self.Tipper.angle_imag))
 
             nt = len(txr)
 
@@ -895,23 +898,27 @@ class PlotMTResponse(PlotSettings):
             # get the properties to color the ellipses by
             if self.ellipse_colorby == 'phiminang' or \
                     self.ellipse_colorby == 'phimin':
-                colorarray = self.pt.phimin
+                color_array = self.pt.phimin
 
             elif self.ellipse_colorby == 'phimaxang' or \
                     self.ellipse_colorby == 'phimax':
-                colorarray = self.pt.phimax
+                color_array = self.pt.phimax
 
 
             elif self.ellipse_colorby == 'phidet':
-                colorarray = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
+                color_array = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
 
 
             elif self.ellipse_colorby == 'skew' or \
                     self.ellipse_colorby == 'skew_seg':
-                colorarray = self.pt.beta
+                color_array = self.pt.beta
 
             elif self.ellipse_colorby == 'ellipticity':
-                colorarray = self.pt.ellipticity
+                color_array = self.pt.ellipticity
+                
+            elif self.ellipse_colorby in ['strike', 'azimuth']:
+                color_array = self.pt.azimuth % 180
+                color_array[np.where(color_array > 90)] -= 180
 
             else:
                 raise NameError(self.ellipse_colorby + ' is not supported')
@@ -937,14 +944,14 @@ class PlotMTResponse(PlotSettings):
 
                 # get ellipse color
                 if cmap.find('seg') > 0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
+                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[ii],
                                                              self.ellipse_colorby,
                                                              cmap,
                                                              ckmin,
                                                              ckmax,
                                                              bounds=bounds))
                 else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
+                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[ii],
                                                              self.ellipse_colorby,
                                                              cmap,
                                                              ckmin,
@@ -1364,7 +1371,7 @@ class PlotMTResponse(PlotSettings):
             >>> p1.redraw_plot()
         """
 
-        plt.close(self.fig)
+        self.fig.clf()
         self.plot()
 
     def __str__(self):
