@@ -564,7 +564,7 @@ class Model(object):
         # if n_airlayers < 0; set to 0
         log_z = mtcc.make_log_increasing_array(z1_layer, 
                                                target_depth,
-                                               n_layers)
+                                               n_layers-n_pad)
 
         if self.z_layer_rounding is not None:
             z_nodes = np.around(log_z, decimals=self.z_layer_rounding)
@@ -580,11 +580,10 @@ class Model(object):
         #itp = len(z_nodes) - 1
 
         # padding cells in the vertical direction
+        z_0 = np.float(z_nodes[-1])
         for ii in range(1, n_pad + 1):
-            z_0 = np.float(z_nodes[-1])
             pad_d = np.round(z_0 * pad_stretch ** ii, -2)
             z_nodes = np.append(z_nodes, pad_d)
-
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
         # z_nodes = np.hstack([[z1_layer] * n_air, z_nodes])
