@@ -1993,7 +1993,7 @@ class Model(object):
 
         # make depth indices into a list
         if depth_index == 'all':
-            depthindices = list(range(len(z)))
+            depthindices = list(range(z.shape[2]))
         elif np.iterable(depth_index):
             depthindices = np.array(depth_index).astype(int)
         else:
