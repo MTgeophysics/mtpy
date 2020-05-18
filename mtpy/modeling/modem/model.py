@@ -1843,7 +1843,10 @@ class Model(object):
                     
                                 
             elif airlayer_type == 'constant':
-                air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
+                if max_elev is not None:
+                    air_cell_thickness = np.ceil((max_elev - topo_core_min)/self.n_air_layers)
+                else:
+                    air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
                 new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
 
             if 'down' not in airlayer_type:

@@ -5,14 +5,17 @@ import os, re
 import numpy as np
 
 HAS_GDAL = gdal_data_check(None)._gdal_data_found
+NEW_GDAL = False
 
 if (not HAS_GDAL):
     try:
         import pyproj
     except ImportError:
         raise RuntimeError("Either GDAL or PyProj must be installed")
-        # end try
-# end if
+else:
+    import osgeo
+    if int(osgeo.__version__[0]) >= 3:
+        NEW_GDAL = True
 
 EPSG_DICT = {}
 try:
@@ -30,7 +33,8 @@ try:
 
         # print( "epsg_code_val", epsg_code_val)
 
-        if epsg_code_val is not None and len(epsg_code_val) > 0 and epsg_code_val[0].isdigit():
+        if epsg_code_val is not None and len(epsg_code_val) > 0 and \
+            epsg_code_val[0].isdigit():
             epsg_code = int(epsg_code_val[0])
             epsg_string = re.compile('>(.*)<').findall(line)[0].strip()
 
@@ -38,12 +42,14 @@ try:
         else:
             pass  #print("epsg_code_val NOT found for this line ", line, epsg_code_val)
     #end for
-except Exception as e:
-    # Failed to load EPSG codes and corresponding proj4 projections strings from pyproj.
-    # Since version 1.9.5 the epsg file stored in pyproj_datadir has been removed and
-    # replaced by 'proj.db', which is stored in a different folder.
-    # Since the underlying proj4 projection strings haven't changed, we simply load a
-    # local copy of these mappings to ensure backward compatibility.
+except Exception:
+    # Failed to load EPSG codes and corresponding proj4 projections strings
+    # from pyproj.
+    # Since version 1.9.5 the epsg file stored in pyproj_datadir has been
+    #removed and replaced by 'proj.db', which is stored in a different folder.
+    # Since the underlying proj4 projection strings haven't changed, we 
+    # simply load a local copy of these mappings to ensure backward
+    # compatibility.
 
     path = os.path.dirname(os.path.abspath(__file__))
     epsg_dict_fn = os.path.join(path, 'epsg.npy')
