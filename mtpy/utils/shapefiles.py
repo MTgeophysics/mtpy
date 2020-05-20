@@ -8,7 +8,7 @@ Created on Sun Apr 13 12:32:16 2014
 @author: jrpeacock
 """
 import mtpy.modeling.modem
-from mtpy.utils.gis_tools import transform_ll_to_utm
+from mtpy.utils.gis_tools import project_point_ll2utm
 
 try:
     from osgeo import ogr, gdal, osr
@@ -652,8 +652,7 @@ class PTShapeFile(object):
                     dpt = modem_data_obj.mt_dict[key].pt
                     mpt = modem_resp_obj.mt_dict[key].pt
                 except KeyError:
-                    print 'No information found for {0} in {1}'.format(key,
-                                                    modem_resp_fn)
+                    print('No information found for {0} in {1}').format(key, modem_resp_fn)
                     continue
 
                 # calculate the residual pt
