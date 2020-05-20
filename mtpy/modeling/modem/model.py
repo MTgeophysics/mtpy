@@ -554,26 +554,24 @@ class Model(object):
         print('-' * 15, file=file)
 
 
-    def make_z_mesh_new(self, z1_layer, target_depth, n_layers, n_pad,
-                        pad_stretch=1.2):
+    def make_z_mesh_new(self):
         """
         new version of make_z_mesh. make_z_mesh and M
         """
-
         # --> make depth grid
         # if n_airlayers < 0; set to 0
-        log_z = mtcc.make_log_increasing_array(z1_layer, 
-                                               target_depth,
-                                               n_layers-n_pad)
+        log_z = mtcc.make_log_increasing_array(self.z1_layer,
+                                               self.z_target_depth,
+                                               self.n_layers - self.pad_z)
 
         if self.z_layer_rounding is not None:
             z_nodes = np.around(log_z, decimals=self.z_layer_rounding)
         else:
             # round any values less than 100 to the same s.f. as z1_layer
-            z_nodes = np.around(log_z[log_z < 100], 
+            z_nodes = np.around(log_z[log_z < 100],
                                 decimals=-int(np.floor(np.log10(self.z1_layer))))
             # round any values greater than or equal to 100 to the nearest 100
-            z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100], 
+            z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100],
                                                    decimals=-2))
 
         # index of top of padding
@@ -581,8 +579,8 @@ class Model(object):
 
         # padding cells in the vertical direction
         z_0 = np.float(z_nodes[-1])
-        for ii in range(1, n_pad + 1):
-            pad_d = np.round(z_0 * pad_stretch ** ii, -2)
+        for ii in range(1, self.pad_z + 1):
+            pad_d = np.round(z_0 * self.pad_stretch_v ** ii, -2)
             z_nodes = np.append(z_nodes, pad_d)
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
