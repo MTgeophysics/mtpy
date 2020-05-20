@@ -11,9 +11,9 @@ class TestPenetration_depth2d(ImageTestCase):
         super(TestPenetration_depth2d, cls).setUpClass()
 
         cls._edifiles = "data/edifiles"
-        cls._period_index_list = [0, 1, 10, 20, 30, 40, 50, 59]
+        cls._period_list = [10400.01, 8799.998, 1800.0, 320.0001, 57.0, 9.4, 1.72, 0.35]
 
-    def test_plot2Dprofile_no_period_index_list(self):
+    def test_plot2Dprofile_no_period_list(self):
         """
         testing plot2Dprofile without period index list
         exception should be raised
@@ -26,18 +26,18 @@ class TestPenetration_depth2d(ImageTestCase):
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_det(self):
-        plot2Dprofile(self._edifiles, self._period_index_list, 'det')
+        plot2Dprofile(self._edifiles, self._period_list, zcomponent='det')
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_zxy(self):
-        plot2Dprofile(self._edifiles, self._period_index_list, 'zxy')
+        plot2Dprofile(self._edifiles, self._period_list, zcomponent='zxy')
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_zyx(self):
-        plot2Dprofile(self._edifiles, self._period_index_list, 'zyx')
+        plot2Dprofile(self._edifiles, self._period_list, zcomponent='zyx')
 
     def test_plot2Dprofile_wrong_rho(self):
         try:
-            plot2Dprofile(self._edifiles, self._period_index_list, 'dat')
+            plot2Dprofile(self._edifiles, self._period_list, zcomponent='dat')
         except Exception:
             pass
