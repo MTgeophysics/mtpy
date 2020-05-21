@@ -203,7 +203,7 @@ class PTShapeFile(object):
                         # GDA94 = EPSG:4283 See  http://epsg.io/4283
                     elif self.projection == 'WGS84':  # UTM zones coordinate system
                         edi_proj = 'WGS84'
-                        self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
+                        self.utm_cs, utm_point = project_point_ll2utm(mt_obj.lon,
                                                                      mt_obj.lat,
                                                                      edi_proj)
                         east, north, elev = utm_point
@@ -455,7 +455,7 @@ class PTShapeFile(object):
                     # Set geographic coordinate system to handle lat/lon
                     self.utm_cs.SetWellKnownGeogCS(self.projection)
                 else:
-                    self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
+                    self.utm_cs, utm_point = project_point_ll2utm(mt_obj.lon,
                                                                  mt_obj.lat,
                                                                  self.projection)
                     east, north, elev = utm_point
@@ -642,7 +642,7 @@ class PTShapeFile(object):
                     # Set geographic coordinate system to handle lat/lon
                     self.utm_cs.SetWellKnownGeogCS(self.projection)
                 else:
-                    self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
+                    self.utm_cs, utm_point = project_point_ll2utm(mt_obj.lon,
                                                                  mt_obj.lat,
                                                                  self.projection)
                     east, north, elev = utm_point
@@ -968,7 +968,7 @@ class TipperShapeFile(object):
                         # Set geographic coordinate system to handle lat/lon
                         self.utm_cs.SetWellKnownGeogCS(self.projection)
                     else:
-                        self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon,
+                        self.utm_cs, utm_point = project_point_ll2utm(mt_obj.lon,
                                                                      mt_obj.lat,
                                                                      self.projection)
                         east, north, elev = utm_point
