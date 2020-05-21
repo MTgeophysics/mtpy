@@ -8,7 +8,7 @@ Created on Sun Apr 13 12:32:16 2014
 @author: jrpeacock
 """
 import mtpy.modeling.modem
-from mtpy.utils.gis_tools import project_point_ll2utm
+from mtpy.utils.gis_tools import project_point_ll2utm, get_utm_zone
 
 try:
     from osgeo import ogr, gdal, osr
@@ -203,10 +203,10 @@ class PTShapeFile(object):
                         # GDA94 = EPSG:4283 See  http://epsg.io/4283
                     elif self.projection == 'WGS84':  # UTM zones coordinate system
                         edi_proj = 'WGS84'
-                        self.utm_cs, utm_point = project_point_ll2utm(mt_obj.lon,
-                                                                     mt_obj.lat,
-                                                                     edi_proj)
-                        east, north, elev = utm_point
+                        east, north, _ = project_point_ll2utm(mt_obj.lat, mt_obj.lon, edi_proj)
+                        zone_number, is_northern, _ = get_utm_zone(mt_obj.lat, mt_obj.lon)
+                        self.utm_cs = osr.SpatialReference()
+                        self.utm_cs.SetUTM(zone_number, is_northern)
                         utm_cs_list.append(self.utm_cs.GetAttrValue('projcs'))
                     else:
                         raise Exception(
