@@ -110,7 +110,7 @@ class TestModemInputFilesBuilder(TestCase):
         # BM: if this test is failing check that the correct filenames are being selected
         #   for comparison
         for test_output, expected_output in (
-                ("ModEM_Datatopo.dat", "ModEM_Data.dat"),
+                ("ModEM_Data_topo.dat", "ModEM_Data.dat"),
                 ("covariance.cov", "covariance.cov"),
                 ("ModEM_Model_File.rho", "ModEM_Model_File.rho")
         ):
