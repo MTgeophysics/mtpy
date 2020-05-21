@@ -322,6 +322,7 @@ class PhaseTensor(object):
 
 
     # ---Z Error array---------------------------------------------------------------
+    @property
     def z_err(self):
         return self._z_err
     
