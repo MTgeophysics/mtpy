@@ -549,16 +549,17 @@ class Model(object):
         print('    as rotating the mesh.', file=file)
         print('-' * 15, file=file)
 
-
-    def make_z_mesh_new(self):
+    def make_z_mesh_new(self, n_layers=None):
         """
         new version of make_z_mesh. make_z_mesh and M
         """
+        n_layers = self.n_layers if n_layers is None else n_layers
+
         # --> make depth grid
         # if n_airlayers < 0; set to 0
         log_z = mtcc.make_log_increasing_array(self.z1_layer,
                                                self.z_target_depth,
-                                               self.n_layers - self.pad_z)
+                                               n_layers - self.pad_z)
 
         if self.z_layer_rounding is not None:
             z_nodes = np.around(log_z, decimals=self.z_layer_rounding)
@@ -1822,11 +1823,8 @@ class Model(object):
                 self.n_layers += self.n_air_layers
                 # make a new mesh
                 n_layers = self.n_layers + self.n_air_layers
-                self.nodes_z, z_grid = self.make_z_mesh_new(self.z1_layer, 
-                                                            self.z_target_depth,
-                                                            n_layers,
-                                                            self.pad_z,
-                                                            self.pad_stretch_v)
+                self.nodes_z, z_grid = self.make_z_mesh_new(n_layers)
+
                 # adjust level to topography min
                 if max_elev is not None:
                     self.grid_z -= max_elev
