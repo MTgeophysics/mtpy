@@ -297,7 +297,8 @@ class Data(object):
                 else:
                     # convert to res/phase
                     # data_1 is resistivity
-                    data_1 = .2 / freq * np.abs(z_obj.det)
+                    # need to take absolute of square root before squaring it
+                    data_1 = .2 / freq * np.abs(z_obj.det**0.5)**2
                     # data_2 is phase
                     data_2 = np.rad2deg(np.arctan2(zdetimag, zdetreal))
 
