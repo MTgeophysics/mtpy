@@ -18,6 +18,8 @@ class TestModEM_Model(TestCase):
         self._model_dir = os.path.join(SAMPLE_DIR, 'ModEM')
         self._sgrid_fn = os.path.join(SAMPLE_DIR, 'gocad', 'ModEM_Model_File.sg')
         self._model_fn = os.path.join(self._model_dir, 'ModEM_Model_File.rho')
+        self._model_fn_old_z_mesh = \
+            os.path.join(SAMPLE_DIR, 'ModEM_old_make_z_mesh', 'ModEM_Model_File.rho')
         self._data_fn = os.path.join(self._model_dir, 'ModEM_Data.dat')
 
     def test_read_gocad_sgrid_file(self):
@@ -40,7 +42,7 @@ class TestModEM_Model(TestCase):
 
         self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
 
-        expected_data_file = os.path.normpath(self._model_fn)
+        expected_data_file = os.path.normpath(self._model_fn_old_z_mesh)
 
         self.assertTrue(os.path.isfile(expected_data_file),
                         "Ref output data file does not exist, nothing to compare with"
