@@ -87,8 +87,8 @@ def test_get_depth_indicies():
     #  that index (by returning a set)
     assert conv._get_depth_indicies(z_cells, [50, 51]) == set([1])
 
-    # If no depths are provided, return every index in a list
-    assert conv._get_depth_indicies(z_cells, []) == [0, 1, 2, 3, 4]
+    # If no depths are provided, return every index in a set
+    assert conv._get_depth_indicies(z_cells, []) == {0, 1, 2, 3, 4}
 
 
 def test_interpolate_depth_slice():

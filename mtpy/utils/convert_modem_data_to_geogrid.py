@@ -224,7 +224,7 @@ def _get_depth_indicies(centers_z, depths):
         return res
     else:
         print("No depths provided, getting all slices...")
-        return range(len(centers_z))
+        return set(range(len(centers_z)))
 
 
 def _interpolate_slice(ce, cn, resgrid, depth_index, target_gridx, target_gridy, log_scale):
