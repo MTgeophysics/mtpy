@@ -506,11 +506,7 @@ class Model(object):
         if self.z_mesh_method == 'custom':
                 self.nodes_z, z_grid = self.grid_z[1:]-self.grid_z[:-1], self.grid_z
         elif self.z_mesh_method == 'new':
-            self.nodes_z, z_grid = self.make_z_mesh_new(self.z1_layer, 
-                                                        self.z_target_depth,
-                                                        self.n_layers,
-                                                        self.pad_z,
-                                                        self.pad_stretch_v)
+            self.nodes_z, z_grid = self.make_z_mesh_new()
         else:
             raise NameError("Z mesh method \"{}\" is not supported".format(self.z_mesh_method))
 
