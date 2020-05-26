@@ -9,18 +9,17 @@ strike analysis using roseplot function
 """
 import os.path as op
 import os
-# os.chdir(r'C:\mtpywin\mtpy') # change to path where mtpy is installed
-os.chdir(r'c:\Users\jpeacock\Documents\GitHub\mtpy\data\edifiles2') # change to path where mtpy is installed
+os.chdir(r'C:\mtpywin\mtpy') # change to path where mtpy is installed
 
 from mtpy.imaging.plotstrike import PlotStrike
 
 
 # directory containing edis
-edipath = r'c:\Users\jpeacock\Documents\GitHub\mtpy\data\edifiles2'
+edipath = r'C:\mtpywin\mtpy\data\edifiles2'
 
 
-# # full path to file to save to
-# savepath = r'C:\mtpywin\mtpy\examples\plots\edi_plots'
+# full path to file to save to
+savepath = r'C:\mtpywin\mtpy\examples\plots\edi_plots'
 
 
 # gets edi file names as a list
@@ -51,25 +50,25 @@ strike_plot.fig_num = 4
 strike_plot.plot()
 
 # to rotate back
-# strike_plot.rotation_angle = 30
+strike_plot.rotation_angle = 30
 
-# # if you want to plot per decade plots
-# strike_plot.plot_type = 1
-# strike_plot.fig_num = 5
-# strike_plot.text_pad = 1.4
-# strike_plot.plot()
+# if you want to plot per decade plots
+strike_plot.plot_type = 1
+strike_plot.fig_num = 5
+strike_plot.text_pad = 1.4
+strike_plot.plot()
 
-# # if you want to only look at a few period ranges
-# # not the range is given in log10 of the period
-# strike_plot.plot_range = [-2, 0] 
-# strike_plot.fig_num = 6
-# strike_plot.plot()
+# if you want to only look at a few period ranges
+# not the range is given in log10 of the period
+strike_plot.plot_range = [-2, 0] 
+strike_plot.fig_num = 6
+strike_plot.plot()
 
-# # if you want a vertical orientation instead of horizontal
-# strike_plot.plot_orientation = 'v'
-# strike_plot.plot_range = 'data'
-# strike_plot.fig_num = 7
-# strike_plot.plot()
+# if you want a vertical orientation instead of horizontal
+strike_plot.plot_orientation = 'v'
+strike_plot.plot_range = 'data'
+strike_plot.fig_num = 7
+strike_plot.plot()
 
 
 
