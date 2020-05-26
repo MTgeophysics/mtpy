@@ -15,11 +15,10 @@ import os.path as op
 import mtpy.imaging.phase_tensor_maps as pptmaps
 
 # directory containing edis
-#edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
-edipath = '/home/bren/data_mtpy/phase_tensor_map/MT086_Edited_EDIs'
+edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
 
 # whether or not to save the figure to file
-save = True
+save = False
 
 # full path to file to save to
 savepath = '/tmp'
@@ -28,8 +27,9 @@ savepath = '/tmp'
 plot_freq = 1e-2
 
 # value to color ellipses by, options are phimin,phimax,skew
-colorby = 'skew'
+colorby = 'strike'
 ellipse_range = [-9, 9]
+rotation_angle = 0
 
 image_fn = 'phase_tensor_map%1is_' % (int(1. / plot_freq)) + colorby + '.png'
 
@@ -57,11 +57,11 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list=elst,
                                 arrow_head_width=0.002,
                                 arrow_head_length=0.002,
                                 #ellipse_cmap='mt_seg_bl2wh2rd'
-                                station_dict={'id': (5, 7)},
-                                background_image='/home/bren/data_mtpy/phase_tensor_map/gravity_Sept2017_Complete_Bouguer_focus_area1_10000_residual_he_ness.tif'
+                                station_id=(5, 7),
+                                #background_image='/home/bren/data_mtpy/phase_tensor_map/gravity_Sept2017_Complete_Bouguer_focus_area1_10000_residual_he_ness.tif'
  #                               bimg_band=1, #  Optional, set to None by default
                                 #bimg_cmap='viridis'  # Optional, set to 'viridis' by default
-                                )
+                                rotation_angle=rotation_angle)
 
 
 if save:
