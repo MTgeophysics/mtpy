@@ -27,20 +27,19 @@ edipath = r'c:\Users\jpeacock\Documents\GitHub\mtpy\data\edifiles2'
 elst = [op.join(edipath,f) for f in os.listdir(edipath) if (f.endswith('.edi'))]# and f.startswith('GL')
 
 
-### this will plot the estimated strike duplicated across quadrants and 
-# plot the orthogonal component.  Plot type 2 will plot all estimates of 
-# strike into one ploe 
+### this will plot the estimated strike duplicated across quadrants
+#  Plot type 2 will plot all estimates of  strike into one ploe 
 strike_plot = PlotStrike(fn_list=elst,
                          fold=False,
-                         show_ptphimin=False,
                          plot_type=2)
 
-# If you want to remove the orthogonal component
-strike_plot.plot_orthogonal = False
+# If you want to plot the orthogonal estimation
+strike_plot.plot_orthogonal = True
 strike_plot.fig_num = 2
 strike_plot.plot()
 
 # if you want to plot Tipper strike estimates as well
+strike_plot.plot_orthogonal = False
 strike_plot.plot_tipper = True
 strike_plot.fig_num = 3
 strike_plot.plot()

@@ -177,7 +177,7 @@ class PlotStrike(object):
         self.color_tip = (.2, .65, .2)
         self.ring_spacing = 10
         self.ring_limits = None
-        self.plot_orthogonal = True
+        self.plot_orthogonal = False
         
         self.font_size = 7
         self.text_pad = 0.6
