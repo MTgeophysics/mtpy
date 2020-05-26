@@ -533,7 +533,7 @@ def get_penetration_depth(mt_obj_list, selected_period, ptol, whichrho='det'):
         # the attribute Z
         zeta = mt_obj.Z
         per_index = np.argmin(np.fabs(zeta.freq - selected_period))
-        per = zeta.freq[per_index]
+        per = 1.0 / zeta.freq[per_index]
         if abs(selected_period - per) > selected_period * ptol:
             periods.append(np.nan)
             pen_depth.append(np.nan)

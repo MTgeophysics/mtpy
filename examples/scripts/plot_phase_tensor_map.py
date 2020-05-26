@@ -15,7 +15,9 @@ import os.path as op
 import mtpy.imaging.phase_tensor_maps as pptmaps
 
 # directory containing edis
-edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
+
+#edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
+edipath = '/mtpy/examples/data/ET_edi'
 
 # whether or not to save the figure to file
 save = False
@@ -57,8 +59,8 @@ m = pptmaps.PlotPhaseTensorMaps(fn_list=elst,
                                 arrow_head_width=0.002,
                                 arrow_head_length=0.002,
                                 #ellipse_cmap='mt_seg_bl2wh2rd'
-                                station_id=(5, 7),
-                                #background_image='/home/bren/data_mtpy/phase_tensor_map/gravity_Sept2017_Complete_Bouguer_focus_area1_10000_residual_he_ness.tif'
+                                station_dict={'id': (5, 7)},
+                                background_image='/mtpy/examples/data/gravity/ET_gravity.tif'
  #                               bimg_band=1, #  Optional, set to None by default
                                 #bimg_cmap='viridis'  # Optional, set to 'viridis' by default
                                 rotation_angle=rotation_angle)
