@@ -483,9 +483,11 @@ class PlotStrike(object):
                     self.ax_pt = self.fig.add_subplot(n_subplots, nb, jj + nb,
                                                        polar=True)
                 elif 'v' in self.plot_orientation:
-                    self.ax_inv = self.fig.add_subplot(nb, n_subplots, 2*jj-1,
+                    self.ax_inv = self.fig.add_subplot(nb, n_subplots,
+                                                       jj * n_subplots - 2,
                                                        polar=True)
-                    self.ax_pt = self.fig.add_subplot(nb, n_subplots, 2*jj,
+                    self.ax_pt = self.fig.add_subplot(nb, n_subplots, 
+                                                      jj * n_subplots - 1,
                                                       polar=True)
                 ax_list = [self.ax_inv, self.ax_pt]
                 # vertical orientation
@@ -495,8 +497,8 @@ class PlotStrike(object):
                                                            jj + 2 * nb,
                                                            polar=True)
                     elif 'v' in self.plot_orientation:
-                        self.ax_tip = self.fig.add_subplot(n_subplots, nb,
-                                                           2*jj + 2,
+                        self.ax_tip = self.fig.add_subplot(nb, n_subplots, 
+                                                           jj * n_subplots,
                                                            polar=True)
                     ax_list.append(self.ax_tip)
 
@@ -623,13 +625,15 @@ class PlotStrike(object):
                         #--> set title of subplot
                         if 'h' in self.plot_orientation:
                             axh.set_title(self.title_dict[bb], fontdict=fd,
-                                          bbox={'facecolor': 'white', 'alpha': .25})
+                                          bbox={'facecolor': 'white',
+                                                'alpha': .25})
 
                             #--> set the title offset
                             axh.titleOffsetTrans._t = (0, .1)
                         elif 'v' in self.plot_orientation:
                             axh.set_ylabel(self.title_dict[bb], fontdict=fd,
-                                           bbox={'facecolor': 'white', 'alpha': .25}, 
+                                           bbox={'facecolor': 'white',
+                                                 'alpha': .25}, 
                                            rotation=0,
                                            labelpad=50)
                             axh.yaxis.set_label_position("right")
