@@ -125,7 +125,7 @@ def strike_angle(z_array=None, z_object=None, pt_array=None,
                  pt_object=None, skew_threshold=5,
                  eccentricity_threshold=0.1):
     """
-    Estimate strike angle from 2D parts of the impedance tensor given the
+    Estimate strike angle from 2D parts of the phase tensor given the
     skew and eccentricity thresholds
 
         Arguments
@@ -210,16 +210,17 @@ def strike_angle(z_array=None, z_object=None, pt_array=None,
             a = pt_obj.alpha[idx]
             b = pt_obj.beta[idx]
     
-            strike1 = (a - b) % 90
-            if 0 < strike1 < 45:
+            strike1 = (a - b) % 180
+            
+            # change so that values range from -90 to +90
+            # add alternative strikes to account for ambiguity
+            if strike1 > 90:
+                strike1 -= 180
                 strike2 = strike1 + 90
             else:
                 strike2 = strike1 - 90
-    
-            s1 = min(strike1, strike2)
-            s2 = max(strike1, strike2)
-    
-            lo_strikes.append((s1, s2))
+        
+            lo_strikes.append((strike1, strike2))
 
     return np.array(lo_strikes)
 
