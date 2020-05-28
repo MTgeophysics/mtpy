@@ -564,7 +564,7 @@ class Model(object):
         # if n_airlayers < 0; set to 0
         log_z = mtcc.make_log_increasing_array(z1_layer, 
                                                target_depth,
-                                               n_layers)
+                                               n_layers-n_pad)
 
         if self.z_layer_rounding is not None:
             z_nodes = np.around(log_z, decimals=self.z_layer_rounding)
@@ -580,11 +580,10 @@ class Model(object):
         #itp = len(z_nodes) - 1
 
         # padding cells in the vertical direction
+        z_0 = np.float(z_nodes[-1])
         for ii in range(1, n_pad + 1):
-            z_0 = np.float(z_nodes[-1])
             pad_d = np.round(z_0 * pad_stretch ** ii, -2)
             z_nodes = np.append(z_nodes, pad_d)
-
         # add air layers and define ground surface level.
         # initial layer thickness is same as z1_layer
         # z_nodes = np.hstack([[z1_layer] * n_air, z_nodes])
@@ -1844,7 +1843,10 @@ class Model(object):
                     
                                 
             elif airlayer_type == 'constant':
-                air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
+                if max_elev is not None:
+                    air_cell_thickness = np.ceil((max_elev - topo_core_min)/self.n_air_layers)
+                else:
+                    air_cell_thickness = np.ceil((topo_core.max() - topo_core_min)/self.n_air_layers)
                 new_air_nodes = np.array([air_cell_thickness]*self.n_air_layers)
 
             if 'down' not in airlayer_type:
@@ -1993,7 +1995,7 @@ class Model(object):
 
         # make depth indices into a list
         if depth_index == 'all':
-            depthindices = list(range(len(z)))
+            depthindices = list(range(z.shape[2]))
         elif np.iterable(depth_index):
             depthindices = np.array(depth_index).astype(int)
         else:
