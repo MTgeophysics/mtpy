@@ -32,7 +32,20 @@ zcomponent = 'det'  # 'zxy', 'zyx' also options
 pen2d.plot2Dprofile(edi_dir=edidir,
                     selected_periods=selected_periods,
                     ptol=ptol,
-                    zcomponent='det',
+                    zcomponent=zcomponent,
                     save=True,
                     savepath='/tmp/Depth2D.png')
 
+# selected_period_indices: indices of periods to plot.
+# 'ptol' ins't required if using indices.
+selected_period_indices = [0, 10, 20]
+
+# p_index: needs to be set to True if using indices.
+period_by_index = True
+
+pen2d.plot2Dprofile(edi_dir=edidir,
+                    selected_periods=selected_period_indices,
+                    period_by_index=period_by_index,
+                    zcomponent=zcomponent,
+                    save=True,
+                    savepath='/tmp/Depth2D_by_index.png')

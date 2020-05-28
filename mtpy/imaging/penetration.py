@@ -145,6 +145,7 @@ class Depth2D(ImagingBase):
     generate a profile using occam2d module, then plot the penetration
     depth profile at the given periods vs stations.
     """
+
     def __init__(self, selected_periods, data=None, ptol=0.05, rho='det'):
         super(Depth2D, self).__init__()
         self._selected_periods = selected_periods
@@ -158,6 +159,8 @@ class Depth2D(ImagingBase):
             raise ZComponentError
         elif self._fig is not None:
             return  # nothing to plot
+        
+        period_by_index = kwargs.pop('period_by_index', False)
 
         pr = occam2d.Profile(edi_list=self._data)
         pr.generate_profile()
@@ -171,7 +174,13 @@ class Depth2D(ImagingBase):
         self._fig = plt.figure(figsize=(8, 6), dpi=80)
         self._fig.set_tight_layout(True)
         for selected_period in self._selected_periods:
-            (stations, periods, pen, _) = get_penetration_depth(pr.edi_list, selected_period, self._ptol, whichrho=self._rho)
+            if period_by_index:
+                (stations, periods, pen, _) = get_penetration_depth_by_index(
+                    pr.edi_list, selected_period, whichrho=self._rho)
+            else:
+                (stations, periods, pen, _) = get_penetration_depth_by_period(
+                    pr.edi_list, selected_period, whichrho=self._rho, ptol=self._ptol)
+
             line_label = "Period=%.2e s" % selected_period
 
             plt.plot(
@@ -223,7 +232,6 @@ class Depth2D(ImagingBase):
         # this plot require multiple edi files
         self._set_edis(data)
 
-    
     def set_rho(self, rho):
         if rho is None or rho in DEFAULT_RHOLIST:
             self._rho = rho
@@ -272,13 +280,13 @@ class Depth3D(ImagingBase):
         if period_by_index:  # self._period is considered as an index
             if not isinstance(self._period, int):
                 self._logger.warning("period value is not integer but used as an index.")
-            (stations, periods, pendep, latlons) = get_penetration_depth(self._data,
-                                                                         int(self._period),
-                                                                         whichrho=self._rho)
+            (stations, periods, pendep, latlons) = get_penetration_depth_by_index(self._data,
+                                                                                  int(self._period),
+                                                                                  whichrho=self._rho)
         else:
-            (stations, periods, pendep, latlons) = get_penetration_depth_generic(self._data,
-                                                                                 self._period,
-                                                                                 whichrho=self._rho, ptol=self._ptol)
+            (stations, periods, pendep, latlons) = get_penetration_depth_by_period(self._data,
+                                                                                   self._period,
+                                                                                   whichrho=self._rho, ptol=self._ptol)
 
         if check_period_values(periods, ptol=self._ptol) is False:
 
@@ -495,7 +503,7 @@ class Depth3D(ImagingBase):
 
 # Utility functions (may need to move to utility module
 
-def get_penetration_depth(mt_obj_list, selected_period, ptol, whichrho='det'):
+def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho='det'):
     """
     Compute the penetration depth of mt_obj at the given period_index, and using whichrho option.
 
@@ -520,7 +528,81 @@ def get_penetration_depth(mt_obj_list, selected_period, ptol, whichrho='det'):
     pen_depth = []
     stations = []
     latlons = []
-    _logger.info("Plotting nearest period to {} for all stations".format(selected_period))
+    for mt_obj in mt_obj_list:
+        if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
+            mt_obj = mt.MT(mt_obj)
+        elif not isinstance(mt_obj, mt.MT):
+            raise Exception("Unsupported list of objects %s" % type(mt_obj))
+        # station id
+        stations.append(mt_obj.station)
+        # latlons
+        latlons.append((mt_obj.lat, mt_obj.lon))
+        # the attribute Z
+        zeta = mt_obj.Z
+
+        if per_index >= len(zeta.freq):
+            _logger.debug(
+                "Number of frequecies (Max per_index)= %s", len(
+                    zeta.freq))
+            raise Exception(
+                "Index out_of_range Error: period index must be less than number of periods in zeta.freq")
+
+        per = 1.0 / zeta.freq[per_index]
+        periods.append(per)
+
+        if whichrho == 'zxy':
+            penetration_depth = - scale_param * \
+                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+        elif whichrho == 'zyx':
+            penetration_depth = - scale_param * \
+                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+        elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
+            # determinant value at the given period index
+            det2 = np.abs(zeta.det[per_index])
+            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+        else:
+            _logger.critical(
+                "unsupported method to compute penetration depth: %s",
+                whichrho)
+            # sys.exit(100)
+            raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
+
+        pen_depth.append(penetration_depth)
+
+    return stations, periods, pen_depth, latlons
+
+
+def load_edi_files(edi_path, file_list=None):
+
+    if file_list is None:
+        file_list = [ff for ff in os.listdir(edi_path) if ff.endswith("edi")]
+
+    if edi_path is not None:
+        edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
+    return edi_list
+
+
+def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whichrho='det',):
+    """
+    This is a more generic and useful function to compute the penetration depths
+    of a list of edi files at given period_sec (seconds).
+    No assumption is made about the edi files period list.
+    A tolerance of 10% is used to identify the relevant edi files which contain the period of interest.
+
+    :param ptol: freq error/tolerance, need to be consistent with phase_tensor_map.py, default is 0.1
+    :param edi_file_list: edi file list of mt object list
+    :param period_sec: the float number value of the period in second: 0.1, ...20.0
+    :param whichrho:
+    :return: tuple of (stations, periods, penetrationdepth, lat-lons-pairs)
+    """
+    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+
+    # per_index=0,1,2,....
+    periods = []
+    pen_depth = []
+    stations = []
+    latlons = []
+    _logger.info("Getting nearest period to {} for all stations".format(selected_period))
     for mt_obj in mt_obj_list:
         if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
             mt_obj = mt.MT(mt_obj)
@@ -563,110 +645,6 @@ def get_penetration_depth(mt_obj_list, selected_period, ptol, whichrho='det'):
         pen_depth.append(penetration_depth)
 
     return stations, periods, pen_depth, latlons
-
-
-def load_edi_files(edi_path, file_list=None):
-
-    if file_list is None:
-        file_list = [ff for ff in os.listdir(edi_path) if ff.endswith("edi")]
-
-    if edi_path is not None:
-        edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
-    return edi_list
-
-
-def get_penetration_depth_generic(edi_file_list, period_sec, whichrho='det', ptol=0.1):
-    """
-    This is a more generic and useful function to compute the penetration depths
-    of a list of edi files at given period_sec (seconds).
-    No assumption is made about the edi files period list.
-    A tolerance of 10% is used to identify the relevant edi files which contain the period of interest.
-
-    :param ptol: freq error/tolerance, need to be consistent with phase_tensor_map.py, default is 0.1
-    :param edi_file_list: edi file list of mt object list
-    :param period_sec: the float number value of the period in second: 0.1, ...20.0
-    :param whichrho:
-    :return: tuple of (stations, periods, penetrationdepth, lat-lons-pairs)
-    """
-
-    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
-    _logger.debug("The scaling parameter=%.6f" % scale_param)
-
-    # per_index=0,1,2,....
-    periods = []
-    pendep = []
-    stations = []
-    latlons = []
-
-    all_freqs = []  # gather all freqs
-
-    for afile in edi_file_list:
-        if isinstance(afile, str) and os.path.isfile(afile):
-            mt_obj = mt.MT(afile)
-        elif isinstance(afile, mt.MT):
-            mt_obj = afile
-            afile = mt_obj.fn
-        else:
-            raise Exception("Unsupported list of objects %s" % type(afile))
-
-        all_freqs.extend(list(mt_obj.Z.freq))
-
-        # all stations positions included
-        # stations.append((mt_obj.lat, mt_obj.lon))
-        stations.append(mt_obj.station)
-
-        p_index = [ff for ff, f2 in enumerate(1.0 / mt_obj.Z.freq)
-                   if (f2 > period_sec * (1 - ptol)) and (f2 < period_sec * (1 + ptol))]
-
-        _logger.debug("Period index found: %s", p_index)
-
-        if len(p_index) >= 1:  # this edi can be included
-            per_index = p_index[0]
-
-            # stations.append(mt_obj.station)
-            latlons.append((mt_obj.lat, mt_obj.lon))
-
-            # the attribute Z
-            zeta = mt_obj.Z
-
-            if per_index >= len(zeta.freq):
-                _logger.debug(
-                    "Number of frequecies (Max per_index)= %s", len(
-                        zeta.freq))
-                raise Exception(
-                    "Index out_of_range Error: period index must be less than number of periods in zeta.freq")
-
-            per = 1.0 / zeta.freq[per_index]
-            periods.append(per)
-
-            if whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
-                # determinant value at the given period index
-                det2 = np.abs(zeta.det[per_index])
-                penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
-            elif whichrho == 'zxy':
-                penetration_depth = -scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
-            elif whichrho == 'zyx':
-                penetration_depth = -scale_param * np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-
-            else:
-                _logger.critical(
-                    "un-supported method to compute penetration depth: %s", whichrho)
-                sys.exit(100)
-
-            pendep.append(penetration_depth)
-
-        else:
-            _logger.warn(
-                '%s was not used in the 3d profile, because it has no required period.',
-                afile)
-            pass
-
-    # sort all frequencies so that they are in descending order,
-    # use set to remove repeats and make an array.
-    all_periods = 1.0 / np.array(sorted(list(set(all_freqs)), reverse=True))
-    # print("Here is a list of ALL the periods in your edi files:\t ", all_periods)
-
-    return stations, periods, pendep, latlons
 
 
 class ZComponentError(ParameterError):
