@@ -400,7 +400,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         self.subplot_wspace = .05
         self.subplot_hspace = .05
         
-        print(kwargs)
         for key, value in kwargs.items():
             setattr(self, key, value)
 

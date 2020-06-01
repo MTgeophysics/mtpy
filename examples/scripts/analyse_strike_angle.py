@@ -31,4 +31,4 @@ strike = strike_angle(z_object=mtObj.Z,
                      eccentricity_threshold=0.1 # threshold in phase ellipse eccentricity to determine if data are 2d (vs 1d)
                       )
 
-print strike
+print(strike)

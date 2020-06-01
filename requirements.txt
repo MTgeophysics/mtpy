@@ -1,5 +1,5 @@
 sphinx>=1.8.3
-matplotlib>=2.0.2
+matplotlib>=3.2.1
 numpy
 scipy
 pillow

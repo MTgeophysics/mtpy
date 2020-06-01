@@ -146,7 +146,7 @@ class ImageCompare(object):
                     else:
                         # checking if the created image is empty
                         # verify(test_image) # if issues with test_image, nonexistent? raise exception.
-                        actual_image = _png.read_png_int(test_image)
+                        actual_image = matplotlib.pyplot.imread(test_image)
                         actual_image = actual_image[:, :, :3]  # remove the alpha channel (if exists)
                         import numpy as np
                         if np.any(actual_image):

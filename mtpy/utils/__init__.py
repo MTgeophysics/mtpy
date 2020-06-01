@@ -14,7 +14,7 @@ if (not HAS_GDAL):
         raise RuntimeError("Either GDAL or PyProj must be installed")
 else:
     import osgeo
-    if int(osgeo.__version__[0]) >= 3:
+    if hasattr(osgeo, '__version__') and int(osgeo.__version__[0]) >= 3:
         NEW_GDAL = True
 
 EPSG_DICT = {}

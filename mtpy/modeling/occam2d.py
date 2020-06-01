@@ -835,7 +835,7 @@ class Mesh():
         if self.x_nodes.shape[0] != nh:
             new_nh = self.x_nodes.shape[0]
             print('The header number {0} should read {1}'.format(nh, new_nh))
-            self.mesh_values.resize(new_nh, nv, 4)
+            self.mesh_values = np.resize(self.mesh_values, (new_nh, nv, 4))
         else:
             new_nh = nh
 
@@ -843,7 +843,7 @@ class Mesh():
         if self.z_nodes.shape[0] != nv:
             new_nv = self.z_nodes.shape[0]
             print('The header number {0} should read {1}'.format(nv, new_nv))
-            self.mesh_values.resize(new_nh, nv, 4)
+            self.mesh_values = np.resize(self.mesh_values, (new_nh, nv, 4))
 
         # make x_grid and z_grid
         self.x_grid = self.x_nodes.copy()

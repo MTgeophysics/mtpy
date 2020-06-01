@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import click
 
-from mtpy.imaging.penetration import get_penetration_depth, load_edi_files, Depth2D
+from mtpy.imaging.penetration import get_penetration_depth_by_index, load_edi_files, Depth2D
 
 # mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -94,7 +94,7 @@ def barplot_multi_station_penentration_depth(
 
     mt_obj_list = [mt.MT(afile) for afile in edifiles_dir]
 
-    (stations, periods, depths, _) = get_penetration_depth(
+    (stations, periods, depths, _) = get_penetration_depth_by_index(
         mt_obj_list, int(per_index), whichrho=zcomponent)
 
     # the attribute Z
