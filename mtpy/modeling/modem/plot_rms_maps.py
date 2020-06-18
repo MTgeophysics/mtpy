@@ -242,24 +242,30 @@ class PlotRMSMaps(object):
         jj = plot_dict['index'][1]
 
         rms = np.zeros(self.residual.residual_array.shape[0])
-        for ridx in range(len(self.residual.residual_array)):
+        self.residual.get_rms()
+        if plot_dict['label'].startswith('$Z'):
+            rms = self.residual.rms_array['rms_z_component'][:,ii,jj]
+        elif plot_dict['label'].startswith('$T'):
+            rms = self.residual.rms_array['rms_tip_component'][:,ii,jj]
+        
+        # for ridx in range(len(self.residual.residual_array)):
 
-            if self.period_index == 'all':
-                r_arr = self.residual.rms_array[ridx]
-                if plot_dict['label'].startswith('$Z'):
-                    rms[ridx] = r_arr['rms_z']
-                else:
-                    rms[ridx] = r_arr['rms_tip']
-            else:
-                r_arr = self.residual.residual_array[ridx]
-                # calulate the rms self.residual/error
-                if plot_dict['label'].startswith('$Z'):
-                    rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-                        r_arr['z_err'][self.period_index, ii, jj].real
+        #     if self.period_index == 'all':
+        #         r_arr = self.residual.rms_array[ridx]
+        #         if plot_dict['label'].startswith('$Z'):
+        #             rms[ridx] = r_arr['rms_z']
+        #         else:
+        #             rms[ridx] = r_arr['rms_tip']
+        #     else:
+        #         r_arr = self.residual.residual_array[ridx]
+        #         # calulate the rms self.residual/error
+        #         if plot_dict['label'].startswith('$Z'):
+        #             rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
+        #                 r_arr['z_err'][self.period_index, ii, jj].real
 
-                else:
-                    rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-                        r_arr['tip_err'][self.period_index, ii, jj].real
+        #         else:
+        #             rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
+        #                 r_arr['tip_err'][self.period_index, ii, jj].real
 
         filt = np.nan_to_num(rms).astype(bool)
 
