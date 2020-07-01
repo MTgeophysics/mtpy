@@ -112,6 +112,7 @@ for i in range(len(elev_points_easts)):
         loc_full_profile.append(0)
     if elev_profile_loc > (profile_length / 2):
         loc_full_profile.append(elev_profile_loc - profile_length / 2)
+loc_full_profile = np.array(loc_full_profile)
 
 # read elevation file -
 epsg = data.model_epsg
@@ -156,85 +157,100 @@ plt.gca().invert_yaxis()
 plt.show()
 # =============================================================================
 # Get the elev_points_easts and elev_points_norths in Mare2DEM reference system.
-# =============================================================================
-#elevationmodel = np.stack(([loc_full_profile, elevation_projected_cubic]), axis=1)
-#elevationmodel = np.array(elevationmodel, dtype='float64')
-#np.savetxt(os.path.join(wd, r'elevation_profile.txt'), elevationmodel)  # write the elevation file that can be imported straight into Mamba2D.m
+# ============================================================================
+# Broken due to shape mismatch
+# Intended to be an X, Y, Z of the profile???
+# print(loc_full_profile.shape, elevation_projected_cubic.shape)
+# elevationmodel = np.stack(([loc_full_profile, elevation_projected_cubic]), axis=1)
+# elevationmodel = np.array(elevationmodel, dtype='float64')
+# np.savetxt(os.path.join(wd, r'elevation_profile.txt'), elevationmodel)  
+# write the elevation file that can be imported straight into Mamba2D.m
 #
 
 # =============================================================================
 # #rewrite the Occam2D data file into Mare2DEM format
 # =============================================================================
+# reordering the columns of data from Occam to MARE2DEM style and replacing the data keys from Occam to Mare2D style:
+o2d_sites = []
+o2d_freqs = []
+o2d_types = []
+o2d_datums = []
+o2d_errors = []
+
+# Prepare data for the Data block
 data_fn = data_fn.strip()
 with open(data_fn, 'r') as f:
     read_data = f.readlines()
-
-data_list = []
-new_data = []
-flag = 0
-mare_fn = os.path.join(wd, 'Mare2D_data.txt')
-# reordering the columns of data from Occam to MARE2DEM style and replacing the data keys from Occam to Mare2D style:
-
-with open(mare_fn, 'w') as output:
+    reading_data = False
     for line in read_data:
-        line.strip()
-        line.split()
-        if 'SITE ' in line:
-            flag = 1
-        else:
-            if flag == 0:
-                pass
-            else:
-                data_list.append(line)
-    for i in range(0, ns + 1):  # nfreq):
-        for j in data_list:
-            if str(i) in j.split('  ')[1] and len(str(i)) == len(j.split('  ')[1]):
-                reordered_j = '\n' + '\t' + j.split()[2] + '\t\t' + j.split()[1] + '\t\t' + j.split()[0] + '\t\t' + j.split()[0] + '\t\t' + j.split()[3] + '\t\t' + j.split()[4]
-                new_data.append(reordered_j)
-    new_data_replaced_keys = [datakeys.replace('\n\t2\t', '\n\t104\t') for datakeys in new_data]
-    new_data_replaced_keys = [datakeys.replace('\n\t6\t', '\n\t106\t') for datakeys in new_data_replaced_keys]
-    new_data_replaced_keys = [datakeys.replace('\n\t9\t', '\n\t103\t') for datakeys in new_data_replaced_keys]
-    new_data_replaced_keys = [datakeys.replace('\n\t10\t', '\n\t105\t') for datakeys in new_data_replaced_keys]
-    new_data_replaced_keys = [datakeys.replace('\n\t5\t', '\n\t125\t') for datakeys in new_data_replaced_keys]
-    new_data_replaced_keys = [datakeys.replace('\n\t1\t', '\n\t123\t') for datakeys in new_data_replaced_keys]
-    new_data_replaced_keys = [datakeys.replace('\n\t3\t', '\n\t133\t') for datakeys in new_data_replaced_keys]
-    new_data_replaced_keys = [datakeys.replace('\n\t4\t', '\n\t134\t') for datakeys in new_data_replaced_keys]
+        if line.startswith('SITE '):
+            reading_data = True
+            continue
+        elif reading_data:
+            parts = line.split()
+            o2d_sites.append(parts[0])
+            o2d_freqs.append(parts[1])
+            o2d_types.append(parts[2])
+            o2d_datums.append(parts[3])
+            o2d_errors.append(parts[4])
 
+sites = np.array(o2d_sites, dtype=np.int8)
+freqs = np.array(o2d_freqs, dtype=np.int8)
+types = np.array(o2d_types, dtype=np.int8)
+datums = np.array(o2d_datums, dtype=np.float64)
+errors = np.array(o2d_errors, dtype=np.float64)
+# Convert occam2d types to mare2dem types
+# The below is: for each element in types array, return corresponding element in conversion
+# dict, if not found in dict return original element
+type_conversion = {1: 123, 2: 104, 3: 133, 4: 134, 5: 125, 6: 106, 9: 103, 10: 105}
+types = np.vectorize(lambda x: type_conversion.get(x, x))(types)
+# Put into dataframe for easier stringifying
+# Note: TX# and RX# are the site ID
+data_df = pd.DataFrame((types, freqs, sites, sites, datums, errors), dtype=np.object).T
+# Bit of a hack: add the '!' to the data frame header because the 'type' integer is small
+# enough that the 'Type' header will have no left whitespace padding, so we can't prepend
+# it with '!' without throwing off the alignment.
+data_df.columns = ['! Type', 'Freq #', 'Tx #', 'Rx #', 'Data', 'StdErr']
+data_str = data_df.to_string(index=False, float_format=lambda x: '%.4f' % x)
+
+# Prepare data for the Reciever block
+# Zeros of shape (n_sites) for X (as float), Theta, Alpha, Beta and Length (ints) columns
+x_col = np.zeros(loc_at_sites.shape, dtype=np.float64)
+zero_ints = np.zeros(loc_at_sites.shape, dtype=np.int8)
+t_col, a_col, b_col, l_col = zero_ints, zero_ints, zero_ints, zero_ints
+# add 0.1 m (shift the sites 10 cm beneath subsurface as recommended)
+elevation_at_sites += 0.1
+site_names = [sn.split('_')[0] for sn in new_o2d.station_list]
+statics = np.ones(loc_at_sites.shape, dtype=np.int8) if solve_statics else zero_ints
+# Put into dataframe for easier stringifying
+recv_df = pd.DataFrame((x_col, loc_at_sites, elevation_at_sites, t_col, a_col, b_col, l_col,
+                        statics, site_names)).T
+recv_df.columns = ['X', 'Y', 'Z', 'Theta', 'Alpha', 'Beta', 'Length', 'SolveStatic', 'Name']
+recv_str = list(recv_df.to_string(index=False, float_format=lambda x: '%.6f' % x))
+# Replace the first char of header with Mare2DEM comment symbol '!'
+# This way the header is correct but Pandas handles the alignment and spacing
+recv_str[0] = '!'
+recv_str = "".join(recv_str)
+
+mare_fn = os.path.join(wd, 'Mare2D_data.txt')
+with open(mare_fn, 'w') as output:
     # 1. header
     fstring = 'Format:  EMData_2.2\n'
     fstring += 'UTM of x,y origin (UTM zone, N, E, 2D strike):'
-    fstring += ' 54S{:>13.1f}{:>13.1f}\t{:d}\n'.format(mare_origin_x, mare_origin_y, gstrike)  # *********AT THE MOMENT UTM ZONE IS HARDCODED...
+    # TODO: fix hardocded UTM zone
+    fstring += ' 54S{:>13.1f}{:>13.1f}\t{:d}\n'.format(mare_origin_x, mare_origin_y, gstrike)
 
     # 2. frequencies
     fstring += '# MT Frequencies:    {}\n'.format(nfreq)
     fstring += '\n'.join([str(round(f, 8)) for f in data.freq])
 
     # 3. receiver info
-    # Prepare the data for the MT reciever section
-    # Zeros of shape (n_sites) for X (as float), Theta, Alpha, Beta and Length (ints) columns
-    x_col = np.zeros(loc_at_sites.shape, dtype=np.float64)
-    zero_ints = np.zeros(loc_at_sites.shape, dtype=np.int8)
-    t_col, a_col, b_col, l_col = zero_ints, zero_ints, zero_ints, zero_ints
-    # add 0.1 m (shift the sites 10 cm beneath subsurface as recommended)
-    elevation_at_sites += 0.1
-    site_names = [sn.split('_')[0] for sn in new_o2d.station_list]
-    statics = np.ones(loc_at_sites.shape, dtype=np.int8) if solve_statics else zero_ints
-    # Put into dataframe for easier stringifying
-    header = ['X', 'Y', 'Z', 'Theta', 'Alpha', 'Beta', 'Length', 'SolveStatic', 'Name']
-    recv_df = pd.DataFrame((x_col, loc_at_sites, elevation_at_sites, t_col, a_col, b_col, l_col,
-                            statics, site_names)).T
-    recv_df.columns = header
-    recv_str = list(recv_df.to_string(index=False, float_format=lambda x: '%.6f' % x))
-    recv_str[0] = '!'
-
     fstring += '\n# MT Receivers:      {}\n'.format(ns)
-    fstring += "".join(recv_str)
+    fstring += recv_str
     fstring += '\n'
 
     # 4. data
-    fstring += '# Data:       {}\n'.format(len(new_data))
-    fstring += '!  Type  Freq #    Tx #    Rx #           Data         StdErr'
-    formats = ['%7i', '%7i', '%7i', '%7i', '%15.5f', '%15.5f']
+    fstring += '# Data:       {}\n'.format(len(sites))
+    fstring += data_str
 
     output.write(fstring)
-    output.writelines(new_data_replaced_keys)
