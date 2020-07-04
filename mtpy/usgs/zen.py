@@ -644,9 +644,11 @@ class Z3DMetadata(object):
             self.station = '{0}{1}'.format(self.line_name,
                                            self.rx_xyz0.split(':')[0])
         except AttributeError:
-            try:
+            if hasattr(self, 'rx_stn'):
                 self.station = self.rx_stn
-            except AttributeError:
+            elif hasattr(self, 'ch_stn'):
+                self.station = self.ch_stn
+            else:
                 self.station = None
                 print("WARNING: Need to input station name")
 
