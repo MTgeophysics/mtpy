@@ -2299,7 +2299,6 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                     zt.read_all_info()
 
                     if zt.metadata.station.find(s_int) >= 0:
-<<<<<<< HEAD
                         channel = zt.metadata.ch_cmp.upper()
                         st = zt.schedule.Time.replace(':', '')
                         sd = zt.schedule.Date.replace('-', '')
@@ -2325,58 +2324,6 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                 else:
                     log_fid.write('+++ Skipped {0} because file to small {1}'.format(full_path_fn, 
                                                                                       file_size))
-
-=======
-                        fn_find = True
-                        if copy_date is not None:
-                            cp_date = int(''.join(copy_date.split('-')))
-
-                            fn_find = False
-
-                            zt_date = int(''.join(schedule_date.split('-')))
-                            if copy_type == 'before':
-                                if zt_date <= cp_date:
-                                    fn_find = True
-                            elif copy_type == 'after':
-                                if zt_date >= cp_date:
-                                    fn_find = True
-                            elif copy_type == 'on':
-                                if zt_date == cp_date:
-                                    fn_find = True
-
-                        if fn_find:
-                            channel = zt.metadata.ch_cmp.upper()
-                            st = zt.schedule.Time.replace(':', '')
-                            sd = zt.schedule.Date.replace('-', '')
-                            sv_fn = '{0}_{1}_{2}_{3}_{4}.Z3D'.format(station,
-                                                                     sd,
-                                                                     st,
-                                                                     int(zt.df),
-                                                                     channel)
-
-                            full_path_sv = os.path.join(save_path, sv_fn)
-                            fn_list.append(full_path_sv)
-
-                            shutil.copy(full_path_fn, full_path_sv)
-
-                            print('copied {0} to {1}\n'.format(full_path_fn,
-                                                               full_path_sv))
-
-                            #log_fid.writelines(zt.log_lines)
-
-                            log_fid.write('copied {0} to \n'.format(full_path_fn)+\
-                                          '       {0}\n'.format(full_path_sv))
-                        else:
-                            print('+++ SKIPPED {0}+++\n'.format(zt.fn))
-                            log_fid.write(' '*4+\
-                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
-
-                    else:
-                        pass
-#
-                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
-                                      'not copied due to bad data.\n\n')
->>>>>>> 47f01630e1bb8c5f3073aed9174ff97037c754b5
             except WindowsError:
                 print('Faulty file at {0}'.format(full_path_fn))
                 log_fid.write('---Faulty file at {0}\n\n'.format(full_path_fn))
