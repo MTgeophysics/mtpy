@@ -23,7 +23,7 @@ from shapely.geometry import Point  # , Polygon, LineString, LinearRing
 
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
-from mtpy.utils.decorator import deprecated
+from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
 import mtpy.analysis.pt as MTpt
@@ -833,7 +833,7 @@ class EdiCollection(object):
         print(len(self.all_frequencies),
               'unique frequencies (Hz)', self.all_frequencies)
 
-        myper = obj.get_periods_by_stats(percentage=20)
+        myper = self.get_periods_by_stats(percentage=20)
 
         print(myper)
 

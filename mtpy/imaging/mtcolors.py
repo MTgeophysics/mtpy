@@ -473,8 +473,8 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     """
 
     #get face color info
-    if comp == 'phimin' or comp == 'phimax' or comp == 'phidet' or \
-       comp == 'ellipticity' or comp == 'geometric_mean':
+    if comp in ['phimin', 'phimax', 'phidet', 'ellipticity', 'geometric_mean',
+                'azimuth', 'strike']:
         if ckmin is None or ckmax is None:
             raise IOError('Need to input min and max values for plotting')
 

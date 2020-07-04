@@ -316,7 +316,12 @@ class JFile(object):
                         print('For component {0}'.format(t_key))
         
         # put the results into mtpy objects
-        freq = 1./all_periods    
+        freq = 1./all_periods 
+        z_arr[np.where(z_arr == np.inf)] = 0 + 0j
+        t_arr[np.where(t_arr == np.inf)] = 0 + 0j
+        z_err_arr[np.where(z_err_arr == np.inf)] = 10**6
+        t_err_arr[np.where(t_err_arr == np.inf)] = 10**6
+        
         self.Z = mtz.Z(z_arr, z_err_arr, freq)
         self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq) 
         

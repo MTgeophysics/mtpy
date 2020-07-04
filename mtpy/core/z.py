@@ -1136,7 +1136,7 @@ class Tipper(object):
         """
         initialize
         """
-
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
         self._tipper = tipper_array
         self._tipper_err = tipper_err_array
         self._freq = freq

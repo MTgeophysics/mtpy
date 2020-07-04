@@ -1,41 +1,123 @@
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
-import pytest
+"""
+Displays geotiffs on matplotlib axes as basemap background images.
 
-
-def demo():
-    delta = 0.025
-    x = y = np.arange(-3.0, 3.0, delta)
-    X, Y = np.meshgrid(x, y)
-    Z1 = mlab.bivariate_normal(X, Y, 1.0, 1.0, 0.0, 0.0)
-    Z2 = mlab.bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
-
-    Z = Z2 - Z1  # difference of Gaussians
-
-    my_extent = (-5, 5, -5, 5)
-    im = plt.imshow(Z, interpolation='bilinear', cmap=cm.RdYlGn,
-                    origin='lower', extent=my_extent,
-                    vmax=abs(Z).max(), vmin=-abs(Z).max())
-
-    plt.show()
-
+Revision History:
+    brenainn.moushall@ga.gov.au 26-03-2020 15:06:38 AEDT:
+        Add function for plotting a geotiff image on a prexisting,
+        georefernced axes.
+"""
 
 import sys
 import os
 
-from osgeo import gdal, osr
-
-from gdalconst import *
+import matplotlib.cm as cm
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 import numpy as np
+from osgeo import gdal, osr, ogr
+from gdalconst import GA_ReadOnly
 
 
-# import cartopy.crs as ccrs
+def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
+                         band_number=None, cmap='viridis'):
+    """
+    Plot a geotiff on a prexisting matplotlib axis that represents a
+    georeferenced map. Doesn't return anything - the plotting is done
+    on the axis in-place.
+
+    Parameters
+    ----------
+    geotiff : str
+        Full path to the geotiff file to display.
+    axes : matplotlib.axes
+        The axes to display the image on.
+    extents : tuple of float, optional
+        Bounding box within which to draw the image of format
+        (left, bottom, right, top). *Must be in the same CRS as the
+        axes*. The geotiff will be cropped using these extents and then
+        displayed within the same extents. If not provided, extents
+        will be retrieved from the axes x and y limits, i.e. the image
+        will fill the entire axes.
+    epsg_code : int, optional
+        EPSG code of the axes map CRS. Must be provided if the axes and
+        image CRS are different. This is used to reproject the given
+        extents to the image CRS, so the extents can be used to crop the
+        image. If not provided, it's assumed the CRS of the axes and
+        image are the same.
+    band_number : int, optional
+        The band to display. If None, then all bands will be read.
+        Leave as None to display RGB/A rasters.
+    cmap : str or matplotlib.colors.Colormap, optional
+        Used to color the image data. Defaults to 'viridis'.
+    """
+    def transform_point(src_srs, dst_srs, x, y):
+        ctr = osr.CoordinateTransformation(src_srs, dst_srs)
+        point = ogr.Geometry(ogr.wkbPoint)
+        point.AddPoint(x, y)
+        point.Transform(ctr)
+        return point.GetX(), point.GetY()
+
+    ds = gdal.Open(geotiff, GA_ReadOnly)
+
+    # By default, will fill up as much of the grid axes as possible.
+    if extents is None:
+        xmin, xmax = axes.get_xlim()
+        ymin, ymax = axes.get_ylim()
+        extents = xmin, ymin, xmax, ymax
+    l, b, r, t = extents
+
+    if epsg_code is not None:
+        # Reproject extents to those of geotiff
+        ax_srs = osr.SpatialReference()
+        ax_srs.ImportFromEPSG(epsg_code)
+        img_srs = osr.SpatialReference()
+        img_srs.ImportFromWkt(ds.GetProjection())
+        l, b = transform_point(ax_srs, img_srs, l, b)
+        r, t = transform_point(ax_srs, img_srs, r, t)
+
+    # Work out geotiff extent.
+    gt = ds.GetGeoTransform()
+    x0, y0, x_pixel_size, y_pixel_size = gt[0], gt[3], gt[1], gt[5]
+    cols = ds.RasterXSize
+    rows = ds.RasterYSize
+    gt_l = x0
+    gt_b = y0 + (y_pixel_size * rows)
+    gt_r = x0 + (x_pixel_size * cols)
+    gt_t = y0
+
+    # Crop the geotiff on edges that extend beyond the grid bounds.
+    crop_l = min(l, gt_l)
+    crop_b = min(b, gt_b)
+    crop_r = min(r, gt_r)
+    crop_t = min(t, gt_t)
+    r1 = int((crop_t - y0) / y_pixel_size)
+    c1 = int((crop_l - x0) / x_pixel_size)
+    r2 = int((crop_b - y0) / y_pixel_size)
+    c2 = int((crop_r - x0) / x_pixel_size)
+
+    band_range = range(1, ds.RasterCount + 1) if band_number is None \
+        else range(band_number, band_number + 1)
+    data = []
+
+    for i in band_range:
+        band = ds.GetRasterBand(i)
+        data.append(band.ReadAsArray(c1, r1, c2 - c1, r2 - r1))
+
+    if len(data) == 1:
+        data = data[0]
+    else:
+        data = np.stack(data, axis=2)
+
+    if epsg_code is not None:
+        crop_l, crop_b = transform_point(img_srs, ax_srs, crop_l, crop_b)
+        crop_r, crop_t = transform_point(img_srs, ax_srs, crop_r, crop_t)
+
+    axes.imshow(data, cmap=cmap, origin='upper', extent=(crop_l, crop_r, crop_b, crop_t))
 
 
 def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True):
     if not os.path.isfile(geofile):
-        pytest.skip("file not found {}".format(geofile))
+        raise FileNotFoundError("Geotiff not found: {}".format(geofile))
     # Register drivers
     gdal.AllRegister()
 
@@ -49,7 +131,6 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     rows = ds.RasterYSize
     cols = ds.RasterXSize
     numbands = ds.RasterCount
-
 
     #     print 'rows= %s, cols= %s, number of bands = %s' %(str(rows), str(cols), str(numbands))
     #     print ("********************")
@@ -68,13 +149,11 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     # projection = ccrs.epsg(projcs)
     # print(projection)
 
-
     transform = ds.GetGeoTransform()
     xOrigin = transform[0]
     yOrigin = transform[3]
     pixelWidth = transform[1]
     pixelHeight = transform[5]
-
 
     #my_ext = (119.967, 121.525, -28.017, -26.955)
 
@@ -100,8 +179,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
 
     # ax.imshow(numarray[0]) # no georef info, just a gridded image origin is upper
 
-
-    my_cmap = 'jet' # cm.RdYlGn
+    my_cmap = 'jet'  # cm.RdYlGn
 
     # ValueError: Possible values are:
     # Accent, Accent_r, Blues, Blues_r, BrBG, BrBG_r, BuGn, BuGn_r, BuPu, BuPu_r,
@@ -125,7 +203,6 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     ax.imshow(numarray[0], extent=my_ext, cmap=my_cmap)
     ax.set_title('%s\n' % ('Image ' + geofile))
 
-
     if show is True:
         plt.show()
 
@@ -133,8 +210,8 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
 
 
 #############################################################
-# python examples/sandpit/plot_geotiff_imshow.py 
-# python examples/sandpit/plot_geotiff_imshow.py /e/Data/Dexport/CleanImages_LakeGorge_2015-10-02T100000.tiff 
+# python examples/sandpit/plot_geotiff_imshow.py
+# python examples/sandpit/plot_geotiff_imshow.py /e/Data/Dexport/CleanImages_LakeGorge_2015-10-02T100000.tiff
 
 
 if __name__ == "__main__":

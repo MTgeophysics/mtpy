@@ -256,10 +256,10 @@ class Data():
                                  i, j])] = self.errorfloor[i, j]
 
         # define header info for data file
-        header = '{:>5}\n{:>5}'.format(self.mode, len(eo.Z.resistivity))
+        header = '{:>5}\n{:>5}'.format(self.mode, len(self.edi_object.Z.resistivity))
 
         # create data array
-        data_list = [1. / eo.freq]
+        data_list = [1. / self.edi_object.Z.freq]
         for i in range(2):
             for j in range(2):
                 if self.mode == 'I':

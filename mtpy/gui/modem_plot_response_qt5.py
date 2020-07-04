@@ -43,6 +43,7 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         
         self.data_fn = None
         self.resp_fn = None
+        self.modem_data = None
         
         self.setup_ui()
         
@@ -197,11 +198,11 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         save_fn = str(fn_dialog.getSaveFileName(caption='Choose File to save',
                                                 filter='*.dat')[0])
         
-        self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
-                                        fn_basename=os.path.basename(save_fn),
-                                        compute_error=False,
-                                        fill=False,
-                                        elevation=True)
+        self.plot_response.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
+                                                      fn_basename=os.path.basename(save_fn),
+                                                      compute_error=False,
+                                                      fill=False,
+                                                      elevation=True)
         
     def get_resp_fn(self):
         """
@@ -350,6 +351,7 @@ class PlotResponses(QtWidgets.QWidget):
         #make a widget that will be the station list
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.itemClicked.connect(self.get_station)
+        self.list_widget.currentItemChanged.connect(self.get_station)
         self.list_widget.setMaximumWidth(150)
         
         self.save_edits_button = QtWidgets.QPushButton()
@@ -404,17 +406,20 @@ class PlotResponses(QtWidgets.QWidget):
         """
         get the station name from the clicked station 
         """
-        self.station = str(widget_item.text()) 
+        try:
+            self.station = str(widget_item.text()) 
+        except AttributeError:
+            print('Error: Widget is None')
+            
         self.plot()
         
     def file_changed_dfn(self):
         """
         data file changed outside the program reload it
         """
-
+        
         print('{0} changed'.format(self.data_fn))
-        self.data_fn = self._data_fn
-
+        self.data_fn = os.path.abspath(self._data_fn)
         
     def save_edits(self):
         """

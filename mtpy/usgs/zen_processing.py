@@ -9,18 +9,14 @@ Created on Fri Sep 16 14:29:43 2016
 @author: jpeacock
 """
 #==============================================================================
-#from __future__ import unicode_literals
-
 import numpy as np
-import time
 import datetime
 import os
 import sys
 from io import StringIO
-# from io import BytesIO
+from pathlib import Path
+import pandas as pd
 
-
-import mtpy.utils.filehandling as mtfh
 import mtpy.processing.birrp as birrp
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.exceptions as mtex
@@ -29,13 +25,11 @@ import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
 import mtpy.core.edi as mtedi
 import mtpy.core.ts as mtts
+from mtpy.usgs import z3d_collection as zc
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MultipleLocator
-
-#==============================================================================
-
 
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
@@ -43,237 +37,9 @@ datetime_sec = '%Y-%m-%d %H:%M:%S'
 #==============================================================================
 
 #==============================================================================
-# make a class to deal with birrp inputs
-#==============================================================================
-class BIRRP_processing(birrp.BIRRP_Parameters):
-    """
-    configuration file for birrp processing
-    Takes a list of a structured np.ndarrays that includes filenames and
-    metadata and creates a dictionary that can be input into
-    birrp.write_script_file.
-    Methods
-    ----------
-        *get_calibrations* : get the coil calibrations from files that are
-                             setup as frequency,amplitude,phase
-        *get_processing_dict* : create a processing dictionary with all the
-                                appropriate key words for
-    """
-
-    def __init__(self, **kwargs):
-
-        self.deltat = 256
-        super(BIRRP_processing, self).__init__(**kwargs)
-
-        self.calibration_path = kwargs.pop('calibration_path',
-                                           r"c:\MT\Ant_calibrations")
-        self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
-                                '2304', '2314', '2324', '2334', '2344',
-                                '2844', '2854']
-        self._max_nread = 20000000
-
-        for key in list(kwargs.keys()):
-            setattr(self, key, kwargs[key])
-
-
-
-    def get_calibrations(self, calibration_path=None):
-        """
-        get coil calibrations
-        """
-        if calibration_path is not None:
-            self.calibration_path = calibration_path
-
-        calibration_dict = {}
-        for cal_fn in os.listdir(self.calibration_path):
-            for cal_num in self.calibration_list:
-                if cal_num in cal_fn:
-                    calibration_dict[cal_num] = \
-                                    os.path.join(self.calibration_path, cal_fn)
-                    break
-        return calibration_dict
-
-    def get_processing_dict(self, fn_birrp_list, hx=2284, hy=2284, hz=2284,
-                            **kwargs):
-        """
-        from fn_birrp_arr make a processing dictionary to input into writing
-        a birrp script file
-        fn_birrp_list = fn_birrp_arr[df]
-        """
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
-
-        self.fn_list = []
-        self.rrfn_list = []
-        # need to sort the fn list so that the files are in the correct
-        # order for input and output as defined by birrp
-        self.nread = []
-        self.nskip = []
-        self.nskipr = []
-        self.nread = []
-        for block_arr in fn_birrp_list:
-            s_list = np.zeros(len(block_arr), dtype='|S100')
-            r_list = np.zeros(2, dtype='|S100')
-            #print '-'*50+'\n'+str(len(block_arr))
-            if len(block_arr) == 5 or len(block_arr) == 7:
-                comp_dict = {'ex':0, 'ey':1, 'hz':2, 'hx':3, 'hy':4,
-                             'rrhx':0, 'rrhy':1}
-                self.nout = 3
-            elif len(block_arr) == 4 or len(block_arr) == 6:
-                comp_dict = {'ex':0, 'ey':1, 'hx':2, 'hy':3,
-                             'rrhx':0, 'rrhy':1}
-                self.nout = 2
-            # get the time to start, number of points to read for each
-            # segment.
-            start_dt_list = sorted(list(set(block_arr['start_dt'])))
-            end_dt_list = sorted(list(set(block_arr['end_dt'])))
-            # if there is only one date time for the block, easy
-            if len(start_dt_list) == 1:
-                # skip the header of each file
-                nskip = 0
-                nskipr = 0
-                start_dt = time.mktime(time.strptime(start_dt_list[0],
-                                                     datetime_fmt))
-
-            else:
-                s_dt_list = np.array([time.mktime(time.strptime(sdt, datetime_fmt))
-                                      for sdt in start_dt_list])
-
-                # get the latest starting time
-                start_dt = s_dt_list.max()
-
-            # get the ending time
-            if len(end_dt_list) == 1:
-                end_dt = time.mktime(time.strptime(end_dt_list[0],
-                                                   datetime_fmt))
-            else:
-                e_dt_list = np.array([time.mktime(time.strptime(edt, datetime_fmt))
-                                      for edt in end_dt_list])
-
-                # get the earliest ending time
-                end_dt = e_dt_list.min()
-
-            # calculate the number of data points to skip for the station
-            # data and the remote reference data
-            nskip = 0
-            nskipr = 0
-            for fn_arr in block_arr:
-                # figure out which component the file is
-                comp = fn_arr['comp'].lower()
-                st_time = time.mktime(time.strptime(fn_arr['start_dt'],
-                                                    datetime_fmt))
-
-                if comp.find('rr') == -1:
-                    s_list[comp_dict[comp]] = fn_arr['fn']
-
-                    # fill remote references just in case there are none
-                    if comp in ['hx', 'hy']:
-                        r_list[comp_dict['rr{0}'.format(comp)]] = fn_arr['fn']
-
-                    # calculate the number of points to skip given the
-                    # start time
-                    nskip_ii = (start_dt-st_time)*abs(self.deltat)
-                    if nskip_ii > nskip:
-                        nskip = nskip_ii
-                else:
-                    r_list[comp_dict[comp]] = fn_arr['fn']
-                    nskipr_ii = (start_dt-st_time)*abs(self.deltat)
-                    if nskipr_ii > nskipr:
-                        nskipr = nskipr_ii
-
-            nread_ii = min(self._max_nread,
-                           int((end_dt-start_dt)*abs(self.deltat)))
-
-            # need to check the length of the block.  If it isn't big enough
-            # then we need to skip it
-            if np.floor(np.log2(nread_ii-nskipr)) > np.log2(self.nfft):
-                # need to add a 1 in to skip the header line
-                # but for 16 we need to skip the first 3 lines because of the
-                # filtering process gives bogus numbers at the beginning
-                if self.deltat == -16:
-                    self.nskip.append(3+int(nskip))
-                    self.nskipr.append(3+int(nskipr))
-                    self.nread.append(nread_ii-6)
-                else:
-                    self.nskip.append(1+int(nskip))
-                    self.nskipr.append(1+int(nskipr))
-                    self.nread.append(nread_ii)
-
-                # append file names appropriately removing any empty names
-                self.fn_list.append(list(s_list[np.where(s_list != '')]))
-                if len(r_list[np.where(r_list != '')]) > 0:
-                    self.rrfn_list.append(list(r_list[np.where(r_list != '')]))
-
-            else:
-                pass
-                print('Not enough points {0}'.format(nread_ii))
-                print('skipping time block {0} for sampling rate {1}'.format(
-                      time.strftime(datetime_fmt, time.localtime(start_dt)),
-                      -self.deltat))
-
-        # need to check for the number of points to be read in, there is
-        # a memory max, for this computer the max is self._max_nread
-        if sum(self.nread) > self._max_nread:
-            self.nread[-1] = self._max_nread-sum(self.nread[0:-1])
-            print('processing {0} points'.format(sum(self.nread)))
-
-        try:
-            self.mcomps = len(self.fn_list[0])
-        except IndexError:
-            raise IOError('''Time blocks are not long enough to process,
-                             consider changing BIRRP parameters''')
-        if self.mcomps == 5:
-            self.magori = "HZ,HX,HY"
-
-        elif self.mcomps == 4:
-            self.magori = "HX,HY"
-        else:
-            raise IOError('Number of components is {0}'.format(self.mcomps))
-
-        # get calibrations for coil responses
-        cal_dict = self.get_calibrations()
-        #get calibration files
-        #--> HX
-        try:
-            self.hx_cal = cal_dict[str(hx)]
-            self.rrhx_cal = cal_dict[str(hx)]
-        except KeyError:
-            print('Did not find HX calibration for {0}'.format(hx))
-            self.hx_cal = cal_dict['2284']
-            self.rrhx_cal = cal_dict['2284']
-            print('Setting calibration coil number to 2284 as default.')
-        #--> HY
-        try:
-            self.hy_cal = cal_dict[str(hy)]
-            self.rrhy_cal = cal_dict[str(hy)]
-        except KeyError:
-            print('Did not find HY calibration for {0}'.format(hy))
-            self.hy_cal = cal_dict['2284']
-            self.rrhy_cal = cal_dict['2284']
-            print('Setting calibration coil number to 2284 as default.')
-        #--> HZ
-        try:
-            self.hz_cal = cal_dict[str(hz)]
-        except KeyError:
-            print('Did not find HZ calibration for {0}'.format(hz))
-            self.hz_cal = cal_dict['2284']
-            print('Setting calibration coil number to 2284 as default.')
-
-        return self.__dict__
-
-    def read_config_file(self, birrp_config_fn):
-        """
-        read in a configuration file and fill in the appropriate parameters
-        """
-
-        birrp_dict = mtcfg.read_configfile(birrp_config_fn)
-
-        for birrp_key in list(birrp_dict.keys()):
-            setattr(self, birrp_key, birrp_dict[birrp_key])
-
-#==============================================================================
 # Survey configuration file
 #==============================================================================
-class Survey_Config(object):
+class SurveyConfig(object):
     """
     survey config class
     will setup a survey configuration file that has the form of:
@@ -351,11 +117,62 @@ class Survey_Config(object):
         self.rr_station = None
         self.rr_date = None
         self.rr_box = None
-#        self.survey_config.rr_lat = zd.header.lat
-
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
+
+    def from_df(self, z3d_df):
+        """
+
+        :param z3d_df: DESCRIPTION
+        :type z3d_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        z3d_df.remote = z3d_df.remote.astype(str)
+        s_df = z3d_df[z3d_df.remote == 'False']
+
+        self.b_xaxis_azimuth = s_df[s_df.component == 'hx'].azimuth.mode()[0]
+        self.b_yaxis_azimuth = s_df[s_df.component == 'hy'].azimuth.mode()[0]
+        self.box = s_df.zen_num.mode()[0]
+        self.date = s_df.start.min().isoformat()
+        self.e_instrument_type = 'Ag-Agcl electrodes'
+        self.e_logger_type = 'zen'
+        self.e_xaxis_azimuth = s_df[s_df.component == 'ex'].azimuth.mode()[0]
+        self.e_xaxis_length = s_df[s_df.component == 'ex'].dipole_length.mode()[0]
+        self.e_yaxis_azimuth = s_df[s_df.component == 'ey'].azimuth.mode()[0]
+        self.e_yaxis_length = s_df[s_df.component == 'hx'].dipole_length.mode()[0]
+        self.elevation = s_df.elevation.median()
+        self.hx = s_df[s_df.component == 'hx'].coil_number.mode()[0]
+        self.hy = s_df[s_df.component == 'hy'].coil_number.mode()[0]
+        try:
+            self.hz = s_df[s_df.component == 'hz'].coil_number.mode()[0]
+        except IndexError:
+            self.hz = ''
+        self.lat = s_df.latitude.median()
+        self.location = 'Earth'
+        self.lon = s_df.longitude.median()
+        self.network = 'USGS'
+        self.notes = 'Generic config file'
+        self.sampling_interval = 'all'
+        self.station = s_df.station.mode()[0]
+        self.station_type = 'mt'
+
+        rr_df = z3d_df[z3d_df.remote == 'True']
+        if len(rr_df) > 0:
+            self.rr_lat = []
+            self.rr_lon = []
+            self.rr_station = []
+            self.rr_date = []
+            self.rr_box = []
+            for station in rr_df.station.unique():
+                rdf = rr_df[rr_df.station == station]
+                self.rr_lat.append(rdf.latitude.median())
+                self.rr_lon.append(rdf.longitude.median())
+                self.rr_station.append(rdf.station.mode()[0])
+                self.rr_date.append(rdf.start.min().isoformat())
+                self.rr_box.append(rdf.zen_num.mode()[0])
 
     def write_survey_config_file(self, save_path=None):
         """
@@ -363,13 +180,33 @@ class Survey_Config(object):
         """
 
         if save_path is not None:
-            self.save_path = save_path
-        fn = os.path.join(self.save_path, '{0}.cfg'.format(self.station))
+            self.save_path = Path(save_path)
+        fn = self.save_path.joinpath('{0}.cfg'.format(self.station))
         mtcfg.write_dict_to_configfile({self.station:self.__dict__}, fn)
 
         #('Wrote survey config file to {0}'.format(fn))
 
         return fn
+
+    def read_survey_config_file(self, survey_cfg_fn, station):
+        """
+        Parameters
+        ----------
+        survey_dfg_fn : TYPE
+            DESCRIPTION.
+        station : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        survey_cfg_dict = mtcfg.read_survey_configfile(survey_cfg_fn)[station]
+
+        for key, value in survey_cfg_dict.items():
+            setattr(self, key, value)
 
 #==============================================================================
 # Z3D files to EDI using BIRRP
@@ -379,10 +216,10 @@ class Z3D2EDI(object):
     go from z3d files to .edi using BIRRP as the processing code
     Arguments
     ---------------
-        **station_dir** : string
+        **station_z3d_dir** : string
                           full path to station directory where the Z3D files
                           to be processed are.
-        **rr_station_dir** : string
+        **rr_station_z3d_dir** : string
                             full path to remote reference directory where
                             Z3D files exist.
         **birrp_exe** : string
@@ -390,8 +227,6 @@ class Z3D2EDI(object):
         **coil_cal_path** : string
     Methods
     ----------
-        **make_survey_config_file : make a survey configuration file from
-                                    a dictionary of information
         **get_z3d_fn_blocks** : get z3d files in blocks of sampling rate and
                                 date
         **make_mtpy_ascii_files** : make mtpy ascii files from given blocks
@@ -415,34 +250,43 @@ class Z3D2EDI(object):
     ------------
         >>> import mtpy.usgs.zen_processing as zp
         >>> zp_obj = zp.Z3D2EDI()
-        >>> zp_obj.station_dir = r"/home/data/mt01"
-        >>> zp_obj.rr_station_dir = r"/home/data/mt02"
+        >>> zp_obj.station_z3d_dir = r"/home/data/mt01"
+        >>> zp_obj.rr_station_z3d_dir = r"/home/data/mt02"
         >>> zp_obj.birrp_exe = r"/home/bin/birrp52"
         >>> zp_obj.coil_cal_path = r"/home/data/ant_calibration"
         >>> plot_obj, comb_edi = zp_obj.process_data(df_list=[4096, 256, 16])
     """
 
-    def __init__(self, station_dir=None, **kwargs):
+    def __init__(self, station_z3d_dir=None, **kwargs):
 
-        self.station_dir = station_dir
-        self.rr_station_dir = kwargs.pop('rr_station_dir', None)
-        self.survey_config = Survey_Config(save_path=self.station_dir)
+        self._station_z3d_dir = None
+        self._station_ts_dir = None
+        self._rr_station_z3d_dir = None
+        self._rr_station_ts_dir = None
+
+        self.station_z3d_dir = station_z3d_dir
+
+        self.survey_config = SurveyConfig(save_path=self.station_z3d_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
-        self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
-        self.coil_cal_path = r"d:\Peacock\MTData\Ant_calibrations\rsp_cal"
-        self._coil_calibration_list = ['2254', '2264', '2274', '2284', '2294',
-                                       '2304', '2314', '2324', '2334', '2344',
-                                       '2844', '2854', ]
+        self.birrp_exe = r"/home/peacock/Documents/birrp52/SourceCode/birrp52_big"
+        self.calibration_path = None
+        self.calibration_dict = {}
         self.num_comp = 5
-        self.df_list = [4096, 256, 16]
-        self.max_blocks = 3
+        self.df_list = [4096, 256, 4]
+        self.max_blocks = 4
         self._max_nread = 20000000
+        # number of lines for birrp to skip in file ts header
+        self._header_len = 23
+        self._tol_dict = {4096: {'s_diff': 5 * 60 * 4096,
+                                      'min_points': 2**18},
+                               256: {'s_diff': 3 * 3600 * 256,
+                                     'min_points': 2**19},
+                               4: {'s_diff': 4 * 3600 * 4,
+                                   'min_points': 2**14}}
 
         # data types for different aspects of getting information
         if sys.version_info[0] == 2:
-            print(np.version.version)
-            #self._ts_fn_dtype = np.dtype([('a', np.float)])
             self._ts_fn_dtype = np.dtype([(u'station','S6'),
                                           (u'npts', np.int),
                                           (u'df', np.int),
@@ -484,879 +328,531 @@ class Z3D2EDI(object):
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
+    @property
+    def station_z3d_dir(self):
+        return self._station_z3d_dir
 
-    def make_survey_config_file(self, survey_config_dict=None):
-        """
-        make a survey configuration file from the data
-        """
-
-        self.survey_config_fn = self.survey_config.write_survey_config_file()
-
-    def get_z3d_fn_blocks(self, station_dir, remote=False,
-                          df_list=None, max_blocks=None):
-        """
-        get z3d file names in an array of blocks
-        """
-
-        if df_list is not None:
-            self.df_list = df_list
-
-        if max_blocks is not None:
-            self.max_blocks = max_blocks
-
-        fn_block_dict = dict([(df, {}) for df in self.df_list])
-        fn_count = 0
-        for fn in os.listdir(station_dir):
-            if fn.lower().endswith('.z3d'):
-
-                z3d_fn = os.path.join(station_dir, fn)
-                z3d_obj = zen.Zen3D(z3d_fn)
-                z3d_obj.read_all_info()
-                if remote is True:
-                    if not z3d_obj.component in ['hx', 'hy']:
-                        continue
-                if z3d_obj.df in self.df_list:
-                    fn_count += 1
-                    try:
-                        fn_block_dict[z3d_obj.df][z3d_obj.zen_schedule].append(z3d_fn)
-                    except KeyError:
-                        fn_block_dict[z3d_obj.df][z3d_obj.zen_schedule] = [z3d_fn]
-
-
-        if fn_count == 0:
-            raise ValueError('No Z3D files found for in {0}'.format(station_dir))
+    @station_z3d_dir.setter
+    def station_z3d_dir(self, station_z3d_dir):
+        if station_z3d_dir in [None, 'None']:
+            self._station_z3d_dir = None
         else:
-            pass
-            #print('Found {0} Z3D files in {1}'.format(fn_count, station_dir))
+            self._station_z3d_dir = Path(station_z3d_dir)
 
-        # check for maximum number of blocks
-        for df_key in list(fn_block_dict.keys()):
-            date_dict = fn_block_dict[df_key]
-            dates = sorted(date_dict.keys())
-            if len(dates) == 0:
-                pass
-                print('No Z3D files found for {0} in {1}'.format(str(df_key),
-                                                                 station_dir))
+    @property
+    def rr_station_z3d_dir(self):
+        return self._rr_station_z3d_dir
 
-            if len(dates) > self.max_blocks:
-                for pop_date in dates[-(len(dates)-self.max_blocks):]:
-                    fn_block_dict[df_key].pop(pop_date)
+    @rr_station_z3d_dir.setter
+    def rr_station_z3d_dir(self, rr_station_z3d_dir):
+        if rr_station_z3d_dir in [None, 'None']:
+            self._rr_station_z3d_dir = None
+        if isinstance(rr_station_z3d_dir, (str, Path)):
+            self._rr_station_z3d_dir = [Path(rr_station_z3d_dir)]
+        elif isinstance(rr_station_z3d_dir, list):
+            self._rr_station_z3d_dir = [Path(r) for r in rr_station_z3d_dir]
 
-        return fn_block_dict
+    @property
+    def station_ts_dir(self):
+        if self._station_ts_dir is None:
+            return self.station_z3d_dir.joinpath('TS')
+        else:
+            return self._station_ts_dir
 
-    def get_calibrations(self, coil_cal_path=None):
+    @station_ts_dir.setter
+    def station_ts_dir(self, station_ts_dir):
+        if station_ts_dir in [None, 'None']:
+            self._station_ts_dir = None
+        else:
+            self._station_ts_dir = Path(station_ts_dir)
+
+    @property
+    def rr_station_ts_dir(self):
+        if self._rr_station_ts_dir is None and \
+            self._rr_station_z3d_dir is not None:
+            return [p.joinpath('TS') for p in self.rr_station_z3d_dir]
+        else:
+            return self._rr_station_ts_dir
+
+    @rr_station_ts_dir.setter
+    def rr_station_ts_dir(self, rr_station_ts_dir):
+        if rr_station_ts_dir in [None, 'None']:
+            self._rr_station_ts_dir = None
+        if isinstance(rr_station_ts_dir, (str, Path)):
+            self._rr_station_ts_dir = [Path(rr_station_ts_dir)]
+        elif isinstance(rr_station_ts_dir, list):
+            self._rr_station_ts_dir = [Path(r) for r in rr_station_ts_dir]
+
+    def get_calibrations(self, calibration_path):
         """
-        get coil calibrations
+        Get coil calibration file names from a given directory
+
+        :param calibration_path: path to calibration files
+        :type calibration_path: string or Path
+
+        :return: sets calibration_dict internally for use later
         """
-        if coil_cal_path is not None:
-            self.coil_cal_path = coil_cal_path
+        self.calibration_path = calibration_path
+        if self.calibration_path is None:
+            print('ERROR: Calibration path is None')
+            self.calibration_dict = {}
 
-        if self.coil_cal_path is None or not os.path.isdir(self.coil_cal_path):
-            print('could not find calibration path {0}'.format(self.coil_cal_path))
-            self.calibration_dict = dict([(cc, '') for cc in
-                                          self._coil_calibration_list])
-            return
+        if not isinstance(self.calibration_path, Path):
+            self.calibration_path = Path(self.calibration_path)
 
-        calibration_dict = {}
-        for cal_fn in os.listdir(self.coil_cal_path):
-            if cal_fn.endswith('.csv'):
-                cal_num = os.path.splitext(cal_fn)[0]
-                calibration_dict[cal_num] = os.path.join(self.coil_cal_path,
-                                                         cal_fn)
+        if not self.calibration_path.exists():
+            print('WARNING: could not find calibration path: '
+                  '{0}'.format(self.calibration_path))
+            self.calibration_dict = {}
 
-        self.calibration_dict = calibration_dict
+        self.calibration_dict = {}
+        for cal_fn in self.calibration_path.glob('*.csv'):
+            cal_num = cal_fn.stem
+            self.calibration_dict[cal_num] = cal_fn
 
-    def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None,
-                              notch_dict={4096:{}, 256:None, 16:None},
-                              df_list=None, max_blocks=None,
-                              ex=50., ey=50., coil_cal_path=None):
+    def convert_z3d_to_mtts(self, station_z3d_dir, rr_station_z3d_dir=None,
+                            use_blocks_dict=None, overwrite=False,
+                            combine=True, notch_dict=None,
+                            combine_sampling_rate=4, calibration_path=None):
         """
-        makes mtpy_mt files from .Z3D files
-        Arguments:
-        -----------
-            **dirpath** : full path to .Z3D files
-            **station_name** : prefix for station names
-            **fmt** : format of data numbers for mt_files
-        Outputs:
-        --------
-            **fn_arr** : np.ndarray(file, length, df, start_dt)
+        Convert Z3D files into MTTS objects and write ascii files for input
+        into BIRRP.  Will write a survey configuration file that can be read
+        in when making EDI files. Writes the DataFrame to a .csv file in the
+        Z3D directory.
+
+        :param station_z3d_dir: path to station z3d folder.  Will be
+                                converted to a Path object on setting.
+        :type station_z3d_dir: string or Path object
+
+        :param rr_station_z3d_dir: path to remote station z3d folder.  Will be
+                                converted to a Path object on setting.
+        :type rr_station_z3d_dir: string or Path object, optional
+
+        :param use_blocks_dict: Dictionary of blocks to use.  If None is input
+                                then will use all blocks. Keys are sampling
+                                rates, values are a list of block numbers
+                                --> {256:[0, 1, 3], 4:[0]}
+        :type use_blocks_dict: dictionary , optional
+
+        :param overwrite: Overwrite existing ascii files, defaults to False
+        :type overwrite: [ True | False ], optional
+
+        :param combine: combine all Z3D files for each component into a single
+                        file samples at combine_sampling_rate.
+                        defaults to True
+        :type combine: [ True | False ], optional
+
+        :param notch_dict: dictionary of notches to filter out. Can be useful
+                           for data with 60 Hz. Keys are sampling rates,
+                           values are notch frequency and width. If an empty
+                           dictionary is entered 60 Hz and harmonics will be
+                           filtered out. defaults to None
+        :type notch_dict: TYPE, optional
+
+        :param combine_sampling_rate: sampling rate for combined file,
+                                      defaults to 4
+        :type combine_sampling_rate: int, optional
+
+        :param calibration_path: path to calibration files, defaults to None
+        :type calibration_path: string or Path, optional
+
+        :return: dataframe containing information on Z3D files to be used
+                 later
+        :rtype: pandas.DataFrame
+
+        :return: path to csv file
+        :rtype: string
+
         :Example: ::
-            >>> import mtpy.usgs.zen as zen
-            >>> fn_list = zen.copy_from_sd('mt01')
-            >>> mtpy_fn = zen.make_mtpy_files(fn_list, station_name='mt')
+
+            >>> zp_obj = zp.Z3D2EDI()
+            >>> rr_z3d_station_dir = ['/home/mt02', '/home/mt03']
+            >>> use_blocks_dict = {4096: [0, 1, 2], 256: [1, 2], 4:[0]}
+            >>> notch_dict = {4096: {}, 256: None, 4: None}
+            >>> kw_dict = {'rr_station_z3d_dir': rr_station_z3d_dir,
+                           'use_blocks_dict': use_blocks_dict,
+                           'notch_dict': notch_dict}
+            >>> z3d_df, z3d_csv = zp_obj.convert_z3d_to_mtts(r"/home/mt01",
+                                                             **kw_dict)
+
         """
+        if calibration_path is not None:
+            self.calibration_path = calibration_path
 
-        if station_dir is not None:
-            self.station_dir = station_dir
+        self.station_z3d_dir = Path(station_z3d_dir)
+        if rr_station_z3d_dir is not None:
+            self.rr_station_z3d_dir = rr_station_z3d_dir
 
-        if rr_station_dir is not None:
-            self.rr_station_dir = rr_station_dir
+        kw_dict = {'block_dict': use_blocks_dict,
+                   'notch_dict': notch_dict,
+                   'overwrite': overwrite,
+                   'combine': combine,
+                   'combine_sampling_rate': combine_sampling_rate,
+                   'calibration_path': self.calibration_path}
 
-        # make rr_station_dir a list so we can loop over it later
-        if type(self.rr_station_dir) is str:
-                self.rr_station_dir = [self.rr_station_dir]
+        zc_obj = zc.Z3DCollection()
+        station_df, station_csv = zc_obj.from_dir_to_mtts(self.station_z3d_dir,
+                                                          **kw_dict)
+        if self.rr_station_z3d_dir is not None:
+            kw_dict['remote'] = True
+            if not isinstance(self.rr_station_z3d_dir, list):
+                rr_z3d_dir = [self.rr_station_z3d_dir]
+            self.rr_station_ts_dir = []
+            for rr_path in self.rr_station_z3d_dir:
+                rr_df, rr_csv = zc_obj.from_dir_to_mtts(rr_path,**kw_dict)
+                station_df = station_df.append(rr_df)
+                self.rr_station_ts_dir.append(Path(rr_path).joinpath('TS'))
+        processing_csv = Path(station_z3d_dir).joinpath(
+                    '{0}_processing_df.csv'.format(self.station_z3d_dir.name))
+        station_df.to_csv(processing_csv)
 
-        if df_list is not None:
-            self.df_list = df_list
+        self.station_ts_dir = Path(station_z3d_dir).joinpath('TS')
 
-        if max_blocks is not None:
-            self.max_blocks = max_blocks
-
-        if coil_cal_path is not None:
-            self.coil_cal_path = coil_cal_path
-
-        # get coil calibrations
-        self.get_calibrations()
-
-        #-------------------------------------------------
-        # make station z3d's into mtpy ts
-        fn_dict = self.get_z3d_fn_blocks(self.station_dir)
-
-        # make an empty array to put things
-        n_files, n_comps = self._get_num_files(fn_dict)
-        fn_arr = self._make_empty_fn_arr(n_files)
-
-        # number of components to process
-        self.num_comp = n_comps
-        #print(' --> processing {0} components'.format(self.num_comp))
-
-        jj = 0  # index for fn_array
-        for df_key in self.df_list:
-            try:
-                df_notch_dict = notch_dict[df_key]
-            except KeyError:
-                df_notch_dict = None
-
-            for date_key in list(fn_dict[df_key].keys()):
-                for fn in fn_dict[df_key][date_key]:
-                    fn_arr[jj] = self._convert_z3d_to_mt_ts(fn, df_notch_dict)
-
-                    # account for decimation, need to make a new instance
-                    # so as to include the original file as well
-                    if fn_arr[jj]['df'] == 256 and 16 in self.df_list:
-                        jj += 1
-                        fn_arr[jj] = self._convert_z3d_to_mt_ts(fn,
-                                                                df_notch_dict,
-                                                                16)
-                    jj += 1
-        # get only the non zero entries
-        fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]
-
-        #--------------------------------------------------
-        # Remote Reference z3d's into mtpy ts
-        if rr_station_dir is not None:
-            self.rr_station_dir = rr_station_dir
-
-        if self.rr_station_dir is not None:
-            print('*** Tranforming remote reference Z3D to mtpy format ***')
-
-            # get the maximum number of remote reference time series
-            # multiply by 3 just to be safe
-            num_ref = (len(fn_arr)/self.num_comp)*4*len(self.rr_station_dir)
-            rr_fn_arr = self._make_empty_fn_arr(num_ref)
-            rr = 0
-            for rr_dir in self.rr_station_dir:
-                rr_fn_dict = self.get_z3d_fn_blocks(rr_dir, remote=True)
-
-                for df_key in self.df_list:
-                    try:
-                        df_notch_dict = notch_dict[df_key]
-                    except KeyError:
-                        df_notch_dict = None
-
-                    for date_key in list(rr_fn_dict[df_key].keys()):
-                        for fn in rr_fn_dict[df_key][date_key]:
-                            rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
-                                                                       df_notch_dict,
-                                                                       remote=True)
-
-                            # account for decimation, need to make a new instance
-                            # so as to include the original file as well
-                            if rr_fn_arr[rr]['df'] == 256 and 16 in self.df_list:
-                                rr += 1
-                                rr_fn_arr[rr] = self._convert_z3d_to_mt_ts(fn,
-                                                                           df_notch_dict,
-                                                                           dec=16,
-                                                                           remote=True)
-                            rr += 1
-
-            # change the time series directory to reflect where the time series
-            # are.
-            self.rr_station_dir = [os.path.join(rr_dir, 'TS') for rr_dir in
-                                   self.rr_station_dir]
-
-            # get only the non-empty time series
-            rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
-        else:
-            rr_fn_arr = None
-        # change directories to be associated with where the mtpy ts are
-        self.station_dir = os.path.join(self.station_dir, 'TS')
-        self.survey_config.save_path = self.station_dir
-
-        # write survey configuration file
+        # write configuration file for edi, this should be deprecated later
+        self.survey_config.from_df(station_df)
+        self.survey_config.save_path = self.station_ts_dir
         self.survey_config_fn = self.survey_config.write_survey_config_file()
 
+        return station_df, processing_csv
 
-        log_lines = []
-        for f_arr in fn_arr:
-            log_lines += [self._make_config_lines(f_arr)]
-        if rr_fn_arr is not None:
-            for rr_f_arr in rr_fn_arr:
-                log_lines += [self._make_config_lines(rr_f_arr)]
-
-        return fn_arr, rr_fn_arr, log_lines
-
-    def _get_num_files(self, fn_dict):
+    def make_block_entry(self, entry, nskip, nread, rr_num=0):
         """
-        get number of files from fn dict
-        """
-        num_files = 0
-        num_comp = []
-        for df_key in list(fn_dict.keys()):
-            for date_key in list(fn_dict[df_key].keys()):
-                # in case there is decimation, then we need to double the
-                # number of 256 files
-                if df_key == 256 and 16 in self.df_list:
-                    num_files += len(fn_dict[df_key][date_key])*2
-                else:
-                    num_files += len(fn_dict[df_key][date_key])
-                num_comp.append(len(fn_dict[df_key][date_key]))
+        Make a block entry from a given entry and parameters
 
-        num_comp = int(np.mean(np.array(num_comp)))
-        return num_files, num_comp
+        :param entry: dataframe row entry
+        :type entry: pandas.DataFrame
 
-    def _make_empty_fn_arr(self, num_files):
-        """
-        make an empty array with the proper dtype for TS files.
-        """
-        # make an array that has all the information about each file
-        fn_arr = np.zeros(int(num_files), dtype=self._ts_fn_dtype)
+        :param nkip: number of points to skip
+        :type nkip: int
 
-        return fn_arr
+        :param nread: number of points to read
+        :type nread: int
 
-    def _convert_z3d_to_mt_ts(self, fn, notch_dict=None, dec=1, remote=False):
-        """
-        convert a z3d file to mtpy ts format and return important information
-        fn - filename
-        notch_dict - dictionary of notches to filter
-        dec - decimation level
+        :param rr_num: remote reference number, defaults to 0
+        :type rr_num: int, optional
+
+        :return: dictionary of the required values
+        :rtype: dictionary
+
         """
 
-        return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
-        zd = zen.Zen3D(fn)
-        zd.read_all_info()
+        r_dict = dict([('fn', entry.fn_ascii),
+                       ('nread', nread),
+                       ('nskip', nskip),
+                       ('comp', entry.component),
+                       ('calibration_fn', entry.cal_fn),
+                       ('rr', entry.remote),
+                       ('rr_num', rr_num),
+                       ('start', entry.start),
+                       ('stop', entry.stop),
+                       ('sampling_rate', entry.sampling_rate),
+                       ('station', entry.station)])
+        return r_dict
 
-        if dec != 1:
-            zd.read_z3d()
+    def compare_times(self, entry, start, stop):
+        """
+        Compare start and stop time from a given row entry.  Calculates the
+        number of points to skip and read.
 
-        #write mtpy mt file
-        zd.write_ascii_mt_file(notch_dict=notch_dict, dec=dec)
+        :param entry: row entry from z3d DataFrame
+        :type entry: pandas.DataFrame
 
-        #create lines to write to a log file
-        return_fn_arr['station'] = zd.station
-        return_fn_arr['npts'] = zd.ts_obj.n_samples
-        return_fn_arr['df'] = zd.df
-        return_fn_arr['start_dt'] = zd.zen_schedule
-        return_fn_arr['comp'] = zd.component
-        return_fn_arr['fn'] = zd.fn_mt_ascii
+        :param start: maximum start time for a given block
+        :type start: pandas.Timestamp
 
-        # add metadata to survey configuration file
-        if zd.component in ['hx', 'hy', 'hz']:
+        :param stop: minimum stop time for a given block
+        :type stop: pandas.Timestamp
 
-            comp = zd.component
-            chn_num = zd.coil_num
-            try:
-                cal_fn = self.calibration_dict[chn_num]
-            except KeyError:
-                print('Did not find calibration for {0}, number {1}'.format(comp,
-                                                                            chn_num))
+        :return: dictionary that includes the number of points to skip, read
+                 and time difference at the beginning and end
+        :rtype: dictionary.
 
-                cal_fn = self.calibration_dict['2284']
+        """
 
-            if remote == False:
-                setattr(self.survey_config, comp, chn_num)
-                setattr(self.survey_config, comp+'_cal_fn', cal_fn)
+        sr = entry.sampling_rate
+        info_dict = {'nskip': 0, 'nread': 0, 'start_diff': 0, 'end_diff': 0}
 
-            elif remote == True:
-                if hasattr(self.survey_config, 'rr_{0}_00'.format(comp)) == False:
-                    setattr(self.survey_config,
-                            'rr_{0}_00'.format(comp),
-                            chn_num)
-                    setattr(self.survey_config,
-                            'rr_{0}_00_cal_fn'.format(comp),
-                            cal_fn)
-                else:
-                    count = 1
-#                    while hasattr(self.survey_config, 'rr_{0}_{1:02}'.format(comp, count)):
-#                        count += 1
-#                        print count
-
-                    setattr(self.survey_config,
-                            'rr_{0}_{1:02}'.format(comp, count),
-                            chn_num)
-                    setattr(self.survey_config,
-                            'rr_{0}_{1:02}_cal_fn'.format(comp, count),
-                            cal_fn)
-
-        elif zd.component == 'ex':
-            self.survey_config.e_xaxis_length = zd.dipole_len
-        elif zd.component == 'ey':
-            self.survey_config.e_yaxis_length = zd.dipole_len
-
-
-        if remote == False:
-            if self.survey_config.lat is None or self.survey_config.lat == 0.0:
-                self.survey_config.lat = zd.lat
-                self.survey_config.lon = zd.lon
-                self.survey_config.elevation = zd.elev
-                self.survey_config.date = zd.schedule.Date
-                self.survey_config.box = int(zd.header.box_number)
-                self.survey_config.station = zd.station
-                self.survey_config.location = zd.metadata.job_name
-                self.survey_config.network = zd.metadata.job_by
+        # estimate time difference at beginning
+        start_time_diff = sr * (start - entry.start).total_seconds()
+        info_dict['start_diff'] = start_time_diff
+        # if difference is positive entry starts before station
+        if start_time_diff > 0:
+            info_dict['nskip'] = self._header_len + start_time_diff
+            info_dict['nread'] = entry.nread - start_time_diff
         else:
-            if self.survey_config.rr_lat is not None:
-                if self.survey_config.rr_lat != zd.lat:
-                    self.survey_config.rr_lat_01 = zd.lat
+            info_dict['nskip'] = self._header_len
+            info_dict['nread'] = entry.nread
 
-                if self.survey_config.rr_lon != zd.lon:
-                    self.survey_config.rr_lon_01 = zd.lon
+        # check the end times
+        end_time_diff = sr * (entry.stop - stop).total_seconds()
+        info_dict['end_diff'] = end_time_diff
+        # if end diff is positive entry ends after station
+        if end_time_diff > 0:
+            info_dict['nread'] -= end_time_diff
 
-                if self.survey_config.rr_elevation != zd.elev:
-                    self.survey_config.rr_elevation_01 = zd.elev
+        return info_dict
 
-                if self.survey_config.rr_date != zd.schedule.Date:
-                    self.survey_config.rr_date_01 = zd.schedule.Date
-
-                if self.survey_config.rr_station != zd.station:
-                    self.survey_config.rr_station_01 = zd.station
-
-                if self.survey_config.rr_box != int(zd.header.box_number):
-                    self.survey_config.rr_box_01 = int(zd.header.box_number)
-            else:
-                self.survey_config.rr_lat = zd.lat
-                self.survey_config.rr_lon = zd.lon
-                self.survey_config.rr_elevation = zd.elev
-                self.survey_config.rr_date = zd.schedule.Date
-                self.survey_config.rr_box = int(zd.header.box_number)
-                self.survey_config.rr_station = zd.station
-
-        return return_fn_arr
-
-    def _make_config_lines(self, fn_arr):
-
-        cfg_list = ['--> station: {0}\n'.format(fn_arr['station']),
-                    '    ts_len = {0}\n'.format(fn_arr['npts']),
-                    '    df = {0}\n'.format(fn_arr['df']),
-                    '    start_dt = {0}\n'.format(fn_arr['start_dt']),
-                    '    comp = {0}\n'.format(fn_arr['comp']),
-                    '    fn = {0}\n'.format(fn_arr['fn'])]
-        if fn_arr['df'] < 256:
-            cfg_list.append('    decimated to {0:.0f} samples/s'.format(fn_arr['df']))
-
-        return ''.join(cfg_list)
-
-
-    def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
-                                  df_list=None, max_blocks=None,
-                                  use_blocks_dict={4096:'all', 256:'all', 16:'all'}):
+    def make_block_df(self, block_list):
         """
-        get the birrp fn list from a directory of TS files
+        convert a given block list into a DataFrame with the appropriate
+        data types specifically for the start and stop.
+
+        :param block_list: list of entries from make_block_entry for a given
+                           schedule block
+        :type block_list: list
+
+        :return: DataFrame with the appropriate data types
+        :rtype: pandas.DataFrame
+
         """
 
-        if station_ts_dir is not None:
-            self.station_dir = station_ts_dir
+        block_df = pd.DataFrame(block_list)
+        block_df = block_df.infer_objects()
+        block_df.start = pd.to_datetime(block_df.start)
+        block_df.stop = pd.to_datetime(block_df.stop)
 
-        if rr_ts_dir is not None:
-            self.rr_station_dir = rr_ts_dir
+        return block_df
 
-        if type(self.rr_station_dir) is str:
-            self.rr_station_dir = [self.rr_station_dir]
+    def align_block(self, block_df):
+        """
+        Align a given block DataFrame such that the start and stop times are
+        the same for each component.  Uses compare_times to align.
 
-        if df_list is not None:
-            self.df_list = df_list
+        :param block_df: block data frame from make_block_df
+        :type block_df: pandas.DataFrame
 
-        if max_blocks is not None:
-            self.max_blocks = max_blocks
+        :return: aligned data frame
+        :rtype: pandas.DataFrame
 
-        if not os.path.isdir(self.station_dir):
-            print('{0} is not a valid directory, check path.'.format(self.station_dir))
-            return None
+        """
 
-        fn_arr = np.zeros(len(os.listdir(self.station_dir)),
-                          dtype=self._ts_fn_dtype)
-        fn_count = 0
-        for fn in os.listdir(self.station_dir):
-            fn = os.path.join(self.station_dir, fn)
-            f_arr, count = self._make_ts_arr_entry(fn)
-            if f_arr is None:
+        b_start = block_df.start.max()
+        b_stop = block_df.stop.min()
+
+        for entry in block_df.itertuples():
+            diff_dict = self.compare_times(entry, b_start, b_stop)
+            for key in ['nskip', 'nread']:
+                block_df.at[entry.Index, key] = diff_dict[key]
+
+        block_df.nread = block_df.nread.min()
+        return block_df
+
+    def get_birrp_dict(self, df, df_list=[4096, 256, 4],
+                       use_blocks_dict=None):
+        """
+        Make a dictionary that can be used to write script files for birrp.
+        This will align each schedule block.
+
+        :param df: z3d data frame
+        :type df: pandas.DataFrame
+
+        :param df_list: list of sampling rates to process,
+                        defaults to [4096, 256, 4]
+        :type df_list: list
+
+        :param use_blocks_dict: dictionary of blocks to use for each sampling
+                                rate.  defaults to None which uses all blocks
+                                possible.
+        :type use_blocks_dict: dictionary
+
+        :return: an array of rec arrays for each block
+        :rtype: dictionary{sampling_rate:numpy.recarray}
+
+        :Example: ::
+
+            >>> b_dict = zp_obj.get_birrp_dict(df, df_list=[256, 4],
+                                               use_blocks_dict={256:[0, 2],
+                                                                '4':[0]})
+
+        """
+        zc_obj = zc.Z3DCollection()
+        use_blocks_dict = zc_obj._validate_block_dict(df, use_blocks_dict)
+
+        birrp_dict = {}
+        for sr in df.sampling_rate.unique():
+            if sr not in df_list:
                 continue
-            fn_arr[fn_count] = f_arr
-            fn_count += count
+            sr_list = []
+            sr_df = df[(df.sampling_rate == sr) & (df.remote == 'False')]
+            rr_df = df[(df.sampling_rate == sr) & (df.remote == 'True')]
 
-        # be sure to trim the array
-        fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]
+            rr_stations = dict([(rr, ii) for ii, rr in
+                                enumerate(rr_df.station.unique())])
 
-        #--------------------------------------------------------
-        # get remote reference filenames
-        if self.rr_station_dir is not None:
-            n_rr = int((len(fn_arr)/self.num_comp)*10*len(self.rr_station_dir))
-            rr_fn_arr = np.zeros(n_rr, dtype=self._ts_fn_dtype)
+            # sort through station blocks first
+            block_count = 0
+            blocks_read_total = 0
+            for block in sr_df.block.unique():
+                if block not in use_blocks_dict[sr]:
+                    continue
+                if block_count > self.max_blocks:
+                    print('WARNING: Max blocks of {0} reached for {1}'.format(
+                          self.max_blocks, sr))
+                    break
+                block_list = []
+                block_df = sr_df[sr_df.block == block]
+                # find the latest start time
+                start = block_df.start.max()
+                stop = block_df.stop.min()
+                if str(stop) == 'NaT':
+                    print('WARNING: Skipping block {0} for {1}.'.format(block,
+                                                                        sr) +
+                          '\n\tReason: no end time')
+                    continue
 
-            rr_count = 0
+                # get information for station block and align
+                for entry in block_df.itertuples():
+                    block_list.append(self.make_block_entry(entry, 0,
+                                                            entry.n_samples))
 
-            for rr_dir in self.rr_station_dir:
-                for rr_fn in os.listdir(rr_dir):
-                    rr_fn = os.path.join(rr_dir, rr_fn)
-                    rr_arr, count = self._make_ts_arr_entry(rr_fn, remote=True)
-                    if rr_arr is not None:
-                        rr_fn_arr[rr_count] = rr_arr
-                    rr_count += count
-            # be sure to trim the array
-            rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
+                # make the block into a dataframe
+                block_birrp_df = self.make_block_df(block_list)
 
-        else:
-            rr_fn_arr = None
+                # --> get remote reference blocks
+                # check for start time
+                rr_block_list = []
+                for rr_entry in rr_df.itertuples():
+                    if rr_entry.start > stop:
+                        print('INFO: Skipping {0} starts after station'.format(
+                              rr_entry.station))
+                        continue
+                    t_diff = abs((rr_entry.start - start).total_seconds()) * sr
+                    # check to see if the difference is within given tolerance
+                    if t_diff <= self._tol_dict[sr]['s_diff']:
+                        # check number of samples
+                        rr_samples = rr_entry.n_samples - t_diff
+                        if rr_samples < self._tol_dict[sr]['min_points']:
+                            print('WARNING: skipping {0} block {1} df {2} at {3}'.format(
+                                  rr_entry.station, rr_entry.block,
+                                  rr_entry.sampling_rate,
+                                  rr_entry.start) +
+                                  '\n\tNot enough points {0}'.format(rr_samples))
+                        # make a block entry and append
+                        else:
+                            rr_block_list.append(self.make_block_entry(rr_entry,
+                                                 0,
+                                                 rr_entry.n_samples,
+                                                 rr_stations[rr_entry.station]))
+                            
+                # check to make sure there are remote references
+                if len(rr_block_list) > 1:
+                    rr_block_birrp_df = self.make_block_df(rr_block_list)
+                    block_birrp_df = block_birrp_df.append(rr_block_birrp_df)
 
+                # align block and append
+                sr_list.append(self.align_block(block_birrp_df.reset_index()))
+                block_count += 1
+                blocks_read_total += block_birrp_df.nread.mean()
+                if blocks_read_total > self._max_nread:
+                    dn = blocks_read_total - self.max_nread
+                    block_birrp_df.nread = block_birrp_df.nread.mean() - dn
+                    print('WARNING: reached maximum points to read' +
+                          ' {0}. \nCutting last block to {1}.'.format(
+                          self._max_nread, block_birrp_df.nread.mean()))
 
-        return self.get_schedules_fn(fn_arr, rr_fn_arr,
-                                     use_blocks_dict=use_blocks_dict)
-#        return (fn_arr, rr_fn_arr)
+            birrp_dict[sr] = np.array([a_df.to_records(index=False) for a_df
+                                       in sr_list])
 
-
-    def _make_ts_arr_entry(self, fn, remote=False):
-        """
-        make ts_arr entries
-        """
-        fn_ext = os.path.splitext(fn)[1][1:].lower()
-        if fn_ext not in ['ex', 'ey', 'hx', 'hy', 'hz']:
-            return None, 0
-
-        return_fn_arr = np.zeros(1, dtype=self._ts_fn_dtype)
-
-        ts_obj = mtts.MTTS()
-        try:
-            ts_obj.read_ascii_header(fn)
-
-            if remote == True:
-                if ts_obj.component.lower() not in ['hx', 'hy']:
-                    return None, 0
-
-            if ts_obj.sampling_rate in self.df_list:
-                return_fn_arr['fn'] = fn
-                return_fn_arr['npts'] = ts_obj.n_samples
-                return_fn_arr['df'] = ts_obj.sampling_rate
-                return_fn_arr['comp'] = ts_obj.component.lower()
-
-                start_sec = ts_obj.start_time_epoch_sec
-
-                num_sec = float(ts_obj.n_samples)/ts_obj.sampling_rate
-                return_fn_arr['start_dt'] = time.strftime(datetime_fmt,
-                                                time.localtime(start_sec))
-                return_fn_arr['end_dt'] = time.strftime(datetime_fmt,
-                                                time.localtime(start_sec+\
-                                                num_sec))
-                count = 1
-            else:
-                count = 0
-        except mtts.MTTSError:
-            print('  Skipped {0}'.format(fn))
-            count = 0
-
-        return return_fn_arr, count
-
-    def get_schedules_fn(self, fn_arr, rr_fn_arr=None, df_list=None,
-                         max_blocks=None,
-                         use_blocks_dict={4096:'all', 256:'all', 16:'all'}):
-        """
-        seperate out the different schedule blocks and frequencies so the
-        can be processed
-        Returns
-        ---------
-            **schedule_fn_dict** : dictionary
-                                   keys are sampling rates and values are
-                                   lists of file names for each schedule
-                                   block up to max blocks
-        """
-
-        if df_list is not None:
-            self.df_list = df_list
-
-        if max_blocks is not None:
-            self.max_blocks = max_blocks
-
-        # get the sampling rates used
-        s_keys = set(self.df_list)
-
-        # make a dictionary with keys as the sampling rates
-        s_dict = dict([(skey, []) for skey in s_keys])
-
-        # loop over the sampling rates and find the schedule blocks
-        for df in s_keys:
-            # find startind dates for sampling rate
-            s_dates = sorted(list(set(fn_arr['start_dt'][np.where(fn_arr['df']==df)])))
-            use_blocks = use_blocks_dict[df]
-            if use_blocks == 'all':
-                date_list = s_dates[0:self.max_blocks]
-            elif type(use_blocks) is list:
-                date_list = [s_dates[ii] for ii in use_blocks]
-                if len(date_list) > self.max_blocks:
-                    date_list = date_list[0:self.max_blocks]
-
-            else:
-                raise ValueError('Do not understand use_blocks type {0}'.format(type(use_blocks)))
-
-            for sdate in date_list:
-                s_fn_arr = fn_arr[np.where((fn_arr['start_dt'] == sdate) &
-                                            (fn_arr['df'] == df))]
-                s_fn_birrp_arr = self._fill_birrp_fn_arr(s_fn_arr)
-
-                # get remote reference information if input
-                if rr_fn_arr is not None:
-                    # make an empty array to append to
-                    rr_birrp_fn_arr = np.zeros(0, dtype=self._birrp_fn_dtype)
-
-                    # find elements where df is the same
-                    df_find = np.where(rr_fn_arr['df'] == df)
-
-                    # make an array of just the sampling rates
-                    df_rr_arr = rr_fn_arr[df_find]
-
-                    # first check to see if any of the dates match
-                    dt_find = np.where(df_rr_arr['start_dt'] == sdate)
-
-                    # if there are dates that match, fill them into rr array
-                    rr_station_find = []
-                    if len(dt_find[0]) >= 1:
-                        dt_rr_arr = self._fill_birrp_fn_arr(df_rr_arr[dt_find],
-                                                            remote=True)
-
-                        rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                    dt_rr_arr)
-                        # need to make a list of remote reference station
-                        # already found so there are no duplicates
-                        rr_station_find += list(set(['{0}_{1}'.format(os.path.basename(f['fn'])[0:4],
-                                                                      f['comp'])
-                                                                      for f in
-                                                                      dt_rr_arr]))
-
-                    # find the where dates do not match
-                    dt_not_find = np.where(df_rr_arr['start_dt'] != sdate)
-
-                    # loop over each remote reference file to check for time
-                    # that might be close enough, but skip any that have the
-                    # same station name
-                    for rr_arr in df_rr_arr[dt_not_find]:
-                        # check to see if this station already has been added
-                        # as a remote reference
-                        f_station = os.path.basename(rr_arr['fn'])[0:4]
-                        f_find = '{0}_{1}'.format(f_station, rr_arr['comp'])
-                        if f_find in rr_station_find:
-                            continue
-
-                        # find the next closest date
-                        # estimate the time difference between station date
-                        # and remote reference date
-                        rr_sec = time.mktime(time.strptime(rr_arr['start_dt'],
-                                                           datetime_fmt))
-                        s_sec = time.mktime(time.strptime(sdate,
-                                                          datetime_fmt))
-                        # estimate time difference
-                        t_diff = s_sec-rr_sec
-
-                        # look for the correct time difference
-                        dt_arr = None
-                        if df == 256:
-                            # if the difference is more than 5 hours pass
-                            if abs(t_diff) > 5*3600:
-                                continue
-                            else:
-                                print('Using rr {0} for TS starting on {1}'.format(f_station,
-                                                                                   rr_arr['start_dt']))
-                                print('For station TS starting on      {0}'.format(sdate))
-
-                                dt_arr = self._fill_birrp_fn_arr(rr_arr,
-                                                                 remote=True)
-                                rr_station_find.append(f_find)
-                        elif df == 4096:
-                            # if the difference is more than 3 minutes
-                            if abs(t_diff) > 4*60:
-                                continue
-                            else:
-                                print('Using rr {0} for TS starting on {1}'.format(f_station,
-                                      rr_arr['start_dt']))
-                                print('For station TS starting on      {0}'.format(sdate))
-
-                                dt_arr = self._fill_birrp_fn_arr(rr_arr,
-                                                                 remote=True)
-                                rr_station_find.append(f_find)
-
-                        elif df == 16:
-                            # if the difference is more than 3 minutes
-                            if abs(t_diff) > 5*3600:
-                                continue
-                            else:
-                                print('Using rr {0} for TS starting on {1}'.format(f_station,
-                                      rr_arr['start_dt']))
-                                print('For station TS starting on      {0}'.format(sdate))
-
-                                dt_arr = self._fill_birrp_fn_arr(rr_arr,
-                                                                 remote=True)
-                                rr_station_find.append(f_find)
-                        if dt_arr is None:
-                            continue
-                        #--------------------------------------------------
-                        # add in nskip values
-                        # when t_diff is positive then skip values in
-                        # the remote reference file
-                        #n_skip = abs(rr_arr['npts']-s_fn_arr['npts'].min())
-                        n_skip = int(abs(t_diff)*df)
-
-                        if t_diff > 0 and dt_arr is not None:
-                            dt_arr['nskip'] = n_skip
-                            dt_arr['nread'] -= n_skip
-
-                            min_nread = min([s_fn_birrp_arr['nread'].min(),
-                                             dt_arr['nread']])
-                            s_fn_birrp_arr['nread'][:] = min_nread
-                        elif t_diff < 0:
-                            #need to test if nskip is already there
-                            if s_fn_birrp_arr['nskip'][0] != 23:
-                                if n_skip > s_fn_birrp_arr['nskip'][0]:
-                                    s_fn_birrp_arr['nskip'][:] = n_skip
-                                    s_fn_birrp_arr['nread'][:] -= n_skip
-                                else:
-                                    pass
-
-                            else:
-                                s_fn_birrp_arr['nskip'][:] = n_skip
-                                s_fn_birrp_arr['nread'][:] -= n_skip
-
-                        # if there was a remote referenc channel found
-                        # append it to the array
-                        if dt_arr is not None:
-                            if dt_arr['nskip'] < 23:
-                                dt_arr['nskip'] = 23
-                            rr_birrp_fn_arr = np.append(rr_birrp_fn_arr,
-                                                        dt_arr)
-
-                    # need to fill in what number remote references are
-                    rr_index = 1
-                    rr_count = 0
-                    for rr_b_arr in rr_birrp_fn_arr:
-                        # for now have a default calibration file
-                        # nearly all the calibration files are identical
-                        # this will work fine for now, till I can figure
-                        # out how to fill it in automatically, need to
-                        # change the format and metadate of mtpy TS
-                        # for now get it from the calibration file
-                        try:
-                            rr_b_arr['calibration_fn'] = getattr(self.survey_config,
-                                                                 'rr_{0}_{1:02}_cal_fn'.format(rr_b_arr['comp'],
-                                                                 rr_index-1))
-                        except AttributeError:
-                            pass
-                            print('Could not find calibration for {0}'.format(rr_b_arr['fn']))
-                            ##
-                        rr_b_arr['rr_num'] = rr_index
-                        rr_count += 1
-                        if rr_count%2 == 0 and rr_count != 0:
-                            rr_index += 1
-
-                        # need to make sure there is n_skip for other
-                        # remote references
-                        rr_min_read = rr_birrp_fn_arr['nread'].min()
-                        for rr_b_arr in rr_birrp_fn_arr:
-                            rr_n_skip = abs(rr_b_arr['nread']-rr_min_read)
-                            if rr_n_skip < 23:
-                                continue
-                            if rr_b_arr['nread'] != rr_min_read:
-                                rr_b_arr['nskip'] = rr_n_skip
-                                print(rr_b_arr['fn'], rr_n_skip)
-
-                    # append the remote reference data to station data
-                    s_fn_birrp_arr = np.append(s_fn_birrp_arr, rr_birrp_fn_arr)
-
-                # fill in the dictionary accordingly
-                s_dict[df].append(s_fn_birrp_arr[np.nonzero(s_fn_birrp_arr['nread'])])
-
-            # need to check for maximum number of points
-            nread_list = [int(sa['nread'].mean()) for sa in s_dict[df]]
-            if sum(nread_list) > self._max_nread:
-                n_last = self._max_nread-sum(nread_list[0:-1])
-                s_dict[df][-1]['nread'][:] = n_last
-
-                print("reading {0} points from last block".format(n_last))
-
-        # return the station dictionary
-        return s_dict
-
-    def _fill_birrp_fn_arr(self, fn_arr, remote=False):
-        """
-        fill a birrp_fn_arr with a ts_fn_arr
-        """
-        # test whether fn_arr has just one entry
-        if fn_arr.shape == ():
-            nc = 1
-        # if there are more than 1 entry get the set
-        else:
-            nc = fn_arr.shape[0]
-
-        # make an empty array to fill
-        s_fn_birrp_arr = np.zeros(nc, dtype=self._birrp_fn_dtype)
-
-        # fill array with data
-        s_fn_birrp_arr['fn'][:] = fn_arr['fn']
-        s_fn_birrp_arr['nread'][:] = fn_arr['npts'].min()
-        s_fn_birrp_arr['nskip'][:] = 23
-        s_fn_birrp_arr['start_dt'][:] = fn_arr['start_dt']
-        s_fn_birrp_arr['comp'][:] = fn_arr['comp']
-
-        # be sure to fill in calibration file for station mags
-        for sfb_arr in s_fn_birrp_arr:
-            if sfb_arr['comp'] in ['hx', 'hy', 'hz'] and remote == False:
-                try:
-                    sfb_arr['calibration_fn'] = getattr(self.survey_config,
-                                                        '{0}_cal_fn'.format(sfb_arr['comp']))
-                except AttributeError:
-                    sfb_arr['calibration_fn'] = None
-
-        if remote == True:
-            s_fn_birrp_arr['rr'] = True
-
-
-        # compute start and end times
-        try:
-            start_dt = fn_arr[0]['start_dt']
-        except TypeError:
-            start_dt = fn_arr['start_dt']
-
-        start_seconds = time.mktime(time.strptime(start_dt,
-                                                  datetime_fmt))
-
-        end_seconds = start_seconds+fn_arr['npts'].min()/float(fn_arr['df'].mean())
-
-        s_fn_birrp_arr['end_dt'][:] = time.strftime(datetime_fmt,
-                                        time.localtime(end_seconds))
-
-        return s_fn_birrp_arr
+        return birrp_dict
 
     def write_script_files(self, birrp_arr_dict, save_path=None,
                            birrp_params_dict={}, **kwargs):
         """
-        write script files in the new method
+        Write BIRRP script files for each sampling rate in the given
+        dictionary.  This will sort the appropriate parameters from the given
+        data.
+
+        :param birrp_arr_dict: dictionary with keys as sampling rates and
+                               values as arrays of recarrays for each schedule
+                               block.
+        :type birrp_arr_dict: dictionary{sampling_rate:numpy.ndarray(
+                                                       numpy.recarray)}
+
+        :param save_path: path to save script file, defaults to
+                          station_ts_dir/BF/sampling_rate/station.script
+        :type save_path: string or Path
+
+        :param birrp_params_dict: dictionary of birrp parameters, default is
+                                  an empty dictionary that will use default
+                                  parameters that work well in most cases.
+
+        .. seealso:: mtpy.processing.birrp
+
+        :return: list of script file paths
+        :rtype: list
+
+        :Example: ::
+
+            >>> sfn_list = zp_obj.write_script_files(birrp_dict,
+                                                     birrp_params={'tbw':2})
+
         """
 
         # make save path
         if save_path is None:
-            save_path = os.path.join(self.station_dir, 'BF')
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
+            save_path = self.station_ts_dir.joinpath('BF')
+        elif not isinstance(save_path, Path):
+            save_path = Path(save_path)
+        if not save_path.exists():
+            save_path.mkdir()
 
         script_fn_list = []
         # loop through by keys, which should be sampling rates
-        df_keys = list(birrp_arr_dict.keys())
-        for df_key in df_keys:
+        for df_key, fn_arr in birrp_arr_dict.items():
             # make a path unique to the sampling rate
-            bf_path = os.path.join(save_path, '{0:.0f}'.format(df_key))
-            if not os.path.exists(bf_path):
-                os.mkdir(bf_path)
+            bf_path = save_path.joinpath('{0:.0f}'.format(df_key))
+            if not bf_path.exists():
+                bf_path.mkdir()
 
             # get the fn_array, and make sure that it is a ndarray type
-            birrp_fn_arr = np.array(birrp_arr_dict[df_key])
+            birrp_fn_arr = birrp_arr_dict[df_key]
+
+            # make a script object passing on the desired birrp parameters
+            try:
+                birrp_script_obj = birrp.ScriptFile(fn_arr=fn_arr)
+            except birrp.ScriptFileError as error:
+                print('ERROR: {0}'.format(error))
+                print('WARNING: Skipping script file for {0}'.format(df_key))
+                continue
 
             # get station name
-            station = os.path.basename(birrp_fn_arr[0][0]['fn'])
-            station = os.path.splitext(station)[0]
-            station = station.split('_')[0]
+            remotes = np.where(fn_arr['rr'] == False)
+            station = np.unique(fn_arr[remotes]['station'])[0]
 
             # add parameters to birrp_params_dict
-            birrp_params_dict['deltat'] = -1*df_key
-            birrp_params_dict['ofil'] = os.path.join(bf_path, station)
+            birrp_params_dict['ofil'] = str(bf_path.joinpath(station))
             if df_key == 16:
                 birrp_params_dict['nfft'] = 2**16
                 birrp_params_dict['nsctmax'] = 11
+            if df_key == 4:
+                if birrp_fn_arr['nread'].sum(axis=0)[0] / 2**16 < 6:
+                    birrp_params_dict['nfft'] = 2**15
+                    birrp_params_dict['nsctmax'] = 11
+                else:
+                    birrp_params_dict['nfft'] = 2**16
+                    birrp_params_dict['nsctmax'] = 12
 
-            # make a script object passing on the desired birrp parameters
-            birrp_script_obj = birrp.ScriptFile(**birrp_params_dict)
-            birrp_script_obj.fn_arr = birrp_fn_arr
+            birrp_script_obj.from_dict(birrp_params_dict)
+
             # write script file
-            birrp_script_obj.write_script_file(script_fn=os.path.join(bf_path,
-                                                                      station+'.script'))
+            b_script = bf_path.joinpath('{0}.script'.format(station))
+            birrp_script_obj.write_script_file(script_fn=b_script)
+
             # write a birrp parameter configuration file
-            birrp_script_obj.write_config_file(os.path.join(bf_path,
-                                                            station))
+            birrp_script_obj.write_config_file(bf_path.joinpath(station))
             script_fn_list.append(birrp_script_obj.script_fn)
-
-        return script_fn_list
-
-    def write_script_files_old(self, fn_birrp_dict, save_path=None,
-                               birrp_params_dict={}, **kwargs):
-        """
-        write a script file from a generic processing dictionary
-        """
-
-        if save_path is None:
-            save_path = os.path.join(self.station_dir, 'BF')
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-
-        s_keys = list(fn_birrp_dict.keys())
-        script_fn_list = []
-        for df in s_keys:
-            bf_path = os.path.join(save_path, '{0:.0f}'.format(df))
-            fn_birrp_arr = fn_birrp_dict[df]
-            pro_obj = BIRRP_processing()
-            if df == 16:
-                pro_obj.nfft = 2**16
-                pro_obj.nsctmax = 11
-            pro_obj.calibration_path = self.coil_cal_path
-            pro_obj.station = self.survey_config.station
-            pro_obj.deltat = -float(df)
-
-            # for advanced processing
-            if self.rr_station_dir is not None:
-                pro_obj.ilev = 1
-                pro_obj.tbw = 3
-                pro_obj.nar = 9
-                pro_obj.c2threshb = .35
-                pro_obj.c2threshe = .45
-                pro_obj.c2threshe1 = .45
-                pro_obj.nf1 = 4
-                pro_obj.nfinc = 2
-                pro_obj.nsctinc = 2
-                pro_obj.nfsect = 2
-                pro_obj.ainlin = .0001
-            for b_key in list(birrp_params_dict.keys()):
-                setattr(pro_obj, b_key, birrp_params_dict[b_key])
-
-            pro_dict = pro_obj.get_processing_dict(fn_birrp_arr,
-                                                   hx=self.survey_config.hx,
-                                                   hy=self.survey_config.hy,
-                                                   hz=self.survey_config.hz,
-                                                   **kwargs)
-
-
-            #write script file using mtpy.processing.birrp
-            script_fn, birrp_dict = birrp.write_script_file(pro_dict,
-                                                            save_path=bf_path)
-
-            script_fn_list.append(script_fn)
-
-            cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(
-                                                                 script_fn[:-7]))
-
-            mtcfg.write_dict_to_configfile({os.path.basename(birrp_dict['ofil']):
-                                                             birrp_dict}, cfg_fn)
-            print('Wrote BIRRP config file for edi file to {0}'.format(cfg_fn))
-
-            self.birrp_config_fn = cfg_fn
 
         return script_fn_list
 
     def run_birrp(self, script_fn_list=None, birrp_exe=None):
         """
         run birrp given the specified files
+
+        :param script_fn_list: list of script file paths
+        :type script_fn_list: list
+
+        :param birrp_exe: path to BIRRP executable
+        :type birrp_exe: string
         """
 
         if script_fn_list is None:
@@ -1369,14 +865,20 @@ class Z3D2EDI(object):
         if type(script_fn_list) is list:
             self.edi_fn = []
             for script_fn in script_fn_list:
-                birrp.run(self.birrp_exe, script_fn)
+                out_str = birrp.run(self.birrp_exe, script_fn)
+                print('INFO: BIRRP Processing \n {0}'.format(out_str))
 
                 output_path = os.path.dirname(script_fn)
-                self.edi_fn.append(self.write_edi_file(output_path,
-                                      survey_config_fn=self.survey_config_fn,
-                                      birrp_config_fn=self.birrp_config_fn))
+                try:
+                    self.edi_fn.append(self.write_edi_file(output_path,
+                                       survey_config_fn=self.survey_config_fn,
+                                       birrp_config_fn=self.birrp_config_fn))
+                except Exception as error:
+                    print('ERROR: {0} did not run properly'.format(script_fn))
+                    print('ERROR: {0}'.format(error))
+
         elif type(script_fn_list) is str:
-            birrp.run(self.birrp_exe, script_fn_list)
+            out_str = birrp.run(self.birrp_exe, script_fn_list)
 
             output_path = os.path.dirname(script_fn_list)
             self.edi_fn = self.write_edi_file(output_path,
@@ -1386,12 +888,23 @@ class Z3D2EDI(object):
     def write_edi_file(self, birrp_output_path, survey_config_fn=None,
                        birrp_config_fn=None):
         """
-        write an edi file from outputs of birrp
+        Write an edi file from outputs of BIRRP
+
+        :param birrp_output_path: full path to directory with BIRRP outputs
+        :type birrp_output_path: string
+
+        :param survey_config_fn: path to survey configuration file
+        :type survey_config_fn: string
+
+        :param birrp_config_fn: path to BIRRP configuration file
+        :type birrp_config_fn: string
+
+        :return: path to edi file
+        :rtype: string
+
         """
         if self.survey_config_fn is not None:
             self.survey_config_fn = survey_config_fn
-
-
 
         if self.survey_config_fn is None:
             ts_find = birrp_output_path.find('TS')
@@ -1400,27 +913,40 @@ class Z3D2EDI(object):
                 for fn in os.listdir(ts_dir):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
-
-        #print(self.survey_config_fn)
+                        self.survey_config.read_survey_config_file(
+                            self.survey_config_fn, 
+                            self.station_z3d_dir.name)
 
         j2edi_obj = birrp.J2Edi(station=self.survey_config.station,
-                                   survey_config_fn=self.survey_config_fn,
-                                   birrp_dir=birrp_output_path,
-                                   birrp_config_fn=self.birrp_config_fn)
+                                survey_config_fn=self.survey_config_fn,
+                                birrp_dir=birrp_output_path,
+                                birrp_config_fn=self.birrp_config_fn)
 
         edi_fn = j2edi_obj.write_edi_file()
-
 
         return edi_fn
 
     def plot_responses(self, edi_fn_list=None):
         """
         plot all the edi files that were created.
+
+        :param edi_fn_list: list of EDI file paths to plot
+        :type edi_fn_list: list
+
+        :return: plot object
+        :rtype: mtpy.imaging.plotnresponse.PlotMultipleResponses
+
+        :Example: ::
+
+            >>> rp = zp_obj.plot_responses(["/home/mt01/TS/BF/4096/mt01edi",
+                                            "/home/mt01/TS/BF/256/mt01.edi",
+                                            "/home/mt01/TS/BF/4/mt01.edi"])
+            >>> rp.tipper_limits = (-.5, .5)
+            >>> rp.res_limits = (.1, 1000)
+            >>> rp.redraw_plot()
         """
         if edi_fn_list is not None:
             self.edi_fn = edi_fn_list
-
-
 
         if type(self.edi_fn) is list:
             # check file lengths to make sure there are no zero length files
@@ -1441,99 +967,123 @@ class Z3D2EDI(object):
 
         return resp_plot
 
-
-    def process_data(self, df_list=None, max_blocks=None,
-                     notch_dict={},
+    def process_data(self, df_fn=None, df_list=[4096, 256, 4], plot=True,
+                     notch_dict={}, use_blocks_dict=None,  overwrite=False,
                      sr_dict={4096:(1000., 4),
                               1024:(3.99, 1.),
                               256:(3.99, .126),
                               16:(.125, .0001)},
-                     use_blocks_dict={4096:'all', 256:'all', 16:'all'},
-                     birrp_param_dict={},
-                     **kwargs):
+                     birrp_param_dict={}, **kwargs):
         """
         process_data is a convinience function that will process Z3D files
         and output an .edi file.  The workflow is to convert Z3D files to
         MTpy ascii format, apply a notch filter if desired, decimate if
         desired.  Do the same for a remote reference if specified.  Make a
         BIRRP script file for each sampling rate, process data, take outputs
-        and write an edi file and plot resutl.  The whole process will take
+        and write an edi file and plot result.  The whole process will take
         a few minutes so be patient.
-        Arguments
-        ---------------
-            **df_list** : list of sampling rates
-                          list of sampling rates (int) to process, options are
-                          - 4096
-                          - 1024
-                          - 256
-                          - 16
-            **max_blocks** : int
-                            maximum number of blocks to process, this cannot
-                            exceed the number of blocks that BIRRP was
-                            compiled with.  *default* is 3
-            **notch_dict** : dict(sampling_rate: notches to filter)
-                            dictionary of notches to filter for each sampling
-                            rate.  Keys are sampling rates (int) and values
-                            are dictionary of notches to filter
-                            ex. {4096:{60, 120, 180}} to filter out 60 Hz noise
-                            *default* is {} which filters out 60 Hz noise and
-                            harmonics.
-            **sr_dict** : dict(sampling_rate: (max_freq, max_freq))
-                          dictionary of min and max frequencies to use for
-                          each sampling rate when making an .edi file.  The
-                          defaults usually work well, but check the plot
-                          to see if there is a better frequency range for
-                          each sampling rate.
-                          *default* is
-                              {4096:(1000., 4),
-                              1024:(3.99, 1.),
-                              256:(3.99, .126),
-                              16:(.125, .0001)}
-            **use_blocks_dict** : dict(sampling_rate: list of blocks to use)
-                                  dictionary with sampling rate as keys and
-                                  list of which blocks to use as values
-                                  ex. {4096: [0, 2]} to skip the second block
-                                  use value 'all' to use all blocks
-                                  *default* is
-                                      {4096:'all', 256:'all', 16:'all'}
-            **birrp_param_dict** : dict(birrp_param: value)
-                                   dictionary of birrp parameters where the
-                                   key is the birrp parameter and value is
-                                   what you want that parameter to be.  See
-                                   mtpy.processing.birrp.write_script_file
-                                   or the BIRRP manual for details on birrp
-                                   parameters
-                                   ex. {'nar':5}
-                                   *default* is {}
-        Returns
-        -------------
-            **plot_obj** : plot_response object
-            **comb_edi_fn** : string
-                              full path to combined edi file
+
+        :param df_fn: path to existing dataframe that was used for processing
+                      useful if changing parameters to a previously processed
+                      station.
+        :type df_fn: string
+
+        :param df_list: list of sampling rates
+        :type df_list: list, defaults to [4096, 256, 4]
+
+        :param notch_dict: dict(sampling_rate: notches to filter)
+                           dictionary of notches to filter for each sampling
+                           rate.  Keys are sampling rates (int) and values
+                           are dictionary of notches to filter
+                           ex. {4096:{60, 120, 180}} to filter out 60 Hz noise
+                           *default* is {} which filters out 60 Hz noise and
+                           harmonics.
+        :type notch_dict: dictionary
+
+        :param sr_dict: dict(sampling_rate: (max_freq, max_freq))
+                        dictionary of min and max frequencies to use for
+                        each sampling rate when making an .edi file.  The
+                        defaults usually work well, but check the plot
+                        to see if there is a better frequency range for
+                        each sampling rate.
+                        *default* is
+                          {4096:(1000., 4),
+                          1024:(3.99, 1.),
+                          256:(3.99, .126),
+                          16:(.125, .0001)}
+        :type sr_dict: dictionary
+
+        :param use_blocks_dict: dict(sampling_rate: list of blocks to use)
+                               dictionary with sampling rate as keys and
+                               list of which blocks to use as values
+                               ex. {4096: [0, 2]} to skip the second block
+                               use value 'all' to use all blocks
+                               *default* is None which will use all blocks
+        :type use_blocks_dict: dictionary
+
+        :param birrp_param_dict: dict(birrp_param: value)
+                                 dictionary of birrp parameters where the
+                                 key is the birrp parameter and value is
+                                 what you want that parameter to be.  See
+                                 mtpy.processing.birrp.write_script_file
+                                 or the BIRRP manual for details on birrp
+                                 parameters
+                                 ex. {'nar':5}
+                                 *default* is {}
+        :type birrp_param_dict: dictionary
+
+        :return: plot_response object
+        :rtype: mtpy.imaging.plotnresponse.PlotMultipleResponses
+
+        :return: full path to combined EDI file
+        :rtype: string
+
+        :return: processing dataframe
+        :rtype: pandas.DataFrame
+
+        :Example: ::
+
+            >>> b_param_dict = {'ilev': ilev,
+                                'c2threshb': .35,
+                                'c2threshe': .35,
+                                'c2thresh1': .35,
+                                'ainuin': .95,
+                                'ainlin': .05,
+                                'nar': 11,
+                                'tbw': 2}
+            >>> zp_obj = zp.Z3D2EDI(station_z3d_dir='/home/mt01')
+            >>> zp_obj.rr_station_z3d_dir = ['/home/mt02',  '/home/mt03']
+            >>> zp_obj.birrp_exe = '/home/bin/birrp52.exe'
+            >>> zp_obj.calibration_path = '/home/mt/calibrations'
+            >>> plot_obj, comb_edi_fn, zdf = zp_obj.process_data(
+                                                 birrp_param_dict=b_param_dict)
+
         """
         if df_list is not None:
             self.df_list = df_list
 
-        if max_blocks is not None:
-            self.max_blocks = max_blocks
-
         # get start time
-        st = time.time()
-
-        if self.df_list is not None:
-            if type(self.df_list) is float or type(self.df_list) is int or\
-               type(self.df_list) is str:
-               self.df_list = [self.df_list]
-
+        st = datetime.datetime.now()
 
         # make files into mtpy files
-        z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(notch_dict=notch_dict)
-
-        # get all information from mtpy files
-        schedule_dict = self.get_schedules_fn_from_dir(use_blocks_dict=use_blocks_dict)
+        if df_fn is not None:
+            zc_obj = zc.Z3DCollection()
+            z3d_df = zc_obj.from_csv(df_fn)
+        else:
+            # skip the block dict, want to look through all the files to get the
+            # data frame.
+            kw_dict = {'use_blocks_dict': None,
+                       'overwrite': overwrite}
+            z3d_df, cfn = self.convert_z3d_to_mtts(self.station_z3d_dir,
+                                                   self.rr_station_z3d_dir,
+                                                   **kw_dict)
+        # make birrp dictionary
+        birrp_dict = self.get_birrp_dict(z3d_df,
+                                         df_list=df_list,
+                                         use_blocks_dict=use_blocks_dict)
 
         # write script files for birrp
-        sfn_list = self.write_script_files(schedule_dict,
+        sfn_list = self.write_script_files(birrp_dict,
                                            birrp_params_dict=birrp_param_dict,
                                            **kwargs)
 
@@ -1547,31 +1097,54 @@ class Z3D2EDI(object):
             self.edi_fn.append(comb_edi_fn)
 
         # plot the output
-        r_plot = self.plot_responses()
+        if plot:
+            r_plot = self.plot_responses()
+        else:
+            r_plot = None
 
-        et = time.time()
-        print('--> Processing took {0:02.0f}:{1:02.0f} minutes'.format((et-st)//60, (et-st)%60))
+        et = datetime.datetime.now()
+        t_diff = (et - st).total_seconds()
+        print('INFO: All processing took {0:02.0f}:{1:02.0f} minutes'.format(
+              t_diff // 60, t_diff % 60))
 
-        return r_plot, comb_edi_fn
+        return r_plot, comb_edi_fn, z3d_df
 
     def combine_edi_files(self, edi_fn_list,
                           sr_dict={4096:(1000., 4),
-                                   1024:(3.99, 1.),
                                    256:(3.99, .126),
-                                   16:(.125, .0001)}):
+                                   4:(.125, .00001)}):
         """
         combine the different edi files that are computed for each sampling
-        rate.
-        for now just a simple cutoff
+        rate. For now just a simple cutoff
+
+        :param edi_fn_list: list of EDI files to combine
+        :dtype edi_fn_list: list
+
+        :param sr_dict: dictionary of frequency limits for each sampling rate
+                        {4096:(1000., 4), 256:(3.99, .126), 4:(.125, .00001)}
+        :dtype sr_dict: dictionary
+
+        :return: full path to combined edi file
+        :rtype: string
+
+        :example: ::
+
+            >>> zp_obj.combine_edi_files(["/home/mt01/TS/BF/4096/mt01edi",
+                                          "/home/mt01/TS/BF/256/mt01.edi",
+                                          "/home/mt01/TS/BF/4/mt01.edi"],
+                                         sr_dict={4096:(1000., 50),
+                                                  256:(49.99, .0625),
+                                                  4:(.0624, .00001)})
+
         """
 
-        if type(edi_fn_list) is str:
-            print('Only one edi file, skipping combining')
-            return
+        if isinstance(edi_fn_list, str):
+            print('WARNING: Only one edi file, skipping combining')
+            return edi_fn_list
 
-        if type(edi_fn_list) is list and len(edi_fn_list) == 1:
-            print('Only one edi file, skipping combining')
-            return
+        if len(edi_fn_list) == 1:
+            print('WARNING: Only one edi file, skipping combining')
+            return edi_fn_list[0]
 
         data_arr = np.zeros(100,
                             dtype=[('freq', np.float),
@@ -1582,14 +1155,10 @@ class Z3D2EDI(object):
 
         count = 0
         for edi_fn in edi_fn_list:
+            if not isinstance(edi_fn, Path):
+                edi_fn = Path(edi_fn)
             # get sampling rate from file name
-            fn_list = edi_fn[edi_fn.find('BF'):].split(os.path.sep)
-            for ss in fn_list:
-                try:
-                    sr_key = int(ss)
-                    break
-                except ValueError:
-                    pass
+            sr_key = int(edi_fn.parts[-2])
             if sr_key in list(sr_dict.keys()):
                 try:
                     edi_obj = mtedi.Edi(edi_fn)
@@ -1608,11 +1177,11 @@ class Z3D2EDI(object):
                     count += len(f_index[0])
                 except IndexError:
                     pass
-                    print('Something went wrong with processing {0}'.format(edi_fn))
+                    print('ERROR: Something went wrong with processing {0}'.format(edi_fn))
 
             else:
                 pass
-                print('{0} was not in combining dictionary'.format(sr_key))
+                print('WARNING: {0} was not in combining dictionary'.format(sr_key))
 
         # now replace
         data_arr = data_arr[np.nonzero(data_arr['freq'])]
@@ -1643,133 +1212,13 @@ class Z3D2EDI(object):
         edi_obj.Tipper = new_t
         edi_obj.Data_sect.nfreq = new_z.z.shape[0]
 
-        n_edi_fn = os.path.join(self.station_dir,
-                                '{0}_comb.edi'.format(os.path.basename(self.station_dir)))
+        n_edi_fn = Path.joinpath(Path(self.station_ts_dir),
+                                 '{0}_comb.edi'.format(Path(self.station_ts_dir).name))
+        # n_edi_fn = os.path.join(self.station_z3d_dir,
+        #                         '{0}_comb.edi'.format(os.path.basename(self.station_z3d_dir)))
         n_edi_fn = edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
 
         return n_edi_fn
-
-def get_remote_reference_schedule(survey_path, plot=True):
-    """
-    Get a detailed list of which stations recorded at the same time, just from
-    the raw Z3D files.
-    Arguments
-    ----------------
-        **survey_path** : string
-                          full path to the survey directory
-        **plot** : [ True | False]
-                   True to plot the schedules as line bars.
-                   *default* is True
-    Outputs
-    -----------------
-        **station_path/Remote_Reference_List.txt** : file with a list of
-                                                     dates with station
-                                                     and sampling rate
-        **plot** if plot is True.
-    :Example: ..
-        >>> import mtpy.usgs.zen_processing as zp
-        >>> zp.get_remote_reference_schedule(r"\home\MT_Data\Survey_01")
-    """
-    date_dict = {}
-    rr_dict = {}
-    for station in os.listdir(survey_path):
-        station_path = os.path.join(survey_path, station)
-        if os.path.isdir(station_path) is True:
-            fn_list = [os.path.join(station_path, fn)
-                       for fn in os.listdir(station_path)
-                       if fn.lower().endswith('ex.z3d')]
-
-            if len(fn_list) == 0:
-                print('No Z3D files found in folder: {0} '.format(station))
-                continue
-
-            station_date_arr = np.zeros(len(fn_list), dtype=[('df', np.float),
-                                                             ('start_dt', '|S20')])
-            for f_index, fn in enumerate(fn_list):
-                zd = zen.Zen3D(fn)
-                zd.read_all_info()
-                station_date_arr[f_index]['df'] = zd.df
-                station_date_arr[f_index]['start_dt'] = zd.zen_schedule
-                try:
-                    rr_dict[zd.zen_schedule]
-                except KeyError:
-                    rr_dict[zd.zen_schedule] = []
-
-                rr_dict[zd.zen_schedule].append((station, zd.df))
-
-            if len(np.nonzero(station_date_arr)[0]) != 0:
-                date_dict[station] = station_date_arr[np.nonzero(station_date_arr['df'])]
-
-    #---------------------------------------------
-    # print out in a useful way
-
-    lines = []
-    for key in sorted(rr_dict.keys()):
-        k_list = key.split(',')
-        k_date = k_list[0]
-        k_time = k_list[1]
-        lines.append('Date: {0}, Time: {1}'.format(k_date, k_time))
-        lines.append('-'*60)
-        for k_tuple in rr_dict[key]:
-            lines.append('\tStation: {0}, Sampling Rate: {1:.0f}'.format(k_tuple[0],
-                         k_tuple[1]))
-
-        lines.append('='*60)
-    with open(os.path.join(survey_path, 'Remote_Reference_List.txt'), 'w') as fid:
-        fid.write('\n'.join(lines))
-
-
-
-    #-------------------------------------
-
-    if plot is True:
-        plt.rcParams['font.size'] = 14
-
-        datetime_display = '%m-%d, %H:%M:%S'
-
-        df_dict = {4096:(.7, .1, 0), 1024:(.5, .5, 0), 256:(0, .2, .8)}
-        # plot the results is a compeling graph
-        fig = plt.figure(2, [12, 10])
-        ax = fig.add_subplot(1, 1, 1)
-        y_labels = ['', '']
-
-        for k_index, key in enumerate(sorted(date_dict.keys())):
-            y_labels.append(key)
-            for ii, k_arr in enumerate(date_dict[key]):
-                x_date_0 = datetime.datetime.strptime(k_arr['start_dt'], datetime_fmt)
-                try:
-                    x_date_1 = datetime.datetime.strptime(date_dict[key]['start_dt'][ii+1],
-                                                          datetime_fmt)
-                except IndexError:
-                    x_date_1 = x_date_0
-
-                y_values = [k_index, k_index]
-
-                l1, = ax.plot([x_date_0, x_date_1], y_values,
-                              lw=8, color=df_dict[k_arr['df']])
-
-        fig.autofmt_xdate(rotation=60)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter(datetime_display))
-#        ax.xaxis.set_major_locator(MultipleLocator((1)))
-#        ax.xaxis.set_minor_locator(MultipleLocator((.25)))
-        ax.xaxis.set_tick_params(width=2, size=5)
-
-        ax.yaxis.set_major_locator(MultipleLocator(1))
-        ax.yaxis.set_ticklabels(y_labels)
-        ax.yaxis.set_tick_params(width=2, size=5)
-        ax.set_ylim(-1, len(y_labels)-2)
-
-        ax.grid(which='major', linestyle='--', color=(.7, .7, .7))
-        ax.set_axisbelow(True)
-
-        l_4096 = plt.Line2D([0, 1], [0, 0], lw=8, color=df_dict[4096])
-        l_1024 = plt.Line2D([0, 1], [0, 0], lw=8, color=df_dict[1024])
-        l_256 = plt.Line2D([0, 1], [0, 0], lw=8, color=df_dict[256])
-
-        fig.legend([l_4096, l_1024, l_256], ['4096', '1024', '256'], ncol=3,
-                   loc='upper center')
-
-        plt.show()
 
 #==============================================================================
 
@@ -1777,6 +1226,7 @@ def get_remote_reference_schedule(survey_path, plot=True):
 class Capturing(list):
     def __enter__(self):
         self._stdout = sys.stdout
+        self._stderr = sys.stderr
         sys.stdout = self._stringio = StringIO()
         # sys.stdout = self._stringio = BytesIO()
         return self
@@ -1799,7 +1249,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     converted to .edi files and plotted.
     You need 2 things to run this code:
         * mtpy --> a Python package for MT and can be found at
-    	           https://github.com/geophysics/mtpy
+                   https://github.com/geophysics/mtpy
         * BIRRP executable --> you can get this from Alan Chave at WHOI
                                if you are using it for non-commercial projects.
     ..note:: This code is quite specific to my setup, so let me know what
@@ -1862,7 +1312,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                     process_df_list=[1024, 256])
     """
 
-    station_dir = os.path.join(survey_dir, station)
+    station_z3d_dir = os.path.join(survey_dir, station)
 
     st = datetime.datetime.now()
     #--> Copy data from files
@@ -1874,13 +1324,13 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                              copy_date=copy_date, copy_type='after')
     except IOError:
         pass
-        print('No files copied from SD cards')
-        print('Looking in  {0} for Z3D files'.format(station_dir))
+        print('ERROR: No files copied from SD cards')
+        print('INFO: Looking in  {0} for Z3D files'.format(station_z3d_dir))
 
     #--> process data
 
     with Capturing() as output:
-        z2edi = Z3D2EDI(station_dir)
+        z2edi = Z3D2EDI(station_z3d_dir)
         z2edi.birrp_exe = birrp_exe
         z2edi.coil_cal_path = ant_calibrations
         try:
@@ -1888,13 +1338,13 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                               max_blocks=max_blocks,
                                               notch_dict=notch_dict)
         except mtex.MTpyError_inputarguments:
-            print('==> Data not good!! Did not produce a proper .edi file')
+            print('WARNING: Data not good!! Did not produce a proper .edi file')
             et = datetime.datetime.now()
             print('--> took {0} seconds'.format((et-st).total_seconds()))
             rp = None
 
     #--> write log file
-    log_fid = open(os.path.join(station_dir, 'Processing.log'), 'w')
+    log_fid = open(os.path.join(station_z3d_dir, 'Processing.log'), 'w')
     log_fid.write('\n'.join(output))
     log_fid.close()
 

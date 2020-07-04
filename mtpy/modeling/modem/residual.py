@@ -164,7 +164,9 @@ class Residual(object):
                        ('rms_tip', np.float),
                        ('rms_period', (np.float, r_shape)),
                        ('rms_z_period', (np.float, r_shape)),
-                       ('rms_tip_period', (np.float, r_shape))
+                       ('rms_tip_period', (np.float, r_shape)),
+                       ('rms_z_component', (np.float, (2, 2))),
+                       ('rms_tip_component', (np.float, (1, 2)))
                        ]
 
         self.rms_array = np.zeros(data_array.shape[0],dtype=rdtype)
@@ -219,6 +221,9 @@ class Residual(object):
                 setattr(self, att, getattr(resp_obj, att))
 
         return resp_obj
+
+
+
 
     def get_rms(self, residual_fn=None):
         
@@ -313,6 +318,20 @@ class Residual(object):
         self.rms = np.mean(rms_value_list_all ** 2.) ** 0.5
         self.rms_z = np.mean(rms_value_list_z ** 2.) ** 0.5
         self.rms_tip = np.mean(rms_value_list_tip ** 2.) ** 0.5
+        
+        # by component
+        for cpt in ['z','tip']:
+            # normalised residuals
+            res_vals_cpt = np.abs(self.residual_array[cpt])/\
+                (np.real(self.residual_array[cpt+'_err']) * 2.**0.5)
+            ijvals = res_vals_cpt.shape[2:]
+            for i in range(ijvals[0]):
+                for j in range(ijvals[1]):
+                    self.rms_array['rms_{}_component'.format(cpt)][:,i,j] = \
+                        (np.nansum(res_vals_cpt[:,:,i,j]**2.,axis=1)/\
+                         np.nansum(np.isfinite(res_vals_cpt[:,:,i,j]),axis=1))**0.5
+        
+
 
     def write_rms_to_file(self):
         """

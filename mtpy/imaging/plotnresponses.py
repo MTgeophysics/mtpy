@@ -1583,14 +1583,14 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                               sharey=self.axpxy)
 
             # place y coordinate labels in the same location
-            self.axrxy.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
-            self.axpxy.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
+            # self.axrxy.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
+            # self.axpxy.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
 
             # --> plot tipper
             try:
                 self.axt = self.fig.add_subplot(gs[pdict['tip'], :])
-                self.axt.yaxis.set_label_coords(labelcoords[0] * .5,
-                                                labelcoords[1])
+                # self.axt.yaxis.set_label_coords(labelcoords[0] * .5,
+                #                                 labelcoords[1])
             except KeyError:
                 pass
 
@@ -1599,8 +1599,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 # can't share axis because not on the same scale
                 self.axpt = self.fig.add_subplot(gs[pdict['pt'], :],
                                                  aspect='equal')
-                self.axpt.yaxis.set_label_coords(labelcoords[0] * .5,
-                                                 labelcoords[1])
+                # self.axpt.yaxis.set_label_coords(labelcoords[0] * .5,
+                #                                  labelcoords[1])
             except KeyError:
                 pass
 
@@ -1608,8 +1608,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             try:
                 self.axst = self.fig.add_subplot(gs[pdict['strike'], :],
                                                  sharex=self.axrxy)
-                self.axst.yaxis.set_label_coords(labelcoords[0] * .5,
-                                                 labelcoords[1])
+                # self.axst.yaxis.set_label_coords(labelcoords[0] * .5,
+                #                                  labelcoords[1])
             except KeyError:
                 pass
 
@@ -1617,8 +1617,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             try:
                 self.axsk = self.fig.add_subplot(gs[pdict['skew'], :],
                                                  sharex=self.axrxy)
-                self.axsk.yaxis.set_label_coords(labelcoords[0] * .5,
-                                                 labelcoords[1])
+                # self.axsk.yaxis.set_label_coords(labelcoords[0] * .5,
+                #                                  labelcoords[1])
             except KeyError:
                 pass
 
@@ -1844,6 +1844,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 tmax = 1.0
                             if np.isnan(tmin):
                                 tmin = -1.0
+                            tmin = max([-1, tmin])
+                            tmax = min([1, tmax])
                             self.tipper_limits = (tmin - .1, tmax + .1)
                         else:
                             tmax = max([tyr.max(), tyi.max(), self.tipper_limits[1] - .1]) + .1
@@ -1852,6 +1854,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 tmax = 1.0
                             if np.isnan(tmin):
                                 tmin = -1.0
+                            tmin = max([-1, tmin])
+                            tmax = min([1, tmax])
                             self.tipper_limits = (tmin, tmax)
 
                         # --> plot real arrows
@@ -2458,7 +2462,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             >>> p1.redraw_plot()
         """
 
-        plt.close(self.fig)
+        plt.close('all')
         self.plot()
 
     def __str__(self):

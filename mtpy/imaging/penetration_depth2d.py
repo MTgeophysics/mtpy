@@ -10,6 +10,11 @@ Usage:
 
 Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
+
+Revision History:
+    brenainn.moushall@ga.gov.au 03-04-2020 15:41:39 AEDT:
+        - Modify 2D plot profile to take a list of selected periods
+          instead of period indicies
 """
 
 import glob
@@ -21,7 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import click
 
-from mtpy.imaging.penetration import get_penetration_depth, load_edi_files, Depth2D
+from mtpy.imaging.penetration import get_penetration_depth_by_index, load_edi_files, Depth2D
 
 # mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -41,27 +46,22 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # use the Zcompotent=[det, zxy, zyx]
-def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det', 
-                  edi_list=None, tick_params={}, save=False,savepath=None,**kwargs):
-    #edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
-    # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
-    # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
-
-    # 1 get a list of edi files, which are suppose to be in a profile.
+def plot2Dprofile(edi_dir, selected_periods, ptol=0.05, zcomponent='det',
+                  edi_list=None, tick_params={}, save=False, savepath=None, **kwargs):
     edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
 
     _logger.debug("edi files: %s", edifiles)
 
     edis = load_edi_files(edi_dir, file_list=edi_list)
-    plot = Depth2D(edis, period_index_list, zcomponent)
+    plot = Depth2D(selected_periods, edis, ptol, zcomponent)
     plot.plot(tick_params, **kwargs)
     if save:
         if os.path.isdir(savepath):
-            savepath == os.path.join(savepath,'Depth2D.png')
+            savepath == os.path.join(savepath, 'Depth2D.png')
         if savepath is not None:
             plot._fig.savefig(savepath)
         else:
-            savepath = os.path.join(edi_dir,'Depth2D.png')
+            savepath = os.path.join(edi_dir, 'Depth2D.png')
     plot.show()
 
 
@@ -94,7 +94,7 @@ def barplot_multi_station_penentration_depth(
 
     mt_obj_list = [mt.MT(afile) for afile in edifiles_dir]
 
-    (stations, periods, depths, _) = get_penetration_depth(
+    (stations, periods, depths, _) = get_penetration_depth_by_index(
         mt_obj_list, int(per_index), whichrho=zcomponent)
 
     # the attribute Z
@@ -140,6 +140,7 @@ def barplot_multi_station_penentration_depth(
     # Check that the periods are the same value for all stations
     return (stations, depths, periods)
 
+
 # =============================================================================================
 # Example Usage:
 # python mtpy/imaging/penetration_depth2d.py examples/data/edi_files/ 1 10 20 30
@@ -150,7 +151,7 @@ if __name__ == "__main__old":
 
     if len(sys.argv) < 2:
         print(("Usage: %s edi_dir" % sys.argv[0]))
-        print ("python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
+        print("python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
@@ -172,14 +173,15 @@ if __name__ == "__main__old":
 # =============================================================================================
 
 @click.command()
-@click.option('-i','--input',type=str,default='examples/data/edi_files',help='directory or edsi data files')
-@click.option('-p','--period_list',type=str,default="0 1 10 20 30 40",help='Periods seperated by space')
-def plot_penetration_image(input,period_list):
+@click.option('-i', '--input', type=str, default='examples/data/edi_files', help='directory or edsi data files')
+@click.option('-p', '--period_list', type=str, default="0 1 10 20 30 40", help='Periods seperated by space')
+def plot_penetration_image(input, period_list):
     if os.path.isdir(input):
         period_index_list = period_list.split(' ')
         plot2Dprofile(input, period_index_list, zcomponent='det')
     else:
         print("Please provide an edi directory !")
+
 
 if __name__ == '__main__':
     plot_penetration_image()

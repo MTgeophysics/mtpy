@@ -14,8 +14,6 @@ JP 2014
 import os
 import numpy as np
 
-import mtpy.modeling.modem
-
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets
 except ImportError:
@@ -30,6 +28,7 @@ from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import matplotlib.colors as colors
+from matplotlib import cm
 
 import mtpy.modeling.modem as modem
 import mtpy.imaging.mtplottools as mtplottools
@@ -143,6 +142,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         #make a widget that will be the period list
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.itemClicked.connect(self.get_period)
+        self.list_widget.currentItemChanged.connect(self.get_period)
         self.list_widget.setMaximumWidth(150)
         
         # make a depth text bar
@@ -260,25 +260,6 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         self.action_model_open.triggered.connect(self.get_model_fn)
         self.menu_model_file.addAction(self.action_model_open)
         self.menubar.addAction(self.menu_model_file.menuAction())
-#        
-        #adding options for display plot type        
-#        self.menu_plot_type = QtWidgets.QMenu(self)
-#        self.menu_plot_type.setTitle("Plot Type")
-#        self.menuDisplay.addMenu(self.menu_plot_type)
-#        self.menubar.addAction(self.menuDisplay.menuAction())
-#        
-#        #set plot impedance or resistivity and phase
-#        self.action_plot_z = QtWidgets.QAction(self)
-#        self.action_plot_z.setText('Impedance')
-#        self.action_plot_z.setCheckable(True)
-#        self.menu_plot_type.addAction(self.action_plot_z)
-#        self.action_plot_z.toggled.connect(self.status_checked_ptz)
-#        
-#        self.action_plot_rp = QtWidgets.QAction(self)
-#        self.action_plot_rp.setText('Resistivity-Phase')
-#        self.action_plot_rp.setCheckable(True)
-#        self.menu_plot_type.addAction(self.action_plot_rp)
-#        self.action_plot_rp.toggled.connect(self.status_checked_ptrp)
 
         self.action_plot_settings = QtWidgets.QAction(self)
         self.action_plot_settings.setText('Settings')
@@ -293,10 +274,6 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         
         self.menubar.addAction(self.menu_display.menuAction())
         
-#        self.menuDisplay.addAction(self.menu_plot_style.menuAction())
-#        self.menu_display.addAction(self.menu_plot_type.menuAction())
-    
-        #self.retranslateUi(self)
         # be sure to connnect all slots first
         QtCore.QMetaObject.connectSlotsByName(self)
         
@@ -313,7 +290,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         
         fn = os.path.abspath(fn)
                                        
-        self.modem_data = mtpy.modeling.modem.Data()
+        self.modem_data = modem.Data()
         self.modem_data.read_data_file(fn)
         self.modem_data_fn = fn
         
@@ -346,9 +323,10 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                                            filter='(*.rho);; (*.ws)',
                                            directory=self.dir_path)[0])
         fn = os.path.abspath(fn)
-        self.modem_model = mtpy.modeling.modem.Model()
+        self.modem_model = modem.Model()
         self.modem_model.read_model_file(fn)
         self.modem_model_fn = fn
+        self.get_depth_array()
         self.plot()
         
         
@@ -363,15 +341,16 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         """
         get response file name
         """
-        print(self.dir_path)
+
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
                                            filter='*.dat', 
                                            directory=self.dir_path)[0])
                                        
-        self.modem_resp = mtpy.modeling.modem.Data()
+        self.modem_resp = modem.Data()
         self.modem_resp.read_data_file(fn)
         self.modem_resp_fn = fn
+        self._get_pt()
         self.plot()
         
     def show_settings(self):
@@ -449,10 +428,10 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
             dpt = self.modem_data.mt_dict[key].pt
             data_pt_arr[:, ii]['east'] = east
             data_pt_arr[:, ii]['north'] = north
-            data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
-            data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
-            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
-            data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]['phimin'] = dpt.phimin
+            data_pt_arr[:, ii]['phimax'] = dpt.phimax
+            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth
+            data_pt_arr[:, ii]['skew'] = dpt.beta
 
             # compute tipper data
             tip = self.modem_data.mt_dict[key].Tipper
@@ -471,10 +450,10 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                 
                 model_pt_arr[:, ii]['east'] = east
                 model_pt_arr[:, ii]['north'] = north
-                model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
-                model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
-                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
-                model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]['phimin'] = mpt.phimin
+                model_pt_arr[:, ii]['phimax'] = mpt.phimax
+                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth
+                model_pt_arr[:, ii]['skew'] = mpt.beta
                 
                 mtip = self.modem_resp.mt_dict[key].Tipper
                 mtip.compute_mag_direction()
@@ -492,12 +471,12 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                                                    pt_object2=mpt)
                     rpt = rpt.residual_pt
                     
-                    res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
-                    res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
-                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
-                    res_pt_arr[:, ii]['skew'] = rpt.beta[0]
-                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0]*\
-                                                                  rpt.phimax[0]))
+                    res_pt_arr[:, ii]['phimin'] = rpt.phimin
+                    res_pt_arr[:, ii]['phimax'] = rpt.phimax
+                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth
+                    res_pt_arr[:, ii]['skew'] = rpt.beta
+                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin*\
+                                                                  rpt.phimax))
                                                                   
             
                 except mtex.MTpyError_PT:
@@ -516,7 +495,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                                             model_pt_arr[:, ii]['tyi']
                 
                 
-        #make these attributes        
+        #make these attributes   
         self.pt_data_arr = data_pt_arr
         
         if self.modem_resp_fn is not None:
@@ -567,13 +546,12 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         plt.rcParams['font.size'] = self.font_size
         
         #make sure there is PT data
-        if self.modem_data_fn is not None:
-            if self.pt_data_arr is None:
-                print('data array is none')
+        if self.pt_data_arr is None:
+            self._get_pt()
+            
+        if self.modem_resp_fn is not None:
+            if self.pt_resp_arr is None:
                 self._get_pt()
-            if self.modem_resp_fn is not None:
-                if self.pt_resp_arr is None:
-                    self._get_pt()
         
         # make a grid of subplots 
         gs = gridspec.GridSpec(1, 3, hspace=self.subplot_hspace,
@@ -613,15 +591,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         self.figure.clf()
                          
         if self.modem_resp_fn is not None:
-#            self.figure, axes = plt.subplots(1, 3, 
-#                                             sharex=True,
-#                                             sharey=True,
-#                                             subplot_kw={'adjustable':'box-forced',
-#                                                         'aspect':'equal'})
-#            axd = axes[0]
-#            axm = axes[1]
-#            axr = axes[2]
-#            self.mpl_widget = FigureCanvas(self.figure)
+            
             axd = self.figure.add_subplot(gs[0, 0], aspect='equal')
             axm = self.figure.add_subplot(gs[0, 1], 
                                           aspect='equal',
@@ -641,7 +611,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         
         #plot model below the phase tensors
         if self.modem_model_fn is not None:
-            self.get_depth_array()
+            #self.get_depth_array()
             if self.depth_array[data_ii] == 0:
                 print('Could not estimate depth for period {0:.5g}'.format(
                     float(self.plot_period)))
@@ -762,10 +732,10 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                     pass
                 else:
                     eheight = mpt['phimin']/\
-                              self.pt_resp_arr[data_ii]['phimax'].max()*\
+                              self.pt_data_arr[data_ii]['phimax'].max()*\
                               self.ellipse_size
                     ewidth = mpt['phimax']/\
-                              self.pt_resp_arr[data_ii]['phimax'].max()*\
+                              self.pt_data_arr[data_ii]['phimax'].max()*\
                               self.ellipse_size
                               
                     ellipsem = Ellipse((mpt['east'],
@@ -830,10 +800,10 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                     pass
                 else:
                     eheight = rpt['phimin']/\
-                              self.pt_resid_arr[data_ii]['phimax'].max()*\
+                              self.pt_data_arr[data_ii]['phimax'].max()*\
                               self.ellipse_size
                     ewidth = rpt['phimax']/\
-                              self.pt_resid_arr[data_ii]['phimax'].max()*\
+                              self.pt_data_arr[data_ii]['phimax'].max()*\
                               self.ellipse_size
                               
                     ellipser = Ellipse((rpt['east'],
@@ -958,8 +928,6 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
         #Model and residual
         if self.modem_resp_fn is not None:
             for aa, ax in enumerate([axm, axr]):
-                ax.set_xlim(self.ew_limits)
-                ax.set_ylim(self.ns_limits)
                 ax.set_xlabel('Easting ({0})'.format(self.map_scale), 
                                fontdict=font_dict)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
@@ -1039,7 +1007,7 @@ class ModEMPlotPTMap(QtWidgets.QMainWindow, mtplottools.MTArrows,
                                y1*self.cb_res_pad, .35*bb[2], .02)
                 cbax = self.figure.add_axes(cb_position)
                 cb_res = mcb.ColorbarBase(cbax, 
-                                      cmap=self.res_cmap,
+                                      cmap=cm.get_cmap(self.res_cmap),
                                       norm=Normalize(vmin=self.res_limits[0],
                                                      vmax=self.res_limits[1]),
                                       orientation='horizontal')

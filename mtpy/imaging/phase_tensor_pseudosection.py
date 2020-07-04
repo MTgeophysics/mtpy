@@ -330,6 +330,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
     def __init__(self, **kwargs):
         super(PlotPhaseTensorPseudoSection, self).__init__()
         mtpl.PlotSettings.__init__(self)
+        self._rotation_angle = 0
 
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
@@ -411,41 +412,35 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         self._arrow_dict = kwargs.pop('arrow_dict', {})
         self._read_arrow_dict(self._arrow_dict)
+        
+        self.subplot_left = .10
+        self.subplot_right = .90
+        self.subplot_bottom = .2
+        self.subplot_top = 0.9
+        self.subplot_wspace = .05
+        self.subplot_hspace = .05
+        
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-        # This is a constructor of object. It's better not to call plot method here!!
-        # self.plot_yn = kwargs.pop('plot_yn', 'y')
-        # if self.plot_yn == 'y':
-        #     self.plot()
-
-        # ---need to rotate data on setting rotz
-
-    def _set_rot_z(self, rot_z):
+    #---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+    
+    @rotation_angle.setter
+    def rotation_angle(self, value):
         """
-        need to rotate data when setting z
+        only a single value is allowed
         """
-
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            self._rot_z = np.array([rot_z] * len(self.mt_list))
-
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                self._rot_z = np.repeat(rot_z, len(self.mt_list))
-
-        else:
-            pass
-
         for ii, mt in enumerate(self.mt_list):
-            mt.rot_z = self._rot_z[ii]
-
-    def _get_rot_z(self):
-        return self._rot_z
-
-    rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
-                     doc="""rotation angle(s)""")
+            # JP: need to set the rotation angle negative for plotting
+            # I think its because the way polar plots work by measuring 
+            # counter clockwise
+            mt.rotation_angle = value
+            
+        self._rotation_angle = value
+            
 
     def plot(self, show=True):
         """
@@ -454,12 +449,12 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         """
 
         plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .10
-        plt.rcParams['figure.subplot.right'] = .90
-        plt.rcParams['figure.subplot.bottom'] = .2
-        plt.rcParams['figure.subplot.top'] = 0.9
-        plt.rcParams['figure.subplot.wspace'] = .70
-        plt.rcParams['figure.subplot.hspace'] = .70
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace
+        plt.rcParams['figure.subplot.hspace'] = self.subplot_hspace
 
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -574,6 +569,8 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
             elif self.ellipse_colorby == 'ellipticity':
                 colorarray = pt.ellipticity[::-1]
+            elif self.ellipse_colorby in ['strike', 'azimuth']:
+                colorarray = pt.azimuth[::-1] % 180
             else:
                 raise NameError(self.ellipse_colorby + ' is not supported')
 
@@ -694,7 +691,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         pmax = int(np.ceil(np.log10(plot_periodlist.max())))
 
         # need to sort the offsets and station labels so they plot correctly
-        sdtype = [('offset', np.float), ('station', '|S10')]
+        sdtype = [('offset', np.float), ('station', 'U10')]
         slist = np.array([(oo, ss) for oo, ss in zip(self.offsetlist,
                                                      self.stationlist)], dtype=sdtype)
         offset_sort = np.sort(slist, order='offset')
@@ -1276,7 +1273,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             >>> pt1.redraw_plot()
         """
 
-        #plt.close(self.fig)
+        self.fig.clf()
         self.plot()
 
     def __str__(self):

@@ -463,7 +463,6 @@ class PhaseTensor(object):
             - Error of Alpha - Numpy array
 
         """
-
         if self.pt is None:
             return None
 
