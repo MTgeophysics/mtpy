@@ -5,6 +5,7 @@ import os
 import filecmp
 import tempfile
 import shutil
+import difflib
 
 import pytest
 import numpy as np
@@ -56,4 +57,11 @@ def test_output():
 
 
 def test_mare2dem_data(ref_output, test_output):
-    assert (filecmp.cmp(ref_output, test_output))
+    files_are_same = filecmp.cmp(ref_output, test_output)
+    if not files_are_same:
+        print("File comparison failed, printing diff")
+        with open(ref_output) as r, open(test_output) as t:
+            diff = difflib.unified_diff(r.readlines(), t.readlines())
+            for line in diff:
+                print(line)
+    assert files_are_same
