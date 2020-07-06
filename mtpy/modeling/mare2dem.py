@@ -13,9 +13,10 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
 
 import mtpy.modeling.occam2d as o2d
-from mtpy.utils import mesh_tools
+from mtpy.utils import mesh_tools, gis_tools, filehandling
 
 
 def station_list(edi_dir):
@@ -30,13 +31,15 @@ def line_length(x0, y0, x1, y1):
     return np.sqrt(abs(y1 - y0) ** 2 + abs(x1 - x0) ** 2)
 
 
-def points_o2d_to_m2d(eastings, northings, profile_length):
+def points_o2d_to_m2d(eastings, northings, profile_length=None):
     """
     Converts Occam2D points to Mare2D system. This is assuming
     O2D profile origin is start of line and Mare2D profile origin is
     middle of line.
     """
     converted_points = []
+    if profile_length is None:
+        profile_length = line_length(eastings[0], northings[0], eastings[-1], northings[-1])
     mid = profile_length / 2
     for e, n in zip(eastings, northings):
         point = line_length(e, n, eastings[0], northings[0])
@@ -49,15 +52,24 @@ def points_o2d_to_m2d(eastings, northings, profile_length):
     return np.array(converted_points)
 
 
-def plot(m2d_profile, elevation, site_locations, site_elevations):
+def plot(m2d_profile, profile_elevation, site_locations, site_elevations, figsize=None):
     """
+    Generate line plot of Mare2DEM profile and site locations against
+    elevation.
     """
-    plt.plot(m2d_profile, elevation, 'ko')
-    plt.plot(site_locations, site_elevations, color='r', marker='*')
-    plt.gca().invert_yaxis()
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(m2d_profile, profile_elevation, 'b', label='M2D Profile')
+    ax.plot(site_locations, site_elevations, color='r', marker='*', linestyle='None', label='Sites')
+    ax.invert_yaxis()
+    ax.set_xlabel("Position (Mare2D coordinates)")
+    ax.set_ylabel("Elevation (meters)")
+    ax.legend()
+    fig.suptitle("Mare2D profile with elevation", fontsize=12)
+    return fig
 
 
-def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300):
+def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300,
+                        flip_elevation=True):
     """
     Converts Occam2D profile to Mare2D format, giving station locations
     and elevations in Mare2D format.
@@ -73,17 +85,21 @@ def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300):
         for loading into Mare2D. According to original script this
         should be changed to something sensible based on length of the
         profile line.
+    flip_elevation : bool, optional
+        If True, elevation is multiplied by -1 after interpolation.
 
     Returns
     -------
-    tuple of float, float, np.ndarray, np.ndarray, np.ndarray
-        A tuple containing (mare origin x, mare origin y,
-        site locations, site elevations, Mare2DEM profile). Mare origin
-        X and Y are the middle of the profile line in UTM coordinates.
-        Site locations are the locations of the site in Mare2D
-        coordinates. Site elevations are elevation of sites in metres
-        (interpolated from surface_file). Mare2DEM profile is the
-        full profile line in Mare2D coordinates.
+    tuple of float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray
+        A tuple containing (mare origin x, mare origin y, utm_zone,
+        site locations, site elevations, Mare2DEM profile,
+        profile elevation). Mare origin X and Y are the middle of the
+        profile line in UTM coordinates. utm_zone is the UTM string of
+        the Mare2D profile origin. Site locations are the locations of
+        the site in Mare2D coordinates. Site elevations are elevation
+        of sites in metres (interpolated from surface_file). Mare2DEM
+        profile is the full profile line in Mare2D coordinates.
+        Elevation is the elevation of the Mare2D profile line.
     """
     # Get site location eastings and northings from Occam2D profile
     site_easts = []
@@ -108,20 +124,38 @@ def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300):
     mare_origin_x = (site_easts.min() + site_easts.max()) / 2
     mare_origin_y = (site_norths.min() + site_norths.max()) / 2
     profile_length = line_length(x0, y0, x1, y1)
+    # UTM zone of Mare2D profile
+    epsg = o2d_data.model_epsg
+    projected_origin = gis_tools.project_point_utm2ll(mare_origin_x, mare_origin_y,
+                                                      None, epsg=epsg)
+    utm_zone = gis_tools.get_utm_zone(projected_origin[0], projected_origin[1])[2]
 
     # Select samples from Occam2D profile for loading into mare2dem
     # For whatever reason, original script ignores first and last coordinates (x0, y0), (x1, y1)
     o2d_easts = np.delete(np.linspace(x0, x1, elevation_sample_n, endpoint=False), 0)
     o2d_norths = np.delete(np.linspace(y0, y1, elevation_sample_n, endpoint=False), 0)
     # Add exact site locations
-    o2d_easts = np.sort(np.concatenate((o2d_easts, site_easts)))
-    o2d_norths = np.sort(np.concatenate((o2d_norths, site_norths)))
+    o2d_easts = np.concatenate((o2d_easts, site_easts))
+    o2d_norths = np.concatenate((o2d_norths, site_norths))
+    # Make sure station indices align between east and north arrays
+    sort_inds = np.argsort(o2d_easts)
+    o2d_easts = o2d_easts[sort_inds]
+    o2d_norths = o2d_norths[sort_inds]
 
-    # Interpolate elevation across sampled points
-    epsg = o2d_data.model_epsg
+    # Interpolate elevation across profile points as a grid
     elevation = mesh_tools.interpolate_elevation_to_grid(
         o2d_easts, o2d_norths, epsg=epsg, surfacefile=surface_file,
         method='cubic')
+    elevation = elevation * -1 if flip_elevation else elevation
+
+    # Get profile elevation (which is a straight line through the elevation grid)
+    profile_elevation = []
+    for i in range(len(o2d_easts)):
+        profile_elevation.append(elevation[i, i])
+    profile_elevation = np.array(profile_elevation)
+
+    # Convert profile to Mare2D system
+    m2d_profile = points_o2d_to_m2d(o2d_easts, o2d_norths, profile_length)
 
     # Get elevation at sites
     site_elevations = []
@@ -134,23 +168,30 @@ def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300):
     # Convert site locations to Mare2D system (0 is profile middle)
     site_locations = points_o2d_to_m2d(site_easts, site_norths, profile_length)
 
-    # Convert profile to Mare2D system
-    m2d_profile = points_o2d_to_m2d(o2d_easts, o2d_norths, profile_length)
-
-    return mare_origin_x, mare_origin_y, site_locations, site_elevations, m2d_profile
+    return (mare_origin_x, mare_origin_y, utm_zone, site_locations, site_elevations,
+            m2d_profile, profile_elevation)
 
 
-def write_elevation_file(m2d_profile, elevation, savepath):
+def write_elevation_file(m2d_profile, profile_elevation, savepath=None):
     """
     Write an elevation file that can be imported into Mamba2D.
     Currently broken due to shape mismatch.
+
+    m2d_profile : np.ndarray
+        1D array of the m2d profile in m2d coordinates.
+    profile_elevation : np.ndarray
+        Z values for each point in the profile.
+    savepath : str or bytes, optional
+        Full path including file of where to save elevation file.
     """
-    elevation_model = np.stack((m2d_profile, elevation), axis=1).astype(np.float64)
+    elevation_model = np.stack((m2d_profile, profile_elevation), axis=1).astype(np.float64)
+    if savepath is None:
+        savepath = os.path.join(os.getcwd(), 'elevation.txt')
     np.savetxt(savepath, elevation_model)
 
 
 def write_mare2dem_data(o2d_filepath, site_locations, site_elevations,
-                        mare_origin, solve_statics=False, savepath=None):
+                        mare_origin, gstrike, solve_statics=False, savepath=None):
     """
     Uses an Occam2D data file and site locations + elevations to
     generate a MARE2DEM data file.
@@ -170,10 +211,12 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations,
         in UTM coordinates. Gets set as the 'z' component of receiver
         locations in the Mare2DEM data file.
     mare_origin : tuple
-        Tuple of float (x, y, strike). The Mare2D origin in UTM c
+        Tuple of float (x, y, utm_zone). The Mare2D origin in UTM c
         oordinates. Note according to the original script, Mare2D origin
-        is the middle of the profile line. UTM zone is derived from these
-        coordinates. The strike is the 2D strike, same as
+        is the middle of the profile line. utm_zone is the UTM string,
+        e.g. '54S'.
+    gstrike : int
+        The 2D strike, same as
         `geoelectric_strike` in Occam2D model. This information is used
         for the UTM origin line in the data file.
     solve_statics : bool or list, optional
@@ -220,7 +263,7 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations,
     type_conversion = {1: 123, 2: 104, 3: 133, 4: 134, 5: 125, 6: 106, 9: 103, 10: 105}
     types = np.vectorize(lambda x: type_conversion.get(x, x))(types)
     # Put into dataframe for easier stringifying
-    # Note: TX# and RX# are the site ID
+    # Note: TX# == RX# == site ID for MT stations
     data_df = pd.DataFrame((types, freqs, sites, sites, datums, errors), dtype=np.object).T
     # Bit of a hack: add the '!' to the data frame header because the 'type' integer is small
     # enough that the 'Type' header will have no left whitespace padding, so we can't prepend
@@ -263,8 +306,8 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations,
         fstring = 'Format:  EMData_2.2\n'
         fstring += 'UTM of x,y origin (UTM zone, N, E, 2D strike):'
         # TODO: fix hardocded UTM zone
-        fstring += ' 54S{:>13.1f}{:>13.1f}\t{:d}\n'.format(
-            mare_origin[0], mare_origin[1], mare_origin[2])
+        fstring += ' {:s}{:>13.1f}{:>13.1f}\t{:d}\n'.format(
+            mare_origin[2], mare_origin[0], mare_origin[1], gstrike)
 
         # 2. frequencies
         fstring += '# MT Frequencies:    {}\n'.format(len(reread_o2d.freq))

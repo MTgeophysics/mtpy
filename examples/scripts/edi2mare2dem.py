@@ -8,14 +8,14 @@ TODO: Original author credit
 Modified 03-07-2020 17:28:10 AEST 
 brenainn.moushall@ga.gov.au
 """
-import os
+# import os
 # os.chdir(r'C:\mtpywin\mtpy')
 
 import mtpy.modeling.occam2d as o2d
 import mtpy.modeling.mare2dem as m2d
 
 # EDI directory
-edi_dir = '/home/bren/mtpy/examples/data/edi_files_2'
+edi_dir = '/path/to/mtpy/examples/data/edi_files_2'
 
 # Full path to save Occam2D data file
 o2d_path = '/tmp/o2d_data.dat'
@@ -30,7 +30,7 @@ solve_statics = False
 # solve_statics = ['Synth10', 'Synth11', 'Synth12']
 
 # ASCII grid topo file for interpoalting elevation across the profile
-surface_file = '/home/bren/mtpy/examples/data/AussieContinent_etopo1.asc'
+surface_file = '/path/to/mtpy/examples/data/AussieContinent_etopo1.asc'
 
 # Generate an Occam2D data object from EDI data
 gstrike = -72
@@ -44,9 +44,18 @@ o2d_data.save_path = o2d_path
 o2d_data.write_data_file(data_fn=o2d_path)
 
 # Convert the Occam2D profile to Mare2D
-mare_origin_x, mare_origin_y, site_locations, site_elevations, m2d_profile = \
+mare_origin_x, mare_origin_y, utm_zone, site_locations, site_elevations, m2d_profile, profile_elevation = \
     m2d.occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300)
 
+# Plot the profile and site locations against elevation
+fig = m2d.plot(m2d_profile, profile_elevation, site_locations, site_elevations)
+# fig.show()
+fig.savefig('/tmp/m2d_plot.png', dpi=400)
+
+# Save the profile elevation to file that can be opened in Mamba2D
+m2d.write_elevation_file(m2d_profile, profile_elevation,
+                         '/tmp/elevation.txt')
+
 m2d.write_mare2dem_data(o2d_path, site_locations, site_elevations,
-                        (mare_origin_x, mare_origin_y, gstrike),
-                        solve_statics=False, savepath=m2d_path)
+                        (mare_origin_x, mare_origin_y, utm_zone),
+                        gstrike, solve_statics=False, savepath=m2d_path)
