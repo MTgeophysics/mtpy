@@ -28,6 +28,9 @@ def station_list(edi_dir):
 
 
 def line_length(x0, y0, x1, y1):
+    """
+    Returns the length of a line segment
+    """
     return np.sqrt(abs(y1 - y0) ** 2 + abs(x1 - x0) ** 2)
 
 
@@ -36,6 +39,24 @@ def points_o2d_to_m2d(eastings, northings, profile_length=None):
     Converts Occam2D points to Mare2D system. This is assuming
     O2D profile origin is start of line and Mare2D profile origin is
     middle of line.
+
+    Parameters
+    ----------
+    eastings : np.ndarray
+        1D array of profile line easting points.
+    northings : np.ndarray
+        1D array of profile line northing points
+    profile_length : float, optional
+        Length of the profile being converted. If not provided, it's
+        assumed the full profile is being convered. Alternatively
+        you can provide the profile length if providing specific
+        points to convert, e.g. site locations.
+
+    Returns
+    -------
+    np.ndarray
+        1D array of floats representing the profile in Mare2D
+        coordinates.
     """
     converted_points = []
     if profile_length is None:
@@ -56,6 +77,21 @@ def plot(m2d_profile, profile_elevation, site_locations, site_elevations, figsiz
     """
     Generate line plot of Mare2DEM profile and site locations against
     elevation.
+
+    Parameters
+    ----------
+    m2d_profile : np.ndarray
+        1D array of floats, profile line in Mare2D
+        coordinates.
+    profile_elevation : np.ndarray
+        1D array of floats, elevation of the profile line.
+    site_locations : np.ndarray
+        1D array of floats, locations of sites on the profile line.
+    site_elevations : np.ndarray
+        1D array of floats, elevation of sites.
+    figsize : tuple of (float, float), optional
+        Size of the figure. 'None' let's matplotlib handle the 
+        figsize.
     """
     fig, ax = plt.subplots(figsize=figsize)
     ax.plot(m2d_profile, profile_elevation, 'b', label='M2D Profile')
@@ -175,7 +211,6 @@ def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300,
 def write_elevation_file(m2d_profile, profile_elevation, savepath=None):
     """
     Write an elevation file that can be imported into Mamba2D.
-    Currently broken due to shape mismatch.
 
     m2d_profile : np.ndarray
         1D array of the m2d profile in m2d coordinates.
