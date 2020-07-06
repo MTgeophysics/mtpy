@@ -1,5 +1,5 @@
 """
-Tests for resistivity model to geotiff.
+Tests for EDI to Mare2D conversion.
 """
 import os
 import filecmp
