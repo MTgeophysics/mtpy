@@ -98,13 +98,13 @@ def calculate_leap_seconds(year, month, day):
                         14: {'min':datetime.date(2006, 1, 1),
                              'max':datetime.date(2009, 1, 1)},
                         15: {'min':datetime.date(2009, 1, 1),
-                             'max':datetime.date(2012, 7, 1)},
-                        16: {'min':datetime.date(2012, 7, 1),
-                             'max':datetime.date(2015, 7, 1)},
-                        17: {'min':datetime.date(2015, 7, 1),
-                             'max':datetime.date(2017, 1, 1)},
-                        18: {'min':datetime.date(2017, 1, 1),
-                             'max':datetime.date(2020, 7, 1)}}
+                             'max':datetime.date(2012, 6, 30)},
+                        16: {'min':datetime.date(2012, 6, 30),
+                             'max':datetime.date(2015, 6, 30)},
+                        17: {'min':datetime.date(2015, 6, 30),
+                             'max':datetime.date(2016, 12, 31)},
+                        18: {'min':datetime.date(2016, 12, 31),
+                             'max':datetime.date(2020, 8, 1)}}
 
     year = int(year)
     month = int(month)
@@ -644,9 +644,11 @@ class Z3DMetadata(object):
             self.station = '{0}{1}'.format(self.line_name,
                                            self.rx_xyz0.split(':')[0])
         except AttributeError:
-            try:
+            if hasattr(self, 'rx_stn'):
                 self.station = self.rx_stn
-            except AttributeError:
+            elif hasattr(self, 'ch_stn'):
+                self.station = self.ch_stn
+            else:
                 self.station = None
                 print("WARNING: Need to input station name")
 
@@ -2260,7 +2262,11 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     log_fid = open(os.path.join(save_path, 'copy_from_sd.log'), 'w')
-
+    
+    # make a datetime object from copy date
+    if copy_date is not None:
+        c_date = dateutil.parser.parse(copy_date)
+        
     st_test = time.ctime()
     fn_list = []
     for key in list(drive_names.keys()):
@@ -2269,70 +2275,57 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
         log_fid.write('='*25+drive_names[key]+'='*25+'\n')
 
         for fn in os.listdir(dr):
+            if 'cal' in fn.lower():
+                continue
             full_path_fn = os.path.normpath(os.path.join(dr, fn))
             if fn[-4:] == '.cfg':
                 shutil.copy(full_path_fn, os.path.join(save_path, fn))
-
+            # test for copy date
+            if copy_date is not None:
+                file_date = datetime.datetime.fromtimestamp(
+                                    os.path.getmtime(full_path_fn))
+                if copy_type == 'after':
+                    if file_date < c_date:
+                        continue
+                elif copy_type == 'before':
+                    if file_date > c_date:
+                        continue
+                elif copy_type == 'on':
+                    if file_date.date() != c_date.date():
+                        continue
+                        
             try:
                 file_size = os.stat(full_path_fn)[6]
                 if file_size >= 1600 and fn.find('.cfg') == -1:
                     zt = Zen3D(fn=full_path_fn)
                     zt.read_all_info()
-                    #zt.read_header()
-                    #zt.read_schedule()
-                    #zt.read_metadata()
-                    schedule_date = '{0}'.format(zt.schedule.Date)
 
                     if zt.metadata.station.find(s_int) >= 0:
-                        fn_find = True
-                        if copy_date is not None:
-                            cp_date = int(''.join(copy_date.split('-')))
+                        channel = zt.metadata.ch_cmp.upper()
+                        st = zt.schedule.Time.replace(':', '')
+                        sd = zt.schedule.Date.replace('-', '')
+                        sv_fn = '{0}_{1}_{2}_{3}_{4}.Z3D'.format(station,
+                                                                 sd,
+                                                                 st,
+                                                                 int(zt.df),
+                                                                 channel)
 
-                            fn_find = False
+                        full_path_sv = os.path.join(save_path, sv_fn)
+                        fn_list.append(full_path_sv)
 
-                            zt_date = int(''.join(schedule_date.split('-')))
-                            if copy_type == 'before':
-                                if zt_date <= cp_date:
-                                    fn_find = True
-                            elif copy_type == 'after':
-                                if zt_date >= cp_date:
-                                    fn_find = True
-                            elif copy_type == 'on':
-                                if zt_date == cp_date:
-                                    fn_find = True
+                        shutil.copy(full_path_fn, full_path_sv)
 
-                        if fn_find:
-                            channel = zt.metadata.ch_cmp.upper()
-                            st = zt.schedule.Time.replace(':', '')
-                            sd = zt.schedule.Date.replace('-', '')
-                            sv_fn = '{0}_{1}_{2}_{3}_{4}.Z3D'.format(station,
-                                                                     sd,
-                                                                     st,
-                                                                     int(zt.df),
-                                                                     channel)
+                        print('copied {0} to {1}\n'.format(full_path_fn, 
+                                                           full_path_sv))
+                                                         
+                        #log_fid.writelines(zt.log_lines)
 
-                            full_path_sv = os.path.join(save_path, sv_fn)
-                            fn_list.append(full_path_sv)
+                        log_fid.write('copied {0} to \n'.format(full_path_fn)+\
+                                      '       {0}\n'.format(full_path_sv))
 
-                            shutil.copy(full_path_fn, full_path_sv)
-
-                            print('copied {0} to {1}\n'.format(full_path_fn,
-                                                               full_path_sv))
-
-                            #log_fid.writelines(zt.log_lines)
-
-                            log_fid.write('copied {0} to \n'.format(full_path_fn)+\
-                                          '       {0}\n'.format(full_path_sv))
-                        else:
-                            print('+++ SKIPPED {0}+++\n'.format(zt.fn))
-                            log_fid.write(' '*4+\
-                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
-
-                    else:
-                        pass
-#
-                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
-                                      'not copied due to bad data.\n\n')
+                else:
+                    log_fid.write('+++ Skipped {0} because file to small {1}'.format(full_path_fn, 
+                                                                                      file_size))
             except WindowsError:
                 print('Faulty file at {0}'.format(full_path_fn))
                 log_fid.write('---Faulty file at {0}\n\n'.format(full_path_fn))
