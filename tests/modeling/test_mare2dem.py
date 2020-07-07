@@ -33,14 +33,15 @@ def test_output():
 
     # Generate an Occam2D data object from EDI data
     gstrike = -72
-    station_list = m2d.station_list(EDI_DATA_DIR2)
-    o2d_data = o2d.Data(edi_path=EDI_DATA_DIR2, model_mode='1', station_list=station_list,
-                        interpolate_freq=False, geoelectric_strike=gstrike, res_te_err=20.,
+    o2d_data = o2d.Data(edi_path=EDI_DATA_DIR2, model_mode='1', optimize_line=True,
+                        interpolate_freq=False, res_te_err=20.,
                         phase_te_err=10., res_tm_err=10., phase_tm_err=5.)
 
     # Save the data file
     o2d_data.save_path = o2d_path
     o2d_data.write_data_file(data_fn=o2d_path)
+
+    gstrike = o2d_data.geoelectric_strike
 
     # Convert the Occam2D profile to Mare2D
     mare_origin_x, mare_origin_y, utm_zone, site_locations, site_elevations, m2d_profile, profile_elevation = \
