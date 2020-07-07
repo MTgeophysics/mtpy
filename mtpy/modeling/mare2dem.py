@@ -19,14 +19,6 @@ import mtpy.modeling.occam2d as o2d
 from mtpy.utils import mesh_tools, gis_tools, filehandling
 
 
-def station_list(edi_dir):
-    """
-    Get list of station names from a directory containing EDI files.
-    """
-    return [os.path.splitext(os.path.basename(fn))[0]
-            for fn in os.listdir(edi_dir) if fn.endswith('.edi')]
-
-
 def line_length(x0, y0, x1, y1):
     """
     Returns the length of a line segment
@@ -171,10 +163,15 @@ def occam2d_to_mare2dem(o2d_data, surface_file, elevation_sample_n=300,
     o2d_easts = np.delete(np.linspace(x0, x1, elevation_sample_n, endpoint=False), 0)
     o2d_norths = np.delete(np.linspace(y0, y1, elevation_sample_n, endpoint=False), 0)
     # Add exact site locations
+    # Make sure station indices align between east and north arrays
     o2d_easts = np.concatenate((o2d_easts, site_easts))
     o2d_norths = np.concatenate((o2d_norths, site_norths))
     # Make sure station indices align between east and north arrays
-    sort_inds = np.argsort(o2d_easts)
+    if x0 == x1:
+        # Sort by North-South for a North-South line
+        sort_inds = np.argsort(o2d_norths)
+    else:
+        sort_inds = np.argsort(o2d_easts)
     o2d_easts = o2d_easts[sort_inds]
     o2d_norths = o2d_norths[sort_inds]
 
@@ -340,8 +337,8 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations,
         # 1. header
         fstring = 'Format:  EMData_2.2\n'
         fstring += 'UTM of x,y origin (UTM zone, N, E, 2D strike):'
-        # TODO: fix hardocded UTM zone
-        fstring += ' {:s}{:>13.1f}{:>13.1f}\t{:d}\n'.format(
+        gstrike = float(gstrike)
+        fstring += ' {:s}{:>13.1f}{:>13.1f}\t{:f}\n'.format(
             mare_origin[2], mare_origin[0], mare_origin[1], gstrike)
 
         # 2. frequencies
