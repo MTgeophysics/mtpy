@@ -14,14 +14,19 @@ import os
 import mtpy.modeling.occam2d as o2d
 import mtpy.modeling.mare2dem as m2d
 
+mtpy_dir = '/path/to/mtpy'
+
 # EDI directory
-edi_dir = '/path/to/mtpy/examples/data/edi_files_2'
+edi_dir = os.path.join(mtpy_dir,'examples','data','edi_files_2')
+
+
+savepath = '/c/tmp'
 
 # Full path to save Occam2D data file
-o2d_path = '/tmp/o2d_data.dat'
+o2d_path = os.path.join(savepath,'Occamdata.dat')
 
 # Full path to save Mare2D data file
-m2d_path = '/tmp/mare2dem_test.txt'
+m2d_path = os.path.join(savepath,'MARE2Ddata.dat')
 
 # Whether to solve statics for all stations
 solve_statics = False
@@ -30,7 +35,8 @@ solve_statics = False
 # solve_statics = ['Synth10', 'Synth11', 'Synth12']
 
 # ASCII grid topo file for interpoalting elevation across the profile
-surface_file = '/path/to/mtpy/examples/data/AussieContinent_etopo1.asc'
+surface_file = os.path.join(mtpy_dir,'examples','data', 
+                            'AussieContinent_etopo1.asc')
 
 # Generate an Occam2D data object from EDI data
 o2d_data = o2d.Data(edi_path=edi_dir, model_mode='1', optimize_line=True,
@@ -48,11 +54,11 @@ mare_origin_x, mare_origin_y, utm_zone, site_locations, site_elevations, m2d_pro
 # Plot the profile and site locations against elevation
 fig = m2d.plot(m2d_profile, profile_elevation, site_locations, site_elevations)
 # fig.show()
-fig.savefig('/tmp/m2d_plot.png', dpi=400)
+fig.savefig(os.path.join(savepath,'m2d_plot.png'), dpi=400)
 
 # Save the profile elevation to file that can be opened in Mamba2D
 m2d.write_elevation_file(m2d_profile, profile_elevation,
-                         '/tmp/elevation.txt')
+                         os.path.join(savepath,'elevation.txt'))
 
 gstrike = o2d_data.geoelectric_strike
 
