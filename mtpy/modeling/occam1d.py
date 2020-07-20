@@ -1910,7 +1910,7 @@ class Plot1DResponse(object):
                 plot_model = abs(10 ** m1.model_res[1:, 1])
                 self.axm.semilogx(plot_model[::-1],
                                   plot_depth[::-1],
-                                  ls='steps-',
+                                  ls='-',
                                   color=cxy,
                                   lw=self.lw)
 
