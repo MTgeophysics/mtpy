@@ -68,11 +68,25 @@ def test_output():
 def test_mare2dem_data(ref_output, test_output):
     files_are_same = filecmp.cmp(ref_output, test_output)
     if not files_are_same:
-        print("File comparison failed, printing diff")
+        print("File comparison failed, testing within tolerance")
         with open(ref_output) as r, open(test_output) as t:
             diff = difflib.unified_diff(r.readlines(), t.readlines())
-            for line in diff:
-                print(line)
+            # Test X, Y, Z are within tolerance (2 decimal places)
+            for i, line in enumerate(diff):
+                if line.startswith('-'):
+                    if diff[i + 1].startswith('+'):
+                        a = line.split()
+                        b = diff[i + 1].split()
+                        ax, ay, az = float(a[0]), float(a[1]), float(a[2])
+                        bx, by, bz = float(b[0]), float(b[1]), float(b[2])
+                        files_are_same = (np.testing.assert_almost_equal(ax, bx, decimal=2)
+                                          and np.testing.assert_almost_equal(ay, by, decimal=2)
+                                          and np.testing.assert_almost_equal(az, bz, decimal=2))
+            if not files_are_same:
+                print("File comparison failed and values out of tolerance, printing diff")
+                diff = difflib.unified_diff(r.readlines(), t.readlines())
+                for line in diff:
+                    print(line)
     assert files_are_same
 
 
