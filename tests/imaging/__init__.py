@@ -111,12 +111,6 @@ class ImageCompare(object):
                         fig.set_size_inches(self.fig_size)
                         fig.set_tight_layout(True)
                     fig.savefig(test_image, **self.savefig_kwargs)
-                    # save rcParams
-                    with open(test_rcparams, "w") as rcfile:
-                        from pprint import pprint
-                        rc = matplotlib.rcParams.copy()
-                        rc.pop("datapath")  # hide datapath
-                        pprint(rc, rcfile)
                     import pytest
                     if self.is_compare_image and os.path.exists(baseline_image):
                         msg = compare_images(baseline_image, test_image, tol=self.tolerance)
