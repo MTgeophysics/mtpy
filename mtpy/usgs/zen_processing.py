@@ -132,6 +132,7 @@ class SurveyConfig(object):
         """
         z3d_df.remote = z3d_df.remote.astype(str)
         s_df = z3d_df[z3d_df.remote == 'False']
+        s_df.start = pd.to_datetime(s_df.start)
 
         self.b_xaxis_azimuth = s_df[s_df.component == 'hx'].azimuth.mode()[0]
         self.b_yaxis_azimuth = s_df[s_df.component == 'hy'].azimuth.mode()[0]
@@ -160,6 +161,7 @@ class SurveyConfig(object):
         self.station_type = 'mt'
 
         rr_df = z3d_df[z3d_df.remote == 'True']
+        rr_df.start = pd.to_datetime(rr_df.start)
         if len(rr_df) > 0:
             self.rr_lat = []
             self.rr_lon = []
@@ -817,7 +819,7 @@ class Z3D2EDI(object):
 
             # get station name
             remotes = np.where(fn_arr['rr'] == False)
-            station = np.unique(fn_arr[remotes]['station'])[0]
+            station = str(np.unique(fn_arr[remotes]['station'])[0])
 
             # add parameters to birrp_params_dict
             birrp_params_dict['ofil'] = str(bf_path.joinpath(station))
@@ -972,7 +974,7 @@ class Z3D2EDI(object):
                      sr_dict={4096:(1000., 4),
                               1024:(3.99, 1.),
                               256:(3.99, .126),
-                              16:(.125, .0001)},
+                              4:(.125, .0001)},
                      birrp_param_dict={}, **kwargs):
         """
         process_data is a convinience function that will process Z3D files
@@ -1240,7 +1242,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                         birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe",
                         ant_calibrations=r"c:\MT\Ant_calibrations",
                         process_df_list=[256],
-                        max_blocks=2,
+                        use_blocks_dict={256:[0, 1]},
                         notch_dict={256:None}):
     """
     This code will down load Z3D files from a Zen that is in SD Mode,
@@ -1332,11 +1334,10 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     with Capturing() as output:
         z2edi = Z3D2EDI(station_z3d_dir)
         z2edi.birrp_exe = birrp_exe
-        z2edi.coil_cal_path = ant_calibrations
+        z2edi.calibration_path = ant_calibrations
         try:
-            rp, comb_edi = z2edi.process_data(df_list=process_df_list,
-                                              max_blocks=max_blocks,
-                                              notch_dict=notch_dict)
+            rp = z2edi.process_data(df_list=process_df_list,
+                                    use_blocks_dict=use_blocks_dict)
         except mtex.MTpyError_inputarguments:
             print('WARNING: Data not good!! Did not produce a proper .edi file')
             et = datetime.datetime.now()
