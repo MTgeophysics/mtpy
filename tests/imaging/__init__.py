@@ -8,7 +8,7 @@ import threading
 from unittest import TestCase
 
 import matplotlib
-from matplotlib import _png
+#cause unittesting failure  from matplotlib import _png
 # from matplotlib.testing.compare import verify # this verify function is deprecated matplotlib2.1
 
 from mtpy.utils.mtpylog import MtPyLog
