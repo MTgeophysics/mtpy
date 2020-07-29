@@ -8,7 +8,6 @@ import threading
 from unittest import TestCase
 
 import matplotlib
-# from matplotlib.testing.compare import verify # this verify function is deprecated matplotlib2.1
 
 from mtpy.utils.mtpylog import MtPyLog
 from tests import TEST_DIR, make_temp_dir, TEST_TEMP_DIR

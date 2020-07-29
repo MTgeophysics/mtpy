@@ -1158,7 +1158,7 @@ class ZongeMTFT():
         self.make_value_dict()
        
         #--> write mtft24.cfg file
-        cfid = file(save_path, 'w')
+        cfid = open(save_path, 'w')
         cfid.write('\n')
         #---- write processing parameters ----
         for ii, mkey in enumerate(self.meta_keys[:-1]):
@@ -1213,7 +1213,7 @@ class ZongeMTFT():
         self.log_lines.append('Wrote config file to {0}\n'.format(save_path))
         
         #write log file
-        lfid = file(os.path.join(os.path.dirname(save_path), 'MTFTcfg.log'),'w')
+        lfid = open(os.path.join(os.path.dirname(save_path), 'MTFTcfg.log'),'w')
         lfid.writelines(self.log_lines)
         lfid.close()
         
@@ -1229,7 +1229,7 @@ class ZongeMTFT():
         if not os.path.isfile(cfg_fn):
             raise IOError('{0} does not exist'.format(cfg_fn))
             
-        cfid = file(cfg_fn, 'r')
+        cfid = open(cfg_fn, 'r')
         clines = cfid.readlines()
         info_lst = []
         setup_lst = []
@@ -1444,7 +1444,7 @@ class ZongeMTEdit():
         self.meta_dict = {}
         self.param_dict = {}
         
-        cfid = file(cfg_fn, 'r')
+        cfid = open(cfg_fn, 'r')
         clines = cfid.readlines()
         for ii, cline in enumerate(clines):
             #--> get metadata 
@@ -1486,7 +1486,7 @@ class ZongeMTEdit():
             self.make_param_dict()
         
         #--- write file ---
-        cfid = file(self.cfg_fn, 'w')
+        cfid = open(self.cfg_fn, 'w')
         
         #--> write metadata
         for mkey in self.meta_keys:
@@ -1753,13 +1753,15 @@ class ZongeMTAvg():
                                              freq)
             
             new_nz = len(list(new_freq_dict.keys()))
+            self.freq_dict = new_freq_dict
             #fill z according to index values
             new_Z = mtz.Z()
+            new_Z.freq = sorted(new_freq_dict.keys())
             new_Z.z = np.zeros((new_nz, 2, 2), dtype='complex')
             new_Z.z_err = np.ones((new_nz, 2, 2))
             nzx, nzy, nzz = self.Z.z.shape
             
-            self.freq_dict = new_freq_dict
+            
             
             #need to fill the new array with the old values, but they
             # need to be stored in the correct position
@@ -1797,7 +1799,7 @@ class ZongeMTAvg():
                     new_Z.z_err[ll,ii, jj] = \
                                 self.comp_dict[ikey]['ares.%err'][kk]*.005
                 
-            new_Z.freq = sorted(self.freq_dict.keys())
+            
             self.Z = new_Z
         
         #fill for the first time
@@ -1985,6 +1987,7 @@ class ZongeMTAvg():
             raise NameError('Could not find {0}'.format(avg_fn))
         
         #read in survey file
+        survey_dict = None
         if survey_cfg_file is not None:
             sdict = mtcf.read_survey_configfile(survey_cfg_file)
             
@@ -2115,9 +2118,9 @@ class ZongeMTAvg():
         
         #------------------HMEAS_EMEAS BLOCK--------------------------
         if mtft_dict:
-            chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp'].split(',')
-            chn_id = mtft_dict['setup_lst'][0]['Chn.ID'].split(',')
-            chn_len_lst = mtft_dict['setup_lst'][0]['Chn.Length'].split(',')
+            chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp']
+            chn_id = mtft_dict['setup_lst'][0]['Chn.ID']
+            chn_len_lst = mtft_dict['setup_lst'][0]['Chn.Length']
             
         else:
             chn_lst = ['hx', 'hy', 'hz', 'ex', 'ey']
@@ -2500,9 +2503,9 @@ class ZongeMTAvg():
         #------------------HMEAS_EMEAS BLOCK--------------------------
         hemeas_lst = []
         if mtft_dict:
-            chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp'].split(',')
-            chn_id = mtft_dict['setup_lst'][0]['Chn.ID'].split(',')
-            chn_len_lst = mtft_dict['setup_lst'][0]['Chn.Length'].split(',')
+            chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp']
+            chn_id = mtft_dict['setup_lst'][0]['Chn.ID']
+            chn_len_lst = mtft_dict['setup_lst'][0]['Chn.Length']
             
         else:
             chn_lst = ['hx', 'hy', 'hz', 'ex', 'ey']
@@ -2644,7 +2647,7 @@ class ZongeMTAvg():
         
             
         #============ WRITE EDI FILE ==========================================
-        edi_fn = self.edi.writefile(save_path)
+        edi_fn = self.edi.write_edi_file(save_path)
         
         print('Wrote .edi file to {0}'.format(edi_fn))
         

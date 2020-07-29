@@ -2332,8 +2332,8 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
     log_fid.close()
 
     et_test = time.ctime()
-    print('Started at: {0}'.format(st_test))
-    print('Ended at: {0}'.format(et_test))
+    print('Started copying at: {0}'.format(st_test))
+    print('Ended copying at: {0}'.format(et_test))
 
     return fn_list
 
