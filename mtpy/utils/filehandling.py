@@ -46,7 +46,7 @@ lo_headerelements = ['station', 'channel','samplingrate','t_min',
 def read_surface_ascii(ascii_fn):
     """
     read in surface which is ascii format ()
-    unlike original function, returns list of lat, long and elevation (no projections)
+    unlike original function, returns numpy array of lon, lat, elev (no projections)
 
     The ascii format is assumed to be:
     ncols        2743
@@ -93,16 +93,13 @@ def read_surface_ascii(ascii_fn):
     lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
     lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
 
-
     return lon, lat, elevation   # this appears correct
-
 
 
 def read1columntext(textfile):
     """
     read a list from a one column text file
     """
-    
     return [ff.strip() for ff in open(textfile).readlines()]
 
 def read_stationdatafile(textfile,read_duplicates = True):
