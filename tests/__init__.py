@@ -36,7 +36,8 @@ AUS_TOPO_FILE = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
 SAMPLE_DIR = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'
-
+M2D_DIR = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'examples/data/mare2dem'))
 
 # set test logging configure
 MtPyLog.load_configure(os.path.join(TEST_DIR, "logging.yml"))

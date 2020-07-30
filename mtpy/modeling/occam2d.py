@@ -963,10 +963,68 @@ class Profile():
         self.elevation_model = kwargs.pop('elevation_model', None)
         self.elevation_profile = None
         self.estimate_elevation = True
+        self.optimize_line = kwargs.pop('optimize_line', False)
+
+    @staticmethod
+    def _optimized_path(eastings, northings, start=None):
+        """
+        TODO: should be refactored to somewhere else, is also used in
+        modem.plot_slices.
+
+        This function was adopted verbatim from the following link:
+
+        https://stackoverflow.com/questions/45829155/sort-points-in-order-to-have-a-continuous-curve-using-python
+
+        Order coordinates such that a continuous line can be formed.
+
+        Parameters
+        ----------
+        eastings : np.ndarray
+            1D array of float, easting coordinates for profile line
+        northings : np.ndarray
+            1D array of float, northing coordinates for profile line
+
+        Returns
+        -------
+        list
+            Index list for sorting E/N coords optimally (and by 
+            extension, a list of EDI objects).
+        """
+        def distance(P1, P2):
+            return ((P1[0] - P2[0])**2 + (P1[1] - P2[1])**2) ** 0.5
+
+        coords = np.column_stack((eastings, northings))
+        coords_list = coords.tolist()
+        # Assume start of profile is minimum easting
+        if start is None:
+            start = min(coords_list, key=lambda x: x[0])
+        pass_by = coords_list
+        path = [start]
+        pass_by.remove(start)
+        while pass_by:
+            nearest = min(pass_by, key=lambda x: distance(path[-1], x))
+            path.append(nearest)
+            pass_by.remove(nearest)
+        inds = [np.where(coords == p)[0][0] for p in path]
+        return inds
 
     def _get_edi_list(self):
         """
-        get a list of edi files that coorespond to the station list
+        Get a list of edi files that coorespond to the station list.
+        The ordering of stations is important as it affects the 
+        ordering of the easting and northing points that are used
+        in calculating the slope and intercept of the profile line.
+
+        Three options for doing so:
+            1. Provide self.station_list - the MT objects will be ordered
+            by the station names provided.
+            
+            2. Set self.optimize_line to True. This will sort the stations
+            by optimizing for the most continuous linear regression
+            through the station locations. Assumes minimum easting
+            is start of profile.
+
+            3. Sort the station names alphabetically.
         
         each element of the list is a mtpy.core.mt.MT object
         """
@@ -978,16 +1036,24 @@ class Profile():
                         self.edi_list.append(mt.MT(os.path.join(self.edi_path,
                                                                 edi)))
                         break
+        elif self.optimize_line:
+            edis = [mt.MT(os.path.join(self.edi_path, edi)) for
+                    edi in os.listdir(self.edi_path) if edi.endswith('.edi')]
+            eastings = np.array([edi.east for edi in edis])
+            northings = np.array([edi.north for edi in edis])
+            optimal_inds = Profile._optimized_path(eastings, northings)
+            self.edi_list = np.asarray(edis)[optimal_inds].tolist()
+            self.station_list = [os.path.splitext(os.path.basename(edi.fn))[0]
+                                 for edi in self.edi_list]
         else:
             self.edi_list = [mt.MT(os.path.join(self.edi_path, edi)) for
-                             edi in os.listdir(self.edi_path)
-                             if edi[-3:] == 'edi']
-
-        self.num_edi = len(self.edi_list)
-
+                             edi in os.listdir(self.edi_path) if edi.endswith('.edi')]
+            self.station_list = [os.path.splitext(os.path.basename(edi.fn))[0]
+                                 for edi in self.edi_list]
         for edi in self.edi_list:
             if type(edi.Tipper.rotation_angle) is list:
                 edi.Tipper.rotation_angle = np.array(edi.Tipper.rotation_angle)
+        self.num_edi = len(self.edi_list)
 
     def generate_profile(self):
         """
@@ -1109,7 +1175,7 @@ class Profile():
             # need to project the y-intercept to the new angle
             p2 = (self.profile_line[0] - p1) * easts[0] + self.profile_line[1]
             self.profile_line = (p1, p2)
-
+        
             for edi in self.edi_list:
                 edi.Z.rotate(self.geoelectric_strike - edi.Z.rotation_angle)
                 # rotate tipper to profile azimuth, not strike.
@@ -1152,7 +1218,6 @@ class Profile():
         profile_vector = np.array([1, self.profile_line[0]])
         # be sure the amplitude is 1 for a unit vector
         profile_vector /= np.linalg.norm(profile_vector)
-
         for ii, edi in enumerate(self.edi_list):
             station_vector = np.array([easts[ii], norths[ii] - self.profile_line[1]])
             position = np.dot(profile_vector, station_vector) * profile_vector
@@ -1161,7 +1226,6 @@ class Profile():
             edi.projected_east = position[0]
             edi.projected_north = position[1] + self.profile_line[1]
             projected_stations[ii] = [position[0], position[1] + self.profile_line[1]]
-
         # set the first station to 0
         for edi in self.edi_list:
             edi.offset -= self.station_locations.min()
@@ -1324,8 +1388,8 @@ class Profile():
         ax.grid(alpha=.5)
         ax.legend([m1, m2], ['Projected', 'Original'], loc='upper left',
                   prop={'size': fs})
-
         plt.show()
+        plt.savefig('/tmp/profile_angle0.png')
 
 
 class Regularization(Mesh):
