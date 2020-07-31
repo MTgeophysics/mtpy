@@ -153,7 +153,7 @@ class ResPhase(object):
 
         """
 
-        print('Reseting z and z_err')
+        print('Resetting z and z_err')
 
         self._resistivity = res_array
         self._phase = phase_array
@@ -170,7 +170,7 @@ class ResPhase(object):
             raise MTex.MTpyError_inputarguments('Error - array "phase" is' + \
                                                 'not real valued !')
 
-        abs_z = np.sqrt(5.0 * self.freq * self.resistivity)
+        abs_z = np.sqrt(5.0 * self.freq * (self.resistivity.T)).T
         self._z = abs_z * np.exp(1j * np.radians(self.phase))
 
         self._z_err = np.zeros_like(self._z, dtype=np.float)
@@ -179,7 +179,7 @@ class ResPhase(object):
         if self._resistivity_err is None or self._phase_err is None:
             return
 
-        for idx_f in range(self.freq.shape):
+        for idx_f in range(self.freq.shape[0]):
             for ii in range(2):
                 for jj in range(2):
                     abs_z = np.sqrt(5 * self.freq[idx_f] * \
