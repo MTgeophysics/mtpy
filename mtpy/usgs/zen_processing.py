@@ -817,7 +817,7 @@ class Z3D2EDI(object):
 
             # get station name
             remotes = np.where(fn_arr['rr'] == False)
-            station = np.unique(fn_arr[remotes]['station'])[0]
+            station = str(np.unique(fn_arr[remotes]['station'])[0])
 
             # add parameters to birrp_params_dict
             birrp_params_dict['ofil'] = str(bf_path.joinpath(station))
@@ -836,8 +836,12 @@ class Z3D2EDI(object):
 
             # write script file
             b_script = bf_path.joinpath('{0}.script'.format(station))
-            birrp_script_obj.write_script_file(script_fn=b_script)
-
+            try:
+                birrp_script_obj.write_script_file(script_fn=b_script)
+            except ValueError as error:
+                print(fn_arr['fn'])
+                raise ValueError(error)
+                
             # write a birrp parameter configuration file
             birrp_script_obj.write_config_file(bf_path.joinpath(station))
             script_fn_list.append(birrp_script_obj.script_fn)

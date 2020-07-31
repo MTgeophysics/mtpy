@@ -67,6 +67,9 @@ class Z3DCollection(object):
         self._z3d_path = None
         self.z3d_path = z3d_path
         self.ts_path = None
+        self._tol_dict = {4096: {'s_diff': 5 * 60 * 4096},
+                          256: {'s_diff': 4 * 256 * 3600},
+                          4: {'s_diff': 4 * 3600 * 5}}
 
         self._keys_dict = {'station': 'station',
                            'start': 'start',
