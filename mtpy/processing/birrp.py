@@ -515,8 +515,7 @@ class ScriptFile(BIRRPParameters):
         elif num_comp == 5:
             self._comp_list = ['ex', 'ey', 'hz', 'hx', 'hy']
         else:
-            raise ValueError('Number of components {0} invalid'+
-                             ', check inputs'.format(num_comp))
+            raise ValueError('Number of components {0} invalid, check inputs'.format(num_comp))
 
         if self.nref == 0:
             self._comp_list += ['hx', 'hy']

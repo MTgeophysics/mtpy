@@ -838,8 +838,12 @@ class Z3D2EDI(object):
 
             # write script file
             b_script = bf_path.joinpath('{0}.script'.format(station))
-            birrp_script_obj.write_script_file(script_fn=b_script)
-
+            try:
+                birrp_script_obj.write_script_file(script_fn=b_script)
+            except ValueError as error:
+                print(fn_arr['fn'])
+                raise ValueError(error)
+                
             # write a birrp parameter configuration file
             birrp_script_obj.write_config_file(bf_path.joinpath(station))
             script_fn_list.append(birrp_script_obj.script_fn)

@@ -539,14 +539,15 @@ class PlotResponse(object):
                             marker='.')
             t_label_list = ['Re{$T_x$}', 'Im{$T_x$}', 'Re{$T_y$}', 'Im{$T_y$}']
             label_list += [['$T_{x}$'], ['$T_{y}$']]
-            for ax, label in zip(self.ax_list[-4:], t_label_list):
-                ax.legend([l1], [label], loc='upper left',
-                          markerscale=.01,
-                          borderaxespad=.05,
-                          labelspacing=.01,
-                          handletextpad=.05,
-                          borderpad=.05,
-                          prop={'size': max([self.font_size, 6])})
+            if self.plot_tipper:
+                for ax, label in zip(self.ax_list[-4:], t_label_list):
+                    ax.legend([l1], [label], loc='upper left',
+                              markerscale=.01,
+                              borderaxespad=.05,
+                              labelspacing=.01,
+                              handletextpad=.05,
+                              borderpad=.05,
+                              prop={'size': max([self.font_size, 6])})
 
 
 
@@ -572,6 +573,9 @@ class PlotResponse(object):
                     ax.set_xlabel('Period (s)', fontdict=fontdict)
 
                 if aa < 4 and self.plot_z is False:
+                    ylabels = ax.get_yticklabels()
+                    ylabels[0] = ''
+                    ax.set_yticklabels(ylabels)
                     ax.set_yscale('log', nonposy='clip')
                     if aa == 0 or aa == 3:
                         ax.set_ylim(self.res_limits_d)
@@ -579,7 +583,7 @@ class PlotResponse(object):
                         ax.set_ylim(self.res_limits_od)
 
                 if aa > 3 and aa < 8 and self.plot_z is False:
-                    ax.yaxis.set_major_locator(MultipleLocator(10.0))
+                    #ax.yaxis.set_major_locator(MultipleLocator(10.0))
                     if self.phase_limits_d is not None:
                         ax.set_ylim(self.phase_limits_d)
                 # set axes labels
@@ -783,6 +787,7 @@ class PlotResponse(object):
                               labelspacing=self.legend_label_spacing,
                               handletextpad=self.legend_handle_text_pad,
                               borderpad=self.legend_border_pad,
+                              framealpha=1,
                               prop={'size': max([self.font_size, 5])})
 
             plt.show()

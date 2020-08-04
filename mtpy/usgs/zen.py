@@ -104,7 +104,7 @@ def calculate_leap_seconds(year, month, day):
                         17: {'min':datetime.date(2015, 6, 30),
                              'max':datetime.date(2016, 12, 31)},
                         18: {'min':datetime.date(2016, 12, 31),
-                             'max':datetime.date(2020, 8, 1)}}
+                             'max':datetime.date(2020, 12, 1)}}
 
     year = int(year)
     month = int(month)
@@ -645,9 +645,9 @@ class Z3DMetadata(object):
                                            self.rx_xyz0.split(':')[0])
         except AttributeError:
             if hasattr(self, 'rx_stn'):
-                self.station = self.rx_stn
+                self.station = f"{self.rx_stn}"
             elif hasattr(self, 'ch_stn'):
-                self.station = self.ch_stn
+                self.station = f"{self.ch_stn}"
             else:
                 self.station = None
                 print("WARNING: Need to input station name")
@@ -1622,12 +1622,10 @@ class Zen3D(object):
             **ptf** : mtpy.imaging.plotspectrogram.PlotTF object
         """
 
-        time_series = self.convert_counts()
-
         kwargs = {'nh':time_window, 'tstep':time_step, 'L':s_window,
                   'ng':frequency_window, 'df':self.df, 'nfbins':n_freq_bins,
                   'sigmaL': sigma_L}
-        ptf = plotspectrogram.PlotTF(time_series, **kwargs)
+        ptf = plotspectrogram.PlotTF(self.ts_obj.ts.data.to_numpy(), **kwargs)
 
         return ptf
 

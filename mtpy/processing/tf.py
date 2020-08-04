@@ -386,10 +386,10 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
     df = float(df)
 
     # get only positive frequencies
-    flst = np.fft.fftfreq(nfbins, 1 / df)[0:nfbins / 2]
+    flst = np.fft.fftfreq(nfbins, 1 / df)[0:int(nfbins / 2)]
 
     # initialize the TFD array
-    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype='complex128')
+    tfarray = np.zeros((int(nfbins / 2), len(tlst)), dtype='complex128')
 
     # calculate the analytic signal to fold negative frequencies onto the
     # positive ones
@@ -400,7 +400,7 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
         fxwin = fa[ii:ii + nh] * h
 
         # get only positive frequencies
-        FXwin = np.fft.fft(padzeros(fxwin, npad=nfbins))[:nfbins / 2]
+        FXwin = np.fft.fft(padzeros(fxwin, npad=nfbins))[:int(nfbins / 2)]
 
         # smooth in frequency plane
         if ng != 1:
@@ -1423,11 +1423,11 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
         pm[:, kk] = p
 
     # loop over frequency and calculate the s-method
-    for ff in range(L / 2, nf - L / 2):
+    for ff in range(int(L / 2), nf - int(L / 2) - 1):
         tfarray[ff, :] = tfarray[ff, :] + 2 * np.real(np.sum(pm * pxx[ff + Llst, :] *
                                                              pxx[ff - Llst, :].conj(), axis=0))
     # normalize
-    tfarray[L / 2:-L / 2] /= L
+    tfarray[int(L / 2):int(-L / 2)] /= L
 
     return tfarray, tlst, flst, pxx
 

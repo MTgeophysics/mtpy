@@ -244,9 +244,9 @@ class PlotRMSMaps(object):
         rms = np.zeros(self.residual.residual_array.shape[0])
         self.residual.get_rms()
         if plot_dict['label'].startswith('$Z'):
-            rms = self.residual.rms_array['rms_z_component'][:,ii,jj]
+            rms = self.residual.rms_array['rms_z_component'][:, self.period_index, ii, jj]
         elif plot_dict['label'].startswith('$T'):
-            rms = self.residual.rms_array['rms_tip_component'][:,ii,jj]
+            rms = self.residual.rms_array['rms_tip_component'][:, self.period_index, ii, jj]
         
         # for ridx in range(len(self.residual.residual_array)):
 
@@ -389,7 +389,9 @@ class PlotRMSMaps(object):
         for p_dict in self.plot_z_list:
             rms, filt = self._calculate_rms(p_dict)
 
-            ax = self.fig.add_subplot(sp_rows, sp_cols, p_dict['plot_num'], aspect='equal')
+            ax = self.fig.add_subplot(sp_rows, sp_cols, 
+                                      p_dict['plot_num'],
+                                      aspect='equal')
 
             plt.scatter(lon[filt],
                         lat[filt],
