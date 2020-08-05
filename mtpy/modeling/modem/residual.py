@@ -165,9 +165,10 @@ class Residual(object):
                        ('rms_period', (np.float, r_shape)),
                        ('rms_z_period', (np.float, r_shape)),
                        ('rms_tip_period', (np.float, r_shape)),
-                       ('rms_z_component', (np.float, (r_shape[0], 2, 2))),
-                       ('rms_tip_component', (np.float, (r_shape[0], 1, 2)))
-                       ]
+                       ('rms_z_component', (np.float, (2, 2))),
+                       ('rms_tip_component', (np.float, (1, 2))),
+                       ('rms_z_component_period', (np.float, (r_shape[0], 2, 2))),
+                       ('rms_tip_component_period', (np.float, (r_shape[0], 1, 2)))]
 
         self.rms_array = np.zeros(data_array.shape[0],dtype=rdtype)
 
@@ -327,7 +328,10 @@ class Residual(object):
             ijvals = res_vals_cpt.shape[2:]
             for i in range(ijvals[0]):
                 for j in range(ijvals[1]):
-                    self.rms_array['rms_{}_component'.format(cpt)][:,:, i,j] = \
+                    self.rms_array['rms_{}_component'.format(cpt)][:,i,j] = \
+                        (np.nansum(res_vals_cpt[:,:,i,j]**2.,axis=1)/\
+                         np.nansum(np.isfinite(res_vals_cpt[:,:,i,j]),axis=1))**0.5
+                    self.rms_array['rms_{}_component_period'.format(cpt)][:,:, i,j] = \
                         (res_vals_cpt[:,:,i,j]**2/\
                          np.isfinite(res_vals_cpt[:,:,i,j]))**0.5
         
