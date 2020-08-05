@@ -47,6 +47,9 @@ class MyStream(QtCore.QObject):
 
     def write(self, message):
         self.message.emit(str(message))
+        
+    def flush(self):
+        print('Done')
 
 class EDI_Editor_Window(QtWidgets.QMainWindow):
     """
@@ -224,15 +227,14 @@ class PlotWidget(QtWidgets.QWidget):
         
         # this will set the minimum width of the mpl plot, important to 
         # resize everything
-        screen = QtWidgets.QDesktopWidget().screenGeometry()
-        self.mpl_widget.setMinimumWidth(screen.width()*(1600./1920))
+        screen = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        self.mpl_widget.setMinimumWidth(screen.width()*.83)
+        self.mpl_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                      QtWidgets.QSizePolicy.Expanding)
         
         # be able to edit the data
         self.mpl_widget.mpl_connect('pick_event', self.on_pick)
         self.mpl_widget.mpl_connect('axes_enter_event', self.in_axes)
-        self.mpl_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                      QtWidgets.QSizePolicy.Expanding)
-
         self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
         
          # header label font
@@ -558,12 +560,19 @@ class PlotWidget(QtWidgets.QWidget):
         info_layout.addWidget(self.output_box)
             
         ## final layout
+        # splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        # splitter.addWidget(info_layout)
+        # splitter.addWidget(mpl_vbox)
+        # splitter.setStretchFactor(1, 4)
+        
         final_layout = QtWidgets.QHBoxLayout()
         final_layout.addLayout(info_layout)
-        final_layout.addLayout(mpl_vbox )
+        final_layout.addLayout(mpl_vbox)
 
         
         self.setLayout(final_layout)
+        # self.setLayout(splitter)
+        # QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
         self.mpl_widget.updateGeometry()
         
     def meta_edit_station(self):
@@ -800,20 +809,21 @@ class PlotWidget(QtWidgets.QWidget):
         if len(interp_idx) != len(new_period):
             
             info =['Cannot interpolate over periods not represented in the data.',
-                   'Data min = {0:<8.3e} s'.format(1./self.mt_obj.Z.freq.max()),
-                   'Data max = {0:<8.3e} s'.format(1./self.mt_obj.Z.freq.min()),
-                   '',                    
-                   'Given period range:',
-                   '     min = {0:<8.3e} s'.format(new_period.min()),
-                   '     max = {0:<8.3e} s'.format(new_period.max()),
-                   '',
-                   'Setting interpolation frequency bounds to:',
-                   '     min = {0:<8.3e} s'.format(1./interp_freq.max()),
-                   '     max = {0:<8.3e} s'.format(1./interp_freq.min())] 
-            msg_box = QtWidgets.QMessageBox()
-            msg_box.setText('\n'.join(info))
-            msg_box.setWindowTitle('Interpolation Bounds')
-            msg_box.exec_()
+                    'Data min = {0:<8.3e} s'.format(1./self.mt_obj.Z.freq.max()),
+                    'Data max = {0:<8.3e} s'.format(1./self.mt_obj.Z.freq.min()),
+                    '',                    
+                    'Given period range:',
+                    '     min = {0:<8.3e} s'.format(new_period.min()),
+                    '     max = {0:<8.3e} s'.format(new_period.max()),
+                    '',
+                    'Setting interpolation frequency bounds to:',
+                    '     min = {0:<8.3e} s'.format(1./interp_freq.max()),
+                    '     max = {0:<8.3e} s'.format(1./interp_freq.min())]
+            print('\n'.join(info))
+            # msg_box = QtWidgets.QMessageBox()
+            # msg_box.setText('\n'.join(info))
+            # msg_box.setWindowTitle('Interpolation Bounds')
+            # msg_box.exec_()
                                  
         if self._edited_dist == True or self._edited_mask == True or \
            self._edited_rot == True or self._edited_ss == True:
@@ -830,9 +840,9 @@ class PlotWidget(QtWidgets.QWidget):
             
         self.redraw_plot()
         
-        print('Interpolated data onto periods:')
-        for ff in interp_freq:
-            print('    {0:.6e}'.format(1./ff))
+        # print('Interpolated data onto periods:')
+        # for ff in interp_freq:
+        #     print('    {0:.6e}'.format(1./ff))
         
     def edits_set(self, selected_item):
         modes_list = ['Both', 'X', 'Y']
