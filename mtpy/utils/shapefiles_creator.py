@@ -120,12 +120,12 @@ class ShapefilesCreator(EdiCollection):
 
         return outpath
 
-    def create_phase_tensor_shp(self, period, ellipsize=None, target_epsg_code=4283, export_fig=False):
+    def create_phase_tensor_shp(self, period, ellipsize=None, phi_max_v=None, 
+            target_epsg_code=4283, export_fig=False):
         """
         create phase tensor ellipses shape file correspond to a MT period
         :return: (geopdf_obj, path_to_shapefile)
         """
-
         if ellipsize is None:  # automatically decide suitable ellipse size.
             ellipsize = self.stations_distances.get("Q1PERCENT") / 2  # a half or a third of the min_distance?
             self._logger.debug("Automatically Selected Max-Ellispse Size = %s", ellipsize)
@@ -151,7 +151,8 @@ class ShapefilesCreator(EdiCollection):
         geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry=mt_locations)
 
         # make  pt_ellispes using polygons
-        phi_max_v = geopdf['phi_max'].max()  # the max of this group of ellipse
+        if phi_max_v is None:
+            phi_max_v = geopdf['phi_max'].max()  # the max of this group of ellipse
 
         # points to trace out the polygon-ellipse
         theta = np.arange(0, 2 * np.pi, np.pi / 30.)
@@ -305,6 +306,7 @@ class ShapefilesCreator(EdiCollection):
 
 
 def create_tensor_tipper_shapefiles(edi_dir, out_dir, periods,
+                                    pt_base_size=None, pt_phi_max=None,
                                     src_epsg=4326, dst_epsg=4326):
     """
     Interface for creating and saving phase tensor and tipper
@@ -339,7 +341,8 @@ def create_tensor_tipper_shapefiles(edi_dir, out_dir, periods,
         index = np.argmin(np.fabs(np.asarray(all_periods) - p))
         nearest = all_periods[index]
         _logger.info("Found nearest period {}s for selected period {}s".format(nearest, p))
-        sfc.create_phase_tensor_shp(all_periods[index], target_epsg_code=dst_epsg)
+        sfc.create_phase_tensor_shp(all_periods[index], target_epsg_code=dst_epsg,
+                ellipsize=pt_base_size, phi_max_v=pt_phi_max)
         sfc.create_tipper_real_shp(all_periods[index], target_epsg_code=dst_epsg)
         sfc.create_tipper_imag_shp(all_periods[index], target_epsg_code=dst_epsg)
 
