@@ -21,8 +21,8 @@ Revision History:
 
 from mtpy.utils.shapefiles_creator import create_tensor_tipper_shapefiles
 
-edi_dir = '/path/to/edis'
-out_dir = '/path/to/outdir'
+edi_dir = '/path/to/data/dir'
+out_dir = '/path/to/out/dir'
 # EPSG code of the EDI data.
 src_epsg = 4326
 # EPSG code of the output (i.e. same CRS as the tiff you will be
@@ -42,16 +42,11 @@ periods = [0., 100.]
 
 # Base size of phase tensor in units of CRS.
 # If left to None, this is half of the min distance between stations.
-pt_base_size = 0.02
-
-# Maximum Phi used for phase tensor size scaling.
-# If left to None, this is the maximum of the set of phase tensors for each period.
-pt_phi_max = 100.0
+pt_base_size = None
 
 # Create and save shapefiles.
 create_tensor_tipper_shapefiles(edi_dir, out_dir, periods, 
-        pt_base_size=pt_base_size, pt_phi_max=pt_phi_max,
-        src_epsg=src_epsg, dst_epsg=dst_epsg)
+        pt_base_size=pt_base_size, src_epsg=src_epsg, dst_epsg=dst_epsg)
 
 # Plots the shapefiles as .png. Currently not working due to absence
 # of 'descartes' library.

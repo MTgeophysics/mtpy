@@ -120,7 +120,7 @@ class ShapefilesCreator(EdiCollection):
 
         return outpath
 
-    def create_phase_tensor_shp(self, period, ellipsize=None, phi_max_v=None, 
+    def create_phase_tensor_shp(self, period, ellipsize=None, 
             target_epsg_code=4283, export_fig=False):
         """
         create phase tensor ellipses shape file correspond to a MT period
@@ -143,28 +143,28 @@ class ShapefilesCreator(EdiCollection):
         self._logger.debug(pdf['period'])
 
         mt_locations = [Point(xy) for xy in zip(pdf['lon'], pdf['lat'])]
-        # OR pdf['geometry'] = pdf.apply(lambda z: Point(z.lon, z.lat), axis=1)
-        # if you want to df = df.drop(['Lon', 'Lat'], axis=1)
-        # orig_crs = {'init': 'epsg:4326'}  # initial crs WGS84
-        # orig_crs = {'init': 'epsg:4283'}  # initial crs GDA94
 
         geopdf = gpd.GeoDataFrame(pdf, crs=self.orig_crs, geometry=mt_locations)
 
-        # make  pt_ellispes using polygons
-        if phi_max_v is None:
-            phi_max_v = geopdf['phi_max'].max()  # the max of this group of ellipse
-
         # points to trace out the polygon-ellipse
         theta = np.arange(0, 2 * np.pi, np.pi / 30.)
-
         azimuth = -np.deg2rad(geopdf['azimuth'])
-        width = ellipsize * (geopdf['phi_max'] / phi_max_v)
-        height = ellipsize * (geopdf['phi_min'] / phi_max_v)
+        scaling = ellipsize / geopdf['phi_max']
+        width = geopdf['phi_max'] * scaling
+        height = geopdf['phi_min'] * scaling
         x0 = geopdf['lon']
         y0 = geopdf['lat']
 
-        # apply formula to generate ellipses
+        # Find invalid ellipses
+        bad_min = np.where(np.logical_or(geopdf['phi_min'] == 0, geopdf['phi_min'] > 100))[0]
+        bad_max = np.where(np.logical_or(geopdf['phi_max'] == 0, geopdf['phi_max'] > 100))[0]
+        dot = 0.0000001 * ellipsize
+        height[bad_min] = dot
+        height[bad_max] = dot
+        width[bad_min] = dot
+        width[bad_max] = dot
 
+        # apply formula to generate ellipses
         ellipse_list = []
         for i in range(0, len(azimuth)):
             x = x0[i] + height[i] * np.cos(theta) * np.cos(azimuth[i]) - \
@@ -342,7 +342,7 @@ def create_tensor_tipper_shapefiles(edi_dir, out_dir, periods,
         nearest = all_periods[index]
         _logger.info("Found nearest period {}s for selected period {}s".format(nearest, p))
         sfc.create_phase_tensor_shp(all_periods[index], target_epsg_code=dst_epsg,
-                ellipsize=pt_base_size, phi_max_v=pt_phi_max)
+                ellipsize=pt_base_size)
         sfc.create_tipper_real_shp(all_periods[index], target_epsg_code=dst_epsg)
         sfc.create_tipper_imag_shp(all_periods[index], target_epsg_code=dst_epsg)
 
@@ -419,7 +419,6 @@ def create_ellipse_shp_from_csv(csvfile, esize=0.03, target_epsg_code=4283):
 
     # points to trace out the polygon-ellipse
     theta = np.arange(0, 2 * np.pi, np.pi / 30.)
-
     azimuth = -np.deg2rad(pdf['azimuth'])
     width = esize * (pdf['phi_max'] / phi_max_v)
     height = esize * (pdf['phi_min'] / phi_max_v)
