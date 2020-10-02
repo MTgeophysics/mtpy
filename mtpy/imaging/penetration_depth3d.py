@@ -430,7 +430,7 @@ if __name__ == "__main__":
 
         bname =os.path.basename(os.path.normpath(edi_dir))
         print ("dir base name", bname)
-        create_penetration_depth_csv(edi_dir, "C:/tmp/%s_MT_pen_depths.csv"%bname)
+        create_penetration_depth_csv(edi_dir, "/tmp/%s_MT_pen_depths.csv"%bname)
 
         # plot pendepth over multiple periods
         # plot_many_periods( edi_dir )

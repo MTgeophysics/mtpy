@@ -190,8 +190,8 @@ def _build_target_grid(centers_east, cell_size_east, centers_north, cell_size_no
     Simply a wrapper around np.meshgrid to allow testing and to avoid
     indexing mistakes.
     """
-    return np.meshgrid(np.arange(centers_east[0], centers_east[-1], cell_size_east),
-                       np.arange(centers_north[0], centers_north[-1], cell_size_north))
+    return np.meshgrid(np.arange(centers_east[0], centers_east[-1] + cell_size_east, cell_size_east),
+                       np.arange(centers_north[0], centers_north[-1] + cell_size_north, cell_size_north))
 
 
 def _get_depth_indicies(centers_z, depths):
@@ -220,10 +220,8 @@ def _get_depth_indicies(centers_z, depths):
 
     if depths:
         res = {_nearest(centers_z, d) for d in depths}
-        print("Slices closest to requested depths: {}".format([centers_z[di] for di in res]))
         return res
     else:
-        print("No depths provided, getting all slices...")
         return set(range(len(centers_z)))
 
 
@@ -332,7 +330,7 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
         zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center_lat, center_lon)
         epsg_code = gis_tools.get_epsg(center_lat, center_lon)
         _logger.info("Input data epsg code has been inferred as {}".format(epsg_code))
-
+    
     print("Loaded model")
 
     # Get the center point of the model grid cells to use as points

@@ -581,11 +581,11 @@ def load_edi_files(edi_path, file_list=None):
         edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
     return edi_list
 
-
-def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whichrho='det',):
+#FZ reversed-fixed logic issues introduced in  https://github.com/MTgeophysics/mtpy/commit/817c9f4a6384460d57974fb7a6f80e04a8a4ce97
+def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whichrho='det'):
     """
     This is a more generic and useful function to compute the penetration depths
-    of a list of edi files at given period_sec (seconds).
+    of a list of edi files at given selected_period (in seconds, NOT freq).
     No assumption is made about the edi files period list.
     A tolerance of 10% is used to identify the relevant edi files which contain the period of interest.
 
@@ -602,47 +602,57 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
     pen_depth = []
     stations = []
     latlons = []
+
     _logger.info("Getting nearest period to {} for all stations".format(selected_period))
     for mt_obj in mt_obj_list:
         if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
             mt_obj = mt.MT(mt_obj)
         elif not isinstance(mt_obj, mt.MT):
             raise Exception("Unsupported list of objects %s" % type(mt_obj))
-        # station id
-        stations.append(mt_obj.station)
-        # latlons
-        latlons.append((mt_obj.lat, mt_obj.lon))
+
         # the attribute Z
         zeta = mt_obj.Z
-        per_index = np.argmin(np.fabs(zeta.freq - selected_period))
+        per_index = np.argmin(np.fabs(zeta.freq - 1.0/selected_period))
         per = 1.0 / zeta.freq[per_index]
-        if abs(selected_period - per) > selected_period * ptol:
-            periods.append(np.nan)
-            pen_depth.append(np.nan)
-            _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} and "
-                            "discarded".format(per, mt_obj.Site.id, ptol))
-            continue
 
-        periods.append(per)
+        print("********* The period-index=%s coressponding to the selected_period %s"%(per_index, selected_period))
 
-        if whichrho == 'zxy':
-            penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
-        elif whichrho == 'zyx':
-            penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-        elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
-            # determinant value at the given period index
-            det2 = np.abs(zeta.det[per_index])
-            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
-        else:
-            _logger.critical(
-                "unsupported method to compute penetration depth: %s",
-                whichrho)
-            # sys.exit(100)
-            raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
+        if abs(selected_period - per) > (selected_period) * ptol:
+            print("************** Different the selected period =", selected_period, per)
+            # periods.append(np.nan)
+            # pen_depth.append(np.nan)
+            _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
+            pass
+        else:  # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
+            # station id
+            stations.append(mt_obj.station)
+            # latlons
+            latlons.append((mt_obj.lat, mt_obj.lon))
 
-        pen_depth.append(penetration_depth)
+            print("********* Include this period at the index ", per,  per_index)
+            periods.append(per)
+
+            if whichrho == 'zxy':
+                penetration_depth = - scale_param * \
+                    np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+            elif whichrho == 'zyx':
+                penetration_depth = - scale_param * \
+                    np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+            elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
+                # determinant value at the given period index
+                det2 = np.abs(zeta.det[per_index])
+                penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+            else:
+                _logger.critical(
+                    "unsupported method to compute penetration depth: %s",
+                    whichrho)
+                # sys.exit(100)
+                raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
+
+            pen_depth.append(penetration_depth)
+
+    # The returned 4 lists should have equal length!!!
+    _logger.debug("The length of stations, periods, pen_depth, latlons: %s,%s,%s,%s ", len(stations), len(periods), len(pen_depth), len(latlons) )
 
     return stations, periods, pen_depth, latlons
 
