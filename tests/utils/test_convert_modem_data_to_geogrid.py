@@ -45,12 +45,14 @@ def test_target_grid_generation():
     grid_north = [-1.5, 0., 1.5]
     test_grid_x, test_grid_y = conv._build_target_grid(grid_east, 1., grid_north, 1.5)
     expected_x = np.array([
-        [-2., -1., 0., 1.],
-        [-2., -1., 0., 1.]
+        [-2., -1., 0., 1., 2],
+        [-2., -1., 0., 1., 2],
+        [-2., -1., 0., 1., 2]
     ])
     expected_y = np.array([
-        [-1.5, -1.5, -1.5, -1.5],
-        [0., 0., 0., 0.]
+        [-1.5, -1.5, -1.5, -1.5, -1.5],
+        [0., 0., 0., 0., 0.],
+        [1.5, 1.5, 1.5, 1.5, 1.5]
     ])
 
     # Testing to make sure the axes are in the correct order.
