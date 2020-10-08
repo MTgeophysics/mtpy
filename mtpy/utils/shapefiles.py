@@ -962,17 +962,19 @@ class TipperShapeFile(object):
                     p_index = [ff for ff, f2 in enumerate(1. / mt_obj.Z.freq)
                                if (f2 > plot_per * (1 - self.ptol)) and
                                (f2 < plot_per * (1 + self.ptol))][0]
-                    if self.projection is None:
+                    if self.projection is None:  # geographic-coord lat lon
                         east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
                         self.utm_cs = osr.SpatialReference()
                         # Set geographic coordinate system to handle lat/lon
-                        self.utm_cs.SetWellKnownGeogCS(self.projection)
-                    else:
-                        self.utm_cs, utm_point = project_point_ll2utm(mt_obj.lon,
-                                                                     mt_obj.lat,
-                                                                     self.projection)
-                        east, north, elev = utm_point
-
+                        # self.utm_cs.SetWellKnownGeogCS(self.projection)
+                        self.utm_cs.ImportFromEPSG(4326)
+                        # create the spatial reference, WGS84=4326
+                        # GDA94 = EPSG:4283 See  http://epsg.io/4283
+                    else:  # UTM zones coordinate system
+                        east, north, _ = project_point_ll2utm(mt_obj.lat, mt_obj.lon, self.projection)
+                        zone_number, is_northern, _ = get_utm_zone(mt_obj.lat, mt_obj.lon)
+                        self.utm_cs = osr.SpatialReference()
+                        self.utm_cs.SetUTM(zone_number, is_northern)
                         utm_cs_list.append(self.utm_cs.GetAttrValue('projcs'))
 
                     if mt_obj.Tipper.tipper is not None:
@@ -1270,7 +1272,7 @@ class TipperShapeFile(object):
 
                 #
                 # 5) create a field to color by
-                new_feature.SetField("Name", tp_arr['station'])
+                new_feature.SetField("Name", tp_arr['station'].decode('UTF-8'))
                 new_feature.SetField("mag_imag", tp_arr['mag_imag'])
                 new_feature.SetField("ang_imag", tp_arr['ang_imag'])
 
