@@ -84,7 +84,7 @@ print("****** To do the pen3d plotting, pick a value from the above periods, whi
 #pen3d.plot_latlon_depth_profile(edidir, 4, 'det', showfig=True, savefig=True, savepath=savepath, fig_dpi=400)
 
 # The recommended way is to use a float value for the second argument, which is frequency (NOT period).
-# provide a float value (e.g. 100.0), which should be in the FREQ  of the EDI files.
+# provide a float value (e.g. 100.0), which should be in the 1/FREQ  of the EDI files.
 
 #pen3d.plot_latlon_depth_profile(edidir, 25.2, savefig=True, savepath=savepath, fig_dpi=400)
 
@@ -92,7 +92,7 @@ print("****** To do the pen3d plotting, pick a value from the above periods, whi
 # limit hit pen3d.plot_latlon_depth_profile(edidir,  0.01, savefig=True, savepath=savepath, fig_dpi=400)
 
 
-# MUST provide period value in seconds ("/Datasets/MTWorkflow/Wenping_EDI132/MT086_Edited_EDIs")
+# User MUST provide period value in seconds ("/Datasets/MTWorkflow/Wenping_EDI132/MT086_Edited_EDIs")
 #pen3d.plot_latlon_depth_profile(edidir,  0.1067, savefig=True, savepath=savepath, fig_dpi=400)  # period =0.1067s ec
 pen3d.plot_latlon_depth_profile(edidir,  95.33, savefig=True, savepath=savepath, fig_dpi=400)
 pen3d.plot_latlon_depth_profile(edidir,  48.9956, savefig=True, savepath=savepath, fig_dpi=400)

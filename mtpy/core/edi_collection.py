@@ -513,6 +513,90 @@ class EdiCollection(object):
 
         return pt_dict
 
+    # 2020-10: FZ started this new function on request of WPJ
+    def create_penetration_depth_csv(self, dest_dir, period_list=None, interpolate=False, file_name="penetration_depth.csv"):
+        """
+        create penetration depth csv file for each frequency corresponding to the given input 1.0/period_list.
+        of course subject to a tolerance.  Note that frequencies values are usually provided in MT EDI files.
+
+        :param dest_dir: output directory
+        :param period_list: list of periods; default=None all available periods will be output
+        :param interpolate: Boolean to indicate whether to interpolate data onto given period_list
+        :param file_name: output files basename
+
+        :return: pt_dict
+        """
+        csvfname = os.path.join(dest_dir, file_name)
+
+        p_dict = {}
+
+        csv_header = ['station', 'freq', 'lon', 'lat', 'pen_depth']
+
+        # convert into freq array
+        freq_list = None
+        if(period_list is None):
+            freq_list = self.all_frequencies
+        else:
+            freq_list = 1./np.array(period_list)
+        # end if
+
+        with open(csvfname, "w",newline="") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+
+            for freq in freq_list:
+                pdlist = []
+                for mt_obj in self.mt_obj_list:
+                    # geographic coord lat long and elevation
+                    # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
+
+                    f_index_list = None
+
+                    if(interpolate):
+                        raise Exception("NOT IMPLEMENTED YET 2020October")
+                        # f_index_list = [0]
+                        # newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
+                        # pt = MTpt.PhaseTensor(z_object=newZ)
+
+                    else:
+                        freq_min = freq * (1 - self.ptol)
+                        freq_max = freq * (1 + self.ptol)
+
+                        f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
+                                        if (f2 > freq_min) and (f2 < freq_max)]
+                    #end if interp
+
+                    # compute pen-depth for the period/freq over participating stations
+                    if len(f_index_list) > 1:
+                        self._logger.warn("more than one freq found %s", f_index_list)
+
+
+                    if len(f_index_list) >= 1:
+                        p_index = f_index_list[0]
+
+                        penetration_depth =1.00  # todo: implement a function to get this value
+                        pdlist.append( [station, freq, lon, lat, penetration_depth] )
+                    else:
+                        self._logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
+                        penetration_depth = -1.00  # negative, NaN the station edi has no such freq.
+                        pdlist.append( [station, freq, lon, lat, penetration_depth] )
+
+                csv_freq_file = os.path.join(dest_dir,
+                                             '{name[0]}_{freq}Hz{name[1]}'.format(
+                                                 freq=str(freq), name=os.path.splitext(file_name)))
+
+                with open(csv_freq_file, "w",newline="") as freq_csvf:
+                    writer_freq = csv.writer(freq_csvf)
+                    writer_freq.writerow(csv_header)
+                    writer_freq.writerows(pdlist)
+
+                writer.writerows(pdlist)
+
+                p_dict[freq] = pdlist
+
+        return p_dict
+
     @deprecated("This function is more expensive compared with the method create_phase_tensor_csv(self,)")
     def create_phase_tensor_csv_with_image(self, dest_dir):
         """
@@ -1013,9 +1097,11 @@ if __name__ == "__main__":
         print( mt_distances )
 
         # obj.create_phase_tensor_csv(outdir)
-        #
-        obj.create_measurement_csv(dest_dir= outdir, interpolate=True)
+        # obj.create_measurement_csv(dest_dir= outdir, interpolate=True)
+        # this function has a bug in the case interpolate=False: check the output csv files you will see a lot of [].
+        # obj.create_measurement_csv(dest_dir= outdir, interpolate=False)  # this function has a bug for interpolate=False
         #obj.calculate_aver_impedance(out_dir=outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
+        obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
 

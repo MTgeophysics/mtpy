@@ -319,10 +319,14 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     latlong_d = (mt_obj.lat, mt_obj.lon, periods, penetration_depth)
     return latlong_d
 
-
 def create_penetration_depth_csv(edi_dir, outputcsv, zcomponent='det'):
     """ Loop over all edi files, and create a csv file with the columns:
     Header Lat, Lon, per0, per1,per2,.....
+
+    TODO:
+    calculate pen-depth for each period, and write into a file for each period, even if non-equal freq cross edi files.
+    Moved this function into edi_collection.create_penetration_depth_csv()
+
     lat, lon, pendepth0, pendepth1, ...
     :param edi_dir: path_to_edifiles_dir
     :param zcomponent: det | zxy  | zyx
