@@ -581,8 +581,7 @@ def load_edi_files(edi_path, file_list=None):
         edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
     return edi_list
 
-# FZ fixed logic issues introduced in a early commit:
-# https://github.com/MTgeophysics/mtpy/commit/817c9f4a6384460d57974fb7a6f80e04a8a4ce97
+# need further refactoring and testing
 def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whichrho='det'):
     """
     This is a more generic and useful function to compute the penetration depths
@@ -611,6 +610,11 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
         elif not isinstance(mt_obj, mt.MT):
             raise Exception("Unsupported list of objects %s" % type(mt_obj))
 
+        # station id
+        stations.append(mt_obj.station)
+        # latlons
+        latlons.append((mt_obj.lat, mt_obj.lon))
+
         # the attribute Z
         zeta = mt_obj.Z
         per_index = np.argmin(np.fabs(zeta.freq - 1.0/selected_period))
@@ -620,15 +624,11 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
 
         if abs(selected_period - per) > (selected_period) * ptol:
             print("************** Different the selected period =", selected_period, per)
-            # periods.append(np.nan)
-            # pen_depth.append(np.nan)
+            periods.append(np.nan)
+            pen_depth.append(np.nan)
             _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
             pass
-        else:  # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
-            # station id
-            stations.append(mt_obj.station)
-            # latlons
-            latlons.append((mt_obj.lat, mt_obj.lon))
+        else:      # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
 
             print("********* Include this period at the index ", per,  per_index)
             periods.append(per)
