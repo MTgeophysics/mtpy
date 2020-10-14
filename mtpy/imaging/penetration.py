@@ -624,7 +624,8 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
 
         if abs(selected_period - per) > (selected_period) * ptol:
             print("************** Different the selected period =", selected_period, per)
-            periods.append(np.nan)
+            #periods.append(np.nan)
+            periods.append(selected_period)
             pen_depth.append(np.nan)
             _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
             pass

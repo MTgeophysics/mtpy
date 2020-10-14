@@ -37,10 +37,11 @@ except:
 if not os.path.isdir(mtpy_path):
     raise Exception("the guessed mtpy dir %s is not a folder!"% mtpy_path)
 
-edidir = os.path.join(mtpy_path,'examples/data/edi2')
-edidir = r"C:\Users\u25656\Desktop\Wenping_EDI132\MT086_Edited_EDIs"
-edidir = "/Datasets/MTWorkflow/Wenping_EDI132/MT086_Edited_EDIs"
-# edidir = r"C:\Githubz\mtpy\examples\data\edi2"
+# edidir = os.path.join(mtpy_path,'examples/data/edi2')
+# edidir = r"C:\Users\u25656\Desktop\Wenping_EDI132\MT086_Edited_EDIs"
+# edidir = "/Datasets/MTWorkflow/Wenping_EDI132/MT086_Edited_EDIs"
+edidir = "/home/547/fxz547/MT086_Edited_EDIs"
+
 
 # If you have own edi change the variable below according to your edi files folder
 # USE / for Unix and Win-Dos compatible
