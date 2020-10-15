@@ -27,6 +27,7 @@ from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
 import mtpy.analysis.pt as MTpt
+import mtpy.imaging.penetration
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
@@ -532,7 +533,7 @@ class EdiCollection(object):
 
         csv_header = ['station', 'freq', 'lon', 'lat', 'pen_depth']
 
-        # convert into freq array
+        # convert the period_list into freq array
         freq_list = None
         if(period_list is None):
             freq_list = self.all_frequencies
@@ -546,41 +547,11 @@ class EdiCollection(object):
 
             for freq in freq_list:
                 pdlist = []
-                for mt_obj in self.mt_obj_list:
-                    # geographic coord lat long and elevation
-                    # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
-                    station, lon, lat = (mt_obj.station, mt_obj.lon, mt_obj.lat)
 
-                    f_index_list = None
+                stations, periods, pen_depth, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq)
 
-                    if(interpolate):
-                        raise Exception("NOT IMPLEMENTED YET 2020October")
-                        # f_index_list = [0]
-                        # newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
-                        # pt = MTpt.PhaseTensor(z_object=newZ)
-
-                    else:
-                        freq_min = freq * (1 - self.ptol)
-                        freq_max = freq * (1 + self.ptol)
-
-                        f_index_list = [ff for ff, f2 in enumerate(mt_obj.Z.freq)
-                                        if (f2 > freq_min) and (f2 < freq_max)]
-                    #end if interp
-
-                    # compute pen-depth for the period/freq over participating stations
-                    if len(f_index_list) > 1:
-                        self._logger.warn("more than one freq found %s", f_index_list)
-
-
-                    if len(f_index_list) >= 1:
-                        p_index = f_index_list[0]
-
-                        penetration_depth =1.00  # todo: implement a function to get this value
-                        pdlist.append( [station, freq, lon, lat, penetration_depth] )
-                    else:
-                        self._logger.warn("Freq %s NOT found for this station %s", freq, mt_obj.station)
-                        penetration_depth = -1.00  # negative, NaN the station edi has no such freq.
-                        pdlist.append( [station, freq, lon, lat, penetration_depth] )
+                for iter in range(len(stations)):
+                    pdlist.append([stations[iter], freq, latlons[iter][1], latlons[iter][0], pen_depth[iter]])
 
                 csv_freq_file = os.path.join(dest_dir,
                                              '{name[0]}_{freq}Hz{name[1]}'.format(
@@ -595,7 +566,7 @@ class EdiCollection(object):
 
                 p_dict[freq] = pdlist
 
-        return p_dict
+        return csvfname
 
     @deprecated("This function is more expensive compared with the method create_phase_tensor_csv(self,)")
     def create_phase_tensor_csv_with_image(self, dest_dir):
@@ -1103,5 +1074,6 @@ if __name__ == "__main__":
         #obj.calculate_aver_impedance(out_dir=outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
-        obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
+        # obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
+        obj.create_penetration_depth_csv(dest_dir= outdir, interpolate=False)
 
