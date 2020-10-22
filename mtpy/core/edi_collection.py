@@ -531,7 +531,7 @@ class EdiCollection(object):
 
         p_dict = {}
 
-        csv_header = ['station', 'freq', 'lon', 'lat', 'pen_depth']
+        csv_header = ['station', 'freq', 'lon', 'lat', 'pen_depth_det', 'pen_depth_zxy', 'pen_depth_zyx']
 
         # convert the period_list into freq array
         freq_list = None
@@ -548,10 +548,13 @@ class EdiCollection(object):
             for freq in freq_list:
                 pdlist = []
 
-                stations, periods, pen_depth, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq)
+                stations, periods, pen_depth_det, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq)  # whichrho='det')
+                stations, periods, pen_depth_zxy, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq,whichrho='zxy')
+                stations, periods, pen_depth_zyx, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq,whichrho='zyx')
+
 
                 for iter in range(len(stations)):
-                    pdlist.append([stations[iter], freq, latlons[iter][1], latlons[iter][0], pen_depth[iter]])
+                    pdlist.append([stations[iter], freq, latlons[iter][1], latlons[iter][0], pen_depth_det[iter], pen_depth_zxy[iter], pen_depth_zyx[iter]])
 
                 csv_freq_file = os.path.join(dest_dir,
                                              '{name[0]}_{freq}Hz{name[1]}'.format(
