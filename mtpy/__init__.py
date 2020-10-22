@@ -1,7 +1,7 @@
 
 # define mtpy release version below
 # see https://packaging.python.org/guides/single-sourcing-package-version/
-__version__ = "1.1.3"
+__version__ = "1.1.4"
 
 import logging
 
