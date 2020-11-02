@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import mtpy
+#import mtpy
 
 # Check for setuptools package:
 
@@ -11,6 +11,22 @@ except ImportError:
     from distutils.core import setup
 else:
     setuptools = True
+
+import codecs
+import os.path
+
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+        return fp.read()
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith('__version__'):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
 
 LONG_DESC = """
 MTPy is an open source Python package to assist with magnetotelluric (MT) data processing, analysis,
@@ -80,7 +96,7 @@ setup_kwargs['data_files'] = [('data', ['mtpy/utils/epsg.npy'])]
 
 setup(
 	name="mtpy",
-	version=mtpy.__version__,
+	version=get_version("mtpy/__init__.py") ,
 	author="Alison Kirkby,Fei Zhang,Jared Peacock,Rakib Hassan, Jinming Duan",
     author_email="Fei.Zhang@ga.gov.au",
 	description="Python toolkit for standard magnetotelluric data processing.",
