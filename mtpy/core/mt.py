@@ -149,7 +149,7 @@ class MT(object):
     @property
     def latitude(self):
         """Latitude"""
-        return self.station.location.latitude
+        return self.station_metadata.location.latitude
 
     @property
     def longitude(self):
