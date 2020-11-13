@@ -123,10 +123,10 @@ class ZMMHeader(object):
             elif 'coordinate' in line:
                 line_list = line.strip().split()
                 self.lat = line_list[1]
-                try:
-                    self.lon = line_list[2]
-                except ValueError:
-                    self.lon = float(line_list[2])%180
+                lon = float(line_list[2])
+                if lon > 180:
+                    lon -= 360
+                self.lon = lon
                     
                 self.declination = float(line_list[-1])
             elif 'number' in line:

@@ -1638,8 +1638,8 @@ class Data(object):
         pointsToVTK(vtk_fn,
                     self.station_locations.rel_north / 1000.,
                     self.station_locations.rel_east / 1000.,
-                    self.station_locations.elev / 1000.,
-                    data={'elevation': self.station_locations.elev / 1000.})
+                    self.station_locations.rel_elev / 1000.,
+                    data={'elevation': self.station_locations.rel_elev / 1000.})
 
         self._logger.info('Wrote station file to {0}'.format(vtk_fn))
 
@@ -1807,12 +1807,6 @@ class Data(object):
 
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            # ====================== ====================================================
-            # The following line have been commented as
-            # self.db_array and elf.station_locations.station_locations['elev'][ss]
-            # point to same location
-            # ====================== ====================================================
-            # self.station_locations.station_locations['elev'][ss] = topoval + 0.1
             self.data_array['rel_elev'][ss] = topoval + 0.001
             
             print('{0} at E={1}, N={2}, z={3}, model_z={4}'.format(sname,

@@ -1923,7 +1923,7 @@ class MT(object):
             # get indicies of non-zero components
             nz_index = np.nonzero(self.Tipper.tipper[:, 0, jj])
 
-            if len(nz_index[0]) == 0:
+            if len(nz_index[0]) < 2:
                 continue
 
             # get non-zero components

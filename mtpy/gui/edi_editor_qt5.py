@@ -810,11 +810,12 @@ class PlotWidget(QtWidgets.QWidget):
                    'Setting interpolation frequency bounds to:',
                    '     min = {0:<8.3e} s'.format(1./interp_freq.max()),
                    '     max = {0:<8.3e} s'.format(1./interp_freq.min())] 
-            msg_box = QtWidgets.QMessageBox()
-            msg_box.setText('\n'.join(info))
-            msg_box.setWindowTitle('Interpolation Bounds')
-            msg_box.exec_()
-                                 
+            #msg_box = QtWidgets.QMessageBox()
+            #msg_box.setText('\n'.join(info))
+            #msg_box.setWindowTitle('Interpolation Bounds')
+            #msg_box.exec_()
+            print('\n'.join(info))
+            
         if self._edited_dist == True or self._edited_mask == True or \
            self._edited_rot == True or self._edited_ss == True:
             new_z, new_tip = self.mt_obj.interpolate(interp_freq, 
@@ -830,9 +831,9 @@ class PlotWidget(QtWidgets.QWidget):
             
         self.redraw_plot()
         
-        print('Interpolated data onto periods:')
-        for ff in interp_freq:
-            print('    {0:.6e}'.format(1./ff))
+        #print('Interpolated data onto periods:')
+        #for ff in interp_freq:
+        #    print('    {0:.6e}'.format(1./ff))
         
     def edits_set(self, selected_item):
         modes_list = ['Both', 'X', 'Y']
