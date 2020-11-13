@@ -27,6 +27,7 @@ from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.matplotlib_utils import gen_hist_bins
 from mtpy.utils.mtpylog import MtPyLog
 import mtpy.analysis.pt as MTpt
+import mtpy.imaging.penetration
 
 def is_num_in_seq(anum, aseq, atol=0.0001):
     """
@@ -512,6 +513,63 @@ class EdiCollection(object):
                 pt_dict[freq] = ptlist
 
         return pt_dict
+
+    # 2020-10: FZ started this new function on request of WPJ
+    def create_penetration_depth_csv(self, dest_dir, period_list=None, interpolate=False, file_name="penetration_depth.csv"):
+        """
+        create penetration depth csv file for each frequency corresponding to the given input 1.0/period_list.
+        of course subject to a tolerance.  Note that frequencies values are usually provided in MT EDI files.
+
+        :param dest_dir: output directory
+        :param period_list: list of periods; default=None all available periods will be output
+        :param interpolate: Boolean to indicate whether to interpolate data onto given period_list
+        :param file_name: output files basename
+
+        :return: pt_dict
+        """
+        csvfname = os.path.join(dest_dir, file_name)
+
+        p_dict = {}
+
+        csv_header = ['station', 'freq', 'lon', 'lat', 'pen_depth_det', 'pen_depth_zxy', 'pen_depth_zyx']
+
+        # convert the period_list into freq array
+        freq_list = None
+        if(period_list is None):
+            freq_list = self.all_frequencies
+        else:
+            freq_list = 1./np.array(period_list)
+        # end if
+
+        with open(csvfname, "w",newline="") as csvf:
+            writer = csv.writer(csvf)
+            writer.writerow(csv_header)
+
+            for freq in freq_list:
+                pdlist = []
+
+                stations, periods, pen_depth_det, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq)  # whichrho='det')
+                stations, periods, pen_depth_zxy, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq,whichrho='zxy')
+                stations, periods, pen_depth_zyx, latlons = mtpy.imaging.penetration.get_penetration_depth_by_period( self.mt_obj_list, 1.0/freq,whichrho='zyx')
+
+
+                for iter in range(len(stations)):
+                    pdlist.append([stations[iter], freq, latlons[iter][1], latlons[iter][0], pen_depth_det[iter], pen_depth_zxy[iter], pen_depth_zyx[iter]])
+
+                csv_freq_file = os.path.join(dest_dir,
+                                             '{name[0]}_{freq}Hz{name[1]}'.format(
+                                                 freq=str(freq), name=os.path.splitext(file_name)))
+
+                with open(csv_freq_file, "w",newline="") as freq_csvf:
+                    writer_freq = csv.writer(freq_csvf)
+                    writer_freq.writerow(csv_header)
+                    writer_freq.writerows(pdlist)
+
+                writer.writerows(pdlist)
+
+                p_dict[freq] = pdlist
+
+        return csvfname
 
     @deprecated("This function is more expensive compared with the method create_phase_tensor_csv(self,)")
     def create_phase_tensor_csv_with_image(self, dest_dir):
@@ -1013,9 +1071,12 @@ if __name__ == "__main__":
         print( mt_distances )
 
         # obj.create_phase_tensor_csv(outdir)
-        #
-        obj.create_measurement_csv(dest_dir= outdir, interpolate=True)
+        # obj.create_measurement_csv(dest_dir= outdir, interpolate=True)
+        # this function has a bug in the case interpolate=False: check the output csv files you will see a lot of [].
+        # obj.create_measurement_csv(dest_dir= outdir, interpolate=False)  # this function has a bug for interpolate=False
         #obj.calculate_aver_impedance(out_dir=outdir)
 
         # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
+        # obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
+        obj.create_penetration_depth_csv(dest_dir= outdir, interpolate=False)
 
