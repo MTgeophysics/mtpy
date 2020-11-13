@@ -9,11 +9,11 @@
 # ==============================================================================
 import numpy as np
 import os
+import logging
 
-from mth5 import metadata
 from scipy import interpolate as spi
 
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.core import metadata
 from mtpy.utils import gis_tools
 import mtpy.core.z as MTz
 import mtpy.analysis.pt as MTpt
@@ -112,7 +112,8 @@ class MT(object):
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
         self.ex_metadata = metadata.Electric()
@@ -164,17 +165,17 @@ class MT(object):
     @property
     def east(self):
         """easting (m)"""
-        return self.station_metadata.location.easting
+        return self._east
 
     @property
     def north(self):
         """northing (m)"""
-        return self.station_metadata.location.northing
+        return self._north
 
     @property
     def utm_zone(self):
         """utm zone"""
-        return self.station_metadata.location.utm_zone
+        return self._utm_zone
 
     @property
     def rotation_angle(self):
@@ -226,7 +227,7 @@ class MT(object):
 
         upon setting utm coordinates are recalculated
         """
-        self.station_metadata.locationlongitude = longitude
+        self.station_metadata.location.longitude = longitude
         if self.latitude is not None or self.latitude != 0.0:
             self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
                 self.latitude,
@@ -239,7 +240,7 @@ class MT(object):
         """
         set elevation, should be input as meters
         """
-        self.station_metadata.locationelevation = elevation
+        self.station_metadata.location.elevation = elevation
 
     @east.setter
     def east(self, easting):
@@ -249,7 +250,8 @@ class MT(object):
         upon setting latitude and longitude are recalculated
         """
         self._east = float(easting)
-        if self.north is not None or self.north != 0.0 and self.utm_zone is not None:
+        if self.north is not None and self.utm_zone is not None:
+            self.logger.debug("Calculating latitude and longitude from UTM")
             self._latitude, self._longitude = gis_tools.project_point_utm2ll(
                 self.east, self.north, self.utm_zone
             )
@@ -262,7 +264,8 @@ class MT(object):
         upon setting latitude and longitude are recalculated
         """
         self._north = float(northing)
-        if self.north is not None or self.north != 0.0 and self.utm_zone is not None:
+        if self.east is not None and self.utm_zone is not None:
+            self.logger.debug("Calculating latitude and longitude from UTM")
             self._latitude, self._longitude = gis_tools.project_point_utm2ll(
                 self.east, self.north, self.utm_zone
             )
@@ -277,10 +280,13 @@ class MT(object):
         TODO: need a validation from utm zone
         """
         self._utm_zone = utm_zone
-        if self.north is not None or self.north != 0.0 and self.utm_zone is not None:
-            self._latitude, self._longitude = gis_tools.project_point_utm2ll(
+        if self.north is not None and self.east is not None:
+            self.logger.debug("Calculating latitude and longitude from UTM")
+            lat, lon= gis_tools.project_point_utm2ll(
                 self.east, self.north, self.utm_zone
             )
+            self.station_metadata.location.latitude = lat
+            self.station_metadata.location.longitude = lon
 
     @rotation_angle.setter
     def rotation_angle(self, theta_r):
