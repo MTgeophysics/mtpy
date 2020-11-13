@@ -20,7 +20,6 @@ import copy
 
 import numpy as np
 
-import mtpy.core.edi as MTedi
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 
@@ -1334,59 +1333,4 @@ def z_object2pt(z_object):
     # pterr_array = p.pterr
 
     # return pt_array, pterr_array
-    return p
-
-
-def _edi_object2pt(edi_object):
-    """
-        Calculate Phase Tensor from Edi object (incl. uncertainties)
-
-        Input:
-        - Edi-object : instance of the MTpy Edi class
-
-        Return:
-        - PT : nx2x2 real valued Numpy array
-        - PT-error : nx2x2 real valued Numpy array
-
-    """
-
-    if not isinstance(edi_object, MTedi.Edi):
-        raise MTex.MTpyError_EDI('Input argument is not an instance of the Edi class')
-    p = PhaseTensor(edi_object=edi_object)
-
-    pt_array = p.pt
-
-    pterr_array = p.pterr
-
-    return pt_array, pterr_array
-
-
-def edi_file2pt(filename):
-    """
-        Calculate Phase Tensor from Edi-file (incl. uncertainties)
-
-        Input:
-        - Edi-file : full path to the Edi-file
-
-        Return:
-        - PT object
-
-    """
-    # Return:
-    # - PT : nx2x2 real valued Numpy array
-    # - PT-error : nx2x2 real valued Numpy array
-
-    # """
-
-    e = MTedi.Edi()
-    e.readfile(filename)
-
-    p = PhaseTensor(z_object=e.Z)
-
-    # pt_array = p.pt
-
-    # pterr_array = p.pterr
-
-    # return pt_array, pterr_array
-
     return p

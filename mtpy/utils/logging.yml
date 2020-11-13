@@ -1,29 +1,40 @@
 version: 1
 disable_existing_loggers: False
 formatters:
-    simple:
-        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    standard:
+        format: "%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s"
         datefmt: "%Y-%m-%dT%H:%M:%S"
 
 handlers:
     console: # screen display print out
         class: logging.StreamHandler
-        level: DEBUG
-        formatter: simple
+        level: INFO
+        formatter: standard
         stream: ext://sys.stdout
+    
+    debug_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: DEBUG
+        formatter: standard
+        filename: mtpy_debug.log
+        maxBytes: 2485760 # 2MB
+        backupCount: 2
+    
+    warning_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: WARNING
+        formatter: standard
+        filename: mtpy_error.log
+        maxBytes: 2485760 # 2MB
+        backupCount: 2
 
 loggers:
-    my_module:
-        level: DEBUG
-        handlers: [console]
-        propagate: no
-
     __main__:
-        level: INFO 
-        handlers: [console]
+        level: DEBUG
+        handlers: [console, debug_file_handler, warning_file_handler]
         propagate: no
 
 root:
-    level: WARN
-    #handlers: [console, info_file_handler, error_file_handler]
-    handlers: [console, ]
+    level: DEBUG
+    handlers: [console, debug_file_handler, warning_file_handler]
+    propogate: yes

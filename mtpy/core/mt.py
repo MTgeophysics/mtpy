@@ -9,21 +9,15 @@
 # ==============================================================================
 import numpy as np
 import os
-from pathlib import Path
-
 
 from mth5 import metadata
-import xarray as xr
+from scipy import interpolate as spi
 
 from mtpy.utils.mtpylog import MtPyLog
-import mtpy.core.edi as MTedi
+from mtpy.utils import gis_tools
 import mtpy.core.z as MTz
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
-import mtpy.core.jfile as MTj
-import mtpy.core.zmm as MTzmm
-
-from mtpy.utils.mtpylog import MtPyLog
 
 
 # =============================================================================
@@ -126,6 +120,9 @@ class MT(object):
         self.hx_metadata = metadata.Magnetic()
         self.hy_metadata = metadata.Magnetic()
         self.hz_metadata = metadata.Magnetic()
+        self._east = None
+        self._north = None
+        self._utm_zone = None
 
         self._Z = MTz.Z()
         self._Tipper = MTz.Tipper()
@@ -214,8 +211,13 @@ class MT(object):
 
         upon setting utm coordinates are recalculated
         """
-        self.station_metadata.locationlatitude = latitude
-        self.station_metadata.location
+        self.station_metadata.location.latitude = latitude
+        if self.longitude is not None or self.longitude != 0.0:
+            self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
+                self.latitude,
+                self.longitude,
+                datum=self.station_metadata.location.datum,
+            )
 
     @longitude.setter
     def longitude(self, longitude):
@@ -225,7 +227,12 @@ class MT(object):
         upon setting utm coordinates are recalculated
         """
         self.station_metadata.locationlongitude = longitude
-        self.station_metadata.locationproject_location2utm()
+        if self.latitude is not None or self.latitude != 0.0:
+            self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
+                self.latitude,
+                self.longitude,
+                datum=self.station_metadata.location.datum,
+            )
 
     @elevation.setter
     def elevation(self, elevation):
@@ -241,8 +248,11 @@ class MT(object):
 
         upon setting latitude and longitude are recalculated
         """
-        self.station_metadata.locationeasting = easting
-        self.station_metadata.locationproject_location2ll()
+        self._east = float(easting)
+        if self.north is not None or self.north != 0.0 and self.utm_zone is not None:
+            self._latitude, self._longitude = gis_tools.project_point_utm2ll(
+                self.east, self.north, self.utm_zone
+            )
 
     @north.setter
     def north(self, northing):
@@ -251,8 +261,11 @@ class MT(object):
 
         upon setting latitude and longitude are recalculated
         """
-        self.station_metadata.locationnorthing = northing
-        self.station_metadata.locationproject_location2ll()
+        self._north = float(northing)
+        if self.north is not None or self.north != 0.0 and self.utm_zone is not None:
+            self._latitude, self._longitude = gis_tools.project_point_utm2ll(
+                self.east, self.north, self.utm_zone
+            )
 
     @utm_zone.setter
     def utm_zone(self, utm_zone):
@@ -260,9 +273,14 @@ class MT(object):
         set UTM zone
 
         upon setting latitude and longitude are recalculated
+        
+        TODO: need a validation from utm zone
         """
-        self.station_metadata.locationutm_zone = utm_zone
-        self.station_metadata.locationproject_location2ll()
+        self._utm_zone = utm_zone
+        if self.north is not None or self.north != 0.0 and self.utm_zone is not None:
+            self._latitude, self._longitude = gis_tools.project_point_utm2ll(
+                self.east, self.north, self.utm_zone
+            )
 
     @rotation_angle.setter
     def rotation_angle(self, theta_r):
@@ -278,8 +296,12 @@ class MT(object):
         self._Tipper.rotate(theta_r)
         self.pt.rotate(theta_r)
 
-        print(("Rotated Z, Tipper, Phase Tensor and Zinvariants by"
-               "{0:.3f} degrees".format(self._rotation_angle)))
+        print(
+            (
+                "Rotated Z, Tipper, Phase Tensor and Zinvariants by"
+                "{0:.3f} degrees".format(self._rotation_angle)
+            )
+        )
 
     @Z.setter
     def Z(self, z_object):
@@ -341,21 +363,27 @@ class MT(object):
         if file_type is None:
             file_type = os.path.splitext(fn)[1][1:].lower()
 
-        if file_type.lower() == 'edi':
+        if file_type.lower() == "edi":
             self._read_edi_file(fn)
-        elif file_type.lower() == 'j':
+        elif file_type.lower() == "j":
             self._read_j_file(fn)
-        elif file_type.lower() == 'xml':
+        elif file_type.lower() == "xml":
             self._read_xml_file(fn)
-        elif file_type.lower() == 'zmm':
+        elif file_type.lower() == "zmm":
             self._read_zmm_file(fn)
         else:
-            raise MTError('File type not supported yet')
+            raise MTError("File type not supported yet")
 
-    def write_mt_file(self, save_dir=None, fn_basename=None, file_type='edi',
-                      new_Z_obj=None, new_Tipper_obj=None, longitude_format='longitude',
-                      latlon_format='dms'
-                      ):
+    def write_mt_file(
+        self,
+        save_dir=None,
+        fn_basename=None,
+        file_type="edi",
+        new_Z_obj=None,
+        new_Tipper_obj=None,
+        longitude_format="longitude",
+        latlon_format="dms",
+    ):
         """
         Write an mt file, the supported file types are EDI and XML.
 
@@ -399,32 +427,30 @@ class MT(object):
         if fn_basename is not None:
             ext = os.path.splitext(fn_basename)[1][1:].lower()
             fn_basename = os.path.splitext(fn_basename)[0]
-            if ext == '':
-                fn_basename = '{0}.{1}'.format(fn_basename, file_type.lower())
-            elif ext in ['xml', 'edi']:
-                fn_basename = '{0}.{1}'.format(fn_basename, ext)
+            if ext == "":
+                fn_basename = "{0}.{1}".format(fn_basename, file_type.lower())
+            elif ext in ["xml", "edi"]:
+                fn_basename = "{0}.{1}".format(fn_basename, ext)
                 file_type = ext
             else:
-                raise MTError('File type {0} not supported yet.'.format(ext))
+                raise MTError("File type {0} not supported yet.".format(ext))
         else:
-            fn_basename = '{0}.{1}'.format(self.station, file_type)
+            fn_basename = "{0}.{1}".format(self.station, file_type)
 
         fn = os.path.join(self.save_dir, fn_basename)
 
-        if file_type == 'edi':
-            fn = self._write_edi_file(fn,
-                                      new_Z=new_Z_obj,
-                                      new_Tipper=new_Tipper_obj,
-                                      longitude_format=longitude_format,
-                                      latlon_format=latlon_format)
-        elif file_type == 'xml':
-            fn = self._write_xml_file(fn,
-                                      new_Z=new_Z_obj,
-                                      new_Tipper=new_Tipper_obj)
+        if file_type == "edi":
+            fn = self._write_edi_file(
+                fn,
+                new_Z=new_Z_obj,
+                new_Tipper=new_Tipper_obj,
+                longitude_format=longitude_format,
+                latlon_format=latlon_format,
+            )
+        elif file_type == "xml":
+            fn = self._write_xml_file(fn, new_Z=new_Z_obj, new_Tipper=new_Tipper_obj)
 
         return fn
-
-
 
     # --> check the order of frequencies
     def _check_freq_order(self):
@@ -436,7 +462,7 @@ class MT(object):
         """
 
         if self.Z.freq[0] < self.Z.freq[1]:
-            print('Flipping arrays to be ordered from short period to long')
+            print("Flipping arrays to be ordered from short period to long")
             self.Z.z = self.Z.z.copy()[::-1]
             self.Z.z_err = self.Z.z_err.copy()[::-1]
             self.Z.freq = self.Z.freq.copy()[::-1]
@@ -447,13 +473,6 @@ class MT(object):
                 self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
 
-    
-        
-
-        
-
-
-    
     def read_cfg_file(self, cfg_fn):
         """
         Read in a configuration file and populate attributes accordingly.
@@ -490,34 +509,34 @@ class MT(object):
             >>> mt_obj.read_cfg_file(r"/home/mt/survey_config.cfg")
         """
 
-        with open(cfg_fn, 'r') as fid:
+        with open(cfg_fn, "r") as fid:
             cfg_lines = fid.readlines()
 
         for line in cfg_lines:
-            if line[0] == '#':
+            if line[0] == "#":
                 continue
-            line_list = line.strip().split('=')
+            line_list = line.strip().split("=")
             if len(line) < 2:
                 continue
             else:
-                name_list = line_list[0].strip().split('.')
+                name_list = line_list[0].strip().split(".")
                 cl_name = name_list[0]
-                if cl_name.lower() == 'fieldnotes':
-                    cl_name = 'FieldNotes'
+                if cl_name.lower() == "fieldnotes":
+                    cl_name = "FieldNotes"
                 else:
                     cl_name = cl_name.capitalize()
 
                 cl_obj = getattr(self, cl_name)
                 cl_attr = name_list[-1]
                 cl_value = line_list[1].strip()
-                if cl_value in ['None', 'none']:
+                if cl_value in ["None", "none"]:
                     cl_value = None
                 try:
                     cl_value = float(cl_value)
                 except ValueError:
-                    if cl_value.find(',') >= 0:
-                        cl_value = cl_value.replace('[', '').replace(']', '')
-                        cl_value = cl_value.strip().split(',')
+                    if cl_value.find(",") >= 0:
+                        cl_value = cl_value.replace("[", "").replace("]", "")
+                        cl_value = cl_value.strip().split(",")
                         try:
                             cl_value = [float(vv) for vv in cl_value]
                         except ValueError:
@@ -528,12 +547,12 @@ class MT(object):
                 count = 1
                 while count < len(name_list) - 1:
                     cl_name = name_list[count].lower()
-                    if cl_name == 'dataquality':
-                        cl_name = 'DataQuality'
-                    elif cl_name == 'datalogger':
-                        cl_name = 'DataLogger'
-                    elif cl_name == 'remotesite':
-                        cl_name = 'RemoteSite'
+                    if cl_name == "dataquality":
+                        cl_name = "DataQuality"
+                    elif cl_name == "datalogger":
+                        cl_name = "DataLogger"
+                    elif cl_name == "remotesite":
+                        cl_name = "RemoteSite"
                     try:
                         cl_obj = getattr(cl_obj, cl_name)
                     except AttributeError:
@@ -541,7 +560,7 @@ class MT(object):
                             cl_obj = getattr(cl_obj, cl_name.capitalize())
                             cl_name = cl_name.capitalize()
                         except AttributeError:
-                            print('Could not get {0}'.format(cl_name))
+                            print("Could not get {0}".format(cl_name))
 
                     count += 1
                 setattr(cl_obj, cl_attr, cl_value)
@@ -566,45 +585,48 @@ class MT(object):
         """
 
         cfg_lines = []
-        for obj_name in sorted(['Site', 'FieldNotes', 'Provenance',
-                                'Processing', 'Copyright']):
+        for obj_name in sorted(
+            ["Site", "FieldNotes", "Provenance", "Processing", "Copyright"]
+        ):
             obj = getattr(self, obj_name)
             l_key = obj_name
             for obj_key in sorted(obj.__dict__.keys()):
                 obj_attr = getattr(obj, obj_key)
-                l_key = '{0}.{1}'.format(obj_name, obj_key)
+                l_key = "{0}.{1}".format(obj_name, obj_key)
 
-                if not isinstance(obj_attr, (str, float, int, list)) and \
-                        obj_attr is not None:
+                if (
+                    not isinstance(obj_attr, (str, float, int, list))
+                    and obj_attr is not None
+                ):
                     for a_key in sorted(obj_attr.__dict__.keys()):
-                        if a_key in ['_kw_list', '_fmt_list', '_logger']:
+                        if a_key in ["_kw_list", "_fmt_list", "_logger"]:
                             continue
                         obj_attr_01 = getattr(obj_attr, a_key)
-                        l_key = '{0}.{1}.{2}'.format(obj_name, obj_key, a_key)
-                        if not isinstance(obj_attr_01, (str, float, int,
-                                                        list, np.float64)) and \
-                                obj_attr_01 is not None:
+                        l_key = "{0}.{1}.{2}".format(obj_name, obj_key, a_key)
+                        if (
+                            not isinstance(
+                                obj_attr_01, (str, float, int, list, np.float64)
+                            )
+                            and obj_attr_01 is not None
+                        ):
                             for b_key in sorted(obj_attr_01.__dict__.keys()):
                                 obj_attr_02 = getattr(obj_attr_01, b_key)
-                                l_key = '{0}.{1}.{2}.{3}'.format(obj_name,
-                                                                 obj_key,
-                                                                 a_key,
-                                                                 b_key)
+                                l_key = "{0}.{1}.{2}.{3}".format(
+                                    obj_name, obj_key, a_key, b_key
+                                )
 
-                                cfg_lines.append('{0} = {1}'.format(l_key,
-                                                                    obj_attr_02))
+                                cfg_lines.append("{0} = {1}".format(l_key, obj_attr_02))
                         else:
-                            cfg_lines.append('{0} = {1}'.format(l_key,
-                                                                obj_attr_01))
+                            cfg_lines.append("{0} = {1}".format(l_key, obj_attr_01))
                 else:
-                    cfg_lines.append('{0} = {1}'.format(l_key, obj_attr))
+                    cfg_lines.append("{0} = {1}".format(l_key, obj_attr))
 
-            cfg_lines.append('')
+            cfg_lines.append("")
 
-        with open(cfg_fn, 'w') as fid:
-            fid.write('\n'.join(cfg_lines))
+        with open(cfg_fn, "w") as fid:
+            fid.write("\n".join(cfg_lines))
 
-        print('--> Wrote MT configuration file to {0}'.format(cfg_fn))
+        print("--> Wrote MT configuration file to {0}".format(cfg_fn))
 
         return cfg_fn
 
@@ -632,8 +654,9 @@ class MT(object):
 
         """
         dummy_z_obj = MTz.copy.deepcopy(self.Z)
-        D, new_z_object = MTdistortion.remove_distortion(z_object=dummy_z_obj,
-                                                         num_freq=num_freq)
+        D, new_z_object = MTdistortion.remove_distortion(
+            z_object=dummy_z_obj, num_freq=num_freq
+        )
 
         return D, new_z_object
 
@@ -672,16 +695,23 @@ class MT(object):
             >>> ...                   new_Z_obj=new_z_obj)
         """
 
-        s_array, new_z = self.Z.remove_ss(reduce_res_factor_x=ss_x,
-                                          reduce_res_factor_y=ss_y)
+        s_array, new_z = self.Z.remove_ss(
+            reduce_res_factor_x=ss_x, reduce_res_factor_y=ss_y
+        )
 
-        new_z_obj = MTz.Z(z_array=new_z,
-                          z_err_array=self.Z.z_err.copy(),
-                          freq=self.Z.freq.copy())
+        new_z_obj = MTz.Z(
+            z_array=new_z, z_err_array=self.Z.z_err.copy(), freq=self.Z.freq.copy()
+        )
 
         return new_z_obj
 
-    def interpolate(self, new_freq_array, interp_type='slinear', bounds_error=True, period_buffer=None):
+    def interpolate(
+        self,
+        new_freq_array,
+        interp_type="slinear",
+        bounds_error=True,
+        period_buffer=None,
+    ):
         """
         Interpolate the impedance tensor onto different frequencies
 
@@ -716,18 +746,15 @@ class MT(object):
             >>> ...                   new_Tipper_obj=new_tipper_object)
 
         """
-        # if the interpolation module has not been loaded return
-        if interp_import is False:
-            raise ImportError('could not interpolate, need to install scipy')
 
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
-            
+
         if period_buffer is not None:
-            if 0. < period_buffer < 1.:
-                period_buffer += 1.
-                print("Warning: period buffer must be > 1. Updating to",period_buffer)
+            if 0.0 < period_buffer < 1.0:
+                period_buffer += 1.0
+                print("Warning: period buffer must be > 1. Updating to", period_buffer)
 
         # check the bounds of the new frequency array
         if bounds_error:
@@ -741,27 +768,36 @@ class MT(object):
 
             # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
-                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min()) + \
-                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min()) + \
-                                 '.  The new frequency range needs to be within the ' +
-                                 'bounds of the old one.')
+                raise ValueError(
+                    "New frequency minimum of {0:.5g}".format(new_freq_array.min())
+                    + " is smaller than old frequency minimum of {0:.5g}".format(
+                        self.Z.freq.min()
+                    )
+                    + ".  The new frequency range needs to be within the "
+                    + "bounds of the old one."
+                )
             if self.Z.freq.max() < new_freq_array.max():
-                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max()) + \
-                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max()) + \
-                                 '.  The new frequency range needs to be within the ' +
-                                 'bounds of the old one.')
+                raise ValueError(
+                    "New frequency maximum of {0:.5g}".format(new_freq_array.max())
+                    + "is smaller than old frequency maximum of {0:.5g}".format(
+                        self.Z.freq.max()
+                    )
+                    + ".  The new frequency range needs to be within the "
+                    + "bounds of the old one."
+                )
 
         # make a new Z object
-        new_Z = MTz.Z(z_array=np.zeros((new_freq_array.shape[0], 2, 2),
-                                       dtype='complex'),
-                      z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)),
-                      freq=new_freq_array)
+        new_Z = MTz.Z(
+            z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
+            z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)),
+            freq=new_freq_array,
+        )
 
-        new_Tipper = MTz.Tipper(tipper_array=np.zeros((new_freq_array.shape[0], 1, 2),
-                                                      dtype='complex'),
-                                tipper_err_array=np.zeros(
-                                    (new_freq_array.shape[0], 1, 2)),
-                                freq=new_freq_array)
+        new_Tipper = MTz.Tipper(
+            tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
+            tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
+            freq=new_freq_array,
+        )
 
         # interpolate the impedance tensor
         for ii in range(2):
@@ -782,15 +818,16 @@ class MT(object):
 
                 # get frequencies to interpolate on to, making sure the
                 # bounds are with in non-zero components
-                new_nz_index = np.where((new_freq_array >= f.min()) & 
-                                        (new_freq_array <= f.max()))[0]
+                new_nz_index = np.where(
+                    (new_freq_array >= f.min()) & (new_freq_array <= f.max())
+                )[0]
                 new_f = new_freq_array[new_nz_index]
-                
+
                 # apply period buffer
                 if type(period_buffer) in [float, int]:
                     new_f_update = []
                     new_nz_index_update = []
-                    for ifidx,ifreq in enumerate(new_f):
+                    for ifidx, ifreq in enumerate(new_f):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
                         fidx = np.where(difference == np.amin(difference))[0][0]
@@ -806,10 +843,11 @@ class MT(object):
                 z_func_err = spi.interp1d(f, z_err, kind=interp_type)
 
                 # interpolate onto new frequency range
-                new_Z.z[new_nz_index, ii, jj] = z_func_real(
-                    new_f) + 1j * z_func_imag(new_f)
+                new_Z.z[new_nz_index, ii, jj] = z_func_real(new_f) + 1j * z_func_imag(
+                    new_f
+                )
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
-                
+
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()
 
@@ -840,13 +878,15 @@ class MT(object):
 
             # get new frequency to interpolate over, making sure bounds are
             # for non-zero components
-            new_nz_index = np.where((new_freq_array >= f.min()) &
-                                    (new_freq_array <= f.max()))
+            new_nz_index = np.where(
+                (new_freq_array >= f.min()) & (new_freq_array <= f.max())
+            )
             new_f = new_freq_array[new_nz_index]
 
             # interpolate onto new frequency range
-            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(new_f) + \
-                                                     1j * t_func_imag(new_f)
+            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(
+                new_f
+            ) + 1j * t_func_imag(new_f)
 
             new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
 
@@ -868,12 +908,15 @@ class MT(object):
         """
 
         from mtpy.imaging import plot_mt_response
+
         # todo change this to the format of the new imaging API
-        plot_obj = plot_mt_response.PlotMTResponse(z_object=self.Z,
-                                                   t_object=self.Tipper,
-                                                   pt_obj=self.pt,
-                                                   station=self.station,
-                                                   **kwargs)
+        plot_obj = plot_mt_response.PlotMTResponse(
+            z_object=self.Z,
+            t_object=self.Tipper,
+            pt_obj=self.pt,
+            station=self.station,
+            **kwargs
+        )
 
         return plot_obj
         # raise NotImplementedError
