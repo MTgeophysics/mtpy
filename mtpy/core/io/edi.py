@@ -23,6 +23,7 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
 from mtpy.core import metadata
+from mtpy.core import mt
 
 import scipy.stats.distributions as ssd
 
@@ -856,7 +857,6 @@ class Edi(object):
             except AttributeError:
                 pass
         
-        
         return ex
     
     @property
@@ -870,8 +870,7 @@ class Edi(object):
                 ey.channel_number = self.Define_measurement.meas_ey.channel_number
             except AttributeError:
                 pass
-        
-        
+
         return ey
     
     @property
@@ -888,8 +887,7 @@ class Edi(object):
                 hx.sensor.id = self.Define_measurement.meas_hx.sensor
             except AttributeError:
                 pass
-        
-        
+
         return hx
     
     @property
@@ -906,8 +904,7 @@ class Edi(object):
                 hy.sensor.id = self.Define_measurement.meas_hy.sensor
             except AttributeError:
                 pass
-        
-        
+
         return hy
     
     @property
@@ -924,8 +921,7 @@ class Edi(object):
                 hz.sensor.id = self.Define_measurement.meas_hz.sensor
             except AttributeError:
                 pass
-        
-        
+
         return hz
     
     
@@ -1878,7 +1874,6 @@ class EMeasurement(object):
                 setattr(self, key.lower(), '0.0')
 
         for key, value in kwargs.items():
-            print(key, value)
             try:
                 setattr(self, key.lower(), float(value))
             except ValueError:
@@ -2151,3 +2146,27 @@ def _validate_edi_lines(edi_lines):
             raise ValueError('*** EDI format not correct check file ***')
     else:
         return edi_lines
+    
+def read_edi(fn):
+    """
+    
+    Read an edi file and return a :class:`mtpy.core.mt.MT` object
+    
+    :param fn: DESCRIPTION
+    :type fn: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    edi_obj = Edi()
+    edi_obj.read_edi_file(fn)
+    
+    mt_obj = mt.MT()
+    
+    for attr in ['Z', 'Tipper', 'survey_metadata', 'station_metadata', 
+                 'ex_metadata', 'ey_metadata', 'hx_metadata', 'hy_metadata', 
+                 'hz_metadata']:
+        setattr(mt_obj, attr, getattr(edi_obj, attr))
+
+    return mt_obj

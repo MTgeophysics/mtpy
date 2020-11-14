@@ -138,6 +138,30 @@ class MT(object):
         # provide key words to fill values if an edi file does not exist
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    def __str__(self):
+        lines = [f"Station: {self.station}", '-' * 50]
+        lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
+        lines.append(f"\tProject:       {self.survey_metadata.project}")
+        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(f"\tLatitude:      {self.latitude:.3f}")
+        lines.append(f"\tLongitude:     {self.longitude:.3f}")
+        lines.append(f"\tElevation:     {self.elevation:.3f}")
+        if self.Tipper.tipper is not None:
+            lines.append("\tTipper:        True")
+        else:
+            lines.append("\tTipper:        False")
+        
+        if self.Z.z is not None:
+            lines.append(f"\tPeriods: {len(self.Z.freq)}")
+            lines.append(f"\t\tPeriod Range:   {1./self.Z.freq.max():.5E}  -- {1./self.Z.freq.min():.5E} s")
+            lines.append(f"\t\tFrequency Range {self.Z.freq.min():.5E}  -- {self.Z.freq.max():.5E} s")
+            
+        return '\n'.join(lines)
+    
+    def __repr__(self):
+        return self.__str__()
 
     # ==========================================================================
     # get functions
