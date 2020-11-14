@@ -943,80 +943,82 @@ class Edi(object):
             sm.transfer_function.processed_date = self.Header.filedate
 
         return sm
+    
+    def _get_electric_metadata(self, comp):
+        """
+        get electric information from the various metadata
+        """
+        comp = comp.lower()
+        electric = metadata.Electric()
+        if hasattr(self.Measurement, f"meas_{comp}"):
+            meas = getattr(self.Measurement, f"meas_{comp}")
+            electric.dipole_length = meas.dipole_length
+            electric.measurement_azimuth = meas.azimuth
+            electric.component = meas.chtype
+            electric.channel_number = meas.channel_number
+            for k, v in self.Info.info_dict.items():
+                if f'{comp}.' in k:
+                    key = k.split(f'{comp}.')[1].strip()
+                    if key  == 'manufacturer':
+                        electric.negative.manufacturer = v
+                        electric.positive.manufacturer = v
+                    if key == 'type':
+                        electric.negative.type = v
+                        electric.positive.type = v 
+        return electric
+        
 
     @property
     def ex_metadata(self):
-        ex = metadata.Electric()
-        if hasattr(self.Measurement, "meas_ex"):
-            ex.dipole_length = self.Measurement.meas_ex.dipole_length
-            ex.measurement_azimuth = self.Measurement.meas_ex.azimuth
-            ex.component = self.Measurement.meas_ex.chtype
-            ex.channel_number = self.Measurement.meas_ex.channel_number
-            for k, v in self.Info.info_dict.items():
-                if 'ex.' in k:
-                    key = k.split('ex.')[1].strip()
-                    if key  == 'manufacturer':
-                        ex.negative.manufacturer = v
-                        ex.positive.manufacturer = v
-                    if key == 'type':
-                        ex.negative.type = v
-                        ex.positive.type = v
-                        
-        return ex
+        return self._get_electric_metadata('ex')
 
     @property
     def ey_metadata(self):
-        ey = metadata.Electric()
-        if hasattr(self.Measurement, "meas_ey"):
-            ey.dipole_length = self.Measurement.meas_ey.dipole_length
-            ey.measurement_azimuth = self.Measurement.meas_ey.azimuth
-            ey.component = self.Measurement.meas_ey.chtype
-            ey.channel_number = self.Measurement.meas_ey.channel_number
+        return self._get_electric_metadata('ey')
+    
+    def _get_magnetic_metadata(self, comp):
+        """
+        
+        get magnetic metadata from the various sources
+        
+        :param comp: DESCRIPTION
+        :type comp: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-        return ey
+        """
+        
+        magnetic = metadata.Magnetic()
+        if hasattr(self.Measurement, f"meas_{comp}"):
+            meas = getattr(self.Measurement, f"meas_{comp}")
+            magnetic.measurement_azimuth = meas.azm
+            magnetic.component = meas.chtype
+            magnetic.channel_number = meas.channel_number
+            try:
+                magnetic.sensor.id = meas.meas_magnetic.sensor
+            except AttributeError:
+                pass
+            for k, v in self.Info.info_dict.items():
+                if f'{comp}.' in k:
+                    key = k.split(f'{comp}.')[1].strip()
+                    if key  == 'manufacturer':
+                        magnetic.sensor.manufacturer = v
+                    if key == 'type':
+                        magnetic.sensor.type = v
+
+        return magnetic
 
     @property
     def hx_metadata(self):
-        hx = metadata.Magnetic()
-        if hasattr(self.Measurement, "meas_hx"):
-            hx.measurement_azimuth = self.Measurement.meas_hx.azm
-            hx.component = self.Measurement.meas_hx.chtype
-            hx.channel_number = self.Measurement.meas_hx.channel_number
-            try:
-                hx.sensor.id = self.Measurement.meas_hx.sensor
-            except AttributeError:
-                pass
-
-        return hx
+        return self._get_magnetic_metadata('hx')
 
     @property
     def hy_metadata(self):
-        hy = metadata.Magnetic()
-        if hasattr(self.Measurement, "meas_hy"):
-            hy.measurement_azimuth = self.Measurement.meas_hy.azm
-            hy.component = self.Measurement.meas_hy.chtype
-            hy.channel_number = self.Measurement.meas_hy.channel_number
-
-            try:
-                hy.sensor.id = self.Measurement.meas_hy.sensor
-            except AttributeError:
-                pass
-
-        return hy
+        return self._get_magnetic_metadata('hy')
 
     @property
     def hz_metadata(self):
-        hz = metadata.Magnetic()
-        if hasattr(self.Measurement, "meas_hz"):
-            hz.measurement_azimuth = self.Measurement.meas_hz.azm
-            hz.component = self.Measurement.meas_hz.chtype
-            hz.channel_number = self.Measurement.meas_hz.channel_number
-            try:
-                hz.sensor.id = self.Measurement.meas_hz.sensor
-            except AttributeError:
-                pass
-
-        return hz
+        return self._get_magnetic_metadata('hz')
 
 
 # ==============================================================================
