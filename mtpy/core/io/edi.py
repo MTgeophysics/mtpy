@@ -951,10 +951,8 @@ class Edi(object):
             ex.dipole_length = self.Measurement.meas_ex.dipole_length
             ex.measurement_azimuth = self.Measurement.meas_ex.azimuth
             ex.component = self.Measurement.meas_ex.chtype
-            try:
-                ex.channel_number = self.Measurement.meas_ex.channel_number
-            except AttributeError:
-                pass
+            ex.channel_number = self.Measurement.meas_ex.channel_number
+
 
         return ex
 
@@ -965,10 +963,7 @@ class Edi(object):
             ey.dipole_length = self.Measurement.meas_ey.dipole_length
             ey.measurement_azimuth = self.Measurement.meas_ey.azimuth
             ey.component = self.Measurement.meas_ey.chtype
-            try:
-                ey.channel_number = self.Measurement.meas_ey.channel_number
-            except AttributeError:
-                pass
+            ey.channel_number = self.Measurement.meas_ey.channel_number
 
         return ey
 
@@ -978,10 +973,7 @@ class Edi(object):
         if hasattr(self.Measurement, "meas_hx"):
             hx.measurement_azimuth = self.Measurement.meas_hx.azm
             hx.component = self.Measurement.meas_hx.chtype
-            try:
-                hx.channel_number = self.Measurement.meas_hx.channel_number
-            except AttributeError:
-                pass
+            hx.channel_number = self.Measurement.meas_hx.channel_number
             try:
                 hx.sensor.id = self.Measurement.meas_hx.sensor
             except AttributeError:
@@ -995,10 +987,8 @@ class Edi(object):
         if hasattr(self.Measurement, "meas_hy"):
             hy.measurement_azimuth = self.Measurement.meas_hy.azm
             hy.component = self.Measurement.meas_hy.chtype
-            try:
-                hy.channel_number = self.Measurement.meas_hy.channel_number
-            except AttributeError:
-                pass
+            hy.channel_number = self.Measurement.meas_hy.channel_number
+
             try:
                 hy.sensor.id = self.Measurement.meas_hy.sensor
             except AttributeError:
@@ -1012,10 +1002,7 @@ class Edi(object):
         if hasattr(self.Measurement, "meas_hz"):
             hz.measurement_azimuth = self.Measurement.meas_hz.azm
             hz.component = self.Measurement.meas_hz.chtype
-            try:
-                hz.channel_number = self.Measurement.meas_hz.channel_number
-            except AttributeError:
-                pass
+            hz.channel_number = self.Measurement.meas_hz.channel_number
             try:
                 hz.sensor.id = self.Measurement.meas_hz.sensor
             except AttributeError:
@@ -1921,16 +1908,26 @@ class HMeasurement(object):
                 setattr(self, key.lower(), "0.0")
 
         for key, value in kwargs.items():
+            if value is None:
+                value = 0.0
             try:
                 setattr(self, key.lower(), float(value))
             except ValueError:
                 setattr(self, key.lower(), value)
+                
+    def __str__(self):
+        return "\n".join(
+            [f"{k} = {v}" for k, v in self.__dict__.items() if k[0] != "_"]
+        )
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def channel_number(self):
         if not isinstance(self.acqchan, (int, float)):
             try:
-                return [int("".join(i for i in "CH9" if i.isdigit()))][0]
+                return [int("".join(i for i in self.acqchan if i.isdigit()))][0]
             except IndexError:
                 return 0
         return self.acqchan
@@ -1978,6 +1975,8 @@ class EMeasurement(object):
                 setattr(self, key.lower(), "0.0")
 
         for key, value in kwargs.items():
+            if value is None:
+                value = 0.0
             try:
                 setattr(self, key.lower(), float(value))
             except ValueError:
@@ -2013,7 +2012,7 @@ class EMeasurement(object):
     def channel_number(self):
         if not isinstance(self.acqchan, (int, float)):
             try:
-                return [int("".join(i for i in "CH9" if i.isdigit()))][0]
+                return [int("".join(i for i in self.acqchan if i.isdigit()))][0]
             except IndexError:
                 return 0
         return self.acqchan
@@ -2337,6 +2336,7 @@ def write_edi(mt_object):
     edi_obj.Measurement.reflat = mt_object.latitude
     edi_obj.Measurement.reflon = mt_object.longitude
     edi_obj.Measurement.maxchan = len(mt_object.station_metadata.channels_recorded)
+    # EX
     edi_obj.Measurement.meas_ex = EMeasurement(
         **{
             "x2": mt_object.ex_metadata.dipole_length
@@ -2344,10 +2344,11 @@ def write_edi(mt_object):
             "y2": mt_object.ex_metadata.dipole_length
             * np.sin(np.deg2rad(mt_object.ex_metadata.measurement_azimuth)),
             "chtype": mt_object.ex_metadata.component,
-            "id": 1,
+            "id": 4,
             "acqchan": mt_object.ex_metadata.channel_number,
         }
     )
+    # EY
     edi_obj.Measurement.meas_ey = EMeasurement(
         **{
             "x2": mt_object.ey_metadata.dipole_length
@@ -2355,9 +2356,35 @@ def write_edi(mt_object):
             "y2": mt_object.ey_metadata.dipole_length
             * np.sin(np.deg2rad(mt_object.ex_metadata.measurement_azimuth)),
             "chtype": mt_object.ey_metadata.component,
-            "id": 2,
+            "id": 5,
             "acqchan": mt_object.ey_metadata.channel_number,
         }
     )
-
+    # HX
+    edi_obj.Measurement.meas_hx = HMeasurement(
+        **{
+            "azm": mt_object.hx_metadata.measurement_azimuth,
+            "chtype": mt_object.hx_metadata.component,
+            "id": 1,
+            "acqchan": mt_object.hx_metadata.channel_number,
+        }
+    )
+    # HY
+    edi_obj.Measurement.meas_hy = HMeasurement(
+        **{
+            "azm": mt_object.hy_metadata.measurement_azimuth,
+            "chtype": mt_object.hy_metadata.component,
+            "id": 2,
+            "acqchan": mt_object.hy_metadata.channel_number,
+        }
+    )
+    # HZ
+    edi_obj.Measurement.meas_hz = HMeasurement(
+        **{
+            "azm": mt_object.hz_metadata.measurement_azimuth,
+            "chtype": mt_object.hz_metadata.component,
+            "id": 3,
+            "acqchan": mt_object.hz_metadata.channel_number,
+        }
+    )
     return edi_obj
