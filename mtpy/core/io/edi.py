@@ -68,7 +68,7 @@ class Edi(object):
     ===================== ========================================== ==========
     Attributes            Description                                default
     ===================== ========================================== ==========
-    Data_sect             DataSection class, contains basic
+    Data             DataSection class, contains basic
                           information on the data collected and in
                           whether the data is in impedance or
                           spectra.
@@ -112,7 +112,7 @@ class Edi(object):
         self.Header = Header()
         self.Info = Information()
         self.Measurement = DefineMeasurement()
-        self.Data_sect = DataSection()
+        self.Data = DataSection()
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
 
@@ -152,7 +152,7 @@ class Edi(object):
             * Header
             * Info
             * Measurement
-            * Data_sect
+            * Data
             * Z
             * Tipper
 
@@ -191,7 +191,7 @@ class Edi(object):
         self.Header = Header(edi_lines=self._edi_lines)
         self.Info = Information(edi_lines=self._edi_lines)
         self.Measurement = DefineMeasurement(edi_lines=self._edi_lines)
-        self.Data_sect = DataSection(edi_lines=self._edi_lines)
+        self.Data = DataSection(edi_lines=self._edi_lines)
 
         self._read_data()
 
@@ -224,24 +224,24 @@ class Edi(object):
         if self.fn.exists() is False:
             raise MTex.MTpyError_EDI("No edi file input, check fn")
 
-        lines = self._edi_lines[self.Data_sect.line_num :]
+        lines = self._edi_lines[self.Data.line_num :]
 
-        if self.Data_sect.data_type == "spectra":
+        if self.Data.data_type == "spectra":
             self.logger.info("Converting Spectra to Impedance and Tipper")
             self.logger.info(
                 "Check to make sure input channel list is correct if the data looks incorrect"
             )
-            if self.Data_sect.nchan == 5:
+            if self.Data.nchan == 5:
                 c_list = ["hx", "hy", "hz", "ex", "ey"]
-            elif self.Data_sect.nchan == 4:
+            elif self.Data.nchan == 4:
                 c_list = ["hx", "hy", "ex", "ey"]
-            elif self.Data_sect.nchan == 6:
+            elif self.Data.nchan == 6:
                 c_list = ["hx", "hy", "ex", "ey", "rhx", "rhy"]
-            elif self.Data_sect.nchan == 7:
+            elif self.Data.nchan == 7:
                 c_list = ["hx", "hy", "hz", "ex", "ey", "rhx", "rhy"]
             self._read_spectra(lines, comp_list=c_list)
 
-        elif self.Data_sect.data_type == "z":
+        elif self.Data.data_type == "z":
             self._read_mt(lines)
 
     def _read_mt(self, data_lines):
@@ -667,7 +667,7 @@ class Edi(object):
         define_lines = self.Measurement.write_Measurement(
             longitude_format=longitude_format, latlon_format=latlon_format
         )
-        dsect_lines = self.Data_sect.write_data_sect(
+        dsect_lines = self.Data.write_Data(
             over_dict={"nfreq": len(self.Z.freq)}
         )
 
@@ -869,9 +869,9 @@ class Edi(object):
     def station(self, new_station):
         """station name"""
         if not isinstance(new_station, str):
-            new_station = "{0}".format(new_station)
+            new_station = f"{new_station}".replace(r"/", "")
         self.Header.dataid = new_station
-        self.Data_sect.sectid = new_station
+        self.Data.sectid = new_station
 
     @property
     def survey_metadata(self):
@@ -1414,7 +1414,7 @@ class Information(object):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self.edi_lines = edi_lines
-        self.info_list = None
+        self.info_list = []
         self.info_dict = {}
 
         if self.fn is not None or self.edi_lines is not None:
@@ -1900,7 +1900,7 @@ class HMeasurement(object):
     def __init__(self, **kwargs):
 
         self._kw_list = ["id", "chtype", "x", "y", "azm", "acqchan"]
-        self._fmt_list = ["<4", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<4.0f", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
             if "f" in fmt:
                 setattr(self, key.lower(), 0.0)
@@ -2074,7 +2074,7 @@ class DataSection(object):
 
         self.data_type = "z"
         self.line_num = 0
-        self.data_sect_list = None
+        self.Data_list = None
 
         self.nfreq = None
         self.sectid = None
@@ -2099,9 +2099,15 @@ class DataSection(object):
         ]
 
         if self.fn is not None or self.edi_lines is not None:
-            self.read_data_sect()
+            self.read_Data()
+            
+    def __str__(self):
+        return ''.join(self.write_Data())
+    
+    def __repr__(self):
+        return self.__str__()
 
-    def get_data_sect(self):
+    def get_Data(self):
         """
         read in the data of the file, will detect if reading spectra or
         impedance.
@@ -2110,8 +2116,8 @@ class DataSection(object):
         if self.fn is None and self.edi_lines is None:
             raise MTex.MTpyError_EDI("No edi file to read. Check fn")
 
-        self.data_sect_list = []
-        data_sect_find = False
+        self.Data_list = []
+        Data_find = False
 
         if self.fn is not None:
             if os.path.isfile(self.fn) is False:
@@ -2123,32 +2129,32 @@ class DataSection(object):
 
         for ii, line in enumerate(self.edi_lines):
             if ">=" in line and "sect" in line.lower():
-                data_sect_find = True
+                Data_find = True
                 self.line_num = ii
                 if line.lower().find("spect") > 0:
                     self.data_type = "spectra"
                 elif line.lower().find("mt") > 0:
                     self.data_type = "z"
-            elif ">" in line and data_sect_find is True:
+            elif ">" in line and Data_find is True:
                 self.line_num = ii
                 break
 
-            elif data_sect_find:
+            elif Data_find:
                 if len(line.strip()) > 2:
-                    self.data_sect_list.append(line.strip())
+                    self.Data_list.append(line.strip())
 
-    def read_data_sect(self, data_sect_list=None):
+    def read_Data(self, Data_list=None):
         """
         read data section
         """
 
-        if data_sect_list is not None:
-            self.data_sect_list = data_sect_list
+        if Data_list is not None:
+            self.Data_list = Data_list
 
         elif self.fn is not None or self.edi_lines is not None:
-            self.get_data_sect()
+            self.get_Data()
 
-        for d_line in self.data_sect_list:
+        for d_line in self.Data_list:
             d_list = d_line.split("=")
             if len(d_list) > 1:
                 key = d_list[0].lower()
@@ -2159,7 +2165,7 @@ class DataSection(object):
 
                 setattr(self, key, value)
 
-    def write_data_sect(self, data_sect_list=None, over_dict=None):
+    def write_Data(self, Data_list=None, over_dict=None):
         """
         write a data section
         """
@@ -2169,16 +2175,16 @@ class DataSection(object):
             for akey in list(over_dict.keys()):
                 self.__setattr__(akey, over_dict[akey])
 
-        if data_sect_list is not None:
-            self.read_data_sect(data_sect_list)
+        if Data_list is not None:
+            self.read_Data(Data_list)
 
         self.data_type = "z"
         self.logger.info("Writing out data a impedances")
 
-        data_sect_lines = ["\n>=mtsect\n".upper()]
+        Data_lines = ["\n>=mtsect\n".upper()]
 
         for key in self._kw_list[0:4]:
-            data_sect_lines.append(
+            Data_lines.append(
                 "{0}{1}={2}\n".format(tab, key.upper(), getattr(self, key))
             )
 
@@ -2188,11 +2194,11 @@ class DataSection(object):
         ch_list2 = sorted(ch_list, key=lambda x: x[0])
 
         for ch in ch_list2:
-            data_sect_lines.append("{0}{1}={2}\n".format(tab, ch[0], ch[1]))
+            Data_lines.append("{0}{1}={2}\n".format(tab, ch[0], ch[1]))
 
-        data_sect_lines.append("\n")
+        Data_lines.append("\n")
 
-        return data_sect_lines
+        return Data_lines
 
 
 def _validate_str_with_equals(input_string):
@@ -2310,9 +2316,13 @@ def write_edi(mt_object):
         raise ValueError("Input must be an mtpy.core.mt.MT object")
 
     edi_obj = Edi()
+    edi_obj.Z = mt_object.Z
+    edi_obj.Tipper = mt_object.Tipper
+    
     # fill header information from survey
     edi_obj.Header.survey = mt_object.survey_metadata.survey_id
     edi_obj.Header.project = mt_object.survey_metadata.project
+    edi_obj.Header.loc = mt_object.survey_metadata.geographic_name
 
     # fill header information from station
     edi_obj.Header.acqby = mt_object.station_metadata.acquired_by.author
@@ -2387,4 +2397,21 @@ def write_edi(mt_object):
             "acqchan": mt_object.hz_metadata.channel_number,
         }
     )
+    
+    # input data section
+    edi_obj.Data.data_type = mt_object.station_metadata.data_type
+    edi_obj.Data.nfreq = mt_object.Z.z.shape[0]
+    edi_obj.Data.sectid = mt_object.station
+    edi_obj.Data.nchan = 5
+    if np.all(mt_object.Tipper.tipper == 0) == True:
+        edi_obj.Data.nchan = 4
+        
+    edi_obj.Data.maxblks = 999
+    for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
+        if hasattr(edi_obj.Measurement, f"meas_{comp}"):
+            setattr(edi_obj.Data, comp, getattr(edi_obj.Measurement, f'meas_{comp}').acqchan)
+
+
+    edi_obj.write_edi_file()
+    
     return edi_obj
