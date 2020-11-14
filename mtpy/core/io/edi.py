@@ -24,6 +24,7 @@ import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
 from mtpy.core import metadata
 from mtpy.core import mt
+from mtpy import __version__
 
 import scipy.stats.distributions as ssd
 
@@ -1059,8 +1060,9 @@ class Header(object):
         self.elev = None
         self.units = '[mV/km]/[nT]'
         self.empty = 1E32
-        self.progvers = 'MTpy'
+        self.progvers = __version__
         self.progdate = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        self.progname = 'MTpy'
         self.project = None
         self.survey = None
         self.coordinate_system = 'Geographic North'
@@ -1080,6 +1082,7 @@ class Header(object):
                              'lon',
                              'filedate',
                              'empty',
+                             'progname',
                              'progdate',
                              'progvers',
                              'coordinate_system',
@@ -1087,13 +1090,20 @@ class Header(object):
                              'datum',
                              'project',
                              'survey',
-                             'units']
+                             'units',
+                             'stdvers']
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
         if self.fn is not None or self.edi_lines is not None:
             self.read_header()
+            
+    def __str__(self):
+        return ''.join(self.write_header())
+    
+    def __repr__(self):
+        return self.__str__()
 
     def get_header_list(self):
         """
@@ -1244,8 +1254,8 @@ class Header(object):
             self.get_header_list()
 
         header_lines = ['>HEAD\n']
-        # for key in sorted(self._header_keys):
-        for key in self._header_keys:  # FZ: NOT sorting
+        for key in sorted(self._header_keys):
+        # for key in self._header_keys:  # FZ: NOT sorting
             try:
                 value = getattr(self, key)
             except Exception as ex:
@@ -1254,7 +1264,7 @@ class Header(object):
             if key in ['progdate', 'progvers']:
                 if value is None:
                     value = 'mtpy'
-            elif key in ['lat', 'lon']:
+            elif key in ['lat', 'lon'] and value is not None:
                 if latlon_format.upper() == 'DD':
                     value = '%.6f'%value
                 else:
@@ -2170,3 +2180,42 @@ def read_edi(fn):
         setattr(mt_obj, attr, getattr(edi_obj, attr))
 
     return mt_obj
+
+def write_edi(mt_object):
+    """
+    Write an edi file from an :class:`mtpy.core.mt.MT` object
+    
+    :param mt_object: DESCRIPTION
+    :type mt_object: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    if not isinstance(mt_object, mt.MT):
+        raise ValueError("Input must be an mtpy.core.mt.MT object")
+        
+    edi_obj = Edi()
+    # fill header information from survey
+    edi_obj.Header.survey = mt_object.survey_metadata.survey_id
+    edi_obj.Header.project = mt_object.survey_metadata.project
+    
+    # fill header information from station
+    edi_obj.Header.acqby = mt_object.station_metadata.acquired_by.author
+    edi_obj.Header.acqdate = mt_object.station_metadata.time_period.start_date
+    edi_obj.Header.coordinate_system = mt_object.station_metadata.orientation.reference_frame
+    edi_obj.Header.dataid = mt_object.station
+    edi_obj.Header.declination = mt_object.station_metadata.location.declination.value
+    edi_obj.Header.elev = mt_object.elevation
+    edi_obj.Header.fileby = mt_object.station_metadata.provenance.submitter.author
+    edi_obj.Header.filedate = mt_object.station_metadata.provenance.creation_time
+    edi_obj.Header.lat = mt_object.latitude
+    edi_obj.Header.lon = mt_object.longitude
+    edi_obj.Header.datum = mt_object.station_metadata.location.datum
+    edi_obj.Header.stdvers = 'SEG 1.0'
+    edi_obj.Header.units = mt_object.station_metadata.transfer_function.units
+    
+    return edi_obj
+    
+    
+    
