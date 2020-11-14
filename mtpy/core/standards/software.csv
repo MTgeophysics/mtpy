@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+author,str,TRUE,free form,none,author of the software,none,none,nerd alert
+version,str,TRUE,free form,none,software version,none,none,12.01a
+name,str,TRUE,free form,none,software name,none,none,mtrules

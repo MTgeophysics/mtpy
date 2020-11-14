@@ -1,0 +1,5 @@
+attribute,type,required,style,units,description,options,alias,example
+comments,str,FALSE,free form,none,any comment on timing system,none,none,GPS locked with internal quartz clock
+drift,float,TRUE,number,seconds,estimated drift of the timing system,none,none,0.001
+type,str,TRUE,free form,none,type of timing system,none,none,GPS
+uncertainty,float,TRUE,number,seconds,estimated uncertainty of the timing system,none,none,0.0002

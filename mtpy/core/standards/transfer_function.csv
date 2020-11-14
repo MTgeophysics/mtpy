@@ -1,0 +1,6 @@
+attribute,type,required,style,units,description,options,alias,example
+sign_convention,str,FALSE,controlled vocabulary,none,sign of the transfer function estimates,[ + | - | other ],none,+
+units,str,FALSE,controlled vocabulary,none,units of the impedance tensor estimates,[ millivolts_per_kilometer_per_nanotesla | ohms | other ],none, millivolts_per_kilometer_per_nanotesla
+runs_processed,str,FALSE,name list,none,list of runs used in the processing,none,none,[ MT001a MT001c]
+remote_references,str,FALSE,name list,none,list of remote references,none,none,[ MT002b MT002c ]
+processed_date,str,FALSE,date time,none,date the data were processed,none,none,2020-01-01T12:00:00

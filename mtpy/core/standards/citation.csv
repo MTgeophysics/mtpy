@@ -1,0 +1,2 @@
+attribute,type,required,style,units,description,options,alias,example
+doi,str,TRUE,url,none,full url of the doi number,none,none,http://doi.###

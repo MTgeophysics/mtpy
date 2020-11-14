@@ -1,0 +1,8 @@
+attribute,type,required,style,units,description,options,alias,example
+channel_layout,str,FALSE,controlled vocabulary,none,how the station was laid out,[ L | X | other ],none,x
+channels_recorded,str,TRUE,name list,none,list of components recorded by the station. Should be a summary of all channels recorded dropped channels will be recorded in Run metadata.,[ Ex | Ey | Hx | Hy | Hz | T | Battery | other ],none,"[ Ex, Ey, Hx, Hy, Hz, T]"
+comments,str,FALSE,free form,none,any comments on the station,none,none,5 runs
+data_type,str,TRUE,controlled vocabulary,none,type of data recorded. If multiple types input as a comma separated list,[ RMT | AMT | BBMT | LPMT | ULPMT | other ],none,BBMT
+geographic_name,str,TRUE,free form,none,closest geographic name to the station,none,none,"Whitehorse, YK"
+id,str,TRUE,alpha numeric,none,Station ID name.  This should be an alpha numeric name that is typically 5-6 characters long.  Commonly the project name in 2 or 3 letters and the station number.,none,none,MT001
+run_list,str,TRUE,name list,none,list of runs recorded by the station. Should be a summary of all runss recorded,[ a | b | c | other ],none,"[ mt001a, mt001b, mt001c ]"

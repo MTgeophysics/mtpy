@@ -1,0 +1,11 @@
+attribute,type,required,style,units,description,options,alias,example
+channel_number,int,TRUE,number,none,channel number on the data logger,none,none,1
+comments,str,FALSE,free form,none,any comments about the channel,none,none,ambient air temperature
+component,str,TRUE,controlled vocabulary,none,name of the component measured,| Ex |Ey |Hx | Hy | Hz | T| Battery| other |,none,T
+measurement_azimuth,float,TRUE,number,degrees,azimuth of channel in measurement coordinate system,none,azimuth,0
+measurement_tilt,float,TRUE,number,degrees,tilt of channel in measurement coordinate system,none,dip,0
+sample_rate,float,TRUE,number,samples per second,sample rate,none,sampling_rate,8
+translated_azimuth,float,FALSE,number,degrees,azimuth of channel in translated coordinate system,none,azimuth,0
+translated_tilt,float,FALSE,number,degrees,tilt of channel in translated coordinate system,none,dip,0
+type,str,TRUE,free form,none,data type for the channel,none,none,temperature
+units,str,TRUE,controlled vocabulary,none,units of the data,[ metric | celsius | meters | degrees | kilograms | other ],none,celsius

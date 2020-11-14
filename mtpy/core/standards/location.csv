@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+latitude,float,TRUE,number,degrees,latitude of location in datum specified at survey level,none,[ lat ],23.134
+longitude,float,TRUE,number,degrees,longitude of location in datum specified at survey level,none,[ lon | long ],14.23
+elevation,float,TRUE,number,degrees,elevation of location in datum specified at survey level,none,[elev ],123.4
