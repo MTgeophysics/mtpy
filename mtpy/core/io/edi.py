@@ -952,8 +952,16 @@ class Edi(object):
             ex.measurement_azimuth = self.Measurement.meas_ex.azimuth
             ex.component = self.Measurement.meas_ex.chtype
             ex.channel_number = self.Measurement.meas_ex.channel_number
-
-
+            for k, v in self.Info.info_dict.items():
+                if 'ex.' in k:
+                    key = k.split('ex.')[1].strip()
+                    if key  == 'manufacturer':
+                        ex.negative.manufacturer = v
+                        ex.positive.manufacturer = v
+                    if key == 'type':
+                        ex.negative.type = v
+                        ex.positive.type = v
+                        
         return ex
 
     @property
@@ -2319,12 +2327,12 @@ def write_edi(mt_object):
     edi_obj.Z = mt_object.Z
     edi_obj.Tipper = mt_object.Tipper
     
-    # fill header information from survey
+    ### fill header information from survey
     edi_obj.Header.survey = mt_object.survey_metadata.survey_id
     edi_obj.Header.project = mt_object.survey_metadata.project
     edi_obj.Header.loc = mt_object.survey_metadata.geographic_name
 
-    # fill header information from station
+    ### fill header information from station
     edi_obj.Header.acqby = mt_object.station_metadata.acquired_by.author
     edi_obj.Header.acqdate = mt_object.station_metadata.time_period.start_date
     edi_obj.Header.coordinate_system = (
@@ -2340,8 +2348,25 @@ def write_edi(mt_object):
     edi_obj.Header.datum = mt_object.station_metadata.location.datum
     edi_obj.Header.stdvers = "SEG 1.0"
     edi_obj.Header.units = mt_object.station_metadata.transfer_function.units
+    
+    ### write notes
+    # write transfer function info first
+    for k, v in mt_object.station_metadata.transfer_function.to_dict(single=True).items():
+        if not v in [None]:
+            edi_obj.Info.info_list.append(f"{k} = {v}")
+    # write field notes 
+    for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
+        c_dict = getattr(mt_object, f"{comp}_metadata").to_dict(single=True)
+        for k, v in c_dict.items():
+            if k in ['filter.name', 'filter.applied', 'time_period.start', 
+                     'time_period.end', 'location.elevation', 'location.latitude',
+                     'location.longitude']:
+                continue
+            if v not in [None]:
+                edi_obj.Info.info_list.append(f"{comp}.{k} = {v}")
+        
 
-    # fill measurement
+    ### fill measurement
     edi_obj.Measurement.refelev = mt_object.elevation
     edi_obj.Measurement.reflat = mt_object.latitude
     edi_obj.Measurement.reflon = mt_object.longitude
