@@ -938,6 +938,8 @@ class Edi(object):
                 sm.geographic_name = value
             elif key == "signconvention":
                 sm.transfer_function.sign_convention = value
+            if 'mtft' in key or 'emtf' in key or 'mtedit' in key:
+                sm.transfer_function.processing_parameters.append(f"{key}={value}")
 
         if self.Header.filedate is not None:
             sm.transfer_function.processed_date = self.Header.filedate
@@ -1827,6 +1829,7 @@ class DefineMeasurement(object):
                 x_key = x_key[0]
                 m_obj = getattr(self, x_key)
                 if m_obj.chtype is not None:
+                    m_obj.chtype = str(m_obj.chtype)
                     if m_obj.chtype.lower().find("h") >= 0:
                         head = "hmeas"
                     elif m_obj.chtype.lower().find("e") >= 0:
@@ -2014,7 +2017,7 @@ class EMeasurement(object):
         if hasattr(self, "azm"):
             return self.azm
         try:
-            return np.rad2deg(np.tan((self.y2 - self.y) / (self.x - self.x2)))
+            return np.rad2deg(np.arctan2((self.y2 - self.y), (self.x2 - self.x)))
         except ZeroDivisionError:
             return 0.0
 
@@ -2355,7 +2358,12 @@ def write_edi(mt_object):
     # write transfer function info first
     for k, v in mt_object.station_metadata.transfer_function.to_dict(single=True).items():
         if not v in [None]:
-            edi_obj.Info.info_list.append(f"{k} = {v}")
+            if k in ["processing_parameters"]:
+                for item in v:
+                    edi_obj.Info.info_list.append(item.replace('=', ' = '))
+            else:
+                edi_obj.Info.info_list.append(f"{k} = {v}")
+            
     # write field notes 
     for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
         c_dict = getattr(mt_object, f"{comp}_metadata").to_dict(single=True)
@@ -2366,6 +2374,7 @@ def write_edi(mt_object):
                 continue
             if v not in [None]:
                 edi_obj.Info.info_list.append(f"{comp}.{k} = {v}")
+    
         
 
     ### fill measurement

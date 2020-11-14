@@ -1495,6 +1495,7 @@ class TransferFunction(Base):
         self.sign_convention = '+'
         self.runs_processed = []
         self.remote_references = []
+        self.processing_parameters = []
         self.processed_date = MTime()
         
         super().__init__(attr_dict=ATTR_DICT["transfer_function"], **kwargs)

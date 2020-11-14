@@ -4,3 +4,4 @@ units,str,FALSE,controlled vocabulary,none,units of the impedance tensor estimat
 runs_processed,str,FALSE,name list,none,list of runs used in the processing,none,none,[ MT001a MT001c]
 remote_references,str,FALSE,name list,none,list of remote references,none,none,[ MT002b MT002c ]
 processed_date,str,FALSE,date time,none,date the data were processed,none,none,2020-01-01T12:00:00
+processing_parameters,str,FALSE,name list,none,list of processing parameters with structure name = value,none,none,[nfft=4096, n_windows=16]
