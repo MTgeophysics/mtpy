@@ -1149,7 +1149,7 @@ class Header(object):
         self.acqby = None
         self.fileby = "MTpy"
         self._acqdate = MTime()
-        self._enddate = MTime()
+        self._enddate = None
         self._filedate = MTime()
         self.loc = None
         self._lat = None
@@ -1158,7 +1158,7 @@ class Header(object):
         self.units = "[mV/km]/[nT]"
         self.empty = 1e32
         self.progvers = __version__
-        self._progdate = MTime()
+        self._progdate = MTime("2020-11-10")
         self.progname = "MTpy"
         self.project = None
         self.survey = None
@@ -1166,6 +1166,9 @@ class Header(object):
         self.declination = None
         self.datum = "WGS84"
         self.phoenix_edi = False
+        self.stdvers = "SEG 1.0"
+        self.state = None
+        self.country = None
 
         self.header_list = None
 
@@ -1191,6 +1194,8 @@ class Header(object):
             "units",
             "stdvers",
         ]
+        
+        self._optional_keys = ["enddate", "state", "country"]
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -1214,6 +1219,8 @@ class Header(object):
             self._fn = None
             return 
         self._fn = Path(value) 
+        if self._fn.exists():
+            self.read_header()
         
     @property
     def lat(self):
@@ -1249,7 +1256,8 @@ class Header(object):
         
     @property
     def enddate(self):
-        return self._enddate.date
+        if self._enddate is not None:
+            return self._enddate.date
     
     @enddate.setter
     def enddate(self, value):
@@ -1366,6 +1374,9 @@ class Header(object):
                 key = "loc"
 
             setattr(self, key, value)
+            
+            if key not in self._header_keys:
+                self._optional_keys.append(key)
 
     def write_header(
         self, header_list=None, longitude_format="LON", latlon_format="dms"
@@ -1400,20 +1411,14 @@ class Header(object):
             self.read_header(header_list)
 
         if self.header_list is None and self.fn is not None:
-            self.get_header_list()
+            self.header_list = self.get_header_list()
 
         header_lines = [">HEAD\n"]
-        for key in sorted(self._header_keys):
-            # for key in self._header_keys:  # FZ: NOT sorting
-            try:
-                value = getattr(self, key)
-            except Exception as ex:
-                self.logger.debug("key value: %s %s %s", key, value, ex)
-                value = None
-            if key in ["progdate", "progvers"]:
-                if value is None:
-                    value = "mtpy"
-            elif key in ["lat", "lon"] and value is not None:
+        for key in sorted(self._header_keys + self._optional_keys):
+            value = getattr(self, key)
+            if key in self._optional_keys and value is None:
+                continue
+            if key in ["lat", "lon"] and value is not None:
                 if latlon_format.upper() == "DD":
                     value = "%.6f" % value
                 else:
@@ -1434,7 +1439,9 @@ class Header(object):
             if isinstance(value, list):
                 value = ",".join(value)
 
-            header_lines.append("{0}{1}={2}\n".format(tab, key.upper(), value))
+            header_lines.append(f"{tab}{key.upper()}={value}\n")
+            
+            
         header_lines.append("\n")
         return header_lines
 
