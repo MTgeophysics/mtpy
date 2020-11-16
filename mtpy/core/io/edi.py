@@ -1149,6 +1149,7 @@ class Header(object):
         self.acqby = None
         self.fileby = "MTpy"
         self._acqdate = MTime()
+        self._enddate = MTime()
         self._filedate = MTime()
         self.loc = None
         self._lat = None
@@ -1245,6 +1246,14 @@ class Header(object):
     @acqdate.setter
     def acqdate(self, value):
         self._acqdate = MTime(value)
+        
+    @property
+    def enddate(self):
+        return self._enddate.date
+    
+    @enddate.setter
+    def enddate(self, value):
+        self._enddate = MTime(value)
         
     @property
     def filedate(self):

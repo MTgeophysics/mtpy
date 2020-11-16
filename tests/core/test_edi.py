@@ -75,7 +75,38 @@ class TestHeader(unittest.TestCase):
         self.assertEqual(self.header.acqdate, "2001-01-01")
         self.assertEqual(self.header.filedate, "2014-09-29")
         
+    def test_read_metronix(self):
+        self.header.fn = edi_list[-1]
+        self.header.read_header()
+        
+        lat_float = 22.691378333333333
+        lon_float = 139.70504
 
+        self.assertAlmostEqual(self.header.lat, lat_float, 3)
+        self.assertAlmostEqual(self.header.lon, lon_float, 3)
+        
+        self.assertEqual(self.header.acqdate, "2014-08-17")
+        self.assertEqual(self.header.enddate, "2014-08-17")
+        self.assertEqual(self.header.filedate, "2014-10-17")
+        self.assertEqual(self.header.progdate, "2014-08-14")
+        self.assertEqual(self.header.fileby, "Metronix")
+        
+    def test_read_quantec(self):
+        self.header.fn = edi_list[2]
+        self.header.read_header()
+        
+        lat_float = -23.051133333333333
+        lon_float = 139.46753333333334
+
+        self.assertAlmostEqual(self.header.lat, lat_float, 3)
+        self.assertAlmostEqual(self.header.lon, lon_float, 3)
+        
+        self.assertEqual(self.header.acqdate, "2014-11-15")
+        self.assertEqual(self.header.enddate, "2014-11-15")
+        self.assertEqual(self.header.filedate, "2014-11-17")
+        self.assertEqual(self.header.progdate, "2012-10-10")
+        self.assertEqual(self.header.fileby, "Quantec Geoscience")
+        
 
 # =============================================================================
 # Run
