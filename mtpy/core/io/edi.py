@@ -664,7 +664,7 @@ class Edi(object):
             longitude_format=longitude_format, latlon_format=latlon_format
         )
         info_lines = self.Info.write_info()
-        define_lines = self.Measurement.write_Measurement(
+        define_lines = self.Measurement.write_measurement(
             longitude_format=longitude_format, latlon_format=latlon_format
         )
         dsect_lines = self.Data.write_Data(
@@ -1278,8 +1278,7 @@ class Header(object):
     @progdate.setter
     def progdate(self, value):
         self._progdate = MTime(value)
-        
-        
+            
 
     def get_header_list(self):
         """
@@ -1375,6 +1374,7 @@ class Header(object):
 
             setattr(self, key, value)
             
+            # be sure to pass any uncommon keys through to new file
             if key not in self._header_keys:
                 self._optional_keys.append(key)
 
@@ -1484,6 +1484,7 @@ class Information(object):
 
     def __init__(self, fn=None, edi_lines=None):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._fn = None
         self.fn = fn
         self.edi_lines = edi_lines
         self.info_list = []
@@ -1491,6 +1492,25 @@ class Information(object):
 
         if self.fn is not None or self.edi_lines is not None:
             self.read_info()
+            
+        @property
+        def fn(self):
+            return self._fn
+        
+        @fn.setter
+        def fn(self, value):
+            if value is None:
+                self._fn = None
+                return 
+            self._fn = Path(value) 
+            if self._fn.exists():
+                self.read_info()
+                
+    def __str__(self):
+        return "".join(self.write_info())
+
+    def __repr__(self):
+        return self.__str__()
 
     def get_info_list(self):
         """
@@ -1498,7 +1518,7 @@ class Information(object):
         """
 
         if self.fn is None and self.edi_lines is None:
-            self.logger.info("no edi file input, check fn attribute")
+            self.logger.info("No EDI file input")
             return
 
         self.info_list = []
@@ -1508,7 +1528,8 @@ class Information(object):
 
         if self.fn is not None:
             if os.path.isfile(self.fn) is False:
-                self.logger.info("Could not find {0}, check path".format(self.fn))
+                msg = f"Could not find EDI file: {self.fn}"
+                self.logger.info(msg)
                 return
 
             with open(self.fn, "r") as fid:
@@ -1557,14 +1578,12 @@ class Information(object):
             l_list = [None, ""]
             # need to check if there is an = or : seperator, which ever
             # comes first is assumed to be the delimiter
-            colon_find = ll.find(":")
-            if colon_find == -1:
+            if ll.count(":") == 0:
                 colon_find = None
-            equals_find = ll.find("=")
-            if equals_find == -1:
+            if ll.find("=") == 0:
                 equals_find = None
             if colon_find is not None and equals_find is not None:
-                if colon_find < equals_find:
+                if ll.count(":") < ll.count("="):
                     l_list = ll.split(":")
                 else:
                     l_list = ll.split("=")
@@ -1578,7 +1597,6 @@ class Information(object):
                 l_key = l_list[0]
                 l_value = l_list[1].strip()
                 self.info_dict[l_key] = l_value.replace('"', "")
-                # setattr(self, l_key, l_value)
 
         if self.info_list is None:
             self.logger.info("Could not read information")
@@ -1692,6 +1710,7 @@ class DefineMeasurement(object):
 
     def __init__(self, fn=None, edi_lines=None):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._fn = None
         self.fn = fn
         self.edi_lines = edi_lines
         self.measurement_list = None
@@ -1716,8 +1735,27 @@ class DefineMeasurement(object):
             "units",
         ]
 
-        if self.fn is not None or self.edi_lines is not None:
-            self.read_Measurement()
+        if self.edi_lines is not None:
+            self.read_measurement()
+            
+    def __str__(self):
+        return "".join(self.write_measurement())
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    @property
+    def fn(self):
+        return self._fn
+    
+    @fn.setter
+    def fn(self, value):
+        if value is None:
+            self._fn = None
+            return 
+        self._fn = Path(value) 
+        if self._fn.exists():
+            self.read_measurement()
 
     def get_measurement_lists(self):
         """
@@ -1773,7 +1811,7 @@ class DefineMeasurement(object):
                         m_dict[key] = value
                     self.measurement_list.append(m_dict)
 
-    def read_Measurement(self, measurement_list=None):
+    def read_measurement(self, measurement_list=None):
         """
         read the define measurment section of the edi file
 
@@ -1848,7 +1886,7 @@ class DefineMeasurement(object):
                     value = EMeasurement(**line)
                 setattr(self, key, value)
 
-    def write_Measurement(
+    def write_measurement(
         self, measurement_list=None, longitude_format="LON", latlon_format="dd"
     ):
         """
@@ -1856,7 +1894,7 @@ class DefineMeasurement(object):
         """
 
         if measurement_list is not None:
-            self.read_Measurement(measurement_list=measurement_list)
+            self.read_measurement(measurement_list=measurement_list)
 
         measurement_lines = ["\n>=DEFINEMEAS\n"]
         for key in self._define_meas_keys:
