@@ -61,7 +61,7 @@ from collections.abc import Iterable
 from operator import itemgetter
 
 from mtpy.core.standards.schema import Standards, validate_attribute, validate_type, MTSchemaError
-from mtpy.core.standards.mttime import MTime
+from mtpy.utils.mttime import MTime
 from mtpy.core.standards import helpers
 
 ATTR_DICT = Standards().ATTR_DICT

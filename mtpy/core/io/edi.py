@@ -13,7 +13,6 @@
 #  Imports
 # ==============================================================================
 import os
-import datetime
 import numpy as np
 import logging
 from pathlib import Path
@@ -21,6 +20,7 @@ from pathlib import Path
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
+from mtpy.utils.mttime import MTime, get_now_utc
 import mtpy.core.z as MTz
 from mtpy.core import metadata
 from mtpy.core import mt
@@ -1142,22 +1142,22 @@ class Header(object):
 
     def __init__(self, fn=None, **kwargs):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._fn = None
         self.fn = fn
         self.edi_lines = None
         self.dataid = None
         self.acqby = None
-        self.fileby = None
-        self.acqdate = None
-        # self.units = None
-        self.filedate = datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
+        self.fileby = "MTpy"
+        self._acqdate = MTime()
+        self._filedate = MTime()
         self.loc = None
-        self.lat = None
-        self.lon = None
-        self.elev = None
+        self._lat = None
+        self._lon = None
+        self._elev = None
         self.units = "[mV/km]/[nT]"
         self.empty = 1e32
         self.progvers = __version__
-        self.progdate = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+        self._progdate = MTime()
         self.progname = "MTpy"
         self.project = None
         self.survey = None
@@ -1202,6 +1202,51 @@ class Header(object):
 
     def __repr__(self):
         return self.__str__()
+    
+    @property
+    def fn(self):
+        return self._fn
+    
+    @fn.setter
+    def fn(self, value):
+        if value is None:
+            self._fn = None
+            return 
+        self._fn = Path(value) 
+        
+    @property
+    def lat(self):
+        return self._lat
+    
+    @lat.setter
+    def lat(self, value):
+        self._lat = gis_tools.assert_lat_value(value)
+        
+    @property
+    def lon(self):
+        return self._lon
+    
+    @lon.setter
+    def lon(self, value):
+        self._lon = gis_tools.assert_lon_value(value)
+        
+    @property
+    def elev(self):
+        return self._elev
+    
+    @elev.setter
+    def elev(self, value):
+        self._elev = gis_tools.assert_elevation_value(value)
+        
+    @property
+    def acqdate(self):
+        return self._acqdate.date
+    
+    @acqdate.setter
+    def acqdate(self, value):
+        self._acqdate = MTime(value)
+        
+        
 
     def get_header_list(self):
         """
@@ -1213,13 +1258,15 @@ class Header(object):
             self.logger.info("No edi file to read.")
             return
 
-        self.header_list = []
+        header_list = []
         head_find = False
 
         # read in file line by line
         if self.fn is not None:
-            if os.path.isfile(self.fn) == False:
-                self.logger.info("Could not find {0}, check path".format(self.fn))
+            if not self.fn.exists():
+                msg = f"Could not find {self.fn}"
+                self.logger.error(msg)
+                raise IOError(msg)
             with open(self.fn, "r") as fid:
                 self.edi_lines = _validate_edi_lines(fid.readlines())
 
@@ -1244,7 +1291,9 @@ class Header(object):
                     if len(h_list) == 2:
                         key = h_list[0].strip()
                         value = h_list[1].strip()
-                        self.header_list.append("{0}={1}".format(key, value))
+                        header_list.append("{0}={1}".format(key, value))
+                        
+        return header_list
 
     def read_header(self, header_list=None):
         """
@@ -1272,45 +1321,16 @@ class Header(object):
             self.logger.info("Nothing to read. header_list and fn are None")
 
         elif self.fn is not None or self.edi_lines is not None:
-            self.get_header_list()
+            self.header_list = self.get_header_list()
 
         for h_line in self.header_list:
             h_list = h_line.split("=")
             key = h_list[0].lower()
             value = h_list[1]
-            if key in "latitude":
-                key = "lat"
-                value = gis_tools.assert_lat_value(value)
-
-            elif key in "longitude":
-                key = "lon"
-                value = gis_tools.assert_lon_value(value)
-
-            elif key in "elevation":
-                key = "elev"
-                value = gis_tools.assert_elevation_value(value)
-            elif key in "declination":
-                try:
-                    value = float(value)
-                except (ValueError, TypeError):
-                    value = 0.0
-
-            # FZ: this elif condensed several key into loc.
-            # elif key in ['country', 'state', 'loc', 'location', 'prospect']:
-            #     key = 'loc'
-            #     try:
-            #         if getattr(self, key) is not None:
-            #             value = '{0}, {1}'.format(getattr(self, key), value)
-            #     except KeyError:
-            #        pass
             # test if its a phoenix formated .edi file
-            elif key in ["progvers"]:
+            if key in ["progvers"]:
                 if value.lower().find("mt-editor") != -1:
                     self.phoenix_edi = True
-
-            elif key in ["fileby"]:
-                if value == "":
-                    value = "MTpy"
 
             setattr(self, key, value)
 
@@ -1373,7 +1393,7 @@ class Header(object):
                     # value = '0.000'
 
             if key in ["filedate"]:
-                value = datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
+                value = get_now_utc()
             #
             if key == "lon":
                 if longitude_format == "LONG":

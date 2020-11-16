@@ -30,6 +30,8 @@ EDI_DATA_DIR = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files'))
 EDI_DATA_DIR2 = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files_2'))
+EDI_DATA_DIR_BB = os.path.normpath(
+    os.path.join(TEST_MTPY_ROOT, 'data/BBMT'))
 AUS_TOPO_FILE = os.path.normpath(
     os.path.join(TEST_MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
 SAMPLE_DIR = os.path.normpath(
