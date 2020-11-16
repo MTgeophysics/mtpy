@@ -72,12 +72,8 @@ class TestHeader(unittest.TestCase):
         self.assertAlmostEqual(self.header.lat, lat_float, 3)
         self.assertAlmostEqual(self.header.lon, lon_float, 3)
 
-        
-        
-
-        
-        
-        
+        self.assertEqual(self.header.acqdate, "2001-01-01")
+        self.assertEqual(self.header.filedate, "2014-09-29")
         
 
 

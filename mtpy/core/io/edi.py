@@ -1246,6 +1246,22 @@ class Header(object):
     def acqdate(self, value):
         self._acqdate = MTime(value)
         
+    @property
+    def filedate(self):
+        return self._filedate.date
+    
+    @filedate.setter
+    def filedate(self, value):
+        self._filedate = MTime(value)
+        
+    @property
+    def progdate(self):
+        return self._progdate.date
+    
+    @progdate.setter
+    def progdate(self, value):
+        self._progdate = MTime(value)
+        
         
 
     def get_header_list(self):
@@ -1331,6 +1347,14 @@ class Header(object):
             if key in ["progvers"]:
                 if value.lower().find("mt-editor") != -1:
                     self.phoenix_edi = True
+            if key in "latitude":
+                key = "lat"
+            elif key in "longitude":
+                key = "lon"
+            elif key in "elevation":
+                key = "elev"
+            elif key in "location":
+                key = "loc"
 
             setattr(self, key, value)
 
