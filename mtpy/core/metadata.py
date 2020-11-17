@@ -836,7 +836,11 @@ class Location(Base):
         self._elevation = 0.0
         self._latitude = 0.0
         self._longitude = 0.0
-
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0
+        self.x2 = 0.0
+        self.y2 = 0.0
         super(Location, self).__init__(attr_dict=ATTR_DICT["location"], **kwargs)
 
     @property

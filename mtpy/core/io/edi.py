@@ -893,6 +893,7 @@ class Edi(object):
     @property
     def station_metadata(self):
         sm = metadata.Station()
+        sm.run_list.append(metadata.Run(id=f"{self.station}a"))
         sm.id = self.station
         sm.data_type = "MT"
         sm.channels_recorded = self.Measurement.channels_recorded
@@ -925,15 +926,20 @@ class Edi(object):
                         sm.transfer_function.remote_references = value.split(",")
                     else:
                         sm.transfer_function.remote_references = value.split()
+            
             elif key == "processedby":
                 sm.transfer_function.processed_by.author = value
+            
             elif key == "runlist":
                 if value.count(",") > 0:
-                    sm.run_list = value.split(",")
-                    sm.transfer_function.runs_processed = value.split(",")
+                    runs = value.split(",")
                 else:
-                    sm.run_list = value.split()
-                    sm.transfer_function.runs_processed = value.split()
+                    runs = value.split()
+                sm.run_list = []
+                for rr in runs:
+                    sm.run_list.append(metadata.Run(id=rr))
+                sm.transfer_function.runs_processed = runs
+               
             elif key == "sitename":
                 sm.geographic_name = value
             elif key == "signconvention":
@@ -944,7 +950,16 @@ class Edi(object):
         if self.Header.filedate is not None:
             sm.transfer_function.processed_date = self.Header.filedate
             
+        # make any extra information in info list into a comment
         sm.comments = '\n'.join(self.Info.info_list)
+        
+        # add information to runs
+        for rr in sm.run_list:
+            rr.ex = self.ex_metadata
+            rr.ey = self.ey_metadata
+            rr.hx = self.hx_metadata
+            rr.hy = self.hy_metadata
+            rr.hz = self.hz_metadata
 
         return sm
     
@@ -960,6 +975,10 @@ class Edi(object):
             electric.measurement_azimuth = meas.azimuth
             electric.component = meas.chtype
             electric.channel_number = meas.channel_number
+            electric.negative.x = meas.x
+            electric.positive.x2 = meas.x2
+            electric.negative.y = meas.y
+            electric.positive.y2 = meas.y2
             for k, v in self.Info.info_dict.items():
                 if f'{comp}.' in k:
                     key = k.split(f'{comp}.')[1].strip()
@@ -998,6 +1017,8 @@ class Edi(object):
             magnetic.measurement_azimuth = meas.azm
             magnetic.component = meas.chtype
             magnetic.channel_number = meas.channel_number
+            magnetic.location.x = meas.x
+            magnetic.location.y = meas.y
             try:
                 magnetic.sensor.id = meas.meas_magnetic.sensor
             except AttributeError:
@@ -1023,6 +1044,14 @@ class Edi(object):
     @property
     def hz_metadata(self):
         return self._get_magnetic_metadata('hz')
+    
+    @property
+    def rrhx_metadata(self):
+        return self._get_magnetic_metadata('rrhx')
+    @property
+    def rrhy_metadata(self):
+        return self._get_magnetic_metadata('rrhy')
+    
 
 
 # ==============================================================================
@@ -1907,6 +1936,12 @@ class DefineMeasurement(object):
                     value = HMeasurement(**line)
                 elif key[4:].find("e") >= 0:
                     value = EMeasurement(**line)
+                if hasattr(self, key):
+                    key = key.replace('_', '_rr')
+                    try:
+                        value.chtype = f'RR{value.chtype}'
+                    except AttributeError:
+                        pass
                 setattr(self, key, value)
 
     def write_measurement(
@@ -2424,11 +2459,6 @@ def read_edi(fn):
         "Tipper",
         "survey_metadata",
         "station_metadata",
-        "ex_metadata",
-        "ey_metadata",
-        "hx_metadata",
-        "hy_metadata",
-        "hz_metadata",
     ]:
         setattr(mt_obj, attr, getattr(edi_obj, attr))
 

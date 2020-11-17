@@ -116,12 +116,12 @@ class MT(object):
         
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
-        self.run_list = [metadata.Run()]
-        self.run_list[0].channels_recorded_electric.append(metadata.Electric(component='ex'))
-        self.run_list[0].channels_recorded_electric.append(metadata.Electric(component='ey'))
-        self.run_list[0].channels_recorded_magnetic.append(metadata.Magnetic(component='hx'))
-        self.run_list[0].channels_recorded_magnetic.append(metadata.Magnetic(component='hy'))
-        self.run_list[0].channels_recorded_magnetic.append(metadata.Magnetic(component='hz'))
+        self.station_metadata.run_list.append(metadata.Run())
+        self.station_metadata.run_list[0].ex = metadata.Electric(component='ex')
+        self.station_metadata.run_list[0].ey = metadata.Electric(component='ey')
+        self.station_metadata.run_list[0].hx = metadata.Magnetic(component='hx')
+        self.station_metadata.run_list[0].hy = metadata.Magnetic(component='hy')
+        self.station_metadata.run_list[0].hz = metadata.Magnetic(component='hz')
         
         self._east = None
         self._north = None
@@ -231,27 +231,27 @@ class MT(object):
     @property
     def ex_metadata(self):
         """ EX metadata """
-        return self.run_list[0].ex
+        return self.station_metadata.run_list[0].ex
     
     @property
     def ey_metadata(self):
         """ EY metadata """
-        return self.run_list[0].ey
+        return self.station_metadata.run_list[0].ey
     
     @property
     def hx_metadata(self):
         """ HX metadata """
-        return self.run_list[0].hx
+        return self.station_metadata.run_list[0].hx
     
     @property
     def hy_metadata(self):
         """ HY metadata """
-        return self.run_list[0].hy
+        return self.station_metadata.run_list[0].hy
     
     @property
     def hz_metadata(self):
         """ HZ metadata """
-        return self.run_list[0].hz
+        return self.station_metadata.run_list[0].hz
     
     # ==========================================================================
     # set functions
@@ -391,6 +391,31 @@ class MT(object):
         set station name
         """
         self.station_metadata.id = station_name
+        
+    @ex_metadata.setter
+    def ex_metadata(self, value):
+        """ set EX metadata """
+        self.station_metadata.run_list[0].ex = value
+            
+    @ey_metadata.setter
+    def ey_metadata(self, value):
+        """ set EY metadata """
+        self.station_metadata.run_list[0].ey = value
+        
+    @hx_metadata.setter
+    def hx_metadata(self, value):
+        """ set hx metadata """
+        self.station_metadata.run_list[0].hx = value
+        
+    @hy_metadata.setter
+    def hy_metadata(self, value):
+        """ set hy metadata """
+        self.station_metadata.run_list[0].hy = value
+        
+    @hz_metadata.setter
+    def hz_metadata(self, value):
+        """ set hz metadata """
+        self.station_metadata.run_list[0].hz = value
 
     # ==========================================================================
     #  read in files
