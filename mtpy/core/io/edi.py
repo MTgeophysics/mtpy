@@ -943,6 +943,8 @@ class Edi(object):
 
         if self.Header.filedate is not None:
             sm.transfer_function.processed_date = self.Header.filedate
+            
+        sm.comments = '\n'.join(self.Info.info_list)
 
         return sm
     
@@ -1493,18 +1495,18 @@ class Information(object):
         if self.fn is not None or self.edi_lines is not None:
             self.read_info()
             
-        @property
-        def fn(self):
-            return self._fn
-        
-        @fn.setter
-        def fn(self, value):
-            if value is None:
-                self._fn = None
-                return 
-            self._fn = Path(value) 
-            if self._fn.exists():
-                self.read_info()
+    @property
+    def fn(self):
+        return self._fn
+    
+    @fn.setter
+    def fn(self, value):
+        if value is None:
+            self._fn = None
+            return 
+        self._fn = Path(value) 
+        if self._fn.exists():
+            self.read_info()
                 
     def __str__(self):
         return "".join(self.write_info())
@@ -1573,17 +1575,35 @@ class Information(object):
             self.get_info_list()
 
         self.info_dict = {}
+        colon_find = None
+        equals_find = None
         # make info items attributes of Information
         for ll in self.info_list:
             l_list = [None, ""]
+            # phoenix has lat an lon information in the notes but separated by 
+            # a space instead of an = or :
+            if "lat" in ll.lower() or "lon" in ll.lower() or "lng" in ll.lower():
+                l_list = ll.split()
+                if len(l_list) == 2:
+                    self.info_dict[l_list[0]] = l_list[1]
+                    continue
+                elif len(l_list) == 4:
+                    self.info_dict[l_list[0]] = l_list[1]
+                    self.info_dict[l_list[2]] = l_list[3]
+                    continue
+                elif len(l_list) == 6:
+                    self.info_dict[l_list[0]] = l_list[1] + l_list[2]
+                    self.info_dict[l_list[3]] = l_list[4] + l_list[5]
+                    continue
+                
             # need to check if there is an = or : seperator, which ever
             # comes first is assumed to be the delimiter
-            if ll.count(":") == 0:
-                colon_find = None
-            if ll.find("=") == 0:
-                equals_find = None
+            if ll.find(":") > 0:
+                colon_find = ll.find(':')
+            if ll.find("=") > 0:
+                equals_find = ll.find('=')
             if colon_find is not None and equals_find is not None:
-                if ll.count(":") < ll.count("="):
+                if ll.find(":") < ll.find("="):
                     l_list = ll.split(":")
                 else:
                     l_list = ll.split("=")
@@ -1593,10 +1613,13 @@ class Information(object):
                 l_list = ll.split("=")
             else:
                 l_list[0] = ll
-            if l_list[0] is not None:
+            if l_list[0] is not None and len(l_list) > 1:
                 l_key = l_list[0]
                 l_value = l_list[1].strip()
+                    
                 self.info_dict[l_key] = l_value.replace('"', "")
+            else: 
+                self.info_dict[l_list[0]] = None
 
         if self.info_list is None:
             self.logger.info("Could not read information")
@@ -2461,6 +2484,9 @@ def write_edi(mt_object):
                     edi_obj.Info.info_list.append(item.replace('=', ' = '))
             else:
                 edi_obj.Info.info_list.append(f"{k} = {v}")
+                
+    # write comments, which would be anything in the info section from an edi
+    edi_obj.Info.info_list += mt_object.station_metadata.comments.split('\n')
             
     # write field notes 
     for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:

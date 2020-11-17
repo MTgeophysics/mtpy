@@ -14,9 +14,9 @@ from tests import TEST_MTPY_ROOT, make_temp_dir, EDI_DATA_DIR_BB
 
 edi_path = Path(EDI_DATA_DIR_BB)
 edi_list = list(edi_path.glob("*.edi"))
-phoenix_fn = edi_list[0]
+phoenix_fn = edi_list[-1]
 quantec_fn = edi_list[2]
-metronix_fn = edi_list[-1]
+metronix_fn = edi_list[-2]
 # =============================================================================
 # Test EDI
 # =============================================================================
@@ -69,14 +69,15 @@ class TestHeader(unittest.TestCase):
         self.header.fn = phoenix_fn
         self.header.read_header()
         
-        lat_float = -30.939149166666667
-        lon_float = 127.12636305555554
+        lat_float = 10.122805555555557
+        lon_float = 10.112722222222223
         
         self.assertAlmostEqual(self.header.lat, lat_float, 3)
         self.assertAlmostEqual(self.header.lon, lon_float, 3)
 
-        self.assertEqual(self.header.acqdate, "2001-01-01")
-        self.assertEqual(self.header.filedate, "2014-09-29")
+        self.assertEqual(self.header.acqdate, "2008-01-01")
+        self.assertEqual(self.header.filedate, "2016-08-14")
+        self.assertEqual(self.header.phoenix_edi, True)
         
     def test_read_metronix(self):
         self.header.fn = metronix_fn
@@ -121,14 +122,14 @@ class TestInformation(unittest.TestCase):
     def test_phoenix(self):
         self.info.fn = phoenix_fn
         
-        self.assertEqual(self.info.info_dict, {})
-        self.assertEqual(self.info.info_list, [])
+        self.assertNotEqual(self.info.info_dict, {})
+        self.assertNotEqual(self.info.info_list, [])
     
     def test_metronix(self):
         self.info.fn = metronix_fn
         
-        self.assertEqual(self.info.info_dict, {})
-        self.assertEqual(self.info.info_list, [])
+        self.assertNotEqual(self.info.info_dict, {})
+        self.assertNotEqual(self.info.info_list, [])
         
     def test_quantec(self):
         self.info.fn = quantec_fn

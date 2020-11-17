@@ -363,7 +363,7 @@ class MT(object):
         """
         set station name
         """
-        self.Site.id = station_name
+        self.station_metadata.id = station_name
 
     # ==========================================================================
     #  read in files
