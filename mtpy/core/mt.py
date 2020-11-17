@@ -116,11 +116,13 @@ class MT(object):
         
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
-        self.ex_metadata = metadata.Electric()
-        self.ey_metadata = metadata.Electric()
-        self.hx_metadata = metadata.Magnetic()
-        self.hy_metadata = metadata.Magnetic()
-        self.hz_metadata = metadata.Magnetic()
+        self.run_list = [metadata.Run()]
+        self.run_list[0].channels_recorded_electric.append(metadata.Electric(component='ex'))
+        self.run_list[0].channels_recorded_electric.append(metadata.Electric(component='ey'))
+        self.run_list[0].channels_recorded_magnetic.append(metadata.Magnetic(component='hx'))
+        self.run_list[0].channels_recorded_magnetic.append(metadata.Magnetic(component='hy'))
+        self.run_list[0].channels_recorded_magnetic.append(metadata.Magnetic(component='hz'))
+        
         self._east = None
         self._north = None
         self._utm_zone = None
@@ -226,6 +228,31 @@ class MT(object):
         """mtpy.analysis.pt.PhaseTensor object to hold phase tensor"""
         return MTpt.PhaseTensor(z_object=self.Z)
 
+    @property
+    def ex_metadata(self):
+        """ EX metadata """
+        return self.run_list[0].ex
+    
+    @property
+    def ey_metadata(self):
+        """ EY metadata """
+        return self.run_list[0].ey
+    
+    @property
+    def hx_metadata(self):
+        """ HX metadata """
+        return self.run_list[0].hx
+    
+    @property
+    def hy_metadata(self):
+        """ HY metadata """
+        return self.run_list[0].hy
+    
+    @property
+    def hz_metadata(self):
+        """ HZ metadata """
+        return self.run_list[0].hz
+    
     # ==========================================================================
     # set functions
     # ==========================================================================

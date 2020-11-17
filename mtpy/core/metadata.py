@@ -61,7 +61,7 @@ from collections.abc import Iterable
 from operator import itemgetter
 
 from mtpy.core.standards.schema import Standards, validate_attribute, validate_type, MTSchemaError
-from mtpy.utils.mttime import MTime
+from mtpy.utils.mttime import MTime, MTTimeError
 from mtpy.core.standards import helpers
 
 ATTR_DICT = Standards().ATTR_DICT
@@ -470,7 +470,12 @@ class Base:
                     self.logger.debug("Setting {0} to {1}".format(name, value))
                     v_dict = self._attr_dict[name]
                     v_type = self._get_standard_type(name)
-                    value = self._validate_type(value, v_type, v_dict["style"])
+                    try:
+                        value = self._validate_type(value, v_type, v_dict["style"])
+                    except MTSchemaError as error:
+                        msg = f"{name} failed because {error}"
+                        self.logger.error(msg)
+                        raise MTSchemaError(msg)
                     # check options
                     if v_dict["style"] == "controlled vocabulary":
                         options = v_dict["options"]
@@ -532,7 +537,11 @@ class Base:
         else:
             value = getattr(self, name)
 
-        return self._validate_type(value, v_type)
+        try:
+            return self._validate_type(value, v_type)
+        except MTSchemaError as error:
+            msg = f"cannot retrieve {name} because {error}"
+            raise MTSchemaError(msg)
 
     def set_attr_from_name(self, name, value):
         """
@@ -1496,10 +1505,18 @@ class TransferFunction(Base):
         self.runs_processed = []
         self.remote_references = []
         self.processing_parameters = []
-        self.processed_date = MTime()
+        self._processed_date = MTime()
         
         super().__init__(attr_dict=ATTR_DICT["transfer_function"], **kwargs)
 
+    @property
+    def processed_date(self):
+        return self._processed_date.date
+    
+    @processed_date.setter
+    def processed_date(self, value):
+        self._processed_date = value
+    
 
 # ==============================================================================
 # Site details
@@ -1553,9 +1570,18 @@ class Station(Base):
         self.location = Location()
         self.time_period = TimePeriod()
         self.transfer_function = TransferFunction()
-        # self._attr_dict = ATTR_DICT["station"]
 
         super().__init__(attr_dict=ATTR_DICT["station"], **kwargs)
+    
+    @property
+    def run_names(self):
+        runs = []
+        for rr in self.run_list:
+            if isinstance(rr, Run):
+                runs.append(rr.id)
+            else:
+                runs.append(rr)
+        return runs 
 
 
 # =============================================================================
@@ -1567,9 +1593,9 @@ class Run(Base):
     def __init__(self, **kwargs):
         self.id = None
         self.sample_rate = None
-        self.channels_recorded_auxiliary = None
-        self.channels_recorded_electric = None
-        self.channels_recorded_magnetic = None
+        self.channels_recorded_auxiliary = []
+        self.channels_recorded_electric = []
+        self.channels_recorded_magnetic = []
         self.comments = None
         self._n_chan = None
         self.data_type = None
@@ -1608,6 +1634,47 @@ class Run(Base):
                 all_channels += rec_list
 
         return all_channels
+    
+    @property
+    def ex(self):
+        for em in self.channels_recorded_electric:
+            if isinstance(em, Electric):
+                if em.component == 'ex':
+                    return em
+        return None
+    
+    @property
+    def ey(self):
+        for em in self.channels_recorded_electric:
+            if isinstance(em, Electric):
+                if em.component == 'ey':
+                    return em
+        return None
+    
+    @property
+    def hx(self):
+        for em in self.channels_recorded_magnetic:
+            if isinstance(em, Magnetic):
+                if em.component == 'hx':
+                    return em
+        return None
+    
+    @property
+    def hy(self):
+        for em in self.channels_recorded_magnetic:
+            if isinstance(em, Magnetic):
+                if em.component == 'hy':
+                    return em
+        return None
+    
+    @property
+    def hz(self):
+        for em in self.channels_recorded_magnetic:
+            if isinstance(em, Magnetic):
+                if em.component == 'hz':
+                    return em
+        return None
+    
 
 
 # =============================================================================

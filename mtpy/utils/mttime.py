@@ -182,6 +182,9 @@ class MTime:
         return self.iso_str
 
     def __eq__(self, other):
+        if other is None:
+            self.logger.warning("Other is None, cannot compare")
+            return False
         if isinstance(other, datetime.datetime):
             return bool(self.dt_object == other)
 
