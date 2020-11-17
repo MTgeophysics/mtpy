@@ -927,6 +927,12 @@ class Standards:
         run_dict.add_dict(
             self.provenance_dict.copy(), "provenance", keys=["comments", "log"]
         )
+        run_dict.add_dict(self.electric_dict, 'ex')
+        run_dict.add_dict(self.electric_dict, 'ey')
+        run_dict.add_dict(self.magnetic_dict, 'hx')
+        run_dict.add_dict(self.magnetic_dict, 'hy')
+        run_dict.add_dict(self.magnetic_dict, 'hz')
+        run_dict.add_dict(self.auxiliary_dict, 'temperature')
         return run_dict
 
     @property

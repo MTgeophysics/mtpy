@@ -188,7 +188,10 @@ class Base:
         return self.to_json()
 
     def __eq__(self, other):
-        if isinstance(other, (Base, dict, str, pd.Series)):
+        # if other is None:
+        #     self.logger.debug(f"Input is None, cannot compare with {self._class_name}")
+        #     return False
+        if isinstance(other, (type(self), Base, dict, str, pd.Series)):
             home_dict = self.to_dict()[self._class_name]
             if isinstance(other, Base):
                 other_dict = other.to_dict()[self._class_name]
@@ -293,7 +296,16 @@ class Base:
         validate type from standards
         
         """
-
+        # need to have this if the user sets a value with a class, there is not
+        # a good way to validate the class object, but all elements within the 
+        # class object will be validated, so it seems fine to skip it.
+        if isinstance(value, (Declination, Location, Fdsn, Rating, DataQuality,
+                              Citation, Copyright, Provenance, Person, Diagnostic,
+                              Battery, Electrode, TimingSystem, TimePeriod,
+                              Orientation, Software, Filtered, Filter, 
+                              DataLogger, TransferFunction, Survey, Station,
+                              Run, Channel, Auxiliary, Electric, Magnetic)):
+            return value
         # return if the value is None, this may need to change in the future
         # if an empty list or something else should be returned
         if not isinstance(value, (list, tuple, np.ndarray)):
@@ -462,6 +474,7 @@ class Base:
             "name",
             "applied",
             "logger",
+            'Electric',
         ]
 
         if hasattr(self, "_attr_dict"):
@@ -472,7 +485,7 @@ class Base:
                     v_type = self._get_standard_type(name)
                     try:
                         value = self._validate_type(value, v_type, v_dict["style"])
-                    except MTSchemaError as error:
+                    except (MTSchemaError, ValueError) as error:
                         msg = f"{name} failed because {error}"
                         self.logger.error(msg)
                         raise MTSchemaError(msg)
@@ -1593,9 +1606,9 @@ class Run(Base):
     def __init__(self, **kwargs):
         self.id = None
         self.sample_rate = None
-        self.channels_recorded_auxiliary = []
-        self.channels_recorded_electric = []
-        self.channels_recorded_magnetic = []
+        # self.channels_recorded_auxiliary = []
+        # self.channels_recorded_electric = []
+        # self.channels_recorded_magnetic = []
         self.comments = None
         self._n_chan = None
         self.data_type = None
@@ -1605,6 +1618,13 @@ class Run(Base):
         self.data_logger = DataLogger()
         self.metadata_by = Person()
         self.fdsn = Fdsn()
+        self._ex = Electric()
+        self._ey = Electric()
+        self._hx = Magnetic()
+        self._hy = Magnetic()
+        self._hz = Magnetic()
+        self._temperature = Auxiliary()
+        
         super().__init__(attr_dict=ATTR_DICT["run"], **kwargs)
 
     @property
@@ -1636,44 +1656,135 @@ class Run(Base):
         return all_channels
     
     @property
-    def ex(self):
-        for em in self.channels_recorded_electric:
-            if isinstance(em, Electric):
-                if em.component == 'ex':
-                    return em
-        return None
+    def channels_recorded_electric(self):
+        rchannels = []
+        for comp in ['ex', 'ey']:
+            obj = getattr(self, comp)
+            if obj.component is None:
+                continue
+            if obj.component.lower() in [comp]:
+                rchannels.append(comp)
+        return rchannels
     
     @property
+    def channels_recorded_magnetic(self):
+        rchannels = []
+        for comp in ['hx', 'hy', 'hz']:
+            obj = getattr(self, comp)
+            if obj.component is None:
+                continue
+            if obj.component.lower() in [comp]:
+                rchannels.append(comp)
+        return rchannels
+    
+    @property
+    def channels_recorded_auxiliary(self):
+        rchannels = []
+        for comp in ['temperature']:
+            obj = getattr(self, comp)
+            if obj.component is None:
+                continue
+            if obj.component.lower() in [comp]:
+                rchannels.append(comp)
+        return rchannels
+
+    @property
+    def ex(self):
+        return self._ex
+    
+    @ex.setter
+    def ex(self, value):
+        if not isinstance(value, Electric):
+            msg = f"Input must be metadata.Electric not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component.lower() not in ['ex']:
+            msg = f"Input Electric.component must be ex not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._ex.from_dict(value.to_dict())
+        
+    @property
     def ey(self):
-        for em in self.channels_recorded_electric:
-            if isinstance(em, Electric):
-                if em.component == 'ey':
-                    return em
-        return None
+        return self._ey
+    
+    @ey.setter
+    def ey(self, value):
+        if not isinstance(value, Electric):
+            msg = f"Input must be metadata.Electric not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component.lower() not in ['ey']:
+            msg = f"Input Electric.component must be ey not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._ey.from_dict(value.to_dict())
     
     @property
     def hx(self):
-        for em in self.channels_recorded_magnetic:
-            if isinstance(em, Magnetic):
-                if em.component == 'hx':
-                    return em
-        return None
+        return self._hx
+    
+    @hx.setter
+    def hx(self, value):
+        if not isinstance(value, Magnetic):
+            msg = f"Input must be metadata.Magnetic not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component.lower() not in ['hx']:
+            msg = f"Input Magnetic.component must be hx not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._hx.from_dict(value.to_dict())
     
     @property
     def hy(self):
-        for em in self.channels_recorded_magnetic:
-            if isinstance(em, Magnetic):
-                if em.component == 'hy':
-                    return em
-        return None
+        return self._hy
+    
+    @hy.setter
+    def hy(self, value):
+        if not isinstance(value, Magnetic):
+            msg = f"Input must be metadata.Magnetic not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component.lower() not in ['hy']:
+            msg = f"Input Magnetic.component must be hy not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._hy.from_dict(value.to_dict())
     
     @property
     def hz(self):
-        for em in self.channels_recorded_magnetic:
-            if isinstance(em, Magnetic):
-                if em.component == 'hz':
-                    return em
-        return None
+        return self._hz
+    
+    @hz.setter
+    def hz(self, value):
+        if not isinstance(value, Magnetic):
+            msg = f"Input must be metadata.Magnetic not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component.lower() not in ['hz']:
+            msg = f"Input Magnetic.component must be hz not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._hz.from_dict(value.to_dict())
+    
+    @property
+    def temperature(self):
+        return self._temperature
+    
+    @temperature.setter
+    def temperature(self, value):
+        if not isinstance(value, Auxiliary):
+            msg = f"Input must be metadata.Magnetic not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component.lower() not in ['temperature']:
+            msg = f"Input Auxiliary.component must be temperature not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._temperature.from_dict(value.to_dict())
+    
+    
     
 
 
