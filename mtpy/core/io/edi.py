@@ -2517,7 +2517,7 @@ def read_edi(fn):
     return mt_obj
 
 
-def write_edi(mt_object):
+def write_edi(mt_object, fn=None):
     """
     Write an edi file from an :class:`mtpy.core.mt.MT` object
     
@@ -2655,6 +2655,6 @@ def write_edi(mt_object):
                 edi_obj.Data, comp, getattr(edi_obj.Measurement, f"meas_{comp}").acqchan
             )
 
-    edi_obj.write_edi_file()
+    edi_obj.write_edi_file(new_edi_fn=fn)
 
     return edi_obj

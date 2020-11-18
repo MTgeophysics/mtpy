@@ -18,6 +18,7 @@ from mtpy.utils import gis_tools
 import mtpy.core.z as MTz
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
+from mtpy.core.io.readwrite import read_file, write_file
 
 
 # =============================================================================
@@ -25,12 +26,6 @@ class MT(object):
     """
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
-
-        * Site --> information on site details (latitude, longitude, name, etc)
-        * FieldNotes --> information on instruments, setup, etc.
-        * Copyright --> information on how the data can be used and citations
-        * Provenance --> where the data come from and how they are stored
-        * Processing --> how the data were processed.
 
     The most used attributes are made available from MT, namely the following.
 
@@ -427,301 +422,6 @@ class MT(object):
         """ set hz metadata """
         self.station_metadata.run_list[0].hz = value
 
-    # ==========================================================================
-    #  read in files
-    # ==========================================================================
-    def read_mt_file(self, fn, file_type=None):
-        """
-        Read an MT response file.
-
-        .. note:: Currently only .edi, .xml, and .j files are supported
-
-        :param fn: full path to input file
-        :type fn: string
-
-        :param file_type: ['edi' | 'j' | 'xml' | ... ]
-                          if None, automatically detects file type by
-                          the extension.
-        :type file_type: string
-
-        :Example: ::
-
-            >>> import mtpy.core.mt as mt
-            >>> mt_obj = mt.MT()
-            >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
-
-        """
-
-        if file_type is None:
-            file_type = os.path.splitext(fn)[1][1:].lower()
-
-        if file_type.lower() == "edi":
-            self._read_edi_file(fn)
-        elif file_type.lower() == "j":
-            self._read_j_file(fn)
-        elif file_type.lower() == "xml":
-            self._read_xml_file(fn)
-        elif file_type.lower() == "zmm":
-            self._read_zmm_file(fn)
-        else:
-            raise MTError("File type not supported yet")
-
-    def write_mt_file(
-        self,
-        save_dir=None,
-        fn_basename=None,
-        file_type="edi",
-        new_Z_obj=None,
-        new_Tipper_obj=None,
-        longitude_format="longitude",
-        latlon_format="dms",
-    ):
-        """
-        Write an mt file, the supported file types are EDI and XML.
-
-        .. todo:: jtype and Gary Egberts z format
-
-        :param save_dir: full path save directory
-        :type save_dir: string
-
-        :param fn_basename: name of file with or without extension
-        :type fn_basename: string
-
-        :param file_type: [ 'edi' | 'xml' ]
-        :type file_type: string
-
-        :param new_Z_obj: new Z object
-        :type new_Z_obj: mtpy.core.z.Z
-
-        :param new_Tipper_obj: new Tipper object
-        :type new_Tipper_obj: mtpy.core.z.Tipper
-
-        :param longitude_format:  whether to write longitude as longitude or LONG. 
-                                  options are 'longitude' or 'LONG', default 'longitude'
-        :type longitude_format:  string
-        :param latlon_format:  format of latitude and longitude in output edi,
-                               degrees minutes seconds ('dms') or decimal 
-                               degrees ('dd')
-        :type latlon_format:  string
-        
-        :returns: full path to file
-        :rtype: string
-
-        :Example: ::
-
-            >>> mt_obj.write_mt_file(file_type='xml')
-
-        """
-
-        if save_dir is not None:
-            self.save_dir = save_dir
-
-        if fn_basename is not None:
-            ext = os.path.splitext(fn_basename)[1][1:].lower()
-            fn_basename = os.path.splitext(fn_basename)[0]
-            if ext == "":
-                fn_basename = "{0}.{1}".format(fn_basename, file_type.lower())
-            elif ext in ["xml", "edi"]:
-                fn_basename = "{0}.{1}".format(fn_basename, ext)
-                file_type = ext
-            else:
-                raise MTError("File type {0} not supported yet.".format(ext))
-        else:
-            fn_basename = "{0}.{1}".format(self.station, file_type)
-
-        fn = os.path.join(self.save_dir, fn_basename)
-
-        if file_type == "edi":
-            fn = self._write_edi_file(
-                fn,
-                new_Z=new_Z_obj,
-                new_Tipper=new_Tipper_obj,
-                longitude_format=longitude_format,
-                latlon_format=latlon_format,
-            )
-        elif file_type == "xml":
-            fn = self._write_xml_file(fn, new_Z=new_Z_obj, new_Tipper=new_Tipper_obj)
-
-        return fn
-
-    # --> check the order of frequencies
-    def _check_freq_order(self):
-        """
-        check to make sure the Z and Tipper arrays are ordered such that
-        the first index corresponds to the highest frequency and the last
-        index corresponds to the lowest freqeuncy.
-
-        """
-
-        if self.Z.freq[0] < self.Z.freq[1]:
-            print("Flipping arrays to be ordered from short period to long")
-            self.Z.z = self.Z.z.copy()[::-1]
-            self.Z.z_err = self.Z.z_err.copy()[::-1]
-            self.Z.freq = self.Z.freq.copy()[::-1]
-
-        if self.Tipper.tipper is not None:
-            if self.Tipper.freq[0] < self.Tipper.freq[1]:
-                self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
-                self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
-                self.Tipper.freq = self.Tipper.freq.copy()[::-1]
-
-    def read_cfg_file(self, cfg_fn):
-        """
-        Read in a configuration file and populate attributes accordingly.
-
-        The configuration file should be in the form:
-            | Site.Location.latitude = 46.5
-            | Site.Location.longitude = 122.7
-            | Site.Location.datum = 'WGS84'
-            |
-            | Processing.Software.name = BIRRP
-            | Processing.Software.version = 5.2.1
-            |
-            | Provenance.Creator.name = L. Cagniard
-            | Provenance.Submitter.name = I. Larionov
-
-
-        :param cfg_fn: full path to configuration file
-        :type cfg_fn: string
-
-        .. note:: The best way to make a configuration file would be to save
-                  a configuration file first from MT, then filling in the
-                  fields.
-
-        :Make configuration file: ::
-
-            >>> import mtpy.core.mt as mt
-            >>> mt_obj = mt.MT()
-            >>> mt_obj.write_cfg_file(r"/mt/generic_config.cfg")
-
-        :Read in configuration file: ::
-
-            >>> import mtpy.core.mt as mt
-            >>> mt_obj = mt.MT()
-            >>> mt_obj.read_cfg_file(r"/home/mt/survey_config.cfg")
-        """
-
-        with open(cfg_fn, "r") as fid:
-            cfg_lines = fid.readlines()
-
-        for line in cfg_lines:
-            if line[0] == "#":
-                continue
-            line_list = line.strip().split("=")
-            if len(line) < 2:
-                continue
-            else:
-                name_list = line_list[0].strip().split(".")
-                cl_name = name_list[0]
-                if cl_name.lower() == "fieldnotes":
-                    cl_name = "FieldNotes"
-                else:
-                    cl_name = cl_name.capitalize()
-
-                cl_obj = getattr(self, cl_name)
-                cl_attr = name_list[-1]
-                cl_value = line_list[1].strip()
-                if cl_value in ["None", "none"]:
-                    cl_value = None
-                try:
-                    cl_value = float(cl_value)
-                except ValueError:
-                    if cl_value.find(",") >= 0:
-                        cl_value = cl_value.replace("[", "").replace("]", "")
-                        cl_value = cl_value.strip().split(",")
-                        try:
-                            cl_value = [float(vv) for vv in cl_value]
-                        except ValueError:
-                            pass
-                except TypeError:
-                    cl_value = None
-
-                count = 1
-                while count < len(name_list) - 1:
-                    cl_name = name_list[count].lower()
-                    if cl_name == "dataquality":
-                        cl_name = "DataQuality"
-                    elif cl_name == "datalogger":
-                        cl_name = "DataLogger"
-                    elif cl_name == "remotesite":
-                        cl_name = "RemoteSite"
-                    try:
-                        cl_obj = getattr(cl_obj, cl_name)
-                    except AttributeError:
-                        try:
-                            cl_obj = getattr(cl_obj, cl_name.capitalize())
-                            cl_name = cl_name.capitalize()
-                        except AttributeError:
-                            print("Could not get {0}".format(cl_name))
-
-                    count += 1
-                setattr(cl_obj, cl_attr, cl_value)
-
-    def write_cfg_file(self, cfg_fn):
-        """
-        Write a configuration file for the MT sections
-
-        :param cfg_fn: full path to configuration file to write to
-        :type cfg_fn: string
-
-        :return cfg_fn: full path to configuration file
-        :rtype cfg_fn: string
-
-        :Write configuration file: ::
-
-            >>> import mtpy.core.mt as mt
-            >>> mt_obj = mt.MT()
-            >>> mt_obj.read_mt_file(r"/home/mt/edi_files/mt01.edi")
-            >>> mt_obj.write_cfg_file(r"/home/mt/survey_config.cfg")
-
-        """
-
-        cfg_lines = []
-        for obj_name in sorted(
-            ["Site", "FieldNotes", "Provenance", "Processing", "Copyright"]
-        ):
-            obj = getattr(self, obj_name)
-            l_key = obj_name
-            for obj_key in sorted(obj.__dict__.keys()):
-                obj_attr = getattr(obj, obj_key)
-                l_key = "{0}.{1}".format(obj_name, obj_key)
-
-                if (
-                    not isinstance(obj_attr, (str, float, int, list))
-                    and obj_attr is not None
-                ):
-                    for a_key in sorted(obj_attr.__dict__.keys()):
-                        if a_key in ["_kw_list", "_fmt_list", "_logger"]:
-                            continue
-                        obj_attr_01 = getattr(obj_attr, a_key)
-                        l_key = "{0}.{1}.{2}".format(obj_name, obj_key, a_key)
-                        if (
-                            not isinstance(
-                                obj_attr_01, (str, float, int, list, np.float64)
-                            )
-                            and obj_attr_01 is not None
-                        ):
-                            for b_key in sorted(obj_attr_01.__dict__.keys()):
-                                obj_attr_02 = getattr(obj_attr_01, b_key)
-                                l_key = "{0}.{1}.{2}.{3}".format(
-                                    obj_name, obj_key, a_key, b_key
-                                )
-
-                                cfg_lines.append("{0} = {1}".format(l_key, obj_attr_02))
-                        else:
-                            cfg_lines.append("{0} = {1}".format(l_key, obj_attr_01))
-                else:
-                    cfg_lines.append("{0} = {1}".format(l_key, obj_attr))
-
-            cfg_lines.append("")
-
-        with open(cfg_fn, "w") as fid:
-            fid.write("\n".join(cfg_lines))
-
-        print("--> Wrote MT configuration file to {0}".format(cfg_fn))
-
-        return cfg_fn
-
     def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
@@ -1012,6 +712,96 @@ class MT(object):
 
         return plot_obj
         # raise NotImplementedError
+        
+    def write_mt_file(
+            self,
+            save_dir=None,
+            fn_basename=None,
+            file_type="edi",
+            longitude_format="longitude",
+            latlon_format="dms",
+        ):
+        """
+        Write an mt file, the supported file types are EDI and XML.
+
+        .. todo:: jtype and Gary Egberts z format
+
+        :param save_dir: full path save directory
+        :type save_dir: string
+
+        :param fn_basename: name of file with or without extension
+        :type fn_basename: string
+
+        :param file_type: [ 'edi' | 'xml' ]
+        :type file_type: string
+
+        :param longitude_format:  whether to write longitude as longitude or LONG. 
+                                  options are 'longitude' or 'LONG', default 'longitude'
+        :type longitude_format:  string
+        :param latlon_format:  format of latitude and longitude in output edi,
+                               degrees minutes seconds ('dms') or decimal 
+                               degrees ('dd')
+        :type latlon_format:  string
+        
+        :returns: full path to file
+        :rtype: string
+
+        :Example: ::
+
+            >>> mt_obj.write_mt_file(file_type='xml')
+
+        """
+
+        if save_dir is not None:
+            self.save_dir = save_dir
+
+        if fn_basename is not None:
+            ext = os.path.splitext(fn_basename)[1][1:].lower()
+            fn_basename = os.path.splitext(fn_basename)[0]
+            if ext == "":
+                fn_basename = "{0}.{1}".format(fn_basename, file_type.lower())
+            elif ext in ["xml", "edi"]:
+                fn_basename = "{0}.{1}".format(fn_basename, ext)
+                file_type = ext
+            else:
+                raise MTError("File type {0} not supported yet.".format(ext))
+        else:
+            fn_basename = "{0}.{1}".format(self.station, file_type)
+
+        fn = os.path.join(self.save_dir, fn_basename)
+
+        return write_file(self, fn, file_type=file_type)
+        
+def read_mt_file(fn, file_type=None):
+    """
+    
+    Read an MT response file.
+
+    .. note:: Currently only .edi, .xml, and .j files are supported
+
+    :param fn: full path to input file
+    :type fn: string
+
+    :param file_type: ['edi' | 'j' | 'xml' | ... ]
+                      if None, automatically detects file type by
+                      the extension.
+    :type file_type: string
+
+    :Example: ::
+
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT()
+        >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
+    
+    :param fn: DESCRIPTION
+    :type fn: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    return read_file(fn, file_type=file_type)
+        
 
 
 # ==============================================================================
