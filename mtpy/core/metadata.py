@@ -1229,6 +1229,13 @@ class Electrode(Base):
         self.manufacturer = None
         self.type = None
         self.model = None
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.elevation = 0.0
+        self.x = 0.0
+        self.x2 = 0.0
+        self.y = 0.0
+        self.y2 = 0.0
         super().__init__(attr_dict=ATTR_DICT["electrode"], **kwargs)
 
 
@@ -1627,6 +1634,8 @@ class Run(Base):
         self._hx = Magnetic()
         self._hy = Magnetic()
         self._hz = Magnetic()
+        self._rrhx = Magnetic()
+        self._rrhy = Magnetic()
         self._temperature = Auxiliary()
         
         super().__init__(attr_dict=ATTR_DICT["run"], **kwargs)
@@ -1702,9 +1711,12 @@ class Run(Base):
             msg = f"Input must be metadata.Electric not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value.component.lower() not in ['ex']:
+        if value.component is None:
+            msg = "assuming initial empty Electric object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['ex']:
             msg = f"Input Electric.component must be ex not {value.component}"
-            self.logger.error(ValueError)
+            self.logger.error(msg)
             raise ValueError(msg)
         self._ex.from_dict(value.to_dict())
         
@@ -1718,9 +1730,12 @@ class Run(Base):
             msg = f"Input must be metadata.Electric not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value.component.lower() not in ['ey']:
+        if value.component is None:
+            msg = "assuming initial empty Electric object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['ey']:
             msg = f"Input Electric.component must be ey not {value.component}"
-            self.logger.error(ValueError)
+            self.logger.error(msg)
             raise ValueError(msg)
         self._ey.from_dict(value.to_dict())
     
@@ -1734,7 +1749,10 @@ class Run(Base):
             msg = f"Input must be metadata.Magnetic not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value.component.lower() not in ['hx']:
+        if value.component is None:
+            msg = "assuming initial empty Magnetic object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['hx']:
             msg = f"Input Magnetic.component must be hx not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
@@ -1750,7 +1768,10 @@ class Run(Base):
             msg = f"Input must be metadata.Magnetic not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value.component.lower() not in ['hy']:
+        if value.component is None:
+            msg = "assuming initial empty Magnetic object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['hy']:
             msg = f"Input Magnetic.component must be hy not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
@@ -1766,11 +1787,52 @@ class Run(Base):
             msg = f"Input must be metadata.Magnetic not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value.component.lower() not in ['hz']:
+        if value.component is None:
+            msg = "assuming initial empty Magnetic object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['hz']:
             msg = f"Input Magnetic.component must be hz not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._hz.from_dict(value.to_dict())
+        
+    @property
+    def rrhx(self):
+        return self._rrhx
+    
+    @rrhx.setter
+    def rrhx(self, value):
+        if not isinstance(value, Magnetic):
+            msg = f"Input must be metadata.Magnetic not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component is None:
+            msg = "assuming initial empty Magnetic object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['rrhx']:
+            msg = f"Input Magnetic.component must be rrhx not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._rrhx.from_dict(value.to_dict())
+        
+    @property
+    def rrhy(self):
+        return self._rrhy
+    
+    @rrhy.setter
+    def rrhy(self, value):
+        if not isinstance(value, Magnetic):
+            msg = f"Input must be metadata.Magnetic not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        if value.component is None:
+            msg = "assuming initial empty Magnetic object"
+            self.logger.debug(msg)
+        elif value.component.lower() not in ['rrhy']:
+            msg = f"Input Magnetic.component must be rrhy not {value.component}"
+            self.logger.error(ValueError)
+            raise ValueError(msg)
+        self._rrhy.from_dict(value.to_dict())
     
     @property
     def temperature(self):

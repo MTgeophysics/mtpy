@@ -932,6 +932,8 @@ class Standards:
         run_dict.add_dict(self.magnetic_dict, 'hx')
         run_dict.add_dict(self.magnetic_dict, 'hy')
         run_dict.add_dict(self.magnetic_dict, 'hz')
+        run_dict.add_dict(self.magnetic_dict, 'rrhx')
+        run_dict.add_dict(self.magnetic_dict, 'rrhy')
         run_dict.add_dict(self.auxiliary_dict, 'temperature')
         return run_dict
 

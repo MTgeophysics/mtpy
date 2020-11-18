@@ -959,7 +959,13 @@ class Edi(object):
             rr.ey = self.ey_metadata
             rr.hx = self.hx_metadata
             rr.hy = self.hy_metadata
-            rr.hz = self.hz_metadata
+            if self.hz_metadata.component in ['hz']:
+                rr.hz = self.hz_metadata
+            if self.rrhx_metadata.component in ['rrhx']:
+                rr.rrhx = self.rrhx_metadata
+            if self.rrhy_metadata.component in ['rrhy']:
+                rr.rrhy = self.rrhy_metadata
+                
 
         return sm
     
@@ -987,7 +993,13 @@ class Edi(object):
                         electric.positive.manufacturer = v
                     if key == 'type':
                         electric.negative.type = v
-                        electric.positive.type = v 
+                        electric.positive.type = v
+                        
+            if electric.positive.x2 == 0 and electric.positive.y2 == 0.0 and\
+                electric.negative.x == 0 and electric.negative.y == 0.0:
+                electric.positive.x2 = electric.dipole_length * np.cos(np.deg2rad(meas.azimuth))
+                electric.positive.y2 = electric.dipole_length * np.sin(np.deg2rad(meas.azimuth))
+
         return electric
         
 
@@ -2032,6 +2044,44 @@ class DefineMeasurement(object):
                 meas_dict[meas_key] = meas_attr
 
         return meas_dict
+    
+    def from_metadata(self, channel):
+        """
+        create a measurement class from metadata
+        
+        :param channel: DESCRIPTION
+        :type channel: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if 'e' in channel.component:
+            meas = EMeasurement(
+                **{
+                    "x": channel.negative.x,
+                    "x2": channel.positive.x2,
+                    "y": channel.negative.y,
+                    "y2": channel.positive.y2,
+                    "chtype": channel.component,
+                    "id": channel.channel_number,
+                    "acqchan": channel.channel_number,
+                }
+            )
+            setattr(self, f"meas_{channel.component.lower()}", meas)
+            
+        if 'h' in channel.component:
+            meas = HMeasurement(
+                **{
+                    "x": channel.location.x,
+                    "y": channel.location.y,
+                    "azm": channel.measurement_azimuth,
+                    "chtype": channel.component,
+                    "id": channel.channel_number,
+                    "acqchan": channel.channel_number,
+                }
+            )
+            setattr(self, f"meas_{channel.component.lower()}", meas)
 
     @property
     def channels_recorded(self):
@@ -2518,76 +2568,56 @@ def write_edi(mt_object):
     # write comments, which would be anything in the info section from an edi
     edi_obj.Info.info_list += mt_object.station_metadata.comments.split('\n')
             
-    # write field notes 
-    for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
-        c_dict = getattr(mt_object, f"{comp}_metadata").to_dict(single=True)
-        for k, v in c_dict.items():
-            if k in ['filter.name', 'filter.applied', 'time_period.start', 
-                     'time_period.end', 'location.elevation', 'location.latitude',
-                     'location.longitude']:
-                continue
-            if v not in [None]:
-                edi_obj.Info.info_list.append(f"{comp}.{k} = {v}")
-    
+    # write field notes
+    for run in mt_object.station_metadata.run_list:
+        write_dict = dict([(comp, False) for comp in ['ex', 'ey', 'hx', 'hy', 'hz',
+                                                      'temperature', 'rrhx', 'rrhy']])
+        for cc in write_dict.keys():
+            if getattr(run, cc).component is not None:
+                write_dict[cc] = True
+                                                       
+        r_dict = run.to_dict(single=True)
         
+        for rk, rv in r_dict.items():
+            if rv not in [None]:
+                if rk[0:2] in ['ex', 'ey', 'hx', 'hy', 'hz', 'te', 'rr']:
+                    if rk[0:2] == 'te':
+                        comp = 'temperature'
+                    elif rk[0:2] == 'rr':
+                        comp = rk[0:4]
+                    else:
+                        comp = rk[0:2]
+                    if write_dict[comp] is False:
+                        continue
+                    skip_list = [f"{comp}.{ff}" for ff in ['filter.name',
+                                                           'filter.applied',
+                                                           'time_period.start', 
+                                                           'time_period.end',
+                                                           'location.elevation',
+                                                           'location.latitude',
+                                                           'location.longitude',
+                                                           'positive.latitude',
+                                                           'positive.longitude',
+                                                           'positive.elevation',
+                                                           'negative.latitude',
+                                                           'negative.longitude',
+                                                           'negative.elevation']]
+                    if rk not in skip_list:
+                        edi_obj.Info.info_list.append(f"{run.id}.{rk} = {rv}")
+                else:
+                    edi_obj.Info.info_list.append(f"{run.id}.{rk} = {rv}")
 
     ### fill measurement
     edi_obj.Measurement.refelev = mt_object.elevation
     edi_obj.Measurement.reflat = mt_object.latitude
     edi_obj.Measurement.reflon = mt_object.longitude
     edi_obj.Measurement.maxchan = len(mt_object.station_metadata.channels_recorded)
-    # EX
-    edi_obj.Measurement.meas_ex = EMeasurement(
-        **{
-            "x2": mt_object.ex_metadata.dipole_length
-            * np.cos(np.deg2rad(mt_object.ex_metadata.measurement_azimuth)),
-            "y2": mt_object.ex_metadata.dipole_length
-            * np.sin(np.deg2rad(mt_object.ex_metadata.measurement_azimuth)),
-            "chtype": mt_object.ex_metadata.component,
-            "id": 4,
-            "acqchan": mt_object.ex_metadata.channel_number,
-        }
-    )
-    # EY
-    edi_obj.Measurement.meas_ey = EMeasurement(
-        **{
-            "x2": mt_object.ey_metadata.dipole_length
-            * np.cos(np.deg2rad(mt_object.ex_metadata.measurement_azimuth)),
-            "y2": mt_object.ey_metadata.dipole_length
-            * np.sin(np.deg2rad(mt_object.ex_metadata.measurement_azimuth)),
-            "chtype": mt_object.ey_metadata.component,
-            "id": 5,
-            "acqchan": mt_object.ey_metadata.channel_number,
-        }
-    )
-    # HX
-    edi_obj.Measurement.meas_hx = HMeasurement(
-        **{
-            "azm": mt_object.hx_metadata.measurement_azimuth,
-            "chtype": mt_object.hx_metadata.component,
-            "id": 1,
-            "acqchan": mt_object.hx_metadata.channel_number,
-        }
-    )
-    # HY
-    edi_obj.Measurement.meas_hy = HMeasurement(
-        **{
-            "azm": mt_object.hy_metadata.measurement_azimuth,
-            "chtype": mt_object.hy_metadata.component,
-            "id": 2,
-            "acqchan": mt_object.hy_metadata.channel_number,
-        }
-    )
-    # HZ
-    edi_obj.Measurement.meas_hz = HMeasurement(
-        **{
-            "azm": mt_object.hz_metadata.measurement_azimuth,
-            "chtype": mt_object.hz_metadata.component,
-            "id": 3,
-            "acqchan": mt_object.hz_metadata.channel_number,
-        }
-    )
-    
+    for comp in ['ex', 'ey', 'hx', 'hy', 'hz', 'rrhx', 'rrhy']:
+        try:
+            edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
+        except AttributeError:
+            edi_obj.logger.debug(f"Did not find information on {comp}")
+                                             
     # input data section
     edi_obj.Data.data_type = mt_object.station_metadata.data_type
     edi_obj.Data.nfreq = mt_object.Z.z.shape[0]

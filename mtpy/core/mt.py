@@ -253,6 +253,16 @@ class MT(object):
         """ HZ metadata """
         return self.station_metadata.run_list[0].hz
     
+    @property
+    def rrhx_metadata(self):
+        """ RRHX metadata """
+        return self.station_metadata.run_list[0].rrhx
+    
+    @property
+    def rrhy_metadata(self):
+        """ RRHY metadata """
+        return self.station_metadata.run_list[0].rrhy
+    
     # ==========================================================================
     # set functions
     # ==========================================================================
