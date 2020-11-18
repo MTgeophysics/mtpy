@@ -667,9 +667,7 @@ class Edi(object):
         define_lines = self.Measurement.write_measurement(
             longitude_format=longitude_format, latlon_format=latlon_format
         )
-        dsect_lines = self.Data.write_Data(
-            over_dict={"nfreq": len(self.Z.freq)}
-        )
+        dsect_lines = self.Data.write_Data(over_dict={"nfreq": len(self.Z.freq)})
 
         # write out frequencies
         freq_lines = [self._data_header_str.format("frequencies".upper())]
@@ -926,10 +924,10 @@ class Edi(object):
                         sm.transfer_function.remote_references = value.split(",")
                     else:
                         sm.transfer_function.remote_references = value.split()
-            
+
             elif key == "processedby":
                 sm.transfer_function.processed_by.author = value
-            
+
             elif key == "runlist":
                 if value.count(",") > 0:
                     runs = value.split(",")
@@ -939,36 +937,35 @@ class Edi(object):
                 for rr in runs:
                     sm.run_list.append(metadata.Run(id=rr))
                 sm.transfer_function.runs_processed = runs
-               
+
             elif key == "sitename":
                 sm.geographic_name = value
             elif key == "signconvention":
                 sm.transfer_function.sign_convention = value
-            if 'mtft' in key or 'emtf' in key or 'mtedit' in key:
+            if "mtft" in key or "emtf" in key or "mtedit" in key:
                 sm.transfer_function.processing_parameters.append(f"{key}={value}")
 
         if self.Header.filedate is not None:
             sm.transfer_function.processed_date = self.Header.filedate
-            
+
         # make any extra information in info list into a comment
-        sm.comments = '\n'.join(self.Info.info_list)
-        
+        sm.comments = "\n".join(self.Info.info_list)
+
         # add information to runs
         for rr in sm.run_list:
             rr.ex = self.ex_metadata
             rr.ey = self.ey_metadata
             rr.hx = self.hx_metadata
             rr.hy = self.hy_metadata
-            if self.hz_metadata.component in ['hz']:
+            if self.hz_metadata.component in ["hz"]:
                 rr.hz = self.hz_metadata
-            if self.rrhx_metadata.component in ['rrhx']:
+            if self.rrhx_metadata.component in ["rrhx"]:
                 rr.rrhx = self.rrhx_metadata
-            if self.rrhy_metadata.component in ['rrhy']:
+            if self.rrhy_metadata.component in ["rrhy"]:
                 rr.rrhy = self.rrhy_metadata
-                
 
         return sm
-    
+
     def _get_electric_metadata(self, comp):
         """
         get electric information from the various metadata
@@ -986,31 +983,38 @@ class Edi(object):
             electric.negative.y = meas.y
             electric.positive.y2 = meas.y2
             for k, v in self.Info.info_dict.items():
-                if f'{comp}.' in k:
-                    key = k.split(f'{comp}.')[1].strip()
-                    if key  == 'manufacturer':
+                if f"{comp}." in k:
+                    key = k.split(f"{comp}.")[1].strip()
+                    if key == "manufacturer":
                         electric.negative.manufacturer = v
                         electric.positive.manufacturer = v
-                    if key == 'type':
+                    if key == "type":
                         electric.negative.type = v
                         electric.positive.type = v
-                        
-            if electric.positive.x2 == 0 and electric.positive.y2 == 0.0 and\
-                electric.negative.x == 0 and electric.negative.y == 0.0:
-                electric.positive.x2 = electric.dipole_length * np.cos(np.deg2rad(meas.azimuth))
-                electric.positive.y2 = electric.dipole_length * np.sin(np.deg2rad(meas.azimuth))
+
+            if (
+                electric.positive.x2 == 0
+                and electric.positive.y2 == 0.0
+                and electric.negative.x == 0
+                and electric.negative.y == 0.0
+            ):
+                electric.positive.x2 = electric.dipole_length * np.cos(
+                    np.deg2rad(meas.azimuth)
+                )
+                electric.positive.y2 = electric.dipole_length * np.sin(
+                    np.deg2rad(meas.azimuth)
+                )
 
         return electric
-        
 
     @property
     def ex_metadata(self):
-        return self._get_electric_metadata('ex')
+        return self._get_electric_metadata("ex")
 
     @property
     def ey_metadata(self):
-        return self._get_electric_metadata('ey')
-    
+        return self._get_electric_metadata("ey")
+
     def _get_magnetic_metadata(self, comp):
         """
         
@@ -1022,7 +1026,7 @@ class Edi(object):
         :rtype: TYPE
 
         """
-        
+
         magnetic = metadata.Magnetic()
         if hasattr(self.Measurement, f"meas_{comp}"):
             meas = getattr(self.Measurement, f"meas_{comp}")
@@ -1036,34 +1040,34 @@ class Edi(object):
             except AttributeError:
                 pass
             for k, v in self.Info.info_dict.items():
-                if f'{comp}.' in k:
-                    key = k.split(f'{comp}.')[1].strip()
-                    if key  == 'manufacturer':
+                if f"{comp}." in k:
+                    key = k.split(f"{comp}.")[1].strip()
+                    if key == "manufacturer":
                         magnetic.sensor.manufacturer = v
-                    if key == 'type':
+                    if key == "type":
                         magnetic.sensor.type = v
 
         return magnetic
 
     @property
     def hx_metadata(self):
-        return self._get_magnetic_metadata('hx')
+        return self._get_magnetic_metadata("hx")
 
     @property
     def hy_metadata(self):
-        return self._get_magnetic_metadata('hy')
+        return self._get_magnetic_metadata("hy")
 
     @property
     def hz_metadata(self):
-        return self._get_magnetic_metadata('hz')
-    
+        return self._get_magnetic_metadata("hz")
+
     @property
     def rrhx_metadata(self):
-        return self._get_magnetic_metadata('rrhx')
+        return self._get_magnetic_metadata("rrhx")
+
     @property
     def rrhy_metadata(self):
-        return self._get_magnetic_metadata('rrhy')
-    
+        return self._get_magnetic_metadata("rrhy")
 
 
 # ==============================================================================
@@ -1237,7 +1241,7 @@ class Header(object):
             "units",
             "stdvers",
         ]
-        
+
         self._optional_keys = ["enddate", "state", "country"]
 
         for key in list(kwargs.keys()):
@@ -1251,77 +1255,76 @@ class Header(object):
 
     def __repr__(self):
         return self.__str__()
-    
+
     @property
     def fn(self):
         return self._fn
-    
+
     @fn.setter
     def fn(self, value):
         if value is None:
             self._fn = None
-            return 
-        self._fn = Path(value) 
+            return
+        self._fn = Path(value)
         if self._fn.exists():
             self.read_header()
-        
+
     @property
     def lat(self):
         return self._lat
-    
+
     @lat.setter
     def lat(self, value):
         self._lat = gis_tools.assert_lat_value(value)
-        
+
     @property
     def lon(self):
         return self._lon
-    
+
     @lon.setter
     def lon(self, value):
         self._lon = gis_tools.assert_lon_value(value)
-        
+
     @property
     def elev(self):
         return self._elev
-    
+
     @elev.setter
     def elev(self, value):
         self._elev = gis_tools.assert_elevation_value(value)
-        
+
     @property
     def acqdate(self):
         return self._acqdate.date
-    
+
     @acqdate.setter
     def acqdate(self, value):
         self._acqdate = MTime(value)
-        
+
     @property
     def enddate(self):
         if self._enddate is not None:
             return self._enddate.date
-    
+
     @enddate.setter
     def enddate(self, value):
         self._enddate = MTime(value)
-        
+
     @property
     def filedate(self):
         return self._filedate.date
-    
+
     @filedate.setter
     def filedate(self, value):
         self._filedate = MTime(value)
-        
+
     @property
     def progdate(self):
         return self._progdate.date
-    
+
     @progdate.setter
     def progdate(self, value):
         self._progdate = MTime(value)
-            
 
     def get_header_list(self):
         """
@@ -1367,7 +1370,7 @@ class Header(object):
                         key = h_list[0].strip()
                         value = h_list[1].strip()
                         header_list.append("{0}={1}".format(key, value))
-                        
+
         return header_list
 
     def read_header(self, header_list=None):
@@ -1416,7 +1419,7 @@ class Header(object):
                 key = "loc"
 
             setattr(self, key, value)
-            
+
             # be sure to pass any uncommon keys through to new file
             if key not in self._header_keys:
                 self._optional_keys.append(key)
@@ -1483,8 +1486,7 @@ class Header(object):
                 value = ",".join(value)
 
             header_lines.append(f"{tab}{key.upper()}={value}\n")
-            
-            
+
         header_lines.append("\n")
         return header_lines
 
@@ -1535,20 +1537,20 @@ class Information(object):
 
         if self.fn is not None or self.edi_lines is not None:
             self.read_info()
-            
+
     @property
     def fn(self):
         return self._fn
-    
+
     @fn.setter
     def fn(self, value):
         if value is None:
             self._fn = None
-            return 
-        self._fn = Path(value) 
+            return
+        self._fn = Path(value)
         if self._fn.exists():
             self.read_info()
-                
+
     def __str__(self):
         return "".join(self.write_info())
 
@@ -1621,7 +1623,7 @@ class Information(object):
         # make info items attributes of Information
         for ll in self.info_list:
             l_list = [None, ""]
-            # phoenix has lat an lon information in the notes but separated by 
+            # phoenix has lat an lon information in the notes but separated by
             # a space instead of an = or :
             if "lat" in ll.lower() or "lon" in ll.lower() or "lng" in ll.lower():
                 l_list = ll.split()
@@ -1636,13 +1638,13 @@ class Information(object):
                     self.info_dict[l_list[0]] = l_list[1] + l_list[2]
                     self.info_dict[l_list[3]] = l_list[4] + l_list[5]
                     continue
-                
+
             # need to check if there is an = or : seperator, which ever
             # comes first is assumed to be the delimiter
             if ll.find(":") > 0:
-                colon_find = ll.find(':')
+                colon_find = ll.find(":")
             if ll.find("=") > 0:
-                equals_find = ll.find('=')
+                equals_find = ll.find("=")
             if colon_find is not None and equals_find is not None:
                 if ll.find(":") < ll.find("="):
                     l_list = ll.split(":")
@@ -1657,9 +1659,9 @@ class Information(object):
             if l_list[0] is not None and len(l_list) > 1:
                 l_key = l_list[0]
                 l_value = l_list[1].strip()
-                    
+
                 self.info_dict[l_key] = l_value.replace('"', "")
-            else: 
+            else:
                 self.info_dict[l_list[0]] = None
 
         if self.info_list is None:
@@ -1801,23 +1803,23 @@ class DefineMeasurement(object):
 
         if self.edi_lines is not None:
             self.read_measurement()
-            
+
     def __str__(self):
         return "".join(self.write_measurement())
-    
+
     def __repr__(self):
         return self.__str__()
-    
+
     @property
     def fn(self):
         return self._fn
-    
+
     @fn.setter
     def fn(self, value):
         if value is None:
             self._fn = None
-            return 
-        self._fn = Path(value) 
+            return
+        self._fn = Path(value)
         if self._fn.exists():
             self.read_measurement()
 
@@ -1949,9 +1951,9 @@ class DefineMeasurement(object):
                 elif key[4:].find("e") >= 0:
                     value = EMeasurement(**line)
                 if hasattr(self, key):
-                    key = key.replace('_', '_rr')
+                    key = key.replace("_", "_rr")
                     try:
-                        value.chtype = f'RR{value.chtype}'
+                        value.chtype = f"RR{value.chtype}"
                     except AttributeError:
                         pass
                 setattr(self, key, value)
@@ -2044,7 +2046,7 @@ class DefineMeasurement(object):
                 meas_dict[meas_key] = meas_attr
 
         return meas_dict
-    
+
     def from_metadata(self, channel):
         """
         create a measurement class from metadata
@@ -2055,8 +2057,8 @@ class DefineMeasurement(object):
         :rtype: TYPE
 
         """
-        
-        if 'e' in channel.component:
+
+        if "e" in channel.component:
             meas = EMeasurement(
                 **{
                     "x": channel.negative.x,
@@ -2069,8 +2071,8 @@ class DefineMeasurement(object):
                 }
             )
             setattr(self, f"meas_{channel.component.lower()}", meas)
-            
-        if 'h' in channel.component:
+
+        if "h" in channel.component:
             meas = HMeasurement(
                 **{
                     "x": channel.location.x,
@@ -2133,7 +2135,7 @@ class HMeasurement(object):
                 setattr(self, key.lower(), float(value))
             except ValueError:
                 setattr(self, key.lower(), value)
-                
+
     def __str__(self):
         return "\n".join(
             [f"{k} = {v}" for k, v in self.__dict__.items() if k[0] != "_"]
@@ -2319,10 +2321,10 @@ class DataSection(object):
 
         if self.fn is not None or self.edi_lines is not None:
             self.read_Data()
-            
+
     def __str__(self):
-        return ''.join(self.write_Data())
-    
+        return "".join(self.write_Data())
+
     def __repr__(self):
         return self.__str__()
 
@@ -2532,7 +2534,7 @@ def write_edi(mt_object):
     edi_obj = Edi()
     edi_obj.Z = mt_object.Z
     edi_obj.Tipper = mt_object.Tipper
-    
+
     ### fill header information from survey
     edi_obj.Header.survey = mt_object.survey_metadata.survey_id
     edi_obj.Header.project = mt_object.survey_metadata.project
@@ -2554,54 +2556,74 @@ def write_edi(mt_object):
     edi_obj.Header.datum = mt_object.station_metadata.location.datum
     edi_obj.Header.stdvers = "SEG 1.0"
     edi_obj.Header.units = mt_object.station_metadata.transfer_function.units
-    
+
     ### write notes
     # write transfer function info first
-    for k, v in mt_object.station_metadata.transfer_function.to_dict(single=True).items():
+    for k, v in mt_object.station_metadata.transfer_function.to_dict(
+        single=True
+    ).items():
         if not v in [None]:
             if k in ["processing_parameters"]:
                 for item in v:
-                    edi_obj.Info.info_list.append(item.replace('=', ' = '))
+                    edi_obj.Info.info_list.append(item.replace("=", " = "))
             else:
                 edi_obj.Info.info_list.append(f"{k} = {v}")
-                
+
     # write comments, which would be anything in the info section from an edi
-    edi_obj.Info.info_list += mt_object.station_metadata.comments.split('\n')
-            
+    edi_obj.Info.info_list += mt_object.station_metadata.comments.split("\n")
+
     # write field notes
     for run in mt_object.station_metadata.run_list:
-        write_dict = dict([(comp, False) for comp in ['ex', 'ey', 'hx', 'hy', 'hz',
-                                                      'temperature', 'rrhx', 'rrhy']])
+        write_dict = dict(
+            [
+                (comp, False)
+                for comp in [
+                    "ex",
+                    "ey",
+                    "hx",
+                    "hy",
+                    "hz",
+                    "temperature",
+                    "rrhx",
+                    "rrhy",
+                ]
+            ]
+        )
         for cc in write_dict.keys():
             if getattr(run, cc).component is not None:
                 write_dict[cc] = True
-                                                       
+
         r_dict = run.to_dict(single=True)
-        
+
         for rk, rv in r_dict.items():
             if rv not in [None]:
-                if rk[0:2] in ['ex', 'ey', 'hx', 'hy', 'hz', 'te', 'rr']:
-                    if rk[0:2] == 'te':
-                        comp = 'temperature'
-                    elif rk[0:2] == 'rr':
+                if rk[0:2] in ["ex", "ey", "hx", "hy", "hz", "te", "rr"]:
+                    if rk[0:2] == "te":
+                        comp = "temperature"
+                    elif rk[0:2] == "rr":
                         comp = rk[0:4]
                     else:
                         comp = rk[0:2]
                     if write_dict[comp] is False:
                         continue
-                    skip_list = [f"{comp}.{ff}" for ff in ['filter.name',
-                                                           'filter.applied',
-                                                           'time_period.start', 
-                                                           'time_period.end',
-                                                           'location.elevation',
-                                                           'location.latitude',
-                                                           'location.longitude',
-                                                           'positive.latitude',
-                                                           'positive.longitude',
-                                                           'positive.elevation',
-                                                           'negative.latitude',
-                                                           'negative.longitude',
-                                                           'negative.elevation']]
+                    skip_list = [
+                        f"{comp}.{ff}"
+                        for ff in [
+                            "filter.name",
+                            "filter.applied",
+                            "time_period.start",
+                            "time_period.end",
+                            "location.elevation",
+                            "location.latitude",
+                            "location.longitude",
+                            "positive.latitude",
+                            "positive.longitude",
+                            "positive.elevation",
+                            "negative.latitude",
+                            "negative.longitude",
+                            "negative.elevation",
+                        ]
+                    ]
                     if rk not in skip_list:
                         edi_obj.Info.info_list.append(f"{run.id}.{rk} = {rv}")
                 else:
@@ -2612,12 +2634,12 @@ def write_edi(mt_object):
     edi_obj.Measurement.reflat = mt_object.latitude
     edi_obj.Measurement.reflon = mt_object.longitude
     edi_obj.Measurement.maxchan = len(mt_object.station_metadata.channels_recorded)
-    for comp in ['ex', 'ey', 'hx', 'hy', 'hz', 'rrhx', 'rrhy']:
+    for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
         try:
             edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
         except AttributeError:
             edi_obj.logger.debug(f"Did not find information on {comp}")
-                                             
+
     # input data section
     edi_obj.Data.data_type = mt_object.station_metadata.data_type
     edi_obj.Data.nfreq = mt_object.Z.z.shape[0]
@@ -2625,13 +2647,14 @@ def write_edi(mt_object):
     edi_obj.Data.nchan = 5
     if np.all(mt_object.Tipper.tipper == 0) == True:
         edi_obj.Data.nchan = 4
-        
-    edi_obj.Data.maxblks = 999
-    for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
-        if hasattr(edi_obj.Measurement, f"meas_{comp}"):
-            setattr(edi_obj.Data, comp, getattr(edi_obj.Measurement, f'meas_{comp}').acqchan)
 
+    edi_obj.Data.maxblks = 999
+    for comp in ["ex", "ey", "hx", "hy", "hz"]:
+        if hasattr(edi_obj.Measurement, f"meas_{comp}"):
+            setattr(
+                edi_obj.Data, comp, getattr(edi_obj.Measurement, f"meas_{comp}").acqchan
+            )
 
     edi_obj.write_edi_file()
-    
+
     return edi_obj
