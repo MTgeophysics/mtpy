@@ -13,7 +13,6 @@
 # Imports
 # ==============================================================================
 import os
-import datetime
 import copy
 
 import numpy as np
@@ -21,13 +20,19 @@ import xml.etree.cElementTree as ET
 from xml.dom import minidom
 
 import mtpy.core.z as mtz
+from mtpy.utils.mttime import get_now_utc
 
-dt_fmt = "%Y-%m-%d %H:%M:%S"
+
+# ==============================================================================
+# exceptions
+# ==============================================================================
+class EMFTXMLError(Exception):
+    pass
 
 # ==============================================================================
 # Generic object to hold information
 # ==============================================================================
-class XML_element(object):
+class XMLElement(object):
     """
     Basically an ET element.  The key components are
         * 'name'  --> name of the element
@@ -101,130 +106,130 @@ conditions_of_use = "".join(
 )
 
 estimates = [
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "real", "name": "VAR"},
         None,
         **{
-            "Description": XML_element("Description", None, "Variance"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Error Estimate"),
-            "Tag": XML_element("Tag", None, "Variance"),
+            "Description": XMLElement("Description", None, "Variance"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Error Estimate"),
+            "Tag": XMLElement("Tag", None, "Variance"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "COV"},
         None,
         **{
-            "Description": XML_element(
+            "Description": XMLElement(
                 "Description", None, "Full covariance between each two TF components"
             ),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Error Estimate"),
-            "Tag": XML_element("Tag", None, "Covariance"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Error Estimate"),
+            "Tag": XMLElement("Tag", None, "Covariance"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "INVSIGCOV"},
         None,
         **{
-            "Description": XML_element(
+            "Description": XMLElement(
                 "Description", None, "Inverse Coherent Signal Power Matrix S"
             ),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Signal Power Estimate"),
-            "Tag": XML_element("Tag", None, "inverse_signal_covariance"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Signal Power Estimate"),
+            "Tag": XMLElement("Tag", None, "inverse_signal_covariance"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "RESIDCOV"},
         None,
         **{
-            "Description": XML_element("Description", None, "Residual Covariance N"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Error Estimate"),
-            "Tag": XML_element("Tag", None, "Coherence"),
+            "Description": XMLElement("Description", None, "Residual Covariance N"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Error Estimate"),
+            "Tag": XMLElement("Tag", None, "Coherence"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "COH"},
         None,
         **{
-            "Description": XML_element("Description", None, "Coherence"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Signal Coherence"),
-            "Tag": XML_element("Tag", None, "Coherence"),
+            "Description": XMLElement("Description", None, "Coherence"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Signal Coherence"),
+            "Tag": XMLElement("Tag", None, "Coherence"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "PREDCOH"},
         None,
         **{
-            "Description": XML_element("Description", None, "Multiple Coherence"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Signal Coherence"),
-            "Tag": XML_element("Tag", None, "Multiple_Coherence"),
+            "Description": XMLElement("Description", None, "Multiple Coherence"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Signal Coherence"),
+            "Tag": XMLElement("Tag", None, "Multiple_Coherence"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "SIGAMP"},
         None,
         **{
-            "Description": XML_element("Description", None, "Signal Amplitude"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Signal Power Estimates"),
-            "Tag": XML_element("Tag", None, "Signal_Amplitude"),
+            "Description": XMLElement("Description", None, "Signal Amplitude"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Signal Power Estimates"),
+            "Tag": XMLElement("Tag", None, "Signal_Amplitude"),
         }
     ),
-    XML_element(
+    XMLElement(
         "Estimate",
         {"type": "complex", "name": "SIGNOISE"},
         None,
         **{
-            "Description": XML_element("Description", None, "Signal Noise"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "Error Estimates"),
-            "Tag": XML_element("Tag", None, "Signal_Noise"),
+            "Description": XMLElement("Description", None, "Signal Noise"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "Error Estimates"),
+            "Tag": XMLElement("Tag", None, "Signal_Noise"),
         }
     ),
 ]
 
 data_types = [
-    XML_element(
+    XMLElement(
         "DataType",
         {"units": "[mV/km]/[nT]", "name": "Z", "input": "H", "output": "E"},
         None,
         **{
-            "Description": XML_element("Description", None, "MT impedance"),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "primary data type"),
-            "Tag": XML_element("Tag", None, "impedance"),
+            "Description": XMLElement("Description", None, "MT impedance"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "primary data type"),
+            "Tag": XMLElement("Tag", None, "impedance"),
         }
     ),
-    XML_element(
+    XMLElement(
         "DataType",
         {"units": "[]", "name": "T", "input": "H", "output": "H"},
         None,
         **{
-            "Description": XML_element(
+            "Description": XMLElement(
                 "Description", None, "Tipper-Vertical Field Transfer Function"
             ),
-            "ExternalUrl": XML_element("ExternalUrl", None, None),
-            "Intention": XML_element("Intention", None, "primary data type"),
-            "Tag": XML_element("Tag", None, "tipper"),
+            "ExternalUrl": XMLElement("ExternalUrl", None, None),
+            "Intention": XMLElement("Intention", None, "primary data type"),
+            "Tag": XMLElement("Tag", None, "tipper"),
         }
     ),
 ]
 # ==============================================================================
 # Useful Functions
 # ==============================================================================
-class XML_Config(object):
+class XMLConfig(object):
     """
     Class to deal with configuration files for xml.
     
@@ -256,324 +261,324 @@ class XML_Config(object):
         self.cfg_fn = None
 
         # Initialize the default attributes and values
-        self.Description = XML_element(
+        self.Description = XMLElement(
             "Description", None, "Magnetotelluric Transfer Functions"
         )
 
-        self.ProductId = XML_element("ProductID", None, None)
+        self.ProductId = XMLElement("ProductID", None, None)
 
-        self.Project = XML_element("Project", None, None)
+        self.Project = XMLElement("Project", None, None)
 
-        self.Survey = XML_element("Survey", None, None)
+        self.Survey = XMLElement("Survey", None, None)
 
-        self.Country = XML_element("Country", None, None)
+        self.Country = XMLElement("Country", None, None)
 
-        self.SubType = XML_element("SubType", None, "MT_FT")
+        self.SubType = XMLElement("SubType", None, "MT_FT")
 
-        self.Notes = XML_element("Notes", None, None)
+        self.Notes = XMLElement("Notes", None, None)
 
-        self.Tags = XML_element("Tags", None, "impedance, tipper")
+        self.Tags = XMLElement("Tags", None, "impedance, tipper")
 
-        self.Image = XML_element(
+        self.Image = XMLElement(
             "Image",
             None,
             None,
             **{
-                "PrimaryData": XML_element("PrimaryData", None, None),
-                "Filename": XML_element("Filename", None, None),
+                "PrimaryData": XMLElement("PrimaryData", None, None),
+                "Filename": XMLElement("Filename", None, None),
             }
         )
 
-        self.Original = XML_element(
+        self.Original = XMLElement(
             "Original",
             None,
             None,
             **{
-                "Attachment": XML_element("Attachment", None, None),
-                "Filename": XML_element("Filename", None, None),
+                "Attachment": XMLElement("Attachment", None, None),
+                "Filename": XMLElement("Filename", None, None),
             }
         )
 
-        self.TimeSeriesArchived = XML_element(
+        self.TimeSeriesArchived = XMLElement(
             "TimeSeriesArchived",
             None,
             None,
             **{
-                "Value": XML_element("Value", None, 0),
-                "URL": XML_element("URL", None, None),
+                "Value": XMLElement("Value", None, 0),
+                "URL": XMLElement("URL", None, None),
             }
         )
 
-        self.ExternalUrl = XML_element(
+        self.ExternalUrl = XMLElement(
             "ExternalUrl",
             None,
             None,
             **{
-                "Description": XML_element("Description", None, None),
-                "Url": XML_element("Url", None, None),
+                "Description": XMLElement("Description", None, None),
+                "Url": XMLElement("Url", None, None),
             }
         )
 
-        self.PrimaryData = XML_element(
+        self.PrimaryData = XMLElement(
             "PrimaryData",
             None,
             None,
-            **{"Filename": XML_element("Filename", None, None)}
+            **{"Filename": XMLElement("Filename", None, None)}
         )
 
-        self.Attachment = XML_element(
+        self.Attachment = XMLElement(
             "Attachment",
             None,
             None,
             **{
-                "Filename": XML_element("Filename", None, None),
-                "Description": XML_element(
+                "Filename": XMLElement("Filename", None, None),
+                "Description": XMLElement(
                     "Description", None, "Original file use to produce XML"
                 ),
             }
         )
 
-        self.Provenance = XML_element(
+        self.Provenance = XMLElement(
             "Provenance",
             None,
             None,
             **{
-                "CreationTime": XML_element(
+                "CreationTime": XMLElement(
                     "CreationTime",
                     None,
-                    datetime.datetime.strftime(datetime.datetime.utcnow(), dt_fmt),
+                    get_now_utc(),
                 ),
-                "CreatingApplication": XML_element(
+                "CreatingApplication": XMLElement(
                     "CreatingApplication", None, "MTpy.core.mtxml"
                 ),
-                "Submitter": XML_element(
+                "Submitter": XMLElement(
                     "Submitter",
                     None,
                     None,
                     **{
-                        "Name": XML_element("Name", None, None),
-                        "Email": XML_element("Email", None, None),
-                        "Org": XML_element("Org", None, None),
-                        "OrgURL": XML_element("OrgURL", None, None),
+                        "Name": XMLElement("Name", None, None),
+                        "Email": XMLElement("Email", None, None),
+                        "Org": XMLElement("Org", None, None),
+                        "OrgURL": XMLElement("OrgURL", None, None),
                     }
                 ),
-                "Creator": XML_element(
+                "Creator": XMLElement(
                     "Creator",
                     None,
                     None,
                     **{
-                        "Name": XML_element("Name", None, None),
-                        "Email": XML_element("Email", None, None),
-                        "Org": XML_element("Org", None, None),
-                        "OrgURL": XML_element("OrgURL", None, None),
+                        "Name": XMLElement("Name", None, None),
+                        "Email": XMLElement("Email", None, None),
+                        "Org": XMLElement("Org", None, None),
+                        "OrgURL": XMLElement("OrgURL", None, None),
                     }
                 ),
             }
         )
 
-        self.Copyright = XML_element(
+        self.Copyright = XMLElement(
             "Copyright",
             None,
             None,
             **{
-                "Citation": XML_element(
+                "Citation": XMLElement(
                     "Citation",
                     None,
                     None,
                     **{
-                        "Title": XML_element("Title", None, None),
-                        "Authors": XML_element("Authors", None, None),
-                        "Year": XML_element("Year", None, None),
-                        "Journal": XML_element("Journal", None, None),
-                        "Volume": XML_element("Volume", None, None),
-                        "DOI": XML_element("DOI", None, None),
+                        "Title": XMLElement("Title", None, None),
+                        "Authors": XMLElement("Authors", None, None),
+                        "Year": XMLElement("Year", None, None),
+                        "Journal": XMLElement("Journal", None, None),
+                        "Volume": XMLElement("Volume", None, None),
+                        "DOI": XMLElement("DOI", None, None),
                     }
                 ),
-                "ReleaseStatus": XML_element("ReleaseStatus", None, "Closed"),
-                "ConditionsOfUse": XML_element(
+                "ReleaseStatus": XMLElement("ReleaseStatus", None, "Closed"),
+                "ConditionsOfUse": XMLElement(
                     "ConditionsOfUse", None, conditions_of_use
                 ),
-                "AdditionalInfo": XML_element("AdditionalInfo", None, None),
+                "AdditionalInfo": XMLElement("AdditionalInfo", None, None),
             }
         )
 
-        self.Site = XML_element(
+        self.Site = XMLElement(
             "Site",
             None,
             None,
             **{
-                "Project": XML_element("Project", None, None),
-                "Survey": XML_element("Survey", None, None),
-                "YearCollected": XML_element("YearCollected", None, None),
-                "Id": XML_element("Id", None, None),
-                "Location": XML_element(
+                "Project": XMLElement("Project", None, None),
+                "Survey": XMLElement("Survey", None, None),
+                "YearCollected": XMLElement("YearCollected", None, None),
+                "Id": XMLElement("Id", None, None),
+                "Location": XMLElement(
                     "Location",
                     None,
                     None,
                     **{
-                        "Latitude": XML_element("Latitude", None, None),
-                        "Longitude": XML_element("Longitude", None, None),
-                        "Elevation": XML_element(
+                        "Latitude": XMLElement("Latitude", None, None),
+                        "Longitude": XMLElement("Longitude", None, None),
+                        "Elevation": XMLElement(
                             "Elevation", {"units": "meters"}, None
                         ),
-                        "Declination": XML_element(
+                        "Declination": XMLElement(
                             "Declination", {"epoch": "1995"}, None
                         ),
                     }
                 ),
-                "Orientation": XML_element(
+                "Orientation": XMLElement(
                     "Orientation", {"angle_to_geographic_north": "0.0"}, None
                 ),
-                "AcquiredBy": XML_element("AcquiredBy", None, None),
-                "Start": XML_element("Start", None, None),
-                "End": XML_element("End", None, None),
-                "RunList": XML_element("RunList", None, None),
+                "AcquiredBy": XMLElement("AcquiredBy", None, None),
+                "Start": XMLElement("Start", None, None),
+                "End": XMLElement("End", None, None),
+                "RunList": XMLElement("RunList", None, None),
             }
         )
 
-        self.FieldNotes = XML_element(
+        self.FieldNotes = XMLElement(
             "FieldNotes",
             None,
             None,
             **{
-                "Instrument": XML_element(
+                "Instrument": XMLElement(
                     "Instrument",
                     None,
                     None,
                     **{
-                        "Type": XML_element("Type", None, None),
-                        "Manufacturer": XML_element("Manufacturer", None, None),
-                        "Id": XML_element("Id", None, None),
-                        "Settings": XML_element("Settings", None, None),
+                        "Type": XMLElement("Type", None, None),
+                        "Manufacturer": XMLElement("Manufacturer", None, None),
+                        "Id": XMLElement("Id", None, None),
+                        "Settings": XMLElement("Settings", None, None),
                     }
                 ),
-                "Dipole": XML_element(
+                "Dipole": XMLElement(
                     "Dipole",
                     {"name": "EX"},
                     None,
                     **{
-                        "Type": XML_element("Type", None, None),
-                        "Manufacturer": XML_element("Manufacturer", None, None),
-                        "Id": XML_element("Id", None, None),
-                        "Length": XML_element("Length", {"units": "meters"}, None),
-                        "Azimuth": XML_element("Azimuth", {"units": "degrees"}, None),
-                        "Channel": XML_element("Channel", None, None),
+                        "Type": XMLElement("Type", None, None),
+                        "Manufacturer": XMLElement("Manufacturer", None, None),
+                        "Id": XMLElement("Id", None, None),
+                        "Length": XMLElement("Length", {"units": "meters"}, None),
+                        "Azimuth": XMLElement("Azimuth", {"units": "degrees"}, None),
+                        "Channel": XMLElement("Channel", None, None),
                     }
                 ),
-                "Dipole_00": XML_element(
+                "Dipole_00": XMLElement(
                     "Dipole",
                     {"name": "EY"},
                     None,
                     **{
-                        "Type": XML_element("Type", None, None),
-                        "Manufacturer": XML_element("Manufacturer", None, None),
-                        "Id": XML_element("Id", None, None),
-                        "Length": XML_element("Length", {"units": "meters"}, None),
-                        "Azimuth": XML_element("Azimuth", {"units": "degrees"}, None),
-                        "Channel": XML_element("Channel", None, None),
+                        "Type": XMLElement("Type", None, None),
+                        "Manufacturer": XMLElement("Manufacturer", None, None),
+                        "Id": XMLElement("Id", None, None),
+                        "Length": XMLElement("Length", {"units": "meters"}, None),
+                        "Azimuth": XMLElement("Azimuth", {"units": "degrees"}, None),
+                        "Channel": XMLElement("Channel", None, None),
                     }
                 ),
-                "Magnetometer": XML_element(
+                "Magnetometer": XMLElement(
                     "Magnetometer",
                     {"name": "HX"},
                     None,
                     **{
-                        "Type": XML_element("Type", None, None),
-                        "Manufacturer": XML_element("Manufacturer", None, None),
-                        "Id": XML_element("Id", None, None),
-                        "Azimuth": XML_element("Azimuth", {"units": "degrees"}, None),
-                        "Channel": XML_element("Channel", None, None),
+                        "Type": XMLElement("Type", None, None),
+                        "Manufacturer": XMLElement("Manufacturer", None, None),
+                        "Id": XMLElement("Id", None, None),
+                        "Azimuth": XMLElement("Azimuth", {"units": "degrees"}, None),
+                        "Channel": XMLElement("Channel", None, None),
                     }
                 ),
-                "Magnetometer_00": XML_element(
+                "Magnetometer_00": XMLElement(
                     "Magnetometer",
                     {"name": "HY"},
                     None,
                     **{
-                        "Type": XML_element("Type", None, None),
-                        "Manufacturer": XML_element("Manufacturer", None, None),
-                        "Id": XML_element("Id", None, None),
-                        "Azimuth": XML_element("Azimuth", {"units": "degrees"}, None),
-                        "Channel": XML_element("Channel", None, None),
+                        "Type": XMLElement("Type", None, None),
+                        "Manufacturer": XMLElement("Manufacturer", None, None),
+                        "Id": XMLElement("Id", None, None),
+                        "Azimuth": XMLElement("Azimuth", {"units": "degrees"}, None),
+                        "Channel": XMLElement("Channel", None, None),
                     }
                 ),
-                "Magnetometer_01": XML_element(
+                "Magnetometer_01": XMLElement(
                     "Magnetometer",
                     {"name": "HZ"},
                     None,
                     **{
-                        "Type": XML_element("Type", None, None),
-                        "Manufacturer": XML_element("Manufacturer", None, None),
-                        "Id": XML_element("Id", None, None),
-                        "Azimuth": XML_element("Azimuth", {"units": "degrees"}, None),
-                        "Channel": XML_element("Channel", None, None),
+                        "Type": XMLElement("Type", None, None),
+                        "Manufacturer": XMLElement("Manufacturer", None, None),
+                        "Id": XMLElement("Id", None, None),
+                        "Azimuth": XMLElement("Azimuth", {"units": "degrees"}, None),
+                        "Channel": XMLElement("Channel", None, None),
                     }
                 ),
-                "DataQualityNotes": XML_element(
+                "DataQualityNotes": XMLElement(
                     "DataQualityNotes",
                     None,
                     None,
                     **{
-                        "Rating": XML_element("Rating", None, None),
-                        "GoodFromPeriod": XML_element("GoodFromPeriod", None, None),
-                        "GoodToPeriod": XML_element("GoodToPeriod", None, None),
-                        "Comments": XML_element("Comments", None, None),
+                        "Rating": XMLElement("Rating", None, None),
+                        "GoodFromPeriod": XMLElement("GoodFromPeriod", None, None),
+                        "GoodToPeriod": XMLElement("GoodToPeriod", None, None),
+                        "Comments": XMLElement("Comments", None, None),
                     }
                 ),
-                "DataQualityWarnings": XML_element(
+                "DataQualityWarnings": XMLElement(
                     "DataQualityWarnings",
                     None,
                     None,
                     **{
-                        "Flag": XML_element("Flag", None, 0),
-                        "Comments": XML_element("Comments", None, None),
+                        "Flag": XMLElement("Flag", None, 0),
+                        "Comments": XMLElement("Comments", None, None),
                     }
                 ),
             }
         )
 
-        self.ProcessingInfo = XML_element(
+        self.ProcessingInfo = XMLElement(
             "ProcessingInfo",
             None,
             None,
             **{
-                "ProcessedBy": XML_element("ProcessedBy", None, None),
-                "ProcessingSoftware": XML_element(
+                "ProcessedBy": XMLElement("ProcessedBy", None, None),
+                "ProcessingSoftware": XMLElement(
                     "ProcessingSoftware",
                     None,
                     None,
                     **{
-                        "Name": XML_element("Name", None, None),
-                        "LastMod": XML_element("LastMod", None, None),
-                        "Version": XML_element("Version", None, None),
-                        "Author": XML_element("Author", None, None),
+                        "Name": XMLElement("Name", None, None),
+                        "LastMod": XMLElement("LastMod", None, None),
+                        "Version": XMLElement("Version", None, None),
+                        "Author": XMLElement("Author", None, None),
                     }
                 ),
-                "SignConvention": XML_element(
+                "SignConvention": XMLElement(
                     "SignConvention", None, r"exp(+i\omega t)"
                 ),
-                "RemoteRef": XML_element(
+                "RemoteRef": XMLElement(
                     "RemoteRef", {"type": "Robust Remote Processing"}, None
                 ),
-                "RemoteInfo": XML_element(
+                "RemoteInfo": XMLElement(
                     "RemoteInfo",
                     None,
                     None,
                     **{
-                        "Project": XML_element("Project", None, None),
-                        "Survey": XML_element("Survey", None, None),
-                        "ID": XML_element("ID", None, None),
-                        "AcquiredBy": XML_element("AcquiredBy", None, None),
-                        "Name": XML_element("Name", None, None),
-                        "YearCollected": XML_element("YearCollected", None, None),
-                        "Location": XML_element(
+                        "Project": XMLElement("Project", None, None),
+                        "Survey": XMLElement("Survey", None, None),
+                        "ID": XMLElement("ID", None, None),
+                        "AcquiredBy": XMLElement("AcquiredBy", None, None),
+                        "Name": XMLElement("Name", None, None),
+                        "YearCollected": XMLElement("YearCollected", None, None),
+                        "Location": XMLElement(
                             "Location",
                             {"datum": "WGS84"},
                             None,
                             **{
-                                "Latitude": XML_element("Latitude", None, None),
-                                "Longitude": XML_element("Longitude", None, None),
-                                "Elevation": XML_element(
+                                "Latitude": XMLElement("Latitude", None, None),
+                                "Longitude": XMLElement("Longitude", None, None),
+                                "Elevation": XMLElement(
                                     "Elevation", {"units": "meters"}, None
                                 ),
                             }
@@ -582,17 +587,17 @@ class XML_Config(object):
                 ),
             }
         )
-        self.SiteLayout = XML_element(
+        self.SiteLayout = XMLElement(
             "SiteLayout",
             None,
             None,
             **{
-                "InputChannels": XML_element(
+                "InputChannels": XMLElement(
                     "InputChannels",
                     {"ref": "site", "units": "m"},
                     None,
                     **{
-                        "Magnetic_hx": XML_element(
+                        "Magnetic_hx": XMLElement(
                             "Magnetic",
                             {
                                 "name": "Hx",
@@ -603,7 +608,7 @@ class XML_Config(object):
                             },
                             None,
                         ),
-                        "Magnetic_hy": XML_element(
+                        "Magnetic_hy": XMLElement(
                             "Magnetic",
                             {
                                 "name": "Hy",
@@ -616,12 +621,12 @@ class XML_Config(object):
                         ),
                     }
                 ),
-                "OutputChannels": XML_element(
+                "OutputChannels": XMLElement(
                     "OutputChannels",
                     {"ref": "site", "units": "m"},
                     None,
                     **{
-                        "Magnetic_hz": XML_element(
+                        "Magnetic_hz": XMLElement(
                             "Magnetic",
                             {
                                 "name": "Hz",
@@ -632,7 +637,7 @@ class XML_Config(object):
                             },
                             None,
                         ),
-                        "Electric_ex": XML_element(
+                        "Electric_ex": XMLElement(
                             "Electric",
                             {
                                 "name": "Ex",
@@ -646,7 +651,7 @@ class XML_Config(object):
                             },
                             None,
                         ),
-                        "Electric_ey": XML_element(
+                        "Electric_ey": XMLElement(
                             "Electric",
                             {
                                 "name": "Ey",
@@ -665,19 +670,19 @@ class XML_Config(object):
             }
         )
 
-        #        self.InputChannels = XML_element('InputChannels', {'ref':'site', 'units':'m'}, None)
-        #        self.OutputChannels = XML_element('OutputChannels', {'ref':'site', 'units':'m'}, None)
-        self.Data = XML_element("Data", {"count": 0}, None)
-        self.PeriodRange = XML_element("PeriodRange", None, None)
+        #        self.InputChannels = XMLElement('InputChannels', {'ref':'site', 'units':'m'}, None)
+        #        self.OutputChannels = XMLElement('OutputChannels', {'ref':'site', 'units':'m'}, None)
+        self.Data = XMLElement("Data", {"count": 0}, None)
+        self.PeriodRange = XMLElement("PeriodRange", None, None)
 
-        self.Datum = XML_element("Datum", None, "WGS84")
-        self.Declination = XML_element("Declination", None, None)
+        self.Datum = XMLElement("Datum", None, "WGS84")
+        self.Declination = XMLElement("Declination", None, None)
 
-        self.StatisticalEstimates = XML_element("StatisticalEstimates", None, None)
+        self.StatisticalEstimates = XMLElement("StatisticalEstimates", None, None)
         for ii, estimate in enumerate(estimates):
             setattr(self.StatisticalEstimates, "Estimate_{0:02}".format(ii), estimate)
 
-        self.DataTypes = XML_element("DataTypes", None, None)
+        self.DataTypes = XMLElement("DataTypes", None, None)
         for ii, d_type in enumerate(data_types):
             setattr(self.DataTypes, "DataType_{0:02}".format(ii), d_type)
 
@@ -687,7 +692,7 @@ class XML_Config(object):
     def read_cfg_file(self, cfg_fn=None):
         """
         Read in a cfg file making all key = value pairs attribures of 
-        XML_Config.  Being sure all new attributes are XML_element objects.
+        XMLConfig.  Being sure all new attributes are XMLElement objects.
         
         The assumed structure of the xml.cfg file is similar to:
             ``# XML Configuration File MTpy
@@ -718,7 +723,7 @@ class XML_Config(object):
         :Read in xml.cfg file: ::
         
             >>> import mtpy.core.mtxml as mtxml
-            >>> cfg_obj = mtxml.XML_Config()
+            >>> cfg_obj = mtxml.XMLConfig()
             >>> cfg_obj.read_cfg_file(r"/home/MT/xml.cfg")
             
         """
@@ -749,7 +754,7 @@ class XML_Config(object):
         read a configuration file line to make the appropriate attribute
         have the correct values and attributes.
         
-        porbably should think of a better name for XML_element objects that are
+        porbably should think of a better name for XMLElement objects that are
         attributes of self.
         """
 
@@ -769,8 +774,8 @@ class XML_Config(object):
             # if its the first key, see if its been made an attribute yet
             if ii == 0:
                 if not hasattr(self, name):
-                    setattr(self, name, XML_element(name, None, None))
-                # for looping purposes we need to get the current XML_element object
+                    setattr(self, name, XMLElement(name, None, None))
+                # for looping purposes we need to get the current XMLElement object
                 cfg_attr = getattr(self, name)
                 # be sure to set any attributes, need to do this here because
                 # the test for hasattr will only make a new one if there
@@ -779,11 +784,11 @@ class XML_Config(object):
                 cfg_attr._attr = attr
             else:
                 if not hasattr(cfg_attr, name):
-                    setattr(cfg_attr, name, XML_element(name, None, None))
+                    setattr(cfg_attr, name, XMLElement(name, None, None))
                 cfg_attr = getattr(cfg_attr, name)
                 cfg_attr._attr = attr
 
-        # set the value of the current XML_element object
+        # set the value of the current XMLElement object
         cfg_attr._value = value
 
     def _split_cfg_line(self, line):
@@ -840,8 +845,8 @@ class XML_Config(object):
             # get the given attribute
             attr_00 = getattr(self, attr_00_name)
 
-            # make sure it is of XML_element instance
-            if isinstance(attr_00, XML_element):
+            # make sure it is of XMLElement instance
+            if isinstance(attr_00, XMLElement):
                 # be sure to add a new line for each parent attribute
                 line_list.append(" ")
                 # get the attributes associated with the parent
@@ -909,7 +914,7 @@ class XML_Config(object):
         print("    Wrote xml configuration file to {0}".format(self.cfg_fn))
         print("-" * 50)
 
-    def _write_cfg_line(self, XML_element_obj, parent=None):
+    def _write_cfg_line(self, XMLElement_obj, parent=None):
         """
         write a configuration file line in the format of:
         parent.attribute = value
@@ -921,20 +926,20 @@ class XML_Config(object):
         elif type(parent) is list:
             parent_str = ".".join([p._name for p in parent] + [""])
 
-        elif isinstance(parent, XML_element):
+        elif isinstance(parent, XMLElement):
             parent_str = "{0}.".format(parent._name)
 
-        if XML_element_obj._attr is not None:
+        if XMLElement_obj._attr is not None:
             attr_str = "".join(
                 [
-                    "({0}={1})".format(a_key, XML_element_obj._attr[a_key])
-                    for a_key in list(XML_element_obj._attr.keys())
+                    "({0}={1})".format(a_key, XMLElement_obj._attr[a_key])
+                    for a_key in list(XMLElement_obj._attr.keys())
                 ]
             )
         else:
             attr_str = ""
         return "{0}{1}{2} = {3}".format(
-            parent_str, XML_element_obj._name, attr_str, XML_element_obj._value
+            parent_str, XMLElement_obj._name, attr_str, XMLElement_obj._value
         )
 
     def _get_attr_keys(self, attribute):
@@ -948,7 +953,7 @@ class XML_Config(object):
 # ==============================================================================
 #  EDI to XML
 # ==============================================================================
-class MT_XML(XML_Config):
+class EMTFXML(XMLConfig):
     """
     Class to read and write MT information from XML format.  This tries to 
     follow the format put forward by Anna Kelbert for archiving MT response 
@@ -957,7 +962,7 @@ class MT_XML(XML_Config):
     A configuration file can be read in that might make it easier to write
     multiple files for the same survey.  
     
-    .. seealso:: mtpy.core.mt_xml.XML_Config
+    .. seealso:: mtpy.core.mt_xml.XMLConfig
    
     =============== ===========================================================
     Attributes      Description
@@ -966,7 +971,7 @@ class MT_XML(XML_Config):
     Tipper          object of type mtpy.core.z.Tipper
     =============== ===========================================================
    
-    .. note:: All other attributes are of the same name and of type XML_element,
+    .. note:: All other attributes are of the same name and of type XMLElement,
               where attributes are name, value and attr.  Attr contains any 
               tag information.  This is left this way so that mtpy.core.mt.MT
               can read in the information.  **Use mtpy.core.mt.MT for 
@@ -975,7 +980,7 @@ class MT_XML(XML_Config):
     =============== ===========================================================
     Methods         Description
     =============== =========================================================== 
-    read_cfg_file   Read a configuration file in the format of XML_Config
+    read_cfg_file   Read a configuration file in the format of XMLConfig
     read_xml_file   Read an xml file
     write_xml_file  Write an xml file
     =============== ===========================================================
@@ -990,7 +995,7 @@ class MT_XML(XML_Config):
 
     def __init__(self, **kwargs):
 
-        XML_Config.__init__(self, **kwargs)
+        XMLConfig.__init__(self, **kwargs)
         self.edi_fn = None
         self.xml_fn = None
         self.cfg_fn = None
@@ -1053,28 +1058,28 @@ class MT_XML(XML_Config):
         }
 
         header_dict = {}
-        header_dict["Z"] = XML_element(
+        header_dict["Z"] = XMLElement(
             "Z", {"units": "[mV/km]/[nT]", "type": "complex", "size": "2 2"}, None
         )
-        header_dict["Z.VAR"] = XML_element(
+        header_dict["Z.VAR"] = XMLElement(
             "Z.VAR", {"type": "real", "size": "2 2"}, None
         )
-        header_dict["Z.INVSIGCOV"] = XML_element(
+        header_dict["Z.INVSIGCOV"] = XMLElement(
             "Z.INVSIGCOV", {"type": "complex", "size": "2 2"}, None
         )
-        header_dict["Z.RESIDCOV"] = XML_element(
+        header_dict["Z.RESIDCOV"] = XMLElement(
             "Z.RESIDCOV", {"type": "complex", "size": "2 2"}, None
         )
-        header_dict["T"] = XML_element(
+        header_dict["T"] = XMLElement(
             "T", {"units": "[]", "type": "complex", "size": "1 2"}, None
         )
-        header_dict["T.VAR"] = XML_element(
+        header_dict["T.VAR"] = XMLElement(
             "T.VAR", {"type": "real", "size": "1 2"}, None
         )
-        header_dict["T.INVSIGCOV"] = XML_element(
+        header_dict["T.INVSIGCOV"] = XMLElement(
             "T.INVSIGCOV", {"type": "complex", "size": "2 2"}, None
         )
-        header_dict["T.RESIDCOV"] = XML_element(
+        header_dict["T.RESIDCOV"] = XMLElement(
             "T.RESIDCOV", {"type": "complex", "size": "1 1"}, None
         )
         nf = self.Z.freq.size
@@ -1106,7 +1111,7 @@ class MT_XML(XML_Config):
 
         # make the data element
 
-        self.Data = XML_element("Data", {"count": str(nf)}, None)
+        self.Data = XMLElement("Data", {"count": str(nf)}, None)
 
         # loop through each period and add appropriate information
         for f_index, freq in enumerate(self.Z.freq):
@@ -1117,7 +1122,7 @@ class MT_XML(XML_Config):
             setattr(
                 self.Data,
                 f_name,
-                XML_element(
+                XMLElement(
                     "Period",
                     {"value": "{0:.6g}".format(1.0 / freq), "units": "seconds"},
                     None,
@@ -1154,7 +1159,7 @@ class MT_XML(XML_Config):
                             setattr(
                                 c_attr,
                                 "value_{0:02}".format(count),
-                                XML_element("value", c_dict, c_value),
+                                XMLElement("value", c_dict, c_value),
                             )
 
                             count += 1
@@ -1202,7 +1207,7 @@ class MT_XML(XML_Config):
                             setattr(
                                 c_attr,
                                 "value_{0:02}".format(count),
-                                XML_element("value", c_dict, c_value),
+                                XMLElement("value", c_dict, c_value),
                             )
                             count += 1
 
@@ -1211,24 +1216,24 @@ class MT_XML(XML_Config):
             "max": "{0:.6e}".format(1.0 / self.Z.freq.max()),
         }
 
-    def _write_element(self, parent_et, XML_element_obj):
+    def _write_element(self, parent_et, XMLElement_obj):
         """
         make a new element 
         """
-        if XML_element_obj._attr is None:
-            XML_element_obj._attr = {}
+        if XMLElement_obj._attr is None:
+            XMLElement_obj._attr = {}
         else:
-            for key in list(XML_element_obj._attr.keys()):
-                XML_element_obj._attr[key] = str(XML_element_obj._attr[key])
-        #        if XML_element_obj._name is None:
-        #            XML_element_obj._name = 'None'
-        #        if XML_element_obj._value is None:
-        #            XML_element_obj.value = 'None'
+            for key in list(XMLElement_obj._attr.keys()):
+                XMLElement_obj._attr[key] = str(XMLElement_obj._attr[key])
+        #        if XMLElement_obj._name is None:
+        #            XMLElement_obj._name = 'None'
+        #        if XMLElement_obj._value is None:
+        #            XMLElement_obj.value = 'None'
 
         new_element = ET.SubElement(
-            parent_et, XML_element_obj._name, XML_element_obj._attr
+            parent_et, XMLElement_obj._name, XMLElement_obj._attr
         )
-        new_element.text = XML_element_obj._value
+        new_element.text = XMLElement_obj._value
         # new_element.tail = '\n'
         return new_element
 
@@ -1469,10 +1474,10 @@ class MT_XML(XML_Config):
             
         Returns
         ---------
-            **XML_element** XML_element Object
+            **XMLElement** XMLElement Object
         """
 
-        return_obj = XML_element(None, None, None)
+        return_obj = XMLElement(None, None, None)
         return_obj._name = element.tag
         try:
             return_obj._value = element.text.strip()
@@ -1579,7 +1584,7 @@ class MT_XML(XML_Config):
         """
 
         if type(z_object) is not mtz.Z:
-            raise MT_XML_Error("To set Z, input needs to be an mtpy.core.z.Z object")
+            raise EMTFXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
 
         self._Z = z_object
 
@@ -1597,13 +1602,9 @@ class MT_XML(XML_Config):
         """
 
         if type(t_object) is not mtz.Tipper:
-            raise MT_XML_Error("To set Z, input needs to be an mtpy.core.z.Z object")
+            raise EMTFXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
 
         self._Tipper = t_object
 
 
-# ==============================================================================
-# exceptions
-# ==============================================================================
-class MT_XML_Error(Exception):
-    pass
+
