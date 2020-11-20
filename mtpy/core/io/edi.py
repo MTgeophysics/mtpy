@@ -197,21 +197,21 @@ class Edi(object):
 
         if self.Header.lat is None:
             self.Header.lat = self.Measurement.reflat
-            self.logger.info(
+            self.logger.debug(
                 "Got latitude from reflat for {0}".format(self.Header.dataid)
             )
         if self.Header.lon is None:
             self.Header.lon = self.Measurement.reflon
-            self.logger.info(
+            self.logger.debug(
                 "Got longitude from reflon for {0}".format(self.Header.dataid)
             )
         if self.Header.elev is None:
             self.Header.elev = self.Measurement.refelev
-            self.logger.info(
+            self.logger.debug(
                 "Got elevation from refelev for {0}".format(self.Header.dataid)
             )
 
-        self.logger.info("Read in edi file for station {0}".format(self.Header.dataid))
+        self.logger.debug("Read in edi file for station {0}".format(self.Header.dataid))
 
     def _read_data(self):
         """
@@ -227,8 +227,8 @@ class Edi(object):
         lines = self._edi_lines[self.Data.line_num :]
 
         if self.Data.data_type == "spectra":
-            self.logger.info("Converting Spectra to Impedance and Tipper")
-            self.logger.info(
+            self.logger.debug("Converting Spectra to Impedance and Tipper")
+            self.logger.debug(
                 "Check to make sure input channel list is correct if the data looks incorrect"
             )
             if self.Data.nchan == 5:
@@ -310,7 +310,7 @@ class Edi(object):
 
         # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
-            self.logger.info("Ordered arrays to be arranged from high to low frequency")
+            self.logger.debug("Ordered arrays to be arranged from high to low frequency")
             freq_arr = freq_arr[::-1]
             z_arr = z_arr[::-1]
             z_err_arr = z_err_arr[::-1]
@@ -358,7 +358,7 @@ class Edi(object):
                 tipper_err_arr = tipper_err_arr[::-1]
 
         else:
-            self.logger.info("Could not find any Tipper data.")
+            self.logger.debug("Could not find any Tipper data.")
 
         self.Tipper._freq = freq_arr
         self.Tipper._tipper = tipper_arr
@@ -407,7 +407,7 @@ class Edi(object):
                     )
                     avgt_dict[key] = avgt
                 except ValueError:
-                    self.logger.info("did not find frequency key")
+                    self.logger.debug("did not find frequency key")
 
             elif data_find and line.find(">") == -1 and line.find("!") == -1:
                 data_dict[key] += [float(ll) for ll in line.strip().split()]
@@ -824,7 +824,7 @@ class Edi(object):
         """set latitude and make sure it is converted to a float"""
 
         self.Header.lat = gis_tools.assert_lat_value(input_lat)
-        self.logger.info(
+        self.logger.debug(
             "Converted input latitude to decimal degrees: {0: .6f}".format(
                 self.Header.lat
             )
@@ -840,7 +840,7 @@ class Edi(object):
     def lon(self, input_lon):
         """set latitude and make sure it is converted to a float"""
         self.Header.lon = gis_tools.assert_lon_value(input_lon)
-        self.logger.info(
+        self.logger.debug(
             "Converted input longitude to decimal degrees: {0: .6f}".format(
                 self.Header.lon
             )
@@ -1324,7 +1324,11 @@ class Header(object):
 
     @progdate.setter
     def progdate(self, value):
-        self._progdate = MTime(value)
+        try:
+            self._progdate = MTime(value)
+        except MTex.MTTimeError as error:
+            msg = f"PROGDATE must be a date not {value}. {error}"
+            self.logger.debug(msg)
 
     def get_header_list(self):
         """
@@ -2400,7 +2404,7 @@ class DataSection(object):
             self.read_Data(Data_list)
 
         self.data_type = "z"
-        self.logger.info("Writing out data a impedances")
+        self.logger.debug("Writing out data a impedances")
 
         Data_lines = ["\n>=mtsect\n".upper()]
 

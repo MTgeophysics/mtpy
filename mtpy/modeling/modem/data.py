@@ -448,7 +448,7 @@ class Data(object):
 
         self.mt_dict = {}
         for edi in self.edi_list:
-            mt_obj = mt.MT(edi)
+            mt_obj = mt.read_mt_file(edi)
             self.mt_dict[mt_obj.station] = mt_obj
 
     def get_relative_station_locations(self):

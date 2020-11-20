@@ -71,3 +71,6 @@ class MTpyError_processing(Exception):
 
 class MTpyError_module_import(Exception):
     pass
+
+class MTTimeError(Exception):
+    pass

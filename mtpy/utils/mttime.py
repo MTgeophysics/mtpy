@@ -13,8 +13,7 @@ from copy import deepcopy
 from dateutil import parser as dtparser
 from dateutil.tz.tz import tzutc
 
-class MTTimeError(Exception):
-    pass
+from mtpy.utils.exceptions import MTTimeError
 
 # =============================================================================
 #  Get leap seconds
@@ -347,7 +346,7 @@ class MTime:
             self.dt_object = self.validate_tzinfo(dtparser.parse(dt_str))
         except dtparser.ParserError as error:
             msg = (
-                "{0}".format(error)
+                f"{error}. "
                 + "Input must be a valid datetime string, see "
                 + "https://docs.python.org/3.8/library/datetime.html"
             )
