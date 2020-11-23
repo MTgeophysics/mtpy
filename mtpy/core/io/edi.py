@@ -2511,6 +2511,7 @@ def read_edi(fn):
     edi_obj.read_edi_file(fn)
 
     mt_obj = mt.MT()
+    mt_obj._fn = fn
 
     for attr in [
         "Z",

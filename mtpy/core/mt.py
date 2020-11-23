@@ -266,8 +266,7 @@ class MT(object):
         try:
             self._fn = Path(value)
             if self._fn.exists():
-                mt_obj = read_file(self._fn)
-                self.__dict__.update(mt_obj.__dict__)
+                self.read_mt_file(self._fn)
         except TypeError:
             self._fn = None
             
@@ -560,13 +559,6 @@ class MT(object):
 
         # check the bounds of the new frequency array
         if bounds_error:
-            # YG: the commented block below seems no longer necessary.
-            # floater = 1.e-8  # FZ: a small offset to avoid out-of-bound error in spi interpolation module.
-            # self._logger.info("massage the new_freq_array's min and max to avoid out-of-bound interp")
-            # minindex = np.argmin(new_freq_array)
-            # maxindex = np.argmax(new_freq_array)
-            # new_freq_array[minindex] += floater
-            # new_freq_array[maxindex] -= floater
 
             # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
@@ -736,6 +728,9 @@ class MT(object):
         Write an mt file, the supported file types are EDI and XML.
 
         .. todo:: jtype and Gary Egberts z format
+        
+        :param fn: full path to file to save to
+        :type fn: :class:`pathlib.Path` or string
 
         :param save_dir: full path save directory
         :type save_dir: string
@@ -777,7 +772,7 @@ class MT(object):
         if fn_basename is None:
             fn_basename = Path(f"{self.station}.edi")
         
-        if file_type is not None:
+        if file_type is None:
             file_type = fn_basename.suffix.lower()[1:]
         if file_type not  in ['edi', 'xml']:
             msg = f"File type {file_type} not supported yet."
@@ -788,37 +783,31 @@ class MT(object):
 
         return write_file(self, fn, file_type=file_type)
         
-def read_mt_file(fn, file_type=None):
-    """
-    
-    Read an MT response file.
-
-    .. note:: Currently only .edi, .xml, and .j files are supported
-
-    :param fn: full path to input file
-    :type fn: string
-
-    :param file_type: ['edi' | 'j' | 'xml' | ... ]
-                      if None, automatically detects file type by
-                      the extension.
-    :type file_type: string
-
-    :Example: ::
-
-        >>> import mtpy.core.mt as mt
-        >>> mt_obj = mt.MT()
-        >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
-    
-    :param fn: DESCRIPTION
-    :type fn: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
-
-    """
-    
-    return read_file(fn, file_type=file_type)
+    def read_mt_file(self, fn, file_type=None):
+        """
         
-
+        Read an MT response file.
+    
+        .. note:: Currently only .edi, .xml, and .j files are supported
+    
+        :param fn: full path to input file
+        :type fn: string
+    
+        :param file_type: ['edi' | 'j' | 'xml' | ... ]
+                          if None, automatically detects file type by
+                          the extension.
+        :type file_type: string
+    
+        :Example: ::
+    
+            >>> import mtpy.core.mt as mt
+            >>> mt_obj = mt.MT()
+            >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
+    
+        """
+        
+        mt_obj = read_file(fn, file_type=file_type)
+        self.__dict__.update(mt_obj.__dict__)
 
 # ==============================================================================
 #             Error

@@ -448,7 +448,7 @@ class Data(object):
 
         self.mt_dict = {}
         for edi in self.edi_list:
-            mt_obj = mt.read_mt_file(edi)
+            mt_obj = mt.MT(edi)
             self.mt_dict[mt_obj.station] = mt_obj
 
     def get_relative_station_locations(self):
@@ -957,7 +957,8 @@ class Data(object):
 
     def write_data_file(self, save_path=None, fn_basename=None,
                         rotation_angle=None, compute_error=True, fill=True,
-                        elevation=False, use_original_freq=False, longitude_format='LON'):
+                        elevation=False, use_original_freq=False, longitude_format='LON',
+                        new_edis=False):
         """
         write data file for ModEM
         will save file as save_path/fn_basename
@@ -1006,12 +1007,15 @@ class Data(object):
         # rotate data if desired
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
-
-        # be sure to fill in data array
-        if fill:
+        if new_edis:
             new_edi_dir = os.path.join(self.save_path, 'new_edis')  # output edi files according to selected periods
             if not os.path.exists(new_edi_dir):
                 os.mkdir(new_edi_dir)
+        else:
+            new_edi_dir = None
+
+        # be sure to fill in data array
+        if fill:
             self.fill_data_array(new_edi_dir=new_edi_dir,
                                  use_original_freq=use_original_freq,
                                  longitude_format=longitude_format)
