@@ -15,7 +15,8 @@ import os
 import sys
 import csv
 import numpy as np
-from logging import INFO as My_Log_Level  # this module's log level
+import logging
+# from logging import INFO as My_Log_Level  # this module's log level
 
 import mtpy.analysis.pt as pt
 from mtpy.core import mt as mt
@@ -272,8 +273,7 @@ class Data(object):
 
     def __init__(self, edi_list=None, **kwargs):
 
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
-        self._logger.setLevel(My_Log_Level)
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         
         self.edi_list = edi_list
 
@@ -358,27 +358,27 @@ class Data(object):
                                        'Imag',
                                        'Error\n'])
         
-        for key in list(kwargs.keys()):
+        for key, value in kwargs.items():
             # have to set rotation angle after period list has been set
             if key != 'rotation_angle':
                 if hasattr(self, key):
-                    setattr(self, key, kwargs[key])
+                    setattr(self, key, value)
                 else:
-                    self._logger.warn("Argument {}={} is not supported thus not been set.".format(key, kwargs[key]))
+                    self.logger.debug(f"Argument {key}={value} will not be set")
 
         # update period buffer to a default value if it is invalid
         if self.period_buffer is not None:
             try:
                 self.period_buffer = float(self.period_buffer)
                 if self.period_buffer < 0.:
-                    self._logger.warn("Period buffer must be > 0, setting to None")
+                    self.logger.warning("Period buffer must be > 0, setting to None")
                     self.period_buffer = None
                 # if provided value between 0 and 1, assume it was meant to be set to 1 + provided value
                 elif self.period_buffer < 1.:
-                    self._logger.warn("Period buffer must be > 1, adding 1 to provided value")
+                    self.logger.warning("Period buffer must be > 1, adding 1 to provided value")
                     self.period_buffer += 1.
             except:
-                self._logger.warn("Period buffer must be convertable to an integer or float, setting to None")
+                self.logger.warning("Period buffer must be convertable to an integer or float, setting to None")
                 
                 
 
@@ -534,7 +534,7 @@ class Data(object):
         if self._rotation_angle == rotation_angle:
             return
 
-#        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+#        self.logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
 #            self._rotation_angle, rotation_angle))
 #
 #        self._rotation_angle = -self._rotation_angle + rotation_angle
@@ -542,7 +542,7 @@ class Data(object):
 #        if self.rotation_angle == 0:
 #            return
 
-        self._logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+        self.logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
             self._rotation_angle, rotation_angle))
         
         self._rotation_angle = rotation_angle
@@ -560,7 +560,7 @@ class Data(object):
 
 
 
-        self._logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
+        self.logger.info('Data rotated to align with {0:.1f} deg clockwise from N'.format(
             self._rotation_angle))
         self.fill_data_array()
 
@@ -683,22 +683,22 @@ class Data(object):
                     self.data_array[ii]['rel_elev'] = d_arr_copy[d_index]['rel_elev']
                     self.data_array[:]['zone'] = d_arr_copy[d_index]['zone']
                 except IndexError:
-                    self._logger.warn('Could not find {0} in data_array'.format(s_key))
+                    self.logger.warning('Could not find {0} in data_array'.format(s_key))
             else:
                 self.data_array[ii]['station'] = mt_obj.station
-                self.data_array[ii]['lat'] = mt_obj.lat
-                self.data_array[ii]['lon'] = mt_obj.lon
+                self.data_array[ii]['lat'] = mt_obj.latitude
+                self.data_array[ii]['lon'] = mt_obj.longitude
                 self.data_array[ii]['east'] = mt_obj.east
                 self.data_array[ii]['north'] = mt_obj.north
-                self.data_array[ii]['elev'] = mt_obj.elev
+                self.data_array[ii]['elev'] = mt_obj.elevation
                 try:
                     self.data_array[ii]['rel_east'] = mt_obj.grid_east
                     self.data_array[ii]['rel_north'] = mt_obj.grid_north
                     self.data_array[ii]['rel_elev'] = mt_obj.grid_elev
                     rel_distance = True
                 except AttributeError:
-                    self._logger.warn("Unable to set relative locations from 'mt_obj' "
-                                      "- not yet implemented")
+                    self.logger.debug("Unable to set relative locations from 'mt_obj' "
+                                      "- not filled yet.")
                     pass
 
             # interpolate each station onto the period list
@@ -723,16 +723,16 @@ class Data(object):
 
             # FZ: sort in order
             interp_periods = np.sort(interp_periods)
-            self._logger.debug("station_name and its original period: %s %s %s",
+            self.logger.debug("station_name and its original period: %s %s %s",
                                mt_obj.station, len(mt_obj.Z.freq), 1.0 / mt_obj.Z.freq)
-            self._logger.debug("station_name and interpolation period: %s %s %s",
+            self.logger.debug("station_name and interpolation period: %s %s %s",
                                mt_obj.station, len(interp_periods), interp_periods)
 
             # default: use_original_freq = True, each MT station edi file will use it's own frequency-filtered.
             # no new freq in the output modem.dat file. select those freq of mt_obj according to interp_periods
             if use_original_freq:
                 interp_periods = self.filter_periods(mt_obj, interp_periods)
-                self._logger.debug("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station,
+                self.logger.debug("station_name and selected/filtered periods: %s, %s, %s", mt_obj.station,
                                    len(interp_periods), interp_periods)
                 # in this case the below interpolate_impedance_tensor function will degenerate into a same-freq set.
                 
@@ -755,12 +755,12 @@ class Data(object):
                 # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None and os.path.isdir(new_edi_dir):
                     # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
+                    mt_obj.Z = interp_z
+                    mt_obj.Tipper = interp_t
                     mt_obj.write_mt_file(
                         save_dir=new_edi_dir,
                         fn_basename=mt_obj.station,
                         file_type='edi',
-                        new_Z_obj=interp_z,
-                        new_Tipper_obj=interp_t,
                         longitude_format=longitude_format)
             else:
                 pass
@@ -819,7 +819,7 @@ class Data(object):
                     d_index = np.where(self.data_array['station'] ==
                                        s_arr['station'])[0][0]
                 except IndexError:
-                    self._logger.warn('Could not find {0} in data_array'.format(s_arr['station']))
+                    self.logger.warning('Could not find {0} in data_array'.format(s_arr['station']))
                     d_index = None
 
                 if d_index is not None:
@@ -999,7 +999,6 @@ class Data(object):
         if fn_basename is not None:
             self.data_fn = fn_basename
 
-        print ("self.save_path, self.data_fn ==",self.save_path, self.data_fn)
         self.data_fn = os.path.join(self.save_path, self.data_fn)
 
         self.get_period_list()
@@ -1128,11 +1127,10 @@ class Data(object):
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, com, rea, ima, abs_err, '\n'])
 
                             d_lines.append(dline)
-        print("self.data_fn ==",  self.data_fn)
         with open(self.data_fn, 'w') as dfid:
             dfid.writelines(d_lines)
 
-        self._logger.info('Wrote ModEM data file to {0}'.format(self.data_fn))
+        self.logger.info('Wrote ModEM data file to {0}'.format(self.data_fn))
         return self.data_fn
 
     @deprecated("error type from GA implementation, not fully tested yet")
@@ -1431,7 +1429,7 @@ class Data(object):
                             self.center_point.elev = value_list[2]
                         except IndexError:
                             self.center_point.elev = 0.0
-                            print('Did not find center elevation in data file')
+                            self.logger.debug('Did not find center elevation in data file')
 
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
                                                                     self.center_point.lon,
@@ -1468,7 +1466,7 @@ class Data(object):
             if h_str.find('_deg') > 0:
                 try:
                     self._rotation_angle = float(h_str[0:h_str.find('_deg')])
-                    self._logger.info('Set rotation angle to {0:.1f} '.format(
+                    self.logger.info('Set rotation angle to {0:.1f} '.format(
                         self._rotation_angle) + 'deg clockwise from N')
                 except ValueError:
                     pass
@@ -1641,7 +1639,7 @@ class Data(object):
                     self.station_locations.rel_elev / 1000.,
                     data={'elevation': self.station_locations.rel_elev / 1000.})
 
-        self._logger.info('Wrote station file to {0}'.format(vtk_fn))
+        self.logger.info('Wrote station file to {0}'.format(vtk_fn))
 
     def get_parameters(self):
         """
@@ -1809,11 +1807,11 @@ class Data(object):
             # data elevation needs to be below the topography (as advised by Naser)
             self.data_array['rel_elev'][ss] = topoval + 0.001
             
-            print('{0} at E={1}, N={2}, z={3}, model_z={4}'.format(sname,
-                                                                   sxi,
-                                                                   syi,
-                                                                   topoval,
-                                                                   self.data_array['rel_elev'][ss]))
+            # print('{0} at E={1}, N={2}, z={3}, model_z={4}'.format(sname,
+            #                                                        sxi,
+            #                                                        syi,
+            #                                                        topoval,
+            #                                                        self.data_array['rel_elev'][ss]))
 
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
@@ -1845,15 +1843,15 @@ class Data(object):
         md.read_data_file(data_fn=data_file)
 
         num_sites = md.data_array.shape[0]
-        print ("ModEM data file number of sites:", num_sites)
+        self.logger.debug("ModEM data file number of sites:", num_sites)
 
         first_site_periods = md.data_array[0][9]  # (23L, 2L, 2L)
-        print ("first_site_periods = %s" % str(first_site_periods.shape[0]))
+        self.logger.debug("first_site_periods = %s" % str(first_site_periods.shape[0]))
 
         period_list = md.period_list
         freq_list = 1.0 / period_list
         num_periods = len(period_list)
-        print ("ModEM data file number of periods:", num_periods)
+        self.logger.debug("ModEM data file number of periods:", num_periods)
 
         csv_basename ="modem_data_to_phase_tensor"
         csvfname = os.path.join(dest_dir, "%s.csv" % csv_basename)
@@ -1868,7 +1866,7 @@ class Data(object):
         for period_num in range(num_periods):
             per= period_list[period_num]
             freq = freq_list[period_num]
-            self._logger.info("Working on period %s; frequency: %s", per, freq )
+            self.logger.debug("Working on period %s; frequency: %s", per, freq )
             csvrows = []
             for num_site in range(num_sites):
                 # Obtain the site for this number
@@ -1917,6 +1915,6 @@ class Data(object):
                 writer.writerows(csvrows)
 
         # Done with all sites and periods
-        self._logger.info("CSV files created in %s", outdir)
+        self.logger.info("CSV files created in %s", outdir)
 
         return csvfname

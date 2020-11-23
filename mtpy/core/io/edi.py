@@ -2062,6 +2062,8 @@ class DefineMeasurement(object):
 
         """
 
+        if channel.component is None:
+            return 
         if "e" in channel.component:
             meas = EMeasurement(
                 **{

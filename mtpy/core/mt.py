@@ -7,10 +7,10 @@
 """
 
 # ==============================================================================
-import numpy as np
-import os
+from pathlib import Path
 import logging
 
+import numpy as np
 from scipy import interpolate as spi
 
 from mtpy.core import metadata
@@ -109,6 +109,7 @@ class MT(object):
     def __init__(self, fn=None, **kwargs):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         
+        # set metadata for the station
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
         self.station_metadata.run_list.append(metadata.Run())
@@ -126,11 +127,9 @@ class MT(object):
         self._Tipper = MTz.Tipper()
         self._rotation_angle = 0
 
-        self.save_dir = os.getcwd()
-        self.original_file_type = None
-        if fn is not None:
-            self.read_mt_file(fn)
-            self._fn = os.path.normpath(os.path.abspath(fn))  # store file reference
+        self.save_dir = Path.cwd()
+        self._fn = None
+        self.fn = fn
 
         # provide key words to fill values if an edi file does not exist
         for key in list(kwargs.keys()):
@@ -261,6 +260,17 @@ class MT(object):
     # ==========================================================================
     # set functions
     # ==========================================================================
+    @fn.setter
+    def fn(self, value):
+        """ set file name """
+        try:
+            self._fn = Path(value)
+            if self._fn.exists():
+                mt_obj = read_file(self._fn)
+                self.__dict__.update(mt_obj.__dict__)
+        except TypeError:
+            self._fn = None
+            
     @latitude.setter
     def latitude(self, latitude):
         """
@@ -715,6 +725,7 @@ class MT(object):
         
     def write_mt_file(
             self,
+            fn=None,
             save_dir=None,
             fn_basename=None,
             file_type="edi",
@@ -751,24 +762,29 @@ class MT(object):
             >>> mt_obj.write_mt_file(file_type='xml')
 
         """
+        
+        if fn is not None:
+            new_fn = Path(fn)
+            self.save_dir = new_fn.parent
+            fn_basename = new_fn.name
 
         if save_dir is not None:
-            self.save_dir = save_dir
+            self.save_dir = Path(save_dir)
 
         if fn_basename is not None:
-            ext = os.path.splitext(fn_basename)[1][1:].lower()
-            fn_basename = os.path.splitext(fn_basename)[0]
-            if ext == "":
-                fn_basename = "{0}.{1}".format(fn_basename, file_type.lower())
-            elif ext in ["xml", "edi"]:
-                fn_basename = "{0}.{1}".format(fn_basename, ext)
-                file_type = ext
-            else:
-                raise MTError("File type {0} not supported yet.".format(ext))
-        else:
-            fn_basename = "{0}.{1}".format(self.station, file_type)
-
-        fn = os.path.join(self.save_dir, fn_basename)
+            fn_basename = Path(fn_basename)
+            
+        if fn_basename is None:
+            fn_basename = Path(f"{self.station}.edi")
+        
+        if file_type is not None:
+            file_type = fn_basename.suffix.lower()[1:]
+        if file_type not  in ['edi', 'xml']:
+            msg = f"File type {file_type} not supported yet."
+            self.logger.error(msg)
+            raise MTError(msg)
+            
+        fn = self.save_dir.joinpath(fn_basename)
 
         return write_file(self, fn, file_type=file_type)
         
