@@ -12,11 +12,9 @@ ModEM
 """
 from __future__ import print_function
 import os
-import sys
 import csv
 import numpy as np
 import logging
-# from logging import INFO as My_Log_Level  # this module's log level
 
 import mtpy.analysis.pt as pt
 from mtpy.core import mt as mt
@@ -24,7 +22,6 @@ from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.mtpy_decorator import deprecated
-from mtpy.utils.mtpylog import MtPyLog
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
 from mtpy.modeling.modem.station import Stations
@@ -33,13 +30,8 @@ from mtpy.modeling.modem.model import Model
 try:
     from pyevtk.hl import pointsToVTK
 except ImportError:
-    print('If you want to write a vtk file for 3d viewing, you need download '
-          'and install evtk from https://bitbucket.org/pauloh/pyevtk', file=sys.stderr)
-
-    print('Note: if you are using Windows you should build evtk first with'
-          'either MinGW or cygwin using the command: \n'
-          '    python setup.py build -compiler=mingw32  or \n'
-          '    python setup.py build -compiler=cygwin')
+    print('If you want to write a vtk file for 3d viewing, you need to '
+          'install pyevtk')
 
 
 # =============================================================================
