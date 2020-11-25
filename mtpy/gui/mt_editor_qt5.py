@@ -882,6 +882,7 @@ class PlotWidget(QtWidgets.QWidget):
         save_fn = str(save_dialog.getSaveFileName(None, 
                                                   'Choose EDI file',
                                                   '{0}_edit.edi'.format(self.mt_obj.fn.stem),
+                                                  directory=self.mt_obj.fn.parent,
                                                   filter='*.edi')[0])
         self.mt_obj.write_mt_file(save_dir=os.path.dirname(save_fn),
                                   fn_basename=os.path.basename(save_fn))

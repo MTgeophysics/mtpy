@@ -1819,8 +1819,6 @@ class Model(object):
                                                                  self.n_air_layers,
                                                                  increment_factor=0.999)[::-1]
             elif airlayer_type == 'log_down':
-                # increase the number of layers
-                self.n_layers += self.n_air_layers
                 # make a new mesh
                 n_layers = self.n_layers + self.n_air_layers
                 self.nodes_z, z_grid = self.make_z_mesh_new(n_layers)
