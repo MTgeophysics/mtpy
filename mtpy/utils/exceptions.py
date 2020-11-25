@@ -10,7 +10,7 @@ Specific exceptions for MTpy.
 
 """
 
-#=================================================================
+# =================================================================
 
 
 class MTpyError_float(Exception):
@@ -71,6 +71,7 @@ class MTpyError_processing(Exception):
 
 class MTpyError_module_import(Exception):
     pass
+
 
 class MTTimeError(Exception):
     pass

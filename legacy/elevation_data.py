@@ -38,8 +38,7 @@ def project_interface(interface, epsg_from, epsg_to, suffix, skiprows=1):
     try:
         import pyproj
     except:
-        raise MTex.MTpyError_module_import(
-            'pyproj module not found; cannot continue')
+        raise MTex.MTpyError_module_import("pyproj module not found; cannot continue")
 
     coord_from = pyproj.Proj("+init=EPSG:%i" % epsg_from)
     coord_to = pyproj.Proj("+init=EPSG:%i" % epsg_to)
@@ -49,5 +48,6 @@ def project_interface(interface, epsg_from, epsg_to, suffix, skiprows=1):
 
     filename, extension = os.path.splitext(interface)
     outfile = filename + suffix + extension
-    np.savetxt(outfile, np.vstack([xp, yp, data[:, 2]]).T, fmt=[
-               '%12.6f', '%12.6f', '%10.2f'])
+    np.savetxt(
+        outfile, np.vstack([xp, yp, data[:, 2]]).T, fmt=["%12.6f", "%12.6f", "%10.2f"]
+    )

@@ -24,15 +24,16 @@ AttributeError: 'MTplot' object has no attribute 'get_Zinvariants'
 
 """
 import os
-os.chdir(r'C:\Git\mtpy')
+
+os.chdir(r"C:\Git\mtpy")
 from mtpy.imaging.plotstrike import PlotStrike
 import os.path as op
 import matplotlib.pyplot as plt
 
 # path to edis
-epath = r'C:\Git\mtpy\examples\data\edi_files'
+epath = r"C:\Git\mtpy\examples\data\edi_files"
 
 
-elst=[op.join(epath,edi) for edi in os.listdir(epath) if edi.endswith('.edi')][::4]
+elst = [op.join(epath, edi) for edi in os.listdir(epath) if edi.endswith(".edi")][::4]
 
 plotstrike = PlotStrike(fn_list=elst)

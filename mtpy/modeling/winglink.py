@@ -15,7 +15,7 @@ from matplotlib.ticker import MultipleLocator
 import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class WLInputError(Exception):
@@ -51,41 +51,53 @@ def read_output_file(output_fn):
                   index is the data and the second index is the model response
     """
     if os.path.isfile(output_fn) is False:
-        raise WLInputError('Cannot find {0}, check path'.format(output_fn))
-    ofid = open(output_fn, 'r')
+        raise WLInputError("Cannot find {0}, check path".format(output_fn))
+    ofid = open(output_fn, "r")
     lines = ofid.readlines()
 
     idict = {}
     stationlst = []
 
     # get title line
-    titleline = lines[1].replace('"', '')
-    titleline = titleline.rstrip().split(',')
-    title = titleline[1].split(':')[1]
-    profile = titleline[0].split(':')[1]
+    titleline = lines[1].replace('"', "")
+    titleline = titleline.rstrip().split(",")
+    title = titleline[1].split(":")[1]
+    profile = titleline[0].split(":")[1]
     inversiontype = lines[2].rstrip()
 
-    dkeys = ['obs_tm_res', 'obs_tm_phase', 'mod_tm_res', 'mod_tm_phase',
-             'obs_te_res', 'obs_te_phase', 'mod_te_res', 'mod_te_phase',
-             'obs_re_tip', 'obs_im_tip', 'mod_re_tip', 'mod_im_tip', 'period']
+    dkeys = [
+        "obs_tm_res",
+        "obs_tm_phase",
+        "mod_tm_res",
+        "mod_tm_phase",
+        "obs_te_res",
+        "obs_te_phase",
+        "mod_te_res",
+        "mod_te_phase",
+        "obs_re_tip",
+        "obs_im_tip",
+        "mod_re_tip",
+        "mod_im_tip",
+        "period",
+    ]
 
     index = 0
     for line in lines[3:]:
         # get the beginning of the station block
-        if line.find('Data for station') == 0:
-            station = line.rstrip().split(':')[1][1:]
+        if line.find("Data for station") == 0:
+            station = line.rstrip().split(":")[1][1:]
             idict[station] = {}
             stationlst.append(station)
-            print('Reading in station: ', station)
-            idict[station]['index'] = index
+            print("Reading in station: ", station)
+            idict[station]["index"] = index
             index += 1
             for key in dkeys:
                 idict[station][key] = []
         # get rms
-        elif line.find('RMS') == 0:
-            idict[station]['rms'] = float(line.strip().split(' = ')[1])
+        elif line.find("RMS") == 0:
+            idict[station]["rms"] = float(line.strip().split(" = ")[1])
         # skip the divding line
-        elif line.find('==') == 0:
+        elif line.find("==") == 0:
             pass
         # get the data
         else:
@@ -93,7 +105,7 @@ def read_output_file(output_fn):
             if len(linelst) == len(dkeys):
                 for kk, key in enumerate(dkeys):
                     try:
-                        if key.find('phase') >= 0:
+                        if key.find("phase") >= 0:
                             idict[station][key].append(-1 * float(linelst[kk]))
                         else:
                             idict[station][key].append(float(linelst[kk]))
@@ -108,27 +120,33 @@ def read_output_file(output_fn):
     data = {}
     for st in list(idict.keys()):
         data[st] = {}
-        data[st]['station'] = st
-        data[st]['index'] = int(idict[st]['index'])
-        data[st]['period'] = np.array(idict[st]['period'])
-        data[st]['te_res'] = np.array([np.array(idict[st]['obs_te_res']),
-                                       np.array(idict[st]['mod_te_res'])])
-        data[st]['tm_res'] = np.array([np.array(idict[st]['obs_tm_res']),
-                                       np.array(idict[st]['mod_tm_res'])])
-        data[st]['te_phase'] = np.array([np.array(idict[st]['obs_te_phase']),
-                                         np.array(idict[st]['mod_te_phase'])])
-        data[st]['tm_phase'] = np.array([np.array(idict[st]['obs_tm_phase']),
-                                         np.array(idict[st]['mod_tm_phase'])])
-        data[st]['re_tip'] = np.array([np.array(idict[st]['obs_re_tip']),
-                                       np.array(idict[st]['mod_re_tip'])])
-        data[st]['im_tip'] = np.array([np.array(idict[st]['obs_im_tip']),
-                                       np.array(idict[st]['mod_im_tip'])])
-        data[st]['rms'] = float(idict[st]['rms'])
+        data[st]["station"] = st
+        data[st]["index"] = int(idict[st]["index"])
+        data[st]["period"] = np.array(idict[st]["period"])
+        data[st]["te_res"] = np.array(
+            [np.array(idict[st]["obs_te_res"]), np.array(idict[st]["mod_te_res"])]
+        )
+        data[st]["tm_res"] = np.array(
+            [np.array(idict[st]["obs_tm_res"]), np.array(idict[st]["mod_tm_res"])]
+        )
+        data[st]["te_phase"] = np.array(
+            [np.array(idict[st]["obs_te_phase"]), np.array(idict[st]["mod_te_phase"])]
+        )
+        data[st]["tm_phase"] = np.array(
+            [np.array(idict[st]["obs_tm_phase"]), np.array(idict[st]["mod_tm_phase"])]
+        )
+        data[st]["re_tip"] = np.array(
+            [np.array(idict[st]["obs_re_tip"]), np.array(idict[st]["mod_re_tip"])]
+        )
+        data[st]["im_tip"] = np.array(
+            [np.array(idict[st]["obs_im_tip"]), np.array(idict[st]["mod_im_tip"])]
+        )
+        data[st]["rms"] = float(idict[st]["rms"])
 
     return data
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def read_model_file(model_fn):
     """
     readModelFile reads in the XYZ txt file output by Winglink.    
@@ -140,7 +158,7 @@ def read_model_file(model_fn):
                             fix
     """
 
-    mfid = open(model_fn, 'r')
+    mfid = open(model_fn, "r")
     lines = mfid.readlines()
     nlines = len(lines)
 
@@ -163,10 +181,10 @@ def read_model_file(model_fn):
     return X, Y, Z, rho
 
 
-#==============================================================================
+# ==============================================================================
 # plot the MT and model responses
-#==============================================================================
-class PlotResponse():
+# ==============================================================================
+class PlotResponse:
     """
     Helper class to deal with plotting the MT response and occam2d model.
 
@@ -268,80 +286,80 @@ class PlotResponse():
 
         self.wl_data_fn = wl_data_fn
 
-        self.color_mode = kwargs.pop('color_mode', 'color')
+        self.color_mode = kwargs.pop("color_mode", "color")
 
-        self.ms = kwargs.pop('ms', 1.5)
-        self.lw = kwargs.pop('lw', .5)
+        self.ms = kwargs.pop("ms", 1.5)
+        self.lw = kwargs.pop("lw", 0.5)
 
         self.ax_list = []
         self.line_list = []
         self.err_list = []
 
         # color mode
-        if self.color_mode == 'color':
+        if self.color_mode == "color":
             # color for data
-            self.cted = kwargs.pop('cted', (0, 0, 1))
-            self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
-            self.mted = kwargs.pop('mted', 's')
-            self.mtmd = kwargs.pop('mtmd', 'o')
+            self.cted = kwargs.pop("cted", (0, 0, 1))
+            self.ctmd = kwargs.pop("ctmd", (1, 0, 0))
+            self.mted = kwargs.pop("mted", "s")
+            self.mtmd = kwargs.pop("mtmd", "o")
 
             # color for Winglink model
-            self.ctewl = kwargs.pop('ctewl', (0, .6, .8))
-            self.ctmwl = kwargs.pop('ctmwl', (.8, .7, 0))
-            self.mtewl = kwargs.pop('mtewl', 'x')
-            self.mtmwl = kwargs.pop('mtmwl', 'x')
+            self.ctewl = kwargs.pop("ctewl", (0, 0.6, 0.8))
+            self.ctmwl = kwargs.pop("ctmwl", (0.8, 0.7, 0))
+            self.mtewl = kwargs.pop("mtewl", "x")
+            self.mtmwl = kwargs.pop("mtmwl", "x")
 
             # color of tipper
-            self.ctipr = kwargs.pop('ctipr', self.cted)
-            self.ctipi = kwargs.pop('ctipi', self.ctmd)
+            self.ctipr = kwargs.pop("ctipr", self.cted)
+            self.ctipi = kwargs.pop("ctipi", self.ctmd)
 
         # black and white mode
-        elif self.color_mode == 'bw':
+        elif self.color_mode == "bw":
             # color for data
-            self.cted = kwargs.pop('cted', (0, 0, 0))
-            self.ctmd = kwargs.pop('ctmd', (0, 0, 0))
-            self.mted = kwargs.pop('mted', '*')
-            self.mtmd = kwargs.pop('mtmd', 'v')
+            self.cted = kwargs.pop("cted", (0, 0, 0))
+            self.ctmd = kwargs.pop("ctmd", (0, 0, 0))
+            self.mted = kwargs.pop("mted", "*")
+            self.mtmd = kwargs.pop("mtmd", "v")
 
             # color for Winglink model
-            self.ctewl = kwargs.pop('ctewl', (0.3, 0.3, 0.3))
-            self.ctmwl = kwargs.pop('ctmwl', (0.3, 0.3, 0.3))
-            self.mtewl = kwargs.pop('mtewl', '|')
-            self.mtmwl = kwargs.pop('mtmwl', '_')
+            self.ctewl = kwargs.pop("ctewl", (0.3, 0.3, 0.3))
+            self.ctmwl = kwargs.pop("ctmwl", (0.3, 0.3, 0.3))
+            self.mtewl = kwargs.pop("mtewl", "|")
+            self.mtmwl = kwargs.pop("mtmwl", "_")
 
-            self.ctipr = kwargs.pop('ctipr', self.cted)
-            self.ctipi = kwargs.pop('ctipi', self.ctmd)
+            self.ctipr = kwargs.pop("ctipr", self.cted)
+            self.ctipi = kwargs.pop("ctipi", self.ctmd)
 
-        self.phase_limits = kwargs.pop('phase_limits', (-5, 95))
-        self.res_limits = kwargs.pop('res_limits', None)
-        self.tip_limits = kwargs.pop('tip_limits', (-.5, .5))
+        self.phase_limits = kwargs.pop("phase_limits", (-5, 95))
+        self.res_limits = kwargs.pop("res_limits", None)
+        self.tip_limits = kwargs.pop("tip_limits", (-0.5, 0.5))
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .1
-        self.subplot_hspace = .15
-        self.subplot_right = .98
-        self.subplot_left = .085
-        self.subplot_top = .93
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.1
+        self.subplot_hspace = 0.15
+        self.subplot_right = 0.98
+        self.subplot_left = 0.085
+        self.subplot_top = 0.93
+        self.subplot_bottom = 0.1
 
-        self.font_size = kwargs.pop('font_size', 6)
+        self.font_size = kwargs.pop("font_size", 6)
 
-        self.plot_type = kwargs.pop('plot_type', '1')
-        self.plot_num = kwargs.pop('plot_num', 2)
-        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_type = kwargs.pop("plot_type", "1")
+        self.plot_num = kwargs.pop("plot_num", 2)
+        self.plot_tipper = kwargs.pop("plot_tipper", "n")
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
         if self.plot_num == 1:
-            self.ylabel_coord = kwargs.pop('ylabel_coords', (-.055, .5))
+            self.ylabel_coord = kwargs.pop("ylabel_coords", (-0.055, 0.5))
         elif self.plot_num == 2:
-            self.ylabel_coord = kwargs.pop('ylabel_coords', (-.12, .5))
+            self.ylabel_coord = kwargs.pop("ylabel_coords", (-0.12, 0.5))
 
         self.fig_list = []
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -355,8 +373,8 @@ class PlotResponse():
         # create station list
         self.station_list = list(wl_data.keys())
 
-        #---------------plot each respones in a different figure---------------
-        if self.plot_type == '1':
+        # ---------------plot each respones in a different figure---------------
+        if self.plot_type == "1":
             pstation_list = list(range(len(self.station_list)))
 
         else:
@@ -370,52 +388,57 @@ class PlotResponse():
                         pstation_list.append(ii)
 
         # set the grid of subplots
-        if self.plot_tipper == 'y':
-            gs = gridspec.GridSpec(3, 2,
-                                   wspace=self.subplot_wspace,
-                                   left=self.subplot_left,
-                                   top=self.subplot_top,
-                                   bottom=self.subplot_bottom,
-                                   right=self.subplot_right,
-                                   hspace=self.subplot_hspace,
-                                   height_ratios=[2, 1.5, 1])
+        if self.plot_tipper == "y":
+            gs = gridspec.GridSpec(
+                3,
+                2,
+                wspace=self.subplot_wspace,
+                left=self.subplot_left,
+                top=self.subplot_top,
+                bottom=self.subplot_bottom,
+                right=self.subplot_right,
+                hspace=self.subplot_hspace,
+                height_ratios=[2, 1.5, 1],
+            )
         else:
-            gs = gridspec.GridSpec(2, 2,
-                                   wspace=self.subplot_wspace,
-                                   left=self.subplot_left,
-                                   top=self.subplot_top,
-                                   bottom=self.subplot_bottom,
-                                   right=self.subplot_right,
-                                   hspace=self.subplot_hspace,
-                                   height_ratios=[2, 1.5])
+            gs = gridspec.GridSpec(
+                2,
+                2,
+                wspace=self.subplot_wspace,
+                left=self.subplot_left,
+                top=self.subplot_top,
+                bottom=self.subplot_bottom,
+                right=self.subplot_right,
+                hspace=self.subplot_hspace,
+                height_ratios=[2, 1.5],
+            )
 
-        #--> set default font size
-        plt.rcParams['font.size'] = self.font_size
+        # --> set default font size
+        plt.rcParams["font.size"] = self.font_size
 
         # loop over each station to plot
         for ii, jj in enumerate(pstation_list):
-            fig = plt.figure(self.station_list[jj],
-                             self.fig_size, dpi=self.fig_dpi)
+            fig = plt.figure(self.station_list[jj], self.fig_size, dpi=self.fig_dpi)
             plt.clf()
 
-            #--> set subplot instances
-            #---plot both TE and TM in same subplot---
+            # --> set subplot instances
+            # ---plot both TE and TM in same subplot---
             if self.plot_num == 1:
                 axrte = fig.add_subplot(gs[0, :])
                 axrtm = axrte
                 axpte = fig.add_subplot(gs[1, :], sharex=axrte)
                 axptm = axpte
-                if self.plot_tipper == 'y':
+                if self.plot_tipper == "y":
                     axtipre = fig.add_subplot(gs[2, :], sharex=axrte)
                     axtipim = axtipre
 
-            #---plot TE and TM in separate subplots---
+            # ---plot TE and TM in separate subplots---
             elif self.plot_num == 2:
                 axrte = fig.add_subplot(gs[0, 0])
                 axrtm = fig.add_subplot(gs[0, 1])
                 axpte = fig.add_subplot(gs[1, 0], sharex=axrte)
                 axptm = fig.add_subplot(gs[1, 1], sharex=axrtm)
-                if self.plot_tipper == 'y':
+                if self.plot_tipper == "y":
                     axtipre = fig.add_subplot(gs[2, 0], sharex=axrte)
                     axtipim = fig.add_subplot(gs[2, 1], sharex=axrtm)
 
@@ -426,71 +449,80 @@ class PlotResponse():
             rlisttm = []
             llisttm = []
 
-            #--------------add in winglink responses------------------------
-            wlrms = wl_data[self.station_list[jj]]['rms']
+            # --------------add in winglink responses------------------------
+            wlrms = wl_data[self.station_list[jj]]["rms"]
             wl_dict = wl_data[self.station_list[jj]]
 
-            zrxy = np.nonzero(wl_dict['te_res'][0] != 0)[0]
-            zryx = np.nonzero(wl_dict['tm_res'][0] != 0)[0]
+            zrxy = np.nonzero(wl_dict["te_res"][0] != 0)[0]
+            zryx = np.nonzero(wl_dict["tm_res"][0] != 0)[0]
 
-            #--> plot data
+            # --> plot data
             if len(zrxy) > 0:
-                r1 = axrte.loglog(wl_dict['period'][zrxy],
-                                  wl_dict['te_res'][0, zrxy],
-                                  ls='-.',
-                                  marker=self.mted,
-                                  ms=self.ms,
-                                  color=self.cted,
-                                  mfc=self.cted,
-                                  mec=self.cted,
-                                  lw=self.lw)
-                axpte.semilogx(wl_dict['period'][zrxy],
-                               wl_dict['te_phase'][0, zrxy],
-                               ls='-.',
-                               marker=self.mted,
-                               ms=self.ms,
-                               color=self.cted,
-                               mfc=self.cted,
-                               mec=self.cted,
-                               lw=self.lw)
+                r1 = axrte.loglog(
+                    wl_dict["period"][zrxy],
+                    wl_dict["te_res"][0, zrxy],
+                    ls="-.",
+                    marker=self.mted,
+                    ms=self.ms,
+                    color=self.cted,
+                    mfc=self.cted,
+                    mec=self.cted,
+                    lw=self.lw,
+                )
+                axpte.semilogx(
+                    wl_dict["period"][zrxy],
+                    wl_dict["te_phase"][0, zrxy],
+                    ls="-.",
+                    marker=self.mted,
+                    ms=self.ms,
+                    color=self.cted,
+                    mfc=self.cted,
+                    mec=self.cted,
+                    lw=self.lw,
+                )
                 rlistte.append(r1[0])
-                llistte.append('$Obs_{TE}$ ')
+                llistte.append("$Obs_{TE}$ ")
             if len(zryx) > 0:
-                r2 = axrtm.loglog(wl_dict['period'][zryx],
-                                  wl_dict['tm_res'][0, zryx],
-                                  ls='-.',
-                                  marker=self.mtmd,
-                                  ms=self.ms,
-                                  color=self.ctmd,
-                                  mfc=self.ctmd,
-                                  lw=self.lw)
+                r2 = axrtm.loglog(
+                    wl_dict["period"][zryx],
+                    wl_dict["tm_res"][0, zryx],
+                    ls="-.",
+                    marker=self.mtmd,
+                    ms=self.ms,
+                    color=self.ctmd,
+                    mfc=self.ctmd,
+                    lw=self.lw,
+                )
 
                 # plot winglink phase
-                axptm.semilogx(wl_dict['period'][zryx],
-                               wl_dict['tm_phase'][0, zryx],
-                               ls='-.',
-                               marker=self.mtmwl,
-                               ms=self.ms,
-                               color=self.ctmd,
-                               mfc=self.ctmd,
-                               lw=self.lw)
+                axptm.semilogx(
+                    wl_dict["period"][zryx],
+                    wl_dict["tm_phase"][0, zryx],
+                    ls="-.",
+                    marker=self.mtmwl,
+                    ms=self.ms,
+                    color=self.ctmd,
+                    mfc=self.ctmd,
+                    lw=self.lw,
+                )
 
                 rlisttm.append(r2[0])
-                llisttm.append('$Obs_{TM}$ ')
+                llisttm.append("$Obs_{TM}$ ")
 
-            if self.plot_tipper == 'y':
+            if self.plot_tipper == "y":
                 t_list = []
                 t_label = []
-                txy = np.nonzero(wl_dict['re_tip'][0])[0]
-                tyx = np.nonzero(wl_dict['im_tip'][0])[0]
-                #--> real tipper  data
+                txy = np.nonzero(wl_dict["re_tip"][0])[0]
+                tyx = np.nonzero(wl_dict["im_tip"][0])[0]
+                # --> real tipper  data
                 if len(txy) > 0:
                     per_list_p = []
                     tpr_list_p = []
                     per_list_n = []
                     tpr_list_n = []
-                    for per, tpr in zip(wl_dict['period'][txy],
-                                        wl_dict['re_tip'][0, txy]):
+                    for per, tpr in zip(
+                        wl_dict["period"][txy], wl_dict["re_tip"][0, txy]
+                    ):
                         if tpr >= 0:
                             per_list_p.append(per)
                             tpr_list_p.append(tpr)
@@ -498,32 +530,30 @@ class PlotResponse():
                             per_list_n.append(per)
                             tpr_list_n.append(tpr)
                     if len(per_list_p) > 0:
-                        m_line, s_line, b_line = axtipre.stem(per_list_p,
-                                                              tpr_list_p,
-                                                              markerfmt='^',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.cted)
-                        plt.setp(m_line, 'markeredgecolor', self.cted)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.cted)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipre.stem(
+                            per_list_p, tpr_list_p, markerfmt="^", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.cted)
+                        plt.setp(m_line, "markeredgecolor", self.cted)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.cted)
+                        plt.setp(b_line, "linewidth", 0.01)
                         t_list.append(m_line)
-                        t_label.append('Real')
+                        t_label.append("Real")
                     if len(per_list_n) > 0:
-                        m_line, s_line, b_line = axtipre.stem(per_list_n,
-                                                              tpr_list_n,
-                                                              markerfmt='v',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.cted)
-                        plt.setp(m_line, 'markeredgecolor', self.cted)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.cted)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipre.stem(
+                            per_list_n, tpr_list_n, markerfmt="v", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.cted)
+                        plt.setp(m_line, "markeredgecolor", self.cted)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.cted)
+                        plt.setp(b_line, "linewidth", 0.01)
                         if len(t_list) == 0:
                             t_list.append(m_line)
-                            t_label.append('Real')
+                            t_label.append("Real")
 
                 else:
                     pass
@@ -532,8 +562,9 @@ class PlotResponse():
                     tpi_list_p = []
                     per_list_n = []
                     tpi_list_n = []
-                    for per, tpi in zip(wl_dict['period'][tyx],
-                                        wl_dict['im_tip'][0, tyx]):
+                    for per, tpi in zip(
+                        wl_dict["period"][tyx], wl_dict["im_tip"][0, tyx]
+                    ):
                         if tpi >= 0:
                             per_list_p.append(per)
                             tpi_list_p.append(tpi)
@@ -541,87 +572,94 @@ class PlotResponse():
                             per_list_n.append(per)
                             tpi_list_n.append(tpi)
                     if len(per_list_p) > 0:
-                        m_line, s_line, b_line = axtipim.stem(per_list_p,
-                                                              tpi_list_p,
-                                                              markerfmt='^',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.ctmd)
-                        plt.setp(m_line, 'markeredgecolor', self.ctmd)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.ctmd)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipim.stem(
+                            per_list_p, tpi_list_p, markerfmt="^", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.ctmd)
+                        plt.setp(m_line, "markeredgecolor", self.ctmd)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.ctmd)
+                        plt.setp(b_line, "linewidth", 0.01)
                         t_list.append(m_line)
-                        t_label.append('Imag')
+                        t_label.append("Imag")
                     if len(per_list_n) > 0:
-                        m_line, s_line, b_line = axtipim.stem(per_list_n,
-                                                              tpi_list_n,
-                                                              markerfmt='v',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.ctmd)
-                        plt.setp(m_line, 'markeredgecolor', self.ctmd)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.ctmd)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipim.stem(
+                            per_list_n, tpi_list_n, markerfmt="v", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.ctmd)
+                        plt.setp(m_line, "markeredgecolor", self.ctmd)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.ctmd)
+                        plt.setp(b_line, "linewidth", 0.01)
                         if len(t_list) <= 1:
                             t_list.append(m_line)
-                            t_label.append('Imag')
+                            t_label.append("Imag")
 
-            #--> plot model response
+            # --> plot model response
             if len(zrxy) > 0:
-                r5 = axrte.loglog(wl_dict['period'][zrxy],
-                                  wl_dict['te_res'][1, zrxy],
-                                  ls='-.',
-                                  marker=self.mtewl,
-                                  ms=self.ms,
-                                  color=self.ctewl,
-                                  mfc=self.ctewl,
-                                  lw=self.lw)
-                axpte.semilogx(wl_dict['period'][zrxy],
-                               wl_dict['te_phase'][1, zrxy],
-                               ls='-.',
-                               marker=self.mtewl,
-                               ms=self.ms,
-                               color=self.ctewl,
-                               mfc=self.ctewl,
-                               lw=self.lw)
+                r5 = axrte.loglog(
+                    wl_dict["period"][zrxy],
+                    wl_dict["te_res"][1, zrxy],
+                    ls="-.",
+                    marker=self.mtewl,
+                    ms=self.ms,
+                    color=self.ctewl,
+                    mfc=self.ctewl,
+                    lw=self.lw,
+                )
+                axpte.semilogx(
+                    wl_dict["period"][zrxy],
+                    wl_dict["te_phase"][1, zrxy],
+                    ls="-.",
+                    marker=self.mtewl,
+                    ms=self.ms,
+                    color=self.ctewl,
+                    mfc=self.ctewl,
+                    lw=self.lw,
+                )
                 rlistte.append(r5[0])
-                llistte.append('$Mod_{TE}$ ' + '{0:.2f}'.format(wlrms))
+                llistte.append("$Mod_{TE}$ " + "{0:.2f}".format(wlrms))
             if len(zryx) > 0:
-                r6 = axrtm.loglog(wl_dict['period'][zryx],
-                                  wl_dict['tm_res'][1, zryx],
-                                  ls='-.',
-                                  marker=self.mtmwl,
-                                  ms=self.ms,
-                                  color=self.ctmwl,
-                                  mfc=self.ctmwl,
-                                  lw=self.lw)
+                r6 = axrtm.loglog(
+                    wl_dict["period"][zryx],
+                    wl_dict["tm_res"][1, zryx],
+                    ls="-.",
+                    marker=self.mtmwl,
+                    ms=self.ms,
+                    color=self.ctmwl,
+                    mfc=self.ctmwl,
+                    lw=self.lw,
+                )
 
                 # plot winglink phase
-                axptm.semilogx(wl_dict['period'][zryx],
-                               wl_dict['tm_phase'][1, zryx],
-                               ls='-.',
-                               marker=self.mtmwl,
-                               ms=self.ms,
-                               color=self.ctmwl,
-                               mfc=self.ctmwl,
-                               lw=self.lw)
+                axptm.semilogx(
+                    wl_dict["period"][zryx],
+                    wl_dict["tm_phase"][1, zryx],
+                    ls="-.",
+                    marker=self.mtmwl,
+                    ms=self.ms,
+                    color=self.ctmwl,
+                    mfc=self.ctmwl,
+                    lw=self.lw,
+                )
 
                 rlisttm.append(r6[0])
-                llisttm.append('$Mod_{TM}$ ' + '{0:.2f}'.format(wlrms))
+                llisttm.append("$Mod_{TM}$ " + "{0:.2f}".format(wlrms))
 
-            if self.plot_tipper == 'y':
-                txy = np.nonzero(wl_dict['re_tip'][0])[0]
-                tyx = np.nonzero(wl_dict['im_tip'][0])[0]
-                #--> real tipper  data
+            if self.plot_tipper == "y":
+                txy = np.nonzero(wl_dict["re_tip"][0])[0]
+                tyx = np.nonzero(wl_dict["im_tip"][0])[0]
+                # --> real tipper  data
                 if len(txy) > 0:
                     per_list_p = []
                     tpr_list_p = []
                     per_list_n = []
                     tpr_list_n = []
-                    for per, tpr in zip(wl_dict['period'][txy],
-                                        wl_dict['re_tip'][1, txy]):
+                    for per, tpr in zip(
+                        wl_dict["period"][txy], wl_dict["re_tip"][1, txy]
+                    ):
                         if tpr >= 0:
                             per_list_p.append(per)
                             tpr_list_p.append(tpr)
@@ -629,27 +667,25 @@ class PlotResponse():
                             per_list_n.append(per)
                             tpr_list_n.append(tpr)
                     if len(per_list_p) > 0:
-                        m_line, s_line, b_line = axtipre.stem(per_list_p,
-                                                              tpr_list_p,
-                                                              markerfmt='^',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.ctewl)
-                        plt.setp(m_line, 'markeredgecolor', self.ctewl)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.ctewl)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipre.stem(
+                            per_list_p, tpr_list_p, markerfmt="^", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.ctewl)
+                        plt.setp(m_line, "markeredgecolor", self.ctewl)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.ctewl)
+                        plt.setp(b_line, "linewidth", 0.01)
                     if len(per_list_n) > 0:
-                        m_line, s_line, b_line = axtipre.stem(per_list_n,
-                                                              tpr_list_n,
-                                                              markerfmt='v',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.ctewl)
-                        plt.setp(m_line, 'markeredgecolor', self.ctewl)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.ctewl)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipre.stem(
+                            per_list_n, tpr_list_n, markerfmt="v", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.ctewl)
+                        plt.setp(m_line, "markeredgecolor", self.ctewl)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.ctewl)
+                        plt.setp(b_line, "linewidth", 0.01)
 
                 else:
                     pass
@@ -658,8 +694,9 @@ class PlotResponse():
                     tpi_list_p = []
                     per_list_n = []
                     tpi_list_n = []
-                    for per, tpi in zip(wl_dict['period'][tyx],
-                                        wl_dict['im_tip'][1, tyx]):
+                    for per, tpi in zip(
+                        wl_dict["period"][tyx], wl_dict["im_tip"][1, tyx]
+                    ):
                         if tpi >= 0:
                             per_list_p.append(per)
                             tpi_list_p.append(tpi)
@@ -667,188 +704,220 @@ class PlotResponse():
                             per_list_n.append(per)
                             tpi_list_n.append(tpi)
                     if len(per_list_p) > 0:
-                        m_line, s_line, b_line = axtipim.stem(per_list_p,
-                                                              tpi_list_p,
-                                                              markerfmt='^',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.ctmwl)
-                        plt.setp(m_line, 'markeredgecolor', self.ctmwl)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.ctmwl)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipim.stem(
+                            per_list_p, tpi_list_p, markerfmt="^", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.ctmwl)
+                        plt.setp(m_line, "markeredgecolor", self.ctmwl)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.ctmwl)
+                        plt.setp(b_line, "linewidth", 0.01)
                     if len(per_list_n) > 0:
-                        m_line, s_line, b_line = axtipim.stem(per_list_n,
-                                                              tpi_list_n,
-                                                              markerfmt='v',
-                                                              basefmt='k')
-                        plt.setp(m_line, 'markerfacecolor', self.ctmwl)
-                        plt.setp(m_line, 'markeredgecolor', self.ctmwl)
-                        plt.setp(m_line, 'markersize', self.ms)
-                        plt.setp(s_line, 'linewidth', self.lw)
-                        plt.setp(s_line, 'color', self.ctmwl)
-                        plt.setp(b_line, 'linewidth', .01)
+                        m_line, s_line, b_line = axtipim.stem(
+                            per_list_n, tpi_list_n, markerfmt="v", basefmt="k"
+                        )
+                        plt.setp(m_line, "markerfacecolor", self.ctmwl)
+                        plt.setp(m_line, "markeredgecolor", self.ctmwl)
+                        plt.setp(m_line, "markersize", self.ms)
+                        plt.setp(s_line, "linewidth", self.lw)
+                        plt.setp(s_line, "color", self.ctmwl)
+                        plt.setp(b_line, "linewidth", 0.01)
 
                 else:
                     pass
             else:
                 if self.plot_num == 1:
-                    axrte.set_title(self.station_list[jj],
-                                    fontdict={'size': self.font_size + 2,
-                                              'weight': 'bold'})
+                    axrte.set_title(
+                        self.station_list[jj],
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
                 elif self.plot_num == 2:
-                    fig.suptitle(self.station_list[jj],
-                                 fontdict={'size': self.font_size + 2,
-                                           'weight': 'bold'})
+                    fig.suptitle(
+                        self.station_list[jj],
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             # set the axis properties
             ax_list = [axrte, axrtm]
             for aa, axr in enumerate(ax_list):
                 # set both axes to logarithmic scale
-                axr.set_xscale('log', nonposx='clip')
+                axr.set_xscale("log", nonposx="clip")
 
                 try:
-                    axr.set_yscale('log', nonposy='clip')
+                    axr.set_yscale("log", nonposy="clip")
                 except ValueError:
                     pass
 
                 # put on a grid
-                axr.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
-                axr.yaxis.set_label_coords(self.ylabel_coord[0],
-                                           self.ylabel_coord[1])
+                axr.grid(True, alpha=0.3, which="both", lw=0.5 * self.lw)
+                axr.yaxis.set_label_coords(self.ylabel_coord[0], self.ylabel_coord[1])
 
                 # set resistivity limits if desired
                 if self.res_limits != None:
-                    axr.set_ylim(10**self.res_limits[0],
-                                 10**self.res_limits[1])
+                    axr.set_ylim(10 ** self.res_limits[0], 10 ** self.res_limits[1])
 
                 # set the tick labels to invisible
                 plt.setp(axr.xaxis.get_ticklabels(), visible=False)
                 if aa == 0:
-                    axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                                   fontdict={'size': self.font_size + 2,
-                                             'weight': 'bold'})
+                    axr.set_ylabel(
+                        "App. Res. ($\Omega \cdot m$)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
                 # set legend based on the plot type
                 if self.plot_num == 1:
                     if aa == 0:
-                        axr.legend(rlistte + rlisttm, llistte + llisttm,
-                                   loc=2, markerscale=1,
-                                   borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,
-                                   borderpad=.05,
-                                   prop={'size': self.font_size + 1})
+                        axr.legend(
+                            rlistte + rlisttm,
+                            llistte + llisttm,
+                            loc=2,
+                            markerscale=1,
+                            borderaxespad=0.05,
+                            labelspacing=0.08,
+                            handletextpad=0.15,
+                            borderpad=0.05,
+                            prop={"size": self.font_size + 1},
+                        )
                 elif self.plot_num == 2:
                     if aa == 0:
-                        axr.legend(rlistte,
-                                   llistte,
-                                   loc=2, markerscale=1,
-                                   borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,
-                                   borderpad=.05,
-                                   prop={'size': self.font_size + 1})
+                        axr.legend(
+                            rlistte,
+                            llistte,
+                            loc=2,
+                            markerscale=1,
+                            borderaxespad=0.05,
+                            labelspacing=0.08,
+                            handletextpad=0.15,
+                            borderpad=0.05,
+                            prop={"size": self.font_size + 1},
+                        )
 
                     if aa == 1:
-                        axr.legend(rlisttm,
-                                   llisttm,
-                                   loc=2, markerscale=1,
-                                   borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,
-                                   borderpad=.05,
-                                   prop={'size': self.font_size + 1})
+                        axr.legend(
+                            rlisttm,
+                            llisttm,
+                            loc=2,
+                            markerscale=1,
+                            borderaxespad=0.05,
+                            labelspacing=0.08,
+                            handletextpad=0.15,
+                            borderpad=0.05,
+                            prop={"size": self.font_size + 1},
+                        )
 
             # set Properties for the phase axes
             for aa, axp in enumerate([axpte, axptm]):
                 # set the x-axis to log scale
-                axp.set_xscale('log', nonposx='clip')
+                axp.set_xscale("log", nonposx="clip")
 
                 # set the phase limits
                 axp.set_ylim(self.phase_limits)
 
                 # put a grid on the subplot
-                axp.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
+                axp.grid(True, alpha=0.3, which="both", lw=0.5 * self.lw)
 
                 # set the tick locations
                 axp.yaxis.set_major_locator(MultipleLocator(10))
                 axp.yaxis.set_minor_locator(MultipleLocator(2))
 
                 # set the x axis label
-                if self.plot_tipper == 'y':
+                if self.plot_tipper == "y":
                     plt.setp(axp.get_xticklabels(), visible=False)
                 else:
-                    axp.set_xlabel('Period (s)',
-                                   fontdict={'size': self.font_size + 2,
-                                             'weight': 'bold'})
+                    axp.set_xlabel(
+                        "Period (s)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
                 # put the y label on the far left plot
-                axp.yaxis.set_label_coords(self.ylabel_coord[0],
-                                           self.ylabel_coord[1])
+                axp.yaxis.set_label_coords(self.ylabel_coord[0], self.ylabel_coord[1])
                 if aa == 0:
-                    axp.set_ylabel('Phase (deg)',
-                                   fontdict={'size': self.font_size + 2,
-                                             'weight': 'bold'})
+                    axp.set_ylabel(
+                        "Phase (deg)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             # set axes properties of tipper axis
-            if self.plot_tipper == 'y':
+            if self.plot_tipper == "y":
                 for aa, axt in enumerate([axtipre, axtipim]):
-                    axt.set_xscale('log', nonposx='clip')
+                    axt.set_xscale("log", nonposx="clip")
 
                     # set tipper limits
                     axt.set_ylim(self.tip_limits)
 
                     # put a grid on the subplot
-                    axt.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
+                    axt.grid(True, alpha=0.3, which="both", lw=0.5 * self.lw)
 
                     # set the tick locations
-                    axt.yaxis.set_major_locator(MultipleLocator(.2))
-                    axt.yaxis.set_minor_locator(MultipleLocator(.1))
+                    axt.yaxis.set_major_locator(MultipleLocator(0.2))
+                    axt.yaxis.set_minor_locator(MultipleLocator(0.1))
 
                     # set the x axis label
-                    axt.set_xlabel('Period (s)',
-                                   fontdict={'size': self.font_size + 2,
-                                             'weight': 'bold'})
+                    axt.set_xlabel(
+                        "Period (s)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
-                    axt.set_xlim(10**np.floor(np.log10(wl_dict['period'].min())),
-                                 10**np.ceil(np.log10(wl_dict['period'].max())))
+                    axt.set_xlim(
+                        10 ** np.floor(np.log10(wl_dict["period"].min())),
+                        10 ** np.ceil(np.log10(wl_dict["period"].max())),
+                    )
 
                     # put the y label on the far left plot
-                    axt.yaxis.set_label_coords(self.ylabel_coord[0],
-                                               self.ylabel_coord[1])
+                    axt.yaxis.set_label_coords(
+                        self.ylabel_coord[0], self.ylabel_coord[1]
+                    )
                     if aa == 0:
-                        axt.set_ylabel('Tipper',
-                                       fontdict={'size': self.font_size + 2,
-                                                 'weight': 'bold'})
+                        axt.set_ylabel(
+                            "Tipper",
+                            fontdict={"size": self.font_size + 2, "weight": "bold"},
+                        )
                         if self.plot_num == 2:
-                            axt.text(axt.get_xlim()[0] * 1.25,
-                                     self.tip_limits[1] * .9,
-                                     'Real', horizontalalignment='left',
-                                     verticalalignment='top',
-                                     bbox={'facecolor': 'white'},
-                                     fontdict={'size': self.font_size + 1})
+                            axt.text(
+                                axt.get_xlim()[0] * 1.25,
+                                self.tip_limits[1] * 0.9,
+                                "Real",
+                                horizontalalignment="left",
+                                verticalalignment="top",
+                                bbox={"facecolor": "white"},
+                                fontdict={"size": self.font_size + 1},
+                            )
                         else:
-                            axt.legend(t_list, t_label,
-                                       loc=2, markerscale=1,
-                                       borderaxespad=.05,
-                                       labelspacing=.08,
-                                       handletextpad=.15,
-                                       borderpad=.05,
-                                       prop={'size': self.font_size + 1})
+                            axt.legend(
+                                t_list,
+                                t_label,
+                                loc=2,
+                                markerscale=1,
+                                borderaxespad=0.05,
+                                labelspacing=0.08,
+                                handletextpad=0.15,
+                                borderpad=0.05,
+                                prop={"size": self.font_size + 1},
+                            )
                     if aa == 1:
                         if self.plot_num == 2:
-                            axt.text(axt.get_xlim()[0] * 1.25,
-                                     self.tip_limits[1] * .9,
-                                     'Imag', horizontalalignment='left',
-                                     verticalalignment='top',
-                                     bbox={'facecolor': 'white'},
-                                     fontdict={'size': self.font_size + 1})
+                            axt.text(
+                                axt.get_xlim()[0] * 1.25,
+                                self.tip_limits[1] * 0.9,
+                                "Imag",
+                                horizontalalignment="left",
+                                verticalalignment="top",
+                                bbox={"facecolor": "white"},
+                                fontdict={"size": self.font_size + 1},
+                            )
 
             # make sure the axis and figure are accessible to the user
-            self.fig_list.append({'station': self.station_list[jj],
-                                  'fig': fig, 'axrte': axrte, 'axrtm': axrtm,
-                                  'axpte': axpte, 'axptm': axptm})
+            self.fig_list.append(
+                {
+                    "station": self.station_list[jj],
+                    "fig": fig,
+                    "axrte": axrte,
+                    "axrtm": axrtm,
+                    "axpte": axpte,
+                    "axptm": axptm,
+                }
+            )
 
         # set the plot to be full screen well at least try
         plt.show()
@@ -870,11 +939,10 @@ class PlotResponse():
             >>> p1.redraw_plot()
         """
 
-        plt.close('all')
+        plt.close("all")
         self.plot()
 
-    def save_figures(self, save_path, fig_fmt='pdf', fig_dpi=None,
-                     close_fig='y'):
+    def save_figures(self, save_path, fig_fmt="pdf", fig_dpi=None, close_fig="y"):
         """
         save all the figure that are in self.fig_list
 
@@ -891,18 +959,17 @@ class PlotResponse():
             os.mkdir(save_path)
 
         for fdict in self.fig_list:
-            svfn = '{0}_resp.{1}'.format(fdict['station'], fig_fmt)
-            fdict['fig'].savefig(os.path.join(save_path, svfn),
-                                 dpi=self.fig_dpi)
-            if close_fig == 'y':
-                plt.close(fdict['fig'])
+            svfn = "{0}_resp.{1}".format(fdict["station"], fig_fmt)
+            fdict["fig"].savefig(os.path.join(save_path, svfn), dpi=self.fig_dpi)
+            if close_fig == "y":
+                plt.close(fdict["fig"])
 
             print("saved figure to {0}".format(os.path.join(save_path, svfn)))
 
 
-#==============================================================================
+# ==============================================================================
 # plot pseudo section of data and model response
-#==============================================================================
+# ==============================================================================
 class PlotPseudoSection(object):
     """
     plot a pseudo section of the data and response if given
@@ -979,49 +1046,57 @@ class PlotPseudoSection(object):
 
         self.wl_data_fn = wl_data_fn
 
-        self.plot_resp = kwargs.pop('plot_resp', 'y')
+        self.plot_resp = kwargs.pop("plot_resp", "y")
 
-        self.label_list = [r'$\rho_{TE-Data}$', r'$\rho_{TE-Model}$',
-                           r'$\rho_{TM-Data}$', r'$\rho_{TM-Model}$',
-                           '$\phi_{TE-Data}$', '$\phi_{TE-Model}$',
-                           '$\phi_{TM-Data}$', '$\phi_{TM-Model}$',
-                           '$\Re e\{T_{Data}\}$', '$\Re e\{T_{Model}\}$',
-                           '$\Im m\{T_{Data}\}$', '$\Im m\{T_{Model}\}$']
+        self.label_list = [
+            r"$\rho_{TE-Data}$",
+            r"$\rho_{TE-Model}$",
+            r"$\rho_{TM-Data}$",
+            r"$\rho_{TM-Model}$",
+            "$\phi_{TE-Data}$",
+            "$\phi_{TE-Model}$",
+            "$\phi_{TM-Data}$",
+            "$\phi_{TM-Model}$",
+            "$\Re e\{T_{Data}\}$",
+            "$\Re e\{T_{Model}\}$",
+            "$\Im m\{T_{Data}\}$",
+            "$\Im m\{T_{Model}\}$",
+        ]
 
-        self.phase_limits_te = kwargs.pop('phase_limits_te', (-5, 95))
-        self.phase_limits_tm = kwargs.pop('phase_limits_tm', (-5, 95))
-        self.res_limits_te = kwargs.pop('res_limits_te', (0, 3))
-        self.res_limits_tm = kwargs.pop('res_limits_tm', (0, 3))
-        self.tip_limits_re = kwargs.pop('tip_limits_re', (-1, 1))
-        self.tip_limits_im = kwargs.pop('tip_limits_im', (-1, 1))
+        self.phase_limits_te = kwargs.pop("phase_limits_te", (-5, 95))
+        self.phase_limits_tm = kwargs.pop("phase_limits_tm", (-5, 95))
+        self.res_limits_te = kwargs.pop("res_limits_te", (0, 3))
+        self.res_limits_tm = kwargs.pop("res_limits_tm", (0, 3))
+        self.tip_limits_re = kwargs.pop("tip_limits_re", (-1, 1))
+        self.tip_limits_im = kwargs.pop("tip_limits_im", (-1, 1))
 
-        self.phase_cmap = kwargs.pop('phase_cmap', 'jet')
-        self.res_cmap = kwargs.pop('res_cmap', 'jet_r')
-        self.tip_cmap = kwargs.pop('res_cmap', 'Spectral_r')
+        self.phase_cmap = kwargs.pop("phase_cmap", "jet")
+        self.res_cmap = kwargs.pop("res_cmap", "jet_r")
+        self.tip_cmap = kwargs.pop("res_cmap", "Spectral_r")
 
-        self.ml = kwargs.pop('ml', 2)
-        self.station_id = kwargs.pop('station_id', [0, 4])
+        self.ml = kwargs.pop("ml", 2)
+        self.station_id = kwargs.pop("station_id", [0, 4])
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .025
-        self.subplot_hspace = .0
-        self.subplot_right = .95
-        self.subplot_left = .085
-        self.subplot_top = .97
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.025
+        self.subplot_hspace = 0.0
+        self.subplot_right = 0.95
+        self.subplot_left = 0.085
+        self.subplot_top = 0.97
+        self.subplot_bottom = 0.1
 
-        self.font_size = kwargs.pop('font_size', 6)
+        self.font_size = kwargs.pop("font_size", 6)
 
-        self.plot_type = kwargs.pop('plot_type', '1')
-        self.plot_num = kwargs.pop('plot_num', 2)
-        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_type = kwargs.pop("plot_type", "1")
+        self.plot_num = kwargs.pop("plot_num", 2)
+        self.plot_tipper = kwargs.pop("plot_tipper", "n")
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
-        self.cb_shrink = .7
-        self.cb_pad = .015
+        self.cb_shrink = 0.7
+        self.cb_pad = 0.015
 
         self.axrte = None
         self.axrtm = None
@@ -1045,7 +1120,7 @@ class PlotPseudoSection(object):
 
         self.fig = None
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -1053,7 +1128,7 @@ class PlotPseudoSection(object):
         plot pseudo section of data and response if given
 
         """
-        if self.plot_resp == 'y':
+        if self.plot_resp == "y":
             nr = 2
         else:
             nr = 1
@@ -1061,17 +1136,19 @@ class PlotPseudoSection(object):
         wl_data = read_output_file(self.wl_data_fn)
         stations = list(wl_data.keys())
 
-        #--> need to sort the stations to be in order
-        slst = np.array([(ss, wl_data[ss]['index']) for ss in stations],
-                        dtype=[('station', '|S20'), ('index', np.int)])
-        slst.sort(order='index')
-        stations = slst['station']
+        # --> need to sort the stations to be in order
+        slst = np.array(
+            [(ss, wl_data[ss]["index"]) for ss in stations],
+            dtype=[("station", "|S20"), ("index", np.int)],
+        )
+        slst.sort(order="index")
+        stations = slst["station"]
 
         ns = len(list(wl_data.keys()))
-        #--> get periods in decreasing order for easier plotting
+        # --> get periods in decreasing order for easier plotting
         periods = []
         for ss in stations:
-            periods.extend(list(wl_data[ss]['period']))
+            periods.extend(list(wl_data[ss]["period"]))
 
         periods = np.array(sorted(set(periods), reverse=True))
         # need to make a dictionary of where periods go cause they are not all
@@ -1092,24 +1169,24 @@ class PlotPseudoSection(object):
 
         for ss in stations:
             d_dict = wl_data[ss]
-            ii = d_dict['index']
-            for jj, per in enumerate(d_dict['period']):
+            ii = d_dict["index"]
+            for jj, per in enumerate(d_dict["period"]):
                 p_index = p_dict[per]
-                te_res_arr[p_index, ii, 0] = d_dict['te_res'][0, jj]
-                tm_res_arr[p_index, ii, 0] = d_dict['tm_res'][0, jj]
-                te_phase_arr[p_index, ii, 0] = d_dict['te_phase'][0, jj]
-                tm_phase_arr[p_index, ii, 0] = d_dict['tm_phase'][0, jj]
-                tip_real_arr[p_index, ii, 0] = d_dict['re_tip'][0, jj]
-                tip_imag_arr[p_index, ii, 0] = d_dict['im_tip'][0, jj]
+                te_res_arr[p_index, ii, 0] = d_dict["te_res"][0, jj]
+                tm_res_arr[p_index, ii, 0] = d_dict["tm_res"][0, jj]
+                te_phase_arr[p_index, ii, 0] = d_dict["te_phase"][0, jj]
+                tm_phase_arr[p_index, ii, 0] = d_dict["tm_phase"][0, jj]
+                tip_real_arr[p_index, ii, 0] = d_dict["re_tip"][0, jj]
+                tip_imag_arr[p_index, ii, 0] = d_dict["im_tip"][0, jj]
 
                 # read in response data
-                if self.plot_resp == 'y':
-                    te_res_arr[p_index, ii, 1] = d_dict['te_res'][1, jj]
-                    tm_res_arr[p_index, ii, 1] = d_dict['tm_res'][1, jj]
-                    te_phase_arr[p_index, ii, 1] = d_dict['te_phase'][1, jj]
-                    tm_phase_arr[p_index, ii, 1] = d_dict['tm_phase'][1, jj]
-                    tip_real_arr[p_index, ii, 1] = d_dict['re_tip'][1, jj]
-                    tip_imag_arr[p_index, ii, 1] = d_dict['im_tip'][1, jj]
+                if self.plot_resp == "y":
+                    te_res_arr[p_index, ii, 1] = d_dict["te_res"][1, jj]
+                    tm_res_arr[p_index, ii, 1] = d_dict["tm_res"][1, jj]
+                    te_phase_arr[p_index, ii, 1] = d_dict["te_phase"][1, jj]
+                    tm_phase_arr[p_index, ii, 1] = d_dict["tm_phase"][1, jj]
+                    tip_real_arr[p_index, ii, 1] = d_dict["re_tip"][1, jj]
+                    tip_imag_arr[p_index, ii, 1] = d_dict["im_tip"][1, jj]
 
         # need to make any zeros 1 for taking log10
         te_res_arr[np.where(te_res_arr == 0)] = 1.0
@@ -1131,173 +1208,213 @@ class PlotPseudoSection(object):
         # make list for station labels
         sindex_1 = self.station_id[0]
         sindex_2 = self.station_id[1]
-        slabel = [stations[ss][sindex_1:sindex_2]
-                  for ss in range(0, ns, self.ml)]
+        slabel = [stations[ss][sindex_1:sindex_2] for ss in range(0, ns, self.ml)]
 
         xloc = offset_list[0] + abs(offset_list[0] - offset_list[1]) / 5
         yloc = 1.10 * periods[-2]
 
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
 
-        log_labels_te = ['10$^{0}$'.format('{' + str(nn) + '}')
-                         for nn in np.arange(int(self.res_limits_te[0]),
-                                             int(self.res_limits_te[1]) + 1)]
-        log_labels_tm = ['10$^{0}$'.format('{' + str(nn) + '}')
-                         for nn in np.arange(int(self.res_limits_tm[0]),
-                                             int(self.res_limits_tm[1]) + 1)]
+        log_labels_te = [
+            "10$^{0}$".format("{" + str(nn) + "}")
+            for nn in np.arange(
+                int(self.res_limits_te[0]), int(self.res_limits_te[1]) + 1
+            )
+        ]
+        log_labels_tm = [
+            "10$^{0}$".format("{" + str(nn) + "}")
+            for nn in np.arange(
+                int(self.res_limits_tm[0]), int(self.res_limits_tm[1]) + 1
+            )
+        ]
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        if self.plot_resp == 'y':
-            if self.plot_tipper == 'y':
-                gs1 = gridspec.GridSpec(1, 3,
-                                        left=self.subplot_left,
-                                        right=self.subplot_right,
-                                        wspace=self.subplot_wspace)
-                gs4 = gridspec.GridSpecFromSubplotSpec(2, 2,
-                                                       hspace=self.subplot_hspace,
-                                                       wspace=0,
-                                                       subplot_spec=gs1[2])
+        if self.plot_resp == "y":
+            if self.plot_tipper == "y":
+                gs1 = gridspec.GridSpec(
+                    1,
+                    3,
+                    left=self.subplot_left,
+                    right=self.subplot_right,
+                    wspace=self.subplot_wspace,
+                )
+                gs4 = gridspec.GridSpecFromSubplotSpec(
+                    2, 2, hspace=self.subplot_hspace, wspace=0, subplot_spec=gs1[2]
+                )
             else:
-                gs1 = gridspec.GridSpec(1, 2,
-                                        left=self.subplot_left,
-                                        right=self.subplot_right,
-                                        wspace=self.subplot_wspace)
-            gs2 = gridspec.GridSpecFromSubplotSpec(2, 2,
-                                                   hspace=self.subplot_hspace,
-                                                   wspace=0,
-                                                   subplot_spec=gs1[0])
-            gs3 = gridspec.GridSpecFromSubplotSpec(2, 2,
-                                                   hspace=self.subplot_hspace,
-                                                   wspace=0,
-                                                   subplot_spec=gs1[1])
+                gs1 = gridspec.GridSpec(
+                    1,
+                    2,
+                    left=self.subplot_left,
+                    right=self.subplot_right,
+                    wspace=self.subplot_wspace,
+                )
+            gs2 = gridspec.GridSpecFromSubplotSpec(
+                2, 2, hspace=self.subplot_hspace, wspace=0, subplot_spec=gs1[0]
+            )
+            gs3 = gridspec.GridSpecFromSubplotSpec(
+                2, 2, hspace=self.subplot_hspace, wspace=0, subplot_spec=gs1[1]
+            )
 
             # plot TE resistivity data
             self.axrte = plt.Subplot(self.fig, gs2[0, 0])
             self.fig.add_subplot(self.axrte)
-            self.axrte.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.log10(te_res_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_te[0],
-                                  vmax=self.res_limits_te[1])
+            self.axrte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.log10(te_res_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_te[0],
+                vmax=self.res_limits_te[1],
+            )
 
             # plot TE resistivity model
             self.axmrte = plt.Subplot(self.fig, gs2[0, 1])
             self.fig.add_subplot(self.axmrte)
-            self.axmrte.pcolormesh(dgrid,
-                                   fgrid,
-                                   np.log10(te_res_arr[:, :, 1]),
-                                   cmap=self.res_cmap,
-                                   vmin=self.res_limits_te[0],
-                                   vmax=self.res_limits_te[1])
+            self.axmrte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.log10(te_res_arr[:, :, 1]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_te[0],
+                vmax=self.res_limits_te[1],
+            )
 
             # plot TM resistivity data
             self.axrtm = plt.Subplot(self.fig, gs3[0, 0])
             self.fig.add_subplot(self.axrtm)
-            self.axrtm.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.log10(tm_res_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_tm[0],
-                                  vmax=self.res_limits_tm[1])
+            self.axrtm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.log10(tm_res_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_tm[0],
+                vmax=self.res_limits_tm[1],
+            )
 
             # plot TM resistivity model
             self.axmrtm = plt.Subplot(self.fig, gs3[0, 1])
             self.fig.add_subplot(self.axmrtm)
-            self.axmrtm.pcolormesh(dgrid,
-                                   fgrid,
-                                   np.log10(tm_res_arr[:, :, 1]),
-                                   cmap=self.res_cmap,
-                                   vmin=self.res_limits_tm[0],
-                                   vmax=self.res_limits_tm[1])
+            self.axmrtm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.log10(tm_res_arr[:, :, 1]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_tm[0],
+                vmax=self.res_limits_tm[1],
+            )
 
             # plot TE phase data
             self.axpte = plt.Subplot(self.fig, gs2[1, 0])
             self.fig.add_subplot(self.axpte)
-            self.axpte.pcolormesh(dgrid,
-                                  fgrid,
-                                  te_phase_arr[:, :, 0],
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_te[0],
-                                  vmax=self.phase_limits_te[1])
+            self.axpte.pcolormesh(
+                dgrid,
+                fgrid,
+                te_phase_arr[:, :, 0],
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_te[0],
+                vmax=self.phase_limits_te[1],
+            )
 
             # plot TE phase model
             self.axmpte = plt.Subplot(self.fig, gs2[1, 1])
             self.fig.add_subplot(self.axmpte)
-            self.axmpte.pcolormesh(dgrid,
-                                   fgrid,
-                                   te_phase_arr[:, :, 1],
-                                   cmap=self.phase_cmap,
-                                   vmin=self.phase_limits_te[0],
-                                   vmax=self.phase_limits_te[1])
+            self.axmpte.pcolormesh(
+                dgrid,
+                fgrid,
+                te_phase_arr[:, :, 1],
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_te[0],
+                vmax=self.phase_limits_te[1],
+            )
 
             # plot TM phase data
             self.axptm = plt.Subplot(self.fig, gs3[1, 0])
             self.fig.add_subplot(self.axptm)
-            self.axptm.pcolormesh(dgrid,
-                                  fgrid,
-                                  tm_phase_arr[:, :, 0],
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_tm[0],
-                                  vmax=self.phase_limits_tm[1])
+            self.axptm.pcolormesh(
+                dgrid,
+                fgrid,
+                tm_phase_arr[:, :, 0],
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_tm[0],
+                vmax=self.phase_limits_tm[1],
+            )
 
             # plot TM phase model
             self.axmptm = plt.Subplot(self.fig, gs3[1, 1])
             self.fig.add_subplot(self.axmptm)
-            self.axmptm.pcolormesh(dgrid,
-                                   fgrid,
-                                   tm_phase_arr[:, :, 1],
-                                   cmap=self.phase_cmap,
-                                   vmin=self.phase_limits_tm[0],
-                                   vmax=self.phase_limits_tm[1])
+            self.axmptm.pcolormesh(
+                dgrid,
+                fgrid,
+                tm_phase_arr[:, :, 1],
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_tm[0],
+                vmax=self.phase_limits_tm[1],
+            )
 
-            ax_list = [self.axrte, self.axmrte, self.axrtm, self.axmrtm,
-                       self.axpte, self.axmpte, self.axptm, self.axmptm]
+            ax_list = [
+                self.axrte,
+                self.axmrte,
+                self.axrtm,
+                self.axmrtm,
+                self.axpte,
+                self.axmpte,
+                self.axptm,
+                self.axmptm,
+            ]
 
-            if self.plot_tipper == 'y':
+            if self.plot_tipper == "y":
                 # plot real tipper  data
                 self.axtpr = plt.Subplot(self.fig, gs4[0, 0])
                 self.fig.add_subplot(self.axtpr)
-                self.axtpr.pcolormesh(dgrid,
-                                      fgrid,
-                                      tip_real_arr[:, :, 0],
-                                      cmap=self.tip_cmap,
-                                      vmin=self.tip_limits_re[0],
-                                      vmax=self.tip_limits_re[1])
+                self.axtpr.pcolormesh(
+                    dgrid,
+                    fgrid,
+                    tip_real_arr[:, :, 0],
+                    cmap=self.tip_cmap,
+                    vmin=self.tip_limits_re[0],
+                    vmax=self.tip_limits_re[1],
+                )
                 # plot real tipper  model
                 self.axmtpr = plt.Subplot(self.fig, gs4[0, 1])
                 self.fig.add_subplot(self.axmtpr)
-                self.axmtpr.pcolormesh(dgrid,
-                                       fgrid,
-                                       tip_real_arr[:, :, 1],
-                                       cmap=self.tip_cmap,
-                                       vmin=self.tip_limits_re[0],
-                                       vmax=self.tip_limits_re[1])
+                self.axmtpr.pcolormesh(
+                    dgrid,
+                    fgrid,
+                    tip_real_arr[:, :, 1],
+                    cmap=self.tip_cmap,
+                    vmin=self.tip_limits_re[0],
+                    vmax=self.tip_limits_re[1],
+                )
 
                 # plot imag tipper  data
                 self.axtpi = plt.Subplot(self.fig, gs4[1, 0])
                 self.fig.add_subplot(self.axtpi)
-                self.axtpi.pcolormesh(dgrid,
-                                      fgrid,
-                                      tip_imag_arr[:, :, 0],
-                                      cmap=self.tip_cmap,
-                                      vmin=self.tip_limits_re[0],
-                                      vmax=self.tip_limits_re[1])
+                self.axtpi.pcolormesh(
+                    dgrid,
+                    fgrid,
+                    tip_imag_arr[:, :, 0],
+                    cmap=self.tip_cmap,
+                    vmin=self.tip_limits_re[0],
+                    vmax=self.tip_limits_re[1],
+                )
                 # plot imag tipper  model
                 self.axmtpi = plt.Subplot(self.fig, gs4[1, 1])
                 self.fig.add_subplot(self.axmtpi)
-                self.axmtpi.pcolormesh(dgrid,
-                                       fgrid,
-                                       tip_imag_arr[:, :, 1],
-                                       cmap=self.tip_cmap,
-                                       vmin=self.tip_limits_re[0],
-                                       vmax=self.tip_limits_re[1])
+                self.axmtpi.pcolormesh(
+                    dgrid,
+                    fgrid,
+                    tip_imag_arr[:, :, 1],
+                    cmap=self.tip_cmap,
+                    vmin=self.tip_limits_re[0],
+                    vmax=self.tip_limits_re[1],
+                )
 
                 ax_list.append(self.axtpr)
                 ax_list.append(self.axmtpr)
@@ -1314,149 +1431,211 @@ class PlotPseudoSection(object):
                 ax.set_xlim(offset_list.min(), offset_list.max())
                 if np.remainder(xx, 2.0) == 1:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    cbx = mcb.make_axes(ax,
-                                        shrink=self.cb_shrink,
-                                        pad=self.cb_pad)
+                    cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
                 if xx == 2 or xx == 6 or xx == 8 or xx == 10:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
                 if xx < 4:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     if xx == 1:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                              norm=Normalize(vmin=self.res_limits_te[0],
-                                                             vmax=self.res_limits_te[1]))
-                        cb.set_ticks(np.arange(int(self.res_limits_te[0]),
-                                               int(self.res_limits_te[1]) + 1))
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.res_cmap,
+                            norm=Normalize(
+                                vmin=self.res_limits_te[0], vmax=self.res_limits_te[1]
+                            ),
+                        )
+                        cb.set_ticks(
+                            np.arange(
+                                int(self.res_limits_te[0]),
+                                int(self.res_limits_te[1]) + 1,
+                            )
+                        )
                         cb.set_ticklabels(log_labels_te)
                     if xx == 3:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                              norm=Normalize(vmin=self.res_limits_tm[0],
-                                                             vmax=self.res_limits_tm[1]))
-                        cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
-                        cb.set_label('Resistivity ($\Omega \cdot$m)',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
-                        cb.set_ticks(np.arange(int(self.res_limits_tm[0]),
-                                               int(self.res_limits_tm[1]) + 1))
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.res_cmap,
+                            norm=Normalize(
+                                vmin=self.res_limits_tm[0], vmax=self.res_limits_tm[1]
+                            ),
+                        )
+                        cb.set_label(
+                            "App. Res. ($\Omega \cdot$m)",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
+                        cb.set_label(
+                            "Resistivity ($\Omega \cdot$m)",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
+                        cb.set_ticks(
+                            np.arange(
+                                int(self.res_limits_tm[0]),
+                                int(self.res_limits_tm[1]) + 1,
+                            )
+                        )
                         cb.set_ticklabels(log_labels_tm)
                 else:
                     # color bar TE phase
                     if xx == 5:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                              norm=Normalize(vmin=self.phase_limits_te[0],
-                                                             vmax=self.phase_limits_te[1]))
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.phase_cmap,
+                            norm=Normalize(
+                                vmin=self.phase_limits_te[0],
+                                vmax=self.phase_limits_te[1],
+                            ),
+                        )
                     # color bar TM phase
                     if xx == 7:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                              norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                             vmax=self.phase_limits_tm[1]))
-                        cb.set_label('Phase (deg)',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.phase_cmap,
+                            norm=Normalize(
+                                vmin=self.phase_limits_tm[0],
+                                vmax=self.phase_limits_tm[1],
+                            ),
+                        )
+                        cb.set_label(
+                            "Phase (deg)",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
                     # color bar tipper Imag
                     if xx == 9:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                              norm=Normalize(vmin=self.tip_limits_re[0],
-                                                             vmax=self.tip_limits_re[1]))
-                        cb.set_label('Re{T}',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.tip_cmap,
+                            norm=Normalize(
+                                vmin=self.tip_limits_re[0], vmax=self.tip_limits_re[1]
+                            ),
+                        )
+                        cb.set_label(
+                            "Re{T}",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
                     if xx == 11:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                              norm=Normalize(vmin=self.tip_limits_im[0],
-                                                             vmax=self.tip_limits_im[1]))
-                        cb.set_label('Im{T}',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.tip_cmap,
+                            norm=Normalize(
+                                vmin=self.tip_limits_im[0], vmax=self.tip_limits_im[1]
+                            ),
+                        )
+                        cb.set_label(
+                            "Im{T}",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
 
-                ax.text(xloc, yloc, self.label_list[xx],
-                        fontdict={'size': self.font_size + 1},
-                        bbox={'facecolor': 'white'},
-                        horizontalalignment='left',
-                        verticalalignment='top')
+                ax.text(
+                    xloc,
+                    yloc,
+                    self.label_list[xx],
+                    fontdict={"size": self.font_size + 1},
+                    bbox={"facecolor": "white"},
+                    horizontalalignment="left",
+                    verticalalignment="top",
+                )
                 if xx == 0 or xx == 4:
-                    ax.set_ylabel('Period (s)',
-                                  fontdict={'size': self.font_size + 2,
-                                            'weight': 'bold'})
+                    ax.set_ylabel(
+                        "Period (s)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
                 if xx > 3:
-                    ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
-                                                       'weight': 'bold'})
+                    ax.set_xlabel(
+                        "Station",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             plt.show()
 
         else:
-            if self.plot_tipper == 'y':
-                gs1 = gridspec.GridSpec(2, 3,
-                                        left=self.subplot_left,
-                                        right=self.subplot_right,
-                                        hspace=self.subplot_hspace,
-                                        wspace=self.subplot_wspace)
+            if self.plot_tipper == "y":
+                gs1 = gridspec.GridSpec(
+                    2,
+                    3,
+                    left=self.subplot_left,
+                    right=self.subplot_right,
+                    hspace=self.subplot_hspace,
+                    wspace=self.subplot_wspace,
+                )
 
             else:
-                gs1 = gridspec.GridSpec(2, 2,
-                                        left=self.subplot_left,
-                                        right=self.subplot_right,
-                                        hspace=self.subplot_hspace,
-                                        wspace=self.subplot_wspace)
+                gs1 = gridspec.GridSpec(
+                    2,
+                    2,
+                    left=self.subplot_left,
+                    right=self.subplot_right,
+                    hspace=self.subplot_hspace,
+                    wspace=self.subplot_wspace,
+                )
 
             # plot TE resistivity data
             self.axrte = self.fig.add_subplot(gs1[0, 0])
-            self.axrte.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.log10(te_res_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_te[0],
-                                  vmax=self.res_limits_te[1])
+            self.axrte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.log10(te_res_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_te[0],
+                vmax=self.res_limits_te[1],
+            )
 
             # plot TM resistivity data
             self.axrtm = self.fig.add_subplot(gs1[0, 1])
-            self.axrtm.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.log10(tm_res_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_tm[0],
-                                  vmax=self.res_limits_tm[1])
+            self.axrtm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.log10(tm_res_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_tm[0],
+                vmax=self.res_limits_tm[1],
+            )
 
             # plot TE phase data
             self.axpte = self.fig.add_subplot(gs1[1, 0])
-            self.axpte.pcolormesh(dgrid,
-                                  fgrid,
-                                  te_phase_arr[:, :, 0],
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_te[0],
-                                  vmax=self.phase_limits_te[1])
+            self.axpte.pcolormesh(
+                dgrid,
+                fgrid,
+                te_phase_arr[:, :, 0],
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_te[0],
+                vmax=self.phase_limits_te[1],
+            )
 
             # plot TM phase data
             self.axptm = self.fig.add_subplot(gs1[1, 1])
-            self.axptm.pcolormesh(dgrid,
-                                  fgrid,
-                                  tm_phase_arr[:, :, 0],
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_tm[0],
-                                  vmax=self.phase_limits_tm[1])
+            self.axptm.pcolormesh(
+                dgrid,
+                fgrid,
+                tm_phase_arr[:, :, 0],
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_tm[0],
+                vmax=self.phase_limits_tm[1],
+            )
             ax_list = [self.axrte, self.axrtm, self.axpte, self.axptm]
-            if self.plot_tipper == 'y':
+            if self.plot_tipper == "y":
                 # plot real tipper  data
                 self.axtpr = plt.Subplot(self.fig, gs1[0, 2])
                 self.fig.add_subplot(self.axtpr)
-                self.axtpr.pcolormesh(dgrid,
-                                      fgrid,
-                                      tip_real_arr[:, :, 0],
-                                      cmap=self.tip_cmap,
-                                      vmin=self.tip_limits_re[0],
-                                      vmax=self.tip_limits_re[1])
+                self.axtpr.pcolormesh(
+                    dgrid,
+                    fgrid,
+                    tip_real_arr[:, :, 0],
+                    cmap=self.tip_cmap,
+                    vmin=self.tip_limits_re[0],
+                    vmax=self.tip_limits_re[1],
+                )
                 # plot real tipper  data
                 self.axtpi = plt.Subplot(self.fig, gs1[1, 2])
                 self.fig.add_subplot(self.axtpi)
-                self.axtpi.pcolormesh(dgrid,
-                                      fgrid,
-                                      tip_imag_arr[:, :, 0],
-                                      cmap=self.tip_cmap,
-                                      vmin=self.tip_limits_re[0],
-                                      vmax=self.tip_limits_re[1])
+                self.axtpi.pcolormesh(
+                    dgrid,
+                    fgrid,
+                    tip_imag_arr[:, :, 0],
+                    cmap=self.tip_cmap,
+                    vmin=self.tip_limits_re[0],
+                    vmax=self.tip_limits_re[1],
+                )
                 ax_list.append(self.axtpr)
                 ax_list.append(self.axtpi)
 
@@ -1467,81 +1646,120 @@ class PlotPseudoSection(object):
                 ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
                 ax.xaxis.set_ticks(offset_list, minor=True)
                 ax.xaxis.set_ticklabels(slabel)
-                ax.grid(True, alpha=.25)
+                ax.grid(True, alpha=0.25)
                 ax.set_xlim(offset_list.min(), offset_list.max())
-                cbx = mcb.make_axes(ax,
-                                    shrink=self.cb_shrink,
-                                    pad=self.cb_pad)
+                cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
                 if xx == 0:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                          norm=Normalize(vmin=self.res_limits_te[0],
-                                                         vmax=self.res_limits_te[1]))
-                    cb.set_ticks(np.arange(self.res_limits_te[0],
-                                           self.res_limits_te[1] + 1))
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.res_cmap,
+                        norm=Normalize(
+                            vmin=self.res_limits_te[0], vmax=self.res_limits_te[1]
+                        ),
+                    )
+                    cb.set_ticks(
+                        np.arange(self.res_limits_te[0], self.res_limits_te[1] + 1)
+                    )
                     cb.set_ticklabels(log_labels_te)
                 elif xx == 1:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                          norm=Normalize(vmin=self.res_limits_tm[0],
-                                                         vmax=self.res_limits_tm[1]))
-                    cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                 fontdict={'size': self.font_size + 1,
-                                           'weight': 'bold'})
-                    cb.set_ticks(np.arange(self.res_limits_tm[0],
-                                           self.res_limits_tm[1] + 1))
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.res_cmap,
+                        norm=Normalize(
+                            vmin=self.res_limits_tm[0], vmax=self.res_limits_tm[1]
+                        ),
+                    )
+                    cb.set_label(
+                        "App. Res. ($\Omega \cdot$m)",
+                        fontdict={"size": self.font_size + 1, "weight": "bold"},
+                    )
+                    cb.set_ticks(
+                        np.arange(self.res_limits_tm[0], self.res_limits_tm[1] + 1)
+                    )
                     cb.set_ticklabels(log_labels_tm)
                 elif xx == 2:
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                          norm=Normalize(vmin=self.phase_limits_te[0],
-                                                         vmax=self.phase_limits_te[1]))
-                    cb.set_ticks(np.arange(self.phase_limits_te[0],
-                                           self.phase_limits_te[1] + 1, 15))
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.phase_cmap,
+                        norm=Normalize(
+                            vmin=self.phase_limits_te[0], vmax=self.phase_limits_te[1]
+                        ),
+                    )
+                    cb.set_ticks(
+                        np.arange(
+                            self.phase_limits_te[0], self.phase_limits_te[1] + 1, 15
+                        )
+                    )
                 elif xx == 3:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                          norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                         vmax=self.phase_limits_tm[1]))
-                    cb.set_label('Phase (deg)',
-                                 fontdict={'size': self.font_size + 1,
-                                           'weight': 'bold'})
-                    cb.set_ticks(np.arange(self.phase_limits_te[0],
-                                           self.phase_limits_te[1] + 1, 15))
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.phase_cmap,
+                        norm=Normalize(
+                            vmin=self.phase_limits_tm[0], vmax=self.phase_limits_tm[1]
+                        ),
+                    )
+                    cb.set_label(
+                        "Phase (deg)",
+                        fontdict={"size": self.font_size + 1, "weight": "bold"},
+                    )
+                    cb.set_ticks(
+                        np.arange(
+                            self.phase_limits_te[0], self.phase_limits_te[1] + 1, 15
+                        )
+                    )
 
                 # real tipper
                 elif xx == 4:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                          norm=Normalize(vmin=self.tip_limits_re[0],
-                                                         vmax=self.tip_limits_re[1]))
-                    cb.set_label('Re{T}',
-                                 fontdict={'size': self.font_size + 1,
-                                           'weight': 'bold'})
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.tip_cmap,
+                        norm=Normalize(
+                            vmin=self.tip_limits_re[0], vmax=self.tip_limits_re[1]
+                        ),
+                    )
+                    cb.set_label(
+                        "Re{T}", fontdict={"size": self.font_size + 1, "weight": "bold"}
+                    )
                 # imag tipper
                 elif xx == 5:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                          norm=Normalize(vmin=self.tip_limits_im[0],
-                                                         vmax=self.tip_limits_im[1]))
-                    cb.set_label('Im{T}',
-                                 fontdict={'size': self.font_size + 1,
-                                           'weight': 'bold'})
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.tip_cmap,
+                        norm=Normalize(
+                            vmin=self.tip_limits_im[0], vmax=self.tip_limits_im[1]
+                        ),
+                    )
+                    cb.set_label(
+                        "Im{T}", fontdict={"size": self.font_size + 1, "weight": "bold"}
+                    )
 
-                ax.text(xloc, yloc, self.label_list[2 * xx],
-                        fontdict={'size': self.font_size + 1},
-                        bbox={'facecolor': 'white'},
-                        horizontalalignment='left',
-                        verticalalignment='top')
+                ax.text(
+                    xloc,
+                    yloc,
+                    self.label_list[2 * xx],
+                    fontdict={"size": self.font_size + 1},
+                    bbox={"facecolor": "white"},
+                    horizontalalignment="left",
+                    verticalalignment="top",
+                )
                 if xx == 0 or xx == 2:
-                    ax.set_ylabel('Period (s)',
-                                  fontdict={'size': self.font_size + 2,
-                                            'weight': 'bold'})
+                    ax.set_ylabel(
+                        "Period (s)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
                 if xx > 1:
-                    ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
-                                                       'weight': 'bold'})
+                    ax.set_xlabel(
+                        "Station",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             plt.show()
 
@@ -1566,8 +1784,14 @@ class PlotPseudoSection(object):
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_plot='y'):
+    def save_figure(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_plot="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -1613,16 +1837,25 @@ class PlotPseudoSection(object):
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
         else:
-            save_fn = os.path.join(save_fn, 'WLPseudoSection.' +
-                                   file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(save_fn, "WLPseudoSection." + file_format)
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-        if close_plot == 'y':
+        if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -1630,7 +1863,7 @@ class PlotPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print('Saved figure to: ' + self.fig_fn)
+        print("Saved figure to: " + self.fig_fn)
 
     def update_plot(self):
         """
@@ -1654,11 +1887,15 @@ class PlotPseudoSection(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots a pseudo section of TE and TM modes for data and "
-                "response if given.")
-#==============================================================================
+        return (
+            "Plots a pseudo section of TE and TM modes for data and "
+            "response if given."
+        )
+
+
+# ==============================================================================
 # plot misfits as a pseudo-section
-#==============================================================================
+# ==============================================================================
 
 
 class PlotMisfitPseudoSection(object):
@@ -1747,41 +1984,46 @@ class PlotMisfitPseudoSection(object):
         self.data_fn = data_fn
         self.resp_fn = resp_fn
 
-        self.label_list = [r'$\rho_{TE}$', r'$\rho_{TM}$',
-                           '$\phi_{TE}$', '$\phi_{TM}$',
-                           '$\Re e\{T\}$', '$\Im m\{T\}$']
+        self.label_list = [
+            r"$\rho_{TE}$",
+            r"$\rho_{TM}$",
+            "$\phi_{TE}$",
+            "$\phi_{TM}$",
+            "$\Re e\{T\}$",
+            "$\Im m\{T\}$",
+        ]
 
-        self.phase_limits_te = kwargs.pop('phase_limits_te', (-10, 10))
-        self.phase_limits_tm = kwargs.pop('phase_limits_tm', (-10, 10))
-        self.res_limits_te = kwargs.pop('res_limits_te', (-2, 2))
-        self.res_limits_tm = kwargs.pop('res_limits_tm', (-2, 2))
-        self.tip_limits_re = kwargs.pop('tip_limits_re', (-.2, .2))
-        self.tip_limits_im = kwargs.pop('tip_limits_im', (-.2, .2))
+        self.phase_limits_te = kwargs.pop("phase_limits_te", (-10, 10))
+        self.phase_limits_tm = kwargs.pop("phase_limits_tm", (-10, 10))
+        self.res_limits_te = kwargs.pop("res_limits_te", (-2, 2))
+        self.res_limits_tm = kwargs.pop("res_limits_tm", (-2, 2))
+        self.tip_limits_re = kwargs.pop("tip_limits_re", (-0.2, 0.2))
+        self.tip_limits_im = kwargs.pop("tip_limits_im", (-0.2, 0.2))
 
-        self.phase_cmap = kwargs.pop('phase_cmap', 'BrBG')
-        self.res_cmap = kwargs.pop('res_cmap', 'BrBG_r')
-        self.tip_cmap = kwargs.pop('tip_cmap', 'PuOr')
-        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
+        self.phase_cmap = kwargs.pop("phase_cmap", "BrBG")
+        self.res_cmap = kwargs.pop("res_cmap", "BrBG_r")
+        self.tip_cmap = kwargs.pop("tip_cmap", "PuOr")
+        self.plot_tipper = kwargs.pop("plot_tipper", "n")
 
-        self.ml = kwargs.pop('ml', 2)
-        self.station_id = kwargs.pop('station_id', [0, 4])
+        self.ml = kwargs.pop("ml", 2)
+        self.station_id = kwargs.pop("station_id", [0, 4])
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .0025
-        self.subplot_hspace = .0
-        self.subplot_right = .95
-        self.subplot_left = .085
-        self.subplot_top = .97
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.0025
+        self.subplot_hspace = 0.0
+        self.subplot_right = 0.95
+        self.subplot_left = 0.085
+        self.subplot_top = 0.97
+        self.subplot_bottom = 0.1
 
-        self.font_size = kwargs.pop('font_size', 6)
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.font_size = kwargs.pop("font_size", 6)
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
-        self.cb_shrink = .7
-        self.cb_pad = .015
+        self.cb_shrink = 0.7
+        self.cb_pad = 0.015
 
         self.axrte = None
         self.axrtm = None
@@ -1800,7 +2042,7 @@ class PlotMisfitPseudoSection(object):
         self.fig = None
         self._data_obj = None
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def get_misfit(self):
@@ -1827,12 +2069,12 @@ class PlotMisfitPseudoSection(object):
         self.misfit_tip_imag = np.zeros((n_periods, n_stations))
 
         for rr, r_dict in zip(list(range(n_stations)), resp_obj.resp):
-            self.misfit_te_res[:, rr] = r_dict['te_res'][1]
-            self.misfit_tm_res[:, rr] = r_dict['tm_res'][1]
-            self.misfit_te_phase[:, rr] = r_dict['te_phase'][1]
-            self.misfit_tm_phase[:, rr] = r_dict['tm_phase'][1]
-            self.misfit_tip_real[:, rr] = r_dict['re_tip'][1]
-            self.misfit_tip_imag[:, rr] = r_dict['im_tip'][1]
+            self.misfit_te_res[:, rr] = r_dict["te_res"][1]
+            self.misfit_tm_res[:, rr] = r_dict["tm_res"][1]
+            self.misfit_te_phase[:, rr] = r_dict["te_phase"][1]
+            self.misfit_tm_phase[:, rr] = r_dict["tm_phase"][1]
+            self.misfit_tip_real[:, rr] = r_dict["re_tip"][1]
+            self.misfit_tip_imag[:, rr] = r_dict["im_tip"][1]
 
         self.misfit_te_res = np.nan_to_num(self.misfit_te_res)
         self.misfit_te_phase = np.nan_to_num(self.misfit_te_phase)
@@ -1851,8 +2093,10 @@ class PlotMisfitPseudoSection(object):
 
         ylimits = (self._data_obj.period.max(), self._data_obj.period.min())
 
-        offset_list = np.append(self._data_obj.station_locations,
-                                self._data_obj.station_locations[-1] * 1.15)
+        offset_list = np.append(
+            self._data_obj.station_locations,
+            self._data_obj.station_locations[-1] * 1.15,
+        )
 
         # make a meshgrid for plotting
         # flip frequency so bottom corner is long period
@@ -1862,24 +2106,26 @@ class PlotMisfitPseudoSection(object):
         ns = len(self._data_obj.station_list)
         sindex_1 = self.station_id[0]
         sindex_2 = self.station_id[1]
-        slabel = [self._data_obj.station_list[ss][sindex_1:sindex_2]
-                  for ss in range(0, ns, self.ml)]
+        slabel = [
+            self._data_obj.station_list[ss][sindex_1:sindex_2]
+            for ss in range(0, ns, self.ml)
+        ]
 
         xloc = offset_list[0] + abs(offset_list[0] - offset_list[1]) / 5
         yloc = 1.10 * self._data_obj.period[1]
 
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.hspace'] = self.subplot_hspace
-        plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.hspace"] = self.subplot_hspace
+        plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        if self.plot_tipper != 'y':
+        if self.plot_tipper != "y":
             self.axrte = self.fig.add_subplot(2, 2, 1)
             self.axrtm = self.fig.add_subplot(2, 2, 2, sharex=self.axrte)
             self.axpte = self.fig.add_subplot(2, 2, 3, sharex=self.axrte)
@@ -1893,54 +2139,66 @@ class PlotMisfitPseudoSection(object):
             self.axtpr = self.fig.add_subplot(2, 3, 3, sharex=self.axrte)
             self.axtpi = self.fig.add_subplot(2, 3, 6, sharex=self.axrte)
 
-        #--> TE Resistivity
-        self.axrte.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_te_res),
-                              cmap=self.res_cmap,
-                              vmin=self.res_limits_te[0],
-                              vmax=self.res_limits_te[1])
-        #--> TM Resistivity
-        self.axrtm.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_tm_res),
-                              cmap=self.res_cmap,
-                              vmin=self.res_limits_tm[0],
-                              vmax=self.res_limits_tm[1])
-        #--> TE Phase
-        self.axpte.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_te_phase),
-                              cmap=self.phase_cmap,
-                              vmin=self.phase_limits_te[0],
-                              vmax=self.phase_limits_te[1])
-        #--> TM Phase
-        self.axptm.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_tm_phase),
-                              cmap=self.phase_cmap,
-                              vmin=self.phase_limits_tm[0],
-                              vmax=self.phase_limits_tm[1])
+        # --> TE Resistivity
+        self.axrte.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_te_res),
+            cmap=self.res_cmap,
+            vmin=self.res_limits_te[0],
+            vmax=self.res_limits_te[1],
+        )
+        # --> TM Resistivity
+        self.axrtm.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_tm_res),
+            cmap=self.res_cmap,
+            vmin=self.res_limits_tm[0],
+            vmax=self.res_limits_tm[1],
+        )
+        # --> TE Phase
+        self.axpte.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_te_phase),
+            cmap=self.phase_cmap,
+            vmin=self.phase_limits_te[0],
+            vmax=self.phase_limits_te[1],
+        )
+        # --> TM Phase
+        self.axptm.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_tm_phase),
+            cmap=self.phase_cmap,
+            vmin=self.phase_limits_tm[0],
+            vmax=self.phase_limits_tm[1],
+        )
 
         ax_list = [self.axrte, self.axrtm, self.axpte, self.axptm]
 
-        if self.plot_tipper == 'y':
-            self.axtpr.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(self.misfit_tip_real),
-                                  cmap=self.tip_cmap,
-                                  vmin=self.tip_limits_re[0],
-                                  vmax=self.tip_limits_re[1])
-            self.axtpi.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(self.misfit_tip_imag),
-                                  cmap=self.tip_cmap,
-                                  vmin=self.tip_limits_im[0],
-                                  vmax=self.tip_limits_im[1])
+        if self.plot_tipper == "y":
+            self.axtpr.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(self.misfit_tip_real),
+                cmap=self.tip_cmap,
+                vmin=self.tip_limits_re[0],
+                vmax=self.tip_limits_re[1],
+            )
+            self.axtpi.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(self.misfit_tip_imag),
+                cmap=self.tip_cmap,
+                vmin=self.tip_limits_im[0],
+                vmax=self.tip_limits_im[1],
+            )
 
             ax_list.append(self.axtpr)
             ax_list.append(self.axtpi)
-         # make everthing look tidy
+        # make everthing look tidy
         for xx, ax in enumerate(ax_list):
             ax.semilogy()
             ax.set_ylim(ylimits)
@@ -1948,75 +2206,105 @@ class PlotMisfitPseudoSection(object):
             ax.xaxis.set_ticks(offset_list, minor=True)
             ax.xaxis.set_ticklabels(slabel)
             ax.set_xlim(offset_list.min(), offset_list.max())
-            cbx = mcb.make_axes(ax,
-                                shrink=self.cb_shrink,
-                                pad=self.cb_pad)
+            cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
 
             # te res
             if xx == 0:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                      norm=Normalize(vmin=self.res_limits_te[0],
-                                                     vmax=self.res_limits_te[1]))
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.res_cmap,
+                    norm=Normalize(
+                        vmin=self.res_limits_te[0], vmax=self.res_limits_te[1]
+                    ),
+                )
             # tm res
             elif xx == 1:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                      norm=Normalize(vmin=self.res_limits_tm[0],
-                                                     vmax=self.res_limits_tm[1]))
-                cb.set_label('Log$_{10}$ App. Res. ($\Omega \cdot$m)',
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.res_cmap,
+                    norm=Normalize(
+                        vmin=self.res_limits_tm[0], vmax=self.res_limits_tm[1]
+                    ),
+                )
+                cb.set_label(
+                    "Log$_{10}$ App. Res. ($\Omega \cdot$m)",
+                    fontdict={"size": self.font_size + 1, "weight": "bold"},
+                )
             # te phase
             elif xx == 2:
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                      norm=Normalize(vmin=self.phase_limits_te[0],
-                                                     vmax=self.phase_limits_te[1]))
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.phase_cmap,
+                    norm=Normalize(
+                        vmin=self.phase_limits_te[0], vmax=self.phase_limits_te[1]
+                    ),
+                )
             # tm phase
             elif xx == 3:
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                      norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                     vmax=self.phase_limits_tm[1]))
-                cb.set_label('Phase (deg)',
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.phase_cmap,
+                    norm=Normalize(
+                        vmin=self.phase_limits_tm[0], vmax=self.phase_limits_tm[1]
+                    ),
+                )
+                cb.set_label(
+                    "Phase (deg)",
+                    fontdict={"size": self.font_size + 1, "weight": "bold"},
+                )
 
             # real tipper
             elif xx == 4:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                      norm=Normalize(vmin=self.tip_limits_re[0],
-                                                     vmax=self.tip_limits_re[1]))
-                cb.set_label('Re{Tip}',
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.tip_cmap,
+                    norm=Normalize(
+                        vmin=self.tip_limits_re[0], vmax=self.tip_limits_re[1]
+                    ),
+                )
+                cb.set_label(
+                    "Re{Tip}", fontdict={"size": self.font_size + 1, "weight": "bold"}
+                )
             # imag tipper
             elif xx == 5:
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.tip_cmap,
-                                      norm=Normalize(vmin=self.tip_limits_im[0],
-                                                     vmax=self.tip_limits_im[1]))
-                cb.set_label('Im{Tip}',
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.tip_cmap,
+                    norm=Normalize(
+                        vmin=self.tip_limits_im[0], vmax=self.tip_limits_im[1]
+                    ),
+                )
+                cb.set_label(
+                    "Im{Tip}", fontdict={"size": self.font_size + 1, "weight": "bold"}
+                )
 
             # make label for plot
-            ax.text(xloc, yloc, self.label_list[xx],
-                    fontdict={'size': self.font_size + 2},
-                    bbox={'facecolor': 'white'},
-                    horizontalalignment='left',
-                    verticalalignment='top')
+            ax.text(
+                xloc,
+                yloc,
+                self.label_list[xx],
+                fontdict={"size": self.font_size + 2},
+                bbox={"facecolor": "white"},
+                horizontalalignment="left",
+                verticalalignment="top",
+            )
 
             if xx == 0 or xx == 2:
-                ax.set_ylabel('Period (s)',
-                              fontdict={'size': self.font_size + 2,
-                                        'weight': 'bold'})
+                ax.set_ylabel(
+                    "Period (s)",
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
             if xx > 1:
-                ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
-                                                   'weight': 'bold'})
+                ax.set_xlabel(
+                    "Station", fontdict={"size": self.font_size + 2, "weight": "bold"}
+                )
 
         plt.show()
 
@@ -2040,8 +2328,14 @@ class PlotMisfitPseudoSection(object):
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_plot='y'):
+    def save_figure(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_plot="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -2091,16 +2385,25 @@ class PlotMisfitPseudoSection(object):
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamMisfitPseudoSection.' +
-                                   file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(save_fn, "OccamMisfitPseudoSection." + file_format)
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-        if close_plot == 'y':
+        if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -2108,7 +2411,7 @@ class PlotMisfitPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print('Saved figure to: ' + self.fig_fn)
+        print("Saved figure to: " + self.fig_fn)
 
     def update_plot(self):
         """
@@ -2136,5 +2439,7 @@ class PlotMisfitPseudoSection(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots a pseudo section of TE and TM modes for data and "
-                "response if given.")
+        return (
+            "Plots a pseudo section of TE and TM modes for data and "
+            "response if given."
+        )

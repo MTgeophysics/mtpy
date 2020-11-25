@@ -27,8 +27,8 @@ class AspectRatio(QGroupBox):
 
     def get_aspect(self):
         if self.ui.radioButton_aspect_auto.isChecked():
-            return 'auto'
+            return "auto"
         elif self.ui.radioButton_aspect_equal.isChecked():
-            return 'equal'
+            return "equal"
         else:
             return self.ui.doubleSpinBox_aspect_float.value()

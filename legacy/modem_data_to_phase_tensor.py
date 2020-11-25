@@ -23,11 +23,11 @@ from mtpy.mtpy_globals import NEW_TEMP_DIR
 if __name__ == "__main__":
 
     file_dat = sys.argv[1]
-    if len(sys.argv)>2:
+    if len(sys.argv) > 2:
         outdir = sys.argv[2]
     else:
-        outdir=NEW_TEMP_DIR
+        outdir = NEW_TEMP_DIR
 
     obj = Data()
-    
+
     obj.compute_phase_tensor(file_dat, outdir)

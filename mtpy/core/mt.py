@@ -108,17 +108,17 @@ class MT(object):
 
     def __init__(self, fn=None, **kwargs):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        
+
         # set metadata for the station
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
         self.station_metadata.run_list.append(metadata.Run())
-        self.station_metadata.run_list[0].ex = metadata.Electric(component='ex')
-        self.station_metadata.run_list[0].ey = metadata.Electric(component='ey')
-        self.station_metadata.run_list[0].hx = metadata.Magnetic(component='hx')
-        self.station_metadata.run_list[0].hy = metadata.Magnetic(component='hy')
-        self.station_metadata.run_list[0].hz = metadata.Magnetic(component='hz')
-        
+        self.station_metadata.run_list[0].ex = metadata.Electric(component="ex")
+        self.station_metadata.run_list[0].ey = metadata.Electric(component="ey")
+        self.station_metadata.run_list[0].hx = metadata.Magnetic(component="hx")
+        self.station_metadata.run_list[0].hy = metadata.Magnetic(component="hy")
+        self.station_metadata.run_list[0].hz = metadata.Magnetic(component="hz")
+
         self._east = None
         self._north = None
         self._utm_zone = None
@@ -134,9 +134,9 @@ class MT(object):
         # provide key words to fill values if an edi file does not exist
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-            
+
     def __str__(self):
-        lines = [f"Station: {self.station}", '-' * 50]
+        lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
         lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
@@ -148,14 +148,18 @@ class MT(object):
             lines.append("\tTipper:        True")
         else:
             lines.append("\tTipper:        False")
-        
+
         if self.Z.z is not None:
             lines.append(f"\tPeriods: {len(self.Z.freq)}")
-            lines.append(f"\t\tPeriod Range:   {1./self.Z.freq.max():.5E}  -- {1./self.Z.freq.min():.5E} s")
-            lines.append(f"\t\tFrequency Range {self.Z.freq.min():.5E}  -- {self.Z.freq.max():.5E} s")
-            
-        return '\n'.join(lines)
-    
+            lines.append(
+                f"\t\tPeriod Range:   {1./self.Z.freq.max():.5E}  -- {1./self.Z.freq.min():.5E} s"
+            )
+            lines.append(
+                f"\t\tFrequency Range {self.Z.freq.min():.5E}  -- {self.Z.freq.max():.5E} s"
+            )
+
+        return "\n".join(lines)
+
     def __repr__(self):
         return self.__str__()
 
@@ -226,37 +230,37 @@ class MT(object):
     def ex_metadata(self):
         """ EX metadata """
         return self.station_metadata.run_list[0].ex
-    
+
     @property
     def ey_metadata(self):
         """ EY metadata """
         return self.station_metadata.run_list[0].ey
-    
+
     @property
     def hx_metadata(self):
         """ HX metadata """
         return self.station_metadata.run_list[0].hx
-    
+
     @property
     def hy_metadata(self):
         """ HY metadata """
         return self.station_metadata.run_list[0].hy
-    
+
     @property
     def hz_metadata(self):
         """ HZ metadata """
         return self.station_metadata.run_list[0].hz
-    
+
     @property
     def rrhx_metadata(self):
         """ RRHX metadata """
         return self.station_metadata.run_list[0].rrhx
-    
+
     @property
     def rrhy_metadata(self):
         """ RRHY metadata """
         return self.station_metadata.run_list[0].rrhy
-    
+
     # ==========================================================================
     # set functions
     # ==========================================================================
@@ -269,7 +273,7 @@ class MT(object):
                 self.read_mt_file(self._fn)
         except TypeError:
             self._fn = None
-            
+
     @latitude.setter
     def latitude(self, latitude):
         """
@@ -347,7 +351,7 @@ class MT(object):
         self._utm_zone = utm_zone
         if self.north is not None and self.east is not None:
             self.logger.debug("Calculating latitude and longitude from UTM")
-            lat, lon= gis_tools.project_point_utm2ll(
+            lat, lon = gis_tools.project_point_utm2ll(
                 self.east, self.north, self.utm_zone
             )
             self.station_metadata.location.latitude = lat
@@ -405,27 +409,27 @@ class MT(object):
         set station name
         """
         self.station_metadata.id = station_name
-        
+
     @ex_metadata.setter
     def ex_metadata(self, value):
         """ set EX metadata """
         self.station_metadata.run_list[0].ex = value
-            
+
     @ey_metadata.setter
     def ey_metadata(self, value):
         """ set EY metadata """
         self.station_metadata.run_list[0].ey = value
-        
+
     @hx_metadata.setter
     def hx_metadata(self, value):
         """ set hx metadata """
         self.station_metadata.run_list[0].hx = value
-        
+
     @hy_metadata.setter
     def hy_metadata(self, value):
         """ set hy metadata """
         self.station_metadata.run_list[0].hy = value
-        
+
     @hz_metadata.setter
     def hz_metadata(self, value):
         """ set hz metadata """
@@ -709,21 +713,21 @@ class MT(object):
             t_object=self.Tipper,
             pt_obj=self.pt,
             station=self.station,
-            **kwargs
+            **kwargs,
         )
 
         return plot_obj
         # raise NotImplementedError
-        
+
     def write_mt_file(
-            self,
-            fn=None,
-            save_dir=None,
-            fn_basename=None,
-            file_type="edi",
-            longitude_format="longitude",
-            latlon_format="dms",
-        ):
+        self,
+        fn=None,
+        save_dir=None,
+        fn_basename=None,
+        file_type="edi",
+        longitude_format="longitude",
+        latlon_format="dms",
+    ):
         """
         Write an mt file, the supported file types are EDI and XML.
 
@@ -757,7 +761,7 @@ class MT(object):
             >>> mt_obj.write_mt_file(file_type='xml')
 
         """
-        
+
         if fn is not None:
             new_fn = Path(fn)
             self.save_dir = new_fn.parent
@@ -768,23 +772,23 @@ class MT(object):
 
         if fn_basename is not None:
             fn_basename = Path(fn_basename)
-            if fn_basename.suffix in ['', None]:
+            if fn_basename.suffix in ["", None]:
                 fn_basename += f".{file_type}"
-            
+
         if fn_basename is None:
             fn_basename = Path(f"{self.station}.{file_type}")
-        
+
         if file_type is None:
             file_type = fn_basename.suffix.lower()[1:]
-        if file_type not  in ['edi', 'xml']:
+        if file_type not in ["edi", "xml"]:
             msg = f"File type {file_type} not supported yet."
             self.logger.error(msg)
             raise MTError(msg)
-            
+
         fn = self.save_dir.joinpath(fn_basename)
 
         return write_file(self, fn, file_type=file_type)
-        
+
     def read_mt_file(self, fn, file_type=None):
         """
         
@@ -807,9 +811,10 @@ class MT(object):
             >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
     
         """
-        
+
         mt_obj = read_file(fn, file_type=file_type)
         self.__dict__.update(mt_obj.__dict__)
+
 
 # ==============================================================================
 #             Error

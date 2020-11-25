@@ -23,25 +23,28 @@ from mtpy.modeling.modem.data_model_analysis import DataModelAnalysis
 #######################
 if __name__ == "__main__":
 
-    if (len(sys.argv) < 2):
+    if len(sys.argv) < 2:
         print("********************************************")
 
-        print("USAGE: python %s %s %s %s %s" % (sys.argv[0], "file.dat", "file.rho", "[z|ns|ew]", "[list_of_location]"))
+        print(
+            "USAGE: python %s %s %s %s %s"
+            % (sys.argv[0], "file.dat", "file.rho", "[z|ns|ew]", "[list_of_location]")
+        )
 
         print("********************************************")
 
         sys, exit(1)
 
     # Take commandline input
-    if (len(sys.argv) == 2):  # A model dir provided
+    if len(sys.argv) == 2:  # A model dir provided
         modeldir = sys.argv[1]
-        datf = os.path.join(modeldir, 'ModEM_Data.dat')
-        rhofiles = glob.glob(os.path.join(modeldir, '*.rho'))
+        datf = os.path.join(modeldir, "ModEM_Data.dat")
+        rhofiles = glob.glob(os.path.join(modeldir, "*.rho"))
 
         # print(rhofiles)
 
         if len(rhofiles) < 1:
-            print ("No rho files found in the dir %s", modeldir)
+            print("No rho files found in the dir %s", modeldir)
             sys.exit(1)
         else:
             # the file with highest numbers in the last 3 numbers before *.rho
@@ -63,11 +66,11 @@ if __name__ == "__main__":
         #             2000,3000,4000,5000,6000,7000,8000,9000,10000]
 
     if len(slice_locs) < 1:
-        slice_locs= None
+        slice_locs = None
 
     # construct plot object
     # self = DataModelAnalysis(datf, rhof)  # default  map_scale='m')
-    myObj = DataModelAnalysis(datf, rhof, map_scale='km')
+    myObj = DataModelAnalysis(datf, rhof, map_scale="km")
 
     myObj.set_plot_orientation(slice_orient)  # horizontal at a given depth z
     # myObj.set_plot_orientation('ew')

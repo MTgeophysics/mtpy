@@ -12,12 +12,12 @@ def main():
     fn = sys.argv[1]
 
     if not op.isfile(fn):
-        print('\n\tFile does not exist: {0}\n'.format(fn))
+        print("\n\tFile does not exist: {0}\n".format(fn))
         sys.exit()
     saveplot = False
     if len(sys.argv) > 2:
         arg2 = sys.argv[2]
-        if 's' in arg2.lower():
+        if "s" in arg2.lower():
             saveplot = True
 
     fn = plotedi(fn, saveplot)
@@ -28,30 +28,30 @@ def plotedi(fn, saveplot=False, component=None):
     try:
         edi.readfile(fn)
     except:
-        print('\n\tERROR - not a valid EDI file: {0}\n'.format(fn))
+        print("\n\tERROR - not a valid EDI file: {0}\n".format(fn))
         sys.exit()
 
     # if saveplot is True:
     #     import matplotlib
-        # matplotlib.use('Agg')
+    # matplotlib.use('Agg')
 
     import pylab
 
     lo_comps = []
     if component is not None:
-        'n' in component.lower()
+        "n" in component.lower()
         try:
-            if 'n' in component.lower():
-                lo_comps.append('n')
+            if "n" in component.lower():
+                lo_comps.append("n")
         except:
             pass
         try:
-            if 'e' in component.lower():
-                lo_comps.append('e')
+            if "e" in component.lower():
+                lo_comps.append("e")
         except:
             pass
     if len(lo_comps) == 0:
-        lo_comps = ['n', 'e']
+        lo_comps = ["n", "e"]
 
     res_te = []
     res_tm = []
@@ -81,22 +81,24 @@ def plotedi(fn, saveplot=False, component=None):
         phierr_te.append(p[0, 1])
         phierr_tm.append(p[1, 0])
 
-    periods = 1. / edi.freq
+    periods = 1.0 / edi.freq
 
     resplotelement_xy = None
     resplotelement_yx = None
 
-    axes = pylab.figure('EDI ' + fn)
+    axes = pylab.figure("EDI " + fn)
     ax1 = pylab.subplot(211)
 
-    if 'n' in lo_comps:
+    if "n" in lo_comps:
         resplotelement_xy = pylab.errorbar(
-            periods, res_te, reserr_te, marker='x', c='b', fmt='x')
-    if 'e' in lo_comps:
+            periods, res_te, reserr_te, marker="x", c="b", fmt="x"
+        )
+    if "e" in lo_comps:
         resplotelement_yx = pylab.errorbar(
-            periods, res_tm, reserr_tm, marker='x', c='r', fmt='x')
-    pylab.xscale('log', nonposx='clip')
-    pylab.yscale('log', nonposy='clip')
+            periods, res_tm, reserr_tm, marker="x", c="r", fmt="x"
+        )
+    pylab.xscale("log", nonposx="clip")
+    pylab.yscale("log", nonposy="clip")
     minval = pylab.min(pylab.min(res_te, res_tm))
     maxval = pylab.max(pylab.max(res_te, res_tm))
     pylab.xlim(0.5 * pylab.min(periods), 2 * pylab.max(periods))
@@ -106,33 +108,43 @@ def plotedi(fn, saveplot=False, component=None):
 
     pylab.autoscale(False)
 
-    pylab.ylabel(r' $\rho$ (in $\Omega m$)')
+    pylab.ylabel(r" $\rho$ (in $\Omega m$)")
     pylab.setp(ax1.get_xticklabels(), visible=False)
     # share x only
     ax2 = pylab.subplot(212, sharex=ax1)
     pylab.autoscale(False)
 
     # ylim(-45,135)
-    if 'n' in lo_comps:
-        pylab.errorbar(periods, phi_te, phierr_te, marker='x', c='b', fmt='x')
-    if 'e' in lo_comps:
-        pylab.errorbar(periods, phi_tm, phierr_tm, marker='x', c='r', fmt='x')
-    pylab.ylabel('Phase angle ($\degree$)')
-    pylab.xlabel('Period (in s)')
-    pylab.plot([pylab.xlim()[0], pylab.xlim()[1]], [45, 45], '-.', c='0.7')
+    if "n" in lo_comps:
+        pylab.errorbar(periods, phi_te, phierr_te, marker="x", c="b", fmt="x")
+    if "e" in lo_comps:
+        pylab.errorbar(periods, phi_tm, phierr_tm, marker="x", c="r", fmt="x")
+    pylab.ylabel("Phase angle ($\degree$)")
+    pylab.xlabel("Period (in s)")
+    pylab.plot([pylab.xlim()[0], pylab.xlim()[1]], [45, 45], "-.", c="0.7")
     pylab.ylim([-0, 90])
 
-    ax1.legend([resplotelement_xy, resplotelement_yx], ['$E_{X}/B_Y$', '$E_Y/B_X$'], loc=2, ncol=1,
-               numpoints=1, markerscale=0.8, frameon=True, labelspacing=0.3,
-               prop={'size': 8}, fancybox=True, shadow=False)
+    ax1.legend(
+        [resplotelement_xy, resplotelement_yx],
+        ["$E_{X}/B_Y$", "$E_Y/B_X$"],
+        loc=2,
+        ncol=1,
+        numpoints=1,
+        markerscale=0.8,
+        frameon=True,
+        labelspacing=0.3,
+        prop={"size": 8},
+        fancybox=True,
+        shadow=False,
+    )
 
     pylab.tight_layout()
     if saveplot is True:
 
         pylab.ioff()
-        outfn = op.splitext(fn)[0] + '.png'
-        pylab.savefig(outfn, bbox_inches='tight')
-        pylab.close('all')
+        outfn = op.splitext(fn)[0] + ".png"
+        pylab.savefig(outfn, bbox_inches="tight")
+        pylab.close("all")
         pylab.ion()
         return outfn
 
@@ -143,5 +155,5 @@ def plotedi(fn, saveplot=False, component=None):
         return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

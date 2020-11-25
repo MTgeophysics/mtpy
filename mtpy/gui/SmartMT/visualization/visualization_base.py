@@ -20,12 +20,16 @@ from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.figure import Figure
 
-if QT_VERSION.startswith('4'):
+if QT_VERSION.startswith("4"):
     from matplotlib.backends.backend_qt4agg import FigureCanvas
-    from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
+    from matplotlib.backends.backend_qt4 import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
 else:
     from matplotlib.backends.backend_qt5agg import FigureCanvas
-    from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
+    from matplotlib.backends.backend_qt5 import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
 
 from mtpy.gui.SmartMT.Components.plot_parameter import PlotParameter
 from mtpy.utils.mtpylog import MtPyLog
@@ -155,19 +159,25 @@ class VisualizationBase(QtCore.QThread):
             self.plot()
             # change size and title
             if self._parameter_ui.customized_figure_size():
-                self._fig.set_size_inches(self._parameter_ui.get_size_inches_width(),
-                                          self._parameter_ui.get_size_inches_height())
+                self._fig.set_size_inches(
+                    self._parameter_ui.get_size_inches_width(),
+                    self._parameter_ui.get_size_inches_height(),
+                )
                 self._fig.set_dpi(self._parameter_ui.get_dpi())
                 self._fig.set_tight_layout(self._parameter_ui.get_layout())
             if self._parameter_ui.customized_figure_title():
-                self._fig.suptitle(self._parameter_ui.get_title(),
-                                   **self._parameter_ui.get_title_font_dict())
+                self._fig.suptitle(
+                    self._parameter_ui.get_title(),
+                    **self._parameter_ui.get_title_font_dict()
+                )
 
             self.plotting_completed.emit(self._fig)
         except Exception as e:
             frm = inspect.trace()[-1]
             mod = inspect.getmodule(frm[0])
-            self.plotting_error.emit("{}: {}".format(mod.__name__, e.message), traceback.format_exc())
+            self.plotting_error.emit(
+                "{}: {}".format(mod.__name__, e.message), traceback.format_exc()
+            )
 
     plotting_error = Signal(str, str)
     plotting_completed = Signal(Figure)
@@ -209,14 +219,15 @@ class MPLCanvasWidget(QWidget):
     def get_fig(self):
         return self._fig
 
+
 def reset_matplotlib():
     # save some important params
     # interactive = matplotlib.rcParams['interactive']
-    backend = matplotlib.rcParams['backend']
+    backend = matplotlib.rcParams["backend"]
     # reset
     matplotlib.rcdefaults()  # reset the rcparams to default
     # recover
-    matplotlib.rcParams['backend'] = backend
+    matplotlib.rcParams["backend"] = backend
     # matplotlib.rcParams['interactive'] = interactive
     # logger = MtPyLog().get_mtpy_logger(__name__)
     # logger.info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))

@@ -8,10 +8,15 @@ from qtpy.QtWidgets import QGroupBox
 from qtpy.QtGui import QDoubleValidator
 
 
-from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import Ui_GroupBox_plot_control_mt_response
-from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_resistivity_phase_pseudo_section import \
-    Ui_GroupBox_plot_control_resistivity_phase_pseudo_section
-from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_strike import Ui_GroupBox_plot_control_strike
+from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_mt_response import (
+    Ui_GroupBox_plot_control_mt_response,
+)
+from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_resistivity_phase_pseudo_section import (
+    Ui_GroupBox_plot_control_resistivity_phase_pseudo_section,
+)
+from mtpy.gui.SmartMT.ui_asset.groupbox_plot_control_strike import (
+    Ui_GroupBox_plot_control_strike,
+)
 from mtpy.imaging.mtcolors import cmapdict
 
 
@@ -34,30 +39,30 @@ class PlotControlMTResponse(QGroupBox):
     def get_strike(self):
         strike = "y"
         if self.ui.checkBox_strike_t.isChecked():
-            strike += 't'
+            strike += "t"
         if self.ui.checkBox_strike_p.isChecked():
-            strike += 'p'
+            strike += "p"
         if self.ui.checkBox_strike_i.isChecked():
-            strike += 'i'
+            strike += "i"
         if len(strike) > 1:
             return strike
         else:
-            return 'n'
+            return "n"
 
     def get_skew(self):
         if self.ui.checkBox_skew.isChecked():
-            return 'y'
+            return "y"
         else:
-            return 'n'
+            return "n"
 
     def is_plot_ellipses(self):
         return self.ui.checkBox_pt.isChecked()
 
     def get_ellipses(self):
         if self.is_plot_ellipses():
-            return 'y'
+            return "y"
         else:
-            return 'n'
+            return "n"
 
     def get_style(self):
         if self.ui.radioButton_compare.isChecked():
@@ -90,9 +95,13 @@ class PlotControlResistivityPhasePseudoSection(QGroupBox):
         self.ui.setupUi(self)
 
         self.ui.comboBox_res_cmap.addItems(list(cmapdict.keys()))
-        self.ui.comboBox_res_cmap.setCurrentIndex(self.ui.comboBox_res_cmap.findText('mt_rd2gr2bl'))
+        self.ui.comboBox_res_cmap.setCurrentIndex(
+            self.ui.comboBox_res_cmap.findText("mt_rd2gr2bl")
+        )
         self.ui.comboBox_phase_cmap.addItems(list(cmapdict.keys()))
-        self.ui.comboBox_phase_cmap.setCurrentIndex(self.ui.comboBox_phase_cmap.findText('mt_bl2gr2rd'))
+        self.ui.comboBox_phase_cmap.setCurrentIndex(
+            self.ui.comboBox_phase_cmap.findText("mt_bl2gr2rd")
+        )
 
         self.ui.doubleSpinBox_res_max.setMaximum(np.inf)
         self.ui.doubleSpinBox_res_min.setMaximum(np.inf)
@@ -164,33 +173,42 @@ class PlotControlResistivityPhasePseudoSection(QGroupBox):
 
     def get_phase_limit(self):
         if self.ui.checkBox_phase.isChecked():
-            return self.ui.doubleSpinBox_phase_min.value(), self.ui.doubleSpinBox_phase_max.value()
+            return (
+                self.ui.doubleSpinBox_phase_min.value(),
+                self.ui.doubleSpinBox_phase_max.value(),
+            )
         else:
             return None
 
     def get_period_limit(self):
         if self.ui.checkBox_period.isChecked():
-            return self.ui.doubleSpinBox_period_min.value(), self.ui.doubleSpinBox_period_max.value()
+            return (
+                self.ui.doubleSpinBox_period_min.value(),
+                self.ui.doubleSpinBox_period_max.value(),
+            )
         else:
             return None
 
     def get_resistivity_limits(self):
         if self.ui.checkBox_resistivity.isChecked():
-            return self.ui.doubleSpinBox_res_min.value(), self.ui.doubleSpinBox_res_max.value()
+            return (
+                self.ui.doubleSpinBox_res_min.value(),
+                self.ui.doubleSpinBox_res_max.value(),
+            )
         else:
             return None
 
     def get_plot_xx(self):
-        return 'y' if self.ui.checkBox_zxx.isChecked() else 'n'
+        return "y" if self.ui.checkBox_zxx.isChecked() else "n"
 
     def get_plot_xy(self):
-        return 'y' if self.ui.checkBox_zxy.isChecked() else 'n'
+        return "y" if self.ui.checkBox_zxy.isChecked() else "n"
 
     def get_plot_yx(self):
-        return 'y' if self.ui.checkBox_zyx.isChecked() else 'n'
+        return "y" if self.ui.checkBox_zyx.isChecked() else "n"
 
     def get_plot_yy(self):
-        return 'y' if self.ui.checkBox_zyy.isChecked() else 'n'
+        return "y" if self.ui.checkBox_zyy.isChecked() else "n"
 
     def get_res_cmap(self):
         return cmapdict[str(self.ui.comboBox_res_cmap.currentText())]
@@ -247,7 +265,7 @@ class PlotControlStrike(QGroupBox):
 
     def get_plot_range(self):
         if self.ui.radioButton_range_data.isChecked():
-            return 'data'
+            return "data"
         else:
             value_min = np.float(str(self.ui.lineEdit_min.text()))
             value_max = np.float(str(self.ui.lineEdit_max.text()))
@@ -257,10 +275,14 @@ class PlotControlStrike(QGroupBox):
         return 1 if self.ui.radioButton_type_1.isChecked() else 2
 
     def get_plot_tipper(self):
-        return 'y' if self.ui.checkBox_plot_tipper.isChecked() else 'n'
+        return "y" if self.ui.checkBox_plot_tipper.isChecked() else "n"
 
     def get_error_floor(self):
-        return self.ui.doubleSpinBox_max_error.value() if self.ui.checkBox_max_error.isChecked() else None
+        return (
+            self.ui.doubleSpinBox_max_error.value()
+            if self.ui.checkBox_max_error.isChecked()
+            else None
+        )
 
     def get_fold(self):
         return self.ui.checkBox_fold.isChecked()

@@ -31,9 +31,9 @@ def _create_fig():
     t = np.arange(0.0, 2.0, 0.01)
     s = 1 + np.sin(2 * np.pi * t)
     plt.plot(t, s)
-    plt.xlabel('time (s)')
-    plt.ylabel('voltage (mV)')
-    plt.title('About as simple as it gets, folks')
+    plt.xlabel("time (s)")
+    plt.ylabel("voltage (mV)")
+    plt.title("About as simple as it gets, folks")
     plt.grid(True)
     # plt.savefig("test.png")
     # plt.show()
@@ -62,41 +62,71 @@ class TestExportDialog(TestCase):
     def test_defaults(self):
         """ test gui default state"""
         # check row states
-        self.assertTrue(self.dialog.ui.comboBox_fileName.currentText() == "figure.png", "Default File Name")
-        self.assertTrue(self.dialog.ui.comboBox_directory.currentText() == os.path.expanduser("~"), "Default Path")
+        self.assertTrue(
+            self.dialog.ui.comboBox_fileName.currentText() == "figure.png",
+            "Default File Name",
+        )
+        self.assertTrue(
+            self.dialog.ui.comboBox_directory.currentText() == os.path.expanduser("~"),
+            "Default Path",
+        )
         # file type
-        self.assertTrue(set(["{} (.{})".format(desc, ext)
-                             for ext, desc in self._fig.canvas.get_supported_filetypes().items()]) ==
-                        set([str(self.dialog.ui.comboBox_fileType.itemText(i))
-                             for i in range(self.dialog.ui.comboBox_fileType.count())]),
-                        "Supported Formats")
+        self.assertTrue(
+            set(
+                [
+                    "{} (.{})".format(desc, ext)
+                    for ext, desc in self._fig.canvas.get_supported_filetypes().items()
+                ]
+            )
+            == set(
+                [
+                    str(self.dialog.ui.comboBox_fileType.itemText(i))
+                    for i in range(self.dialog.ui.comboBox_fileType.count())
+                ]
+            ),
+            "Supported Formats",
+        )
 
-        self.assertTrue(self.dialog.ui.checkBox_tightBbox.isChecked(), "Tight Layout Default")
+        self.assertTrue(
+            self.dialog.ui.checkBox_tightBbox.isChecked(), "Tight Layout Default"
+        )
         self.assertFalse(self.dialog.get_transparent(), "Transparent Default")
-        self.assertTrue(self.dialog.ui.comboBox_orientation.currentText() == "Landscape", "Orientation Default")
+        self.assertTrue(
+            self.dialog.ui.comboBox_orientation.currentText() == "Landscape",
+            "Orientation Default",
+        )
         self.assertTrue(self.dialog.ui.spinBox_dpi.value() == 80)
-        self.assertTrue(self.dialog.ui.doubleSpinBox_height_inches.value() == 6.)
-        self.assertTrue(self.dialog.ui.doubleSpinBox_width_inches.value() == 8.)
+        self.assertTrue(self.dialog.ui.doubleSpinBox_height_inches.value() == 6.0)
+        self.assertTrue(self.dialog.ui.doubleSpinBox_width_inches.value() == 8.0)
         self.assertTrue(self.dialog.ui.spinBox_height_pixels.value() == 480)
         self.assertTrue(self.dialog.ui.spinBox_width_pixels.value() == 640)
         self.assertTrue(self.dialog.ui.checkBox_open_after_export.isChecked())
 
         # check states from the getters
-        self.assertTrue(self.dialog.get_bbox_inches() == 'tight', "Tight Layout Value")
-        self.assertTrue(self.dialog.get_file_format()[0] == 'png', "Format Value")
-        self.assertTrue(self.dialog.get_orientation() == 'landscape', "Orientation Value")
-        self.assertTrue(os.path.normpath(self.dialog.get_save_file_name()) ==
-                        os.path.normpath(os.path.join(os.path.expanduser("~"),
-                                                      str(self.dialog.ui.comboBox_fileName.currentText()))
-                                         ),
-                        "Save File Path Value")
+        self.assertTrue(self.dialog.get_bbox_inches() == "tight", "Tight Layout Value")
+        self.assertTrue(self.dialog.get_file_format()[0] == "png", "Format Value")
+        self.assertTrue(
+            self.dialog.get_orientation() == "landscape", "Orientation Value"
+        )
+        self.assertTrue(
+            os.path.normpath(self.dialog.get_save_file_name())
+            == os.path.normpath(
+                os.path.join(
+                    os.path.expanduser("~"),
+                    str(self.dialog.ui.comboBox_fileName.currentText()),
+                )
+            ),
+            "Save File Path Value",
+        )
 
     def test_file_name_change(self):
         # select all existing tests
         _rewrite_text(self.dialog.ui.comboBox_fileName, "test_file.jpg")
         # current text should have changed
-        self.assertTrue(self.dialog.ui.comboBox_fileName.currentText() == "test_file.jpg",
-                        "Changed file name")
+        self.assertTrue(
+            self.dialog.ui.comboBox_fileName.currentText() == "test_file.jpg",
+            "Changed file name",
+        )
         # format should have changed
         self.assertTrue(self.dialog.get_file_format()[0] == "jpg")
         # transparent should be false
@@ -105,8 +135,10 @@ class TestExportDialog(TestCase):
         # change to file with unsupported format
         _rewrite_text(self.dialog.ui.comboBox_fileName, "test_file_2.abcd")
         # current text should have changed
-        self.assertTrue(self.dialog.ui.comboBox_fileName.currentText() == "test_file_2.abcd",
-                        "Changed file name")
+        self.assertTrue(
+            self.dialog.ui.comboBox_fileName.currentText() == "test_file_2.abcd",
+            "Changed file name",
+        )
         # current format should not been changed
         self.assertTrue(self.dialog.get_file_format()[0] == "jpg")
 
@@ -114,11 +146,19 @@ class TestExportDialog(TestCase):
         for i in range(self.dialog.ui.comboBox_fileType.count()):
             self.dialog.ui.comboBox_fileType.setCurrentIndex(i)
             extenion = self.dialog.get_file_format()[0]
-            self.assertTrue(self.dialog.ui.comboBox_fileName.currentText() == "figure.{}".format(extenion))
+            self.assertTrue(
+                self.dialog.ui.comboBox_fileName.currentText()
+                == "figure.{}".format(extenion)
+            )
 
     def test_directory_change(self):
-        _rewrite_text(self.dialog.ui.comboBox_directory, os.path.abspath(self._temp_dir))
-        self.assertTrue(os.path.dirname(self.dialog.get_save_file_name()) == os.path.abspath(self._temp_dir))
+        _rewrite_text(
+            self.dialog.ui.comboBox_directory, os.path.abspath(self._temp_dir)
+        )
+        self.assertTrue(
+            os.path.dirname(self.dialog.get_save_file_name())
+            == os.path.abspath(self._temp_dir)
+        )
         # print self.dialog.get_save_file_name()
 
         # select from the browse
@@ -126,21 +166,25 @@ class TestExportDialog(TestCase):
         self.dialog._dir_dialog.setDirectory(os.path.normpath(os.path.expanduser("~")))
         self.dialog._dir_dialog.exec_ = _fake_exec_reject  # path should not change
         _click_area(self.dialog.ui.pushButton_browse)
-        self.assertTrue(os.path.dirname(self.dialog.get_save_file_name()) == os.path.abspath(self._temp_dir))
+        self.assertTrue(
+            os.path.dirname(self.dialog.get_save_file_name())
+            == os.path.abspath(self._temp_dir)
+        )
 
         self.dialog._dir_dialog.exec_ = _fake_exec_accept
         _click_area(self.dialog.ui.pushButton_browse)
         # QTest.qWaitForWindowShown(self.dialog._dir_dialog)
         # self.dialog._dir_dialog.accept()
         self.assertTrue(
-            os.path.dirname(
-                os.path.normpath(self.dialog.get_save_file_name())
-            ) == os.path.normpath(os.path.expanduser("~")))
+            os.path.dirname(os.path.normpath(self.dialog.get_save_file_name()))
+            == os.path.normpath(os.path.expanduser("~"))
+        )
 
     def test_export(self):
         # set export dir
-        _rewrite_text(self.dialog.ui.comboBox_directory,
-                      os.path.abspath(self._temp_dir))
+        _rewrite_text(
+            self.dialog.ui.comboBox_directory, os.path.abspath(self._temp_dir)
+        )
         fname = self.dialog.get_save_file_name()
         if os.path.isfile(fname):
             # if file exist, remove
@@ -150,13 +194,17 @@ class TestExportDialog(TestCase):
         # set open after to false
         self.dialog.ui.checkBox_open_after_export.setChecked(False)
 
-        self.dialog.exec_ = self._fake_export_dialog_exec_cancel  # should not create file
+        self.dialog.exec_ = (
+            self._fake_export_dialog_exec_cancel
+        )  # should not create file
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_cancel
         fname = self.dialog.export_to_file(self._fig)
         print(self._fig.get_dpi(), self.dialog.ui.spinBox_dpi.value())
         self.assertTrue(self.dialog.ui.spinBox_dpi.value() == self._fig.get_dpi())
         self.assertTrue(fname is None)
-        self.assertFalse(os.path.exists(self.dialog.get_save_file_name()), "File exists")
+        self.assertFalse(
+            os.path.exists(self.dialog.get_save_file_name()), "File exists"
+        )
 
         # save the new file now
         self.dialog.exec_ = self._fake_export_dialog_exec_export
@@ -164,54 +212,87 @@ class TestExportDialog(TestCase):
         self.assertTrue(os.path.exists(fname), "File exists")
         self.assertTrue(os.path.isfile(fname))
 
-        file_count = len([name for name in os.listdir(self._temp_dir)
-                          if os.path.isfile(os.path.join(self._temp_dir, name))])
+        file_count = len(
+            [
+                name
+                for name in os.listdir(self._temp_dir)
+                if os.path.isfile(os.path.join(self._temp_dir, name))
+            ]
+        )
         # save to the same file and overwrite
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
         fname = self.dialog.export_to_file(self._fig)
         self.assertTrue(os.path.exists(fname), "File exists")
-        new_file_count = len([name for name in os.listdir(self._temp_dir)
-                              if os.path.isfile(os.path.join(self._temp_dir, name))])
+        new_file_count = len(
+            [
+                name
+                for name in os.listdir(self._temp_dir)
+                if os.path.isfile(os.path.join(self._temp_dir, name))
+            ]
+        )
         self.assertTrue(file_count == new_file_count)  # no file should be created
         # save to the same file and save as new name
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_save_as
         fname = self.dialog.export_to_file(self._fig)
         self.assertTrue(os.path.exists(fname), "File exists")
-        new_file_count = len([name for name in os.listdir(self._temp_dir)
-                              if os.path.isfile(os.path.join(self._temp_dir, name))])
-        self.assertTrue(file_count + 1 == new_file_count)  # one extra file should be created
+        new_file_count = len(
+            [
+                name
+                for name in os.listdir(self._temp_dir)
+                if os.path.isfile(os.path.join(self._temp_dir, name))
+            ]
+        )
+        self.assertTrue(
+            file_count + 1 == new_file_count
+        )  # one extra file should be created
         file_count = new_file_count
 
     def test_dpi(self):
         # save to higher dpi
         # set export dir
-        _rewrite_text(self.dialog.ui.comboBox_directory,
-                      os.path.abspath(self._temp_dir))
+        _rewrite_text(
+            self.dialog.ui.comboBox_directory, os.path.abspath(self._temp_dir)
+        )
         self.dialog.exec_ = self._fake_export_dialog_exec_export
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
         # set open after to false
         self.dialog.ui.checkBox_open_after_export.setChecked(False)
 
-        QTest.keyClicks(self.dialog.ui.spinBox_dpi, '400')
+        QTest.keyClicks(self.dialog.ui.spinBox_dpi, "400")
         _rewrite_text(self.dialog.ui.comboBox_fileName, "400dpi.jpg")
         fname = self.dialog.export_to_file(self._fig)
         self.assertTrue(os.path.exists(fname), "File exists")
-        new_file_count = len([name for name in os.listdir(self._temp_dir)
-                              if os.path.isfile(os.path.join(self._temp_dir, name))])
+        new_file_count = len(
+            [
+                name
+                for name in os.listdir(self._temp_dir)
+                if os.path.isfile(os.path.join(self._temp_dir, name))
+            ]
+        )
 
-        QTest.keyClicks(self.dialog.ui.spinBox_dpi, '600')
+        QTest.keyClicks(self.dialog.ui.spinBox_dpi, "600")
         _rewrite_text(self.dialog.ui.comboBox_fileName, "600dpi.jpg")
         fname = self.dialog.export_to_file(self._fig)
         self.assertTrue(os.path.exists(fname), "File exists")
-        new_file_count = len([name for name in os.listdir(self._temp_dir)
-                              if os.path.isfile(os.path.join(self._temp_dir, name))])
+        new_file_count = len(
+            [
+                name
+                for name in os.listdir(self._temp_dir)
+                if os.path.isfile(os.path.join(self._temp_dir, name))
+            ]
+        )
 
-        QTest.keyClicks(self.dialog.ui.spinBox_dpi, '1000')
+        QTest.keyClicks(self.dialog.ui.spinBox_dpi, "1000")
         _rewrite_text(self.dialog.ui.comboBox_fileName, "1000dpi.jpg")
         fname = self.dialog.export_to_file(self._fig)
         self.assertTrue(os.path.exists(fname), "File exists")
-        new_file_count = len([name for name in os.listdir(self._temp_dir)
-                              if os.path.isfile(os.path.join(self._temp_dir, name))])
+        new_file_count = len(
+            [
+                name
+                for name in os.listdir(self._temp_dir)
+                if os.path.isfile(os.path.join(self._temp_dir, name))
+            ]
+        )
 
     def _fake_msg_dialog_exec_overwrite(self):
         self.dialog._msg_box.show()
@@ -243,8 +324,9 @@ class TestExportDialog(TestCase):
 def _transparent_test_gen(index, ext, description):
     def _test_transparent(self):
         # set to save to tmp dir
-        _rewrite_text(self.dialog.ui.comboBox_directory,
-                      os.path.abspath(self._temp_dir))
+        _rewrite_text(
+            self.dialog.ui.comboBox_directory, os.path.abspath(self._temp_dir)
+        )
 
         self.dialog.exec_ = self._fake_export_dialog_exec_export
         self.dialog._msg_box.exec_ = self._fake_msg_dialog_exec_overwrite
@@ -253,17 +335,25 @@ def _transparent_test_gen(index, ext, description):
 
         # print "testing save to {0[1]} (.{0[0]})".format(self.dialog.get_file_format())
         for isTrans in [True, False]:
-            _rewrite_text(self.dialog.ui.comboBox_fileName, "transparent_{}.{}".format(isTrans, ext))
+            _rewrite_text(
+                self.dialog.ui.comboBox_fileName,
+                "transparent_{}.{}".format(isTrans, ext),
+            )
             self.dialog.ui.comboBox_fileType.setCurrentIndex(index)
-            self.assertTrue((ext, description) == self.dialog.get_file_format(), "sanity check")
+            self.assertTrue(
+                (ext, description) == self.dialog.get_file_format(), "sanity check"
+            )
             self.dialog.ui.checkBox_transparent.setChecked(isTrans)
             try:
                 fname = self.dialog.export_to_file(self._fig)
             except RuntimeError as e:
                 self.skipTest(e.message)
-            self.assertTrue(os.path.exists(fname),
-                            "testing save to {0[1]} (.{0[0]}) without transparent".format(
-                                self.dialog.get_file_format()))
+            self.assertTrue(
+                os.path.exists(fname),
+                "testing save to {0[1]} (.{0[0]}) without transparent".format(
+                    self.dialog.get_file_format()
+                ),
+            )
 
     return _test_transparent
 

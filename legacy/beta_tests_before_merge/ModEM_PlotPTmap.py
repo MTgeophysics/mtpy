@@ -25,16 +25,15 @@ TypeError: _read_ellipse_dict() takes exactly 2 arguments (1 given)
 import os
 import os.path as op
 
-os.chdir(r'C:\Git\mtpy')
+os.chdir(r"C:\Git\mtpy")
 from mtpy.modeling.modem import PlotPTMaps
 
-wd = r'C:\Git\mtpy\examples\model_files\ModEM'
+wd = r"C:\Git\mtpy\examples\model_files\ModEM"
 
-filestem = 'Modular_MPI_NLCG_004'
-datafn = 'ModEM_Data.dat'
+filestem = "Modular_MPI_NLCG_004"
+datafn = "ModEM_Data.dat"
 
 
-PlotPTMaps(data_fn = op.join(wd,datafn),
-                resp_fn = op.join(wd,filestem + '.dat'),
-                ellipse_size=20
-                )
+PlotPTMaps(
+    data_fn=op.join(wd, datafn), resp_fn=op.join(wd, filestem + ".dat"), ellipse_size=20
+)

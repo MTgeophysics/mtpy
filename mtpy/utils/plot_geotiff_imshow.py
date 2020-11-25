@@ -18,8 +18,9 @@ from osgeo import gdal, osr, ogr
 from gdalconst import GA_ReadOnly
 
 
-def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
-                         band_number=None, cmap='viridis'):
+def plot_geotiff_on_axes(
+    geotiff, axes, extents=None, epsg_code=None, band_number=None, cmap="viridis"
+):
     """
     Plot a geotiff on a prexisting matplotlib axis that represents a
     georeferenced map. Doesn't return anything - the plotting is done
@@ -50,6 +51,7 @@ def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
     cmap : str or matplotlib.colors.Colormap, optional
         Used to color the image data. Defaults to 'viridis'.
     """
+
     def transform_point(src_srs, dst_srs, x, y):
         ctr = osr.CoordinateTransformation(src_srs, dst_srs)
         point = ogr.Geometry(ogr.wkbPoint)
@@ -95,8 +97,11 @@ def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
     r2 = int((crop_b - y0) / y_pixel_size)
     c2 = int((crop_r - x0) / x_pixel_size)
 
-    band_range = range(1, ds.RasterCount + 1) if band_number is None \
+    band_range = (
+        range(1, ds.RasterCount + 1)
+        if band_number is None
         else range(band_number, band_number + 1)
+    )
     data = []
 
     for i in band_range:
@@ -112,10 +117,12 @@ def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
         crop_l, crop_b = transform_point(img_srs, ax_srs, crop_l, crop_b)
         crop_r, crop_t = transform_point(img_srs, ax_srs, crop_r, crop_t)
 
-    axes.imshow(data, cmap=cmap, origin='upper', extent=(crop_l, crop_r, crop_b, crop_t))
+    axes.imshow(
+        data, cmap=cmap, origin="upper", extent=(crop_l, crop_r, crop_b, crop_t)
+    )
 
 
-def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True):
+def plot_geotiff(geofile="/e/Data/uncoverml/GA-cover2/PM_Gravity.tif", show=True):
     if not os.path.isfile(geofile):
         raise FileNotFoundError("Geotiff not found: {}".format(geofile))
     # Register drivers
@@ -125,7 +132,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     ds = gdal.Open(geofile, GA_ReadOnly)
 
     if ds is None:
-        raise Exception('Could not open image file %s' % (geofile))
+        raise Exception("Could not open image file %s" % (geofile))
 
     # get image size
     rows = ds.RasterYSize
@@ -155,10 +162,14 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     pixelWidth = transform[1]
     pixelHeight = transform[5]
 
-    #my_ext = (119.967, 121.525, -28.017, -26.955)
+    # my_ext = (119.967, 121.525, -28.017, -26.955)
 
-    my_ext = (transform[0], transform[0] + ds.RasterXSize * transform[1],
-              transform[3] + ds.RasterYSize * transform[5], transform[3])
+    my_ext = (
+        transform[0],
+        transform[0] + ds.RasterXSize * transform[1],
+        transform[3] + ds.RasterYSize * transform[5],
+        transform[3],
+    )
     print(my_ext)
 
     #     print ("Projection Info = %s"%(proj))
@@ -179,7 +190,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
 
     # ax.imshow(numarray[0]) # no georef info, just a gridded image origin is upper
 
-    my_cmap = 'jet'  # cm.RdYlGn
+    my_cmap = "jet"  # cm.RdYlGn
 
     # ValueError: Possible values are:
     # Accent, Accent_r, Blues, Blues_r, BrBG, BrBG_r, BuGn, BuGn_r, BuPu, BuPu_r,
@@ -201,7 +212,7 @@ def plot_geotiff(geofile='/e/Data/uncoverml/GA-cover2/PM_Gravity.tif', show=True
     # winter, winter_r
 
     ax.imshow(numarray[0], extent=my_ext, cmap=my_cmap)
-    ax.set_title('%s\n' % ('Image ' + geofile))
+    ax.set_title("%s\n" % ("Image " + geofile))
 
     if show is True:
         plt.show()

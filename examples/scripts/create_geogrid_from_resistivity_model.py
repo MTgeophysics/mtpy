@@ -59,11 +59,10 @@ if __name__ == "__main__":
         # Whether or not to scale the data logarithmically. If True,
         #  the log10 of the data will be taken. If False, the data will
         #  be untouched.
-        'log_scale': False
+        "log_scale": False,
     }
 
     create_geogrid(dat_file, rho_file, out_dir, **kwargs)
 
     # Call this function to list available depths:
     # list_depths(rho_file, kwargs[zpad])
-

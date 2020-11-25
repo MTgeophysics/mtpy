@@ -1,4 +1,4 @@
-'''
+"""
 Input and output of seismic traces.
 
 This module provides a simple unified interface to load and save traces to a
@@ -27,7 +27,7 @@ ASCII Table  text                                  yes      [#f5]_
 .. [#f3] The KAN file format has only been seen once by the author, and support for it may be removed again.
 .. [#f4] YAFF is an in-house, experimental file format, which should not be released into the wild.
 .. [#f5] ASCII tables with two columns (time and amplitude) are output - meta information will be lost.
-'''
+"""
 
 import os
 
@@ -36,8 +36,8 @@ import numpy as num
 import trace
 
 
-def load(filename, format='mseed', getdata=True, substitutions=None):
-    '''Load traces from file.
+def load(filename, format="mseed", getdata=True, substitutions=None):
+    """Load traces from file.
 
     :param format: format of the file (``'mseed'``, ``'sac'``, ``'segy'``, ``'seisan_l'``, ``'seisan_b'``, ``'kan'``, ``'yaff'``, ``'from_extension'``)
     :param getdata: if ``True`` (the default), read data, otherwise only read traces metadata
@@ -50,36 +50,37 @@ def load(filename, format='mseed', getdata=True, substitutions=None):
     considered are (matching is case insensitiv): ``'.sac'``, ``'.kan'``, ``'.sgy'``, ``'.segy'``, ``'.yaff'``, everything else is assumed to be in Mini-SEED format.
 
     This function calls :py:func:`iload` and aggregates the loaded traces in a list.
-    '''
+    """
 
-    return list(iload(filename, format=format,
-                      getdata=getdata, substitutions=substitutions))
+    return list(
+        iload(filename, format=format, getdata=getdata, substitutions=substitutions)
+    )
 
 
 def detect_format(filename):
     try:
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             data = f.read(512)
 
     except OSError as e:
         raise FileLoadError(e)
 
     format = None
-    for mod, fmt in ((yaff, 'yaff'), (mseed, 'mseed'), (sac, 'sac')):
+    for mod, fmt in ((yaff, "yaff"), (mseed, "mseed"), (sac, "sac")):
         if mod.detect(data):
             return fmt
 
     raise FileLoadError(UnknownFormat(filename))
 
 
-def iload(filename, format='mseed', getdata=True, substitutions=None):
-    '''Load traces from file (iterator version).
+def iload(filename, format="mseed", getdata=True, substitutions=None):
+    """Load traces from file (iterator version).
 
     This function works like :py:func:`load`, but returns an iterator which yields the loaded traces.
-    '''
+    """
     load_data = getdata
 
-    toks = format.split('.', 1)
+    toks = format.split(".", 1)
     if toks == 2:
         format, subformat = toks
     else:
@@ -96,31 +97,32 @@ def iload(filename, format='mseed', getdata=True, substitutions=None):
         return tr
 
     extension_to_format = {
-        '.yaff': 'yaff',
-        '.sac': 'sac',
-        '.kan': 'kan',
-        '.segy': 'segy',
-        '.sgy': 'segy'}
+        ".yaff": "yaff",
+        ".sac": "sac",
+        ".kan": "kan",
+        ".segy": "segy",
+        ".sgy": "segy",
+    }
 
-    if format == 'from_extension':
-        format = 'mseed'
+    if format == "from_extension":
+        format = "mseed"
         extension = os.path.splitext(filename)[1]
-        format = extension_to_format.get(extension.lower(), 'mseed')
+        format = extension_to_format.get(extension.lower(), "mseed")
 
-    if format == 'detect':
+    if format == "detect":
         format = detect_format(filename)
 
     format_to_module = {
-        'kan': kan,
-        'segy': segy,
-        'yaff': yaff,
-        'sac': sac,
-        'mseed': mseed,
-        'seisan': seisan_waveform,
+        "kan": kan,
+        "segy": segy,
+        "yaff": yaff,
+        "sac": sac,
+        "mseed": mseed,
+        "seisan": seisan_waveform,
     }
 
     add_args = {
-        'seisan': {'subformat': subformat},
+        "seisan": {"subformat": subformat},
     }
 
     if format not in format_to_module:
@@ -128,14 +130,12 @@ def iload(filename, format='mseed', getdata=True, substitutions=None):
 
     mod = format_to_module[format]
 
-    for tr in mod.iload(filename, load_data=load_data,
-                        **add_args.get(format, {})):
+    for tr in mod.iload(filename, load_data=load_data, **add_args.get(format, {})):
         yield subs(tr)
 
 
-def save(traces, filename_template, format='mtpy',
-         additional={}, stations=None):
-    '''Save traces to file(s).
+def save(traces, filename_template, format="mtpy", additional={}, stations=None):
+    """Save traces to file(s).
 
     :param traces: a trace or an iterable of traces to store
     :param filename_template: filename template with placeholders for trace
@@ -152,17 +152,17 @@ def save(traces, filename_template, format='mtpy',
     .. note::
         Network, station, location, and channel codes may be silently truncated
         to file format specific maximum lengthes.
-    '''
+    """
     if isinstance(traces, trace.Trace):
         traces = [traces]
 
-    if format == 'from_extension':
+    if format == "from_extension":
         format = os.path.splitext(filename_template)[1][1:]
 
-    if format == 'mseed':
+    if format == "mseed":
         return mseed.save(traces, filename_template, additional)
 
-    elif format == 'sac':
+    elif format == "sac":
         fns = []
         for tr in traces:
             f = sac.SacFile(from_trace=tr)
@@ -172,7 +172,7 @@ def save(traces, filename_template, format='mtpy',
                 f.stlo = s.lon
                 f.stel = s.elevation
                 f.stdp = s.depth
-                f.cmpinc = s.get_channel(tr.channel).dip + 90.
+                f.cmpinc = s.get_channel(tr.channel).dip + 90.0
                 f.cmpaz = s.get_channel(tr.channel).azimuth
 
             fn = tr.fill_template(filename_template, **additional)
@@ -182,7 +182,7 @@ def save(traces, filename_template, format='mtpy',
 
         return fns
 
-    elif format == 'mtpy':
+    elif format == "mtpy":
         fns = []
         for tr in traces:
             fn = tr.fill_template(filename_template, **additional)
@@ -190,22 +190,20 @@ def save(traces, filename_template, format='mtpy',
             num.savetxt(fn, num.transpose((x, y)))
             fns.append(fn)
 
-    elif format == 'yaff':
+    elif format == "yaff":
         return yaff.save(traces, filename_template, additional)
     else:
         raise UnsupportedFormat(format)
 
 
 class UnknownFormat(Exception):
-
     def __init__(self, filename):
-        Exception.__init__(self, 'Unknown file format: {0}'.format(filename))
+        Exception.__init__(self, "Unknown file format: {0}".format(filename))
 
 
 class UnsupportedFormat(Exception):
-
     def __init__(self, format):
-        Exception.__init__(self, 'Unsupported file format: {0}'.format(format))
+        Exception.__init__(self, "Unsupported file format: {0}".format(format))
 
 
 def make_substitutions(tr, substitutions):
@@ -214,5 +212,6 @@ def make_substitutions(tr, substitutions):
 
 
 class FileLoadError(Exception):
-    '''Raised when a problem occurred while loading of a file.'''
+    """Raised when a problem occurred while loading of a file."""
+
     pass

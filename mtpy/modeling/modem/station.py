@@ -12,10 +12,11 @@ ModEM
 import numpy as np
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
+
 # in module imports
 from .exception import ModEMError
 
-__all__ = ['Stations']
+__all__ = ["Stations"]
 
 
 class Stations(object):
@@ -33,16 +34,18 @@ class Stations(object):
 
     def __init__(self, **kwargs):
 
-        self.dtype = [('station', '|S10'),
-                      ('lat', np.float),
-                      ('lon', np.float),
-                      ('elev', np.float),
-                      ('rel_east', np.float),
-                      ('rel_north', np.float),
-                      ('rel_elev', np.float),
-                      ('east', np.float),
-                      ('north', np.float),
-                      ('zone', 'S4')]
+        self.dtype = [
+            ("station", "|S10"),
+            ("lat", np.float),
+            ("lon", np.float),
+            ("elev", np.float),
+            ("rel_east", np.float),
+            ("rel_north", np.float),
+            ("rel_elev", np.float),
+            ("east", np.float),
+            ("north", np.float),
+            ("zone", "S4"),
+        ]
         self.station_locations = np.zeros(0, dtype=self.dtype)
         self.model_epsg = None
         self.model_utm_zone = None
@@ -54,43 +57,43 @@ class Stations(object):
     ## --> define properties that can only be returned and not set
     @property
     def lat(self):
-        return self.station_locations['lat']
+        return self.station_locations["lat"]
 
     @property
     def lon(self):
-        return self.station_locations['lon']
+        return self.station_locations["lon"]
 
     @property
     def east(self):
-        return self.station_locations['east']
+        return self.station_locations["east"]
 
     @property
     def north(self):
-        return self.station_locations['north']
+        return self.station_locations["north"]
 
     @property
     def elev(self):
-        return self.station_locations['elev']
+        return self.station_locations["elev"]
 
     @property
     def rel_east(self):
-        return self.station_locations['rel_east']
+        return self.station_locations["rel_east"]
 
     @property
     def rel_north(self):
-        return self.station_locations['rel_north']
+        return self.station_locations["rel_north"]
 
     @property
     def rel_elev(self):
-        return self.station_locations['rel_elev']
+        return self.station_locations["rel_elev"]
 
     @property
     def utm_zone(self):
-        return self.station_locations['zone']
+        return self.station_locations["zone"]
 
     @property
     def station(self):
-        return self.station_locations['station']
+        return self.station_locations["station"]
 
     def _get_mt_objs_from_list(self, input_list):
         """
@@ -98,17 +101,21 @@ class Stations(object):
         """
 
         if type(input_list) not in [list, np.ndarray]:
-            raise ValueError('Input list needs to be type list, not {0}'.format(type(input_list)))
+            raise ValueError(
+                "Input list needs to be type list, not {0}".format(type(input_list))
+            )
 
         if type(input_list[0]) is mt.MT:
             return input_list
 
         if type(input_list[0]) is str:
-            if input_list[0].endswith('.edi'):
+            if input_list[0].endswith(".edi"):
                 return [mt.MT(fn) for fn in input_list]
 
             else:
-                raise ModEMError('file {0} not supported yet'.format(input_list[0][-4:]))
+                raise ModEMError(
+                    "file {0} not supported yet".format(input_list[0][-4:])
+                )
 
     def get_station_locations(self, input_list):
         """
@@ -130,37 +137,40 @@ class Stations(object):
 
         # if station locations are not input read from the edi files
         if mt_obj_list is None:
-            raise AttributeError('mt_obj_list is None, need to input a list of '
-                                 'mt objects to read in.')
+            raise AttributeError(
+                "mt_obj_list is None, need to input a list of " "mt objects to read in."
+            )
 
         n_stations = len(mt_obj_list)
 
         if n_stations == 0:
-            raise ModEMError('No .edi files in edi_list, please check '
-                             'file locations.')
+            raise ModEMError(
+                "No .edi files in edi_list, please check " "file locations."
+            )
 
         # make a structured array to put station location information into
-        self.station_locations = np.zeros(n_stations,
-                                          dtype=self.dtype)
+        self.station_locations = np.zeros(n_stations, dtype=self.dtype)
         # get station locations in meters
         for ii, mt_obj in enumerate(mt_obj_list):
-            self.station_locations[ii]['lat'] = mt_obj.latitude
-            self.station_locations[ii]['lon'] = mt_obj.longitude
-            self.station_locations[ii]['station'] = mt_obj.station
-            self.station_locations[ii]['elev'] = mt_obj.elevation
+            self.station_locations[ii]["lat"] = mt_obj.latitude
+            self.station_locations[ii]["lon"] = mt_obj.longitude
+            self.station_locations[ii]["station"] = mt_obj.station
+            self.station_locations[ii]["elev"] = mt_obj.elevation
 
             if (self.model_epsg is not None) or (self.model_utm_zone is not None):
-                east, north, utm_zone = gis_tools.project_point_ll2utm(mt_obj.latitude,
-                                                                       mt_obj.longitude,
-                                                                       utm_zone=self.model_utm_zone,
-                                                                       epsg=self.model_epsg)
-                self.station_locations[ii]['east'] = east
-                self.station_locations[ii]['north'] = north
-                self.station_locations[ii]['zone'] = utm_zone
+                east, north, utm_zone = gis_tools.project_point_ll2utm(
+                    mt_obj.latitude,
+                    mt_obj.longitude,
+                    utm_zone=self.model_utm_zone,
+                    epsg=self.model_epsg,
+                )
+                self.station_locations[ii]["east"] = east
+                self.station_locations[ii]["north"] = north
+                self.station_locations[ii]["zone"] = utm_zone
             else:
-                self.station_locations[ii]['east'] = mt_obj.east
-                self.station_locations[ii]['north'] = mt_obj.north
-                self.station_locations[ii]['zone'] = mt_obj.utm_zone
+                self.station_locations[ii]["east"] = mt_obj.east
+                self.station_locations[ii]["north"] = mt_obj.north
+                self.station_locations[ii]["zone"] = mt_obj.utm_zone
 
         # get relative station locations
         self.calculate_rel_locations()
@@ -188,19 +198,19 @@ class Stations(object):
         #        self.station_locations['rel_north'] -= north_center+shift_north
 
         # translate the stations so they are relative to 0,0
-        east_center = (self.east.max() + self.east.min()) / 2.
-        north_center = (self.north.max() + self.north.min()) / 2.
+        east_center = (self.east.max() + self.east.min()) / 2.0
+        north_center = (self.north.max() + self.north.min()) / 2.0
 
-        self.station_locations['rel_east'] = self.east - east_center
-        self.station_locations['rel_north'] = self.north - north_center
-        
+        self.station_locations["rel_east"] = self.east - east_center
+        self.station_locations["rel_north"] = self.north - north_center
+
         # BM: Before topograhy is applied to the model, the station
-        #  elevation isn't relative to anything (according to 
+        #  elevation isn't relative to anything (according to
         #  Data.project_stations_on_topography, station elevation is
         #  relevant to topography). So rel_elev and elev are the same.
         #  Once topography has been applied, rel_elev can be calcuated
         #  by calling Data.project_stations_on_topography.
-        self.station_locations['rel_elev'] = self.elev
+        self.station_locations["rel_elev"] = self.elev
 
     # make center point a get method, can't set it.
     @property
@@ -214,12 +224,14 @@ class Stations(object):
                                   structured array of length 1
                                   dtype includes (east, north, zone, lat, lon)
         """
-        dtype = [('lat', np.float),
-                 ('lon', np.float),
-                 ('east', np.float),
-                 ('north', np.float),
-                 ('elev', np.float),
-                 ('zone', 'S4')]
+        dtype = [
+            ("lat", np.float),
+            ("lon", np.float),
+            ("east", np.float),
+            ("north", np.float),
+            ("elev", np.float),
+            ("zone", "S4"),
+        ]
         center_location = np.recarray(1, dtype=dtype)
         #        AK - using the mean here but in get_relative_locations used (max + min)/2, why???
 
@@ -235,20 +247,26 @@ class Stations(object):
         #        # calculate center point in lat, lon, easting, northing
         #        center_location['east'] = center_point[0]
         #        center_location['north'] = center_point[1]
-        center_point = np.array([self.east.max() + self.east.min(),
-                                 self.north.max() + self.north.min()]) / 2.
-        center_location['east'] = center_point[0]
-        center_location['north'] = center_point[1]
+        center_point = (
+            np.array(
+                [self.east.max() + self.east.min(), self.north.max() + self.north.min()]
+            )
+            / 2.0
+        )
+        center_location["east"] = center_point[0]
+        center_location["north"] = center_point[1]
 
-        center_location['zone'] = self.utm_zone[0]
+        center_location["zone"] = self.utm_zone[0]
 
-        center_ll = gis_tools.project_point_utm2ll(float(center_point[0]),
-                                                   float(center_point[1]),
-                                                   self.utm_zone[0],
-                                                   epsg=self.model_epsg)
+        center_ll = gis_tools.project_point_utm2ll(
+            float(center_point[0]),
+            float(center_point[1]),
+            self.utm_zone[0],
+            epsg=self.model_epsg,
+        )
 
-        center_location['lat'] = center_ll[0]
-        center_location['lon'] = center_ll[1]
+        center_location["lat"] = center_ll[0]
+        center_location["lon"] = center_ll[1]
         # BM: Because we are now writing center_point.elev to ModEm
         #  data file, we need to provide it.
         #  The center point elevation is the highest point of the
@@ -256,7 +274,7 @@ class Stations(object):
         #  station. After it's applied, it's the highest point
         #  point of the surface model (this will be set by calling
         #  Data.project_stations_on_topography).
-        center_location['elev'] = self.elev.max()
+        center_location["elev"] = self.elev.max()
 
         return center_location
 
@@ -279,24 +297,19 @@ class Stations(object):
 
         cos_ang = np.cos(np.deg2rad(rotation_angle))
         sin_ang = np.sin(np.deg2rad(rotation_angle))
-        rot_matrix = np.array([[cos_ang, sin_ang],
-                               [-sin_ang, cos_ang]])
+        rot_matrix = np.array([[cos_ang, sin_ang], [-sin_ang, cos_ang]])
 
-        coords = np.array([self.station_locations['rel_east'],
-                           self.station_locations['rel_north']])
+        coords = np.array(
+            [self.station_locations["rel_east"], self.station_locations["rel_north"]]
+        )
 
         # rotate the relative station locations
         new_coords = np.array(np.dot(rot_matrix, coords))
 
+        self.station_locations["rel_east"] = new_coords[0, :]
+        self.station_locations["rel_north"] = new_coords[1, :]
 
-        self.station_locations['rel_east'] = new_coords[0, :]
-        self.station_locations['rel_north'] = new_coords[1, :]
-        
-
-        print('Rotated stations by {0:.1f} deg clockwise from N'.format(
-            rotation_angle))
-        
-
+        print("Rotated stations by {0:.1f} deg clockwise from N".format(rotation_angle))
 
     def check_utm_crossing(self):
         """

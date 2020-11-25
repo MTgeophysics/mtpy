@@ -36,42 +36,54 @@ import mtpy.utils.exceptions as MTex
 
 # =================================================================
 
-list_of_channels = ['ex', 'ey', 'bx', 'by', 'bz']
+list_of_channels = ["ex", "ey", "bx", "by", "bz"]
 
-list_of_bfield_loggers = MTcf.dict_of_allowed_values_bfield['B_logger_type']
-list_of_bfield_instruments = MTcf.dict_of_allowed_values_bfield[
-    'B_instrument_type']
-list_of_efield_loggers = MTcf.dict_of_allowed_values_efield['E_logger_type']
-list_of_efield_instruments = MTcf.dict_of_allowed_values_efield[
-    'E_instrument_type']
+list_of_bfield_loggers = MTcf.dict_of_allowed_values_bfield["B_logger_type"]
+list_of_bfield_instruments = MTcf.dict_of_allowed_values_bfield["B_instrument_type"]
+list_of_efield_loggers = MTcf.dict_of_allowed_values_efield["E_logger_type"]
+list_of_efield_instruments = MTcf.dict_of_allowed_values_efield["E_instrument_type"]
 
 list_of_loggers = list(set(list_of_bfield_loggers + list_of_efield_loggers))
-list_of_instruments = list(
-    set(list_of_bfield_instruments + list_of_efield_instruments))
+list_of_instruments = list(set(list_of_bfield_instruments + list_of_efield_instruments))
 
 # section for amplification and scaling factors:
 
 
-dict_of_calibration_factors_volt2nanotesla = {
-    'fluxgate': 70000 / 0.1, 'coil': 1.}
+dict_of_calibration_factors_volt2nanotesla = {"fluxgate": 70000 / 0.1, "coil": 1.0}
 
 # ...dict_of_instrument_amplification = {'electrodes' :10. , 'fluxgate' = 1., 'coil': 1.}
 # dict_of_channel_amplification = {'ex':1, 'ey':1.,'bx':1. ,'by':1., 'bz': 0.5}
 
-dict_of_bz_instrument_amplification = {'edl': 0.5, 'elogger': 1.}
+dict_of_bz_instrument_amplification = {"edl": 0.5, "elogger": 1.0}
 
-dict_of_EDL_gain_factors = {'high': 10., 'low': 1., 'verylow': 0.4,
-                            str(10): 10., str(1): 1., str(0.4): 0.4}
+dict_of_EDL_gain_factors = {
+    "high": 10.0,
+    "low": 1.0,
+    "verylow": 0.4,
+    str(10): 10.0,
+    str(1): 1.0,
+    str(0.4): 0.4,
+}
 
-list_of_elogger_gain_factors = [11., 1]
+list_of_elogger_gain_factors = [11.0, 1]
 
 
 # dict_of_efield_amplification = {'edl': 10., 'elogger': 1.}
 
 # =================================================================
 
-def calibrate(raw_data, field, instrument, logger, dipole_length=1.,
-              calibration_factor=1., amplification=1., gain=1., offset=0.):
+
+def calibrate(
+    raw_data,
+    field,
+    instrument,
+    logger,
+    dipole_length=1.0,
+    calibration_factor=1.0,
+    amplification=1.0,
+    gain=1.0,
+    offset=0.0,
+):
     """
     Convert a given time series from raw data (voltage)
     into field strength amplitude values.
@@ -100,8 +112,9 @@ def calibrate(raw_data, field, instrument, logger, dipole_length=1.,
 
     units_per_count = calibration_factor
 
-    _data_instrument_consistency_check(raw_data, field, dipole_length,
-                                       instrument, amplification, logger, gain)
+    _data_instrument_consistency_check(
+        raw_data, field, dipole_length, instrument, amplification, logger, gain
+    )
 
     # converting counts into units, including
     # - transistion from voltage to field
@@ -114,6 +127,7 @@ def calibrate(raw_data, field, instrument, logger, dipole_length=1.,
 
 
 # =================================================================
+
 
 def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
     """
@@ -132,15 +146,23 @@ def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
 
     # Since the conversion is straight from volt into V/m, no further
     # calibration factor is needed
-    e_field = calibrate(data, 'e', 'electrodes', 'edl', dipole_length=dipole,
-                        calibration_factor=1.,
-                        amplification=instrument_amplification,
-                        gain=edl_gain, offset=0.)
+    e_field = calibrate(
+        data,
+        "e",
+        "electrodes",
+        "edl",
+        dipole_length=dipole,
+        calibration_factor=1.0,
+        amplification=instrument_amplification,
+        gain=edl_gain,
+        offset=0.0,
+    )
 
     return e_field
 
 
 # =================================================================
+
 
 def EDL_b_field(data, edl_gain, instrument, instrument_amplification):
     """
@@ -162,15 +184,23 @@ def EDL_b_field(data, edl_gain, instrument, instrument_amplification):
 
     # nanotesla_per_microvolt = nanotesla_per_volt / (10 ** 6)
 
-    b_field = calibrate(data, 'b', instrument, 'edl', dipole_length=1.,
-                        calibration_factor=1.,
-                        amplification=instrument_amplification,
-                        gain=edl_gain, offset=0.)
+    b_field = calibrate(
+        data,
+        "b",
+        instrument,
+        "edl",
+        dipole_length=1.0,
+        calibration_factor=1.0,
+        amplification=instrument_amplification,
+        gain=edl_gain,
+        offset=0.0,
+    )
 
     return b_field
 
 
 # =================================================================
+
 
 def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
     """
@@ -188,19 +218,39 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
     """
     # Since the conversion is straight from volt into V/m, no further
     # calibration factor is needed
-    e_field = calibrate(data, 'e', 'electrodes', 'elogger', dipole_length=dipole,
-                        calibration_factor=1.,
-                        amplification=instrument_amplification,
-                        gain=elogger_gain, offset=0.)
+    e_field = calibrate(
+        data,
+        "e",
+        "electrodes",
+        "elogger",
+        dipole_length=dipole,
+        calibration_factor=1.0,
+        amplification=instrument_amplification,
+        gain=elogger_gain,
+        offset=0.0,
+    )
 
     return e_field
 
 
 # =================================================================
 
-def calibrate_file(filename, outdir, instrument, instrument_amplification,
-                   logger, gain, dipole, stationname, channel, latitude,
-                   longitude, elevation, offset=0):
+
+def calibrate_file(
+    filename,
+    outdir,
+    instrument,
+    instrument_amplification,
+    logger,
+    gain,
+    dipole,
+    stationname,
+    channel,
+    latitude,
+    longitude,
+    elevation,
+    offset=0,
+):
     """
     Calibrate data from one given file and store the output to another file.
     If the channel is not given explicitly, it's taken from the filename suffix.
@@ -222,25 +272,25 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
     time_axis = None
 
     if not instrument.lower() in list_of_instruments:
-        raise MTex.MTpyError_inputarguments('instrument type not known')
+        raise MTex.MTpyError_inputarguments("instrument type not known")
 
     if not logger.lower() in list_of_loggers:
-        raise MTex.MTpyError_inputarguments('data logger type not known')
+        raise MTex.MTpyError_inputarguments("data logger type not known")
 
     if not op.isfile(filename):
-        raise MTex.MTpyError_inputarguments('data file not existing')
+        raise MTex.MTpyError_inputarguments("data file not existing")
 
     infile_base = op.basename(filename)
 
     try:
         data_in = np.loadtxt(filename)
     except:
-        raise MTex.MTpyError_inputarguments('cannot read data file')
+        raise MTex.MTpyError_inputarguments("cannot read data file")
 
     data_out = copy.copy(data_in)
 
     # read in first line of input file, checking, if header line exists
-    FH = open(filename, 'r')
+    FH = open(filename, "r")
     firstline = FH.readline().strip()
     FH.close()
 
@@ -255,14 +305,15 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
         try:
             os.makedirs(outdir)
         except:
-            raise MTex.MTpyError_inputarguments('output directory is not '
-                                                'existing and cannot be generated')
+            raise MTex.MTpyError_inputarguments(
+                "output directory is not " "existing and cannot be generated"
+            )
 
     if channel is None:
         channel = filename[-2:].lower()
 
     if not channel in list_of_channels:
-        raise MTex.MTpyError_inputarguments('wrong channel specification')
+        raise MTex.MTpyError_inputarguments("wrong channel specification")
 
     field = channel[0]
 
@@ -271,37 +322,39 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
     # return
 
     # separate way for B and E fields here:
-    if field == 'e':
+    if field == "e":
 
         if dipole <= 1:
-            print 'Check dipole length value ! - It is highly improbable to ' \
-                  'have a 1 meter dipole!!'
+            print "Check dipole length value ! - It is highly improbable to " "have a 1 meter dipole!!"
 
-            answer = raw_input('\t\tContinue anyway? [y/N] \n')
+            answer = raw_input("\t\tContinue anyway? [y/N] \n")
 
-            if not answer[0].lower() == 'y':
-                sys.exit('Calibration process interrupted by user input!')
+            if not answer[0].lower() == "y":
+                sys.exit("Calibration process interrupted by user input!")
 
-        instrument = 'electrodes'
+        instrument = "electrodes"
 
         logger = logger.lower()
 
-        if logger == 'elogger':
+        if logger == "elogger":
 
             if not type(gain) in [float, int]:  # list_of_elogger_gain_factors:
-                raise MTex.MTpyError_inputarguments('invalid gain for elogger:'
-                                                    ' {0}'.format(gain))
+                raise MTex.MTpyError_inputarguments(
+                    "invalid gain for elogger:" " {0}".format(gain)
+                )
 
             # instrument_amplification = dict_of_efield_amplification[logger]
 
-            outfile_data = elogger_e_field(data_in, gain, dipole,
-                                           instrument_amplification)
+            outfile_data = elogger_e_field(
+                data_in, gain, dipole, instrument_amplification
+            )
 
-        elif logger == 'edl':
+        elif logger == "edl":
 
             if not type(gain) in [float, int, str]:
-                raise MTex.MTpyError_inputarguments('invalid gain for EDL: '
-                                                    '{0}'.format(gain))
+                raise MTex.MTpyError_inputarguments(
+                    "invalid gain for EDL: " "{0}".format(gain)
+                )
 
             # instrument_amplification = dict_of_efield_amplification[logger]
 
@@ -310,289 +363,303 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
             else:
                 EDLgain = float(gain)
 
-            outfile_data = EDL_e_field(data_in, EDLgain, dipole,
-                                       instrument_amplification)
+            outfile_data = EDL_e_field(
+                data_in, EDLgain, dipole, instrument_amplification
+            )
 
-        dataunit = 'microvoltpermeter'
+        dataunit = "microvoltpermeter"
 
     # B-field part
-    elif field == 'b':
+    elif field == "b":
         instrument = instrument.lower()
         if not instrument in list_of_bfield_instruments:
-            raise MTex.MTpyError_inputarguments('invalid instrument for B-'
-                                                'field measurements')
+            raise MTex.MTpyError_inputarguments(
+                "invalid instrument for B-" "field measurements"
+            )
 
         logger = logger.lower()
 
         if not logger in list_of_bfield_loggers:
-            raise MTex.MTpyError_inputarguments('invalid logger for B-field'
-                                                ' measurements')
+            raise MTex.MTpyError_inputarguments(
+                "invalid logger for B-field" " measurements"
+            )
 
         # instrument_amplification = 1.
 
         # calibration_factor = dict_of_calibration_factors_volt2nanotesla[instrument]
 
-        if logger == 'edl':
+        if logger == "edl":
 
             if not type(gain) in [float, int, str]:
-                raise MTex.MTpyError_inputarguments('invalid gain: '
-                                                    '{0}'.format(gain))
+                raise MTex.MTpyError_inputarguments("invalid gain: " "{0}".format(gain))
 
             if isinstance(gain, str):
                 EDLgain = dict_of_EDL_gain_factors[gain]
             else:
                 EDLgain = float(gain)
 
-            if instrument == 'fluxgate' and channel == 'bz':
-                instrument_amplification *= dict_of_bz_instrument_amplification[
-                    logger]
+            if instrument == "fluxgate" and channel == "bz":
+                instrument_amplification *= dict_of_bz_instrument_amplification[logger]
 
-            outfile_data = EDL_b_field(data_in, EDLgain, instrument,
-                                       instrument_amplification)
+            outfile_data = EDL_b_field(
+                data_in, EDLgain, instrument, instrument_amplification
+            )
 
-        dataunit = 'nanotesla'
+        dataunit = "nanotesla"
 
-    newbasename = '{0}_{1}.{2}'.format(op.splitext(infile_base)[0], dataunit,
-                                       infile_base.split('.')[-1].lower())
+    newbasename = "{0}_{1}.{2}".format(
+        op.splitext(infile_base)[0], dataunit, infile_base.split(".")[-1].lower()
+    )
 
     # set up output file
     outfile = op.join(outdir, newbasename)
 
-    additional_header_info = ' {0} {1:02.5f} {2:03.5f} {3:.1f} \n'.format(
-        dataunit, latitude, longitude, elevation)
+    additional_header_info = " {0} {1:02.5f} {2:03.5f} {3:.1f} \n".format(
+        dataunit, latitude, longitude, elevation
+    )
 
-    if firstline[0][0] == '#':
+    if firstline[0][0] == "#":
         newfirstline = firstline + additional_header_info
 
     else:
-        newfirstline = '# {0} {1} {2}'.format(stationname, channel,
-                                              additional_header_info)
+        newfirstline = "# {0} {1} {2}".format(
+            stationname, channel, additional_header_info
+        )
 
     if time_axis is not None:
         data_out[:, 1] = outfile_data
     else:
         data_out = outfile_data
 
-    Fout = open(outfile, 'w')
+    Fout = open(outfile, "w")
 
     Fout.write(newfirstline)
-    np.savetxt(Fout, data_out, fmt='%.8e')
+    np.savetxt(Fout, data_out, fmt="%.8e")
     Fout.close()
 
-    print 'read file', filename, '  ->  wrote file %s' % (outfile)
+    print "read file", filename, "  ->  wrote file %s" % (outfile)
 
 
 # =================================================================
 
-def _data_instrument_consistency_check(data, field, dipole_length, instrument,
-                                       amplification, logger, gain):
+
+def _data_instrument_consistency_check(
+    data, field, dipole_length, instrument, amplification, logger, gain
+):
     """
     Check, if the input values given  for the calibration make any sense at all.
 
     """
 
     if len(data) == 0:
-        raise MTex.MTpyError_ts_data('no data provided for calibration')
+        raise MTex.MTpyError_ts_data("no data provided for calibration")
 
-    if not field.lower() in ['e', 'b']:
-        raise MTex.MTpyError_inputarguments('Field must be E or B')
+    if not field.lower() in ["e", "b"]:
+        raise MTex.MTpyError_inputarguments("Field must be E or B")
 
     #    if float(dipole_length) <= 0:
     #        raise MTpyError_inputarguments( 'Dipole length must be positive' )
 
     if float(amplification) <= 0:
-        raise MTex.MTpyError_inputarguments(
-            'Amplification factor must be positive')
+        raise MTex.MTpyError_inputarguments("Amplification factor must be positive")
 
     if float(gain) <= 0:
-        raise MTex.MTpyError_inputarguments('Instrument gain must be positive')
+        raise MTex.MTpyError_inputarguments("Instrument gain must be positive")
 
     try:
         if not logger.lower() in list_of_loggers:
             raise
     except:
-        raise MTex.MTpyError_inputarguments('wrong choice of logger')
+        raise MTex.MTpyError_inputarguments("wrong choice of logger")
 
     try:
         if not instrument.lower() in list_of_instruments:
             raise
     except:
-        raise MTex.MTpyError_inputarguments('wrong choice of instrument')
+        raise MTex.MTpyError_inputarguments("wrong choice of instrument")
 
-    if field.lower == 'b':
-        if logger.lower() == 'elogger':
-            raise MTex.MTpyError_inputarguments('wrong choice of logger')
-        if instrument.lower() == 'electrodes':
-            raise MTex.MTpyError_inputarguments('wrong choice of instrument')
+    if field.lower == "b":
+        if logger.lower() == "elogger":
+            raise MTex.MTpyError_inputarguments("wrong choice of logger")
+        if instrument.lower() == "electrodes":
+            raise MTex.MTpyError_inputarguments("wrong choice of instrument")
         if not float(dipole_length) == 1:
-            raise MTex.MTpyError_inputarguments('Dipole length must be "1" for'
-                                                ' B-field calibration')
+            raise MTex.MTpyError_inputarguments(
+                'Dipole length must be "1" for' " B-field calibration"
+            )
 
-    if field.lower == 'e':
-        if not instrument.lower() == 'electrodes':
-            raise MTex.MTpyError_inputarguments('wrong choice of instrument')
+    if field.lower == "e":
+        if not instrument.lower() == "electrodes":
+            raise MTex.MTpyError_inputarguments("wrong choice of instrument")
 
 
-def convertfiles(dirpath, folder, infodict, fmt='%.6g'):
+def convertfiles(dirpath, folder, infodict, fmt="%.6g"):
     """
     convertfiles will convert data of counts from data logger to units.
     """
-    aconvstr = ' has already been converted check data file' + '\n'
-    delemptyfile = ' has been deleted because the file was empty' + '\n'
+    aconvstr = " has already been converted check data file" + "\n"
+    delemptyfile = " has been deleted because the file was empty" + "\n"
     clines = []
-    clines.append('======' + folder + '======' + '\n')
+    clines.append("======" + folder + "======" + "\n")
     for dayfolder in os.listdir(os.path.join(dirpath, folder)):
-        if dayfolder.find('.') == -1:
-            clines.append('---' + dayfolder + '---' + '\n')
-            for filename in os.listdir(
-                    os.path.join(dirpath, folder, dayfolder)):
-                if filename.find('.') >= 0:
-                    if fnmatch.fnmatch(filename, '*.MTex'):
-                        exfid = file(os.path.join(dirpath, folder, dayfolder,
-                                                  filename), 'r')
+        if dayfolder.find(".") == -1:
+            clines.append("---" + dayfolder + "---" + "\n")
+            for filename in os.listdir(os.path.join(dirpath, folder, dayfolder)):
+                if filename.find(".") >= 0:
+                    if fnmatch.fnmatch(filename, "*.MTex"):
+                        exfid = file(
+                            os.path.join(dirpath, folder, dayfolder, filename), "r"
+                        )
                         exlines = exfid.readlines()
                         if len(exlines) == 0:
                             # os.remove(os.path.join(dirpath,folder,dayfolder,filename))
                             clines.append(filename + delemptyfile)
 
-                        elif exlines[0].find('.') >= 0:
+                        elif exlines[0].find(".") >= 0:
                             exfid.close()
                             clines.append(filename + aconvstr)
 
                         else:
-                            exconv = convertE(exlines, infodict['dlgain'],
-                                              infodict['egain'],
-                                              infodict['ex'])
+                            exconv = convertE(
+                                exlines,
+                                infodict["dlgain"],
+                                infodict["egain"],
+                                infodict["ex"],
+                            )
                             exfid.close()
                             exconvlst = [
-                                fmt %
-                                exconv[ii] +
-                                '\n' for ii in range(
-                                    len(exconv))]
-                            exfidn = file(os.path.join(dirpath, folder, dayfolder,
-                                                       filename), 'w')
+                                fmt % exconv[ii] + "\n" for ii in range(len(exconv))
+                            ]
+                            exfidn = file(
+                                os.path.join(dirpath, folder, dayfolder, filename), "w"
+                            )
                             exfidn.writelines(exconvlst)
                             exfidn.close()
-                            clines.append(filename + '\n')
-                    elif fnmatch.fnmatch(filename, '*.EY'):
-                        eyfid = file(os.path.join(dirpath, folder, dayfolder,
-                                                  filename), 'r')
+                            clines.append(filename + "\n")
+                    elif fnmatch.fnmatch(filename, "*.EY"):
+                        eyfid = file(
+                            os.path.join(dirpath, folder, dayfolder, filename), "r"
+                        )
                         eylines = eyfid.readlines()
                         if len(eylines) == 0:
                             #                            os.remove(os.path.join(dirpath,folder,dayfolder,
                             # filename))
                             clines.append(filename + delemptyfile)
-                        elif eylines[0].find('.') >= 0:
+                        elif eylines[0].find(".") >= 0:
                             eyfid.close()
                             # clines.append(filename+aconvstr)
 
                         else:
-                            eyconv = convertE(eylines, infodict['dlgain'],
-                                              infodict['egain'],
-                                              infodict['ey'])
+                            eyconv = convertE(
+                                eylines,
+                                infodict["dlgain"],
+                                infodict["egain"],
+                                infodict["ey"],
+                            )
                             eyfid.close()
                             eyconvlst = [
-                                fmt %
-                                eyconv[ii] +
-                                '\n' for ii in range(
-                                    len(eyconv))]
-                            eyfidn = file(os.path.join(dirpath, folder, dayfolder,
-                                                       filename), 'w')
+                                fmt % eyconv[ii] + "\n" for ii in range(len(eyconv))
+                            ]
+                            eyfidn = file(
+                                os.path.join(dirpath, folder, dayfolder, filename), "w"
+                            )
                             eyfidn.writelines(eyconvlst)
                             eyfidn.close()
-                            clines.append(filename + '\n')
+                            clines.append(filename + "\n")
                 else:
-                    clines.append('Found Folder: ' + filename + '\n')
-            if infodict['magtype'] == 'lp':
-                magoristr = infodict['magori'].replace('"', '')
-                magorilst = magoristr.split(',')
-                for filename in os.listdir(
-                        os.path.join(dirpath, folder, dayfolder)):
-                    if filename.find('.') >= 0:
-                        if fnmatch.fnmatch(filename, '*.' + magorilst[0]):
-                            bxfid = file(os.path.join(dirpath, folder, dayfolder,
-                                                      filename), 'r')
+                    clines.append("Found Folder: " + filename + "\n")
+            if infodict["magtype"] == "lp":
+                magoristr = infodict["magori"].replace('"', "")
+                magorilst = magoristr.split(",")
+                for filename in os.listdir(os.path.join(dirpath, folder, dayfolder)):
+                    if filename.find(".") >= 0:
+                        if fnmatch.fnmatch(filename, "*." + magorilst[0]):
+                            bxfid = file(
+                                os.path.join(dirpath, folder, dayfolder, filename), "r"
+                            )
                             bxlines = bxfid.readlines()
                             if len(bxlines) == 0:
                                 #                                os.remove(os.path.join(dirpath,folder,dayfolder,
                                 # filename))
                                 clines.append(filename + delemptyfile)
-                            elif bxlines[0].find('.') >= 0:
+                            elif bxlines[0].find(".") >= 0:
                                 bxfid.close()
                                 clines.append(filename + aconvstr)
                             else:
-                                bxconv = convertlpB(
-                                    bxlines, infodict['dlgain'])
+                                bxconv = convertlpB(bxlines, infodict["dlgain"])
                                 bxfid.close()
                                 bxconvlst = [
-                                    fmt %
-                                    bxconv[ii] +
-                                    '\n' for ii in range(
-                                        len(bxconv))]
-                                bxfidn = file(os.path.join(dirpath, folder,
-                                                           dayfolder, filename), 'w')
+                                    fmt % bxconv[ii] + "\n" for ii in range(len(bxconv))
+                                ]
+                                bxfidn = file(
+                                    os.path.join(dirpath, folder, dayfolder, filename),
+                                    "w",
+                                )
                                 bxfidn.writelines(bxconvlst)
                                 bxfidn.close()
-                                clines.append(filename + ' as BX' + '\n')
-                        elif fnmatch.fnmatch(filename, '*.' + magorilst[1]):
-                            byfid = file(os.path.join(dirpath, folder, dayfolder,
-                                                      filename), 'r')
+                                clines.append(filename + " as BX" + "\n")
+                        elif fnmatch.fnmatch(filename, "*." + magorilst[1]):
+                            byfid = file(
+                                os.path.join(dirpath, folder, dayfolder, filename), "r"
+                            )
                             bylines = byfid.readlines()
 
                             if len(bylines) == 0:
                                 #                                os.remove(os.path.join(dirpath,folder,dayfolder,
                                 # filename))
                                 clines.append(filename + delemptyfile)
-                            elif bylines[0].find('.') >= 0:
+                            elif bylines[0].find(".") >= 0:
                                 byfid.close()
                                 clines.append(filename + aconvstr)
 
                             else:
-                                byconv = convertlpB(bylines,
-                                                    infodict['dlgain'])
+                                byconv = convertlpB(bylines, infodict["dlgain"])
                                 byfid.close()
                                 byconvlst = [
-                                    fmt %
-                                    byconv[ii] +
-                                    '\n' for ii in range(
-                                        len(byconv))]
-                                byfidn = file(os.path.join(dirpath, folder,
-                                                           dayfolder, filename), 'w')
+                                    fmt % byconv[ii] + "\n" for ii in range(len(byconv))
+                                ]
+                                byfidn = file(
+                                    os.path.join(dirpath, folder, dayfolder, filename),
+                                    "w",
+                                )
                                 byfidn.writelines(byconvlst)
                                 byfidn.close()
-                                clines.append(filename + ' as BY' + '\n')
-                        elif fnmatch.fnmatch(filename, '*.' + magorilst[2]):
-                            bzfid = file(os.path.join(dirpath, folder, dayfolder,
-                                                      filename), 'r')
+                                clines.append(filename + " as BY" + "\n")
+                        elif fnmatch.fnmatch(filename, "*." + magorilst[2]):
+                            bzfid = file(
+                                os.path.join(dirpath, folder, dayfolder, filename), "r"
+                            )
                             bzlines = bzfid.readlines()
 
                             if len(bzlines) == 0:
                                 #                                os.remove(os.path.join(dirpath,folder,dayfolder,
                                 # filename))
                                 clines.append(filename + delemptyfile)
-                            elif bzlines[0].find('.') >= 0:
+                            elif bzlines[0].find(".") >= 0:
                                 bzfid.close()
                                 clines.append(filename + aconvstr)
 
                             else:
-                                bzconv = convertlpB(bzlines,
-                                                    infodict['dlgain'],
-                                                    zadj=infodict['lpbzcor'])
+                                bzconv = convertlpB(
+                                    bzlines,
+                                    infodict["dlgain"],
+                                    zadj=infodict["lpbzcor"],
+                                )
                                 bzfid.close()
                                 bzconvlst = [
-                                    fmt %
-                                    bzconv[ii] +
-                                    '\n' for ii in range(
-                                        len(bzconv))]
-                                bzfidn = file(os.path.join(dirpath, folder,
-                                                           dayfolder, filename), 'w')
+                                    fmt % bzconv[ii] + "\n" for ii in range(len(bzconv))
+                                ]
+                                bzfidn = file(
+                                    os.path.join(dirpath, folder, dayfolder, filename),
+                                    "w",
+                                )
                                 bzfidn.writelines(bzconvlst)
                                 bzfidn.close()
-                                clines.append(filename + ' as BZ' + '\n')
+                                clines.append(filename + " as BZ" + "\n")
                         else:
                             pass
                     else:
-                        clines.append('Found Folder: ' + filename + '\n')
+                        clines.append("Found Folder: " + filename + "\n")
     return clines
 
 
@@ -610,8 +677,9 @@ def convertlpB(bfield, dlgain=1, zadj=1):
     Outputs:
         bfieldc = scaled bfield 1D array
     """
-    bfieldc = np.array(bfield, dtype='float') / 10.E7 * \
-        70000. * float(dlgain) * float(zadj)
+    bfieldc = (
+        np.array(bfield, dtype="float") / 10.0e7 * 70000.0 * float(dlgain) * float(zadj)
+    )
 
     return bfieldc
 
@@ -632,14 +700,26 @@ def convertE(efield, dlgain, egain, dlength):
     Outputs:
         efieldc = scaled electric field 1D array
     """
-    efieldc = np.array(efield, dtype='float') * float(dlgain) / (float(dlength) *
-                                                                 float(egain))
+    efieldc = (
+        np.array(efield, dtype="float")
+        * float(dlgain)
+        / (float(dlength) * float(egain))
+    )
 
     return efieldc
 
 
-def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
-                        exlen=100., eylen=100., magtype='lp', zadj=2):
+def convertCounts2Units(
+    filenames,
+    eyn="n",
+    lpyn="n",
+    egain=1.0,
+    dlgain=1.0,
+    exlen=100.0,
+    eylen=100.0,
+    magtype="lp",
+    zadj=2,
+):
     """
     convertCounts2Units(filenames,eyn='n',lpyn='n',egain=1.0,dlgain=1.0,
     exlen=100.,eylen=100., magtype='lp',zadj=2)
@@ -656,126 +736,127 @@ def convertCounts2Units(filenames, eyn='n', lpyn='n', egain=1.0, dlgain=1.0,
     zadj => bz adjusting parameter for bartington sensor"""
 
     for ii in range(len(filenames)):
-        if eyn == 'n':
+        if eyn == "n":
             # convert MTex chanel
-            if fnmatch.fnmatch(filenames[ii], '*.MTex'):
-                exfid = file(filenames[ii], 'r')
+            if fnmatch.fnmatch(filenames[ii], "*.MTex"):
+                exfid = file(filenames[ii], "r")
                 exlines = exfid.readlines()
-                if exlines[0].find('.') >= 0:
-                    print 'Found decimal point in ' + filenames[ii] + '. Check File'
-                    exyn = input('Still convert? (y/n) as a string')
-                    if exyn == 'n':
+                if exlines[0].find(".") >= 0:
+                    print "Found decimal point in " + filenames[ii] + ". Check File"
+                    exyn = input("Still convert? (y/n) as a string")
+                    if exyn == "n":
                         exfid.close()
                     else:
                         exconv = convertE(exlines, dlgain, egain, exlen)
                         exfid.close()
-                        exconvlst = [str(exconv[ii]) +
-                                     '\n' for ii in range(len(exconv))]
-                        exfidn = file(filenames[ii], 'w')
+                        exconvlst = [
+                            str(exconv[ii]) + "\n" for ii in range(len(exconv))
+                        ]
+                        exfidn = file(filenames[ii], "w")
                         exfidn.writelines(exconvlst)
                         exfidn.close()
                 else:
                     exconv = convertE(exlines, dlgain, egain, exlen)
                     exfid.close()
-                    exconvlst = [str(exconv[ii]) +
-                                 '\n' for ii in range(len(exconv))]
-                    exfidn = file(filenames[ii], 'w')
+                    exconvlst = [str(exconv[ii]) + "\n" for ii in range(len(exconv))]
+                    exfidn = file(filenames[ii], "w")
                     exfidn.writelines(exconvlst)
                     exfidn.close()
-            elif fnmatch.fnmatch(filenames[ii], '*.EY'):
-                eyfid = file(filenames[ii], 'r')
+            elif fnmatch.fnmatch(filenames[ii], "*.EY"):
+                eyfid = file(filenames[ii], "r")
                 eylines = eyfid.readlines()
-                if eylines[0].find('.') >= 0:
-                    print 'Found decimal point ' + filenames[ii] + '. Check File.'
-                    eyyn = input('Still convert? (y/n) as a string')
-                    if eyyn == 'n':
+                if eylines[0].find(".") >= 0:
+                    print "Found decimal point " + filenames[ii] + ". Check File."
+                    eyyn = input("Still convert? (y/n) as a string")
+                    if eyyn == "n":
                         eyfid.close()
                     else:
                         eyconv = convertE(eylines, dlgain, egain, eylen)
                         eyfid.close()
-                        eyconvlst = [str(eyconv[ii]) +
-                                     '\n' for ii in range(len(eyconv))]
-                        eyfidn = file(filenames[ii], 'w')
+                        eyconvlst = [
+                            str(eyconv[ii]) + "\n" for ii in range(len(eyconv))
+                        ]
+                        eyfidn = file(filenames[ii], "w")
                         eyfidn.writelines(eyconvlst)
                         eyfidn.close()
                 else:
                     eyconv = convertE(eylines, dlgain, egain, eylen)
                     eyfid.close()
-                    eyconvlst = [str(eyconv[ii]) +
-                                 '\n' for ii in range(len(eyconv))]
-                    eyfidn = file(filenames[ii], 'w')
+                    eyconvlst = [str(eyconv[ii]) + "\n" for ii in range(len(eyconv))]
+                    eyfidn = file(filenames[ii], "w")
                     eyfidn.writelines(eyconvlst)
                     eyfidn.close()
         else:
             pass
 
         # convert Magnetic Channels for long period surveys
-        if magtype == 'lp' and lpyn == 'n':
+        if magtype == "lp" and lpyn == "n":
             # Convert BX
-            if fnmatch.fnmatch(filenames[ii], '*.BX'):
-                bxfid = file(filenames[ii], 'r')
+            if fnmatch.fnmatch(filenames[ii], "*.BX"):
+                bxfid = file(filenames[ii], "r")
                 bxlines = bxfid.readlines()
-                if bxlines[0].find('.') >= 0:
-                    print 'Found decimal point ' + filenames[ii] + '. Check File.'
-                    bxyn = input('Still convert? (y/n) as a string')
-                    if bxyn == 'n':
+                if bxlines[0].find(".") >= 0:
+                    print "Found decimal point " + filenames[ii] + ". Check File."
+                    bxyn = input("Still convert? (y/n) as a string")
+                    if bxyn == "n":
                         bxfid.close()
                     else:
                         bxconv = convertlpB(bxlines, dlgain)
                         bxfid.close()
-                        bxconvlst = [str(bxconv[ii]) +
-                                     '\n' for ii in range(len(bxconv))]
-                        bxfidn = file(filenames[ii], 'w')
+                        bxconvlst = [
+                            str(bxconv[ii]) + "\n" for ii in range(len(bxconv))
+                        ]
+                        bxfidn = file(filenames[ii], "w")
                         bxfidn.writelines(bxconvlst)
                         bxfidn.close()
             # convert BY
-            elif fnmatch.fnmatch(filenames[ii], '*.BY'):
-                byfid = file(filenames[ii], 'r')
+            elif fnmatch.fnmatch(filenames[ii], "*.BY"):
+                byfid = file(filenames[ii], "r")
                 bylines = byfid.readlines()
-                if bylines[0].find('.') >= 0:
-                    print 'Found decimal point ' + filenames[ii] + '. Check File.'
-                    byyn = input('Still convert? (y/n) as a string')
-                    if byyn == 'n':
+                if bylines[0].find(".") >= 0:
+                    print "Found decimal point " + filenames[ii] + ". Check File."
+                    byyn = input("Still convert? (y/n) as a string")
+                    if byyn == "n":
                         byfid.close()
                     else:
                         byconv = convertlpB(bylines, dlgain)
                         byfid.close()
-                        byconvlst = [str(byconv[ii]) +
-                                     '\n' for ii in range(len(byconv))]
-                        byfidn = file(filenames[ii], 'w')
+                        byconvlst = [
+                            str(byconv[ii]) + "\n" for ii in range(len(byconv))
+                        ]
+                        byfidn = file(filenames[ii], "w")
                         byfidn.writelines(byconvlst)
                         byfidn.close()
                 else:
                     byconv = convertlpB(bylines, dlgain)
                     byfid.close()
-                    byconvlst = [str(byconv[ii]) +
-                                 '\n' for ii in range(len(byconv))]
-                    byfidn = file(filenames[ii], 'w')
+                    byconvlst = [str(byconv[ii]) + "\n" for ii in range(len(byconv))]
+                    byfidn = file(filenames[ii], "w")
                     byfidn.writelines(byconvlst)
                     byfidn.close()
             # convert BZ
-            elif fnmatch.fnmatch(filenames[ii], '*.BZ'):
-                bzfid = file(filenames[ii], 'r')
+            elif fnmatch.fnmatch(filenames[ii], "*.BZ"):
+                bzfid = file(filenames[ii], "r")
                 bzlines = bzfid.readlines()
-                if bzlines[0].find('.') >= 0:
-                    print 'Found decimal point ' + filenames[ii] + '. Check File.'
-                    bzyn = input('Still convert? (y/n) as a string')
-                    if bzyn == 'n':
+                if bzlines[0].find(".") >= 0:
+                    print "Found decimal point " + filenames[ii] + ". Check File."
+                    bzyn = input("Still convert? (y/n) as a string")
+                    if bzyn == "n":
                         bzfid.close()
                     else:
                         bzconv = convertlpB(bzlines, dlgain, zadj=zadj)
                         bzfid.close()
-                        bzconvlst = [str(bzconv[ii]) +
-                                     '\n' for ii in range(len(bzconv))]
-                        bzfidn = file(filenames[ii], 'w')
+                        bzconvlst = [
+                            str(bzconv[ii]) + "\n" for ii in range(len(bzconv))
+                        ]
+                        bzfidn = file(filenames[ii], "w")
                         bzfidn.writelines(bzconvlst)
                         bzfidn.close()
                 else:
                     bzconv = convertlpB(bzlines, dlgain, zadj=zadj)
                     bzfid.close()
-                    bzconvlst = [str(bzconv[ii]) +
-                                 '\n' for ii in range(len(bzconv))]
-                    bzfidn = file(filenames[ii], 'w')
+                    bzconvlst = [str(bzconv[ii]) + "\n" for ii in range(len(bzconv))]
+                    bzfidn = file(filenames[ii], "w")
                     bzfidn.writelines(bzconvlst)
                     bzfidn.close()
             else:

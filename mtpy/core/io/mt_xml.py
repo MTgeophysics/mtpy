@@ -29,6 +29,7 @@ from mtpy.utils.mttime import get_now_utc
 class EMFTXMLError(Exception):
     pass
 
+
 # ==============================================================================
 # Generic object to hold information
 # ==============================================================================
@@ -343,11 +344,7 @@ class XMLConfig(object):
             None,
             None,
             **{
-                "CreationTime": XMLElement(
-                    "CreationTime",
-                    None,
-                    get_now_utc(),
-                ),
+                "CreationTime": XMLElement("CreationTime", None, get_now_utc(),),
                 "CreatingApplication": XMLElement(
                     "CreatingApplication", None, "MTpy.core.mtxml"
                 ),
@@ -418,9 +415,7 @@ class XMLConfig(object):
                     **{
                         "Latitude": XMLElement("Latitude", None, None),
                         "Longitude": XMLElement("Longitude", None, None),
-                        "Elevation": XMLElement(
-                            "Elevation", {"units": "meters"}, None
-                        ),
+                        "Elevation": XMLElement("Elevation", {"units": "meters"}, None),
                         "Declination": XMLElement(
                             "Declination", {"epoch": "1995"}, None
                         ),
@@ -1605,6 +1600,3 @@ class EMTFXML(XMLConfig):
             raise EMTFXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
 
         self._Tipper = t_object
-
-
-

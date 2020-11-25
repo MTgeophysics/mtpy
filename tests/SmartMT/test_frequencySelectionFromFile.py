@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 
 
 def _get_mt_objs(edi_path):
-    edi_files = glob.glob(os.path.join(edi_path, '*.edi'))
+    edi_files = glob.glob(os.path.join(edi_path, "*.edi"))
     mt_objs = [mt.MT(os.path.abspath(file_name)) for file_name in edi_files]
     return mt_objs
 
@@ -53,23 +53,38 @@ class TestFrequencySelectionFromFile(TestCase):
     #     QTest.qWait(10000)
 
     def test_selection(self):
-        self.assertTrue(self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount() == 0)
+        self.assertTrue(
+            self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount() == 0
+        )
         _click_area(self.app.freq_slct_from_file.ui.listView_stations.viewport())
         QTest.qWait(1000)
-        _click_area(self.app.freq_slct_from_file.ui.listView_stations.viewport(), modifier=QtCore.Qt.ControlModifier)
+        _click_area(
+            self.app.freq_slct_from_file.ui.listView_stations.viewport(),
+            modifier=QtCore.Qt.ControlModifier,
+        )
         QTest.qWait(1000)
-        _click_area(self.app.freq_slct_from_file.ui.listView_stations.viewport(), modifier=QtCore.Qt.ControlModifier)
+        _click_area(
+            self.app.freq_slct_from_file.ui.listView_stations.viewport(),
+            modifier=QtCore.Qt.ControlModifier,
+        )
         QTest.qWait(1000)
-        self.assertTrue(self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount() > 0)
+        self.assertTrue(
+            self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount() > 0
+        )
 
     def test_get_frequencies(self):
         _click_area(self.app.freq_slct_from_file.ui.listView_stations.viewport())
         QTest.qWait(1000)
         freqs = self.app.freq_slct_from_file.get_selected_frequencies()
-        self.assertTrue(len(freqs) == self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount())
+        self.assertTrue(
+            len(freqs)
+            == self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount()
+        )
         #  check frequency
         index = self.app.freq_slct_from_file.ui.listView_stations.selectedIndexes()[0]
-        station = self.app.freq_slct_from_file.model_stations.item(index.row()).data(QtCore.Qt.DisplayRole)
+        station = self.app.freq_slct_from_file.model_stations.item(index.row()).data(
+            QtCore.Qt.DisplayRole
+        )
         mtobj = self.app.freq_slct_from_file._mt_obj_dict[station]
         mt_freqs = sorted(list(set(mtobj.Z.freq)))
         self.assertTrue(all([freq == mtfreq for freq, mtfreq in zip(freqs, mt_freqs)]))
@@ -78,11 +93,18 @@ class TestFrequencySelectionFromFile(TestCase):
         _click_area(self.app.freq_slct_from_file.ui.listView_stations.viewport())
         QTest.qWait(1000)
         periods = self.app.freq_slct_from_file.get_selected_periods()
-        self.assertTrue(len(periods) == self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount())
+        self.assertTrue(
+            len(periods)
+            == self.app.freq_slct_from_file.ui.tableWidget_selected.rowCount()
+        )
         #  check periods
         index = self.app.freq_slct_from_file.ui.listView_stations.selectedIndexes()[0]
-        station = self.app.freq_slct_from_file.model_stations.item(index.row()).data(QtCore.Qt.DisplayRole)
+        station = self.app.freq_slct_from_file.model_stations.item(index.row()).data(
+            QtCore.Qt.DisplayRole
+        )
         mtobj = self.app.freq_slct_from_file._mt_obj_dict[station]
         mt_freqs = sorted(list(set(mtobj.Z.freq)))
-        mt_periods = list(1./np.array(mt_freqs))
-        self.assertTrue(all([freq == mtfreq for freq, mtfreq in zip(periods, mt_periods)]))
+        mt_periods = list(1.0 / np.array(mt_freqs))
+        self.assertTrue(
+            all([freq == mtfreq for freq, mtfreq in zip(periods, mt_periods)])
+        )

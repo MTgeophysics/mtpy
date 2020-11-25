@@ -15,15 +15,17 @@ from tests.imaging import ImageTestCase
 
 class Test_ModEM_PlotResponse(ImageTestCase):
     def test_modular_MPI_NLCG_004(self):
-        wd = op.normpath(op.join(SAMPLE_DIR, 'ModEM'))
-        filestem = 'Modular_MPI_NLCG_004'
-        datafn = 'ModEM_Data.dat'
-        station = 'pb23'
+        wd = op.normpath(op.join(SAMPLE_DIR, "ModEM"))
+        filestem = "Modular_MPI_NLCG_004"
+        datafn = "ModEM_Data.dat"
+        station = "pb23"
         plot_z = False
 
-        ro = PlotResponse(data_fn=op.join(wd, datafn),
-                          resp_fn=op.join(wd, filestem + '.dat'),
-                          plot_type=[station],
-                          plot_z=plot_z)
+        ro = PlotResponse(
+            data_fn=op.join(wd, datafn),
+            resp_fn=op.join(wd, filestem + ".dat"),
+            plot_type=[station],
+            plot_z=plot_z,
+        )
 
         ro.plot()

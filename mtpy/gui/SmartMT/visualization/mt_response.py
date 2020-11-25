@@ -9,7 +9,12 @@
     Date: 20/06/2017
 """
 
-from mtpy.gui.SmartMT.Components.PlotParameter import Ellipse, Arrow, StationSelection, Rotation
+from mtpy.gui.SmartMT.Components.PlotParameter import (
+    Ellipse,
+    Arrow,
+    StationSelection,
+    Rotation,
+)
 from mtpy.gui.SmartMT.gui.plot_control_guis import PlotControlMTResponse
 from mtpy.gui.SmartMT.visualization.visualization_base import VisualizationBase
 from mtpy.imaging.plot_mt_response import PlotMTResponse
@@ -18,22 +23,25 @@ from mtpy.utils.matplotlib_utils import get_next_fig_num
 
 
 class MTResponse(VisualizationBase):
-
     def plot(self):
         # get parameters
         self._station = self._station_ui.get_station()
 
         self._params = {
-            'z_object': self._station.Z,
-            't_object': self._station.Tipper if 'y' in self._arrow_ui.get_plot_tipper() else None,
-            'pt_obj': self._station.pt if self._plot_control_ui.is_plot_ellipses() else None,
-            'rotation_angle': self._rotation_ui.get_rotation_in_degree(),
-            'plot_num': self._plot_control_ui.get_plot_num(),
+            "z_object": self._station.Z,
+            "t_object": self._station.Tipper
+            if "y" in self._arrow_ui.get_plot_tipper()
+            else None,
+            "pt_obj": self._station.pt
+            if self._plot_control_ui.is_plot_ellipses()
+            else None,
+            "rotation_angle": self._rotation_ui.get_rotation_in_degree(),
+            "plot_num": self._plot_control_ui.get_plot_num(),
             "plot_tipper": self._arrow_ui.get_plot_tipper(),
             # 'plot_strike': self._plot_control_ui.get_strike(),  # no longer available in mtpy
             # 'plot_skew': self._plot_control_ui.get_skew(),   # no longer available in mtpy
-            'plot_yn': 'n',
-            'fig_num': get_next_fig_num()
+            "plot_yn": "n",
+            "fig_num": get_next_fig_num()
             # 'plot_title': self._common_ui.get_title()
         }
 
@@ -71,7 +79,9 @@ class MTResponse(VisualizationBase):
         self._ellipse_ui = Ellipse(self._parameter_ui)
         self._ellipse_ui.setHidden(True)
         # make the radio button toggle hidden of the ellipses groupbox
-        self._plot_control_ui.ui.checkBox_pt.toggled.connect(self._ellipse_radio_button_toggled)
+        self._plot_control_ui.ui.checkBox_pt.toggled.connect(
+            self._ellipse_radio_button_toggled
+        )
         self._parameter_ui.add_parameter_groupbox(self._ellipse_ui)
 
         self._arrow_ui = Arrow(self._parameter_ui)
@@ -99,8 +109,8 @@ class MTResponse(VisualizationBase):
     def get_plot_tooltip(self):
         return "station=%s, rotation=%.2f°, plot_num=%d" % (
             self._station.station,
-            self._params['rotation_angle'],
-            self._params['plot_num']
+            self._params["rotation_angle"],
+            self._params["plot_num"],
         )
 
     @staticmethod
@@ -125,8 +135,8 @@ subplots such as strike, skew and phase tensor ellipses.</p>
 class MultipleMTResponses(VisualizationBase):
     def get_plot_tooltip(self):
         return "rotation=%.2f°, plot_num=%d" % (
-            self._params['rot_z'],
-            self._params['plot_num'],
+            self._params["rot_z"],
+            self._params["plot_num"],
         )
 
     @staticmethod
@@ -187,24 +197,24 @@ subplots such as strike, skew and phase tensor ellipses.</p>
     def plot(self):
         # get parameters
         self._params = {
-            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
-            'rot_z': self._rotation_ui.get_rotation_in_degree(),
-            'plot_num': self._plot_control_ui.get_plot_num(),
-            'plot_tipper': self._arrow_ui.get_plot_tipper(),
-            'plot_strike': self._plot_control_ui.get_strike(),
-            'plot_skew': self._plot_control_ui.get_skew(),
-            'plot_pt': self._plot_control_ui.get_ellipses(),
+            "fn_list": [mt_obj.fn for mt_obj in self._mt_objs],
+            "rot_z": self._rotation_ui.get_rotation_in_degree(),
+            "plot_num": self._plot_control_ui.get_plot_num(),
+            "plot_tipper": self._arrow_ui.get_plot_tipper(),
+            "plot_strike": self._plot_control_ui.get_strike(),
+            "plot_skew": self._plot_control_ui.get_skew(),
+            "plot_pt": self._plot_control_ui.get_ellipses(),
             # 'plot_title': self._common_ui.get_title(),
-            'plot_style': self._plot_control_ui.get_style(),
-            'plot_yn': 'n',
-            'fig_num': get_next_fig_num()
+            "plot_style": self._plot_control_ui.get_style(),
+            "plot_yn": "n",
+            "fig_num": get_next_fig_num(),
         }
 
         if self._arrow_ui.ui.groupBox_advanced_options.isChecked():
-            self._params['arrow_dict'] = self._arrow_ui.get_arrow_dict()
+            self._params["arrow_dict"] = self._arrow_ui.get_arrow_dict()
 
         if not self._ellipse_ui.isHidden():
-            self._params['ellipse_dict'] = self._ellipse_ui.get_ellipse_dict()
+            self._params["ellipse_dict"] = self._ellipse_ui.get_ellipse_dict()
 
         # plot
         self._plotting_object = PlotMultipleResponses(**self._params)

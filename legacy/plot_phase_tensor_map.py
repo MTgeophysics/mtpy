@@ -11,6 +11,7 @@ import sys
 from mtpy.imaging.phase_tensor_maps import PlotPhaseTensorMaps
 import argparse
 
+
 def plot_pt(edi_file_list, freq, save_path=None):
     """
     Plot Phase Tensor Map in Lat-Long (unprojected) Coordinate system
@@ -25,21 +26,21 @@ def plot_pt(edi_file_list, freq, save_path=None):
     # Try different size to find a suitable value for your case. as a
     # guidance: 1 degree=100KM
     ellipse_dict = {
-        'size': 0.2,
-        'colorby': 'phimin',
-        'range': (
-            0,
-            90,
-            1),
-        'cmap': 'mt_bl2gr2rd'}
+        "size": 0.2,
+        "colorby": "phimin",
+        "range": (0, 90, 1),
+        "cmap": "mt_bl2gr2rd",
+    }
 
     # adjust to suitable size: parameters describing the induction vector arrows
-    arrow_dict = {'size': 0.5,
-                  'lw': 0.2,
-                  'head_width': 0.04,
-                  'head_length': 0.04,
-                  'threshold': 0.8,
-                  'direction': 0}
+    arrow_dict = {
+        "size": 0.5,
+        "lw": 0.2,
+        "head_width": 0.04,
+        "head_length": 0.04,
+        "threshold": 0.8,
+        "direction": 0,
+    }
 
     # parameters describing the arrow legend (not necessarily used)
     # arrow_legend_dict = {'position': 'upper right',
@@ -48,27 +49,29 @@ def plot_pt(edi_file_list, freq, save_path=None):
     #                      'yborderpad': 0.015}
 
     # 2) Construct plotting object
-    pt_obj = PlotPhaseTensorMaps(fn_list=edi_file_list,
-                                 plot_freq=freq,
-                                 ftol=0.10,  # freq tolerance,which will decide how many data points included
-                                 mapscale='deg',  # deg or m, or km
-                                 xpad=0.4,  # plot margin; change according to lat-lon in edifiles
-                                 ypad=0.4,  # ~ 2* ellipse size
-                                 ellipse_dict=ellipse_dict,
-                                 plot_tipper='yr',
-                                 arrow_dict=arrow_dict,
-                                 # arrow_legend_dict=arrow_legend_dict,
-                                 # fig_spython examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
-                                 # fig_dpi=300, the default is OK. Higher dpi
-                                 # may distort figure
-                                 save_fn=save_path)
+    pt_obj = PlotPhaseTensorMaps(
+        fn_list=edi_file_list,
+        plot_freq=freq,
+        ftol=0.10,  # freq tolerance,which will decide how many data points included
+        mapscale="deg",  # deg or m, or km
+        xpad=0.4,  # plot margin; change according to lat-lon in edifiles
+        ypad=0.4,  # ~ 2* ellipse size
+        ellipse_dict=ellipse_dict,
+        plot_tipper="yr",
+        arrow_dict=arrow_dict,
+        # arrow_legend_dict=arrow_legend_dict,
+        # fig_spython examples/plot_phase_tensor_map.py tests/data/edifiles/ 10 /e/MTPY2_Outputs/ptmap3deg.pngize=(6, 5),
+        # fig_dpi=300, the default is OK. Higher dpi
+        # may distort figure
+        save_fn=save_path,
+    )
 
     # 3) do the plot and save figure - if the param save_path provided
     path2figure = pt_obj.plot(save_path=save_path)
 
     pt_obj.export_params_to_file(save_path=save_path)
 
-    print ("Please check your output figure: %s" % path2figure)
+    print("Please check your output figure: %s" % path2figure)
 
     return
 
@@ -84,13 +87,11 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
     """
 
     ellipse_dict = {
-        'size': 20,
-        'colorby': 'phimin',
-        'range': (
-            0,
-            90,
-            1),
-        'cmap': 'mt_bl2gr2rd'}
+        "size": 20,
+        "colorby": "phimin",
+        "range": (0, 90, 1),
+        "cmap": "mt_bl2gr2rd",
+    }
 
     pt2 = PlotPhaseTensorMaps(
         fn_list=edi_file_list,
@@ -98,7 +99,7 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
         save_fn=save_path,
         xpad=20,  # plot margin; change according to your dataset and mapscale km/m
         ypad=20,
-        mapscale='km',  # mapscale='m' can cause big numbers in ticks labels
+        mapscale="km",  # mapscale='m' can cause big numbers in ticks labels
         ellipse_dict=ellipse_dict,
         # plot_tipper='yri',
         # plot_title='??Customisable Title?? '
@@ -107,7 +108,7 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
     pt2.plot()
 
     if save_path is not None:
-        pt2.save_figure(save_path, fig_dpi=300, file_format='jpg')  # pdf)
+        pt2.save_figure(save_path, fig_dpi=300, file_format="jpg")  # pdf)
 
 
 ##########################################################################
@@ -115,21 +116,29 @@ def plot_pt_utm(edi_file_list, freq, save_path=None):
 ##########################################################################
 def get_command_args():
 
-    parser = argparse.ArgumentParser( \
-    description='Plotting Phase Tensor Maps ' )
+    parser = argparse.ArgumentParser(description="Plotting Phase Tensor Maps ")
 
-#--------------------------------------------------------------------------
-#  Adding arguments
-#--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #  Adding arguments
+    # --------------------------------------------------------------------------
 
     parser.add_argument(
-    '-p','--path', type=str,help='examples\data\edi_files', required=True)
+        "-p", "--path", type=str, help="examples\data\edi_files", required=True
+    )
     parser.add_argument(
-    '-f','--freq', type=int,help='Integer number (* or ** )', default=10,required=False)
-    parser.add_argument('-0','--ofile', type=str,help="examples/", default=None, required=False)
+        "-f",
+        "--freq",
+        type=int,
+        help="Integer number (* or ** )",
+        default=10,
+        required=False,
+    )
+    parser.add_argument(
+        "-0", "--ofile", type=str, help="examples/", default=None, required=False
+    )
 
     args = parser.parse_args()
-    return args.path,args.freq,args.ofile
+    return args.path, args.freq, args.ofile
 
 
 ##########################################################################
@@ -141,9 +150,9 @@ def get_command_args():
 # python examples/plot_phase_tensor_map.py  E:/Datasets/MT_Datasets/GA_UA_edited_10s-10000s 0.0625 E:/MTPY2_Outputs
 ##########################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    edi_path,input_freq,save_file=get_command_args()
+    edi_path, input_freq, save_file = get_command_args()
     # the MT edi dir
     # edi_path = sys.argv[1]
     # get edi file names as a list

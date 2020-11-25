@@ -80,13 +80,16 @@ class BusyOverlay(QWidget):
 
         for i in range(6):
             if (self.counter / 5) % 6 == i:
-                painter.setBrush(QBrush(QColor(127 + (self.counter % 5) * 32, 127, 127)))
+                painter.setBrush(
+                    QBrush(QColor(127 + (self.counter % 5) * 32, 127, 127))
+                )
             else:
                 painter.setBrush(QBrush(QColor(127, 127, 127)))
             painter.drawEllipse(
                 self.width() / 2 + 30 * np.cos(2 * np.pi * i / 6.0) - 10,
                 self.height() / 2 + 30 * np.sin(2 * np.pi * i / 6.0) - 10,
-                20, 20
+                20,
+                20,
             )
 
         painter.end()

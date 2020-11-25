@@ -11,8 +11,12 @@
 
 from qtpy.QtWidgets import QGroupBox
 
-from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import Ui_groupBoxZ_Component_Multiple
-from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import Ui_groupBoxZ_Component_Single
+from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_multiple import (
+    Ui_groupBoxZ_Component_Multiple,
+)
+from mtpy.gui.SmartMT.ui_asset.groupbox_z_component_single import (
+    Ui_groupBoxZ_Component_Single,
+)
 
 
 class ZComponentMultiple(QGroupBox):
@@ -31,7 +35,12 @@ class ZComponentMultiple(QGroupBox):
         :return:
         """
         # counter = 0
-        if self.ui.checkBox_det.isChecked() + self.ui.checkBox_zxy.isChecked() + self.ui.checkBox_zyx.isChecked() == 1:
+        if (
+            self.ui.checkBox_det.isChecked()
+            + self.ui.checkBox_zxy.isChecked()
+            + self.ui.checkBox_zyx.isChecked()
+            == 1
+        ):
             # only one checkbox is checked, lock the checked box
             if self.ui.checkBox_det.isChecked():
                 self.ui.checkBox_det.setEnabled(False)
@@ -47,11 +56,11 @@ class ZComponentMultiple(QGroupBox):
     def get_selection(self):
         zcomponent = []
         if self.ui.checkBox_det.isChecked():
-            zcomponent.append('det')
+            zcomponent.append("det")
         if self.ui.checkBox_zxy.isChecked():
-            zcomponent.append('zxy')
+            zcomponent.append("zxy")
         if self.ui.checkBox_zyx.isChecked():
-            zcomponent.append('zyx')
+            zcomponent.append("zyx")
         return zcomponent
 
 
@@ -63,8 +72,8 @@ class ZComponentSingle(QGroupBox):
 
     def get_selection(self):
         if self.ui.radioButton_det.isChecked():
-            return 'det'
+            return "det"
         elif self.ui.radioButton_zxy.isChecked():
-            return 'zxy'
+            return "zxy"
         elif self.ui.radioButton_zyx.isChecked():
-            return 'zyx'
+            return "zyx"

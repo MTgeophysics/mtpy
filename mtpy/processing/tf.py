@@ -82,7 +82,7 @@ def padzeros(f, npad=None, pad_pattern=None):
     return fpad
 
 
-def sinc_filter(f, fcutoff=10., w=10.0, dt=.001):
+def sinc_filter(f, fcutoff=10.0, w=10.0, dt=0.001):
     """
     Applies a sinc filter of width w to the function f by multipling in
     the frequency domain.
@@ -104,7 +104,7 @@ def sinc_filter(f, fcutoff=10., w=10.0, dt=.001):
                      f with sinc filter applied
     """
     # time shift for the peak of the sinc function
-    tshift = float(w) / 2.
+    tshift = float(w) / 2.0
 
     # pad the input array with zeros for faster fft
     fpad = padzeros(f)
@@ -122,7 +122,7 @@ def sinc_filter(f, fcutoff=10., w=10.0, dt=.001):
 
     # be sure to normalize it so there is no scaling applied to input array
     norm = sum(fs)
-    filt[0:len(t)] = fs / norm
+    filt[0 : len(t)] = fs / norm
 
     # transform to Fourier domain
     Filt = np.fft.fft(filt)
@@ -133,7 +133,7 @@ def sinc_filter(f, fcutoff=10., w=10.0, dt=.001):
     # tranform back to time domain and cull edges so the length of the returned
     # array is the same as the input array
     filt_f = np.fft.ifft(Filt_F)
-    filt_f = filt_f[len(t) / 2:len(f) + len(t) / 2]
+    filt_f = filt_f[len(t) / 2 : len(f) + len(t) / 2]
 
     return filt_f
 
@@ -183,7 +183,7 @@ def normalize_L2(f):
     return fnorm
 
 
-def decimate(f, m, window_function='hanning'):
+def decimate(f, m, window_function="hanning"):
     """
     resamples the data at the interval m so that the returned array is
     len(f)/m samples long
@@ -231,13 +231,12 @@ def dwindow(window):
     h = window
     nh = len(h)
     lh = (nh - 1) / 2
-    stepheight = (h[0] + h[-1]) / 2.
+    stepheight = (h[0] + h[-1]) / 2.0
     ramp = float((h[-1] - h[0])) / nh
     h2 = np.zeros(nh + 2)
-    h2[1:nh + 1] = h - stepheight - ramp * \
-        np.arange(start=-lh, stop=lh + 1, step=1)
+    h2[1 : nh + 1] = h - stepheight - ramp * np.arange(start=-lh, stop=lh + 1, step=1)
 
-    dwin = (h2[2:nh + 2] - h2[0:nh]) / 2. + ramp
+    dwin = (h2[2 : nh + 2] - h2[0:nh]) / 2.0 + ramp
     dwin[0] = dwin[0] + stepheight
     dwin[-1] = dwin[-1] - stepheight
 
@@ -265,7 +264,7 @@ def gausswin(window_len, alpha=2.5):
     lh = (window_len - 1) / 2 + 1 - np.remainder(window_len, 2)
     gt = np.arange(start=-lh, stop=lh + 1, step=1)
 
-    gauss_window = np.exp(-.5 * (alpha * gt / float(lh)) ** 2)
+    gauss_window = np.exp(-0.5 * (alpha * gt / float(lh)) ** 2)
 
     return gauss_window
 
@@ -296,7 +295,7 @@ def wvd_analytic_signal(fx):
     # compute the fourier transform
     FX = np.fft.fft(fxp)
     # apply analytic signal
-    FX[1:n - 1] = 2 * FX[1:n - 1]
+    FX[1 : n - 1] = 2 * FX[1 : n - 1]
     FX[n:] = 0
 
     # inverse fourier transform and set anything outside of length n to zero
@@ -373,7 +372,7 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
     if ng != 1:
         if np.remainder(ng, 2) != 1:
             ng = ng - 1
-            print('ng forced to be odd as ng-1')
+            print("ng forced to be odd as ng-1")
         else:
             pass
         g = normalize_L2(np.hanning(ng))
@@ -386,10 +385,10 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
     df = float(df)
 
     # get only positive frequencies
-    flst = np.fft.fftfreq(nfbins, 1 / df)[0:int(nfbins / 2)]
+    flst = np.fft.fftfreq(nfbins, 1 / df)[0 : int(nfbins / 2)]
 
     # initialize the TFD array
-    tfarray = np.zeros((int(nfbins / 2), len(tlst)), dtype='complex128')
+    tfarray = np.zeros((int(nfbins / 2), len(tlst)), dtype="complex128")
 
     # calculate the analytic signal to fold negative frequencies onto the
     # positive ones
@@ -397,15 +396,14 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
 
     # compute the fft at each window instance
     for place, ii in enumerate(tlst):
-        fxwin = fa[ii:ii + nh] * h
+        fxwin = fa[ii : ii + nh] * h
 
         # get only positive frequencies
-        FXwin = np.fft.fft(padzeros(fxwin, npad=nfbins))[:int(nfbins / 2)]
+        FXwin = np.fft.fft(padzeros(fxwin, npad=nfbins))[: int(nfbins / 2)]
 
         # smooth in frequency plane
         if ng != 1:
-            FXwin = np.convolve(padzeros(FXwin, npad=len(FXwin) + ng - 1), g,
-                                'valid')
+            FXwin = np.convolve(padzeros(FXwin, npad=len(FXwin) + ng - 1), g, "valid")
         else:
             pass
 
@@ -415,8 +413,9 @@ def stft(fx, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10):
     return tfarray, tlst, flst
 
 
-def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alpha=4,
-                    threshold=None):
+def reassigned_stft(
+    fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alpha=4, threshold=None
+):
     """
     Computes the reassigned spectrogram by estimating the center of gravity of
     the signal and condensing dispersed energy back to that location.  Works
@@ -494,19 +493,21 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
     nt = len(tlst)
 
     # make a frequency list
-    flst = np.fft.fftfreq(nfbins, 1. / df)[nfbins / 2:]
-    return_flst = np.fft.fftfreq(nfbins, 1. / df)[0:nfbins / 2]
+    flst = np.fft.fftfreq(nfbins, 1.0 / df)[nfbins / 2 :]
+    return_flst = np.fft.fftfreq(nfbins, 1.0 / df)[0 : nfbins / 2]
 
     # initialize some time-frequency arrays
-    tfr = np.zeros((nfbins, nt), dtype='complex')
-    tf2 = np.zeros((nfbins, nt), dtype='complex')
-    tf3 = np.zeros((nfbins, nt), dtype='complex')
+    tfr = np.zeros((nfbins, nt), dtype="complex")
+    tf2 = np.zeros((nfbins, nt), dtype="complex")
+    tf3 = np.zeros((nfbins, nt), dtype="complex")
 
     # compute components for reassignment
     for ii, tt in enumerate(tlst):
         # create a time shift list
-        tau = np.arange(start=-min([np.round(nx / 2.), lh, tt - 1]),
-                        stop=min([np.round(nx / 2.), lh, nx - tt - 1]) + 1)
+        tau = np.arange(
+            start=-min([np.round(nx / 2.0), lh, tt - 1]),
+            stop=min([np.round(nx / 2.0), lh, nx - tt - 1]) + 1,
+        )
         # compute the frequency spots to be calculated
         ff = np.remainder(nfbins + tau, nfbins)
         xlst = tt + tau
@@ -522,24 +523,25 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
     specd = np.fft.fft(tf3, axis=0)
 
     # get only positive frequencies
-    spec = spec[nfbins / 2:, :]
-    spect = spect[nfbins / 2:, :]
-    specd = specd[nfbins / 2:, :]
+    spec = spec[nfbins / 2 :, :]
+    spect = spect[nfbins / 2 :, :]
+    specd = specd[nfbins / 2 :, :]
 
     # check to make sure no spurious zeros floating around
-    spec[np.where(abs(spec) < 1.E-6)] = 0.0
+    spec[np.where(abs(spec) < 1.0e-6)] = 0.0
     zerofind = np.nonzero(abs(spec))
-    twspec = np.zeros((nfbins / 2, nt), dtype='float')
-    dwspec = np.zeros((nfbins / 2, nt), dtype='float')
+    twspec = np.zeros((nfbins / 2, nt), dtype="float")
+    dwspec = np.zeros((nfbins / 2, nt), dtype="float")
     twspec[zerofind] = np.round(np.real(spect[zerofind] / spec[zerofind]) / 1)
-    dwspec[zerofind] = np.round(np.imag((nfbins / 2.) *
-                                        specd[zerofind] / spec[zerofind]) / (np.pi))
+    dwspec[zerofind] = np.round(
+        np.imag((nfbins / 2.0) * specd[zerofind] / spec[zerofind]) / (np.pi)
+    )
 
     # compute reassignment
     rtfarray = np.zeros_like(spec)
 
     if threshold is None:
-        threshold = 1.E-4 * np.mean(fx[tlst])
+        threshold = 1.0e-4 * np.mean(fx[tlst])
 
     for nn in range(nt):
         for kk in range(nfbins / 2):
@@ -549,8 +551,11 @@ def reassigned_stft(fx, nh=2 ** 6 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, alp
                 nhat = int(min([max([nhat, 1]), nt - 1]))
                 # get center of gravity index in frequency direction
                 khat = int(kk - dwspec[kk, nn])
-                khat = int(np.remainder(np.remainder(khat - 1, nfbins / 2) + nfbins / 2,
-                                        nfbins / 2))
+                khat = int(
+                    np.remainder(
+                        np.remainder(khat - 1, nfbins / 2) + nfbins / 2, nfbins / 2
+                    )
+                )
                 # reassign energy
                 rtfarray[khat, nhat] = rtfarray[khat, nhat] + spec[kk, nn]
                 spect[kk, nn] = khat + 1j * nhat
@@ -613,7 +618,7 @@ def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
 
     if fm > 1:
         fn = fn[0]
-        print('computing cross spectra')
+        print("computing cross spectra")
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -626,26 +631,25 @@ def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
     fn = len(fa)
     # sampling period
     df = float(df)
-    dt = 1. / df
+    dt = 1.0 / df
     # time shift
     tau = (nh - 1) / 2
 
     # create a time array such that the first point is centered on time window
-    tlst = np.arange(start=0, stop=fn - 1, step=tstep, dtype='int')
+    tlst = np.arange(start=0, stop=fn - 1, step=tstep, dtype="int")
 
     # create an empty array to put the tf in
-    tfarray = np.zeros((nfbins, len(tlst)), dtype='complex')
+    tfarray = np.zeros((nfbins, len(tlst)), dtype="complex")
 
     # create a frequency array with just positive frequencies
-    flst = np.fft.fftfreq(nfbins, dt)[0:nfbins / 2]
+    flst = np.fft.fftfreq(nfbins, dt)[0 : nfbins / 2]
 
     # calculate pseudo WV
     for point, nn in enumerate(tlst):
         # calculate the smallest timeshift possible
         tau_min = min(nn, tau, fn - nn - 1)
         # make a timeshift array
-        tau_lst = np.arange(start=-tau_min, stop=tau_min + 1, step=1,
-                            dtype='int')
+        tau_lst = np.arange(start=-tau_min, stop=tau_min + 1, step=1, dtype="int")
         # calculate rectangular windowed correlation function of analytic
         # signal
         Rnn = 4 * np.conjugate(fa[nn - tau_lst]) * fb[nn + tau_lst]
@@ -661,8 +665,9 @@ def wvd(fx, nh=2 ** 8 - 1, tstep=2 ** 5, nfbins=2 ** 10, df=1.0):
     return tfarray, tlst, flst
 
 
-def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=None,
-          sigmaf=None):
+def spwvd(
+    fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=None, sigmaf=None
+):
     """
     Calculates the smoothed pseudo Wigner-Ville distribution for an array
     fx. Smoothed with Gaussians windows to get best localization.
@@ -724,7 +729,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print('computing cross spectra')
+        print("computing cross spectra")
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -734,7 +739,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         fa = wvd_analytic_signal(fx)
         fa = sps.hilbert(dctrend(fx))
         fb = fa.copy()
-        print('Computed Analytic signal')
+        print("Computed Analytic signal")
 
     # sampling period
     df = float(df)
@@ -743,13 +748,13 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
     # create normalize windows in time (g) and frequency (h)
     # note window length should be odd so that h,g[0]=1,nh>ng
     if nh is None:
-        nh = np.floor(fn / 2.)
+        nh = np.floor(fn / 2.0)
     # make sure the window length is odd
     if np.remainder(nh, 2) == 0:
         nh += 1
     # calculate length for time smoothing window
     if ng is None:
-        ng = np.floor(fn / 5.)
+        ng = np.floor(fn / 5.0)
     if np.remainder(ng, 2) == 0:
         ng += 1
     # calculate standard deviations for gaussian windows
@@ -764,7 +769,7 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
         sigmag = sigmaf
     nh = int(nh)
     ng = int(ng)
-    print('nh=' + str(nh) + '; ng=' + str(ng))
+    print("nh=" + str(nh) + "; ng=" + str(ng))
     # calculate windows and normalize
     h = sps.gaussian(nh, sigmah)
     h /= sum(h)
@@ -776,53 +781,69 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
     Lg = (ng - 1) / 2  # midpoint index of window g
 
     # create a time array such that the first point is centered on time window
-    tlst = np.arange(start=0, stop=fn + 1, step=tstep, dtype='int')
+    tlst = np.arange(start=0, stop=fn + 1, step=tstep, dtype="int")
 
     # create an empty array to put the tf in
     # make sure data type is complex
-    tfarray = np.zeros((nfbins, len(tlst)), dtype='complex')
+    tfarray = np.zeros((nfbins, len(tlst)), dtype="complex")
 
     # create a frequency array with just positive frequencies
-    flst = np.fft.fftfreq(nfbins, dt)[0:nfbins / 2]
+    flst = np.fft.fftfreq(nfbins, dt)[0 : nfbins / 2]
 
     # calculate pseudo WV
     for point, t in enumerate(tlst):
         # find the smallest possible time shift
         tau_max = min(t + Lg - 1, fn - t + Lg, round(nfbins / 2), Lh)
         # create time lag list
-        taulst = np.arange(start=-min(Lg, fn - t), stop=min(Lg, t - 1) + 1, step=1,
-                           dtype='int')
+        taulst = np.arange(
+            start=-min(Lg, fn - t), stop=min(Lg, t - 1) + 1, step=1, dtype="int"
+        )
         # calculate windowed correlation function of analytic function for
         # zero frequency
-        tfarray[0, point] = sum(2 * (g[Lg + taulst] / sum(g[Lg + taulst])) *
-                                fa[t - taulst - 1] * np.conjugate(fb[t - taulst - 1]))
+        tfarray[0, point] = sum(
+            2
+            * (g[Lg + taulst] / sum(g[Lg + taulst]))
+            * fa[t - taulst - 1]
+            * np.conjugate(fb[t - taulst - 1])
+        )
         # calculate tfd by calculating convolution of window and correlation
         # function as sum of correlation function over the lag period times the
         # window at that point. Calculate symmetrical segments for FFT later
         for mm in range(tau_max):
-            taulst = np.arange(start=-min(Lg, fn - t - mm - 1), stop=min(Lg, t - mm - 1) + 1,
-                               step=1, dtype='int')
+            taulst = np.arange(
+                start=-min(Lg, fn - t - mm - 1),
+                stop=min(Lg, t - mm - 1) + 1,
+                step=1,
+                dtype="int",
+            )
             # compute positive half
             gm = 2 * (g[Lg + taulst] / sum(g[Lg + taulst]))
-            Rmm = sum(gm * fa[t + mm - taulst - 1] *
-                      np.conjugate(fb[t - mm - taulst]))
+            Rmm = sum(gm * fa[t + mm - taulst - 1] * np.conjugate(fb[t - mm - taulst]))
             tfarray[mm, point] = h[Lh + mm - 1] * Rmm
             # compute negative half
-            Rmm = sum(gm * fa[t - mm - taulst] *
-                      np.conjugate(fb[t + mm - taulst - 1]))
+            Rmm = sum(gm * fa[t - mm - taulst] * np.conjugate(fb[t + mm - taulst - 1]))
             tfarray[nfbins - mm - 1, point] = h[Lh - mm] * Rmm
         mm = round(nfbins / 2)
 
         if t <= fn - mm and t >= mm and mm <= Lh:
-            print('doing weird thing')
-            taulst = np.arange(start=-min(Lg, fn - t - mm), stop=min(Lg, fn - t, mm) + 1,
-                               step=1, dtype='int')
+            print("doing weird thing")
+            taulst = np.arange(
+                start=-min(Lg, fn - t - mm),
+                stop=min(Lg, fn - t, mm) + 1,
+                step=1,
+                dtype="int",
+            )
             gm = g[Lg + taulst] / sum(g[Lg + taulst])
-            tfarray[mm - 1, point] = .5 * \
-                (sum(h[Lh + mm] * (gm * fa[t + mm - taulst - 1] *
-                                   np.conjugate(fb[t - mm - taulst]))) +
-                 sum(h[Lh - mm] * (gm * fa[t - mm - taulst] *
-                                   np.conjugate(fb[t + mm - taulst - 1]))))
+            tfarray[mm - 1, point] = 0.5 * (
+                sum(
+                    h[Lh + mm]
+                    * (gm * fa[t + mm - taulst - 1] * np.conjugate(fb[t - mm - taulst]))
+                )
+                + sum(
+                    h[Lh - mm]
+                    * (gm * fa[t - mm - taulst] * np.conjugate(fb[t + mm - taulst - 1]))
+                )
+            )
 
     tfarray = np.fft.fft(tfarray, axis=0)
     # rotate for plotting purposes so that (t=0,f=0) is at the lower left
@@ -831,8 +852,16 @@ def spwvd(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=None, ng=None, sigmat=Non
     return tfarray, tlst, flst
 
 
-def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df=1.0,
-               sigmat=None, sigmaf=None):
+def robust_wvd(
+    fx,
+    nh=2 ** 7 - 1,
+    ng=2 ** 4 - 1,
+    tstep=2 ** 4,
+    nfbins=2 ** 8,
+    df=1.0,
+    sigmat=None,
+    sigmaf=None,
+):
     """
     Calculate the robust Wigner-Ville distribution for an array
     fx. Smoothed with Gaussians windows to get best localization.
@@ -893,7 +922,7 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print('computing cross spectra')
+        print("computing cross spectra")
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -903,25 +932,25 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
         fa = wvd_analytic_signal(fx)
         fa = sps.hilbert(dctrend(fx))
         fb = fa.copy()
-        print('Computed Analytic signal')
+        print("Computed Analytic signal")
 
         # make sure window length is odd
     if nh is None:
-        nh = np.floor(fn / 2.)
+        nh = np.floor(fn / 2.0)
     # make sure the window length is odd
     if np.remainder(nh, 2) == 0:
         nh += 1
     # calculate length for time smoothing window
     if ng is None:
-        ng = np.floor(fn / 5.)
+        ng = np.floor(fn / 5.0)
     if np.remainder(ng, 2) == 0:
         ng += 1
     nh = int(nh)
     ng = int(ng)
-    print('nh = {0}'.format(nh))
-    print('ng = {0}'.format(ng))
+    print("nh = {0}".format(nh))
+    print("ng = {0}".format(ng))
 
-    dt = 1. / (df * 2.)
+    dt = 1.0 / (df * 2.0)
 
     # get length of input time series
     nfx = len(fa)
@@ -938,36 +967,44 @@ def robust_wvd(fx, nh=2 ** 7 - 1, ng=2 ** 4 - 1, tstep=2 ** 4, nfbins=2 ** 8, df
     g = sps.gaussian(ng, sigmaf)
     g /= sum(g)
 
-    mlst = np.arange(start=-nh / 2 + 1, stop=nh / 2 + 1, step=1, dtype='int')
+    mlst = np.arange(start=-nh / 2 + 1, stop=nh / 2 + 1, step=1, dtype="int")
     tlst = np.arange(start=nh / 2, stop=nfx - nh / 2, step=tstep)
     # make a frequency list for plotting exporting only positive frequencies
     # get only positive frequencies
-    flst = np.fft.fftfreq(nfbins, dt)[nfbins / 2:]
+    flst = np.fft.fftfreq(nfbins, dt)[nfbins / 2 :]
     flst[-1] = 0
-    flstp = np.fft.fftfreq(nfbins, 2 * dt)[0:nfbins / 2]
+    flstp = np.fft.fftfreq(nfbins, 2 * dt)[0 : nfbins / 2]
 
     # create an empty array to put the tf in
-    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype='complex')
+    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype="complex")
 
     for tpoint, nn in enumerate(tlst):
         # calculate windowed correlation function of analytic function
         fxwin = h * fa[nn + mlst] * fb[nn - mlst].conj()
         for fpoint, mm in enumerate(flst):
-            fxmed = np.convolve(g, fxwin * np.exp(1j * 4 * np.pi * mlst * mm * dt),
-                                mode='same') / (nh * ng)
+            fxmed = np.convolve(
+                g, fxwin * np.exp(1j * 4 * np.pi * mlst * mm * dt), mode="same"
+            ) / (nh * ng)
             fxmedpoint = np.median(fxmed.real)
             if fxmedpoint == 0.0:
-                tfarray[fpoint, tpoint] = 1E-10
+                tfarray[fpoint, tpoint] = 1e-10
             else:
                 tfarray[fpoint, tpoint] = fxmedpoint
 
-    tfarray = (4. * nh / dt) * tfarray
+    tfarray = (4.0 * nh / dt) * tfarray
 
     return tfarray, tlst, flstp
 
 
-def specwv(fx, tstep=2 ** 5, nfbins=2 ** 10, nhs=2 ** 8, nhwv=2 ** 9 - 1, ngwv=2 ** 3 - 1,
-           df=1.0):
+def specwv(
+    fx,
+    tstep=2 ** 5,
+    nfbins=2 ** 10,
+    nhs=2 ** 8,
+    nhwv=2 ** 9 - 1,
+    ngwv=2 ** 3 - 1,
+    df=1.0,
+):
     """
     Calculates the Wigner-Ville distribution mulitplied by the STFT windowed
     by the common gaussian window h for an array f.  Handy for removing cross
@@ -1019,11 +1056,10 @@ def specwv(fx, tstep=2 ** 5, nfbins=2 ** 10, nhs=2 ** 8, nhwv=2 ** 9 - 1, ngwv=2
     pst, tlst, flst = stft(fx, nh=nhs, tstep=tstep, nfbins=nfbins, df=df)
 
     # calculate new time step so WVD and STFT will align
-    ntstep = len(fx) / (len(tlst) * 2.)
+    ntstep = len(fx) / (len(tlst) * 2.0)
 
     # calculate spwvd
-    pwv, twv, fwv = spwvd(fx, tstep=ntstep, nfbins=nfbins, df=df,
-                          nh=nhwv, ng=ngwv)
+    pwv, twv, fwv = spwvd(fx, tstep=ntstep, nfbins=nfbins, df=df, nh=nhwv, ng=ngwv)
 
     # multiply the two together normalize
     tfarray = pst / pst.max() * pwv / pwv.max()
@@ -1031,8 +1067,7 @@ def specwv(fx, tstep=2 ** 5, nfbins=2 ** 10, nhs=2 ** 8, nhwv=2 ** 9 - 1, ngwv=2
     return tfarray, tlst, flst
 
 
-def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10,
-              df=1.0, nh=2 ** 8 - 1, beta=.2):
+def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10, df=1.0, nh=2 ** 8 - 1, beta=0.2):
     """
     Calculates the modified b distribution as defined by cosh(n)^-2 beta
     for an array fx.  Supposed to remove cross terms in the WVD.
@@ -1084,7 +1119,7 @@ def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10,
 
     if fm > 1:
         fn = fn[0]
-        print('computing cross spectra')
+        print("computing cross spectra")
         # compute the analytic signal of function f and dctrend
         fa = wvd_analytic_signal(fx[0])
         fb = wvd_analytic_signal(fx[1])
@@ -1096,26 +1131,25 @@ def modifiedb(fx, tstep=2 ** 5, nfbins=2 ** 10,
 
     # sampling period
     df = float(df)
-    dt = 1. / df
+    dt = 1.0 / df
 
     tau = (nh - 1) / 2  # midpoint index of window h
 
     # create a time array such that the first point is centered on time window
-    tlst = np.arange(start=0, stop=fn - 1, step=tstep, dtype='int')
+    tlst = np.arange(start=0, stop=fn - 1, step=tstep, dtype="int")
 
     # create an empty array to put the tf in
-    tfarray = np.zeros((nfbins, len(tlst)), dtype='complex')
+    tfarray = np.zeros((nfbins, len(tlst)), dtype="complex")
 
     # create a frequency array with just positive frequencies
-    flst = np.fft.fftfreq(nfbins, dt)[0:nfbins / 2]
+    flst = np.fft.fftfreq(nfbins, dt)[0 : nfbins / 2]
 
     # calculate pseudo WV
     for point, nn in enumerate(tlst):
         # calculate the smallest timeshift possible
         tau_min = min(nn, tau, fn - nn - 1)
         # make a timeshift array
-        taulst = np.arange(start=-tau_min, stop=tau_min +
-                           1, step=1, dtype='int')
+        taulst = np.arange(start=-tau_min, stop=tau_min + 1, step=1, dtype="int")
         # create modified b window
         mbwin = np.cosh(taulst) ** (-2 * beta)
         mbwin = mbwin / sum(mbwin)
@@ -1175,16 +1209,16 @@ def robust_stft_median(fx, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
     nfx = len(fx)
 
     # compute time shift list
-    mlst = np.arange(start=-nh / 2 + 1, stop=nh / 2 + 1, step=1, dtype='int')
+    mlst = np.arange(start=-nh / 2 + 1, stop=nh / 2 + 1, step=1, dtype="int")
     # compute time locations to take STFT
     tlst = np.arange(start=0, stop=nfx - nh + 1, step=tstep)
 
     # make a frequency list for plotting exporting only positive frequencies
     flst = np.fft.fftfreq(nfbins, 1 / df)
-    flstc = flst[nfbins / 2:]
+    flstc = flst[nfbins / 2 :]
     # Note: these are actually the negative frequencies but works better for
     # calculations
-    flstp = flst[0:nfbins / 2]
+    flstp = flst[0 : nfbins / 2]
 
     # make time window and normalize
     sigmanh = nh / (6 * np.sqrt(2 * np.log(2)))
@@ -1192,7 +1226,7 @@ def robust_stft_median(fx, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
     h = h / sum(h)
 
     # create an empty array to put the tf in and initialize a complex value
-    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype='complex')
+    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype="complex")
 
     # take the hilbert transform of the signal to make complex and remove
     # negative frequencies
@@ -1201,27 +1235,26 @@ def robust_stft_median(fx, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
 
     # make a frequency list for plotting exporting only positive frequencies
     # get only positive frequencies
-    flst = np.fft.fftfreq(nfbins, 1 / df)[nfbins / 2:]
+    flst = np.fft.fftfreq(nfbins, 1 / df)[nfbins / 2 :]
 
     for tpoint, nn in enumerate(tlst):
         # calculate windowed correlation function of analytic function
-        fxwin = h * fa[nn:nn + nh]
+        fxwin = h * fa[nn : nn + nh]
         for fpoint, mm in enumerate(flstc):
             fxmed = fxwin * np.exp(1j * 2 * np.pi * mlst * mm / df)
             fxmedreal = np.median(fxmed.real)
             fxmedimag = np.median(fxmed.imag)
             if fxmedreal + 1j * fxmedimag == 0.0:
-                tfarray[fpoint, tpoint] = 1E-10
+                tfarray[fpoint, tpoint] = 1e-10
             else:
                 tfarray[fpoint, tpoint] = fxmedreal + 1j * fxmedimag
     # normalize tfarray
-    tfarray = (4. * nh * df) * tfarray
+    tfarray = (4.0 * nh * df) * tfarray
 
     return tfarray, tlst, flstp
 
 
-def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 **
-                  5, df=1.0, nfbins=2 ** 10):
+def robust_stft_L(fx, alpha=0.325, nh=2 ** 8, tstep=2 ** 5, df=1.0, nfbins=2 ** 10):
     """
     Calculates the robust spectrogram by estimating the vector median and
     summing terms estimated by alpha coefficients.
@@ -1269,16 +1302,16 @@ def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 **
     nfx = len(fx)
 
     # compute time shift list
-    mlst = np.arange(start=-nh / 2 + 1, stop=nh / 2 + 1, step=1, dtype='int')
+    mlst = np.arange(start=-nh / 2 + 1, stop=nh / 2 + 1, step=1, dtype="int")
     # compute time locations to take STFT
     tlst = np.arange(start=0, stop=nfx - nh + 1, step=tstep)
 
     # make a frequency list for plotting exporting only positive frequencies
     flst = np.fft.fftfreq(nfbins, 1 / df)
-    flstc = flst[nfbins / 2:]
+    flstc = flst[nfbins / 2 :]
     # Note: these are actually the negative frequencies but works better for
     # calculations
-    flstp = flst[0:nfbins / 2]
+    flstp = flst[0 : nfbins / 2]
 
     # make time window and normalize
     sigmanh = nh / (6 * np.sqrt(2 * np.log(2)))
@@ -1286,7 +1319,7 @@ def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 **
     h /= sum(h)
 
     # create an empty array to put the tf in and initialize a complex value
-    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype='complex')
+    tfarray = np.zeros((nfbins / 2, len(tlst)), dtype="complex")
 
     # take the hilbert transform of the signal to make complex and remove
     # negative frequencies
@@ -1295,33 +1328,35 @@ def robust_stft_L(fx, alpha=.325, nh=2 ** 8, tstep=2 **
 
     # make a frequency list for plotting exporting only positive frequencies
     # get only positive frequencies
-    flst = np.fft.fftfreq(nfbins, 1 / df)[nfbins / 2:]
+    flst = np.fft.fftfreq(nfbins, 1 / df)[nfbins / 2 :]
 
     # create list of coefficients
     a = np.zeros(nh)
-    a[(nh - 2) * alpha:alpha * (2 - nh) + nh - 1] = 1. / \
-        (nh * (1 - 2 * alpha) + 4 * alpha)
+    a[(nh - 2) * alpha : alpha * (2 - nh) + nh - 1] = 1.0 / (
+        nh * (1 - 2 * alpha) + 4 * alpha
+    )
 
     for tpoint, nn in enumerate(tlst):
         # calculate windowed correlation function of analytic function
-        fxwin = h * fa[nn:nn + nh]
+        fxwin = h * fa[nn : nn + nh]
         for fpoint, mm in enumerate(flstc):
             fxelement = fxwin * np.exp(1j * 2 * np.pi * mlst * mm / df)
             fxreal = np.sort(fxelement.real)[::-1]
             fximag = np.sort(fxelement.imag)[::-1]
             tfpoint = sum(a * (fxreal + 1j * fximag))
             if tfpoint == 0.0:
-                tfarray[fpoint, tpoint] = 1E-10
+                tfarray[fpoint, tpoint] = 1e-10
             else:
                 tfarray[fpoint, tpoint] = tfpoint
     # normalize tfarray
-    tfarray = (4. * nh * df) * tfarray
+    tfarray = (4.0 * nh * df) * tfarray
 
     return tfarray, tlst, flstp
 
 
-def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
-            sigmaL=None):
+def smethod(
+    fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10, sigmaL=None
+):
     """
     Calculates the smethod by estimating the STFT first and computing the WV
     of window length L in the frequency domain.
@@ -1385,7 +1420,7 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print('computing cross spectra')
+        print("computing cross spectra")
         # compute the analytic signal of function f and dctrend
         # fa=sps.hilbert(dctrend(fx[0]))
         # fb=sps.hilbert(dctrend(fx[1]))
@@ -1393,10 +1428,8 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
         fb = fx[1]
         fa = fa.reshape(fn)
         fb = fb.reshape(fn)
-        pxa, tlst, flst = stft(fa, nh=nh, tstep=tstep, ng=ng, df=df,
-                               nfbins=nfbins)
-        pxb, tlst, flst = stft(fb, nh=nh, tstep=tstep, ng=ng, df=df,
-                               nfbins=nfbins)
+        pxa, tlst, flst = stft(fa, nh=nh, tstep=tstep, ng=ng, df=df, nfbins=nfbins)
+        pxb, tlst, flst = stft(fb, nh=nh, tstep=tstep, ng=ng, df=df, nfbins=nfbins)
         pxx = pxa * pxb.conj()
     else:
         # compute the analytic signal of function f and dctrend
@@ -1404,15 +1437,14 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
         fa = fx
         fa = fa.reshape(fn)
         fb = fa
-        pxx, tlst, flst = stft(fa, nh=nh, tstep=tstep, ng=ng, df=df,
-                               nfbins=nfbins)
+        pxx, tlst, flst = stft(fa, nh=nh, tstep=tstep, ng=ng, df=df, nfbins=nfbins)
 
     # make an new array to put the new tfd in
     tfarray = abs(pxx) ** 2
     # get shape of spectrogram
     nf, nt = tfarray.shape
     # create a list of frequency shifts
-    Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype='int')
+    Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype="int")
     # create a frequency gaussian window
     if sigmaL is None:
         sigmaL = L / (1 * np.sqrt(2 * np.log(2)))
@@ -1424,16 +1456,26 @@ def smethod(fx, L=11, nh=2 ** 8, tstep=2 ** 7, ng=1, df=1.0, nfbins=2 ** 10,
 
     # loop over frequency and calculate the s-method
     for ff in range(int(L / 2), nf - int(L / 2) - 1):
-        tfarray[ff, :] = tfarray[ff, :] + 2 * np.real(np.sum(pm * pxx[ff + Llst, :] *
-                                                             pxx[ff - Llst, :].conj(), axis=0))
+        tfarray[ff, :] = tfarray[ff, :] + 2 * np.real(
+            np.sum(pm * pxx[ff + Llst, :] * pxx[ff - Llst, :].conj(), axis=0)
+        )
     # normalize
-    tfarray[int(L / 2):int(-L / 2)] /= L
+    tfarray[int(L / 2) : int(-L / 2)] /= L
 
     return tfarray, tlst, flst, pxx
 
 
-def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
-                   robusttype='median', sigmaL=None, alpha=.325):
+def robust_smethod(
+    fx,
+    L=5,
+    nh=2 ** 7,
+    tstep=2 ** 5,
+    nfbins=2 ** 10,
+    df=1.0,
+    robusttype="median",
+    sigmaL=None,
+    alpha=0.325,
+):
     """
     Computes the robust Smethod via the robust spectrogram.
 
@@ -1496,36 +1538,42 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print('computing cross spectra')
+        print("computing cross spectra")
         # compute the analytic signal of function f and dctrend
         fa = fx[0].reshape(fn)
         fb = fx[1].reshape(fn)
-        if robusttype == 'median':
-            pxa, tlst, flst = robust_stft_median(fa, nh=nh, tstep=tstep, df=df,
-                                                 nfbins=nfbins)
-            pxb, tlst, flst = robust_stft_median(fb, nh=nh, tstep=tstep, df=df,
-                                                 nfbins=nfbins)
-        elif robusttype == 'L':
-            pxa, tlst, flst = robust_stft_L(fa, nh=nh, tstep=tstep, df=df,
-                                            nfbins=nfbins, alpha=alpha)
-            pxb, tlst, flst = robust_stft_L(fb, nh=nh, tstep=tstep, df=df,
-                                            nfbins=nfbins, alpha=alpha)
+        if robusttype == "median":
+            pxa, tlst, flst = robust_stft_median(
+                fa, nh=nh, tstep=tstep, df=df, nfbins=nfbins
+            )
+            pxb, tlst, flst = robust_stft_median(
+                fb, nh=nh, tstep=tstep, df=df, nfbins=nfbins
+            )
+        elif robusttype == "L":
+            pxa, tlst, flst = robust_stft_L(
+                fa, nh=nh, tstep=tstep, df=df, nfbins=nfbins, alpha=alpha
+            )
+            pxb, tlst, flst = robust_stft_L(
+                fb, nh=nh, tstep=tstep, df=df, nfbins=nfbins, alpha=alpha
+            )
         else:
-            raise NameError('robusttype {0} undefined'.format(robusttype))
+            raise NameError("robusttype {0} undefined".format(robusttype))
         pxx = pxa * pxb.conj()
     else:
         fa = fx.reshape(fn)
-        if robusttype == 'median':
-            pxx, tlst, flst = robust_stft_median(fa, nh=nh, tstep=tstep, df=df,
-                                                 nfbins=nfbins)
-        elif robusttype == 'L':
-            pxx, tlst, flst = robust_stft_L(fa, nh=nh, tstep=tstep, df=df,
-                                            nfbins=nfbins, alpha=alpha)
+        if robusttype == "median":
+            pxx, tlst, flst = robust_stft_median(
+                fa, nh=nh, tstep=tstep, df=df, nfbins=nfbins
+            )
+        elif robusttype == "L":
+            pxx, tlst, flst = robust_stft_L(
+                fa, nh=nh, tstep=tstep, df=df, nfbins=nfbins, alpha=alpha
+            )
         else:
-            raise NameError('robusttype {0} undefined'.format(robusttype))
+            raise NameError("robusttype {0} undefined".format(robusttype))
 
     # compute frequency shift list
-    Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype='int')
+    Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype="int")
 
     # compute the frequency window of length L
     if sigmaL is None:
@@ -1539,18 +1587,18 @@ def robust_smethod(fx, L=5, nh=2 ** 7, tstep=2 ** 5, nfbins=2 ** 10, df=1.0,
     smarray = pxx.copy()
     # compute S-method
     for ff in range(L / 2, nfbins / 2 - L / 2):
-        smarray[ff, :] = smarray[ff, :] + 2 * np.real(np.sum(pm * pxx[ff + Llst, :] *
-                                                             pxx[ff - Llst,
-                                                                 :].conj(),
-                                                             axis=0))
+        smarray[ff, :] = smarray[ff, :] + 2 * np.real(
+            np.sum(pm * pxx[ff + Llst, :] * pxx[ff - Llst, :].conj(), axis=0)
+        )
     # normalize
-    smarray = (2. / (L * nh)) * smarray
+    smarray = (2.0 / (L * nh)) * smarray
 
     return smarray, tlst, flst, pxx
 
 
-def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, alpha=4,
-                       thresh=.01, L=5):
+def reassigned_smethod(
+    fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, alpha=4, thresh=0.01, L=5
+):
     """
     Calulates the reassigned S-method as described by Djurovic[1999] by
     using the spectrogram to estimate the reassignment.
@@ -1614,7 +1662,7 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
         fn = len(fx)
         fm = 1
     if fm > 1:
-        print('computing cross spectra')
+        print("computing cross spectra")
         fa = fx[0]
         fb = fx[1]
         fa = fa.reshape(fn)
@@ -1641,18 +1689,20 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
     nt = len(tlst)
 
     # make frequency list for plotting
-    flst = np.fft.fftfreq(nfbins, 1. / df)[:nfbins / 2]
+    flst = np.fft.fftfreq(nfbins, 1.0 / df)[: nfbins / 2]
 
     # initialize some time-frequency arrays
-    tfh = np.zeros((nfbins, nt), dtype='complex')
-    tfth = np.zeros((nfbins, nt), dtype='complex')
-    tfdh = np.zeros((nfbins, nt), dtype='complex')
+    tfh = np.zeros((nfbins, nt), dtype="complex")
+    tfth = np.zeros((nfbins, nt), dtype="complex")
+    tfdh = np.zeros((nfbins, nt), dtype="complex")
 
     # compute components for reassignment
     for ii, tt in enumerate(tlst):
         # create a time shift list
-        tau = np.arange(start=-min([np.round(nx / 2.), lh, tt - 1]),
-                        stop=min([np.round(nx / 2.), lh, nx - tt - 1]) + 1)
+        tau = np.arange(
+            start=-min([np.round(nx / 2.0), lh, tt - 1]),
+            stop=min([np.round(nx / 2.0), lh, nx - tt - 1]) + 1,
+        )
         # compute the frequency spots to be calculated
         ff = np.remainder(nfbins + tau, nfbins)
         # make lists of data points for each window calculation
@@ -1669,37 +1719,41 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
     specdh = np.fft.fft(tfdh, axis=0)
 
     # get only positive frequencies
-    spech = spech[nfbins / 2:, :]
-    specth = specth[nfbins / 2:, :]
-    specdh = specdh[nfbins / 2:, :]
+    spech = spech[nfbins / 2 :, :]
+    specth = specth[nfbins / 2 :, :]
+    specdh = specdh[nfbins / 2 :, :]
 
     # check to make sure no spurious zeros floating around
-    szf = np.where(abs(spech) < 1.E-6)
+    szf = np.where(abs(spech) < 1.0e-6)
     spech[szf] = 0.0 + 0.0j
     zerofind = np.nonzero(abs(spech))
-    twspec = np.zeros((nfbins / 2, nt), dtype='float')
-    dwspec = np.zeros((nfbins / 2, nt), dtype='float')
+    twspec = np.zeros((nfbins / 2, nt), dtype="float")
+    dwspec = np.zeros((nfbins / 2, nt), dtype="float")
     twspec[zerofind] = np.round(np.real(specth[zerofind] / spech[zerofind]))
-    dwspec[zerofind] = np.round(np.imag((nfbins / 2.) * specdh[zerofind] /
-                                        spech[zerofind]) / (np.pi))
+    dwspec[zerofind] = np.round(
+        np.imag((nfbins / 2.0) * specdh[zerofind] / spech[zerofind]) / (np.pi)
+    )
 
     # get shape of spectrogram
     nf, nt = spech.shape
 
     # -----calculate s-method-----
-    Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype='int')
+    Llst = np.arange(start=-L / 2 + 1, stop=L / 2 + 1, step=1, dtype="int")
 
     # make and empty array of zeros
     sm = np.zeros_like(spech)
 
     # put values where L cannot be value of L, near top and bottom
-    sm[0:L / 2, :] = abs(spech[0:L / 2, :]) ** 2
-    sm[-L / 2:, :] = abs(spech[-L / 2:, :]) ** 2
+    sm[0 : L / 2, :] = abs(spech[0 : L / 2, :]) ** 2
+    sm[-L / 2 :, :] = abs(spech[-L / 2 :, :]) ** 2
 
     # calculate s-method
     for ff in range(L / 2, nf - L / 2 - 1):
-        sm[ff, :] = 2 * np.real(np.sum(spech[ff + Llst, :] * spech[ff - Llst, :].conj(),
-                                       axis=0)) / L
+        sm[ff, :] = (
+            2
+            * np.real(np.sum(spech[ff + Llst, :] * spech[ff - Llst, :].conj(), axis=0))
+            / L
+        )
 
     # ------compute reassignment-----
     rtfarray = np.zeros((nfbins / 2, nt))
@@ -1715,15 +1769,18 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
                 nhat = int(min([max([nhat, 1]), nt - 1]))
                 # get center of gravity index in frequency direction from spec
                 khat = int(kk - dwspec[kk, nn])
-                khat = int(np.remainder(np.remainder(khat - 1, nfbins / 2) + nfbins / 2,
-                                        nfbins / 2))
+                khat = int(
+                    np.remainder(
+                        np.remainder(khat - 1, nfbins / 2) + nfbins / 2, nfbins / 2
+                    )
+                )
                 rtfarray[khat, nhat] = rtfarray[khat, nhat] + abs(sm[kk, nn])
             else:
                 rtfarray[kk, nn] = rtfarray[kk, nn] + sm[kk, nn]
 
     # place values where L cannot be L
-    rtfarray[:L / 2, :] = abs(sm[:L / 2, :])
-    rtfarray[-L / 2:, :] = abs(sm[-L / 2:, :])
+    rtfarray[: L / 2, :] = abs(sm[: L / 2, :])
+    rtfarray[-L / 2 :, :] = abs(sm[-L / 2 :, :])
 
     # for plotting purposes set anything that is 0 to 1, so that log(1) will
     # plot as zero
@@ -1737,8 +1794,20 @@ def reassigned_smethod(fx, nh=2 ** 7 - 1, tstep=2 ** 4, nfbins=2 ** 9, df=1.0, a
     return rtfarray, tlst, flst, sm
 
 
-def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0, nfbins=2 ** 10,
-           tftol=1.E-8, L=7, normalize=True, tftype='spwvd', alpha=.38):
+def stfbss(
+    X,
+    nsources=5,
+    ng=2 ** 5 - 1,
+    nh=2 ** 9 - 1,
+    tstep=2 ** 6 - 1,
+    df=1.0,
+    nfbins=2 ** 10,
+    tftol=1.0e-8,
+    L=7,
+    normalize=True,
+    tftype="spwvd",
+    alpha=0.38,
+):
     """
     btfssX,nsources=5,ng=2**5-1,nh=2**9-1,tstep=2**6-1,df=1.0,nfbins=2**10,
           tftol=1.E-8,normalize=True)
@@ -1776,17 +1845,29 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
     # get number of time bins
     ntbins = int(float(maxn) / tstep)
 
-    if tftype == 'spwvd':
-        tfkwargs = {'ng': ng, 'nh': nh, 'df': df,
-                    'nfbins': nfbins, 'tstep': tstep}
+    if tftype == "spwvd":
+        tfkwargs = {"ng": ng, "nh": nh, "df": df, "nfbins": nfbins, "tstep": tstep}
 
-    elif tftype == 'smethod':
-        tfkwargs = {'ng': ng, 'nh': nh, 'df': df,
-                    'nfbins': nfbins, 'tstep': tstep, 'L': L}
+    elif tftype == "smethod":
+        tfkwargs = {
+            "ng": ng,
+            "nh": nh,
+            "df": df,
+            "nfbins": nfbins,
+            "tstep": tstep,
+            "L": L,
+        }
 
-    elif tftype == 'Lestimate':
-        tfkwargs = {'nh': nh, 'df': df, 'nfbins': nfbins, 'tstep': tstep, 'L': L,
-                    'alpha': alpha, 'robusttype': 'L'}
+    elif tftype == "Lestimate":
+        tfkwargs = {
+            "nh": nh,
+            "df": df,
+            "nfbins": nfbins,
+            "tstep": tstep,
+            "L": L,
+            "alpha": alpha,
+            "robusttype": "L",
+        }
     # remove dc component from time series and normalize
     if normalize == True:
         for ii in range(m):
@@ -1810,10 +1891,10 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
     eigvec = u[:, lspot]
 
     # calculate the noise variance as mean of non-principal components
-    sigman = np.mean(eigval[0:m - n])
+    sigman = np.mean(eigval[0 : m - n])
 
     # compute scaling factor for whitening matrix
-    wscale = 1 / np.sqrt(eigval[m - n:m] - sigman)
+    wscale = 1 / np.sqrt(eigval[m - n : m] - sigman)
 
     # compute whitening matrix
     W = np.zeros((m, n))
@@ -1830,8 +1911,8 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
 
     Za = np.array(Z.copy())
 
-    if tftype == 'spwvd':
-        stfd = np.zeros((n, n, nfbins, ntbins + 1), dtype='complex128')
+    if tftype == "spwvd":
+        stfd = np.zeros((n, n, nfbins, ntbins + 1), dtype="complex128")
         # compute auto terms
         for ii in range(n):
             pswvd, tswvd, fswvd = spwvd(Za[ii].reshape(maxn), **tfkwargs)
@@ -1840,15 +1921,15 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
         # compute cross terms
         for jj in range(n):
             for kk in range(jj, n):
-                pswvd, tswvd, fswvd = spwvd([Za[jj].reshape(maxn),
-                                             Za[kk].reshape(maxn)],
-                                            **tfkwargs)
+                pswvd, tswvd, fswvd = spwvd(
+                    [Za[jj].reshape(maxn), Za[kk].reshape(maxn)], **tfkwargs
+                )
                 stfd[jj, kk, :, :] = pswvd
                 stfd[kk, jj, :, :] = pswvd.conj()
 
-    elif tftype == 'smethod':
+    elif tftype == "smethod":
         nfbins = nfbins / 2
-        stfd = np.zeros((n, n, nfbins, ntbins), dtype='complex128')
+        stfd = np.zeros((n, n, nfbins, ntbins), dtype="complex128")
         # compute auto terms
         for ii in range(n):
             psm, tsm, fsm, pst = smethod(Za[ii].reshape(maxn), **tfkwargs)
@@ -1857,29 +1938,28 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
         # compute cross terms
         for jj in range(n):
             for kk in range(jj, n):
-                psm, tsm, fsm, pst = smethod([Za[jj].reshape(maxn),
-                                              Za[kk].reshape(maxn)],
-                                             **tfkwargs)
+                psm, tsm, fsm, pst = smethod(
+                    [Za[jj].reshape(maxn), Za[kk].reshape(maxn)], **tfkwargs
+                )
                 stfd[jj, kk, :, :] = psm
                 stfd[kk, jj, :, :] = psm.conj()
 
-    elif tftype == 'Lestimate':
+    elif tftype == "Lestimate":
         nfbins = nfbins / 2
-        stfd = np.zeros((n, n, nfbins, ntbins), dtype='complex128')
+        stfd = np.zeros((n, n, nfbins, ntbins), dtype="complex128")
         # compute auto terms
         for ii in range(n):
-            psm, tsm, fsm, pst = robust_smethod(
-                Za[ii].reshape(maxn), **tfkwargs)
-            stfd[ii, ii, :, :psm.shape[1]] = psm
+            psm, tsm, fsm, pst = robust_smethod(Za[ii].reshape(maxn), **tfkwargs)
+            stfd[ii, ii, :, : psm.shape[1]] = psm
 
         # compute cross terms
         for jj in range(n):
             for kk in range(jj, n):
-                psm, tsm, fsm, pst = robust_smethod([Za[jj].reshape(maxn),
-                                                     Za[kk].reshape(maxn)],
-                                                    **tfkwargs)
-                stfd[jj, kk, :, :psm.shape[1]] = psm
-                stfd[kk, jj, :, :psm.shape[1]] = psm.conj()
+                psm, tsm, fsm, pst = robust_smethod(
+                    [Za[jj].reshape(maxn), Za[kk].reshape(maxn)], **tfkwargs
+                )
+                stfd[jj, kk, :, : psm.shape[1]] = psm
+                stfd[kk, jj, :, : psm.shape[1]] = psm.conj()
 
     # ===============================================================================
     # Compute criteria for cross terms
@@ -1891,8 +1971,9 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
     for ff in range(nfbins):
         for tt in range(ntbins):
             # compensate for noise
-            stfd[:, :, ff, tt] = stfd[:, :, ff, tt] - \
-                sigman * np.matrix(W) * np.matrix(W.T)
+            stfd[:, :, ff, tt] = stfd[:, :, ff, tt] - sigman * np.matrix(W) * np.matrix(
+                W.T
+            )
             # compute the trace
             stfdTr[ff, tt] = abs(np.trace(stfd[:, :, ff, tt]))
     # compute mean over entire t-f plane
@@ -1922,8 +2003,11 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
 
     # get points where the Jacobi is negative definite
     detjacobi = Jtt * Jff - Jtf * Jft
-    negjacobi = np.where(detjacobi > 0, 1, 0) * np.where(Jtt < 0, 1, 0) \
+    negjacobi = (
+        np.where(detjacobi > 0, 1, 0)
+        * np.where(Jtt < 0, 1, 0)
         * np.where((Jtt + Jff) < 0, 1, 0)
+    )
 
     maxpoints = smallgrad * negjacobi
 
@@ -1931,16 +2015,15 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
     ntfpoints = len(gfspot)
 
     if ntfpoints == 0:
-        raise ValueError('Found no tf points, relax tolerance')
+        raise ValueError("Found no tf points, relax tolerance")
     else:
-        print('Found ' + str(ntfpoints) + ' t-f points')
+        print("Found " + str(ntfpoints) + " t-f points")
 
     for rr in range(ntfpoints):
         if rr == 0:
             Rjd = stfd[:, :, gfspot[rr], gtspot[rr]]
         else:
-            Rjd = np.concatenate(
-                (Rjd, stfd[:, :, gfspot[rr], gtspot[rr]]), axis=1)
+            Rjd = np.concatenate((Rjd, stfd[:, :, gfspot[rr], gtspot[rr]]), axis=1)
     Rjd = np.array(Rjd)
 
     # ===============================================================================
@@ -1976,8 +2059,7 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
                 gg = np.real(np.dot(g, g.T))
                 ton = gg[0, 0] - gg[1, 1]
                 toff = gg[0, 1] + gg[1, 0]
-                theta = 0.5 * np.arctan2(toff, ton +
-                                         np.sqrt(ton ** 2 + toff ** 2))
+                theta = 0.5 * np.arctan2(toff, ton + np.sqrt(ton ** 2 + toff ** 2))
                 # Givens update
                 if abs(theta) > tftol:
                     encore = True
@@ -1990,9 +2072,11 @@ def stfbss(X, nsources=5, ng=2 ** 5 - 1, nh=2 ** 9 - 1, tstep=2 ** 6 - 1, df=1.0
                     Rjd[pair, :] = G.T * Rjd[pair, :]
                     Rjd[:, np.concatenate([pi, qi])] = np.append(
                         c * Rjd[:, pi] + s * Rjd[:, qi],
-                        -s * Rjd[:, pi] + c * Rjd[:, qi], axis=1)
+                        -s * Rjd[:, pi] + c * Rjd[:, qi],
+                        axis=1,
+                    )
         updates += upds
-    print('Updated ' + str(updates) + ' times.')
+    print("Updated " + str(updates) + " times.")
 
     # compute estimated signal matrix
     Se = np.dot(V.T, Z)

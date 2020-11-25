@@ -19,7 +19,7 @@ if not _GUI_RESOURCE_BUILT:
     from qtpy.uic import compileUiDir
     from qtpy import QT_VERSION
 
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # running in a pyinstaller bundle
         _dir = os.path.join(sys._MEIPASS, "mtpy/gui/SmartMT/ui_asset")
         sys.path.append(sys._MEIPASS)
@@ -27,7 +27,9 @@ if not _GUI_RESOURCE_BUILT:
         _dir = os.path.dirname(__file__)
 
     if QT_VERSION.startswith("4"):
-        _resource_suffix = "_py{python_version}_qt4_rc".format(python_version=sys.version_info[0])
+        _resource_suffix = "_py{python_version}_qt4_rc".format(
+            python_version=sys.version_info[0]
+        )
     else:
         _resource_suffix = "_qt5_rc"
 

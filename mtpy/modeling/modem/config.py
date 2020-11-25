@@ -17,7 +17,7 @@ from .data import Data
 from .model import Model
 from .convariance import Covariance
 
-__all__ = ['ModEMConfig']
+__all__ = ["ModEMConfig"]
 
 
 class ModEMConfig(object):
@@ -26,13 +26,12 @@ class ModEMConfig(object):
     """
 
     def __init__(self, **kwargs):
-        self.cfg_dict = {'ModEM_Inversion_Parameters': {}}
+        self.cfg_dict = {"ModEM_Inversion_Parameters": {}}
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
-    def write_config_file(self, save_dir=None,
-                          config_fn_basename='ModEM_inv.cfg'):
+    def write_config_file(self, save_dir=None, config_fn_basename="ModEM_inv.cfg"):
         """
         write a config file based on provided information
         """
@@ -43,8 +42,7 @@ class ModEMConfig(object):
         cfg_fn = os.path.join(save_dir, config_fn_basename)
 
         if self.cfg_dict is not None:
-            mtcfg.write_dict_to_configfile(self.cfg_dict,
-                                           cfg_fn)
+            mtcfg.write_dict_to_configfile(self.cfg_dict, cfg_fn)
 
     def add_dict(self, fn=None, obj=None):
         """
@@ -52,24 +50,22 @@ class ModEMConfig(object):
         """
 
         if fn is not None:
-            if fn.endswith('.rho'):
+            if fn.endswith(".rho"):
                 m_obj = Model()
                 m_obj.read_model_file(fn)
-            elif fn.endswith('.dat'):
+            elif fn.endswith(".dat"):
                 m_obj = Data()
                 m_obj.read_data_file(fn)
-            elif fn.endswith('.cov'):
+            elif fn.endswith(".cov"):
                 m_obj = Covariance()
                 m_obj.read_cov_fn(fn)
         elif obj is not None:
             m_obj = obj
 
         else:
-            raise ModEMError('Need to input a file name or object')
+            raise ModEMError("Need to input a file name or object")
 
         add_dict = m_obj.get_parameters()
 
         for key in list(add_dict.keys()):
-            self.cfg_dict['ModEM_Inversion_Parameters'][key] = add_dict[key]
-
-
+            self.cfg_dict["ModEM_Inversion_Parameters"][key] = add_dict[key]

@@ -16,75 +16,66 @@ test_params = [
     (
         "data/edifiles",
         {
-            'style_all': {
+            "style_all": {
                 "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200},
-                "on_compare_fail": _expected_compare_fail
+                "savefig_kwargs": {"dpi": 200},
+                "on_compare_fail": _expected_compare_fail,
             },
-            'style_compare': {
+            "style_compare": {
                 "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200},
-                "on_compare_fail": _expected_compare_fail
-            }
-        }
+                "savefig_kwargs": {"dpi": 200},
+                "on_compare_fail": _expected_compare_fail,
+            },
+        },
     ),
     (
         "examples/data/edi2",
         {
-            'style_all': {
+            "style_all": {
                 "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200},
-                "on_compare_fail": _expected_compare_fail
+                "savefig_kwargs": {"dpi": 200},
+                "on_compare_fail": _expected_compare_fail,
             },
-            'style_compare': {
+            "style_compare": {
                 "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200},
-                "on_compare_fail": _expected_compare_fail
-            }
-        }
+                "savefig_kwargs": {"dpi": 200},
+                "on_compare_fail": _expected_compare_fail,
+            },
+        },
     ),
     (
         "examples/data/edi_files",
         {
-            'style_all': {
+            "style_all": {
                 "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200},
-                "on_compare_fail": _expected_compare_fail
+                "savefig_kwargs": {"dpi": 200},
+                "on_compare_fail": _expected_compare_fail,
             },
-            'style_compare': {
+            "style_compare": {
                 "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200},
-                "on_compare_fail": _expected_compare_fail
-            }
-        }
+                "savefig_kwargs": {"dpi": 200},
+                "on_compare_fail": _expected_compare_fail,
+            },
+        },
     ),
     (
         "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
         {
-            'style_all': {
-                "fig_size": (16, 6),
-                "savefig_kwargs": {'dpi': 200}
-            },
-            'style_compare': {
-                "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200}
-            }
-        }
+            "style_all": {"fig_size": (16, 6), "savefig_kwargs": {"dpi": 200}},
+            "style_compare": {"fig_size": (8, 6), "savefig_kwargs": {"dpi": 200}},
+        },
     ),
     (
         "../MT_Datasets/GA_UA_edited_10s-10000s",
         {
-            'style_all': {
+            "style_all": {
                 "fig_size": (32, 6),
                 "tolerance": 10,
-                "savefig_kwargs": {'dpi': 200}
+                "savefig_kwargs": {"dpi": 200},
             },
-            'style_compare': {
-                "fig_size": (8, 6),
-                "savefig_kwargs": {'dpi': 200}
-            }
-        }
-    )
+            "style_compare": {"fig_size": (8, 6), "savefig_kwargs": {"dpi": 200}},
+        },
+    ),
 ]
 
 
@@ -94,26 +85,30 @@ class TestPlotMultipleResponses(ImageTestCase):
 
 def _test_gen(edi_path):
     def style_all(self):
-        edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
+        edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
         pt_obj = PlotMultipleResponses(
             fn_list=edi_file_list,
             plot_num=1,
-            plot_tipper='yr',
-            plot_style='all',
-            plot_yn='n', fig_size=(8, 6), fig_dpi=100
+            plot_tipper="yr",
+            plot_style="all",
+            plot_yn="n",
+            fig_size=(8, 6),
+            fig_dpi=100,
         )
         pt_obj.plot()
         plt.pause(0.5)
 
     def style_compare(self):
-        edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
+        edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
         # compare
         pt_obj = PlotMultipleResponses(
             fn_list=edi_file_list,
             plot_num=1,
-            plot_tipper='yr',
-            plot_style='compare',
-            plot_yn='n', fig_size=(8, 6), fig_dpi=100
+            plot_tipper="yr",
+            plot_style="compare",
+            plot_yn="n",
+            fig_size=(8, 6),
+            fig_dpi=100,
         )
         pt_obj.plot()
         plt.pause(0.5)
@@ -128,8 +123,10 @@ for edi_path, img_kwargs in test_params:
         for _test_func in _test_gen(edi_path):
             plot_name = _test_func.__name__
             _test_func.__name__ = "test_{test_name}_{plot_name}".format(
-                test_name=test_name, plot_name=plot_name)
+                test_name=test_name, plot_name=plot_name
+            )
             setattr(
                 TestPlotMultipleResponses,
                 _test_func.__name__,
-                ImageCompare(**img_kwargs[plot_name]).__call__(_test_func))
+                ImageCompare(**img_kwargs[plot_name]).__call__(_test_func),
+            )

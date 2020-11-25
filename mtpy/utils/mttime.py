@@ -445,7 +445,7 @@ class MTime:
         return deepcopy(self)
 
 
-def get_now_utc(fmt='iso'):
+def get_now_utc(fmt="iso"):
     """
     Get the current time in UTC format
     
@@ -458,11 +458,9 @@ def get_now_utc(fmt='iso'):
 
     m_obj = MTime()
     m_obj.now()
-    if fmt == 'iso':
+    if fmt == "iso":
         return m_obj.iso_str
     elif fmt == "date":
         return m_obj.date
     elif fmt == "obj":
         return m_obj
-    
-

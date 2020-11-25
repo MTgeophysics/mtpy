@@ -11,7 +11,10 @@ class FileValidator(QValidator):
         dir = os.path.dirname(QString)
         if os.path.isfile(QString):
             return QValidator.Acceptable, p_int
-        elif dir == "" or (os.path.isdir(dir) and any([item.startswith(basename) for item in os.listdir(dir)])):
+        elif dir == "" or (
+            os.path.isdir(dir)
+            and any([item.startswith(basename) for item in os.listdir(dir)])
+        ):
             return QValidator.Intermediate, QString, p_int
         else:
             return QValidator.Invalid, QString, p_int
@@ -24,9 +27,16 @@ class DirectoryValidator(QValidator):
         dir = os.path.dirname(QString)
         if os.path.isdir(QString):
             return QValidator.Acceptable, QString, p_int
-        elif dir == "" or (os.path.isdir(dir) and any([item.startswith(basename)
-                                                       for item in os.listdir(dir)
-                                                       if os.path.isdir(os.path.join(dir, item))])):
+        elif dir == "" or (
+            os.path.isdir(dir)
+            and any(
+                [
+                    item.startswith(basename)
+                    for item in os.listdir(dir)
+                    if os.path.isdir(os.path.join(dir, item))
+                ]
+            )
+        ):
             return QValidator.Intermediate, QString, p_int
         else:
             return QValidator.Invalid, QString, p_int
@@ -38,7 +48,7 @@ class FloatValidator(QValidator):
         string = str(string)
         if valid_float_string(string):
             state = QValidator.Acceptable
-        elif string == "" or string[position - 1] in 'e.-+':
+        elif string == "" or string[position - 1] in "e.-+":
             state = QValidator.Intermediate
         else:
             state = QValidator.Invalid
@@ -51,7 +61,7 @@ class FloatValidator(QValidator):
         return match.groups()[0] if match else ""
 
 
-_float_re = re.compile(r'(([+-]?\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?)')
+_float_re = re.compile(r"(([+-]?\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?)")
 
 
 def valid_float_string(string):

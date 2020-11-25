@@ -11,13 +11,14 @@ Created on Mon Aug 26 17:44:20 2013
 
 @author: jpeacock-pr
 """
-#==============================================================================
+# ==============================================================================
 import numpy as np
-#==============================================================================
 
-#==============================================================================
+# ==============================================================================
+
+# ==============================================================================
 # read an out file
-#==============================================================================
+# ==============================================================================
 
 
 def read_out_file(out_fn, ncol=5):
@@ -36,7 +37,7 @@ def read_out_file(out_fn, ncol=5):
                           y is to the north in meters.)
     """
 
-    wl_ofid = file(out_fn, 'r')
+    wl_ofid = file(out_fn, "r")
     raw_data = wl_ofid.read().strip().split()
 
     nx = int(raw_data[0])
@@ -56,9 +57,10 @@ def read_out_file(out_fn, ncol=5):
 
     return dx, dy, dz
 
-#==============================================================================
+
+# ==============================================================================
 # read a sites file
-#==============================================================================
+# ==============================================================================
 
 
 def read_sites_file(sites_fn):
@@ -86,7 +88,7 @@ def read_sites_file(sites_fn):
         **site_list** : list of station names
     """
 
-    sfid = file(sites_fn, 'r')
+    sfid = file(sites_fn, "r")
     slines = sfid.readlines()
 
     slst = []
@@ -94,19 +96,20 @@ def read_sites_file(sites_fn):
     for ss in slines:
         sdict = {}
         sline = ss.strip().split()
-        sdict['station'] = sline[0][0:-4]
-        sdict['dx'] = int(sline[1]) - 1
-        sdict['dy'] = int(sline[2]) - 1
-        sdict['dz'] = int(sline[3]) - 1
-        sdict['something'] = int(sline[4])
-        sdict['number'] = int(sline[5])
+        sdict["station"] = sline[0][0:-4]
+        sdict["dx"] = int(sline[1]) - 1
+        sdict["dy"] = int(sline[2]) - 1
+        sdict["dz"] = int(sline[3]) - 1
+        sdict["something"] = int(sline[4])
+        sdict["number"] = int(sline[5])
         slst.append(sdict)
         site_list.append(sline[0][0:-4])
     return slst, site_list
 
-#==============================================================================
+
+# ==============================================================================
 # get station locations from sites file
-#==============================================================================
+# ==============================================================================
 
 
 def get_station_locations(sites_fn, out_fn, ncol=5):
@@ -148,8 +151,8 @@ def get_station_locations(sites_fn, out_fn, ncol=5):
     yarr = np.zeros(ns)
 
     for ii, sdict in enumerate(slst):
-        xx = sdict['dx']
-        yy = sdict['dy']
+        xx = sdict["dx"]
+        yy = sdict["dy"]
         if xx < nxh:
             xarr[ii] = dx[xx:nxh].sum() - dx[xx] / 2
         else:

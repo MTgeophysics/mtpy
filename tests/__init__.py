@@ -1,14 +1,8 @@
-
-
 import os
 import shutil
 
 TEST_MTPY_ROOT = os.path.normpath(
-    os.path.abspath(
-        os.path.dirname(
-            os.path.dirname(__file__)
-        )
-    )
+    os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 )  # assume tests is on the root level of mtpy
 
 TEST_DIR = os.path.normpath(os.path.abspath(os.path.dirname(__file__)))
@@ -26,15 +20,15 @@ def make_temp_dir(dir_name, base_dir=TEST_TEMP_DIR):
     return _temp_dir
 
 
-EDI_DATA_DIR = os.path.normpath(
-    os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files'))
+EDI_DATA_DIR = os.path.normpath(os.path.join(TEST_MTPY_ROOT, "examples/data/edi_files"))
 EDI_DATA_DIR2 = os.path.normpath(
-    os.path.join(TEST_MTPY_ROOT, 'examples/data/edi_files_2'))
-EDI_DATA_DIR_BB = os.path.normpath(
-    os.path.join(TEST_MTPY_ROOT, 'data/BBMT'))
+    os.path.join(TEST_MTPY_ROOT, "examples/data/edi_files_2")
+)
+EDI_DATA_DIR_BB = os.path.normpath(os.path.join(TEST_MTPY_ROOT, "data/BBMT"))
 AUS_TOPO_FILE = os.path.normpath(
-    os.path.join(TEST_MTPY_ROOT, 'examples/data/AussieContinent_etopo1.asc'))
+    os.path.join(TEST_MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
+)
 SAMPLE_DIR = os.path.normpath(
-    os.path.join(TEST_MTPY_ROOT, 'examples/model_files'))  # r'E:\Githubz\mtpy\examples\model_files'
-M2D_DIR = os.path.normpath(
-    os.path.join(TEST_MTPY_ROOT, 'examples/data/mare2dem'))
+    os.path.join(TEST_MTPY_ROOT, "examples/model_files")
+)  # r'E:\Githubz\mtpy\examples\model_files'
+M2D_DIR = os.path.normpath(os.path.join(TEST_MTPY_ROOT, "examples/data/mare2dem"))

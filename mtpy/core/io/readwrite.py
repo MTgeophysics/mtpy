@@ -80,7 +80,8 @@ def get_reader(extension):
     msg = f"Could not find a reader for file type {extension}"
     logger.error(msg)
     raise ValueError(msg)
-    
+
+
 def get_writer(extension):
     """
     
@@ -136,8 +137,15 @@ def read_file(fn, file_type=None):
 
     return file_reader(fn)
 
-def write_file(mt_object, fn, file_type=None, longitude_format='lon',
-               latlon_format='dms', overwrite=False):
+
+def write_file(
+    mt_object,
+    fn,
+    file_type=None,
+    longitude_format="lon",
+    latlon_format="dms",
+    overwrite=False,
+):
     """
     write a file based on extension or file type
     
@@ -149,7 +157,7 @@ def write_file(mt_object, fn, file_type=None, longitude_format='lon',
     :rtype: TYPE
 
     """
-    
+
     if not isinstance(fn, Path):
         fn = Path(fn)
 

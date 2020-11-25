@@ -24,7 +24,7 @@ from mtpy.utils import exceptions as mtex
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Model
 
-__all__ = ['PlotPTMaps']
+__all__ = ["PlotPTMaps"]
 
 
 class PlotPTMaps(MTEllipse):
@@ -149,7 +149,7 @@ class PlotPTMaps(MTEllipse):
         self.data_fn = data_fn
         self.resp_fn = resp_fn
 
-        self.save_path = kwargs.pop('save_path', None)
+        self.save_path = kwargs.pop("save_path", None)
         if self.model_fn is not None and self.save_path is None:
             self.save_path = os.path.dirname(self.model_fn)
         elif self.model_fn is not None and self.save_path is None:
@@ -159,55 +159,55 @@ class PlotPTMaps(MTEllipse):
             if not os.path.exists(self.save_path):
                 os.mkdir(self.save_path)
 
-        self.save_plots = kwargs.pop('save_plots', 'y')
-        self.plot_period_list = kwargs.pop('plot_period_list', None)
+        self.save_plots = kwargs.pop("save_plots", "y")
+        self.plot_period_list = kwargs.pop("plot_period_list", None)
         self.period_dict = None
 
-        self.map_scale = kwargs.pop('map_scale', 'km')
+        self.map_scale = kwargs.pop("map_scale", "km")
         # make map scale
-        if self.map_scale == 'km':
-            self.dscale = 1000.
-        elif self.map_scale == 'm':
-            self.dscale = 1.
-        self.ew_limits = kwargs.pop('ew_limits', None)
-        self.ns_limits = kwargs.pop('ns_limits', None)
+        if self.map_scale == "km":
+            self.dscale = 1000.0
+        elif self.map_scale == "m":
+            self.dscale = 1.0
+        self.ew_limits = kwargs.pop("ew_limits", None)
+        self.ns_limits = kwargs.pop("ns_limits", None)
 
-        self.pad_east = kwargs.pop('pad_east', 2000)
-        self.pad_north = kwargs.pop('pad_north', 2000)
+        self.pad_east = kwargs.pop("pad_east", 2000)
+        self.pad_north = kwargs.pop("pad_north", 2000)
 
-        self.plot_grid = kwargs.pop('plot_grid', 'n')
+        self.plot_grid = kwargs.pop("plot_grid", "n")
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
-        self.fig_aspect = kwargs.pop('fig_aspect', 1)
-        self.title = kwargs.pop('title', 'on')
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
+        self.fig_aspect = kwargs.pop("fig_aspect", 1)
+        self.title = kwargs.pop("title", "on")
         self.fig_list = []
 
-        self.xminorticks = kwargs.pop('xminorticks', 1000)
-        self.yminorticks = kwargs.pop('yminorticks', 1000)
+        self.xminorticks = kwargs.pop("xminorticks", 1000)
+        self.yminorticks = kwargs.pop("yminorticks", 1000)
 
-        self.residual_cmap = kwargs.pop('residual_cmap', 'mt_wh2or')
-        self.font_size = kwargs.pop('font_size', 7)
+        self.residual_cmap = kwargs.pop("residual_cmap", "mt_wh2or")
+        self.font_size = kwargs.pop("font_size", 7)
 
-        self.cb_tick_step = kwargs.pop('cb_tick_step', 45)
-        self.cb_residual_tick_step = kwargs.pop('cb_residual_tick_step', 3)
-        self.cb_pt_pad = kwargs.pop('cb_pt_pad', 1.2)
-        self.cb_res_pad = kwargs.pop('cb_res_pad', .5)
+        self.cb_tick_step = kwargs.pop("cb_tick_step", 45)
+        self.cb_residual_tick_step = kwargs.pop("cb_residual_tick_step", 3)
+        self.cb_pt_pad = kwargs.pop("cb_pt_pad", 1.2)
+        self.cb_res_pad = kwargs.pop("cb_res_pad", 0.5)
 
-        self.res_limits = kwargs.pop('res_limits', (0, 4))
-        self.res_cmap = kwargs.pop('res_cmap', 'jet_r')
+        self.res_limits = kwargs.pop("res_limits", (0, 4))
+        self.res_cmap = kwargs.pop("res_cmap", "jet_r")
 
         # --> set the ellipse properties -------------------
-        self._ellipse_dict = kwargs.pop('ellipse_dict', {'size': 2})
+        self._ellipse_dict = kwargs.pop("ellipse_dict", {"size": 2})
         self._read_ellipse_dict(self._ellipse_dict)
 
-        self.subplot_right = .99
-        self.subplot_left = .085
-        self.subplot_top = .92
-        self.subplot_bottom = .1
-        self.subplot_hspace = .2
-        self.subplot_wspace = .05
+        self.subplot_right = 0.99
+        self.subplot_left = 0.085
+        self.subplot_top = 0.92
+        self.subplot_bottom = 0.1
+        self.subplot_hspace = 0.2
+        self.subplot_wspace = 0.05
 
         self.data_obj = None
         self.resp_obj = None
@@ -218,8 +218,8 @@ class PlotPTMaps(MTEllipse):
         self.pt_resp_arr = None
         self.pt_resid_arr = None
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        if self.plot_yn == "y":
             self.plot()
 
     def _read_files(self):
@@ -255,8 +255,9 @@ class PlotPTMaps(MTEllipse):
             if type(self.plot_period_list) is list:
                 # check if entries are index values or actual periods
                 if type(self.plot_period_list[0]) is int:
-                    self.plot_period_list = [self.data_obj.period_list[ii]
-                                             for ii in self.plot_period_list]
+                    self.plot_period_list = [
+                        self.data_obj.period_list[ii] for ii in self.plot_period_list
+                    ]
                 else:
                     pass
             elif type(self.plot_period_list) is int:
@@ -264,8 +265,9 @@ class PlotPTMaps(MTEllipse):
             elif type(self.plot_period_list) is float:
                 self.plot_period_list = [self.plot_period_list]
 
-        self.period_dict = dict([(key, value) for value, key in
-                                 enumerate(self.data_obj.period_list)])
+        self.period_dict = dict(
+            [(key, value) for value, key in enumerate(self.data_obj.period_list)]
+        )
 
     def _get_pt(self):
         """
@@ -275,61 +277,76 @@ class PlotPTMaps(MTEllipse):
         ns = len(self.data_obj.mt_dict.keys())
         nf = len(self.data_obj.period_list)
 
-        data_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
-                                                ('phimax', np.float),
-                                                ('skew', np.float),
-                                                ('azimuth', np.float),
-                                                ('east', np.float),
-                                                ('north', np.float)])
+        data_pt_arr = np.zeros(
+            (nf, ns),
+            dtype=[
+                ("phimin", np.float),
+                ("phimax", np.float),
+                ("skew", np.float),
+                ("azimuth", np.float),
+                ("east", np.float),
+                ("north", np.float),
+            ],
+        )
         if self.resp_fn is not None:
-            model_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
-                                                     ('phimax', np.float),
-                                                     ('skew', np.float),
-                                                     ('azimuth', np.float),
-                                                     ('east', np.float),
-                                                     ('north', np.float)])
+            model_pt_arr = np.zeros(
+                (nf, ns),
+                dtype=[
+                    ("phimin", np.float),
+                    ("phimax", np.float),
+                    ("skew", np.float),
+                    ("azimuth", np.float),
+                    ("east", np.float),
+                    ("north", np.float),
+                ],
+            )
 
-            res_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
-                                                   ('phimax', np.float),
-                                                   ('skew', np.float),
-                                                   ('azimuth', np.float),
-                                                   ('east', np.float),
-                                                   ('north', np.float),
-                                                   ('geometric_mean', np.float)])
+            res_pt_arr = np.zeros(
+                (nf, ns),
+                dtype=[
+                    ("phimin", np.float),
+                    ("phimax", np.float),
+                    ("skew", np.float),
+                    ("azimuth", np.float),
+                    ("east", np.float),
+                    ("north", np.float),
+                    ("geometric_mean", np.float),
+                ],
+            )
 
         for ii, key in enumerate(self.data_obj.mt_dict.keys()):
             east = self.data_obj.mt_dict[key].grid_east / self.dscale
             north = self.data_obj.mt_dict[key].grid_north / self.dscale
             dpt = self.data_obj.mt_dict[key].pt
-            data_pt_arr[:, ii]['east'] = east
-            data_pt_arr[:, ii]['north'] = north
-            data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
-            data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
-            data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
-            data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]["east"] = east
+            data_pt_arr[:, ii]["north"] = north
+            data_pt_arr[:, ii]["phimin"] = dpt.phimin[0]
+            data_pt_arr[:, ii]["phimax"] = dpt.phimax[0]
+            data_pt_arr[:, ii]["azimuth"] = dpt.azimuth[0]
+            data_pt_arr[:, ii]["skew"] = dpt.beta[0]
             if self.resp_fn is not None:
                 mpt = self.resp_obj.mt_dict[key].pt
                 try:
-                    rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt,
-                                                   pt_object2=mpt)
+                    rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt, pt_object2=mpt)
                     rpt = rpt.residual_pt
-                    res_pt_arr[:, ii]['east'] = east
-                    res_pt_arr[:, ii]['north'] = north
-                    res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
-                    res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
-                    res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
-                    res_pt_arr[:, ii]['skew'] = rpt.beta[0]
-                    res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] * \
-                                                                      rpt.phimax[0]))
+                    res_pt_arr[:, ii]["east"] = east
+                    res_pt_arr[:, ii]["north"] = north
+                    res_pt_arr[:, ii]["phimin"] = rpt.phimin[0]
+                    res_pt_arr[:, ii]["phimax"] = rpt.phimax[0]
+                    res_pt_arr[:, ii]["azimuth"] = rpt.azimuth[0]
+                    res_pt_arr[:, ii]["skew"] = rpt.beta[0]
+                    res_pt_arr[:, ii]["geometric_mean"] = np.sqrt(
+                        abs(rpt.phimin[0] * rpt.phimax[0])
+                    )
                 except mtex.MTpyError_PT:
                     print key, dpt.pt.shape, mpt.pt.shape
 
-                model_pt_arr[:, ii]['east'] = east
-                model_pt_arr[:, ii]['north'] = north
-                model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
-                model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
-                model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
-                model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]["east"] = east
+                model_pt_arr[:, ii]["north"] = north
+                model_pt_arr[:, ii]["phimin"] = mpt.phimin[0]
+                model_pt_arr[:, ii]["phimax"] = mpt.phimax[0]
+                model_pt_arr[:, ii]["azimuth"] = mpt.azimuth[0]
+                model_pt_arr[:, ii]["skew"] = mpt.beta[0]
 
         # make these attributes
         self.pt_data_arr = data_pt_arr
@@ -350,16 +367,17 @@ class PlotPTMaps(MTEllipse):
             self._read_files()
 
         # set plot properties
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
-        font_dict = {'size': self.font_size + 2, 'weight': 'bold'}
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
+        font_dict = {"size": self.font_size + 2, "weight": "bold"}
 
         # make a grid of subplots
-        gs = gridspec.GridSpec(1, 3, hspace=self.subplot_hspace,
-                               wspace=self.subplot_wspace)
+        gs = gridspec.GridSpec(
+            1, 3, hspace=self.subplot_hspace, wspace=self.subplot_wspace
+        )
 
         # set some parameters for the colorbar
         ckmin = float(self.ellipse_range[0])
@@ -367,173 +385,220 @@ class PlotPTMaps(MTEllipse):
         try:
             ckstep = float(self.ellipse_range[2])
         except IndexError:
-            if self.ellipse_cmap == 'mt_seg_bl2wh2rd':
-                raise ValueError('Need to input range as (min, max, step)')
+            if self.ellipse_cmap == "mt_seg_bl2wh2rd":
+                raise ValueError("Need to input range as (min, max, step)")
             else:
                 ckstep = 3
         bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
 
         # set plot limits to be the station area
         if self.ew_limits == None:
-            east_min = self.data_obj.data_array['rel_east'].min() - \
-                       self.pad_east
-            east_max = self.data_obj.data_array['rel_east'].max() + \
-                       self.pad_east
+            east_min = self.data_obj.data_array["rel_east"].min() - self.pad_east
+            east_max = self.data_obj.data_array["rel_east"].max() + self.pad_east
             self.ew_limits = (east_min / self.dscale, east_max / self.dscale)
 
         if self.ns_limits == None:
-            north_min = self.data_obj.data_array['rel_north'].min() - \
-                        self.pad_north
-            north_max = self.data_obj.data_array['rel_north'].max() + \
-                        self.pad_north
+            north_min = self.data_obj.data_array["rel_north"].min() - self.pad_north
+            north_max = self.data_obj.data_array["rel_north"].max() + self.pad_north
             self.ns_limits = (north_min / self.dscale, north_max / self.dscale)
 
         # -------------plot phase tensors------------------------------------
         for ff, per in enumerate(self.plot_period_list):
             data_ii = self.period_dict[per]
 
-            print 'Plotting Period: {0:.5g}'.format(per)
-            fig = plt.figure('{0:.5g}'.format(per), figsize=self.fig_size,
-                             dpi=self.fig_dpi)
+            print "Plotting Period: {0:.5g}".format(per)
+            fig = plt.figure(
+                "{0:.5g}".format(per), figsize=self.fig_size, dpi=self.fig_dpi
+            )
             fig.clf()
 
             if self.resp_fn is not None:
-                axd = fig.add_subplot(gs[0, 0], aspect='equal')
-                axm = fig.add_subplot(gs[0, 1], aspect='equal')
-                axr = fig.add_subplot(gs[0, 2], aspect='equal')
+                axd = fig.add_subplot(gs[0, 0], aspect="equal")
+                axm = fig.add_subplot(gs[0, 1], aspect="equal")
+                axr = fig.add_subplot(gs[0, 2], aspect="equal")
                 ax_list = [axd, axm, axr]
 
             else:
-                axd = fig.add_subplot(gs[0, :], aspect='equal')
+                axd = fig.add_subplot(gs[0, :], aspect="equal")
                 ax_list = [axd]
 
             # plot model below the phase tensors
             if self.model_fn is not None:
-                approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model.copy(),
-                                                               self.model_obj.grid_z.copy() / self.dscale,
-                                                               per,
-                                                               dscale=self.dscale)
+                approx_depth, d_index = ws.estimate_skin_depth(
+                    self.model_obj.res_model.copy(),
+                    self.model_obj.grid_z.copy() / self.dscale,
+                    per,
+                    dscale=self.dscale,
+                )
                 # need to add an extra row and column to east and north to make sure
                 # all is plotted see pcolor for details.
-                plot_east = np.append(self.model_obj.grid_east,
-                                      self.model_obj.grid_east[-1] * 1.25) / \
-                            self.dscale
-                plot_north = np.append(self.model_obj.grid_north,
-                                       self.model_obj.grid_north[-1] * 1.25) / \
-                             self.dscale
+                plot_east = (
+                    np.append(
+                        self.model_obj.grid_east, self.model_obj.grid_east[-1] * 1.25
+                    )
+                    / self.dscale
+                )
+                plot_north = (
+                    np.append(
+                        self.model_obj.grid_north, self.model_obj.grid_north[-1] * 1.25
+                    )
+                    / self.dscale
+                )
 
                 # make a mesh grid for plotting
                 # the 'ij' makes sure the resulting grid is in east, north
-                self.mesh_east, self.mesh_north = np.meshgrid(plot_east,
-                                                              plot_north,
-                                                              indexing='ij')
+                self.mesh_east, self.mesh_north = np.meshgrid(
+                    plot_east, plot_north, indexing="ij"
+                )
 
                 for ax in ax_list:
                     plot_res = np.log10(self.model_obj.res_model[:, :, d_index].T)
-                    ax.pcolormesh(self.mesh_east,
-                                  self.mesh_north,
-                                  plot_res,
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits[0],
-                                  vmax=self.res_limits[1])
+                    ax.pcolormesh(
+                        self.mesh_east,
+                        self.mesh_north,
+                        plot_res,
+                        cmap=self.res_cmap,
+                        vmin=self.res_limits[0],
+                        vmax=self.res_limits[1],
+                    )
 
             # --> plot data phase tensors
             for pt in self.pt_data_arr[data_ii]:
-                eheight = pt['phimin'] / \
-                          self.pt_data_arr[data_ii]['phimax'].max() * \
-                          self.ellipse_size
-                ewidth = pt['phimax'] / \
-                         self.pt_data_arr[data_ii]['phimax'].max() * \
-                         self.ellipse_size
+                eheight = (
+                    pt["phimin"]
+                    / self.pt_data_arr[data_ii]["phimax"].max()
+                    * self.ellipse_size
+                )
+                ewidth = (
+                    pt["phimax"]
+                    / self.pt_data_arr[data_ii]["phimax"].max()
+                    * self.ellipse_size
+                )
 
-                ellipse = Ellipse((pt['east'],
-                                   pt['north']),
-                                  width=ewidth,
-                                  height=eheight,
-                                  angle=90 - pt['azimuth'])
+                ellipse = Ellipse(
+                    (pt["east"], pt["north"]),
+                    width=ewidth,
+                    height=eheight,
+                    angle=90 - pt["azimuth"],
+                )
 
                 # get ellipse color
-                if self.ellipse_cmap.find('seg') > 0:
-                    ellipse.set_facecolor(mtcl.get_plot_color(pt[self.ellipse_colorby],
-                                                              self.ellipse_colorby,
-                                                              self.ellipse_cmap,
-                                                              ckmin,
-                                                              ckmax,
-                                                              bounds=bounds))
+                if self.ellipse_cmap.find("seg") > 0:
+                    ellipse.set_facecolor(
+                        mtcl.get_plot_color(
+                            pt[self.ellipse_colorby],
+                            self.ellipse_colorby,
+                            self.ellipse_cmap,
+                            ckmin,
+                            ckmax,
+                            bounds=bounds,
+                        )
+                    )
                 else:
-                    ellipse.set_facecolor(mtcl.get_plot_color(pt[self.ellipse_colorby],
-                                                              self.ellipse_colorby,
-                                                              self.ellipse_cmap,
-                                                              ckmin,
-                                                              ckmax))
+                    ellipse.set_facecolor(
+                        mtcl.get_plot_color(
+                            pt[self.ellipse_colorby],
+                            self.ellipse_colorby,
+                            self.ellipse_cmap,
+                            ckmin,
+                            ckmax,
+                        )
+                    )
 
                 axd.add_artist(ellipse)
 
             # -----------plot response phase tensors---------------
             if self.resp_fn is not None:
-                rcmin = np.floor(self.pt_resid_arr['geometric_mean'].min())
-                rcmax = np.floor(self.pt_resid_arr['geometric_mean'].max())
-                for mpt, rpt in zip(self.pt_resp_arr[data_ii],
-                                    self.pt_resid_arr[data_ii]):
-                    eheight = mpt['phimin'] / \
-                              self.pt_resp_arr[data_ii]['phimax'].max() * \
-                              self.ellipse_size
-                    ewidth = mpt['phimax'] / \
-                             self.pt_resp_arr[data_ii]['phimax'].max() * \
-                             self.ellipse_size
+                rcmin = np.floor(self.pt_resid_arr["geometric_mean"].min())
+                rcmax = np.floor(self.pt_resid_arr["geometric_mean"].max())
+                for mpt, rpt in zip(
+                    self.pt_resp_arr[data_ii], self.pt_resid_arr[data_ii]
+                ):
+                    eheight = (
+                        mpt["phimin"]
+                        / self.pt_resp_arr[data_ii]["phimax"].max()
+                        * self.ellipse_size
+                    )
+                    ewidth = (
+                        mpt["phimax"]
+                        / self.pt_resp_arr[data_ii]["phimax"].max()
+                        * self.ellipse_size
+                    )
 
-                    ellipsem = Ellipse((mpt['east'],
-                                        mpt['north']),
-                                       width=ewidth,
-                                       height=eheight,
-                                       angle=90 - mpt['azimuth'])
+                    ellipsem = Ellipse(
+                        (mpt["east"], mpt["north"]),
+                        width=ewidth,
+                        height=eheight,
+                        angle=90 - mpt["azimuth"],
+                    )
 
                     # get ellipse color
-                    if self.ellipse_cmap.find('seg') > 0:
-                        ellipsem.set_facecolor(mtcl.get_plot_color(mpt[self.ellipse_colorby],
-                                                                   self.ellipse_colorby,
-                                                                   self.ellipse_cmap,
-                                                                   ckmin,
-                                                                   ckmax,
-                                                                   bounds=bounds))
+                    if self.ellipse_cmap.find("seg") > 0:
+                        ellipsem.set_facecolor(
+                            mtcl.get_plot_color(
+                                mpt[self.ellipse_colorby],
+                                self.ellipse_colorby,
+                                self.ellipse_cmap,
+                                ckmin,
+                                ckmax,
+                                bounds=bounds,
+                            )
+                        )
                     else:
-                        ellipsem.set_facecolor(mtcl.get_plot_color(mpt[self.ellipse_colorby],
-                                                                   self.ellipse_colorby,
-                                                                   self.ellipse_cmap,
-                                                                   ckmin,
-                                                                   ckmax))
+                        ellipsem.set_facecolor(
+                            mtcl.get_plot_color(
+                                mpt[self.ellipse_colorby],
+                                self.ellipse_colorby,
+                                self.ellipse_cmap,
+                                ckmin,
+                                ckmax,
+                            )
+                        )
 
                     axm.add_artist(ellipsem)
 
                     # -----------plot residual phase tensors---------------
-                    eheight = rpt['phimin'] / \
-                              self.pt_resid_arr[data_ii]['phimax'].max() * \
-                              self.ellipse_size
-                    ewidth = rpt['phimax'] / \
-                             self.pt_resid_arr[data_ii]['phimax'].max() * \
-                             self.ellipse_size
+                    eheight = (
+                        rpt["phimin"]
+                        / self.pt_resid_arr[data_ii]["phimax"].max()
+                        * self.ellipse_size
+                    )
+                    ewidth = (
+                        rpt["phimax"]
+                        / self.pt_resid_arr[data_ii]["phimax"].max()
+                        * self.ellipse_size
+                    )
 
-                    ellipser = Ellipse((rpt['east'],
-                                        rpt['north']),
-                                       width=ewidth,
-                                       height=eheight,
-                                       angle=rpt['azimuth'])
+                    ellipser = Ellipse(
+                        (rpt["east"], rpt["north"]),
+                        width=ewidth,
+                        height=eheight,
+                        angle=rpt["azimuth"],
+                    )
 
                     # get ellipse color
-                    rpt_color = np.sqrt(abs(rpt['phimin'] * rpt['phimax']))
-                    if self.ellipse_cmap.find('seg') > 0:
-                        ellipser.set_facecolor(mtcl.get_plot_color(rpt_color,
-                                                                   'geometric_mean',
-                                                                   self.residual_cmap,
-                                                                   ckmin,
-                                                                   ckmax,
-                                                                   bounds=bounds))
+                    rpt_color = np.sqrt(abs(rpt["phimin"] * rpt["phimax"]))
+                    if self.ellipse_cmap.find("seg") > 0:
+                        ellipser.set_facecolor(
+                            mtcl.get_plot_color(
+                                rpt_color,
+                                "geometric_mean",
+                                self.residual_cmap,
+                                ckmin,
+                                ckmax,
+                                bounds=bounds,
+                            )
+                        )
                     else:
-                        ellipser.set_facecolor(mtcl.get_plot_color(rpt_color,
-                                                                   'geometric_mean',
-                                                                   self.residual_cmap,
-                                                                   ckmin,
-                                                                   ckmax))
+                        ellipser.set_facecolor(
+                            mtcl.get_plot_color(
+                                rpt_color,
+                                "geometric_mean",
+                                self.residual_cmap,
+                                ckmin,
+                                ckmax,
+                            )
+                        )
 
                     axr.add_artist(ellipser)
 
@@ -541,108 +606,145 @@ class PlotPTMaps(MTEllipse):
             # data
             axd.set_xlim(self.ew_limits)
             axd.set_ylim(self.ns_limits)
-            axd.set_xlabel('Easting ({0})'.format(self.map_scale),
-                           fontdict=font_dict)
-            axd.set_ylabel('Northing ({0})'.format(self.map_scale),
-                           fontdict=font_dict)
+            axd.set_xlabel("Easting ({0})".format(self.map_scale), fontdict=font_dict)
+            axd.set_ylabel("Northing ({0})".format(self.map_scale), fontdict=font_dict)
             # make a colorbar for phase tensors
             # bb = axd.axes.get_position().bounds
             bb = axd.get_position().bounds
-            y1 = .25 * (2 + (self.ns_limits[1] - self.ns_limits[0]) /
-                        (self.ew_limits[1] - self.ew_limits[0]))
-            cb_location = (3.35 * bb[2] / 5 + bb[0],
-                           y1 * self.cb_pt_pad, .295 * bb[2], .02)
+            y1 = 0.25 * (
+                2
+                + (self.ns_limits[1] - self.ns_limits[0])
+                / (self.ew_limits[1] - self.ew_limits[0])
+            )
+            cb_location = (
+                3.35 * bb[2] / 5 + bb[0],
+                y1 * self.cb_pt_pad,
+                0.295 * bb[2],
+                0.02,
+            )
             cbaxd = fig.add_axes(cb_location)
-            cbd = mcb.ColorbarBase(cbaxd,
-                                   cmap=mtcl.cmapdict[self.ellipse_cmap],
-                                   norm=Normalize(vmin=ckmin,
-                                                  vmax=ckmax),
-                                   orientation='horizontal')
-            cbd.ax.xaxis.set_label_position('top')
-            cbd.ax.xaxis.set_label_coords(.5, 1.75)
+            cbd = mcb.ColorbarBase(
+                cbaxd,
+                cmap=mtcl.cmapdict[self.ellipse_cmap],
+                norm=Normalize(vmin=ckmin, vmax=ckmax),
+                orientation="horizontal",
+            )
+            cbd.ax.xaxis.set_label_position("top")
+            cbd.ax.xaxis.set_label_coords(0.5, 1.75)
             cbd.set_label(mtplottools.ckdict[self.ellipse_colorby])
-            cbd.set_ticks(np.arange(ckmin, ckmax + self.cb_tick_step,
-                                    self.cb_tick_step))
+            cbd.set_ticks(
+                np.arange(ckmin, ckmax + self.cb_tick_step, self.cb_tick_step)
+            )
 
-            axd.text(self.ew_limits[0] * .95,
-                     self.ns_limits[1] * .95,
-                     'Data',
-                     horizontalalignment='left',
-                     verticalalignment='top',
-                     bbox={'facecolor': 'white'},
-                     fontdict={'size': self.font_size + 1})
+            axd.text(
+                self.ew_limits[0] * 0.95,
+                self.ns_limits[1] * 0.95,
+                "Data",
+                horizontalalignment="left",
+                verticalalignment="top",
+                bbox={"facecolor": "white"},
+                fontdict={"size": self.font_size + 1},
+            )
 
             # Model and residual
             if self.resp_fn is not None:
                 for aa, ax in enumerate([axm, axr]):
                     ax.set_xlim(self.ew_limits)
                     ax.set_ylim(self.ns_limits)
-                    ax.set_xlabel('Easting ({0})'.format(self.map_scale),
-                                  fontdict=font_dict)
+                    ax.set_xlabel(
+                        "Easting ({0})".format(self.map_scale), fontdict=font_dict
+                    )
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                     # make a colorbar ontop of axis
                     bb = ax.axes.get_position().bounds
-                    y1 = .25 * (2 + (self.ns_limits[1] - self.ns_limits[0]) /
-                                (self.ew_limits[1] - self.ew_limits[0]))
-                    cb_location = (3.35 * bb[2] / 5 + bb[0],
-                                   y1 * self.cb_pt_pad, .295 * bb[2], .02)
+                    y1 = 0.25 * (
+                        2
+                        + (self.ns_limits[1] - self.ns_limits[0])
+                        / (self.ew_limits[1] - self.ew_limits[0])
+                    )
+                    cb_location = (
+                        3.35 * bb[2] / 5 + bb[0],
+                        y1 * self.cb_pt_pad,
+                        0.295 * bb[2],
+                        0.02,
+                    )
                     cbax = fig.add_axes(cb_location)
                     if aa == 0:
-                        cb = mcb.ColorbarBase(cbax,
-                                              cmap=mtcl.cmapdict[self.ellipse_cmap],
-                                              norm=Normalize(vmin=ckmin,
-                                                             vmax=ckmax),
-                                              orientation='horizontal')
-                        cb.ax.xaxis.set_label_position('top')
-                        cb.ax.xaxis.set_label_coords(.5, 1.75)
+                        cb = mcb.ColorbarBase(
+                            cbax,
+                            cmap=mtcl.cmapdict[self.ellipse_cmap],
+                            norm=Normalize(vmin=ckmin, vmax=ckmax),
+                            orientation="horizontal",
+                        )
+                        cb.ax.xaxis.set_label_position("top")
+                        cb.ax.xaxis.set_label_coords(0.5, 1.75)
                         cb.set_label(mtplottools.ckdict[self.ellipse_colorby])
-                        cb.set_ticks(np.arange(ckmin, ckmax + self.cb_tick_step,
-                                               self.cb_tick_step))
-                        ax.text(self.ew_limits[0] * .95,
-                                self.ns_limits[1] * .95,
-                                'Model',
-                                horizontalalignment='left',
-                                verticalalignment='top',
-                                bbox={'facecolor': 'white'},
-                                fontdict={'size': self.font_size + 1})
+                        cb.set_ticks(
+                            np.arange(
+                                ckmin, ckmax + self.cb_tick_step, self.cb_tick_step
+                            )
+                        )
+                        ax.text(
+                            self.ew_limits[0] * 0.95,
+                            self.ns_limits[1] * 0.95,
+                            "Model",
+                            horizontalalignment="left",
+                            verticalalignment="top",
+                            bbox={"facecolor": "white"},
+                            fontdict={"size": self.font_size + 1},
+                        )
                     else:
-                        cb = mcb.ColorbarBase(cbax,
-                                              cmap=mtcl.cmapdict[self.residual_cmap],
-                                              norm=Normalize(vmin=rcmin,
-                                                             vmax=rcmax),
-                                              orientation='horizontal')
-                        cb.ax.xaxis.set_label_position('top')
-                        cb.ax.xaxis.set_label_coords(.5, 1.75)
+                        cb = mcb.ColorbarBase(
+                            cbax,
+                            cmap=mtcl.cmapdict[self.residual_cmap],
+                            norm=Normalize(vmin=rcmin, vmax=rcmax),
+                            orientation="horizontal",
+                        )
+                        cb.ax.xaxis.set_label_position("top")
+                        cb.ax.xaxis.set_label_coords(0.5, 1.75)
                         cb.set_label(r"$\sqrt{\Phi_{min} \Phi_{max}}$")
                         cb_ticks = [rcmin, (rcmax - rcmin) / 2, rcmax]
                         cb.set_ticks(cb_ticks)
-                        ax.text(self.ew_limits[0] * .95,
-                                self.ns_limits[1] * .95,
-                                'Residual',
-                                horizontalalignment='left',
-                                verticalalignment='top',
-                                bbox={'facecolor': 'white'},
-                                fontdict={'size': self.font_size + 1})
+                        ax.text(
+                            self.ew_limits[0] * 0.95,
+                            self.ns_limits[1] * 0.95,
+                            "Residual",
+                            horizontalalignment="left",
+                            verticalalignment="top",
+                            bbox={"facecolor": "white"},
+                            fontdict={"size": self.font_size + 1},
+                        )
 
             if self.model_fn is not None:
                 for ax in ax_list:
-                    ax.tick_params(direction='out')
+                    ax.tick_params(direction="out")
                     bb = ax.axes.get_position().bounds
-                    y1 = .25 * (2 - (self.ns_limits[1] - self.ns_limits[0]) /
-                                (self.ew_limits[1] - self.ew_limits[0]))
-                    cb_position = (3.0 * bb[2] / 5 + bb[0],
-                                   y1 * self.cb_res_pad, .35 * bb[2], .02)
+                    y1 = 0.25 * (
+                        2
+                        - (self.ns_limits[1] - self.ns_limits[0])
+                        / (self.ew_limits[1] - self.ew_limits[0])
+                    )
+                    cb_position = (
+                        3.0 * bb[2] / 5 + bb[0],
+                        y1 * self.cb_res_pad,
+                        0.35 * bb[2],
+                        0.02,
+                    )
                     cbax = fig.add_axes(cb_position)
-                    cb = mcb.ColorbarBase(cbax,
-                                          cmap=self.res_cmap,
-                                          norm=Normalize(vmin=self.res_limits[0],
-                                                         vmax=self.res_limits[1]),
-                                          orientation='horizontal')
-                    cb.ax.xaxis.set_label_position('top')
-                    cb.ax.xaxis.set_label_coords(.5, 1.5)
-                    cb.set_label('Resistivity ($\Omega \cdot$m)')
-                    cb_ticks = np.arange(np.floor(self.res_limits[0]),
-                                         np.ceil(self.res_limits[1] + 1), 1)
+                    cb = mcb.ColorbarBase(
+                        cbax,
+                        cmap=self.res_cmap,
+                        norm=Normalize(
+                            vmin=self.res_limits[0], vmax=self.res_limits[1]
+                        ),
+                        orientation="horizontal",
+                    )
+                    cb.ax.xaxis.set_label_position("top")
+                    cb.ax.xaxis.set_label_coords(0.5, 1.5)
+                    cb.set_label("Resistivity ($\Omega \cdot$m)")
+                    cb_ticks = np.arange(
+                        np.floor(self.res_limits[0]), np.ceil(self.res_limits[1] + 1), 1
+                    )
                     cb.set_ticks(cb_ticks)
                     cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
 
@@ -669,8 +771,14 @@ class PlotPTMaps(MTEllipse):
             plt.close(fig)
         self.plot()
 
-    def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
-                    orientation='landscape', close_fig='y'):
+    def save_figure(
+        self,
+        save_path=None,
+        fig_dpi=None,
+        file_format="pdf",
+        orientation="landscape",
+        close_fig="y",
+    ):
         """
         save_figure will save the figure to save_fn.
 
@@ -722,23 +830,30 @@ class PlotPTMaps(MTEllipse):
             try:
                 os.mkdir(save_path)
             except:
-                raise IOError('Need to input a correct directory path')
+                raise IOError("Need to input a correct directory path")
 
         for fig in self.fig_list:
             per = fig.canvas.get_window_title()
-            save_fn = os.path.join(save_path, 'PT_DepthSlice_{0}s.{1}'.format(
-                per, file_format))
-            fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(
+                save_path, "PT_DepthSlice_{0}s.{1}".format(per, file_format)
+            )
+            fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-            if close_fig == 'y':
+            if close_fig == "y":
                 plt.close(fig)
 
             else:
                 pass
 
             self.fig_fn = save_fn
-            print ('Saved figure to: ' + self.fig_fn)
+            print ("Saved figure to: " + self.fig_fn)
+
 
 # ==================================================================================
 # FZ: add example usage code
@@ -748,14 +863,15 @@ if __name__ == "__main__":
     from mtpy.mtpy_globals import *
 
     # directory where files are located
-    wd = os.path.join(SAMPLE_DIR, 'ModEM')
+    wd = os.path.join(SAMPLE_DIR, "ModEM")
 
     # file stem for inversion result
-    filestem = 'Modular_MPI_NLCG_004'
+    filestem = "Modular_MPI_NLCG_004"
 
-    filestem = 'Modular_MPI_NLCG_004'
-    datafn = 'ModEM_Data.dat'
-    PlotPTMaps(data_fn=os.path.join(wd, datafn),
-               resp_fn=os.path.join(wd, filestem + '.dat'),
-               ellipse_size=20
-               )
+    filestem = "Modular_MPI_NLCG_004"
+    datafn = "ModEM_Data.dat"
+    PlotPTMaps(
+        data_fn=os.path.join(wd, datafn),
+        resp_fn=os.path.join(wd, filestem + ".dat"),
+        ellipse_size=20,
+    )

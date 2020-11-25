@@ -15,7 +15,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import AxesWidget
 from qtpy import QT_VERSION
 
-if QT_VERSION.startswith('4'):
+if QT_VERSION.startswith("4"):
     from matplotlib.backends.backend_qt4agg import FigureCanvas
 else:
     from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -30,7 +30,7 @@ class MPLCanvas(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
 
-        self._fig = Figure(figsize=(width, height), dpi=dpi, facecolor='none')
+        self._fig = Figure(figsize=(width, height), dpi=dpi, facecolor="none")
 
         FigureCanvas.__init__(self, self._fig)
         # super(MPLCanvas, self).__init__(self._fig)
@@ -56,15 +56,25 @@ class Cursor(AxesWidget):
     inspaired by matplotlib.widgets.Cursor
     """
 
-    def __init__(self, ax, track_x=True, track_y=True, show_coord=True, text_format="(%.2f, %.2f)", col='green',
-                 useblit=True, show_drag=False, **lineprops):
+    def __init__(
+        self,
+        ax,
+        track_x=True,
+        track_y=True,
+        show_coord=True,
+        text_format="(%.2f, %.2f)",
+        col="green",
+        useblit=True,
+        show_drag=False,
+        **lineprops
+    ):
         AxesWidget.__init__(self, ax)
 
-        self.connect_event('motion_notify_event', self.onmove)
-        self.connect_event('draw_event', self.clear)
+        self.connect_event("motion_notify_event", self.onmove)
+        self.connect_event("draw_event", self.clear)
         if show_drag:
-            self.connect_event('button_press_event', self.on_press)
-            self.connect_event('button_release_event', self.on_release)
+            self.connect_event("button_press_event", self.on_press)
+            self.connect_event("button_release_event", self.on_release)
 
         self.visible = True
         self.horizOn = track_y
@@ -75,13 +85,22 @@ class Cursor(AxesWidget):
         self.useblit = useblit and self.canvas.supports_blit
 
         if self.useblit:
-            lineprops['animated'] = True
-        if 'color' not in lineprops:
-            lineprops['color'] = col
+            lineprops["animated"] = True
+        if "color" not in lineprops:
+            lineprops["color"] = col
         self.lineh = ax.axhline(ax.get_ybound()[0], visible=False, **lineprops)
         self.linev = ax.axvline(ax.get_xbound()[0], visible=False, **lineprops)
-        self.text = ax.text(ax.get_xbound()[0], ax.get_ybound()[0], '', fontsize=8, color=col, visible=False)
-        self.area = patches.Rectangle((0, 0), 0, 0, fc=col, ec=None, alpha=0.2, visible=False)
+        self.text = ax.text(
+            ax.get_xbound()[0],
+            ax.get_ybound()[0],
+            "",
+            fontsize=8,
+            color=col,
+            visible=False,
+        )
+        self.area = patches.Rectangle(
+            (0, 0), 0, 0, fc=col, ec=None, alpha=0.2, visible=False
+        )
         self.ax.add_patch(self.area)
 
         self._press = None
@@ -185,7 +204,14 @@ class Cursor(AxesWidget):
 
 
 class MathTextLabel(QWidget):
-    def __init__(self, parent=None, math_text=None, horizontalalignment='left', verticalalignment='top', **kwargs):
+    def __init__(
+        self,
+        parent=None,
+        math_text=None,
+        horizontalalignment="left",
+        verticalalignment="top",
+        **kwargs
+    ):
         QWidget.__init__(self, parent, **kwargs)
 
         layout = QVBoxLayout(self)
@@ -199,12 +225,14 @@ class MathTextLabel(QWidget):
         layout.addWidget(self._canvas)
 
         self._figure.clear()
-        self._display_text = self._figure.suptitle(math_text,
-                                                   x=0.0,
-                                                   y=1.0,
-                                                   horizontalalignment=horizontalalignment,
-                                                   verticalalignment=verticalalignment,
-                                                   size=QApplication.font().pointSize() * 2)
+        self._display_text = self._figure.suptitle(
+            math_text,
+            x=0.0,
+            y=1.0,
+            horizontalalignment=horizontalalignment,
+            verticalalignment=verticalalignment,
+            size=QApplication.font().pointSize() * 2,
+        )
         self._canvas.draw()
 
         (x0, y0), (x1, y1) = self._display_text.get_window_extent().get_points()

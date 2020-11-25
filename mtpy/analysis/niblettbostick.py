@@ -28,7 +28,7 @@ import mtpy.analysis.geometry as MTge
 import mtpy.core.z as MTz
 import mtpy.utils.calculator as MTcc
 
-#reload(MTz)
+# reload(MTz)
 
 
 def rhophi2rhodepth(rho, phase, period):
@@ -54,7 +54,7 @@ def rhophi2rhodepth(rho, phase, period):
     rho_nb = rho * (np.pi / 2 / np.deg2rad(phase % 90) - 1)
     # print rho,period,depth,rho_nb
     # print 'rho: {0:.1f} \t-\t rhoNB: {3:.1f}\t-\t period: {1:.1f} \t-\t depth: {2:.1f}'.format(
-    #												rho,period,depth,rho_nb)
+    # 												rho,period,depth,rho_nb)
 
     return rho_nb, depth
 
@@ -123,14 +123,8 @@ def calculate_znb(z_object=None, z_array=None, periods=None):
 
     for i, per in enumerate(periods):
 
-        te_rho, te_depth = rhophi2rhodepth(
-            app_res[i][
-                0, 1], phase[i][
-                0, 1], per)
-        tm_rho, tm_depth = rhophi2rhodepth(
-            app_res[i][
-                1, 0], phase[i][
-                1, 0], per)
+        te_rho, te_depth = rhophi2rhodepth(app_res[i][0, 1], phase[i][0, 1], per)
+        tm_rho, tm_depth = rhophi2rhodepth(app_res[i][1, 0], phase[i][1, 0], per)
 
         if te_rho > tm_rho:
             lo_nb_max.append([te_depth, te_rho])
@@ -206,9 +200,9 @@ def calculate_depth_nb(z_object=None, z_array=None, periods=None):
     # deal with inputs
     if z_object is not None:
         z_obj = z_object
-        periods = 1./z_object.freq
+        periods = 1.0 / z_object.freq
     else:
-        z_obj = MTz.Z(z_array=z_array, freq=1./periods)
+        z_obj = MTz.Z(z_array=z_array, freq=1.0 / periods)
         periods = periods
 
     dimensions = MTge.dimensionality(z_array=z_obj.z)
@@ -221,45 +215,49 @@ def calculate_depth_nb(z_object=None, z_array=None, periods=None):
 
     # interperpolate strike angle onto all periods
     # make a function for strike using only 2d angles
-    strike_interp = spi.interp1d(periods_2d, angles_2d,
-                                 bounds_error=False,
-                                 fill_value=0)
+    strike_interp = spi.interp1d(
+        periods_2d, angles_2d, bounds_error=False, fill_value=0
+    )
     strike_angles = strike_interp(periods)
 
     # rotate z to be along the interpolated strike angles
     z_obj.rotate(strike_angles)
-    
-#    angles_incl1D = interpolate_strike_angles(angles_2d, periods_2d)
-	
-#    z3 = MTz.rotate_z(z_2d, -angles_incl1D)[0]
+
+    #    angles_incl1D = interpolate_strike_angles(angles_2d, periods_2d)
+
+    #    z3 = MTz.rotate_z(z_2d, -angles_incl1D)[0]
 
     # at this point we assume that the two modes are the off-diagonal elements!!
     # TE is element (1,2), TM at (2,1)
     #    lo_nb_max = []
     #    lo_nb_min = []
 
-    depth_array = np.zeros(periods.shape[0],
-                           dtype=[('period', np.float),
-                                  ('depth_min', np.float),
-                                  ('depth_max', np.float),
-                                  ('rho_min', np.float),
-                                  ('rho_max', np.float)])
+    depth_array = np.zeros(
+        periods.shape[0],
+        dtype=[
+            ("period", np.float),
+            ("depth_min", np.float),
+            ("depth_max", np.float),
+            ("rho_min", np.float),
+            ("rho_max", np.float),
+        ],
+    )
 
-##    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z3, periods_2d)
-#    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z_rot, periods)
+    ##    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z3, periods_2d)
+    #    app_res, app_res_err, phase, phase_err = MTz.z2resphi(z_rot, periods)
 
     for ii, per in enumerate(periods):
-        te_rho, te_depth = rhophi2rhodepth(z_obj.resistivity[ii, 0, 1],
-                                           z_obj.phase[ii, 0, 1],
-                                           per)
-        tm_rho, tm_depth = rhophi2rhodepth(z_obj.resistivity[ii, 1, 0],
-                                           z_obj.phase[ii, 1, 0],
-                                           per)
-        depth_array[ii]['period'] = per
-        depth_array[ii]['depth_min'] = min([te_depth, tm_depth])
-        depth_array[ii]['depth_max'] = max([te_depth, tm_depth])
-        depth_array[ii]['rho_min'] = min([te_rho, tm_rho])
-        depth_array[ii]['rho_max'] = max([te_rho, tm_rho])
+        te_rho, te_depth = rhophi2rhodepth(
+            z_obj.resistivity[ii, 0, 1], z_obj.phase[ii, 0, 1], per
+        )
+        tm_rho, tm_depth = rhophi2rhodepth(
+            z_obj.resistivity[ii, 1, 0], z_obj.phase[ii, 1, 0], per
+        )
+        depth_array[ii]["period"] = per
+        depth_array[ii]["depth_min"] = min([te_depth, tm_depth])
+        depth_array[ii]["depth_max"] = max([te_depth, tm_depth])
+        depth_array[ii]["rho_min"] = min([te_rho, tm_rho])
+        depth_array[ii]["rho_max"] = max([te_rho, tm_rho])
 
     return depth_array
 
@@ -326,7 +324,7 @@ def calculate_rho_minmax(z_object=None, z_array=None, periods=None):
     lo_nb_min = []
 
     rotsteps = 360
-    rotangles = np.arange(rotsteps) * 180. / rotsteps
+    rotangles = np.arange(rotsteps) * 180.0 / rotsteps
 
     for i, per in enumerate(periods2):
         z_curr = z2[i]
@@ -347,8 +345,7 @@ def calculate_rho_minmax(z_object=None, z_array=None, periods=None):
             temp_vals[jj, 2] = tm_depth
             temp_vals[jj, 3] = tm_rho
 
-        column = (np.argmax([np.max(temp_vals[:, 1]),
-                             np.max(temp_vals[:, 3])])) * 2 + 1
+        column = (np.argmax([np.max(temp_vals[:, 1]), np.max(temp_vals[:, 3])])) * 2 + 1
 
         maxidx = np.argmax(temp_vals[:, column])
         max_rho = temp_vals[maxidx, column]
@@ -356,8 +353,9 @@ def calculate_rho_minmax(z_object=None, z_array=None, periods=None):
         max_ang = rotangles[maxidx]
 
         # alternative 1
-        min_column = (np.argmin([np.max(temp_vals[:, 1]),
-                                 np.max(temp_vals[:, 3])])) * 2 + 1
+        min_column = (
+            np.argmin([np.max(temp_vals[:, 1]), np.max(temp_vals[:, 3])])
+        ) * 2 + 1
         if max_ang <= 90:
             min_ang = max_ang + 90
         else:
@@ -397,7 +395,7 @@ def interpolate_strike_angles(angles, in_periods):
         curr_ang = angles[in_line]
         if np.isnan(curr_ang):
             if in_line in [0, len(angles) - 1]:
-                new_angles[in_line] = 0.
+                new_angles[in_line] = 0.0
                 in_line += 1
                 continue
 
@@ -418,7 +416,7 @@ def interpolate_strike_angles(angles, in_periods):
                     break
             # catch case of all nan:
             if ang2 is None:
-                ang2 = 0.
+                ang2 = 0.0
 
             delta_per = per2 - per1
             delta_ang = ang2 - ang1

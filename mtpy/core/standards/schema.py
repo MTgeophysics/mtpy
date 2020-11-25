@@ -35,6 +35,7 @@ from mtpy.core.standards import CSV_FN_PATHS
 class MTSchemaError(Exception):
     pass
 
+
 logger = logging.getLogger(__name__)
 # =============================================================================
 # Variables
@@ -853,7 +854,7 @@ class Standards:
             if "declination" not in key:
                 elec_dict.update({key: v_dict})
         return elec_dict
-    
+
     @property
     def transfer_function_dict(self):
         tf_dict = from_csv(get_level_fn("transfer_function"))
@@ -927,14 +928,14 @@ class Standards:
         run_dict.add_dict(
             self.provenance_dict.copy(), "provenance", keys=["comments", "log"]
         )
-        run_dict.add_dict(self.electric_dict, 'ex')
-        run_dict.add_dict(self.electric_dict, 'ey')
-        run_dict.add_dict(self.magnetic_dict, 'hx')
-        run_dict.add_dict(self.magnetic_dict, 'hy')
-        run_dict.add_dict(self.magnetic_dict, 'hz')
-        run_dict.add_dict(self.magnetic_dict, 'rrhx')
-        run_dict.add_dict(self.magnetic_dict, 'rrhy')
-        run_dict.add_dict(self.auxiliary_dict, 'temperature')
+        run_dict.add_dict(self.electric_dict, "ex")
+        run_dict.add_dict(self.electric_dict, "ey")
+        run_dict.add_dict(self.magnetic_dict, "hx")
+        run_dict.add_dict(self.magnetic_dict, "hy")
+        run_dict.add_dict(self.magnetic_dict, "hz")
+        run_dict.add_dict(self.magnetic_dict, "rrhx")
+        run_dict.add_dict(self.magnetic_dict, "rrhy")
+        run_dict.add_dict(self.auxiliary_dict, "temperature")
         return run_dict
 
     @property
@@ -970,8 +971,6 @@ class Standards:
         magnetic_dict = from_csv(get_level_fn("magnetic"))
         magnetic_dict.add_dict(self.channel_dict.copy())
         return magnetic_dict
-    
-
 
     @property
     def ATTR_DICT(self):

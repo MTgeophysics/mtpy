@@ -5,7 +5,8 @@
 import numpy as np
 import sys
 import os
-#==============================================================================
+
+# ==============================================================================
 
 # plot model geometry
 plot = True
@@ -42,7 +43,7 @@ model_depth = 200000
 model_extension_factor = 1
 
 # starting resistivity value for homog. halfspace setup
-rho0 = 100.
+rho0 = 100.0
 
 # define layered/1d model as input
 inmodel1d = np.zeros((4, 2))
@@ -51,34 +52,35 @@ inmodel1d[1] = 250, 100
 inmodel1d[2] = 2000, 10
 inmodel1d[3] = 4000, 1000
 
-#inmodel1d = None
+# inmodel1d = None
 
-#==============================================================================
+# ==============================================================================
 # allow rotation of the grid along a known geo electrical strike angle
 # X,Y will be rotated to X',Y' with X' along strike
 # rotation center is the midpoint of the station loactions
-strike = 0.
+strike = 0.0
 # NOTE: if strike is set to a value !=0, the locations of the stations have to
 # be adapted in the data file in the same way!!!
-#==============================================================================
+# ==============================================================================
 
 
 # name of datafile (to be handled as argument later on)
-datafile = 'ModEMdata.dat'
+datafile = "ModEMdata.dat"
 
 # name of output model file
-modelfile = 'THE_modelfile.rho'
+modelfile = "THE_modelfile.rho"
 
-#==============================================================================
-#==============================================================================
-#==============================================================================
+# ==============================================================================
+# ==============================================================================
+# ==============================================================================
 
-outstring = ''
+outstring = ""
 
-outstring += '# ModEM model generated with MTpy - layout read from datafile: {0}\n'.format(
-    datafile)
+outstring += "# ModEM model generated with MTpy - layout read from datafile: {0}\n".format(
+    datafile
+)
 
-Fin = open(datafile, 'r')
+Fin = open(datafile, "r")
 data = Fin.readlines()
 Fin.close()
 
@@ -89,7 +91,7 @@ coords = []
 # start in line after header info, determined by starting character '>'
 for dataline in data:
     line = dataline.strip().split()
-    if (len(line) == 0) or line[0].strip()[0] in ['#', '>']:
+    if (len(line) == 0) or line[0].strip()[0] in ["#", ">"]:
         continue
     try:
         line = dataline.strip().split()
@@ -103,10 +105,9 @@ coords = np.array(list(set(coords)))
 
 if strike != 0:
     original_coords = coords.copy()
-    cosphi = np.cos(strike / 180. * np.pi)
-    sinphi = np.sin(strike / 180. * np.pi)
-    RotMat = np.matrix(
-        np.array([cosphi, sinphi, -sinphi, cosphi]).reshape(2, 2))
+    cosphi = np.cos(strike / 180.0 * np.pi)
+    sinphi = np.sin(strike / 180.0 * np.pi)
+    RotMat = np.matrix(np.array([cosphi, sinphi, -sinphi, cosphi]).reshape(2, 2))
 
     center = (np.mean(coords[:, 0]), np.mean(coords[:, 1]))
 
@@ -156,10 +157,12 @@ while all_points_in_single_cell is False:
     offset_y = y_shifts * dy / shifting_fraction
 
     if n_shifts > 0:
-        print '{0} shift(s): x-offset {1} m - y-offset {2} m'.format(n_shifts, offset_x, offset_y)
+        print "{0} shift(s): x-offset {1} m - y-offset {2} m".format(
+            n_shifts, offset_x, offset_y
+        )
 
-    center_x0 = xmin - surplusX / 2. + offset_x
-    center_y0 = ymin - surplusY / 2. + offset_y
+    center_x0 = xmin - surplusX / 2.0 + offset_x
+    center_y0 = ymin - surplusY / 2.0 + offset_y
 
     grid_x_points = (np.arange(n_center_xblocks + 1) * dx) + center_x0
     grid_y_points = (np.arange(n_center_yblocks + 1) * dy) + center_y0
@@ -170,7 +173,7 @@ while all_points_in_single_cell is False:
         idx_x = np.argmin(np.abs(grid_x_points - co[0]))
         if (grid_x_points - co[0])[idx_x] == 0:
             # coordinate lies on a node line => need to shift
-            print 'station coordinates lie on cell nodes'
+            print "station coordinates lie on cell nodes"
             break
         # otherwise, shift the index to correspond with the row of blocks, if
         # necessary:
@@ -205,8 +208,7 @@ y_range = np.max(grid_y_points) - np.min(grid_y_points)
 
 
 if all_points_in_single_cell < 1:
-    print 'ERROR - cannot build grid having each station in a single cell!\n'\
-        'change the values for dx,dy or remove stations'
+    print "ERROR - cannot build grid having each station in a single cell!\n" "change the values for dx,dy or remove stations"
     sys.exit()
 
 
@@ -258,7 +260,7 @@ yblocks = []
 for idy_y in range(len(grid_y_points) - 1):
     yblocks.append(grid_y_points[idy_y + 1] - grid_y_points[idy_y])
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 n_zpadding = 3
 
 # build block depths:
@@ -267,16 +269,18 @@ n_layers_eff = n_layers - 1
 # splitted uppermost layer
 
 log_part_thickness = model_depth - (n_layers_eff - 1) * z0
-depths = np.logspace( np.log10(z0), np.log10(log_part_thickness), n_layers_eff ) + \
-    np.arange(n_layers_eff) * z0
+depths = (
+    np.logspace(np.log10(z0), np.log10(log_part_thickness), n_layers_eff)
+    + np.arange(n_layers_eff) * z0
+)
 
 
 depths = list(depths)
 
-thicknesses = [z0 / 2.]
+thicknesses = [z0 / 2.0]
 for i, layer in enumerate(depths):
     if i == 0:
-        t = layer / 2.
+        t = layer / 2.0
     else:
         t = layer - depths[i - 1]
     thicknesses.append(t)
@@ -302,42 +306,47 @@ for t in thicknesses:
 
 
 # some information for the user:
-print '\n\t Model set up - dimensions: {0:.1f}x{1:.1f}x{2:.1f} km^3 ({3}x{4}x{5} cells)\n'.format(
-    (grid_x_points[-1] - grid_x_points[0]) /
-    1000., (grid_y_points[-1] - grid_y_points[0]) / 1000.,
-    depths[-1] / 1000., len(grid_x_points) - 1, len(grid_y_points) - 1, len(grid_z_points) - 1)
+print "\n\t Model set up - dimensions: {0:.1f}x{1:.1f}x{2:.1f} km^3 ({3}x{4}x{5} cells)\n".format(
+    (grid_x_points[-1] - grid_x_points[0]) / 1000.0,
+    (grid_y_points[-1] - grid_y_points[0]) / 1000.0,
+    depths[-1] / 1000.0,
+    len(grid_x_points) - 1,
+    len(grid_y_points) - 1,
+    len(grid_z_points) - 1,
+)
 
 
-outstring += '{0}    {1}    {2}    {3}    {4}\n'.format(len(xblocks), len(yblocks),
-                                                        len(thicknesses), 0, 'LOGE')
+outstring += "{0}    {1}    {2}    {3}    {4}\n".format(
+    len(xblocks), len(yblocks), len(thicknesses), 0, "LOGE"
+)
 
-xstring = ''
+xstring = ""
 for block in xblocks:
-    xstring += '{0:.3f}  '.format(block)
-xstring += '\n'
+    xstring += "{0:.3f}  ".format(block)
+xstring += "\n"
 
 outstring += xstring
 
-ystring = ''
+ystring = ""
 for block in yblocks:
-    ystring += '{0:.3f}  '.format(block)
-ystring += '\n'
+    ystring += "{0:.3f}  ".format(block)
+ystring += "\n"
 
 outstring += ystring
 
 
-zstring = ''
+zstring = ""
 for block in thicknesses:
-    zstring += '{0:.3f}  '.format(block)
-zstring += '\n'
+    zstring += "{0:.3f}  ".format(block)
+zstring += "\n"
 
 outstring += zstring
 
 
 for idx_z in range(len(thicknesses)):
-    z_string = ''
+    z_string = ""
     # empty line before each layer:
-    z_string += '\n'
+    z_string += "\n"
     resistivity = rho0
 
     if inmodel1d is not None:
@@ -350,41 +359,49 @@ for idx_z in range(len(thicknesses)):
         resistivity = inmodel1d[layertop_idx, 1]
 
     for idx_y in range(len(yblocks)):
-        y_string = ''
+        y_string = ""
         for idx_x in range(len(xblocks)):
-            x_string = '{0:.5E}  '.format(np.log(resistivity))
+            x_string = "{0:.5E}  ".format(np.log(resistivity))
             y_string += x_string
-        y_string += '\n'
+        y_string += "\n"
         z_string += y_string
     outstring += z_string
 
 
-co_reference = '{0}  {1}  {2} \n'.format(
-    np.min(grid_x_points), np.min(grid_y_points), 0)
+co_reference = "{0}  {1}  {2} \n".format(
+    np.min(grid_x_points), np.min(grid_y_points), 0
+)
 
 outstring += co_reference
 
-outstring += '0 \n'
+outstring += "0 \n"
 
-Fout = open(modelfile, 'w')
+Fout = open(modelfile, "w")
 Fout.write(outstring)
 Fout.close()
 
 
-def plotgrid(stations, grid_x, grid_y, grid_z=None,
-             n_xpadding=None, n_y_padding=None, n_zpadding_layers=None):
+def plotgrid(
+    stations,
+    grid_x,
+    grid_y,
+    grid_z=None,
+    n_xpadding=None,
+    n_y_padding=None,
+    n_zpadding_layers=None,
+):
     ion()
-    close('all')
+    close("all")
 
     equal = True
     equal = False
 
-    grid_x = [i / 1000. for i in grid_x]
-    grid_y = [i / 1000. for i in grid_y]
+    grid_x = [i / 1000.0 for i in grid_x]
+    grid_y = [i / 1000.0 for i in grid_y]
 
     # Note: X and Y are swapped - mathematical definition used in the plotting functions!!!
-    #fig = figure(1)
-    #ax = fig.gca()
+    # fig = figure(1)
+    # ax = fig.gca()
     fig = figure(figsize=(8, 6))
     if grid_z is not None:
         colspan = 3
@@ -392,34 +409,33 @@ def plotgrid(stations, grid_x, grid_y, grid_z=None,
         colspan = 4
 
     if equal == True:
-        ax = subplot2grid((1, 4), (0, 0), colspan=colspan, aspect='equal')
+        ax = subplot2grid((1, 4), (0, 0), colspan=colspan, aspect="equal")
     else:
-        ax = subplot2grid((1, 4), (0, 0), colspan=colspan, aspect='auto')
+        ax = subplot2grid((1, 4), (0, 0), colspan=colspan, aspect="auto")
 
-    #ax = subplot(1,2,1)
-    ax.scatter(stations[:, 1] / 1000., stations[:, 0] / 1000., c='r')
-    ax.scatter([ymin_padded / 1000.], [xmin_padded / 1000.],
-               c='b', marker='x', s=40)
-    outline_x = [
-        min(grid_x),
-        min(grid_x),
-        max(grid_x),
-        max(grid_x),
-        min(grid_x)]
-    outline_y = [
-        min(grid_y),
-        max(grid_y),
-        max(grid_y),
-        min(grid_y),
-        min(grid_y)]
-    ax.plot(outline_y, outline_x, c='r')
+    # ax = subplot(1,2,1)
+    ax.scatter(stations[:, 1] / 1000.0, stations[:, 0] / 1000.0, c="r")
+    ax.scatter([ymin_padded / 1000.0], [xmin_padded / 1000.0], c="b", marker="x", s=40)
+    outline_x = [min(grid_x), min(grid_x), max(grid_x), max(grid_x), min(grid_x)]
+    outline_y = [min(grid_y), max(grid_y), max(grid_y), min(grid_y), min(grid_y)]
+    ax.plot(outline_y, outline_x, c="r")
 
     if n_xpadding is not None and n_ypadding is not None:
-        regular_x = [grid_x[n_xpadding], grid_x[n_xpadding],
-                     grid_x[-n_xpadding - 1], grid_x[-n_xpadding - 1], grid_x[n_xpadding]]
-        regular_y = [grid_y[n_ypadding], grid_y[-n_ypadding - 1],
-                     grid_y[-n_ypadding - 1], grid_y[n_ypadding], grid_y[n_ypadding]]
-        ax.plot(regular_y, regular_x, c='b')
+        regular_x = [
+            grid_x[n_xpadding],
+            grid_x[n_xpadding],
+            grid_x[-n_xpadding - 1],
+            grid_x[-n_xpadding - 1],
+            grid_x[n_xpadding],
+        ]
+        regular_y = [
+            grid_y[n_ypadding],
+            grid_y[-n_ypadding - 1],
+            grid_y[-n_ypadding - 1],
+            grid_y[n_ypadding],
+            grid_y[n_ypadding],
+        ]
+        ax.plot(regular_y, regular_x, c="b")
 
     extension_factor = 0.1
     x_extent = max(grid_x) - min(grid_x)
@@ -431,52 +447,45 @@ def plotgrid(stations, grid_x, grid_y, grid_z=None,
     ax.set_xlim([min(grid_y) - y_extension, max(grid_y) + y_extension])
 
     ax.set_yticks(grid_x, minor=True)
-    ax.yaxis.grid(False, which='major')
-    ax.yaxis.grid(True, which='minor', c='g')
+    ax.yaxis.grid(False, which="major")
+    ax.yaxis.grid(True, which="minor", c="g")
     ax.set_xticks(grid_y, minor=True)
-    ax.xaxis.grid(False, which='major')
-    ax.xaxis.grid(True, which='minor', c='g')
-    ax.set_xlabel('Easting (Y-coordinate) in km')
-    ax.set_ylabel('Northing (X-coordinate) in km')
+    ax.xaxis.grid(False, which="major")
+    ax.xaxis.grid(True, which="minor", c="g")
+    ax.set_xlabel("Easting (Y-coordinate) in km")
+    ax.set_ylabel("Northing (X-coordinate) in km")
     ax.set_title(
-        'Model geometry (origin at {0:.1f},{1:.1f})'.format(
-            xmin_padded, ymin_padded))
+        "Model geometry (origin at {0:.1f},{1:.1f})".format(xmin_padded, ymin_padded)
+    )
 
     if equal == True:
-        ax.set_aspect('equal', adjustable='box')
+        ax.set_aspect("equal", adjustable="box")
     draw()
 
     if grid_z is not None:
 
-        grid_z = [-i / 1000. for i in grid_z]
+        grid_z = [-i / 1000.0 for i in grid_z]
         bottom_index = len(grid_z) - n_zpadding_layers - 1
 
         if equal == True:
-            ax2 = subplot2grid((1, 4), (0, 3), aspect='equal')
+            ax2 = subplot2grid((1, 4), (0, 3), aspect="equal")
         else:
-            ax2 = subplot2grid((1, 4), (0, 3), aspect='auto')
+            ax2 = subplot2grid((1, 4), (0, 3), aspect="auto")
 
-        #fig2 = figure(2)
-        #ax2 = fig2.gca()
-        #ax2 = subplot(1,2,2)
-        outline_z = [
-            min(grid_z),
-            min(grid_z),
-            max(grid_z),
-            max(grid_z),
-            min(grid_z)]
-        outline_y = [
-            min(grid_y),
-            max(grid_y),
-            max(grid_y),
-            min(grid_y),
-            min(grid_y)]
-        plot(outline_y, outline_z, c='r')
+        # fig2 = figure(2)
+        # ax2 = fig2.gca()
+        # ax2 = subplot(1,2,2)
+        outline_z = [min(grid_z), min(grid_z), max(grid_z), max(grid_z), min(grid_z)]
+        outline_y = [min(grid_y), max(grid_y), max(grid_y), min(grid_y), min(grid_y)]
+        plot(outline_y, outline_z, c="r")
 
-        plot([min(grid_y), max(grid_y)], [
-             grid_z[bottom_index], grid_z[bottom_index]], c='b')
+        plot(
+            [min(grid_y), max(grid_y)],
+            [grid_z[bottom_index], grid_z[bottom_index]],
+            c="b",
+        )
 
-        ax2.axhline(linewidth=2, color='k')
+        ax2.axhline(linewidth=2, color="k")
 
         extension_factor = 0.1
 
@@ -489,13 +498,13 @@ def plotgrid(stations, grid_x, grid_y, grid_z=None,
         ax2.set_xlim([min(grid_y) - y_extension, max(grid_y) + y_extension])
         # ax2.set_aspect('equal','datalim')
         ax2.set_yticks(grid_z, minor=True)
-        ax2.yaxis.grid(False, which='major')
-        ax2.yaxis.grid(True, which='minor', c='k')
-        ax2.set_xlabel('Easting (Y-coordinate) in km')
-        ax2.set_ylabel('Depth in km')
-        ax2.set_title('Model layers')
+        ax2.yaxis.grid(False, which="major")
+        ax2.yaxis.grid(True, which="minor", c="k")
+        ax2.set_xlabel("Easting (Y-coordinate) in km")
+        ax2.set_ylabel("Depth in km")
+        ax2.set_title("Model layers")
 
-        ax2.set_aspect('equal', adjustable='box')
+        ax2.set_aspect("equal", adjustable="box")
 
     tight_layout()
     show(block=True)
@@ -504,7 +513,8 @@ def plotgrid(stations, grid_x, grid_y, grid_z=None,
 if plot == True:
 
     import platform
-    if not platform.system().lower().startswith('win'):
+
+    if not platform.system().lower().startswith("win"):
 
         # generate an interactive plot window, which remains open after this
         # script has finshed:
@@ -513,10 +523,11 @@ if plot == True:
         if proc_num != 0:
             # This is the parent process, that should quit immediately to return to the
             # shell.
-            print "You can kill the plot window with the command \"kill %d\"." % proc_num
+            print 'You can kill the plot window with the command "kill %d".' % proc_num
             sys.exit()
 
     from pylab import *
+
     plotgrid(
         coords,
         grid_x_points,
@@ -524,4 +535,5 @@ if plot == True:
         grid_z_points,
         n_xpadding,
         n_ypadding,
-        n_zpadding)
+        n_zpadding,
+    )

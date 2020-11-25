@@ -22,12 +22,26 @@ class MeshGrid(QGroupBox):
         # connect signal
         self.ui.radioButton_imshow.toggled.connect(self._imshow_toggled)
 
-    _grid_types = ['imshow', 'pcolormesh']
-    _interpolation_methods = ['none', 'nearest', 'bilinear', 'bicubic',
-                              'spline16', 'spline36', 'hanning', 'hamming',
-                              'hermite', 'kaiser', 'quadric', 'catrom',
-                              'gaussian', 'bessel', 'mitchell', 'sinc',
-                              'lanczos']
+    _grid_types = ["imshow", "pcolormesh"]
+    _interpolation_methods = [
+        "none",
+        "nearest",
+        "bilinear",
+        "bicubic",
+        "spline16",
+        "spline36",
+        "hanning",
+        "hamming",
+        "hermite",
+        "kaiser",
+        "quadric",
+        "catrom",
+        "gaussian",
+        "bessel",
+        "mitchell",
+        "sinc",
+        "lanczos",
+    ]
 
     def _imshow_toggled(self, checked):
         if checked:

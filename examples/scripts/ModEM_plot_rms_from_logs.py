@@ -21,29 +21,29 @@ from mtpy.utils import plot_rms_iterations
 
 if __name__ == "__main__":
     # Path to logfile directory
-    path = '/path/to/directory'
+    path = "/path/to/directory"
     # Name of metric to plot. Available: 'f', 'm2', 'rms', 'lambda',
     #  'alpha'
-    metric = 'rms'
+    metric = "rms"
     # Plotting arguments
     plot_kwargs = {
         # Set as None to use default values.
         # Interval of x-axis ticks - default is 1
-        'x_interval': 5.,
+        "x_interval": 5.0,
         # Interval of y-axis ticks - default is variance of the values
-        'y_interval': 0.5,
+        "y_interval": 0.5,
         # Width of the figure in pixels - default is 800
-        'fig_width': 800,
+        "fig_width": 800,
         # Height of the figure in inches - default is 800
-        'fig_height': 800,
+        "fig_height": 800,
         # DPI of the figure - default is 100
-        'dpi': None
+        "dpi": None,
     }
 
     logfile = plot_rms_iterations.concatenate_log_files(path)
     metrics = plot_rms_iterations.read(logfile)
     figure = plot_rms_iterations.plot(metric, metrics[metric], **plot_kwargs)
-    plotfile = os.path.join(path, metric + '.png')
+    plotfile = os.path.join(path, metric + ".png")
     figure.savefig(plotfile)
     print("Complete!")
     print("Concatenated logfile: {}".format(logfile))

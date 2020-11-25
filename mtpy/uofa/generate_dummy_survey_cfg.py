@@ -17,8 +17,9 @@ import sys
 import os.path as op
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
-#reload(MTfh)
-#reload(MTcf)
+
+# reload(MTfh)
+# reload(MTcf)
 
 
 def main():
@@ -26,18 +27,18 @@ def main():
     args = sys.argv[1:]
 
     if len(args) == 0:
-        print('\n\tError - no station name given\n')
+        print("\n\tError - no station name given\n")
         return
 
     lo_stations = args[0]
     try:
-        lo_stations = lo_stations.split(',')
+        lo_stations = lo_stations.split(",")
         lo_stations = [i.upper() for i in lo_stations]
     except:
-        print('Error - station name list could not be read!')
-        print('(Must be comma-separated list...no whitespaces)\n')
+        print("Error - station name list could not be read!")
+        print("(Must be comma-separated list...no whitespaces)\n")
 
-    outfile = op.abspath(op.join(os.curdir, 'dummy_survey.cfg'))
+    outfile = op.abspath(op.join(os.curdir, "dummy_survey.cfg"))
     outfile = MTfh.make_unique_filename(outfile)
 
     survey_dict = {}
@@ -57,5 +58,5 @@ def main():
     MTcf.write_dict_to_configfile(survey_dict, outfile)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

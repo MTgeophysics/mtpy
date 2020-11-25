@@ -310,7 +310,9 @@ class Edi(object):
 
         # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
-            self.logger.debug("Ordered arrays to be arranged from high to low frequency")
+            self.logger.debug(
+                "Ordered arrays to be arranged from high to low frequency"
+            )
             freq_arr = freq_arr[::-1]
             z_arr = z_arr[::-1]
             z_err_arr = z_err_arr[::-1]
@@ -2063,7 +2065,7 @@ class DefineMeasurement(object):
         """
 
         if channel.component is None:
-            return 
+            return
         if "e" in channel.component:
             meas = EMeasurement(
                 **{

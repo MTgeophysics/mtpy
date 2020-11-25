@@ -60,7 +60,12 @@ from collections import OrderedDict
 from collections.abc import Iterable
 from operator import itemgetter
 
-from mtpy.core.standards.schema import Standards, validate_attribute, validate_type, MTSchemaError
+from mtpy.core.standards.schema import (
+    Standards,
+    validate_attribute,
+    validate_type,
+    MTSchemaError,
+)
 from mtpy.utils.mttime import MTime, MTTimeError
 from mtpy.core.standards import helpers
 
@@ -297,14 +302,40 @@ class Base:
         
         """
         # need to have this if the user sets a value with a class, there is not
-        # a good way to validate the class object, but all elements within the 
+        # a good way to validate the class object, but all elements within the
         # class object will be validated, so it seems fine to skip it.
-        if isinstance(value, (Declination, Location, Fdsn, Rating, DataQuality,
-                              Citation, Copyright, Provenance, Person, Diagnostic,
-                              Battery, Electrode, TimingSystem, TimePeriod,
-                              Orientation, Software, Filtered, Filter, 
-                              DataLogger, TransferFunction, Survey, Station,
-                              Run, Channel, Auxiliary, Electric, Magnetic)):
+        if isinstance(
+            value,
+            (
+                Declination,
+                Location,
+                Fdsn,
+                Rating,
+                DataQuality,
+                Citation,
+                Copyright,
+                Provenance,
+                Person,
+                Diagnostic,
+                Battery,
+                Electrode,
+                TimingSystem,
+                TimePeriod,
+                Orientation,
+                Software,
+                Filtered,
+                Filter,
+                DataLogger,
+                TransferFunction,
+                Survey,
+                Station,
+                Run,
+                Channel,
+                Auxiliary,
+                Electric,
+                Magnetic,
+            ),
+        ):
             return value
         # return if the value is None, this may need to change in the future
         # if an empty list or something else should be returned
@@ -474,7 +505,7 @@ class Base:
             "name",
             "applied",
             "logger",
-            'Electric',
+            "Electric",
         ]
 
         if hasattr(self, "_attr_dict"):
@@ -1513,7 +1544,8 @@ class DataLogger(Base):
         self.firmware = Software()
         self.power_source = Battery()
         super().__init__(attr_dict=ATTR_DICT["datalogger"], **kwargs)
-        
+
+
 # =============================================================================
 # transfer function
 # =============================================================================
@@ -1521,26 +1553,26 @@ class TransferFunction(Base):
     __doc__ = write_lines(ATTR_DICT["transfer_function"])
 
     def __init__(self, **kwargs):
-        
+
         self.processed_by = Person()
         self.software = Software()
         self.units = "millivolts_per_kilometer_per_nanotesla"
-        self.sign_convention = '+'
+        self.sign_convention = "+"
         self.runs_processed = []
         self.remote_references = []
         self.processing_parameters = []
         self._processed_date = MTime()
-        
+
         super().__init__(attr_dict=ATTR_DICT["transfer_function"], **kwargs)
 
     @property
     def processed_date(self):
         return self._processed_date.date
-    
+
     @processed_date.setter
     def processed_date(self, value):
         self._processed_date = value
-    
+
 
 # ==============================================================================
 # Site details
@@ -1596,7 +1628,7 @@ class Station(Base):
         self.transfer_function = TransferFunction()
 
         super().__init__(attr_dict=ATTR_DICT["station"], **kwargs)
-    
+
     @property
     def run_names(self):
         runs = []
@@ -1605,7 +1637,7 @@ class Station(Base):
                 runs.append(rr.id)
             else:
                 runs.append(rr)
-        return runs 
+        return runs
 
 
 # =============================================================================
@@ -1637,7 +1669,7 @@ class Run(Base):
         self._rrhx = Magnetic()
         self._rrhy = Magnetic()
         self._temperature = Auxiliary()
-        
+
         super().__init__(attr_dict=ATTR_DICT["run"], **kwargs)
 
     @property
@@ -1667,33 +1699,33 @@ class Run(Base):
                 all_channels += rec_list
 
         return all_channels
-    
+
     @property
     def channels_recorded_electric(self):
         rchannels = []
-        for comp in ['ex', 'ey']:
+        for comp in ["ex", "ey"]:
             obj = getattr(self, comp)
             if obj.component is None:
                 continue
             if obj.component.lower() in [comp]:
                 rchannels.append(comp)
         return rchannels
-    
+
     @property
     def channels_recorded_magnetic(self):
         rchannels = []
-        for comp in ['hx', 'hy', 'hz']:
+        for comp in ["hx", "hy", "hz"]:
             obj = getattr(self, comp)
             if obj.component is None:
                 continue
             if obj.component.lower() in [comp]:
                 rchannels.append(comp)
         return rchannels
-    
+
     @property
     def channels_recorded_auxiliary(self):
         rchannels = []
-        for comp in ['temperature']:
+        for comp in ["temperature"]:
             obj = getattr(self, comp)
             if obj.component is None:
                 continue
@@ -1704,7 +1736,7 @@ class Run(Base):
     @property
     def ex(self):
         return self._ex
-    
+
     @ex.setter
     def ex(self, value):
         if not isinstance(value, Electric):
@@ -1714,16 +1746,16 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Electric object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['ex']:
+        elif value.component.lower() not in ["ex"]:
             msg = f"Input Electric.component must be ex not {value.component}"
             self.logger.error(msg)
             raise ValueError(msg)
         self._ex.from_dict(value.to_dict())
-        
+
     @property
     def ey(self):
         return self._ey
-    
+
     @ey.setter
     def ey(self, value):
         if not isinstance(value, Electric):
@@ -1733,16 +1765,16 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Electric object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['ey']:
+        elif value.component.lower() not in ["ey"]:
             msg = f"Input Electric.component must be ey not {value.component}"
             self.logger.error(msg)
             raise ValueError(msg)
         self._ey.from_dict(value.to_dict())
-    
+
     @property
     def hx(self):
         return self._hx
-    
+
     @hx.setter
     def hx(self, value):
         if not isinstance(value, Magnetic):
@@ -1752,16 +1784,16 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Magnetic object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['hx']:
+        elif value.component.lower() not in ["hx"]:
             msg = f"Input Magnetic.component must be hx not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._hx.from_dict(value.to_dict())
-    
+
     @property
     def hy(self):
         return self._hy
-    
+
     @hy.setter
     def hy(self, value):
         if not isinstance(value, Magnetic):
@@ -1771,16 +1803,16 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Magnetic object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['hy']:
+        elif value.component.lower() not in ["hy"]:
             msg = f"Input Magnetic.component must be hy not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._hy.from_dict(value.to_dict())
-    
+
     @property
     def hz(self):
         return self._hz
-    
+
     @hz.setter
     def hz(self, value):
         if not isinstance(value, Magnetic):
@@ -1790,16 +1822,16 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Magnetic object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['hz']:
+        elif value.component.lower() not in ["hz"]:
             msg = f"Input Magnetic.component must be hz not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._hz.from_dict(value.to_dict())
-        
+
     @property
     def rrhx(self):
         return self._rrhx
-    
+
     @rrhx.setter
     def rrhx(self, value):
         if not isinstance(value, Magnetic):
@@ -1809,16 +1841,16 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Magnetic object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['rrhx']:
+        elif value.component.lower() not in ["rrhx"]:
             msg = f"Input Magnetic.component must be rrhx not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._rrhx.from_dict(value.to_dict())
-        
+
     @property
     def rrhy(self):
         return self._rrhy
-    
+
     @rrhy.setter
     def rrhy(self, value):
         if not isinstance(value, Magnetic):
@@ -1828,30 +1860,27 @@ class Run(Base):
         if value.component is None:
             msg = "assuming initial empty Magnetic object"
             self.logger.debug(msg)
-        elif value.component.lower() not in ['rrhy']:
+        elif value.component.lower() not in ["rrhy"]:
             msg = f"Input Magnetic.component must be rrhy not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._rrhy.from_dict(value.to_dict())
-    
+
     @property
     def temperature(self):
         return self._temperature
-    
+
     @temperature.setter
     def temperature(self, value):
         if not isinstance(value, Auxiliary):
             msg = f"Input must be metadata.Magnetic not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value.component.lower() not in ['temperature']:
+        if value.component.lower() not in ["temperature"]:
             msg = f"Input Auxiliary.component must be temperature not {value.component}"
             self.logger.error(ValueError)
             raise ValueError(msg)
         self._temperature.from_dict(value.to_dict())
-    
-    
-    
 
 
 # =============================================================================
@@ -1936,7 +1965,3 @@ class Magnetic(Channel):
         self.type = "magnetic"
 
         self._attr_dict = ATTR_DICT["magnetic"]
-
-
-        
-

@@ -49,7 +49,7 @@ class TestOccam1D(TestCase):
 
     def setUp(self):
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = os.path.join(SAMPLE_DIR, 'Occam1d')
+        self._expected_output_dir = os.path.join(SAMPLE_DIR, "Occam1d")
 
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
@@ -70,27 +70,32 @@ class TestOccam1D(TestCase):
         # create data file
         ocd = mtoc1d.Data()  # create an object and assign values to arguments
 
-        ocd.write_data_file(edi_file=path2edifile,
-                            mode='det',
-                            # mode, can be te, tm, det (for res/phase) or tez, tmz, zdet for real/imag impedance tensor values
-                            save_path=tmp_save_path,
-                            res_errorfloor=5,  # percent error floor
-                            phase_errorfloor=1,  # error floor in degrees
-                            z_errorfloor=2.5,
-                            remove_outofquadrant=True)
+        ocd.write_data_file(
+            edi_file=path2edifile,
+            mode="det",
+            # mode, can be te, tm, det (for res/phase) or tez, tmz, zdet for real/imag impedance tensor values
+            save_path=tmp_save_path,
+            res_errorfloor=5,  # percent error floor
+            phase_errorfloor=1,  # error floor in degrees
+            z_errorfloor=2.5,
+            remove_outofquadrant=True,
+        )
 
         # create model file
-        ocm = mtoc1d.Model(n_layers=100,  # number of layers
-                           target_depth=10000,  # target depth in metres, before padding
-                           z1_layer=10  # first layer thickness in metres
-                           )
+        ocm = mtoc1d.Model(
+            n_layers=100,  # number of layers
+            target_depth=10000,  # target depth in metres, before padding
+            z1_layer=10,  # first layer thickness in metres
+        )
         ocm.write_model_file(save_path=tmp_save_path)
 
         # create startup file
-        ocs = mtoc1d.Startup(data_fn=ocd.data_fn,  # basename of data file *default* is Occam1DDataFile
-                             model_fn=ocm.model_fn,  # basename for model file *default* is Model1D
-                             max_iter=200,  # maximum number of iterations to run
-                             target_rms=0.0)
+        ocs = mtoc1d.Startup(
+            data_fn=ocd.data_fn,  # basename of data file *default* is Occam1DDataFile
+            model_fn=ocm.model_fn,  # basename for model file *default* is Model1D
+            max_iter=200,  # maximum number of iterations to run
+            target_rms=0.0,
+        )
 
         ocs.write_startup_file()
 
@@ -99,51 +104,67 @@ class TestOccam1D(TestCase):
     def test_fun1(self):
         """ use the same pb23c.edi to reproduce previous run results"""
 
-        outdir = self._main_func(os.path.join(EDI_DATA_DIR, 'pb23c.edi'))
+        outdir = self._main_func(os.path.join(EDI_DATA_DIR, "pb23c.edi"))
 
         for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
             output_data_file = os.path.join(outdir, afile)
-            self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
+            self.assertTrue(
+                os.path.isfile(output_data_file), "output data file not found"
+            )
 
             expected_data_file = os.path.join(self._expected_output_dir, afile)
 
-            self.assertTrue(os.path.isfile(expected_data_file),
-                            "Ref output data file does not exist, nothing to compare with"
-                            )
-            is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file, ignores=["Date/Time"])
+            self.assertTrue(
+                os.path.isfile(expected_data_file),
+                "Ref output data file does not exist, nothing to compare with",
+            )
+            is_identical, msg = tests.modeling.diff_files(
+                output_data_file, expected_data_file, ignores=["Date/Time"]
+            )
 
             print(msg)
-            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
+            self.assertTrue(
+                is_identical, "The output file is not the same with the baseline file."
+            )
 
     def test_fun2(self):
         """ another test edi case: The output files should be different !!!"""
 
         # outdir = self._main_func(r'E:/Githubz/mtpy/examples/data/edi_files/pb25c.edi')
-        outdir = self._main_func(os.path.join(EDI_DATA_DIR, 'pb25c.edi'))
+        outdir = self._main_func(os.path.join(EDI_DATA_DIR, "pb25c.edi"))
 
         # for afile in ("Model1D", "Occam1d_DataFile_DET.dat", "OccamStartup1D"):
-        for afile in ["Occam1d_DataFile_DET.dat"]:  # only one file is different, the other 2 files same?
+        for afile in [
+            "Occam1d_DataFile_DET.dat"
+        ]:  # only one file is different, the other 2 files same?
 
             output_data_file = os.path.join(outdir, afile)
-            self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
+            self.assertTrue(
+                os.path.isfile(output_data_file), "output data file not found"
+            )
 
             expected_data_file = os.path.join(self._expected_output_dir, afile)
 
-            self.assertTrue(os.path.isfile(expected_data_file),
-                            "Ref output data file does not exist, nothing to compare with"
-                            )
+            self.assertTrue(
+                os.path.isfile(expected_data_file),
+                "Ref output data file does not exist, nothing to compare with",
+            )
 
-            is_identical, msg = tests.modeling.diff_files(output_data_file, expected_data_file)
+            is_identical, msg = tests.modeling.diff_files(
+                output_data_file, expected_data_file
+            )
             print(msg)
-            self.assertFalse(is_identical, "The output file is the same with the baseline file.")
+            self.assertFalse(
+                is_identical, "The output file is the same with the baseline file."
+            )
 
     def test_view_outputs(self):
         # FZ's workdir
         savepath = self._temp_dir
 
         # model and data file names
-        modelfn = os.path.join(self._expected_output_dir, 'Model1D')
-        datafn = os.path.join(self._expected_output_dir, 'Occam1d_DataFile_DET.dat')
+        modelfn = os.path.join(self._expected_output_dir, "Model1D")
+        datafn = os.path.join(self._expected_output_dir, "Occam1d_DataFile_DET.dat")
 
         # list of all the 'smooth' files, exclude the log file
         fn_list = np.array([ff for ff in os.listdir(self._expected_output_dir)])
@@ -151,8 +172,8 @@ class TestOccam1D(TestCase):
         # go to model results directory and find the latest iteration file
         # iterfile = 'ITER_135.iter'
         # respfile = 'ITER_135.resp'
-        iterfile = 'ITER_97.iter'
-        respfile = 'ITER_97.resp'
+        iterfile = "ITER_97.iter"
+        respfile = "ITER_97.resp"
 
         # get maximum iteration
         iterfn = os.path.join(self._expected_output_dir, iterfile)
@@ -168,20 +189,21 @@ class TestOccam1D(TestCase):
         oc1d.read_resp_file(resp_fn=respfn, data_fn=datafn)
 
         # plot the model output
-        pr = mtoc1d.Plot1DResponse(data_te_fn=datafn,
-                                   data_tm_fn=datafn,
-                                   model_fn=modelfn,
-                                   resp_te_fn=respfn,
-                                   iter_te_fn=iterfn,
-                                   depth_limits=(0, 1)
-                                   )
+        pr = mtoc1d.Plot1DResponse(
+            data_te_fn=datafn,
+            data_tm_fn=datafn,
+            model_fn=modelfn,
+            resp_te_fn=respfn,
+            iter_te_fn=iterfn,
+            depth_limits=(0, 1),
+        )
         pr.axm.set_xlim(1e-1, 1e3)
         pr.axr.set_ylim(1, 100)
 
-        p2file = os.path.join(savepath, 'occam1dplot.png')
-        pr.save_figure(p2file, close_plot='n')
+        p2file = os.path.join(savepath, "occam1dplot.png")
+        pr.save_figure(p2file, close_plot="n")
 
         tests.imaging.plt_wait(1)
         tests.imaging.plt_close()
 
-        assert(os.path.exists(p2file))
+        assert os.path.exists(p2file)

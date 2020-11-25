@@ -4,16 +4,16 @@ import sys
 import os.path as op
 import time
 
-station_names = ['01']
+station_names = ["01"]
 
 # station_names = ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19',
 # '20','21','22','23','24','25']
 
 
-lo_subfolders = ['/media/Elements2/KEX01_32gig/']
+lo_subfolders = ["/media/Elements2/KEX01_32gig/"]
 
 
-dates = ['2014-01-30-at-13-00-00']
+dates = ["2014-01-30-at-13-00-00"]
 # ,'2014-01-17-at-13-00-00','2014-01-18-at-13-00-00',
 # '2014-01-19-at-13-00-00','2014-01-20-at-13-00-00','2014-01-21-at-13-00-00','2014-01-22-at-13-00-00',
 # '2014-01-23-at-13-00-00','2014-01-24-at-13-00-00','2014-01-25-at-13-00-00','2014-01-26-at-13-00-00','2014-01-27-at-13-00-00',
@@ -35,25 +35,25 @@ channels = [(0, 1)]
 # (0,1),(0,1),(0,1),(0,1),(0,1),(0,1)]
 
 
-outputbase = '/stash/elogger/L101_30_Jan_Test/400000_detrend_removed'
+outputbase = "/stash/elogger/L101_30_Jan_Test/400000_detrend_removed"
 
 channelsB = (0, 1)
 
-dataDirB = '/media/Elements/KEXRR_32gig/RRB/'
+dataDirB = "/media/Elements/KEXRR_32gig/RRB/"
 
 channelsC = (0, 1)
 
-dataDirC = '/media/Elements2/KEX01_32gig/L125_Blogger/'
+dataDirC = "/media/Elements2/KEX01_32gig/L125_Blogger/"
 
-prefix = 'L1'
+prefix = "L1"
 
-subfolder_addon = '_RR_B125'
+subfolder_addon = "_RR_B125"
 
 for idx_s, station in enumerate(station_names):
 
     dataDirA = op.join(lo_subfolders[0], prefix + station)
 
-    subfoldername = '{0}{1}{2}'.format(prefix, station, subfolder_addon)
+    subfoldername = "{0}{1}{2}".format(prefix, station, subfolder_addon)
 
     subfolder = op.join(outputbase, subfoldername)
     if not op.isdir(subfolder):
@@ -76,7 +76,8 @@ for idx_s, station in enumerate(station_names):
                 channelsB,
                 channelsC,
                 timestamp,
-                subfolder)
+                subfolder,
+            )
             # sys.exit()
         except:
             continue
