@@ -133,27 +133,27 @@ class ResPhase(object):
         """
         Set values for resistivity (res - in Ohm m) and phase
         (phase - in degrees), including error propagation.
-
-
+    
+    
         :param res_array: resistivity array in Ohm-m
         :type res_array: np.ndarray(num_freq, 2, 2)
-
+    
         :param phase_array: phase array in degrees
         :type phase_array: np.ndarray(num_freq, 2, 2)
-
+    
         :param freq: frequency array in Hz
         :type freq: np.ndarray(num_freq)
-
+    
         :param res_err_array: resistivity error array in Ohm-m
         :type res_err_array: np.ndarray(num_freq, 2, 2)
-
+    
         :param phase_err_array: phase error array in degrees
         :type phase_err_array: np.ndarray(num_freq, 2, 2)
-
-
+    
+    
         """
 
-       self._logger.debug('Resetting z and z_err')
+        self._logger.debug('Resetting z and z_err')
 
         self._resistivity = res_array
         self._phase = phase_array

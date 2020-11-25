@@ -512,7 +512,7 @@ class Data(object):
         if self.period_list is not None:
             self.logger.debug(
                 "Inverting periods "
-                + ", ".join([f"{pp:.5E}" for pp in self.period_list()])
+                + ", ".join([f"{pp:.5E}" for pp in self.period_list])
             )
             return
 
