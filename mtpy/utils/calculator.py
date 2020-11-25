@@ -27,7 +27,6 @@ epsilon = 1e-9
 #magnetic permeability in free space in H/m (=Vs/Am)
 mu0 = 4e-7*math.pi
 
-
 #=================================================================
 
 def centre_point(xarray, yarray):

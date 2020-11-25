@@ -480,11 +480,8 @@ class Data(object):
             self.get_mt_dict()
 
         if self.period_list is not None:
-            print('-' * 50)
-            print('Inverting for periods:')
-            for per in self.period_list:
-                print('     {0:<12.6f}'.format(per))
-            print('-' * 50)
+            self.logger.debug("Inverting periods " + 
+                              ", ".join([f"{pp:.5E}" for pp in self.period_list()]))
             return
 
         data_period_list = []
@@ -751,7 +748,6 @@ class Data(object):
                     mt_obj.Tipper = interp_t
                     mt_obj.write_mt_file(
                         save_dir=new_edi_dir,
-                        fn_basename=mt_obj.station,
                         file_type='edi',
                         longitude_format=longitude_format)
             else:

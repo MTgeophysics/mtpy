@@ -13,10 +13,12 @@ Residual Phase Tensor following Heise et al., [2008]
 (LK)
 
 Revised by Peacock, 2016
+Added logging 2020 (Peacock)
 
 """
 
 import copy
+import logging
 
 import numpy as np
 
@@ -70,16 +72,17 @@ class PhaseTensor(object):
         self._z_err = z_err_array
         self._freq = freq
         self.rotation_angle = pt_rot
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # if a z object is input be sure to set the z and z_err so that the
         # pt will be calculated
-        # print type(z_object)==type(MTz.Z()),isinstance(z_object, MTz.Z)
+        # self.logger.error type(z_object)==type(MTz.Z()),isinstance(z_object, MTz.Z)
         # if isinstance(z_object, MTz.Z):
         if z_object is not None:
             try:
                 self.set_z_object(z_object)
             except:
-                print('\tWarning - could not digest provided Z-Object')
+                self.logger.warning('Could not digest provided Z-Object')
 
         elif z_array is not None:
 
@@ -88,7 +91,7 @@ class PhaseTensor(object):
             except:
                 self._z = None
                 self._z_err = None
-                print('Can not calculate pt from z==None')
+                self.logger.warning('Can not calculate pt from z==None')
 
             if z_err_array is not None:
 
@@ -100,7 +103,7 @@ class PhaseTensor(object):
                     pass
 
         if self._freq is None:
-            print('Should input a freq array to know which index of the' + \
+            self.logger.warning('Should input a freq array to know which index of the' + \
                   ' PT array corresponds to which freq.')
 
     # ==========================================================================
@@ -152,7 +155,7 @@ class PhaseTensor(object):
                     raise MTex.MTpyError_inputarguments('pt and pt_err are not'+\
                                                         ' the same shape')
             except:
-                print('Shape of new PT array and existing pt_error do not match'+\
+                self.logger.warning('Shape of new PT array and existing pt_error do not match'+\
                       '- setting pt_error to "None"')
                 self._pt_err = None
             try:
@@ -160,7 +163,7 @@ class PhaseTensor(object):
                     raise MTex.MTpyError_inputarguments('pt and freq are' + \
                                                         'not the same shape')
             except:
-                print('Shape of new PT array and existing "freq" do not' + \
+                self.logger.warning('Shape of new PT array and existing "freq" do not' + \
                       'match - setting freq to "None"')
                 self._freq = None
             try:
@@ -168,7 +171,7 @@ class PhaseTensor(object):
                     raise MTex.MTpyError_inputarguments('pt and rotation angles' + \
                                                         'are not the same shape')
             except:
-                print('Shape of new PT array and existing "Rotation_angle" do ' + \
+                self.logger.warning('Shape of new PT array and existing "Rotation_angle" do ' + \
                       'not match - setting rotation_angle to "None"')
                 self.rotation_angle = None
 
@@ -243,7 +246,7 @@ class PhaseTensor(object):
         if (self._pt is not None):
             if lo_freq is not None:
                 if (len(lo_freq) is not len(self._pt)):
-                    print('length of freq list not correct' + \
+                    self.logger.warning('length of freq list not correct' + \
                           '(%i instead of %i)' % (len(lo_freq),
                                                   len(self._pt)))
                     return
@@ -278,11 +281,11 @@ class PhaseTensor(object):
                                                              self._z_err[idx_f])
                 except MTex.MTpyError_PT:
                     try:
-                        print('Singular Matrix at {0:.5g} Hz'.format(
+                        self.logger.debug('Singular Matrix at {0:.5g} Hz'.format(
                             self._freq[idx_f]))
                     except AttributeError:
-                        print('Computed singular matrix')
-                        print('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
+                        self.logger.debug('Computed singular matrix')
+                        self.logger.debug('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
 
         # --> if there is not error to the impedance tensor
         else:
@@ -291,11 +294,11 @@ class PhaseTensor(object):
                     self._pt[idx_f] = z2pt(self._z[idx_f])[0]
                 except MTex.MTpyError_PT:
                     try:
-                        print('Singular Matrix at {0:.5g}'.format(
+                        self.logger.debug('Singular Matrix at {0:.5g}'.format(
                             self._freq[idx_f]))
                     except AttributeError:
-                        print('Computed singular matrix')
-                        print('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
+                        self.logger.debug('Computed singular matrix')
+                        self.logger.debug('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
 
         self.rotation_angle = z_object.rotation_angle
 
@@ -327,11 +330,11 @@ class PhaseTensor(object):
                                                              self._z_err[idx_f])
                 except MTex.MTpyError_PT:
                     try:
-                        print('Singular Matrix at {0:.5g} Hz'.format(
+                        self.logger.debug('Singular Matrix at {0:.5g} Hz'.format(
                             self._freq[idx_f]))
                     except AttributeError:
-                        print('Computed singular matrix')
-                        print('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
+                        self.logger.debug('Computed singular matrix')
+                        self.logger.debug('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
 
         # --> if there is not error to the impedance tensor
         elif self._z is not None:
@@ -340,11 +343,11 @@ class PhaseTensor(object):
                     self._pt[idx_f] = z2pt(self._z[idx_f])[0]
                 except MTex.MTpyError_PT:
                     try:
-                        print('Singular Matrix at {0:.5g}'.format(
+                        self.logger.debug('Singular Matrix at {0:.5g}'.format(
                             self._freq[idx_f]))
                     except AttributeError:
-                        print('Computed singular matrix')
-                        print('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
+                        self.logger.debug('Computed singular matrix')
+                        self.logger.debug('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
 
     # def _get_z(self):
     #     return self._z
@@ -360,7 +363,7 @@ class PhaseTensor(object):
 
         self._z_err = z_err_array
         if self._z.shape != self._z_err.shape:
-            print('z and z_err are not the not the same shape, setting ' + \
+            self.logger.warning('z and z_err are not the not the same shape, setting ' + \
                   'z_err to None')
 
         self._pt = np.zeros_like(self._z, dtype=np.float)
@@ -373,11 +376,11 @@ class PhaseTensor(object):
                                                              self._z_err[idx_f])
                 except MTex.MTpyError_PT:
                     try:
-                        print('Singular Matrix at {0:.5g} Hz'.format(
+                        self.logger.debug('Singular Matrix at {0:.5g} Hz'.format(
                             self._freq[idx_f]))
                     except AttributeError:
-                        print('Computed singular matrix')
-                        print('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
+                        self.logger.debug('Computed singular matrix')
+                        self.logger.debug('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
 
             # --> if there is not error to the impedance tensor
             else:
@@ -386,11 +389,11 @@ class PhaseTensor(object):
                         self._pt[idx_f] = z2pt(self._z[idx_f])[0]
                     except MTex.MTpyError_PT:
                         try:
-                            print('Singular Matrix at {0:.5g}'.format(
+                            self.logger.debug('Singular Matrix at {0:.5g}'.format(
                                 self._freq[idx_f]))
                         except AttributeError:
-                            print('Computed singular matrix')
-                            print('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
+                            self.logger.debug('Computed singular matrix')
+                            self.logger.debug('  --> pt[{0}]=np.zeros((2,2))'.format(idx_f))
 
     # def _get_z_err(self):
     #     return self._z_err
@@ -766,7 +769,7 @@ class PhaseTensor(object):
         """
 
         if self._pt is None :
-            print('pt-array is "None" - I cannot rotate that')
+            self.logger.warning('pt-array is "None" - I cannot rotate that')
             return
 
         if np.iterable(self.rotation_angle) == 0:
@@ -779,7 +782,7 @@ class PhaseTensor(object):
             try:
                 degreeangle = float(alpha % 360)
             except:
-                print('"Angle" must be a valid number (in degrees)')
+                self.logger.warning('"Angle" must be a valid number (in degrees)')
                 return
 
             # make an n long list of identical angles
@@ -789,7 +792,7 @@ class PhaseTensor(object):
                 try:
                     degreeangle = float(alpha % 360)
                 except:
-                    print('"Angle" must be a valid number (in degrees)')
+                    self.logger.warning('"Angle" must be a valid number (in degrees)')
                     return
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for i in self.pt]
@@ -797,14 +800,14 @@ class PhaseTensor(object):
                 try:
                     lo_angles = [float(i % 360) for i in alpha]
                 except:
-                    print('"Angles" must be valid numbers (in degrees)')
+                    self.logger.warning('"Angles" must be valid numbers (in degrees)')
                     return
 
         self.rotation_angle = list((np.array(lo_angles) + \
                                     np.array(self.rotation_angle)) % 360)
 
         if len(lo_angles) != len(self._pt):
-            print('Wrong number Number of "angles" - need %i ' % (len(self._pt)))
+            self.logger.warning('Wrong number Number of "angles" - need %i ' % (len(self._pt)))
             self.rotation_angle = 0.
             return
 
@@ -909,7 +912,7 @@ class ResidualPhaseTensor():
         if pt_object1 is not None or  pt_object2 is not None:
             if not ((isinstance(pt_object1, PhaseTensor) and\
                      isinstance(pt_object2, PhaseTensor))):
-                print(type(pt_object1), type(pt_object2))
+                self.logger.warning(type(pt_object1), type(pt_object2))
                 raise MTex.MTpyError_PT('ERROR - arguments must be instances '
                                         'of the PhaseTensor class')
 
@@ -982,7 +985,7 @@ class ResidualPhaseTensor():
                     self.rpt = pt1 - pt2
 
         else:
-            print  ('Could not determine ResPT - both PhaseTensor objects must'
+            self.logger.warning  ('Could not determine ResPT - both PhaseTensor objects must'
                     'contain PT arrays of the same shape')
 
 
@@ -1066,7 +1069,7 @@ class ResidualPhaseTensor():
                                         'contain PT-error arrays of the same shape')
 
         else:
-            print  ('Could not determine Residual PT uncertainties - both'
+            self.logger.warning  ('Could not determine Residual PT uncertainties - both'
                     ' PhaseTensor objects must contain PT-error arrays of the'
                     'same shape')
 
@@ -1113,7 +1116,7 @@ class ResidualPhaseTensor():
 
         """
         if (self.rpt is not None) and (self.rpt.shape != rpt_array.shape):
-            print('Error - shape of "ResPT" array does not match shape of existing rpt array: %s ; %s' % (
+            self.logger.error('Shape of "ResPT" array does not match shape of existing rpt array: %s ; %s' % (
                 str(rpt_array.shape), str(self.rpt.shape)))
             return
 
@@ -1135,7 +1138,7 @@ class ResidualPhaseTensor():
 
         """
         if (self.rpt_err is not None) and (self.rpt_err.shape != rpt_err_array.shape):
-            print('Error - shape of "ResPT-error" array does not match shape of existing rpt_err array: %s ; %s'%(str(rpt_err_array.shape),str(self.rpt_err.shape)))
+            self.logger.error('Error - shape of "ResPT-error" array does not match shape of existing rpt_err array: %s ; %s'%(str(rpt_err_array.shape),str(self.rpt_err.shape)))
             return
 
         self.rpt_err = rpt_err_array

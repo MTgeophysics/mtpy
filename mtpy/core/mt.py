@@ -768,9 +768,11 @@ class MT(object):
 
         if fn_basename is not None:
             fn_basename = Path(fn_basename)
+            if fn_basename.suffix in ['', None]:
+                fn_basename += f".{file_type}"
             
         if fn_basename is None:
-            fn_basename = Path(f"{self.station}.edi")
+            fn_basename = Path(f"{self.station}.{file_type}")
         
         if file_type is None:
             file_type = fn_basename.suffix.lower()[1:]

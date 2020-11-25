@@ -153,7 +153,7 @@ class ResPhase(object):
 
         """
 
-        print('Resetting z and z_err')
+       self._logger.debug('Resetting z and z_err')
 
         self._resistivity = res_array
         self._phase = phase_array
@@ -443,7 +443,7 @@ class Z(ResPhase):
                     try:
                         self.compute_resistivity_phase()
                     except IndexError:
-                        print('Need to input frequency array')
+                        self._logger.warning('Need to input frequency array')
 
     # ----impedance tensor -----------------------------------------------------
     @property
