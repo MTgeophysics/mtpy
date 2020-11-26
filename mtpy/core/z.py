@@ -4,25 +4,23 @@
 .. module:: Z
    :synopsis: Deal with MT responses Z and Tipper
 
-.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov>
+.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov> 
 .. moduleauthor:: Lars Krieger
+
+Updated 11/2020 for logging and formating.
 """
 
+# =================================================================
 import cmath
 import copy
 import math
+import logging
 
-# =================================================================
 import numpy as np
 
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 from mtpy.utils.mtpylog import MtPyLog
-
-
-# get a logger object for this module, using the utility class MtPyLog to
-# config the logger
-# _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # ==============================================================================
@@ -34,7 +32,7 @@ class ResPhase(object):
     """
 
     def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         self._z = z_array
         self._z_err = z_err_array
@@ -45,10 +43,30 @@ class ResPhase(object):
         self._resistivity_err = None
         self._phase_err = None
 
-        self.freq = freq
+        self._freq = freq
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
+            
+    def __str__(self):
+        lines = ["Resistivity and Phase", "-" * 30]
+        if self.freq is not None:
+            lines.append(f"\tNumber of frequencies:  {self.freq.size}")
+            lines.append(f"\tFrequency range:        {self.freq.min():.5E} -- {self.freq.max():.5E} Hz")
+            lines.append(f"\tPeriod range:           {1/self.freq.max():.5E} -- {1/self.freq.min():.5E} s")
+
+        return '\n'.join(lines)
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    @property
+    def freq(self):
+        return self._freq
+    
+    @freq.setter
+    def freq(self, value):
+        self._freq = value
 
     @property
     def resistivity(self):
@@ -95,9 +113,14 @@ class ResPhase(object):
         if freq is not None:
             self.freq = freq
 
-        #if self._z is None or self._z_err is None or self.freq is None: #The _z_err can be None!!!
+        # The _z_err can be None!!!
         if self._z is None or self.freq is None:
-            raise MT_Z_Error('Values are None, check _z, _z_err, freq')
+            if self._z is None:
+                msg = "z values are None, cannot compute parameters"
+            elif self._freq is None:
+                msg = "freq values are None, cannot compute parameters" 
+            self._logger.error(msg)
+            raise MT_Z_Error(msg)
 
         self._resistivity = np.apply_along_axis(lambda x: np.abs(x) ** 2 / self.freq * 0.2,
                                                 0, self._z)
@@ -111,21 +134,12 @@ class ResPhase(object):
             for idx_f in range(self.freq.size):
                 for ii in range(2):
                     for jj in range(2):
-#                        r_err, phi_err = MTcc.z_error2r_phi_error(
-#                            np.real(self._z[idx_f, ii, jj]),
-#                            self._z_err[idx_f, ii, jj],
-#                            np.imag(self._z[idx_f, ii, jj]),
-#                            self._z_err[idx_f, ii, jj])
-
                         r_err, phi_err = MTcc.z_error2r_phi_error(
                                 self._z[idx_f, ii, jj].real,
                                 self._z[idx_f, ii, jj].imag,
                                 self._z_err[idx_f, ii, jj])
                         self._resistivity_err[idx_f, ii, jj] = \
                             self._resistivity[idx_f, ii, jj] * r_err
-#                        self._resistivity_err[idx_f, ii, jj] = \
-#                            0.4 * np.abs(self._z[idx_f, ii, jj]) / \
-#                            self.freq[idx_f] * r_err
                         self._phase_err[idx_f, ii, jj] = phi_err
 
     def set_res_phase(self, res_array, phase_array, freq, res_err_array=None,
@@ -163,12 +177,14 @@ class ResPhase(object):
 
         # assert real array:
         if np.linalg.norm(np.imag(res_array)) != 0:
-            raise MTex.MTpyError_inputarguments('Error - array "res" is not' + \
-                                                'real valued !')
+            msg = "Resistivity is not real valued"
+            self._logger.error(msg)
+            raise MTex.MTpyError_inputarguments(msg)
 
         if np.linalg.norm(np.imag(phase_array)) != 0:
-            raise MTex.MTpyError_inputarguments('Error - array "phase" is' + \
-                                                'not real valued !')
+            msg = "Phase is not real valued"
+            self._logger.error(msg)
+            raise MTex.MTpyError_inputarguments(msg)
 
         abs_z = np.sqrt(5.0 * self.freq * (self.resistivity.T)).T
         self._z = abs_z * np.exp(1j * np.radians(self.phase))
@@ -383,11 +399,7 @@ class Z(ResPhase):
         Initialises the attributes with None
         """
 
-        ResPhase.__init__(self)
-
-        self._z = z_array
-        self._z_err = z_err_array
-        self._freq = freq
+        super().__init__(z_array=z_array, z_err_array=z_err_array, freq=freq)
 
         if z_array is not None:
             if len(z_array.shape) == 2 and z_array.shape == (2, 2):
@@ -405,8 +417,28 @@ class Z(ResPhase):
         if self._z is not None:
             self.rotation_angle = np.zeros((len(self._z)))
 
-        if self._z is not None:
+        if self._z is not None and self._freq is not None:
             self.compute_resistivity_phase()
+            
+    def __str__(self):
+        lines = ["Impedance Tensor", "-" * 30]
+        if self.freq is not None:
+            lines.append(f"\tNumber of frequencies:  {self.freq.size}")
+            lines.append(f"\tFrequency range:        {self.freq.min():.5E} -- {self.freq.max():.5E} Hz")
+            lines.append(f"\tPeriod range:           {1/self.freq.max():.5E} -- {1/self.freq.min():.5E} s")
+            lines.append("")
+            lines.append("\tElements:")
+            for zz, ff in zip(self.z, self.freq):
+                lines.append(f"\tFrequency: {ff:5E} Hz -- Period {1/ff} s")
+                lines.append("\t\t" + np.array2string(zz, 
+                                                    formatter={'complex_kind':lambda x: f"{x.real:.4e}{x.imag:+.4E}"}).replace("\n", "\n\t\t"))
+                
+            
+                
+        return '\n'.join(lines)
+    
+    def __repr__(self):
+        return self.__str__()
 
     # ---frequency-------------------------------------------------------------
     @property
@@ -435,15 +467,16 @@ class Z(ResPhase):
         if self.z is not None:
             if len(self.z.shape) == 3:
                 if self._freq.size != len(self.z):
-                    self._logger.warn('length of freq list/array not correct'
-                                      '({0} instead of {1})'.format(self._freq.size,
-                                                                    len(self.z)))
+                    msg = ("New freq array is not correct shape for existing z" +
+                           "new: {self._freq.size} != old: {self.z.shape[0]}")
+                    self._logger.warning(msg)
                     return
                 else:
                     try:
                         self.compute_resistivity_phase()
                     except IndexError:
-                        self._logger.warning('Need to input frequency array')
+                        msg = "Need to input frequency array to calculate parameters" 
+                        self._logger.warning(msg)
 
     # ----impedance tensor -----------------------------------------------------
     @property
@@ -469,6 +502,8 @@ class Z(ResPhase):
         Nulling the rotation_angle
         """
 
+        if not isinstance(z_array, np.ndarray):
+            z_array = np.array(z_array)
         try:
             if len(z_array.shape) == 3 and z_array.shape[1:3] == (2, 2):
                 if z_array.dtype in ['complex', 'float', 'int']:
@@ -480,18 +515,18 @@ class Z(ResPhase):
                         self._z = np.zeros((1, 2, 2), 'complex')
                         self._z[0] = z_array
             except IndexError:
-                self._logger.error('provided Z array does not have correct dimensions- Z unchanged')
+                msg = f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)" 
+                self._logger.error(msg)
+                raise MT_Z_Error(msg)
 
         if isinstance(self.rotation_angle, float):
             self.rotation_angle = np.repeat(self.rotation_angle,
                                             len(self._z))
 
         # for consistency recalculate resistivity and phase
-        if self._z is not None and self._z_err is not None:
-            try:
-                self.compute_resistivity_phase()
-            except IndexError:
-                self._logger.error('Need to input frequency array')
+        if self._z is not None and self._freq is not None:
+           self.compute_resistivity_phase()
+
 
     # ----impedance error-----------------------------------------------------
     @property
@@ -513,11 +548,8 @@ class Z(ResPhase):
         self._z_err = z_err_array
 
         # for consistency recalculate resistivity and phase
-        if self._z_err is not None and self._z is not None:
-            try:
-                self.compute_resistivity_phase()
-            except IndexError:
-                self._logger.error('Need to input frequency array')
+        if self._z_err is not None and self._z is not None and self._freq is not None:
+            self.compute_resistivity_phase()
 
     @property
     def inverse(self):
@@ -537,8 +569,8 @@ class Z(ResPhase):
             try:
                 inverse[idx_f, :, :] = np.array((np.matrix(self.z[idx_f, :, :])).I)
             except:
-                raise MTex.MTpyError_Z('The {0}ith impedance'.format(idx_f + 1) + \
-                                       'tensor cannot be inverted')
+                msg = f'The {idx_f + 1}ith impedance tensor cannot be inverted'
+                raise MTex.MTpyError_Z(msg)
 
         return inverse
 
@@ -564,7 +596,7 @@ class Z(ResPhase):
         """
 
         if self.z is None:
-            self._logger.warn('Z array is "None" - I cannot rotate that')
+            self._logger.warning('Z array is "None" and cannot be rotated')
             return
 
         # check for iterable list/set of angles - if so, it must have length
@@ -573,8 +605,9 @@ class Z(ResPhase):
             try:
                 degreeangle = float(alpha % 360)
             except ValueError:
-                self._logger.error('"Angle" must be a valid number (in degrees)')
-                return
+                msg = f'Angle must be a valid number (in degrees) not {alpha}'
+                self._logger.error(msg)
+                raise MT_Z_Error(msg)
 
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.z]
@@ -583,24 +616,26 @@ class Z(ResPhase):
                 try:
                     degreeangle = float(alpha % 360)
                 except ValueError:
-                    self._logger.error('"Angle" must be a valid number (in degrees)')
-                    return
+                    msg = f'Angle must be a valid number (in degrees) not {alpha}'
+                    self._logger.error(msg)
+                    raise MT_Z_Error(msg)
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.z]
             else:
                 try:
                     lo_angles = [float(ii % 360) for ii in alpha]
                 except ValueError:
-                    self._logger.error('"Angles" must be valid numbers (in degrees)')
-                    return
+                    msg = f'Angle must be a valid number (in degrees) not {alpha}'
+                    self._logger.error(msg)
+                    raise MT_Z_Error(msg)
 
         self.rotation_angle = np.array([(oldangle + lo_angles[ii]) % 360
                                         for ii, oldangle in enumerate(self.rotation_angle)])
 
         if len(lo_angles) != len(self.z):
-            self._logger.warn('Wrong number of "angles" - I need {0}'.format(len(self.z)))
-            # self.rotation_angle = 0.
-            return
+            msg = f'Wrong number of angles, need {len(self.z)}'
+            self._logger.error(msg)
+            raise MT_Z_Error(msg)
 
         z_rot = copy.copy(self.z)
         z_err_rot = copy.copy(self.z_err)
@@ -672,28 +707,34 @@ class Z(ResPhase):
             try:
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
-                self._logger.error('reduce_res_factor_x must be a valid numbers')
-                return
+                msg = 'reduce_res_factor_x must be a valid number'
+                self._logger.error(msg)
+                raise ValueError(msg)
 
             lo_x_factors = np.repeat(x_factor, len(self.z))
         elif len(reduce_res_factor_x) == 1:
             try:
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
-                self._logger.error('reduce_res_factor_x must be a valid numbers')
-                return
+                msg = 'reduce_res_factor_x must be a valid number'
+                self._logger.error(msg)
+                raise ValueError(msg)
             lo_x_factors = np.repeat(x_factor, len(self.z))
         else:
             try:
                 lo_x_factors = np.repeat(x_factor,
                                          len(reduce_res_factor_x))
             except ValueError:
-                self._logger.error('"reduce_res_factor_x" must be valid numbers')
-                return
+                msg = 'reduce_res_factor_x must be a valid number'
+                self._logger.error(msg)
+                raise ValueError(msg)
 
         if len(lo_x_factors) != len(self.z):
-            self._logger.error('Wrong number Number of reduce_res_factor_x - need {0}'.format(len(self.z)))
-            return
+            msg = (f"Length of reduce_res_factor_x needs to be {len(self.z)}" +
+                   f" not {len(lo_x_factors)}")
+            self._logger.error(msg)
+            raise ValueError(msg)
+
 
         # check for iterable list/set of reduce_res_factor_y - if so,
         # it must have length 1 or same as len(z):
@@ -701,29 +742,33 @@ class Z(ResPhase):
             try:
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
-                self._logger.error('"reduce_res_factor_y" must be a valid numbers')
-                return
+                msg = 'reduce_res_factor_y must be a valid number'
+                self._logger.error(msg)
+                raise ValueError(msg)
 
             lo_y_factors = np.repeat(y_factor, len(self.z))
         elif len(reduce_res_factor_y) == 1:
             try:
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
-                self._logger.error('"reduce_res_factor_y" must be a valid numbers')
-                return
+                msg = 'reduce_res_factor_y must be a valid number'
+                self._logger.error(msg)
+                raise ValueError(msg)
             lo_y_factors = np.repeat(y_factor, len(self.z))
         else:
             try:
                 lo_y_factors = np.repeat(y_factor,
                                          len(reduce_res_factor_y))
             except ValueError:
-                self._logger.error('"reduce_res_factor_y" must be valid numbers')
-                return
+                msg = 'reduce_res_factor_x must be a valid number'
+                self._logger.error(msg)
+                raise ValueError(msg)
 
         if len(lo_y_factors) != len(self.z):
-            self._logger.error('Wrong number Number of "reduce_res_factor_y"' + \
-                               '- need {0} '.format(len(self.z)))
-            return
+            msg = (f"Length of reduce_res_factor_x needs to be {len(self.z)}" +
+                   f" not {len(lo_x_factors)}")
+            self._logger.error(msg)
+            raise ValueError(msg)
 
         z_corrected = copy.copy(self.z)
         static_shift = np.zeros((len(self.z), 2, 2))
@@ -781,7 +826,9 @@ class Z(ResPhase):
         try:
             if not (len(distortion_tensor.shape) in [2, 3]) and \
                     (len(distortion_err_tensor.shape) in [2, 3]):
-                raise ValueError('Shape not the same')
+                msg = "Shapes of distortion tensor and error are not he correct shape"
+                self._logger.error(msg)
+                raise ValueError(msg)
             if len(distortion_tensor.shape) == 3 or \
                             len(distortion_err_tensor.shape) == 3:
                 self._logger.info('Distortion is not time-dependent - take only first' + \
@@ -790,17 +837,21 @@ class Z(ResPhase):
                     distortion_tensor = distortion_tensor[0]
                     distortion_err_tensor = distortion_err_tensor[0]
                 except IndexError:
-                    raise ValueError('distortion tensor the wrong shape')
+                    msg = "Shapes of distortion tensor and error are not he correct shape"
+                    self._logger.error(msg)
+                    raise ValueError(msg)
 
             if not (distortion_tensor.shape == (2, 2)) and \
                     (distortion_err_tensor.shape == (2, 2)):
-                raise ValueError('Shape not the same')
+                msg = "Shapes of distortion tensor and error are not he correct shape"
+                self._logger.error(msg)
+                raise ValueError(msg)
 
             distortion_tensor = np.matrix(np.real(distortion_tensor))
 
         except ValueError:
-            raise MTex.MTpyError_Z('The array provided is not a proper' + \
-                                   'distortion tensor')
+            msg = 'The array provided is not a proper distortion tensor, must be (2, 2)'
+            raise MTex.MTpyError_Z(msg)
 
         try:
             DI = distortion_tensor.I
