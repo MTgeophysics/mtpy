@@ -1,14 +1,26 @@
-from unittest import TestCase
+"""
+Test mtpy.core.z
+
+Updated: Peacock (11/2020)
+    - Adding tests for inputs and coherence
+ 
+"""
+# =============================================================================
+# 
+# =============================================================================
+import unittest
 import numpy as np
+from pathlib import Path
 
 # import pytest
 from tests import TEST_MTPY_ROOT
 from mtpy.core.z import Z, MTZError
 from mtpy.core.mt import MT
-import os
 
-
-class TestOnlyZ(TestCase):
+# =============================================================================
+# Test only Z
+# =============================================================================
+class TestOnlyZ(unittest.TestCase):
     def setUp(self):
         self.z_obj = Z()
         
@@ -21,22 +33,52 @@ class TestOnlyZ(TestCase):
     def test_fail_z_input(self):
         self.assertRaises(MTZError, self.z_obj.z, [[1], [2], [3]])
         
-    def test_lits_input(self):
+    def test_list_input(self):
         self.z_obj.z = [[8, 9], [10, 11]]
         
         self.assertEqual(self.z_obj.z.shape, (1, 2, 2))
         self.assertIn(self.z_obj.z.dtype, ["complex"])
         
+    def test_freq_input(self):
+        
+        self.z_obj.freq = [1, 2, 3]
+        
+        self.assertIsInstance(self.z_obj.freq, np.ndarray)
+        
+    def test_z_err_input(self):
+        self.z_obj.z_err = [[1, 2], [3, 4]]
+        
+        self.assertEqual(self.z_obj.z_err.shape, (1, 2, 2))
+        self.assertIn(self.z_obj.z_err.dtype, ["float"])
+        
+    def test_fail_input_lengths(self):
+        self.z_obj.z = np.random.random((5, 2, 2)) + 1j * np.random.random((5, 2, 2))
+        
+        self.assertRaises(MTZError, self.z_obj.freq, [1, 2])
+        self.assertRaises(MTZError, self.z_obj.z_err, np.random.random((2, 2, 2)))
+        
+    def test_res_phase_calc(self):
+        self.z_obj.z = np.random.random((5, 2, 2)) + 1j * np.random.random((5, 2, 2))
+        self.z_obj.freq = np.logspace(0, 3, 5)
+        self.z_obj.z_err = np.random.random((5, 2, 2))
+        
+        self.assertNotIsInstance(self.z_obj.res_xx, type(None))
+        self.assertNotIsInstance(self.z_obj.phase_xx, type(None))
+        self.assertNotIsInstance(self.z_obj.res_det, type(None))
+        self.assertNotIsInstance(self.z_obj.res_err_xx, type(None))
+        self.assertNotIsInstance(self.z_obj.phase_err_xx, type(None))
+        self.assertNotIsInstance(self.z_obj.res_det_err, type(None))
 
-class TestZ(TestCase):
+# =============================================================================
+# Test input of an edi file
+# =============================================================================
+class TestZ(unittest.TestCase):
     def setUp(self):
-        self.edi_file = os.path.join(TEST_MTPY_ROOT, r"data/BBMT/EGC020A_pho.edi")
-        self.MT = MT(self.edi_file)
+        edi_fn = Path(TEST_MTPY_ROOT, r"data/BBMT/EGC020A_pho.edi")
+        self.MT = MT(edi_fn)
         self.rotation_angle = 30
         self.static_shift_x = 1.2
         self.static_shift_y = 1.5
-        
-
 
     def test_rotate(self):
 
@@ -133,3 +175,9 @@ class TestZ(TestCase):
         )
 
         self.assertTrue(np.all(np.abs(zObj.resistivity / res_test - 1.0) < 1e-6))
+
+# =============================================================================
+# Run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()

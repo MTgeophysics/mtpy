@@ -506,20 +506,15 @@ class Z(ResPhase):
             return None
 
         if self.z is not None:
-            if len(self.z.shape) == 3:
-                if self._freq.size != len(self.z):
-                    msg = (
-                        "New freq array is not correct shape for existing z"
-                        + "new: {self._freq.size} != old: {self.z.shape[0]}"
-                    )
-                    self._logger.warning(msg)
-                    return
-                else:
-                    try:
-                        self.compute_resistivity_phase()
-                    except IndexError:
-                        msg = "Need to input frequency array to calculate parameters"
-                        self._logger.warning(msg)
+            if self.z.shape[0] != len(self._freq):
+                msg = (
+                    "New freq array is not correct shape for existing z"
+                    + "new: {self._freq.size} != old: {self.z.shape[0]}"
+                )
+                self._logger.error(msg)
+                raise MTZError
+
+            self.compute_resistivity_phase()
 
     # ----impedance tensor -----------------------------------------------------
     @property
