@@ -7,7 +7,7 @@
 .. moduleauthor:: Jared Peacock <jpeacock@usgs.gov> 
 .. moduleauthor:: Lars Krieger
 
-Updated 11/2020 for logging and formating.
+Updated 11/2020 for logging and formating (J. Peacock).
     - ToDo: add functionality for covariance matrix
 """
 
@@ -353,41 +353,6 @@ class Z(ResPhase):
                  elements.
     :type freq: np.ndarray(n_freq)
 
-
-    =============== ===========================================================
-    Attributes      Description
-    =============== ===========================================================
-    freq             array of frequencies corresponding to elements of z
-    rotation_angle   angle of which data is rotated by
-    z                impedance tensor
-    z_err             estimated errors of impedance tensor
-    resistivity      apparent resisitivity estimated from z in Ohm-m
-    resistivity_err  apparent resisitivity error
-    phase            impedance phase (deg)
-    phase_err        error in impedance phase
-    =============== ===========================================================
-
-    =================== =======================================================
-    Methods             Description
-    =================== =======================================================
-    det                  calculates determinant of z with errors
-    invariants           calculates the invariants of z
-    inverse              calculates the inverse of z
-    remove_distortion    removes distortion given a distortion matrix
-    remove_ss            removes static shift by assumin Z = S * Z_0
-    norm                 calculates the norm of Z
-    only1d               zeros diagonal components and computes
-                         the absolute valued mean of the off-diagonal
-                         components.
-    only2d               zeros diagonal components
-    res_phase            computes resistivity and phase
-    rotate               rotates z positive clockwise, angle assumes
-                         North is 0.
-    set_res_phase        recalculates z and z_err, needs attribute freq
-    skew                 calculates the invariant skew (off diagonal trace)
-    trace                calculates the trace of z
-    =================== =======================================================
-
     :Example: ::
 
         >>> import mtpy.core.z as mtz
@@ -416,27 +381,20 @@ class Z(ResPhase):
         :type freq: np.ndarray(n_freq)
 
         Initialises the attributes with None
+        
         """
-
-        super().__init__(z_array=z_array, z_err_array=z_err_array, freq=freq)
-
-        if z_array is not None:
-            if len(z_array.shape) == 2 and z_array.shape == (2, 2):
-                if z_array.dtype in ["complex", "float", "int"]:
-                    self._z = np.zeros((1, 2, 2), "complex")
-                    self._z[0] = z_array
-
-        if z_err_array is not None:
-            if len(z_err_array.shape) == 2 and z_err_array.shape == (2, 2):
-                if z_err_array.dtype in ["complex", "float", "int"]:
-                    self._z_err = np.zeros((1, 2, 2), "complex")
-                    self._z_err[0] = z_err_array
-
         self.rotation_angle = 0.0
-        if self._z is not None:
-            self.rotation_angle = np.zeros((len(self._z)))
 
-        if self._z is not None and self._freq is not None:
+        super().__init__()
+        self.z = z_array
+        self.z_err = z_err_array
+        self.freq = freq
+
+        
+        if self.z is not None:
+            self.rotation_angle = np.zeros((len(self.z)))
+
+        if self.z is not None and self.freq is not None:
             self.compute_resistivity_phase()
 
     def __str__(self):
@@ -463,24 +421,31 @@ class Z(ResPhase):
                     ).replace("\n", "\n\t\t")
                 )
         else:
-            lines.append("Elements:")
-            for ff, zz in enumerate(self.z):
-                lines.append(f"\tIndex {ff}")
-                lines.append(
-                    "\t\t"
-                    + np.array2string(
-                        zz,
-                        formatter={
-                            "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
-                        },
-                    ).replace("\n", "\n\t\t")
-                )
+            if self.z is not None:
+                lines.append("Elements:")
+                for ff, zz in enumerate(self.z):
+                    lines.append(f"\tIndex {ff}")
+                    lines.append(
+                        "\t\t"
+                        + np.array2string(
+                            zz,
+                            formatter={
+                                "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
+                            },
+                        ).replace("\n", "\n\t\t")
+                    )
                     
 
         return "\n".join(lines)
 
     def __repr__(self):
         return self.__str__()
+    
+    def __eq__(self, other):
+        if not isinstance(other, Z):
+            msg = f"Cannot compare {type(other)} with Z"
+            self._logger.error(msg)
+            raise MTpyError_Z(msg)
 
     # ---frequency-------------------------------------------------------------
     @property
@@ -509,11 +474,11 @@ class Z(ResPhase):
         if self.z is not None:
             if self.z.shape[0] != len(self._freq):
                 msg = (
-                    "New freq array is not correct shape for existing z"
-                    + "new: {self._freq.size} != old: {self.z.shape[0]}"
+                    "New freq array is not correct shape for existing z. "
+                    + f"new: {self._freq.size} != old: {self.z.shape[0]}"
                 )
                 self._logger.error(msg)
-                raise MTpyError_Z
+                raise MTpyError_Z(msg)
 
             self.compute_resistivity_phase()
 
@@ -540,12 +505,24 @@ class Z(ResPhase):
 
         Nulling the rotation_angle
         """
+        
+        if z_array is None:
+            return
 
         if not isinstance(z_array, np.ndarray):
             z_array = np.array(z_array, dtype="complex")
             
         if z_array.dtype not in ['complex']:
             z_array = z_array.astype("complex")
+            
+        # check to see if the new z array is the same shape as the old
+        if self._z is not None and self._z.shape != z_array.shape:
+            msg = ("Shape of new array does not match old.  " +
+                f"new shape {z_array.shape} != " +
+                f"old shape {self._z.shape}. " + 
+                "Make a new Z instance to be safe.")
+            self._logger.error(msg)
+            raise MTpyError_Z(msg)
 
         if len(z_array.shape) == 3:
             if z_array.shape[1:3] == (2, 2):
@@ -591,6 +568,9 @@ class Z(ResPhase):
                             deviation
         :type z_err_array: np.ndarray(nfreq, 2, 2)
         """
+        if z_err_array is None:
+            return
+        
         if not isinstance(z_err_array, np.ndarray):
             z_err_array = np.array(z_err_array, dtype="float")
             
@@ -887,22 +867,23 @@ class Z(ResPhase):
         :param distortion_err_tensor: default is None
         :type distortion_err_tensor: np.ndarray(2, 2, dtype=real),
 
-			:returns: input distortion tensor
+		:returns: input distortion tensor
         :rtype: np.ndarray(2, 2, dtype='real')
 
-			:returns: impedance tensor with distorion removed
+		:returns: impedance tensor with distorion removed
         :rtype: np.ndarray(num_freq, 2, 2, dtype='complex')
 
 
-			:returns: impedance tensor error after distortion is removed
+		:returns: impedance tensor error after distortion is removed
         :rtype: np.ndarray(num_freq, 2, 2, dtype='complex')
 
 
-    		:Example: ::
+  		:Example: ::
 
-    			>>> import mtpy.core.z as mtz
-    			>>> distortion = np.array([[1.2, .5],[.35, 2.1]])
-    			>>> d, new_z, new_z_err = z_obj.remove_distortion(distortion)
+  			>>> import mtpy.core.z as mtz
+  			>>> distortion = np.array([[1.2, .5],[.35, 2.1]])
+  			>>> d, new_z, new_z_err = z_obj.remove_distortion(distortion)
+              
         """
 
         if distortion_err_tensor is None:
@@ -1404,10 +1385,12 @@ class Tipper(object):
 
         # check to see if the new tipper array is the same shape as the old
         if self._tipper is not None and self._tipper.shape != tipper_array.shape:
-            raise MTpyError_Tipper(
-                'Shape of new "tipper" array does not match old'
-                + f"new shape {tipper_array.shape} != old shape {self._tipper.shape}"
-            )
+            msg = ("Shape of new array does not match old.  " +
+                f"new shape {tipper_array.shape} != " +
+                f"old shape {self._tipper.shape}. " + 
+                "Make a new Tipper instance to be save.")
+            self._logger.error(msg)
+            raise MTpyError_Tipper(msg)
             
         if len(tipper_array.shape) == 3:
             if tipper_array.shape[1:3] == (1, 2):
@@ -1930,7 +1913,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error=
     try:
         z_arr = np.array(np.dot(T, np.dot(Z_prime, U.I)))
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTpyError_input_arguments(
             "ERROR - Given angles do not"
             + "define basis for 2 dimensions - cannot convert Z'"
         )
