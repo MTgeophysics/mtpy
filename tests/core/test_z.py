@@ -14,9 +14,9 @@ from pathlib import Path
 
 # import pytest
 from tests import TEST_MTPY_ROOT
-from mtpy.core.z import Z
+from mtpy.core.z import Z, Tipper
 from mtpy.core.mt import MT
-from mtpy.utils.exceptions import MTpyError_Z
+from mtpy.utils.exceptions import MTpyError_Z, MTpyError_Tipper
 
 # =============================================================================
 # Test only Z
@@ -32,7 +32,10 @@ class TestOnlyZ(unittest.TestCase):
         self.assertIn(self.z_obj.z.dtype, ["complex"])
         
     def test_fail_z_input(self):
-        self.assertRaises(MTpyError_Z, self.z_obj.z, [[1], [2], [3]])
+        try:
+            self.z_obj.z = [[1], [2], [3]]
+        except MTpyError_Z:
+            pass
         
     def test_list_input(self):
         self.z_obj.z = [[8, 9], [10, 11]]
@@ -55,8 +58,15 @@ class TestOnlyZ(unittest.TestCase):
     def test_fail_input_lengths(self):
         self.z_obj.z = np.random.random((5, 2, 2)) + 1j * np.random.random((5, 2, 2))
         
-        self.assertRaises(MTpyError_Z, self.z_obj.freq, [1, 2])
-        self.assertRaises(MTpyError_Z, self.z_obj.z_err, np.random.random((2, 2, 2)))
+        try:
+            self.z_obj.freq = [1, 2]
+        except MTpyError_Z:
+            pass
+            
+        try:
+            self.z_obj.z_err = np.random.random((2, 2, 2))
+        except MTpyError_Z:
+            pass
         
     def test_res_phase_calc(self):
         self.z_obj.z = np.random.random((5, 2, 2)) + 1j * np.random.random((5, 2, 2))
@@ -176,6 +186,69 @@ class TestZ(unittest.TestCase):
         )
 
         self.assertTrue(np.all(np.abs(zObj.resistivity / res_test - 1.0) < 1e-6))
+        
+# =============================================================================
+# Test only Tipper
+# =============================================================================
+class TestOnlyTipper(unittest.TestCase):
+    def setUp(self):
+        self.t_obj = Tipper()
+        
+    def test_2x2_input(self):
+        self.t_obj.tipper = np.random.random((1, 2)) + 1j * np.random.random((1, 2))
+        
+        self.assertEqual(self.t_obj.tipper.shape, (1, 1, 2))
+        self.assertIn(self.t_obj.tipper.dtype, ["complex"])
+        
+    def test_fail_t_input(self):
+        try:
+            self.t_obj.tipper = [[1], [2], [3]]
+        except MTpyError_Tipper:
+            pass
+        
+    def test_list_input(self):
+        self.t_obj.tipper = [[10, 11]]
+        
+        self.assertEqual(self.t_obj.tipper.shape, (1, 1, 2))
+        self.assertIn(self.t_obj.tipper.dtype, ["complex"])
+        
+    def test_freq_input(self):
+        
+        self.t_obj.freq = [1, 2, 3]
+        
+        self.assertIsInstance(self.t_obj.freq, np.ndarray)
+        
+    def test_z_err_input(self):
+        self.t_obj.tipper_err = [[3, 4]]
+        
+        self.assertEqual(self.t_obj.tipper_err.shape, (1, 1, 2))
+        self.assertIn(self.t_obj.tipper_err.dtype, ["float"])
+        
+    def test_fail_input_lengths(self):
+        self.t_obj.tipper = np.random.random((5, 1, 2)) + 1j * np.random.random((5, 1, 2))
+        
+        try:
+            self.t_obj.tipper = [1, 2]
+        except MTpyError_Tipper:
+            pass
+        
+        try:
+            self.t_obj.tipper_err = np.random.random((2, 1, 2))
+        except MTpyError_Tipper:
+            pass
+
+    def test_mag_calc(self):
+        self.t_obj.tipper = np.random.random((5, 1, 2)) + 1j * np.random.random((5, 1, 2))
+        self.t_obj.freq = np.logspace(0, 3, 5)
+        self.t_obj.tipper_err = np.random.random((5, 1, 2))
+        
+        self.assertNotIsInstance(self.t_obj.mag_real, type(None))
+        self.assertNotIsInstance(self.t_obj.mag_imag, type(None))
+        self.assertNotIsInstance(self.t_obj.mag_err, type(None))
+        self.assertNotIsInstance(self.t_obj.angle_real, type(None))
+        self.assertNotIsInstance(self.t_obj.angle_imag, type(None))
+        self.assertNotIsInstance(self.t_obj.angle_err, type(None))
+
 
 # =============================================================================
 # Run

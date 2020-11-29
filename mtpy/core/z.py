@@ -8,6 +8,7 @@
 .. moduleauthor:: Lars Krieger
 
 Updated 11/2020 for logging and formating.
+    - ToDo: add functionality for covariance matrix
 """
 
 # =================================================================
@@ -500,10 +501,10 @@ class Z(ResPhase):
         :type freq_arr: np.ndarray
         """
 
-        if freq_arr is not None:
-            self._freq = np.array(freq_arr, dtype="float")
-        else:
-            return
+        if freq_arr is None:
+            return 
+        
+        self._freq = np.array(freq_arr, dtype="float")
 
         if self.z is not None:
             if self.z.shape[0] != len(self._freq):
@@ -1300,6 +1301,50 @@ class Tipper(object):
         if self._tipper is not None and self._freq is not None:
             self.compute_amp_phase()
             self.compute_mag_direction()
+            
+    def __str__(self):
+        lines = ["Induction Vector (Tippers)", "-" * 40]
+        if self.freq is not None:
+            lines.append(f"\tNumber of frequencies:  {self.freq.size}")
+            lines.append(
+                f"\tFrequency range:        {self.freq.min():.5E} -- {self.freq.max():.5E} Hz"
+            )
+            lines.append(
+                f"\tPeriod range:           {1/self.freq.max():.5E} -- {1/self.freq.min():.5E} s"
+            )
+            lines.append("")
+            lines.append("\tElements:")
+            for zz, ff in zip(self.tipper, self.freq):
+                lines.append(f"\tFrequency: {ff:5E} Hz -- Period {1/ff} s")
+                lines.append(
+                    "\t\t"
+                    + np.array2string(
+                        zz,
+                        formatter={
+                            "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
+                        },
+                    ).replace("\n", "\n\t\t")
+                )
+        else:
+            if self.tipper is not None:
+                lines.append("Elements:")
+                for ff, zz in enumerate(self.tipper):
+                    lines.append(f"\tIndex {ff}")
+                    lines.append(
+                        "\t\t"
+                        + np.array2string(
+                            zz,
+                            formatter={
+                                "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
+                            },
+                        ).replace("\n", "\n\t\t")
+                    )
+                        
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
 
     # ==========================================================================
     # Define get/set and properties
@@ -1317,15 +1362,19 @@ class Tipper(object):
         :param freq_arr: array of frequnecies (Hz)
         :type freq_arr: np.ndarray(num_frequencies)
         """
-        if freq_arr is not None:
-            self._freq = np.array(freq_arr)
+        if freq_arr is None:
+            return 
+        
+        self._freq = np.array(freq_arr, dtype="float")
 
-        if self._freq.size is not len(self.tipper):
-            self._logger.info(
-                "length of freq list/array not correct"
-                + " (%ii instead of %ii)" % (self._freq.size, len(self.tipper))
-            )
-            return
+        if self.tipper is not None:
+            if self.tipper.shape[0] != len(self._freq):
+                msg = (
+                    "New freq array is not correct shape for existing z"
+                    + "new: {self._freq.size} != old: {self.tipper.shape[0]}"
+                )
+                self._logger.error(msg)
+                raise MTpyError_Tipper
 
         # for consistency recalculate amplitude and phase
         self.compute_amp_phase()
@@ -1344,26 +1393,51 @@ class Tipper(object):
                              *default* is None
         :type tipper_array: np.ndarray((nf, 1, 2), dtype='complex')
         """
+        if tipper_array is None:
+            return
+        
+        if not isinstance(tipper_array, np.ndarray):
+            tipper_array = np.array(tipper_array, dtype="complex")
+        
+        if not tipper_array.dtype in ["complex"]:
+            tipper_array = tipper_array.astype("complex")
 
         # check to see if the new tipper array is the same shape as the old
         if self._tipper is not None and self._tipper.shape != tipper_array.shape:
-            raise MTpyError_Z(
+            raise MTpyError_Tipper(
                 'Shape of new "tipper" array does not match old'
-                + "new shape {0} != old shape {1}".format(
-                    tipper_array.shape, self._tipper.shape
-                )
-                + "\n***Make new Tipper object***"
+                + f"new shape {tipper_array.shape} != old shape {self._tipper.shape}"
             )
-        if tipper_array is not None:
-            if len(tipper_array.shape) == 3 and tipper_array.shape[1:3] == (1, 2):
-                if tipper_array.dtype in ["complex", "float", "int"]:
-                    self._tipper = tipper_array
+            
+        if len(tipper_array.shape) == 3:
+            if tipper_array.shape[1:3] == (1, 2):
+                self._tipper = tipper_array
+            else:
+                msg = f"Input array must be shape (n, 1, 2) not {tipper_array.shape}"
+                self._logger.error(msg)
+                raise MTpyError_Tipper(msg)
+                
+        elif len(tipper_array.shape) == 2:
+            if tipper_array.shape == (1, 2):
+                self._tipper = tipper_array.reshape((1, 1, 2))
+                self._logger.debug("setting input tipper with shape (1, 2) to (1, 1, 2)")
+            else:
+                msg = f"Input array must be shape (n, 1, 2) not {tipper_array.shape}"
+                self._logger.error(msg)
+                raise MTpyError_Tipper(msg)
+        else:
+            msg = (
+                f"{tipper_array.shape} are not the correct dimensions, must be (n, 1, 2)"
+            )
+            self._logger.error(msg)
+            raise MTpyError_Tipper(msg)
+        
 
         # neeed to set the rotation angle such that it is an array
         if self.rotation_angle is float:
             self.rotation_angle = np.repeat(self.rotation_angle, len(self._tipper))
 
-            # for consistency recalculate mag and angle
+        # for consistency recalculate mag and angle
         self.compute_mag_direction()
 
         # for consistency recalculate amplitude and phase
@@ -1385,25 +1459,45 @@ class Tipper(object):
                                  *default* is None
         :type tipper_err_array: np.ndarray((nf, 1, 2))
         """
-        if self.tipper_err is not None and (
-            self._tipper_err.shape != tipper_err_array.shape
-        ):
-            raise MTpyError_Z(
-                'Shape of new "tipper_err" array does not match old'
-                + "new shape {0} != old shape {1}".format(tipper_err_array.shape),
-                self._tipper_err.shape,
+        if tipper_err_array is None:
+            return
+        
+        if not isinstance(tipper_err_array, np.ndarray):
+            tipper_err_array = np.array(tipper_err_array, dtype="float")
+        
+        if not tipper_err_array.dtype in ["float"]:
+            tipper_err_array = tipper_err_array.astype("float")
+
+            
+        if len(tipper_err_array.shape) == 3:
+            if not tipper_err_array.shape[1:3] == (1, 2):
+                msg = f"Input array must be shape (n, 1, 2) not {tipper_err_array.shape}"
+                self._logger.error(msg)
+                raise MTpyError_Tipper(msg)
+                
+        elif len(tipper_err_array.shape) == 2:
+            if tipper_err_array.shape == (1, 2):
+                tipper_err_array = tipper_err_array.reshape((1, 1, 2))
+                self._logger.debug("setting input tipper with shape (1, 2) to (1, 1, 2)")
+            else:
+                msg = f"Input array must be shape (n, 1, 2) not {tipper_err_array.shape}"
+                self._logger.error(msg)
+                raise MTpyError_Tipper(msg)
+        else:
+            msg = (
+                f"{tipper_err_array.shape} are not the correct dimensions, must be (n, 1, 2)"
             )
-
-        # make sure the input array is of required shape
-        if tipper_err_array is not None:
-            if len(tipper_err_array.shape) == 3 and tipper_err_array.shape[1:3] == (
-                1,
-                2,
-            ):
-                if tipper_err_array.dtype in ["float", "int"]:
-                    self._tipper_err = tipper_err_array
-
-                    assert self._tipper_err.shape == self._tipper.shape
+            self._logger.error(msg)
+            raise MTpyError_Tipper(msg)
+            
+        # check to see if the new tipper array is the same shape as the old
+        if self._tipper is not None and self._tipper.shape != tipper_err_array.shape:
+            raise MTpyError_Tipper(
+                "Shape of new error array does not match old"
+                + f"new shape {tipper_err_array.shape} != old shape {self._tipper.shape}"
+            )
+            
+        self._tipper_err = tipper_err_array
 
         # for consistency recalculate mag and angle
         self.compute_mag_direction()
