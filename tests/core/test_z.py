@@ -3,10 +3,30 @@ import numpy as np
 
 # import pytest
 from tests import TEST_MTPY_ROOT
-from mtpy.core.z import Z
+from mtpy.core.z import Z, MTZError
 from mtpy.core.mt import MT
 import os
 
+
+class TestOnlyZ(TestCase):
+    def setUp(self):
+        self.z_obj = Z()
+        
+    def test_2x2_input(self):
+        self.z_obj.z = np.random.random((2, 2)) + 1j * np.random.random((2, 2))
+        
+        self.assertEqual(self.z_obj.z.shape, (1, 2, 2))
+        self.assertIn(self.z_obj.z.dtype, ["complex"])
+        
+    def test_fail_z_input(self):
+        self.assertRaises(MTZError, self.z_obj.z, [[1], [2], [3]])
+        
+    def test_lits_input(self):
+        self.z_obj.z = [[8, 9], [10, 11]]
+        
+        self.assertEqual(self.z_obj.z.shape, (1, 2, 2))
+        self.assertIn(self.z_obj.z.dtype, ["complex"])
+        
 
 class TestZ(TestCase):
     def setUp(self):
@@ -15,6 +35,8 @@ class TestZ(TestCase):
         self.rotation_angle = 30
         self.static_shift_x = 1.2
         self.static_shift_y = 1.5
+        
+
 
     def test_rotate(self):
 

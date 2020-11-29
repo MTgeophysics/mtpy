@@ -28,7 +28,9 @@ from mtpy.utils.mtpylog import MtPyLog
 # ==============================================================================
 class ResPhase(object):
     """
-    resistivity and phase container
+    resistivity and phase container with convenience property attributes to 
+    access the different components.
+    
     """
 
     def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
@@ -123,7 +125,7 @@ class ResPhase(object):
             elif self._freq is None:
                 msg = "freq values are None, cannot compute parameters"
             self._logger.error(msg)
-            raise MT_Z_Error(msg)
+            raise MTZError(msg)
 
         self._resistivity = np.apply_along_axis(
             lambda x: np.abs(x) ** 2 / self.freq * 0.2, 0, self._z
@@ -459,6 +461,20 @@ class Z(ResPhase):
                         },
                     ).replace("\n", "\n\t\t")
                 )
+        else:
+            lines.append("Elements:")
+            for ff, zz in enumerate(self.z):
+                lines.append(f"\tIndex {ff}")
+                lines.append(
+                    "\t\t"
+                    + np.array2string(
+                        zz,
+                        formatter={
+                            "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
+                        },
+                    ).replace("\n", "\n\t\t")
+                )
+                    
 
         return "\n".join(lines)
 
@@ -530,23 +546,33 @@ class Z(ResPhase):
         """
 
         if not isinstance(z_array, np.ndarray):
-            z_array = np.array(z_array)
-        try:
-            if len(z_array.shape) == 3 and z_array.shape[1:3] == (2, 2):
-                if z_array.dtype in ["complex", "float", "int"]:
-                    self._z = z_array
-        except IndexError:
-            try:
-                if len(z_array.shape) == 2 and z_array.shape == (2, 2):
-                    if z_array.dtype in ["complex", "float", "int"]:
-                        self._z = np.zeros((1, 2, 2), "complex")
-                        self._z[0] = z_array
-            except IndexError:
-                msg = (
-                    f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
-                )
+            z_array = np.array(z_array, dtype="complex")
+            
+        if z_array.dtype not in ['complex']:
+            z_array = z_array.astype("complex")
+
+        if len(z_array.shape) == 3:
+            if z_array.shape[1:3] == (2, 2):
+                self._z = z_array
+            else:
+                msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
                 self._logger.error(msg)
-                raise MT_Z_Error(msg)
+                raise MTZError(msg)
+
+        elif len(z_array.shape) == 2:
+            if z_array.shape == (2, 2):
+                self._z = z_array.reshape((1, 2, 2))
+                self._logger.debug("setting input z with shape (2, 2) to (1, 2, 2)")
+            else:
+                msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
+                self._logger.error(msg)
+                raise MTZError(msg)
+        else:
+            msg = (
+                f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
+            )
+            self._logger.error(msg)
+            raise MTZError(msg)
 
         if isinstance(self.rotation_angle, float):
             self.rotation_angle = np.repeat(self.rotation_angle, len(self._z))
@@ -569,12 +595,39 @@ class Z(ResPhase):
                             deviation
         :type z_err_array: np.ndarray(nfreq, 2, 2)
         """
-        if z_err_array.shape != self.z.shape:
-            self._logger.warn(
-                "z_err_array shape {0} is not same shape as z {1}".format(
-                    z_err_array.shape, self.z.shape
-                )
+        if not isinstance(z_err_array, np.ndarray):
+            z_err_array = np.array(z_err_array, dtype="float")
+            
+        if z_err_array.dtype not in ['float']:
+            z_err_array = z_err_array.astype("float")
+
+        if len(z_err_array.shape) == 3:
+            if not z_err_array.shape[1:3] == (2, 2):
+                msg = f"Input array must be shape (n, 2, 2) not {z_err_array.shape}"
+                self._logger.error(msg)
+                raise MTZError(msg)
+                
+        elif len(z_err_array.shape) == 2:
+            if z_err_array.shape == (2, 2):
+                z_err_array = z_err_array.reshape((1, 2, 2))
+                self._logger.debug("setting input z_err with shape (2, 2) to (1, 2, 2)")
+            else:
+                msg = f"Input array must be shape (n, 2, 2) not {z_err_array.shape}"
+                self._logger.error(msg)
+                raise MTZError(msg)
+        else:
+            msg = (
+                f"{z_err_array.shape} are not the correct dimensions, must be (n, 2, 2)"
             )
+            self._logger.error(msg)
+            raise MTZError(msg)  
+        
+        if self._z is not None:
+            if self._z.shape != z_err_array.shape:
+                msg = f"z_err {z_err_array.shape} is not the same shape as z {self._z.shape}"
+                self._logger.error(msg)
+                raise MTZError(msg)
+            
         self._z_err = z_err_array
 
         # for consistency recalculate resistivity and phase
@@ -637,7 +690,7 @@ class Z(ResPhase):
             except ValueError:
                 msg = f"Angle must be a valid number (in degrees) not {alpha}"
                 self._logger.error(msg)
-                raise MT_Z_Error(msg)
+                raise MTZError(msg)
 
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.z]
@@ -648,7 +701,7 @@ class Z(ResPhase):
                 except ValueError:
                     msg = f"Angle must be a valid number (in degrees) not {alpha}"
                     self._logger.error(msg)
-                    raise MT_Z_Error(msg)
+                    raise MTZError(msg)
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.z]
             else:
@@ -657,7 +710,7 @@ class Z(ResPhase):
                 except ValueError:
                     msg = f"Angle must be a valid number (in degrees) not {alpha}"
                     self._logger.error(msg)
-                    raise MT_Z_Error(msg)
+                    raise MTZError(msg)
 
         self.rotation_angle = np.array(
             [
@@ -669,7 +722,7 @@ class Z(ResPhase):
         if len(lo_angles) != len(self.z):
             msg = f"Wrong number of angles, need {len(self.z)}"
             self._logger.error(msg)
-            raise MT_Z_Error(msg)
+            raise MTZError(msg)
 
         z_rot = copy.copy(self.z)
         z_err_rot = copy.copy(self.z_err)
@@ -1186,7 +1239,7 @@ class Z(ResPhase):
 # ==============================================================================
 # errors
 # ==============================================================================
-class MT_Z_Error(Exception):
+class MTZError(Exception):
     pass
 
 
@@ -1314,7 +1367,7 @@ class Tipper(object):
 
         # check to see if the new tipper array is the same shape as the old
         if self._tipper is not None and self._tipper.shape != tipper_array.shape:
-            raise MT_Z_Error(
+            raise MTZError(
                 'Shape of new "tipper" array does not match old'
                 + "new shape {0} != old shape {1}".format(
                     tipper_array.shape, self._tipper.shape
@@ -1355,7 +1408,7 @@ class Tipper(object):
         if self.tipper_err is not None and (
             self._tipper_err.shape != tipper_err_array.shape
         ):
-            raise MT_Z_Error(
+            raise MTZError(
                 'Shape of new "tipper_err" array does not match old'
                 + "new shape {0} != old shape {1}".format(tipper_err_array.shape),
                 self._tipper_err.shape,
