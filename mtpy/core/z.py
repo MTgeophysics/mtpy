@@ -446,6 +446,14 @@ class Z(ResPhase):
             msg = f"Cannot compare {type(other)} with Z"
             self._logger.error(msg)
             raise MTpyError_Z(msg)
+        
+        if self.z != other.z:
+            return False
+        
+        if self.freq != other.freq:
+            return False
+        
+        return True
 
     # ---frequency-------------------------------------------------------------
     @property
@@ -1327,6 +1335,19 @@ class Tipper(object):
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if not isinstance(other, Tipper):
+            msg = f"Cannot compare {type(other)} with Tipper"
+            self._logger.error(msg)
+            raise MTpyError_Tipper(msg)
+        
+        if self.z != other.tipper:
+            return False
+        
+        if self.freq != other.freq:
+            return False
+        
+        return True
     # ==========================================================================
     # Define get/set and properties
     # ==========================================================================
