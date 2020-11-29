@@ -19,7 +19,7 @@ import logging
 import numpy as np
 
 import mtpy.utils.calculator as MTcc
-import mtpy.utils.exceptions as MTex
+from mtpy.utils.exceptions import (MTpyError_Z, MTpyError_Tipper, MTpyError_input_arguments)
 from mtpy.utils.mtpylog import MtPyLog
 
 
@@ -125,7 +125,7 @@ class ResPhase(object):
             elif self._freq is None:
                 msg = "freq values are None, cannot compute parameters"
             self._logger.error(msg)
-            raise MTZError(msg)
+            raise MTpyError_Z(msg)
 
         self._resistivity = np.apply_along_axis(
             lambda x: np.abs(x) ** 2 / self.freq * 0.2, 0, self._z
@@ -188,12 +188,12 @@ class ResPhase(object):
         if np.linalg.norm(np.imag(res_array)) != 0:
             msg = "Resistivity is not real valued"
             self._logger.error(msg)
-            raise MTex.MTpyError_inputarguments(msg)
+            raise MTpyError_input_arguments(msg)
 
         if np.linalg.norm(np.imag(phase_array)) != 0:
             msg = "Phase is not real valued"
             self._logger.error(msg)
-            raise MTex.MTpyError_inputarguments(msg)
+            raise MTpyError_input_arguments(msg)
 
         abs_z = np.sqrt(5.0 * self.freq * (self.resistivity.T)).T
         self._z = abs_z * np.exp(1j * np.radians(self.phase))
@@ -501,9 +501,9 @@ class Z(ResPhase):
         """
 
         if freq_arr is not None:
-            self._freq = np.array(freq_arr)
+            self._freq = np.array(freq_arr, dtype="float")
         else:
-            return None
+            return
 
         if self.z is not None:
             if self.z.shape[0] != len(self._freq):
@@ -512,7 +512,7 @@ class Z(ResPhase):
                     + "new: {self._freq.size} != old: {self.z.shape[0]}"
                 )
                 self._logger.error(msg)
-                raise MTZError
+                raise MTpyError_Z
 
             self.compute_resistivity_phase()
 
@@ -552,7 +552,7 @@ class Z(ResPhase):
             else:
                 msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
                 self._logger.error(msg)
-                raise MTZError(msg)
+                raise MTpyError_Z(msg)
 
         elif len(z_array.shape) == 2:
             if z_array.shape == (2, 2):
@@ -561,13 +561,13 @@ class Z(ResPhase):
             else:
                 msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
                 self._logger.error(msg)
-                raise MTZError(msg)
+                raise MTpyError_Z(msg)
         else:
             msg = (
                 f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
             )
             self._logger.error(msg)
-            raise MTZError(msg)
+            raise MTpyError_Z(msg)
 
         if isinstance(self.rotation_angle, float):
             self.rotation_angle = np.repeat(self.rotation_angle, len(self._z))
@@ -600,7 +600,7 @@ class Z(ResPhase):
             if not z_err_array.shape[1:3] == (2, 2):
                 msg = f"Input array must be shape (n, 2, 2) not {z_err_array.shape}"
                 self._logger.error(msg)
-                raise MTZError(msg)
+                raise MTpyError_Z(msg)
                 
         elif len(z_err_array.shape) == 2:
             if z_err_array.shape == (2, 2):
@@ -609,19 +609,19 @@ class Z(ResPhase):
             else:
                 msg = f"Input array must be shape (n, 2, 2) not {z_err_array.shape}"
                 self._logger.error(msg)
-                raise MTZError(msg)
+                raise MTpyError_Z(msg)
         else:
             msg = (
                 f"{z_err_array.shape} are not the correct dimensions, must be (n, 2, 2)"
             )
             self._logger.error(msg)
-            raise MTZError(msg)  
+            raise MTpyError_Z(msg)  
         
         if self._z is not None:
             if self._z.shape != z_err_array.shape:
                 msg = f"z_err {z_err_array.shape} is not the same shape as z {self._z.shape}"
                 self._logger.error(msg)
-                raise MTZError(msg)
+                raise MTpyError_Z(msg)
             
         self._z_err = z_err_array
 
@@ -648,7 +648,7 @@ class Z(ResPhase):
                 inverse[idx_f, :, :] = np.array((np.matrix(self.z[idx_f, :, :])).I)
             except:
                 msg = f"The {idx_f + 1}ith impedance tensor cannot be inverted"
-                raise MTex.MTpyError_Z(msg)
+                raise MTpyError_Z(msg)
 
         return inverse
 
@@ -685,7 +685,7 @@ class Z(ResPhase):
             except ValueError:
                 msg = f"Angle must be a valid number (in degrees) not {alpha}"
                 self._logger.error(msg)
-                raise MTZError(msg)
+                raise MTpyError_Z(msg)
 
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.z]
@@ -696,7 +696,7 @@ class Z(ResPhase):
                 except ValueError:
                     msg = f"Angle must be a valid number (in degrees) not {alpha}"
                     self._logger.error(msg)
-                    raise MTZError(msg)
+                    raise MTpyError_Z(msg)
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.z]
             else:
@@ -705,7 +705,7 @@ class Z(ResPhase):
                 except ValueError:
                     msg = f"Angle must be a valid number (in degrees) not {alpha}"
                     self._logger.error(msg)
-                    raise MTZError(msg)
+                    raise MTpyError_Z(msg)
 
         self.rotation_angle = np.array(
             [
@@ -717,7 +717,7 @@ class Z(ResPhase):
         if len(lo_angles) != len(self.z):
             msg = f"Wrong number of angles, need {len(self.z)}"
             self._logger.error(msg)
-            raise MTZError(msg)
+            raise MTpyError_Z(msg)
 
         z_rot = copy.copy(self.z)
         z_err_rot = copy.copy(self.z_err)
@@ -911,7 +911,7 @@ class Z(ResPhase):
             if not (len(distortion_tensor.shape) in [2, 3]) and (
                 len(distortion_err_tensor.shape) in [2, 3]
             ):
-                msg = "Shapes of distortion tensor and error are not he correct shape"
+                msg = "Distortion tensor and error are not correct shape"
                 self._logger.error(msg)
                 raise ValueError(msg)
             if (
@@ -919,7 +919,7 @@ class Z(ResPhase):
                 or len(distortion_err_tensor.shape) == 3
             ):
                 self._logger.info(
-                    "Distortion is not time-dependent - take only first"
+                    "Distortion is not time-dependent - taking only first"
                     + "of given distortion tensors"
                 )
                 try:
@@ -927,7 +927,7 @@ class Z(ResPhase):
                     distortion_err_tensor = distortion_err_tensor[0]
                 except IndexError:
                     msg = (
-                        "Shapes of distortion tensor and error are not he correct shape"
+                        "Distortion tensor and error are not correct shape"
                     )
                     self._logger.error(msg)
                     raise ValueError(msg)
@@ -935,21 +935,21 @@ class Z(ResPhase):
             if not (distortion_tensor.shape == (2, 2)) and (
                 distortion_err_tensor.shape == (2, 2)
             ):
-                msg = "Shapes of distortion tensor and error are not he correct shape"
+                msg = "Distortion tensor and error are not correct shape"
                 self._logger.error(msg)
                 raise ValueError(msg)
 
             distortion_tensor = np.matrix(np.real(distortion_tensor))
 
         except ValueError:
-            msg = "The array provided is not a proper distortion tensor, must be (2, 2)"
-            raise MTex.MTpyError_Z(msg)
+            msg = "Input distortion tensor, must be (2, 2)"
+            raise MTpyError_Z(msg)
 
         try:
             DI = distortion_tensor.I
         except np.linalg.LinAlgError:
-            raise MTex.MTpyError_Z(
-                "The provided distortion tensor is" + "singular - I cannot invert that!"
+            raise MTpyError_Z(
+                "The provided distortion tensor is singular cannot be used."
             )
 
         # propagation of errors (using 1-norm) - step 1 - inversion of D:
@@ -1130,11 +1130,6 @@ class Z(ResPhase):
                 )
                 / 2.0
             )
-        # det_Z_err[:] = np.abs(self.z[:, 1, 1] * self.z_err[:, 0, 0]) +\
-        #                           np.abs(self.z[:, 0, 0] * self.z_err[:, 1, 1]) +\
-        #                           np.abs(self.z[:, 0, 1] * self.z_err[:, 1, 0]) +\
-        #                           np.abs(self.z[:, 1, 0] * self.z_err[:, 0, 1])
-
         return det_Z_err
 
     @property
@@ -1230,19 +1225,9 @@ class Z(ResPhase):
 
         return invariants_dict
 
-
-# ==============================================================================
-# errors
-# ==============================================================================
-class MTZError(Exception):
-    pass
-
-
 # ======================================================================
 #                               TIPPER
 # ======================================================================
-
-
 class Tipper(object):
     """
     Tipper class --> generates a Tipper-object.
@@ -1362,7 +1347,7 @@ class Tipper(object):
 
         # check to see if the new tipper array is the same shape as the old
         if self._tipper is not None and self._tipper.shape != tipper_array.shape:
-            raise MTZError(
+            raise MTpyError_Z(
                 'Shape of new "tipper" array does not match old'
                 + "new shape {0} != old shape {1}".format(
                     tipper_array.shape, self._tipper.shape
@@ -1403,7 +1388,7 @@ class Tipper(object):
         if self.tipper_err is not None and (
             self._tipper_err.shape != tipper_err_array.shape
         ):
-            raise MTZError(
+            raise MTpyError_Z(
                 'Shape of new "tipper_err" array does not match old'
                 + "new shape {0} != old shape {1}".format(tipper_err_array.shape),
                 self._tipper_err.shape,
@@ -1811,7 +1796,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error=
         Z_prime = np.matrix(Z_prime)
 
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTpyError_input_arguments(
             "ERROR - Z array not valid!" + "Must be 2x2 complex array"
         )
 
@@ -1826,7 +1811,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error=
                 raise
 
         except:
-            raise MTex.MTpyError_inputarguments(
+            raise MTpyError_input_arguments(
                 "ERROR - Z-error array not" + "valid! Must be 2x2 real array"
             )
 

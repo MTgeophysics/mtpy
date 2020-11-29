@@ -14,8 +14,9 @@ from pathlib import Path
 
 # import pytest
 from tests import TEST_MTPY_ROOT
-from mtpy.core.z import Z, MTZError
+from mtpy.core.z import Z
 from mtpy.core.mt import MT
+from mtpy.utils.exceptions import MTpyError_Z
 
 # =============================================================================
 # Test only Z
@@ -31,7 +32,7 @@ class TestOnlyZ(unittest.TestCase):
         self.assertIn(self.z_obj.z.dtype, ["complex"])
         
     def test_fail_z_input(self):
-        self.assertRaises(MTZError, self.z_obj.z, [[1], [2], [3]])
+        self.assertRaises(MTpyError_Z, self.z_obj.z, [[1], [2], [3]])
         
     def test_list_input(self):
         self.z_obj.z = [[8, 9], [10, 11]]
@@ -54,8 +55,8 @@ class TestOnlyZ(unittest.TestCase):
     def test_fail_input_lengths(self):
         self.z_obj.z = np.random.random((5, 2, 2)) + 1j * np.random.random((5, 2, 2))
         
-        self.assertRaises(MTZError, self.z_obj.freq, [1, 2])
-        self.assertRaises(MTZError, self.z_obj.z_err, np.random.random((2, 2, 2)))
+        self.assertRaises(MTpyError_Z, self.z_obj.freq, [1, 2])
+        self.assertRaises(MTpyError_Z, self.z_obj.z_err, np.random.random((2, 2, 2)))
         
     def test_res_phase_calc(self):
         self.z_obj.z = np.random.random((5, 2, 2)) + 1j * np.random.random((5, 2, 2))

@@ -17,7 +17,7 @@ class MTpyError_float(Exception):
     pass
 
 
-class MTpyError_inputarguments(Exception):
+class MTpyError_input_arguments(Exception):
     pass
 
 
