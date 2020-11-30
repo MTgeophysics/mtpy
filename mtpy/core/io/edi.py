@@ -107,8 +107,6 @@ class Edi(object):
         self._fn = None
         self._edi_lines = None
 
-        self.fn = fn
-
         self.Header = Header()
         self.Info = Information()
         self.Measurement = DefineMeasurement()
@@ -132,9 +130,36 @@ class Edi(object):
 
         self._num_format = " 15.6e"
         self._block_len = 6
+        
+        self.fn = fn
+        
+    def __str__(self):
+        lines = [f"Station: {self.station}", "-" * 50]
+        lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
+        lines.append(f"\tProject:       {self.survey_metadata.project}")
+        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(f"\tLatitude:      {self.lat:.3f}")
+        lines.append(f"\tLongitude:     {self.lon:.3f}")
+        lines.append(f"\tElevation:     {self.elev:.3f}")
+        if self.Tipper.tipper is not None:
+            lines.append("\tTipper:        True")
+        else:
+            lines.append("\tTipper:        False")
 
-        if self.fn is not None:
-            self.read_edi_file()
+        if self.Z.z is not None:
+            lines.append(f"\tPeriods: {len(self.Z.freq)}")
+            lines.append(
+                f"\t\tPeriod Range:   {1./self.Z.freq.max():.5E}  -- {1./self.Z.freq.min():.5E} s"
+            )
+            lines.append(
+                f"\t\tFrequency Range {self.Z.freq.min():.5E}  -- {self.Z.freq.max():.5E} s"
+            )
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def fn(self):
@@ -144,6 +169,8 @@ class Edi(object):
     def fn(self, fn):
         if fn is not None:
             self._fn = Path(fn)
+            if self._fn.exists():
+                self.read_edi_file()
 
     def read_edi_file(self, fn=None):
         """

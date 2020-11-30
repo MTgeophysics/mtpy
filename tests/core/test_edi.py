@@ -27,6 +27,40 @@ class TestEDI(unittest.TestCase):
 
     def setUp(self):
         self.edi_obj = edi.Edi()
+        
+    def test_phoenix(self):
+        self.edi_obj.fn = phoenix_fn
+        
+        self.assertEqual(self.edi_obj.station, "PHXTest01")
+        self.assertAlmostEqual(self.edi_obj.lat, 10.123, 1)
+        self.assertAlmostEqual(self.edi_obj.lon, 10.113, 1)
+        self.assertAlmostEqual(self.edi_obj.elev, 2918, 1)
+        self.assertEqual(self.edi_obj.Z.z.shape, (80, 2, 2))
+        self.assertEqual(self.edi_obj.Tipper.tipper.shape, (80, 1, 2))
+        self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
+        
+        
+    def test_metronix(self):
+        self.edi_obj.fn = metronix_fn
+        
+        self.assertEqual(self.edi_obj.station, "GEO")
+        self.assertAlmostEqual(self.edi_obj.lat, 22.691, 1)
+        self.assertAlmostEqual(self.edi_obj.lon, 139.705, 1)
+        self.assertAlmostEqual(self.edi_obj.elev, 181, 1)
+        self.assertEqual(self.edi_obj.Z.z.shape, (73, 2, 2))
+        self.assertEqual(self.edi_obj.Tipper.tipper.shape, (73, 1, 2))
+        self.assertEqual(self.edi_obj.Data.data_type_in, "z")
+        
+    def test_quantec(self):
+        self.edi_obj.fn = quantec_fn
+        
+        self.assertEqual(self.edi_obj.station, "Geoscience Australia")
+        self.assertAlmostEqual(self.edi_obj.lat, -23.051, 1)
+        self.assertAlmostEqual(self.edi_obj.lon, 139.468, 1)
+        self.assertAlmostEqual(self.edi_obj.elev, 122, 1)
+        self.assertEqual(self.edi_obj.Z.z.shape, (41, 2, 2))
+        self.assertEqual(self.edi_obj.Tipper.tipper.shape, (41, 1, 2))
+        self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
 
 
 class TestHeader(unittest.TestCase):
@@ -271,10 +305,7 @@ class TestDataSection(unittest.TestCase):
         self.assertEqual(self.ds.data_type_in, "spectra")
         self.assertEqual(self.ds.nfreq, 41)
         self.assertEqual(self.ds.sectid, "IEA00184")
-    
         
-        
-
 
 # =============================================================================
 # Run
