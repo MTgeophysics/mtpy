@@ -805,25 +805,56 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
         return np.rec.array(projected_point)
 
 
-def epsg_project(x, y, epsg_from, epsg_to):
+def epsg_project(x, y, epsg_from, epsg_to, proj_str=None):
     """
     project some xy points using the pyproj modules
-    """
 
+    Parameters
+    ----------
+    x : integer or float
+        x coordinate of point
+    y : integer or float
+        y coordinate of point
+    epsg_from : int
+        epsg code of x, y points provided. To provide custom projection, set
+        to 0 and provide proj_str
+    epsg_to : TYPE
+        epsg code to project to. To provide custom projection, set
+        to 0 and provide proj_str
+    proj_str : str
+        Proj4 string to provide to pyproj if using custom projection. This proj
+        string will be applied if epsg_from or epsg_to == 0. 
+        The default is None.
+
+    Returns
+    -------
+    xp, yp
+        x and y coordinates of projected point.
+
+    """
+    
     try:
         import pyproj
     except ImportError:
         print("please install pyproj")
         return
-    if epsg_from is not None:
-        try:
-            p1 = pyproj.Proj(EPSG_DICT[epsg_from])
-            p2 = pyproj.Proj(EPSG_DICT[epsg_to])
-        except KeyError:
-            print("Surface or data epsg either not in dictionary or None")
-            return
+    
+    # option to add custom projection
+    # print("epsg",epsg_from,epsg_to,"proj_str",proj_str)
+    if 0 in [epsg_from,epsg_to]:
+        EPSG_DICT[0] = proj_str
+    
+    
+    try:
+        p1 = pyproj.Proj(EPSG_DICT[epsg_from])
+        p2 = pyproj.Proj(EPSG_DICT[epsg_to])
+    except KeyError:
+        print("Surface or data epsg either not in dictionary or None")
+        return
 
     return pyproj.transform(p1, p2, x, y)
+
+
 
 
 def utm_wgs84_conv(lat, lon):
