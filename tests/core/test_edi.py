@@ -17,6 +17,8 @@ edi_list = list(edi_path.glob("*.edi"))
 phoenix_fn = edi_list[-1]
 quantec_fn = edi_list[2]
 metronix_fn = edi_list[-2]
+
+temp_dir = Path(make_temp_dir("EDI_TESTS"))
 # =============================================================================
 # Test EDI
 # =============================================================================
@@ -38,6 +40,10 @@ class TestEDI(unittest.TestCase):
         self.assertEqual(self.edi_obj.Z.z.shape, (80, 2, 2))
         self.assertEqual(self.edi_obj.Tipper.tipper.shape, (80, 1, 2))
         self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
+        
+    def test_write_phoenix(self):
+        self.mt_obj = edi.read_edi(phoenix_fn)
+        edi.write_edi(self.mt_obj, fn=temp_dir.joinpath("phoenix_test.edi"))
         
         
     def test_metronix(self):

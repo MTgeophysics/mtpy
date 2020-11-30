@@ -1,5 +1,6 @@
 attribute,type,required,style,units,description,options,alias,example
 channel_number,int,TRUE,number,none,channel number on the data logger,none,none,1
+channel_id,str,FALSE,free form,none,channel id given by the user or data logger,none,none,1001.11
 comments,str,FALSE,free form,none,any comments about the channel,none,none,ambient air temperature
 component,str,TRUE,controlled vocabulary,none,name of the component measured,| Ex |Ey |Hx | Hy | Hz | T| Battery| other |,none,T
 measurement_azimuth,float,TRUE,number,degrees,azimuth of channel in measurement coordinate system,none,azimuth,0

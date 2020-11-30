@@ -1893,6 +1893,7 @@ class Channel(Base):
         self.type = "auxiliary"
         self.units = None
         self.channel_number = None
+        self.channel_id = None
         self.comments = None
         self._component = None
         self.sample_rate = 0.0

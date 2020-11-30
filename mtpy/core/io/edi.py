@@ -1005,6 +1005,7 @@ class Edi(object):
         if hasattr(self.Measurement, f"meas_{comp}"):
             meas = getattr(self.Measurement, f"meas_{comp}")
             electric.dipole_length = meas.dipole_length
+            electric.channel_id = meas.id
             electric.measurement_azimuth = meas.azimuth
             electric.component = meas.chtype
             electric.channel_number = meas.channel_number
@@ -1063,6 +1064,7 @@ class Edi(object):
             magnetic.measurement_azimuth = meas.azm
             magnetic.component = meas.chtype
             magnetic.channel_number = meas.channel_number
+            magnetic.channel_id = meas.id
             magnetic.location.x = meas.x
             magnetic.location.y = meas.y
             try:
@@ -2117,7 +2119,7 @@ class DefineMeasurement(object):
                     "y": channel.negative.y,
                     "y2": channel.positive.y2,
                     "chtype": channel.component,
-                    "id": channel.channel_number,
+                    "id": channel.channel_id,
                     "acqchan": channel.channel_number,
                 }
             )
@@ -2130,7 +2132,7 @@ class DefineMeasurement(object):
                     "y": channel.location.y,
                     "azm": channel.measurement_azimuth,
                     "chtype": channel.component,
-                    "id": channel.channel_number,
+                    "id": channel.channel_id,
                     "acqchan": channel.channel_number,
                 }
             )
@@ -2761,15 +2763,13 @@ def write_edi(mt_object, fn=None):
     edi_obj.Data.data_type = mt_object.station_metadata.data_type
     edi_obj.Data.nfreq = mt_object.Z.z.shape[0]
     edi_obj.Data.sectid = mt_object.station
-    edi_obj.Data.nchan = 5
-    if np.all(mt_object.Tipper.tipper == 0) == True:
-        edi_obj.Data.nchan = 4
+    edi_obj.Data.nchan = len(edi_obj.Measurement.channel_ids)
 
     edi_obj.Data.maxblks = 999
-    for comp in ["ex", "ey", "hx", "hy", "hz"]:
+    for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
         if hasattr(edi_obj.Measurement, f"meas_{comp}"):
             setattr(
-                edi_obj.Data, comp, getattr(edi_obj.Measurement, f"meas_{comp}").acqchan
+                edi_obj.Data, comp, getattr(edi_obj.Measurement, f"meas_{comp}").id
             )
 
     edi_obj.write_edi_file(new_edi_fn=fn)
