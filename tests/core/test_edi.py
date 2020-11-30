@@ -173,13 +173,13 @@ class TestDefine(unittest.TestCase):
         self.assertAlmostEqual(self.define.meas_ey.azimuth, 116.67, 2)
         
         self.assertDictEqual(self.define.channel_ids,
-                             {'114.011': 'EX',
-                              '115.011': 'EY',
-                              '111.011': 'HX',
-                              '112.011': 'HY',
-                              '113.011': 'HZ',
-                              '116.011': 'RRHX',
-                              '117.011': 'RRHY'})
+                             {'EX': '114.011',
+                             'EY': '115.011',
+                             'HX': '111.011',
+                             'HY': '112.011',
+                             'HZ': '113.011',
+                             'RRHX': '116.011',
+                             'RRHY': '117.011'})
         
     def test_metronix(self):
         self.define.fn = metronix_fn
@@ -202,6 +202,13 @@ class TestDefine(unittest.TestCase):
         
         self.assertEqual(self.define.meas_ey.dipole_length, 100)
         self.assertEqual(self.define.meas_ey.azimuth, 90)
+        
+        self.assertDictEqual(self.define.channel_ids, 
+                             {'EX': '1000.0001',
+                             'EY': '1001.0001',
+                             'HX': '1002.0001',
+                             'HY': '1003.0001',
+                             'HZ': '1004.0001'})
         
     def test_quantec(self):
         self.define.fn = quantec_fn
@@ -227,6 +234,15 @@ class TestDefine(unittest.TestCase):
         
         self.assertEqual(self.define.meas_ey.dipole_length, 100)
         self.assertEqual(self.define.meas_ey.azimuth, 90)
+        
+        self.assertDictEqual(self.define.channel_ids,
+                             {'EX': '14.001',
+                             'EY': '15.001',
+                             'HX': '11.001',
+                             'HY': '12.001',
+                             'HZ': '13.001',
+                             'RRHX': '11.001',
+                             'RRHY': '12.001'})
         
 class TestDataSection(unittest.TestCase):
     """

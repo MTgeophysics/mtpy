@@ -2429,8 +2429,7 @@ class DataSection(object):
                     try:
                         value = int(value)
                     except ValueError:
-                        continue
-
+                        pass
                 setattr(self, key, value)
             else:
                 if "//" in d_line:
@@ -2441,6 +2440,11 @@ class DataSection(object):
                         self.channel_ids += d_line.strip().split()
                     else:
                         self.channel_ids.append(d_line)
+        if self.channel_ids == []:
+            for comp in self._kw_list[4:]:
+                ch_id = getattr(self, comp)
+                if ch_id is not None:
+                    self.channel_ids.append(ch_id)
                     
     def write_data(self, data_list=None, over_dict=None):
         """
