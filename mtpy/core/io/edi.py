@@ -1836,7 +1836,9 @@ class DefineMeasurement(object):
         for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
             try:
                 m = getattr(self, f"meas_{comp}")
-                ch_ids[str(m.id)] = m.chtype
+                # if there are remote references that are the same as the
+                # h channels skip them. 
+                ch_ids[m.chtype] = str(m.id)
             except AttributeError:
                 continue
             
@@ -2435,7 +2437,10 @@ class DataSection(object):
                     channels = True
                     continue
                 if channels:
-                    self.channel_ids.append(d_line)
+                    if len(d_line) > 10:
+                        self.channel_ids += d_line.strip().split()
+                    else:
+                        self.channel_ids.append(d_line)
                     
     def write_data(self, data_list=None, over_dict=None):
         """
@@ -2462,9 +2467,11 @@ class DataSection(object):
             data_lines.append(f"{tab}{key.upper()}={getattr(self, key)}\n")
 
         # need to sort the list so it is descending order by channel number
-        ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[4:]
+        ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[4:-2]
                    if getattr(self, key) is not None]
-        ch_list2 = sorted(ch_list, key=lambda x: x[1])
+        rr_ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[-2:]
+                   if getattr(self, key) is not None]
+        ch_list2 = sorted(ch_list, key=lambda x: x[1]) + sorted(rr_ch_list, key=lambda x: x[1])
 
         for ch in ch_list2:
             data_lines.append(f"{tab}{ch[0]}={ch[1]}\n")
@@ -2488,15 +2495,10 @@ class DataSection(object):
 
         """
         
-        for ch in self.channel_ids:
-            try:
-                comp = ch_ids[ch]
-                setattr(self, comp.lower(), ch)
-            except KeyError:
-                print(f"Could not find {ch} in channel_ids")
-                continue
-        
-
+        for ch_id in self.channel_ids:
+            for key, value in ch_ids.items():
+                if ch_id == str(value):
+                    setattr(self, key.lower(), value)
 
 def _validate_str_with_equals(input_string):
     """
