@@ -216,9 +216,9 @@ def element_to_dict(element):
 
     # going to skip attributes for now, later can check them against
     # standards
-    # if element.attrib:
-    #     meta_dict['attr_dict'][element.tag] = dict([(k, v)
-    #                                   for k, v in element.attrib.items()])
+    if element.attrib:
+        for k, v in element.attrib.items():
+            meta_dict[element.tag][k] = v
 
     if element.text:
         text = element.text.strip()

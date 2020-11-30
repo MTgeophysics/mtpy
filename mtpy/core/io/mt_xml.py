@@ -21,6 +21,9 @@ from xml.dom import minidom
 
 import mtpy.core.z as mtz
 from mtpy.utils.mttime import get_now_utc
+from mtpy.core.standards.helpers import (element_to_dict, 
+                                         recursive_split_setattr, 
+                                         flatten_dict)
 
 
 # ==============================================================================
@@ -945,6 +948,40 @@ class XMLConfig(object):
         ]
 
 
+class Base:
+    """
+    empty object to put stuff into
+    """
+    def __init__(self, **kwargs):
+        self.dict_to_attr(kwargs)
+    def dict_to_attr(self, value_dict):
+        
+        value_dict = flatten_dict(value_dict)
+        for k, v in value_dict.items():
+            self.recursive_split_setattr(self, k, v)
+            
+    # def _set_attr(self, key, value):
+    #     if isinstance(value, (dict)):
+    #         setattr(self, key, Base)
+
+    #     value = flatten_dict(value)
+    #     recursive_split_setattr(self, key, value)
+        
+    def recursive_split_setattr(self, base_object, name, value, sep="."):
+        key, *other = name.split(sep, 1)
+    
+        if other:
+            try:
+                base_object = getattr(base_object, key)
+            except AttributeError:
+                setattr(base_object, key, Base)
+                base_object = getattr(base_object, key)
+            recursive_split_setattr(base_object, other[0], value)
+        else:
+            setattr(base_object, key, value)
+                
+        
+
 # ==============================================================================
 #  EDI to XML
 # ==============================================================================
@@ -1301,6 +1338,23 @@ class EMTFXML(XMLConfig):
         print("-" * 72)
 
         return self.xml_fn
+    
+    def read_xml_file_2(self, xml_fn):
+        """
+        
+        """
+        self.xml_fn = xml_fn
+
+        et_xml = ET.parse(xml_fn)
+
+        root = et_xml.getroot()
+        
+        for element in list(root):
+            element_dict = element_to_dict(element)
+            
+            for k, v in element_dict.items():
+                pass
+        
 
     def read_xml_file(self, xml_fn):
         """
@@ -1579,7 +1633,7 @@ class EMTFXML(XMLConfig):
         """
 
         if type(z_object) is not mtz.Z:
-            raise EMTFXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
+            raise EMFTXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
 
         self._Z = z_object
 
@@ -1597,6 +1651,6 @@ class EMTFXML(XMLConfig):
         """
 
         if type(t_object) is not mtz.Tipper:
-            raise EMTFXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
+            raise EMFTXMLError("To set Z, input needs to be an mtpy.core.z.Z object")
 
         self._Tipper = t_object
