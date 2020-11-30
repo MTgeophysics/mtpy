@@ -42,20 +42,42 @@ class TestEDI(unittest.TestCase):
         self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
         
     def test_write_phoenix(self):
-        self.mt_obj = edi.read_edi(phoenix_fn)
-        edi.write_edi(self.mt_obj, fn=temp_dir.joinpath("phoenix_test.edi"))
+        mt_obj = edi.read_edi(phoenix_fn)
+        edi_obj = edi.write_edi(mt_obj, fn=temp_dir.joinpath("phoenix_test.edi"))
+        
+        mt_obj = edi.read_edi(edi_obj.fn)
+        
+        self.assertEqual(edi_obj.station, "PHXTest01")
+        self.assertEqual(mt_obj.ex_metadata, edi_obj.ex_metadata)
+        self.assertEqual(mt_obj.ey_metadata, edi_obj.ey_metadata)
+        self.assertEqual(mt_obj.hx_metadata, edi_obj.hx_metadata)
+        self.assertEqual(mt_obj.hy_metadata, edi_obj.hy_metadata)
+        self.assertEqual(mt_obj.hz_metadata, edi_obj.hz_metadata)
         
         
     def test_metronix(self):
         self.edi_obj.fn = metronix_fn
         
-        self.assertEqual(self.edi_obj.station, "GEO")
+        self.assertEqual(self.edi_obj.station, "GEO858")
         self.assertAlmostEqual(self.edi_obj.lat, 22.691, 1)
         self.assertAlmostEqual(self.edi_obj.lon, 139.705, 1)
         self.assertAlmostEqual(self.edi_obj.elev, 181, 1)
         self.assertEqual(self.edi_obj.Z.z.shape, (73, 2, 2))
         self.assertEqual(self.edi_obj.Tipper.tipper.shape, (73, 1, 2))
         self.assertEqual(self.edi_obj.Data.data_type_in, "z")
+        
+    def test_write_metronix(self):
+        mt_obj = edi.read_edi(metronix_fn)
+        edi_obj = edi.write_edi(mt_obj, fn=temp_dir.joinpath("metronix_test.edi"))
+        
+        mt_obj = edi.read_edi(edi_obj.fn)
+        
+        self.assertEqual(edi_obj.station, "GEO858")
+        self.assertEqual(mt_obj.ex_metadata, edi_obj.ex_metadata)
+        self.assertEqual(mt_obj.ey_metadata, edi_obj.ey_metadata)
+        self.assertEqual(mt_obj.hx_metadata, edi_obj.hx_metadata)
+        self.assertEqual(mt_obj.hy_metadata, edi_obj.hy_metadata)
+        self.assertEqual(mt_obj.hz_metadata, edi_obj.hz_metadata)
         
     def test_quantec(self):
         self.edi_obj.fn = quantec_fn
@@ -67,6 +89,19 @@ class TestEDI(unittest.TestCase):
         self.assertEqual(self.edi_obj.Z.z.shape, (41, 2, 2))
         self.assertEqual(self.edi_obj.Tipper.tipper.shape, (41, 1, 2))
         self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
+        
+    def test_write_quantec(self):
+        mt_obj = edi.read_edi(quantec_fn)
+        edi_obj = edi.write_edi(mt_obj, fn=temp_dir.joinpath("quantec_test.edi"))
+        
+        mt_obj = edi.read_edi(edi_obj.fn)
+        
+        self.assertEqual(edi_obj.station, "Geoscience Australia")
+        self.assertEqual(mt_obj.ex_metadata, edi_obj.ex_metadata)
+        self.assertEqual(mt_obj.ey_metadata, edi_obj.ey_metadata)
+        self.assertEqual(mt_obj.hx_metadata, edi_obj.hx_metadata)
+        self.assertEqual(mt_obj.hy_metadata, edi_obj.hy_metadata)
+        self.assertEqual(mt_obj.hz_metadata, edi_obj.hz_metadata)
 
 
 class TestHeader(unittest.TestCase):
@@ -303,7 +338,7 @@ class TestDataSection(unittest.TestCase):
         
         self.assertEqual(self.ds.data_type_in, "z")
         self.assertEqual(self.ds.nfreq, 73)
-        self.assertEqual(self.ds.sectid, "858")
+        self.assertEqual(self.ds.sectid, "GEO858")
         
     def test_quantec(self):
         self.ds.fn = quantec_fn
