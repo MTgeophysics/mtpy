@@ -23,7 +23,7 @@ import mtpy.utils.filehandling as MTfh
 from mtpy.utils.mttime import MTime, get_now_utc
 import mtpy.core.z as MTz
 from mtpy.core import metadata
-from mtpy.core import mt
+
 from mtpy import __version__
 
 import scipy.stats.distributions as ssd
@@ -669,7 +669,7 @@ class Edi(object):
         define_lines = self.Measurement.write_measurement(
             longitude_format=longitude_format, latlon_format=latlon_format
         )
-        dsect_lines = self.Data.write_Data(over_dict={"nfreq": len(self.Z.freq)})
+        dsect_lines = self.Data.write_data(over_dict={"nfreq": len(self.Z.freq)})
 
         # write out frequencies
         freq_lines = [self._data_header_str.format("frequencies".upper())]
@@ -1746,7 +1746,7 @@ class DefineMeasurement(object):
     ================= ==================================== ======== ===========
     Attributes        Description                          Default  In .edi
     ================= ==================================== ======== ===========
-    fn            Full path to edi file read in        None     no
+    fn                Full path to edi file read in        None     no
     maxchan           Maximum number of channels measured  None     yes
     maxmeas           Maximum number of measurements       9999     yes
     maxrun            Maximum number of measurement runs   999      yes
@@ -1828,6 +1828,19 @@ class DefineMeasurement(object):
         self._fn = Path(value)
         if self._fn.exists():
             self.read_measurement()
+            
+    @property
+    def channel_ids(self):
+        ch_ids = {}
+        for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
+            try:
+                m = getattr(self, f"meas_{comp}")
+                ch_ids[str(m.id)] = m.chtype
+            except AttributeError:
+                continue
+            
+        return ch_ids
+            
 
     def get_measurement_lists(self):
         """
@@ -2129,9 +2142,9 @@ class HMeasurement(object):
     def __init__(self, **kwargs):
 
         self._kw_list = ["id", "chtype", "x", "y", "azm", "acqchan"]
-        self._fmt_list = ["<4.0f", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<4.6g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
-            if "f" in fmt:
+            if "f" in fmt or "g" in fmt:
                 setattr(self, key.lower(), 0.0)
             else:
                 setattr(self, key.lower(), "0.0")
@@ -2196,9 +2209,9 @@ class EMeasurement(object):
     def __init__(self, **kwargs):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._kw_list = ["id", "chtype", "x", "y", "x2", "y2", "acqchan"]
-        self._fmt_list = ["<4.4g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<4.6g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.1f", "<4"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
-            if "f" in fmt:
+            if "f" in fmt or "g" in fmt:
                 setattr(self, key.lower(), 0.0)
             else:
                 setattr(self, key.lower(), "0.0")
@@ -2301,9 +2314,10 @@ class DataSection(object):
         self.fn = fn
         self.edi_lines = edi_lines
 
-        self.data_type = "z"
+        self.data_type_out = "z"
+        self.data_type_in = "z"
         self.line_num = 0
-        self.Data_list = None
+        self.data_list = None
 
         self.nfreq = None
         self.sectid = None
@@ -2314,6 +2328,9 @@ class DataSection(object):
         self.hx = None
         self.hy = None
         self.hz = None
+        self.rrhx = None
+        self.rrhy = None
+        self.channel_ids = []
 
         self._kw_list = [
             "nfreq",
@@ -2325,18 +2342,33 @@ class DataSection(object):
             "hx",
             "hy",
             "hz",
+            "rrhx",
+            "rrhy",
         ]
 
         if self.fn is not None or self.edi_lines is not None:
-            self.read_Data()
+            self.read_data()
 
     def __str__(self):
-        return "".join(self.write_Data())
+        return "".join(self.write_data())
 
     def __repr__(self):
         return self.__str__()
 
-    def get_Data(self):
+    @property
+    def fn(self):
+        return self._fn
+
+    @fn.setter
+    def fn(self, value):
+        if value is None:
+            self._fn = None
+            return
+        self._fn = Path(value)
+        if self._fn.exists():
+            self.read_data()
+
+    def get_data(self):
         """
         read in the data of the file, will detect if reading spectra or
         impedance.
@@ -2345,11 +2377,11 @@ class DataSection(object):
         if self.fn is None and self.edi_lines is None:
             raise MTex.MTpyError_EDI("No edi file to read. Check fn")
 
-        self.Data_list = []
-        Data_find = False
+        self.data_list = []
+        data_find = False
 
         if self.fn is not None:
-            if os.path.isfile(self.fn) is False:
+            if not self.fn.exists:
                 raise MTex.MTpyError_EDI(
                     "Could not find {0}. Check path".format(self.fn)
                 )
@@ -2358,32 +2390,34 @@ class DataSection(object):
 
         for ii, line in enumerate(self.edi_lines):
             if ">=" in line and "sect" in line.lower():
-                Data_find = True
+                data_find = True
                 self.line_num = ii
-                if line.lower().find("spect") > 0:
-                    self.data_type = "spectra"
-                elif line.lower().find("mt") > 0:
-                    self.data_type = "z"
-            elif ">" in line and Data_find is True:
+                if "spect" in line.lower():
+                    self.data_type_in = "spectra"
+                elif "mt" in line.lower():
+                    self.data_type_in = "z"
+            elif ">" in line and data_find is True:
                 self.line_num = ii
                 break
 
-            elif Data_find:
+            elif data_find:
                 if len(line.strip()) > 2:
-                    self.Data_list.append(line.strip())
+                    self.data_list.append(line.strip())
 
-    def read_Data(self, Data_list=None):
+    def read_data(self, data_list=None):
         """
         read data section
         """
 
-        if Data_list is not None:
-            self.Data_list = Data_list
+        if data_list is not None:
+            self.data_list = data_list
 
         elif self.fn is not None or self.edi_lines is not None:
-            self.get_Data()
+            self.get_data()
 
-        for d_line in self.Data_list:
+        channels = False
+        self.channel_ids = []
+        for d_line in self.data_list:
             d_list = d_line.split("=")
             if len(d_list) > 1:
                 key = d_list[0].lower()
@@ -2393,41 +2427,72 @@ class DataSection(object):
                     value = d_list[1].strip().replace('"', "")
 
                 setattr(self, key, value)
-
-    def write_Data(self, Data_list=None, over_dict=None):
+            else:
+                if "//" in d_line:
+                    channels = True
+                    continue
+                if channels:
+                    self.channel_ids.append(d_line)
+                    
+    def write_data(self, data_list=None, over_dict=None):
         """
         write a data section
         """
 
-        # FZ: need to modify the nfreq (number of freqs), when re-writing effective EDI files)
+        # FZ: need to modify the nfreq (number of freqs), 
+        # when re-writing effective EDI files)
         if over_dict is not None:
             for akey in list(over_dict.keys()):
                 self.__setattr__(akey, over_dict[akey])
 
-        if Data_list is not None:
-            self.read_Data(Data_list)
+        if data_list is not None:
+            self.read_data(data_list)
 
-        self.data_type = "z"
         self.logger.debug("Writing out data a impedances")
 
-        Data_lines = ["\n>=mtsect\n".upper()]
+        if self.data_type_out == 'z':
+            data_lines = ["\n>=mtsect\n".upper()]
+        elif self.data_type_out == "spectra":
+            data_lines = ["\n>spectrasect\n".upper()]
 
         for key in self._kw_list[0:4]:
-            Data_lines.append(
-                "{0}{1}={2}\n".format(tab, key.upper(), getattr(self, key))
-            )
+            data_lines.append(f"{tab}{key.upper()}={getattr(self, key)}\n")
 
         # need to sort the list so it is descending order by channel number
-        ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[4:]]
-        # ch_list = sorted(ch_list, key=lambda x: x[1])  #FZ: x[1] can be None, not working for Py3
-        ch_list2 = sorted(ch_list, key=lambda x: x[0])
+        ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[4:]
+                   if getattr(self, key) is not None]
+        ch_list2 = sorted(ch_list, key=lambda x: x[1])
 
         for ch in ch_list2:
-            Data_lines.append("{0}{1}={2}\n".format(tab, ch[0], ch[1]))
+            data_lines.append(f"{tab}{ch[0]}={ch[1]}\n")
 
-        Data_lines.append("\n")
+        data_lines.append("\n")
 
-        return Data_lines
+        return data_lines
+    
+    def match_channels(self, ch_ids):
+        """
+        
+
+        Parameters
+        ----------
+        ch_ids : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        for ch in self.channel_ids:
+            try:
+                comp = ch_ids[ch]
+                setattr(self, comp.lower(), ch)
+            except KeyError:
+                print(f"Could not find {ch} in channel_ids")
+                continue
+        
 
 
 def _validate_str_with_equals(input_string):
@@ -2496,7 +2561,9 @@ def _validate_edi_lines(edi_lines):
     else:
         return edi_lines
 
-
+# =============================================================================
+#  Generic read and write
+# =============================================================================
 def read_edi(fn):
     """
     
@@ -2508,7 +2575,11 @@ def read_edi(fn):
     :rtype: TYPE
 
     """
-
+    # need to add this here instead of the top is because of recursive
+    # importing.  This may not be the best way to do this but works for now
+    # so we don't have to break how MTpy structure is setup now.
+    from mtpy.core import mt
+    
     edi_obj = Edi()
     edi_obj.read_edi_file(fn)
 
@@ -2536,7 +2607,8 @@ def write_edi(mt_object, fn=None):
     :rtype: TYPE
 
     """
-
+    from mtpy.core import mt
+    
     if not isinstance(mt_object, mt.MT):
         raise ValueError("Input must be an mtpy.core.mt.MT object")
 

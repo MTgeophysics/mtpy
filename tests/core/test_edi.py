@@ -138,6 +138,117 @@ class TestInformation(unittest.TestCase):
 
         self.assertEqual(self.info.info_dict, {})
         self.assertEqual(self.info.info_list, [])
+        
+class TestDefine(unittest.TestCase):
+    """ 
+    Testing mtpy.core.io.edi.DefineMeasurement
+    """
+    
+    def setUp(self):
+        self.define = edi.DefineMeasurement()
+        
+    def test_phoenix(self):
+        self.define.fn = phoenix_fn
+        
+        self.assertTrue(hasattr(self.define, "meas_ex"))
+        self.assertTrue(hasattr(self.define, "meas_ey"))
+        self.assertTrue(hasattr(self.define, "meas_hx"))
+        self.assertTrue(hasattr(self.define, "meas_hy"))
+        self.assertTrue(hasattr(self.define, "meas_hz"))
+        self.assertTrue(hasattr(self.define, "meas_rrhx"))
+        self.assertTrue(hasattr(self.define, "meas_rrhy"))
+        
+        self.assertEqual(self.define.meas_ex.chtype, "EX")
+        self.assertEqual(self.define.meas_ey.chtype, "EY")
+        self.assertEqual(self.define.meas_hx.chtype, "HX")
+        self.assertEqual(self.define.meas_hy.chtype, "HY")
+        self.assertEqual(self.define.meas_hz.chtype, "HZ")
+        self.assertEqual(self.define.meas_rrhx.chtype, "RRHX")
+        self.assertEqual(self.define.meas_rrhy.chtype, "RRHY")
+        
+        self.assertEqual(self.define.meas_ex.dipole_length, 50)
+        self.assertEqual(self.define.meas_ex.azimuth, 0)
+        
+        self.assertAlmostEqual(self.define.meas_ey.dipole_length, 49.9, 1)
+        self.assertAlmostEqual(self.define.meas_ey.azimuth, 116.67, 2)
+        
+    def test_metronix(self):
+        self.define.fn = metronix_fn
+        
+        self.assertTrue(hasattr(self.define, "meas_ex"))
+        self.assertTrue(hasattr(self.define, "meas_ey"))
+        self.assertTrue(hasattr(self.define, "meas_hx"))
+        self.assertTrue(hasattr(self.define, "meas_hy"))
+        self.assertTrue(hasattr(self.define, "meas_hz"))
+        
+        self.assertEqual(self.define.meas_ex.chtype, "EX")
+        self.assertEqual(self.define.meas_ey.chtype, "EY")
+        self.assertEqual(self.define.meas_hx.chtype, "HX")
+        self.assertEqual(self.define.meas_hy.chtype, "HY")
+        self.assertEqual(self.define.meas_hz.chtype, "HZ")
+        
+        
+        self.assertEqual(self.define.meas_ex.dipole_length, 100)
+        self.assertEqual(self.define.meas_ex.azimuth, 0)
+        
+        self.assertEqual(self.define.meas_ey.dipole_length, 100)
+        self.assertEqual(self.define.meas_ey.azimuth, 90)
+        
+    def test_quantec(self):
+        self.define.fn = quantec_fn
+        
+        self.assertTrue(hasattr(self.define, "meas_ex"))
+        self.assertTrue(hasattr(self.define, "meas_ey"))
+        self.assertTrue(hasattr(self.define, "meas_hx"))
+        self.assertTrue(hasattr(self.define, "meas_hy"))
+        self.assertTrue(hasattr(self.define, "meas_hz"))
+        self.assertTrue(hasattr(self.define, "meas_rrhx"))
+        self.assertTrue(hasattr(self.define, "meas_rrhy"))
+        
+        self.assertEqual(self.define.meas_ex.chtype, "EX")
+        self.assertEqual(self.define.meas_ey.chtype, "EY")
+        self.assertEqual(self.define.meas_hx.chtype, "HX")
+        self.assertEqual(self.define.meas_hy.chtype, "HY")
+        self.assertEqual(self.define.meas_hz.chtype, "HZ")
+        self.assertEqual(self.define.meas_rrhx.chtype, "RRHX")
+        self.assertEqual(self.define.meas_rrhy.chtype, "RRHY")
+        
+        self.assertEqual(self.define.meas_ex.dipole_length, 100)
+        self.assertEqual(self.define.meas_ex.azimuth, 0)
+        
+        self.assertEqual(self.define.meas_ey.dipole_length, 100)
+        self.assertEqual(self.define.meas_ey.azimuth, 90)
+        
+class TestDataSection(unittest.TestCase):
+    """
+    Testing mtpy.core.io.edi.DataSection
+    """
+    def setUp(self):
+        self.ds = edi.DataSection()
+        
+    def test_phoenix(self):
+        self.ds.fn = phoenix_fn
+        
+        self.assertEqual(self.ds.data_type_in, "spectra")
+        self.assertEqual(self.ds.nfreq, 80)
+        self.assertEqual(self.ds.sectid, "14-IEB0537A")
+        
+    def test_metronix(self):
+        self.ds.fn = metronix_fn
+        
+        self.assertEqual(self.ds.data_type_in, "z")
+        self.assertEqual(self.ds.nfreq, 73)
+        self.assertEqual(self.ds.sectid, "858")
+        
+    def test_quantec(self):
+        self.ds.fn = quantec_fn
+        
+        self.assertEqual(self.ds.data_type_in, "spectra")
+        self.assertEqual(self.ds.nfreq, 41)
+        self.assertEqual(self.ds.sectid, "IEA00184")
+    
+        
+        
 
 
 # =============================================================================
