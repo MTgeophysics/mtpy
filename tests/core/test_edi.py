@@ -172,6 +172,15 @@ class TestDefine(unittest.TestCase):
         self.assertAlmostEqual(self.define.meas_ey.dipole_length, 49.9, 1)
         self.assertAlmostEqual(self.define.meas_ey.azimuth, 116.67, 2)
         
+        self.assertDictEqual(self.define.channel_ids,
+                             {'114.011': 'EX',
+                              '115.011': 'EY',
+                              '111.011': 'HX',
+                              '112.011': 'HY',
+                              '113.011': 'HZ',
+                              '116.011': 'RRHX',
+                              '117.011': 'RRHY'})
+        
     def test_metronix(self):
         self.define.fn = metronix_fn
         
@@ -231,7 +240,7 @@ class TestDataSection(unittest.TestCase):
         
         self.assertEqual(self.ds.data_type_in, "spectra")
         self.assertEqual(self.ds.nfreq, 80)
-        self.assertEqual(self.ds.sectid, "14-IEB0537A")
+        self.assertEqual(self.ds.sectid, "PHXTest01")
         
     def test_metronix(self):
         self.ds.fn = metronix_fn

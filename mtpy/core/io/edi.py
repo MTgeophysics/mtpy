@@ -192,6 +192,7 @@ class Edi(object):
         self.Info = Information(edi_lines=self._edi_lines)
         self.Measurement = DefineMeasurement(edi_lines=self._edi_lines)
         self.Data = DataSection(edi_lines=self._edi_lines)
+        self.Data.match_channels(self.Measurement.channel_ids)
 
         self._read_data()
 
@@ -226,7 +227,7 @@ class Edi(object):
 
         lines = self._edi_lines[self.Data.line_num :]
 
-        if self.Data.data_type == "spectra":
+        if self.Data.data_type_in == "spectra":
             self.logger.debug("Converting Spectra to Impedance and Tipper")
             self.logger.debug(
                 "Check to make sure input channel list is correct if the data looks incorrect"
@@ -241,7 +242,7 @@ class Edi(object):
                 c_list = ["hx", "hy", "hz", "ex", "ey", "rhx", "rhy"]
             self._read_spectra(lines, comp_list=c_list)
 
-        elif self.Data.data_type == "z":
+        elif self.Data.data_type_in == "z":
             self._read_mt(lines)
 
     def _read_mt(self, data_lines):
@@ -2421,10 +2422,12 @@ class DataSection(object):
             d_list = d_line.split("=")
             if len(d_list) > 1:
                 key = d_list[0].lower()
-                try:
-                    value = int(d_list[1].strip())
-                except ValueError:
-                    value = d_list[1].strip().replace('"', "")
+                value = d_list[1].strip().replace('"', "")
+                if key not in ["sectid"]:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
 
                 setattr(self, key, value)
             else:
