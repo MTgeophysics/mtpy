@@ -14,6 +14,7 @@
 # ==============================================================================
 import os
 import copy
+import re
 
 import numpy as np
 import xml.etree.cElementTree as ET
@@ -21,8 +22,7 @@ from xml.dom import minidom
 
 import mtpy.core.z as mtz
 from mtpy.utils.mttime import get_now_utc
-from mtpy.core.standards.helpers import (element_to_dict, 
-                                         recursive_split_setattr, 
+from mtpy.core.standards.helpers import (element_to_dict,  
                                          flatten_dict)
 
 
@@ -947,38 +947,71 @@ class XMLConfig(object):
             if a_key not in ["_name", "_value", "_attr"]
         ]
 
+# class Empty:
+#     pass
 
-class Base:
-    """
-    empty object to put stuff into
-    """
-    def __init__(self, **kwargs):
-        self.dict_to_attr(kwargs)
-    def dict_to_attr(self, value_dict):
+# class Base:
+#     """
+#     empty object to put stuff into
+#     """
+#     def __init__(self, **kwargs):
+#         self.dict_to_attr(kwargs)
         
-        value_dict = flatten_dict(value_dict)
-        for k, v in value_dict.items():
-            self.recursive_split_setattr(self, k, v)
-            
-    # def _set_attr(self, key, value):
-    #     if isinstance(value, (dict)):
-    #         setattr(self, key, Base)
-
-    #     value = flatten_dict(value)
-    #     recursive_split_setattr(self, key, value)
-        
-    def recursive_split_setattr(self, base_object, name, value, sep="."):
-        key, *other = name.split(sep, 1)
+#     def __str__(self):
+#         lines = []
+#         for k, v in self.__dict__.items():
+#             if k[0] == "_":
+#                 continue
+#             if isinstance(v, type(Base)):
+#                 for k1, v1 in v.__dict__.items():
+#                     if k1[0] == "_":
+#                         continue
+#                     if isinstance(v1, type(Base)):
+#                         for k2, v2 in v1.__dict__.items():
+#                             if k2[0] == "_":
+#                                 continue
+#                             lines.append(f"{k}.{k2}.{k1} = {v2}")
+#                     lines.append(f"{k}.{k1} = {v1}")
+#             else:
+#                 lines.append(f"{k} = {v}")
+#         return "\n".join(lines)
     
-        if other:
-            try:
-                base_object = getattr(base_object, key)
-            except AttributeError:
-                setattr(base_object, key, Base)
-                base_object = getattr(base_object, key)
-            recursive_split_setattr(base_object, other[0], value)
-        else:
-            setattr(base_object, key, value)
+#     def __repr__(self):
+#         return self.__str__()
+    
+#     def dict_to_attr(self, value_dict):
+        
+#         value_dict = flatten_dict(value_dict)
+#         for k, v in value_dict.items():
+#             self.recursive_split_setattr(self, k, v)
+#     def _validate_name(self, name):
+    
+#         if "/" in name:
+#             name = name.replace("/", ".")
+    
+#         if re.search("[A-Z].*?", name):
+#             name = "_".join(re.findall(".[^A-Z]*", name))
+#             name = name.replace("._", ".")
+#             name = name.lower()
+    
+#         return name
+        
+#     def recursive_split_setattr(self, base_object, name, value, sep="."):
+#         key, *other = name.split(sep, 1)
+#         key = self._validate_name(key)
+
+    
+#         if other:
+#             try:
+#                 base_object = getattr(base_object, key)
+#             except AttributeError:
+#                 setattr(base_object, key, Empty)
+#                 base_object = getattr(base_object, key)
+#                 print(f"In base={key}, other={other[0]}")
+#             self.recursive_split_setattr(base_object, other[0], value)
+#         else:
+#             print(f"Setting {key} = {value}")
+#             setattr(base_object, key, value)
                 
         
 

@@ -217,14 +217,16 @@ def element_to_dict(element):
     # going to skip attributes for now, later can check them against
     # standards
     if element.attrib:
+        print(f"found attributes {element.tag} -- {element.attrib}")
         for k, v in element.attrib.items():
+            print(f"setting {element.tag} {k} to {v}")
             meta_dict[element.tag][k] = v
 
     if element.text:
         text = element.text.strip()
         if children or element.attrib:
             if text:
-                meta_dict[element.tag] = text
+                meta_dict[element.tag]['value'] = text
         else:
             meta_dict[element.tag] = text
 
