@@ -154,35 +154,35 @@ def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor
 def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
 
     if inmatrix is None:
-        raise MTex.MTpyError_inputarguments("Matrix must be defined")
+        raise MTex.MTpyError_input_arguments("Matrix must be defined")
 
     if (inmatrix_err is not None) and (inmatrix.shape != inmatrix_err.shape):
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "Matrix and err-matrix shapes do not match: %s - %s"
             % (str(inmatrix.shape), str(inmatrix_err.shape))
         )
 
     if inmatrix.shape[-2] != inmatrix.shape[-1]:
-        raise MTex.MTpyError_inputarguments("Matrices must be square!")
+        raise MTex.MTpyError_input_arguments("Matrices must be square!")
 
     if (inmatrix_err is not None) and (
         inmatrix_err.shape[-2] != inmatrix_err.shape[-1]
     ):
-        raise MTex.MTpyError_inputarguments("Matrices must be square!")
+        raise MTex.MTpyError_input_arguments("Matrices must be square!")
 
     dim = inmatrix.shape[-1]
 
     det = np.linalg.det(inmatrix)
 
     if det == 0:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "Matrix is singular - I cannot invert that!"
         )
 
     inv_matrix = np.zeros_like(inmatrix)
 
     if dim != 2:
-        raise MTex.MTpyError_inputarguments("Only 2D matrices supported yet")
+        raise MTex.MTpyError_input_arguments("Only 2D matrices supported yet")
 
     inv_matrix = np.linalg.inv(inmatrix)
 
@@ -229,7 +229,7 @@ def rhophi2z(rho, phi, freq):
             raise
 
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "ERROR - arguments must be two 2x2 arrays (real)"
         )
 
@@ -506,10 +506,10 @@ def old_z_error2r_phi_error(x, x_error, y, y_error):
 def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err=None):
 
     if inmatrix is None:
-        raise MTex.MTpyError_inputarguments("Matrix AND eror matrix must be defined")
+        raise MTex.MTpyError_input_arguments("Matrix AND eror matrix must be defined")
 
     if (inmatrix_err is not None) and (inmatrix.shape != inmatrix_err.shape):
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "Matrix and err-matrix shapes do not match: %s - %s"
             % (str(inmatrix.shape), str(inmatrix_err.shape))
         )
@@ -517,7 +517,7 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err=None):
     try:
         degreeangle = angle % 360
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             '"Angle" must be a valid number (in degrees)'
         )
 
@@ -572,10 +572,10 @@ def rotatevector_incl_errors(invector, angle, invector_err=None):
     # check for row or column vector
 
     if invector is None:
-        raise MTex.MTpyError_inputarguments("Vector AND error-vector must be defined")
+        raise MTex.MTpyError_input_arguments("Vector AND error-vector must be defined")
 
     if (invector_err is not None) and (invector.shape != invector_err.shape):
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "Vector and errror-vector shapes do not match: %s - %s"
             % (str(invector.shape), str(invector_err.shape))
         )
@@ -583,7 +583,7 @@ def rotatevector_incl_errors(invector, angle, invector_err=None):
     try:
         degreeangle = angle % 360
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             '"Angle" must be a valid number (in degrees)'
         )
 
@@ -621,10 +621,10 @@ def multiplymatrices_incl_errors(
 ):
 
     if inmatrix1 is None or inmatrix2 is None:
-        raise MTex.MTpyError_inputarguments("ERROR - two 2x2 arrays needed as input")
+        raise MTex.MTpyError_input_arguments("ERROR - two 2x2 arrays needed as input")
 
     if inmatrix1.shape != inmatrix2.shape:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "ERROR - two 2x2 arrays with same dimensions needed as input"
         )
 
@@ -689,7 +689,7 @@ def reorient_data2D(x_values, y_values, x_sensor_angle=0, y_sensor_angle=90):
         if len(x_values) != len(y_values):
             raise
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "ERROR - both input arrays must be of same length"
         )
 
@@ -707,7 +707,7 @@ def reorient_data2D(x_values, y_values, x_sensor_angle=0, y_sensor_angle=90):
         x_angle = math.radians(x_sensor_angle)
         y_angle = math.radians(y_sensor_angle)
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "ERROR - both angles must be of type int or float"
         )
 
@@ -721,7 +721,7 @@ def reorient_data2D(x_values, y_values, x_sensor_angle=0, y_sensor_angle=90):
     try:
         new_array = np.dot(in_array, T.I)
     except:
-        raise MTex.MTpyError_inputarguments(
+        raise MTex.MTpyError_input_arguments(
             "ERROR - angles must define independent axes to span 2D"
         )
 

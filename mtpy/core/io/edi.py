@@ -891,13 +891,13 @@ class Edi(object):
     @property
     def station(self):
         """station name"""
-        return self.Header.dataid
+        return self.Header.dataid.replace(r"/", "_")
 
     @station.setter
     def station(self, new_station):
         """station name"""
         if not isinstance(new_station, str):
-            new_station = f"{new_station}".replace(r"/", "")
+            new_station = f"{new_station}".replace(r"/", "_")
         self.Header.dataid = new_station
         self.Data.sectid = new_station
 

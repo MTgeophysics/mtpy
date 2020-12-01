@@ -167,7 +167,7 @@ class PhaseTensor(object):
             # testing existing atributes for consistent shapes:
             try:
                 if np.shape(self.pt) != np.shape(self.pt_err):
-                    raise MTex.MTpyError_inputarguments(
+                    raise MTex.MTpyError_input_arguments(
                         "pt and pt_err are not" + " the same shape"
                     )
             except:
@@ -178,7 +178,7 @@ class PhaseTensor(object):
                 self._pt_err = None
             try:
                 if len(self.pt) != len(self.freq):
-                    raise MTex.MTpyError_inputarguments(
+                    raise MTex.MTpyError_input_arguments(
                         "pt and freq are" + "not the same shape"
                     )
             except:
@@ -189,7 +189,7 @@ class PhaseTensor(object):
                 self._freq = None
             try:
                 if len(self.pt) != len(self.rotation_angle):
-                    raise MTex.MTpyError_inputarguments(
+                    raise MTex.MTpyError_input_arguments(
                         "pt and rotation angles" + "are not the same shape"
                     )
             except:
@@ -1129,7 +1129,7 @@ class ResidualPhaseTensor:
                                 self.rpt_err[idx] = np.sqrt(
                                     0.25 * err1 ** 2 + 0.25 * err2 ** 2
                                 )
-                            except MTex.MTpyError_inputarguments:
+                            except MTex.MTpyError_input_arguments:
                                 self.rpt_err[idx] = 1e10
 
                         self._pt_err1 = pt1err
@@ -1162,7 +1162,7 @@ class ResidualPhaseTensor:
                             )
 
                             self.rpt_err = np.sqrt(0.25 * err1 ** 2 + 0.25 * err2 ** 2)
-                        except MTex.MTpyError_inputarguments:
+                        except MTex.MTpyError_input_arguments:
                             self.rpt_err[idx] = 1e10
 
                         self._pt1err = np.zeros((1, 2, 2))
