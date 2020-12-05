@@ -731,16 +731,21 @@ class Base:
             self.logger.error(msg)
             raise MTSchemaError(msg)
 
-        class_name = list(meta_dict.keys())[0]
-        if class_name.lower() != self._class_name.lower():
-            msg = (
-                "name of input dictionary is not the same as class type "
-                "input = {0}, class type = {1}".format(class_name, self._class_name)
-            )
-            self.logger.debug(msg)
+        keys = list(meta_dict.keys())
+        if len(keys) == 1:
+            class_name = keys[0]
+            if class_name.lower() != self._class_name.lower():
+                msg = (
+                    "name of input dictionary is not the same as class type "
+                    "input = {0}, class type = {1}".format(class_name, self._class_name)
+                )
+                self.logger.debug(msg)
+            meta_dict = helpers.flatten_dict(meta_dict[class_name])
+        else:
+            self.logger.debug(f"Assuming input dictionary is of type {self._class_name}")
+            meta_dict = helpers.flatten_dict(meta_dict)
 
-        # be sure to flatten the dictionary first for easier transform
-        meta_dict = helpers.flatten_dict(meta_dict[class_name])
+        # set attributes by key.
         for name, value in meta_dict.items():
             self.set_attr_from_name(name, value)
 
