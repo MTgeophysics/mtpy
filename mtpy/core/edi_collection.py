@@ -1074,10 +1074,10 @@ if __name__ == "__main__":
         max_dist = mt_distances.get("MAX_DIST")
         print( mt_distances )
 
+        # todo: review this method to consistent column naming. create_phase_tensor_csv
         # obj.create_phase_tensor_csv(outdir)
 
-
-        # Todo: There is an issue in the case interpolate=False: the output csv files [float].
+    # When the interploae = True
         # obj.create_measurement_csv(outdir, interpolate=True)
         # obj.calculate_aver_impedance(outdir,interpolate=True)
 
@@ -1086,5 +1086,6 @@ if __name__ == "__main__":
         obj.calculate_aver_impedance(outdir,interpolate=False)
 
         # obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
-        #obj.create_penetration_depth_csv(outdir, interpolate=False)  # todo: interploate=True
+        #obj.create_penetration_depth_csv(outdir, interpolate=False)
+        # todo: interploate=True combine create_penetration_depth_csv into calculate_aver_impedance
 
