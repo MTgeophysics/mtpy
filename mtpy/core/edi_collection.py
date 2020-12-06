@@ -13,7 +13,7 @@ import glob
 import os
 import sys
 
-from logging import INFO
+from logging import INFO,DEBUG,WARNING,ERROR
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -71,6 +71,7 @@ class EdiCollection(object):
         #self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)  # will be EdiCollection
         self._logger = MtPyLog.get_mtpy_logger(__name__)  # __name__ will be  path.to.module OR __main__
         self._logger.setLevel(INFO)
+        #self._logger.setLevel(DEBUG)
 
         if edilist is not None:
             self.edifiles = edilist
@@ -650,6 +651,7 @@ class EdiCollection(object):
                     freq_max = freq * (1 + self.ptol)
                     freq_min = freq * (1 - self.ptol)
                     f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+                    f_index_list = f_index_list[0]  # reduce from 3d [f,2,2] to 1d [f]
 
                     pt = mt_obj.pt
                     ti = mt_obj.Tipper
@@ -660,9 +662,9 @@ class EdiCollection(object):
                     self._logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
-                    p_index = f_index_list[0]
+                    the_index = f_index_list[0]  # a single value
 
-                    self._logger.debug("The freqs index %s", f_index_list)
+                    self._logger.debug("The freqs index %s", the_index)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lat, lon = (
@@ -672,28 +674,28 @@ class EdiCollection(object):
                     # resist_phase.compute_res_phase()
 
                     mt_stat = [freq, station, lon, lat,
-                               zobj.z[p_index, 0, 0].real,
-                               zobj.z[p_index, 0, 0].imag,
-                               zobj.z[p_index, 0, 1].real,
-                               zobj.z[p_index, 0, 1].imag,
-                               zobj.z[p_index, 1, 0].real,
-                               zobj.z[p_index, 1, 0].imag,
-                               zobj.z[p_index, 1, 1].real,
-                               zobj.z[p_index, 1, 1].imag,
-                               ti.tipper[p_index, 0, 0].real,
-                               ti.tipper[p_index, 0, 0].imag,
-                               ti.tipper[p_index, 0, 1].real,
-                               ti.tipper[p_index, 0, 1].imag,
-                               resist_phase.resxx[p_index], resist_phase.resxy[p_index],
-                               resist_phase.resyx[p_index], resist_phase.resyy[p_index],
-                               resist_phase.phasexx[p_index], resist_phase.phasexy[p_index],
-                               resist_phase.phaseyx[p_index], resist_phase.phaseyy[p_index]
+                               zobj.z[the_index, 0, 0].real,
+                               zobj.z[the_index, 0, 0].imag,
+                               zobj.z[the_index, 0, 1].real,
+                               zobj.z[the_index, 0, 1].imag,
+                               zobj.z[the_index, 1, 0].real,
+                               zobj.z[the_index, 1, 0].imag,
+                               zobj.z[the_index, 1, 1].real,
+                               zobj.z[the_index, 1, 1].imag,
+                               ti.tipper[the_index, 0, 0].real,
+                               ti.tipper[the_index, 0, 0].imag,
+                               ti.tipper[the_index, 0, 1].real,
+                               ti.tipper[the_index, 0, 1].imag,
+                               resist_phase.resxx[the_index], resist_phase.resxy[the_index],
+                               resist_phase.resyx[the_index], resist_phase.resyy[the_index],
+                               resist_phase.phasexx[the_index], resist_phase.phasexy[the_index],
+                               resist_phase.phaseyx[the_index], resist_phase.phaseyy[the_index]
                                ]
                     mtlist.append(mt_stat)
 
                 else:
                     self._logger.warn(
-                        'Freq %s NOT found for this station %s', freq, mt_obj.station)
+                        'Freq %s NOT found for this station %s *** Skipping it in CSV file', freq, mt_obj.station)
 
             with open(csvfname, "a",newline="") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
@@ -983,40 +985,43 @@ class EdiCollection(object):
                     freq_max = freq * (1 + self.ptol)
                     freq_min = freq * (1 - self.ptol)
                     f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+                    f_index_list = f_index_list[0]  # slice to get the dimension_freq.
 
                     zobj = mt_obj.Z
+
+                    self._logger.debug("Debug interpolate=False f_index_list: %s,%s ", f_index_list, len(f_index_list))
                 # end if
 
-                # print("Debug type(zobj.det) ******", type(zobj.det), zobj.det.size, zobj.det, np.abs(zobj.det[0]))
+                self._logger.debug("Debug zobj.det ****** %s, %s,%s,%s",type(zobj.det), len(zobj.det), zobj.det[0], np.abs(zobj.det[0]))
 
                 if len(f_index_list) > 1:
                     self._logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
-                    p_index = f_index_list[0]
+                    the_index = f_index_list[0]
 
-                    self._logger.debug("The freqs index %s", f_index_list)
+                    self._logger.debug("The freqs index %s", the_index)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lat, lon = (
                         mt_obj.station, mt_obj.lat, mt_obj.lon)
 
                     mt_stat = [freq, station,lon, lat,
-                               zobj.z[p_index, 0, 0].real,
-                               zobj.z[p_index, 0, 0].imag,
-                               zobj.z[p_index, 0, 1].real,
-                               zobj.z[p_index, 0, 1].imag,
-                               zobj.z[p_index, 1, 0].real,
-                               zobj.z[p_index, 1, 0].imag,
-                               zobj.z[p_index, 1, 1].real,
-                               zobj.z[p_index, 1, 1].imag,
-                                np.abs(zobj.det[0])
+                               zobj.z[the_index, 0, 0].real,
+                               zobj.z[the_index, 0, 0].imag,
+                               zobj.z[the_index, 0, 1].real,
+                               zobj.z[the_index, 0, 1].imag,
+                               zobj.z[the_index, 1, 0].real,
+                               zobj.z[the_index, 1, 0].imag,
+                               zobj.z[the_index, 1, 1].real,
+                               zobj.z[the_index, 1, 1].imag,
+                               np.abs(zobj.det[the_index])
                                ]
                     mtlist.append(mt_stat)
 
                 else:
                     self._logger.warn(
-                        'Freq %s NOT found for this station %s', freq, mt_obj.station)
+                        'Freq %s NOT found for this station %s ***** Skipping it in csv file', freq, mt_obj.station)
 
             with open(csvfname, "a", newline="") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
@@ -1073,9 +1078,13 @@ if __name__ == "__main__":
 
 
         # Todo: There is an issue in the case interpolate=False: the output csv files [float].
-        obj.create_measurement_csv(outdir, interpolate=True)
-        obj.calculate_aver_impedance(outdir,interpolate=True)
+        # obj.create_measurement_csv(outdir, interpolate=True)
+        # obj.calculate_aver_impedance(outdir,interpolate=True)
+
+# When the interploae = False
+        obj.create_measurement_csv(outdir, interpolate=False)
+        obj.calculate_aver_impedance(outdir,interpolate=False)
 
         # obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
-        obj.create_penetration_depth_csv(outdir, interpolate=False)  # todo: interploate=True
+        #obj.create_penetration_depth_csv(outdir, interpolate=False)  # todo: interploate=True
 
