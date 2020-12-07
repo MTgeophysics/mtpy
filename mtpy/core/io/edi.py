@@ -319,22 +319,22 @@ class Edi(object):
             z_arr[:, 0, 0] = (
                 np.array(data_dict["zxxr"]) + np.array(data_dict["zxxi"]) * 1j
             )
-            z_err_arr[:, 0, 0] = np.array(data_dict["zxx.var"]) ** 0.5
+            z_err_arr[:, 0, 0] = np.abs(np.array(data_dict["zxx.var"])) ** 0.5
         if "zxyr" in data_dict.keys():
             z_arr[:, 0, 1] = (
                 np.array(data_dict["zxyr"]) + np.array(data_dict["zxyi"]) * 1j
             )
-            z_err_arr[:, 0, 1] = np.array(data_dict["zxy.var"]) ** 0.5
+            z_err_arr[:, 0, 1] = np.abs(np.array(data_dict["zxy.var"])) ** 0.5
         if "zyxr" in data_dict.keys():
             z_arr[:, 1, 0] = (
                 np.array(data_dict["zyxr"]) + np.array(data_dict["zyxi"]) * 1j
             )
-            z_err_arr[:, 1, 0] = np.array(data_dict["zyx.var"]) ** 0.5
+            z_err_arr[:, 1, 0] = np.abs(np.array(data_dict["zyx.var"])) ** 0.5
         if "zyyr" in data_dict.keys():
             z_arr[:, 1, 1] = (
                 np.array(data_dict["zyyr"]) + np.array(data_dict["zyyi"]) * 1j
             )
-            z_err_arr[:, 1, 1] = np.array(data_dict["zyy.var"]) ** 0.5
+            z_err_arr[:, 1, 1] = np.abs(np.array(data_dict["zyy.var"])) ** 0.5
 
         # check for order of frequency, we want high togit  low
         if freq_arr[0] < freq_arr[1]:
@@ -380,8 +380,8 @@ class Edi(object):
                 np.array(data_dict["tyr.exp"]) + np.array(data_dict["tyi.exp"]) * 1j
             )
 
-            tipper_err_arr[:, 0, 0] = np.array(data_dict["txvar.exp"]) ** 0.5
-            tipper_err_arr[:, 0, 1] = np.array(data_dict["tyvar.exp"]) ** 0.5
+            tipper_err_arr[:, 0, 0] = np.abs(np.array(data_dict["txvar.exp"])) ** 0.5
+            tipper_err_arr[:, 0, 1] = np.abs(np.array(data_dict["tyvar.exp"])) ** 0.5
 
             if flip:
                 tipper_arr = tipper_arr[::-1]
@@ -1334,7 +1334,14 @@ class Header(object):
 
     @acqdate.setter
     def acqdate(self, value):
-        self._acqdate = MTime(value)
+        if value in [None, "NONE", "None", "none"]:
+            self.logger.debug("Header.acqdate is None, cannot set value")
+            return 
+        try:
+            self._acqdate = MTime(value)
+        except MTex.MTTimeError as error:
+            msg = f"Cannot set Header.acqdata with {value}. {error}"
+            self.logger.debug(msg)
 
     @property
     def enddate(self):
@@ -1343,7 +1350,14 @@ class Header(object):
 
     @enddate.setter
     def enddate(self, value):
-        self._enddate = MTime(value)
+        if value in [None, "NONE", "None", "none"]:
+            self.logger.debug("Header.enddate is None, cannot set value")
+            return 
+        try:
+            self._enddate = MTime(value)
+        except MTex.MTTimeError as error:
+            msg = f"Cannot set Header.enddate with {value}. {error}"
+            self.logger.debug(msg)
 
     @property
     def filedate(self):
@@ -1351,7 +1365,14 @@ class Header(object):
 
     @filedate.setter
     def filedate(self, value):
-        self._filedate = MTime(value)
+        if value in [None, "NONE", "None", "none"]:
+            self.logger.debug("Header.filedate is None, cannot set value")
+            return 
+        try:
+            self._filedate = MTime(value)
+        except MTex.MTTimeError as error:
+            msg = f"Cannot set Header.filedate with {value}. {error}"
+            self.logger.debug(msg)
 
     @property
     def progdate(self):
@@ -1359,10 +1380,13 @@ class Header(object):
 
     @progdate.setter
     def progdate(self, value):
+        if value in [None, "NONE", "None", "none"]:
+            self.logger.debug("Header.progdate is None, cannot set value")
+            return 
         try:
             self._progdate = MTime(value)
         except MTex.MTTimeError as error:
-            msg = f"PROGDATE must be a date not {value}. {error}"
+            msg = f"Header.progdage must be a date not {value}. {error}"
             self.logger.debug(msg)
 
     def get_header_list(self):
@@ -2205,7 +2229,7 @@ class HMeasurement(object):
         if not isinstance(self.acqchan, (int, float)):
             try:
                 return [int("".join(i for i in self.acqchan if i.isdigit()))][0]
-            except IndexError:
+            except (IndexError, ValueError):
                 return 0
         return self.acqchan
 
@@ -2290,7 +2314,7 @@ class EMeasurement(object):
         if not isinstance(self.acqchan, (int, float)):
             try:
                 return [int("".join(i for i in self.acqchan if i.isdigit()))][0]
-            except IndexError:
+            except (IndexError, ValueError):
                 return 0
         return self.acqchan
 
