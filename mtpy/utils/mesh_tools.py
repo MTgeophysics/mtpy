@@ -22,6 +22,31 @@ def grid_centre(grid_edges):
     """
     return np.mean([grid_edges[1:], grid_edges[:-1]], axis=0)
 
+def get_rounding(cell_width):
+    """
+    Get the rounding number given the cell width.  Will be the same values as the 
+    width
+    
+    :param cell_width: DESCRIPTION
+    :type cell_width: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    if (cell_width > 1) and (cell_width < 10):
+        rounding = 0
+    
+    elif (cell_width >= 10) and (cell_width < 100):
+        rounding = -1
+    elif (cell_width >= 100) and (cell_width < 1000):
+        rounding = -2
+    elif (cell_width >= 1000) and (cell_width < 10000):
+        rounding = -3
+        
+    return rounding
+    
+    
 
 def rotate_mesh(grid_east, grid_north, origin, rotation_angle, return_centre=False):
     """
@@ -259,6 +284,7 @@ def get_padding_cells(cell_width, max_distance, num_cells, stretch):
     
     """
 
+
     # compute scaling factor
     scaling = ((max_distance) / (cell_width * stretch)) ** (1.0 / (num_cells - 1))
 
@@ -266,11 +292,13 @@ def get_padding_cells(cell_width, max_distance, num_cells, stretch):
     padding = np.zeros(num_cells)
     for ii in range(num_cells):
         # calculate the cell width for an exponential increase
-        exp_pad = np.round((cell_width * stretch) * scaling ** ii, -2)
+        exp_pad = np.round((cell_width * stretch) * scaling ** ii, 
+                           get_rounding(cell_width))
 
         # calculate the cell width for a geometric increase by 1.2
         mult_pad = np.round(
-            (cell_width * stretch) * ((1 - stretch ** (ii + 1)) / (1 - stretch)), -2
+            (cell_width * stretch) * ((1 - stretch ** (ii + 1)) / (1 - stretch)), 
+            get_rounding(cell_width),
         )
 
         # take the maximum width for padding
@@ -285,7 +313,8 @@ def get_padding_from_stretch(cell_width, pad_stretch, num_cells):
     
     """
     nodes = np.around(
-        cell_width * (np.ones(num_cells) * pad_stretch) ** np.arange(num_cells), -2
+        cell_width * (np.ones(num_cells) * pad_stretch) ** np.arange(num_cells), 
+        get_rounding(cell_width)
     )
 
     return np.array([nodes[:i].sum() for i in range(1, len(nodes) + 1)])
@@ -300,7 +329,8 @@ def get_padding_cells2(cell_width, core_max, max_distance, num_cells):
     max_distance = max(cell_width * num_cells, max_distance)
 
     cells = np.around(
-        np.logspace(np.log10(core_max), np.log10(max_distance), num_cells), -2
+        np.logspace(np.log10(core_max), np.log10(max_distance), num_cells), 
+        get_rounding(cell_width)
     )
     cells -= core_max
 

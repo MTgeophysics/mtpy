@@ -2223,3 +2223,86 @@ class Model(object):
             data = np.vstack([xp, yp, vals]).T
 
             np.savetxt(fname, data, fmt=fmt)
+            
+    def write_out_file(self, save_fn, geographic_east, geographic_north, geographic_elevation):
+        """
+        will write an .out file for LeapFrog.
+
+        Note that y is assumed to be S --> N, e is assumed to be W --> E and
+        z is positive upwards.  This means that index [0, 0, 0] is the
+        southwest corner of the first layer. 
+
+        """
+
+        # get resistivity model
+        if self.res_model is None:
+            self.res_model = np.zeros(
+                (self.nodes_north.size, self.nodes_east.size, self.nodes_z.size)
+            )
+            self.res_model[:, :, :] = self.res_initial_value
+
+        elif type(self.res_model) in [float, int]:
+            self.res_initial_value = self.res_model
+            self.res_model = np.zeros(
+                (self.nodes_north.size, self.nodes_east.size, self.nodes_z.size)
+            )
+            self.res_model[:, :, :] = self.res_initial_value
+            
+        shift_east = geographic_east - (self.nodes_east[0] - self.nodes_east[1]/2 - self.grid_center[1]/2)/1000
+        shift_north =  geographic_north + (self.nodes_north[0] - self.nodes_north[1]/2 - self.grid_center[0]/2)/1000
+
+        # --> write file
+        with open(save_fn, "w") as ifid:
+            ifid.write("\n")
+            ifid.write(
+                "{0:>5}{1:>5}{2:>5}{3:>5} {4}\n".format(
+                    self.nodes_east.size,
+                    self.nodes_north.size,
+                    self.nodes_z.size,
+                    0,
+                    "VAL",
+                )
+            )
+
+            # write S --> N node block
+            for ii, nnode in enumerate(self.nodes_east):
+                ifid.write("{0:>12.3f}".format(abs(nnode)))
+
+            ifid.write("\n")
+
+            # write W --> E node block
+            for jj, enode in enumerate(self.nodes_north):
+                ifid.write("{0:>12.3f}".format(abs(enode)))
+            ifid.write("\n")
+
+            # write top --> bottom node block
+            for kk, zz in enumerate(self.nodes_z):
+                ifid.write("{0:>12.3f}".format(abs(zz)))
+            ifid.write("\n")
+
+            # write the resistivity in log e format
+            write_res_model = self.res_model[::-1, :, :]
+
+            # write out the layers from resmodel
+            count = 1
+            for zz in range(self.nodes_z.size):
+                ifid.write(f"{count}\n")
+                for nn in range(self.nodes_north.size):
+                    for ee in range(self.nodes_east.size):
+                        ifid.write("{0:>13.5E}".format(write_res_model[nn, ee, zz]))
+                    ifid.write("\n")
+                count += 1
+
+            ## write footer
+            ifid.write("\n")
+            ifid.write("WINGLINK\n")
+            ifid.write("  Project      (site name)\n")
+            ifid.write("           1           1    (i j block numbers)\n")
+            ifid.write(f"   {shift_east:.3f}       {shift_north:.3f}       (real world coordinates)\n")
+            ifid.write("  0.0000000E+00    (rotation)\n")
+            ifid.write(f"   {geographic_elevation:.3f}       (top elevation)\n")
+            ifid.write("\n")
+
+
+        self._logger.info("Wrote file to: {0}".format(save_fn))
+

@@ -984,10 +984,8 @@ class PlotWidget(QtWidgets.QWidget):
         save_dialog = QtWidgets.QFileDialog()
         save_fn = str(
             save_dialog.getSaveFileName(
-                None,
-                "Choose EDI file",
-                "{0}_edit.edi".format(self.mt_obj.fn.stem),
-                directory=self.mt_obj.fn.parent,
+                caption="Choose EDI file",
+                directory=self.mt_obj.fn.as_posix(),
                 filter="*.edi",
             )[0]
         )
