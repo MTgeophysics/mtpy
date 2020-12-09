@@ -22,8 +22,7 @@ from xml.dom import minidom
 
 import mtpy.core.z as mtz
 from mtpy.utils.mttime import get_now_utc
-from mtpy.core.standards.helpers import (element_to_dict,  
-                                         flatten_dict)
+from mtpy.core.standards.helpers import element_to_dict, flatten_dict
 
 
 # ==============================================================================
@@ -947,6 +946,7 @@ class XMLConfig(object):
             if a_key not in ["_name", "_value", "_attr"]
         ]
 
+
 # class Empty:
 #     pass
 
@@ -956,7 +956,7 @@ class XMLConfig(object):
 #     """
 #     def __init__(self, **kwargs):
 #         self.dict_to_attr(kwargs)
-        
+
 #     def __str__(self):
 #         lines = []
 #         for k, v in self.__dict__.items():
@@ -975,32 +975,32 @@ class XMLConfig(object):
 #             else:
 #                 lines.append(f"{k} = {v}")
 #         return "\n".join(lines)
-    
+
 #     def __repr__(self):
 #         return self.__str__()
-    
+
 #     def dict_to_attr(self, value_dict):
-        
+
 #         value_dict = flatten_dict(value_dict)
 #         for k, v in value_dict.items():
 #             self.recursive_split_setattr(self, k, v)
 #     def _validate_name(self, name):
-    
+
 #         if "/" in name:
 #             name = name.replace("/", ".")
-    
+
 #         if re.search("[A-Z].*?", name):
 #             name = "_".join(re.findall(".[^A-Z]*", name))
 #             name = name.replace("._", ".")
 #             name = name.lower()
-    
+
 #         return name
-        
+
 #     def recursive_split_setattr(self, base_object, name, value, sep="."):
 #         key, *other = name.split(sep, 1)
 #         key = self._validate_name(key)
 
-    
+
 #         if other:
 #             try:
 #                 base_object = getattr(base_object, key)
@@ -1012,8 +1012,7 @@ class XMLConfig(object):
 #         else:
 #             print(f"Setting {key} = {value}")
 #             setattr(base_object, key, value)
-                
-        
+
 
 # ==============================================================================
 #  EDI to XML
@@ -1371,7 +1370,7 @@ class EMTFXML(XMLConfig):
         print("-" * 72)
 
         return self.xml_fn
-    
+
     def read_xml_file_2(self, xml_fn):
         """
         
@@ -1381,13 +1380,12 @@ class EMTFXML(XMLConfig):
         et_xml = ET.parse(xml_fn)
 
         root = et_xml.getroot()
-        
+
         for element in list(root):
             element_dict = element_to_dict(element)
-            
+
             for k, v in element_dict.items():
                 pass
-        
 
     def read_xml_file(self, xml_fn):
         """

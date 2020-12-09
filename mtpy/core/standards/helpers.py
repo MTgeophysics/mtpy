@@ -226,7 +226,7 @@ def element_to_dict(element):
         text = element.text.strip()
         if children or element.attrib:
             if text:
-                meta_dict[element.tag]['value'] = text
+                meta_dict[element.tag]["value"] = text
         else:
             meta_dict[element.tag] = text
 

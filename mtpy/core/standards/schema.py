@@ -971,14 +971,12 @@ class Standards:
         magnetic_dict = from_csv(get_level_fn("magnetic"))
         magnetic_dict.add_dict(self.channel_dict.copy())
         return magnetic_dict
-    
+
     @property
     def xml_site(self):
         site_dict = from_csv(get_level_fn("station"))
         site_dict.add_dict(self.location_dict.copy(), "location")
         return site_dict
-        
-        
 
     @property
     def ATTR_DICT(self):

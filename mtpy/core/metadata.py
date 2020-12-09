@@ -742,7 +742,9 @@ class Base:
                 self.logger.debug(msg)
             meta_dict = helpers.flatten_dict(meta_dict[class_name])
         else:
-            self.logger.debug(f"Assuming input dictionary is of type {self._class_name}")
+            self.logger.debug(
+                f"Assuming input dictionary is of type {self._class_name}"
+            )
             meta_dict = helpers.flatten_dict(meta_dict)
 
         # set attributes by key.

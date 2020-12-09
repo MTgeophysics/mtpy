@@ -29,10 +29,10 @@ class TestEDI(unittest.TestCase):
 
     def setUp(self):
         self.edi_obj = edi.Edi()
-        
+
     def test_phoenix(self):
         self.edi_obj.fn = phoenix_fn
-        
+
         self.assertEqual(self.edi_obj.station, "PHXTest01")
         self.assertAlmostEqual(self.edi_obj.lat, 10.123, 1)
         self.assertAlmostEqual(self.edi_obj.lon, 10.113, 1)
@@ -40,24 +40,23 @@ class TestEDI(unittest.TestCase):
         self.assertEqual(self.edi_obj.Z.z.shape, (80, 2, 2))
         self.assertEqual(self.edi_obj.Tipper.tipper.shape, (80, 1, 2))
         self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
-        
+
     def test_write_phoenix(self):
         mt_obj = edi.read_edi(phoenix_fn)
         edi_obj = edi.write_edi(mt_obj, fn=temp_dir.joinpath("phoenix_test.edi"))
-        
+
         mt_obj = edi.read_edi(edi_obj.fn)
-        
+
         self.assertEqual(edi_obj.station, "PHXTest01")
         self.assertEqual(mt_obj.ex_metadata, edi_obj.ex_metadata)
         self.assertEqual(mt_obj.ey_metadata, edi_obj.ey_metadata)
         self.assertEqual(mt_obj.hx_metadata, edi_obj.hx_metadata)
         self.assertEqual(mt_obj.hy_metadata, edi_obj.hy_metadata)
         self.assertEqual(mt_obj.hz_metadata, edi_obj.hz_metadata)
-        
-        
+
     def test_metronix(self):
         self.edi_obj.fn = metronix_fn
-        
+
         self.assertEqual(self.edi_obj.station, "GEO858")
         self.assertAlmostEqual(self.edi_obj.lat, 22.691, 1)
         self.assertAlmostEqual(self.edi_obj.lon, 139.705, 1)
@@ -65,23 +64,23 @@ class TestEDI(unittest.TestCase):
         self.assertEqual(self.edi_obj.Z.z.shape, (73, 2, 2))
         self.assertEqual(self.edi_obj.Tipper.tipper.shape, (73, 1, 2))
         self.assertEqual(self.edi_obj.Data.data_type_in, "z")
-        
+
     def test_write_metronix(self):
         mt_obj = edi.read_edi(metronix_fn)
         edi_obj = edi.write_edi(mt_obj, fn=temp_dir.joinpath("metronix_test.edi"))
-        
+
         mt_obj = edi.read_edi(edi_obj.fn)
-        
+
         self.assertEqual(edi_obj.station, "GEO858")
         self.assertEqual(mt_obj.ex_metadata, edi_obj.ex_metadata)
         self.assertEqual(mt_obj.ey_metadata, edi_obj.ey_metadata)
         self.assertEqual(mt_obj.hx_metadata, edi_obj.hx_metadata)
         self.assertEqual(mt_obj.hy_metadata, edi_obj.hy_metadata)
         self.assertEqual(mt_obj.hz_metadata, edi_obj.hz_metadata)
-        
+
     def test_quantec(self):
         self.edi_obj.fn = quantec_fn
-        
+
         self.assertEqual(self.edi_obj.station, "Geoscience Australia")
         self.assertAlmostEqual(self.edi_obj.lat, -23.051, 1)
         self.assertAlmostEqual(self.edi_obj.lon, 139.468, 1)
@@ -89,13 +88,13 @@ class TestEDI(unittest.TestCase):
         self.assertEqual(self.edi_obj.Z.z.shape, (41, 2, 2))
         self.assertEqual(self.edi_obj.Tipper.tipper.shape, (41, 1, 2))
         self.assertEqual(self.edi_obj.Data.data_type_in, "spectra")
-        
+
     def test_write_quantec(self):
         mt_obj = edi.read_edi(quantec_fn)
         edi_obj = edi.write_edi(mt_obj, fn=temp_dir.joinpath("quantec_test.edi"))
-        
+
         mt_obj = edi.read_edi(edi_obj.fn)
-        
+
         self.assertEqual(edi_obj.station, "Geoscience Australia")
         self.assertEqual(mt_obj.ex_metadata, edi_obj.ex_metadata)
         self.assertEqual(mt_obj.ey_metadata, edi_obj.ey_metadata)
@@ -213,18 +212,19 @@ class TestInformation(unittest.TestCase):
 
         self.assertEqual(self.info.info_dict, {})
         self.assertEqual(self.info.info_list, [])
-        
+
+
 class TestDefine(unittest.TestCase):
     """ 
     Testing mtpy.core.io.edi.DefineMeasurement
     """
-    
+
     def setUp(self):
         self.define = edi.DefineMeasurement()
-        
+
     def test_phoenix(self):
         self.define.fn = phoenix_fn
-        
+
         self.assertTrue(hasattr(self.define, "meas_ex"))
         self.assertTrue(hasattr(self.define, "meas_ey"))
         self.assertTrue(hasattr(self.define, "meas_hx"))
@@ -232,7 +232,7 @@ class TestDefine(unittest.TestCase):
         self.assertTrue(hasattr(self.define, "meas_hz"))
         self.assertTrue(hasattr(self.define, "meas_rrhx"))
         self.assertTrue(hasattr(self.define, "meas_rrhy"))
-        
+
         self.assertEqual(self.define.meas_ex.chtype, "EX")
         self.assertEqual(self.define.meas_ey.chtype, "EY")
         self.assertEqual(self.define.meas_hx.chtype, "HX")
@@ -240,54 +240,61 @@ class TestDefine(unittest.TestCase):
         self.assertEqual(self.define.meas_hz.chtype, "HZ")
         self.assertEqual(self.define.meas_rrhx.chtype, "RRHX")
         self.assertEqual(self.define.meas_rrhy.chtype, "RRHY")
-        
+
         self.assertEqual(self.define.meas_ex.dipole_length, 50)
         self.assertEqual(self.define.meas_ex.azimuth, 0)
-        
+
         self.assertAlmostEqual(self.define.meas_ey.dipole_length, 49.9, 1)
         self.assertAlmostEqual(self.define.meas_ey.azimuth, 116.67, 2)
-        
-        self.assertDictEqual(self.define.channel_ids,
-                             {'EX': '114.011',
-                             'EY': '115.011',
-                             'HX': '111.011',
-                             'HY': '112.011',
-                             'HZ': '113.011',
-                             'RRHX': '116.011',
-                             'RRHY': '117.011'})
-        
+
+        self.assertDictEqual(
+            self.define.channel_ids,
+            {
+                "EX": "114.011",
+                "EY": "115.011",
+                "HX": "111.011",
+                "HY": "112.011",
+                "HZ": "113.011",
+                "RRHX": "116.011",
+                "RRHY": "117.011",
+            },
+        )
+
     def test_metronix(self):
         self.define.fn = metronix_fn
-        
+
         self.assertTrue(hasattr(self.define, "meas_ex"))
         self.assertTrue(hasattr(self.define, "meas_ey"))
         self.assertTrue(hasattr(self.define, "meas_hx"))
         self.assertTrue(hasattr(self.define, "meas_hy"))
         self.assertTrue(hasattr(self.define, "meas_hz"))
-        
+
         self.assertEqual(self.define.meas_ex.chtype, "EX")
         self.assertEqual(self.define.meas_ey.chtype, "EY")
         self.assertEqual(self.define.meas_hx.chtype, "HX")
         self.assertEqual(self.define.meas_hy.chtype, "HY")
         self.assertEqual(self.define.meas_hz.chtype, "HZ")
-        
-        
+
         self.assertEqual(self.define.meas_ex.dipole_length, 100)
         self.assertEqual(self.define.meas_ex.azimuth, 0)
-        
+
         self.assertEqual(self.define.meas_ey.dipole_length, 100)
         self.assertEqual(self.define.meas_ey.azimuth, 90)
-        
-        self.assertDictEqual(self.define.channel_ids, 
-                             {'EX': '1000.0001',
-                             'EY': '1001.0001',
-                             'HX': '1002.0001',
-                             'HY': '1003.0001',
-                             'HZ': '1004.0001'})
-        
+
+        self.assertDictEqual(
+            self.define.channel_ids,
+            {
+                "EX": "1000.0001",
+                "EY": "1001.0001",
+                "HX": "1002.0001",
+                "HY": "1003.0001",
+                "HZ": "1004.0001",
+            },
+        )
+
     def test_quantec(self):
         self.define.fn = quantec_fn
-        
+
         self.assertTrue(hasattr(self.define, "meas_ex"))
         self.assertTrue(hasattr(self.define, "meas_ey"))
         self.assertTrue(hasattr(self.define, "meas_hx"))
@@ -295,7 +302,7 @@ class TestDefine(unittest.TestCase):
         self.assertTrue(hasattr(self.define, "meas_hz"))
         self.assertTrue(hasattr(self.define, "meas_rrhx"))
         self.assertTrue(hasattr(self.define, "meas_rrhy"))
-        
+
         self.assertEqual(self.define.meas_ex.chtype, "EX")
         self.assertEqual(self.define.meas_ey.chtype, "EY")
         self.assertEqual(self.define.meas_hx.chtype, "HX")
@@ -303,50 +310,56 @@ class TestDefine(unittest.TestCase):
         self.assertEqual(self.define.meas_hz.chtype, "HZ")
         self.assertEqual(self.define.meas_rrhx.chtype, "RRHX")
         self.assertEqual(self.define.meas_rrhy.chtype, "RRHY")
-        
+
         self.assertEqual(self.define.meas_ex.dipole_length, 100)
         self.assertEqual(self.define.meas_ex.azimuth, 0)
-        
+
         self.assertEqual(self.define.meas_ey.dipole_length, 100)
         self.assertEqual(self.define.meas_ey.azimuth, 90)
-        
-        self.assertDictEqual(self.define.channel_ids,
-                             {'EX': '14.001',
-                             'EY': '15.001',
-                             'HX': '11.001',
-                             'HY': '12.001',
-                             'HZ': '13.001',
-                             'RRHX': '11.001',
-                             'RRHY': '12.001'})
-        
+
+        self.assertDictEqual(
+            self.define.channel_ids,
+            {
+                "EX": "14.001",
+                "EY": "15.001",
+                "HX": "11.001",
+                "HY": "12.001",
+                "HZ": "13.001",
+                "RRHX": "11.001",
+                "RRHY": "12.001",
+            },
+        )
+
+
 class TestDataSection(unittest.TestCase):
     """
     Testing mtpy.core.io.edi.DataSection
     """
+
     def setUp(self):
         self.ds = edi.DataSection()
-        
+
     def test_phoenix(self):
         self.ds.fn = phoenix_fn
-        
+
         self.assertEqual(self.ds.data_type_in, "spectra")
         self.assertEqual(self.ds.nfreq, 80)
         self.assertEqual(self.ds.sectid, "PHXTest01")
-        
+
     def test_metronix(self):
         self.ds.fn = metronix_fn
-        
+
         self.assertEqual(self.ds.data_type_in, "z")
         self.assertEqual(self.ds.nfreq, 73)
         self.assertEqual(self.ds.sectid, "GEO858")
-        
+
     def test_quantec(self):
         self.ds.fn = quantec_fn
-        
+
         self.assertEqual(self.ds.data_type_in, "spectra")
         self.assertEqual(self.ds.nfreq, 41)
         self.assertEqual(self.ds.sectid, "IEA00184")
-        
+
 
 # =============================================================================
 # Run

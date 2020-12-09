@@ -130,9 +130,9 @@ class Edi(object):
 
         self._num_format = " 15.6e"
         self._block_len = 6
-        
+
         self.fn = fn
-        
+
     def __str__(self):
         lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
@@ -1336,7 +1336,7 @@ class Header(object):
     def acqdate(self, value):
         if value in [None, "NONE", "None", "none"]:
             self.logger.debug("Header.acqdate is None, cannot set value")
-            return 
+            return
         try:
             self._acqdate = MTime(value)
         except MTex.MTTimeError as error:
@@ -1352,7 +1352,7 @@ class Header(object):
     def enddate(self, value):
         if value in [None, "NONE", "None", "none"]:
             self.logger.debug("Header.enddate is None, cannot set value")
-            return 
+            return
         try:
             self._enddate = MTime(value)
         except MTex.MTTimeError as error:
@@ -1367,7 +1367,7 @@ class Header(object):
     def filedate(self, value):
         if value in [None, "NONE", "None", "none"]:
             self.logger.debug("Header.filedate is None, cannot set value")
-            return 
+            return
         try:
             self._filedate = MTime(value)
         except MTex.MTTimeError as error:
@@ -1382,7 +1382,7 @@ class Header(object):
     def progdate(self, value):
         if value in [None, "NONE", "None", "none"]:
             self.logger.debug("Header.progdate is None, cannot set value")
-            return 
+            return
         try:
             self._progdate = MTime(value)
         except MTex.MTTimeError as error:
@@ -1885,7 +1885,7 @@ class DefineMeasurement(object):
         self._fn = Path(value)
         if self._fn.exists():
             self.read_measurement()
-            
+
     @property
     def channel_ids(self):
         ch_ids = {}
@@ -1893,13 +1893,12 @@ class DefineMeasurement(object):
             try:
                 m = getattr(self, f"meas_{comp}")
                 # if there are remote references that are the same as the
-                # h channels skip them. 
+                # h channels skip them.
                 ch_ids[m.chtype] = str(m.id)
             except AttributeError:
                 continue
-            
+
         return ch_ids
-            
 
     def get_measurement_lists(self):
         """
@@ -2501,13 +2500,13 @@ class DataSection(object):
                 ch_id = getattr(self, comp)
                 if ch_id is not None:
                     self.channel_ids.append(ch_id)
-                    
+
     def write_data(self, data_list=None, over_dict=None):
         """
         write a data section
         """
 
-        # FZ: need to modify the nfreq (number of freqs), 
+        # FZ: need to modify the nfreq (number of freqs),
         # when re-writing effective EDI files)
         if over_dict is not None:
             for akey in list(over_dict.keys()):
@@ -2518,7 +2517,7 @@ class DataSection(object):
 
         self.logger.debug("Writing out data a impedances")
 
-        if self.data_type_out == 'z':
+        if self.data_type_out == "z":
             data_lines = ["\n>=mtsect\n".upper()]
         elif self.data_type_out == "spectra":
             data_lines = ["\n>spectrasect\n".upper()]
@@ -2527,11 +2526,19 @@ class DataSection(object):
             data_lines.append(f"{tab}{key.upper()}={getattr(self, key)}\n")
 
         # need to sort the list so it is descending order by channel number
-        ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[4:-2]
-                   if getattr(self, key) is not None]
-        rr_ch_list = [(key.upper(), getattr(self, key)) for key in self._kw_list[-2:]
-                   if getattr(self, key) is not None]
-        ch_list2 = sorted(ch_list, key=lambda x: x[1]) + sorted(rr_ch_list, key=lambda x: x[1])
+        ch_list = [
+            (key.upper(), getattr(self, key))
+            for key in self._kw_list[4:-2]
+            if getattr(self, key) is not None
+        ]
+        rr_ch_list = [
+            (key.upper(), getattr(self, key))
+            for key in self._kw_list[-2:]
+            if getattr(self, key) is not None
+        ]
+        ch_list2 = sorted(ch_list, key=lambda x: x[1]) + sorted(
+            rr_ch_list, key=lambda x: x[1]
+        )
 
         for ch in ch_list2:
             data_lines.append(f"{tab}{ch[0]}={ch[1]}\n")
@@ -2539,7 +2546,7 @@ class DataSection(object):
         data_lines.append("\n")
 
         return data_lines
-    
+
     def match_channels(self, ch_ids):
         """
         
@@ -2554,11 +2561,12 @@ class DataSection(object):
         None.
 
         """
-        
+
         for ch_id in self.channel_ids:
             for key, value in ch_ids.items():
                 if ch_id == str(value):
                     setattr(self, key.lower(), value)
+
 
 def _validate_str_with_equals(input_string):
     """
@@ -2626,6 +2634,7 @@ def _validate_edi_lines(edi_lines):
     else:
         return edi_lines
 
+
 # =============================================================================
 #  Generic read and write
 # =============================================================================
@@ -2644,7 +2653,7 @@ def read_edi(fn):
     # importing.  This may not be the best way to do this but works for now
     # so we don't have to break how MTpy structure is setup now.
     from mtpy.core import mt
-    
+
     edi_obj = Edi()
     edi_obj.read_edi_file(fn)
 
@@ -2673,7 +2682,7 @@ def write_edi(mt_object, fn=None):
 
     """
     from mtpy.core import mt
-    
+
     if not isinstance(mt_object, mt.MT):
         raise ValueError("Input must be an mtpy.core.mt.MT object")
 
@@ -2795,11 +2804,9 @@ def write_edi(mt_object, fn=None):
     edi_obj.Data.maxblks = 999
     for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
         if hasattr(edi_obj.Measurement, f"meas_{comp}"):
-            setattr(
-                edi_obj.Data, comp, getattr(edi_obj.Measurement, f"meas_{comp}").id
-            )
+            setattr(edi_obj.Data, comp, getattr(edi_obj.Measurement, f"meas_{comp}").id)
 
     new_edi_fn = edi_obj.write_edi_file(new_edi_fn=fn)
     edi_obj._fn = new_edi_fn
-    
+
     return edi_obj

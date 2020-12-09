@@ -378,7 +378,7 @@ class Data(object):
         """
         reset dtype
         """
-        
+
         dtype = [
             ("station", "|U10"),
             ("lat", np.float),
@@ -397,7 +397,7 @@ class Data(object):
             ("tip_err", (np.float, t_shape)),
             ("tip_inv_err", (np.float, t_shape)),
         ]
-        
+
         return dtype
 
     @staticmethod
@@ -449,7 +449,7 @@ class Data(object):
         for edi in self.edi_list:
             mt_obj = mt.MT(edi)
             mt_dict[mt_obj.station] = mt_obj
-        
+
         return mt_dict
 
     def get_relative_station_locations(self, mt_dict, data_array):
@@ -466,10 +466,10 @@ class Data(object):
         if self._rotation_angle != 0:
             # rotate stations the opposite way to the data
             stations_obj.rotate_stations(-self._rotation_angle)
-            
+
         # get center point
         self.center_point = stations_obj.center_point
-            
+
         # fill data array
         data_array[:]["station"] = stations_obj.station
         data_array[:]["lat"] = stations_obj.lat
@@ -483,7 +483,7 @@ class Data(object):
         data_array[:]["zone"] = stations_obj.utm_zone
 
         return data_array
-    
+
     def get_data_periods(self, mt_dict):
         """
          Get an array of unique periods from the data
@@ -498,9 +498,7 @@ class Data(object):
         for s_key, mt_obj in mt_dict.items():
             data_period_list.extend(list(1.0 / mt_obj.Z.freq))
 
-        return  np.array(
-            sorted(list(set(data_period_list)), reverse=False)
-        )
+        return np.array(sorted(list(set(data_period_list)), reverse=False))
 
     def get_period_list(self, mt_dict):
         """
@@ -534,9 +532,8 @@ class Data(object):
         period_list = np.logspace(pmin, pmax, num=self.max_num_periods)
 
         self.logger.debug(
-                "Inverting periods "
-                + ", ".join([f"{pp:.5E}" for pp in self.period_list])
-            )
+            "Inverting periods " + ", ".join([f"{pp:.5E}" for pp in self.period_list])
+        )
 
         if period_list is None:  # YG: is this possible?
             raise ModEMError(
@@ -813,9 +810,7 @@ class Data(object):
 
                     if mt_obj.Tipper.tipper is not None:
                         data_array[ii]["tip"][jj] = interp_t.tipper[kk, :, :]
-                        data_array[ii]["tip_err"][jj] = interp_t.tipper_err[
-                            kk, :, :
-                        ]
+                        data_array[ii]["tip_err"][jj] = interp_t.tipper_err[kk, :, :]
 
                 # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None and os.path.isdir(new_edi_dir):
@@ -2165,7 +2160,7 @@ class Data(object):
         self.logger.info("CSV files created in %s", outdir)
 
         return csvfname
-    
+
     def add_station(self, fn=None, mt_object=None, new_edi_dir=None):
         """
         Add a station to an existing data object.
@@ -2179,7 +2174,6 @@ class Data(object):
 
         """
 
-
         if fn is not None:
             if isinstance(fn, (list, tuple)):
                 mt_object = [mt.MT(f) for f in fn]
@@ -2189,7 +2183,7 @@ class Data(object):
                 msg = f"Do not understand input type {type(fn)}"
                 self.logger.error(msg)
                 raise ValueError(msg)
-        
+
         if mt_object is None:
             return None
         elif isinstance(mt_object, mt.MT):
@@ -2198,11 +2192,8 @@ class Data(object):
             msg = f"Do not understand input type {type(fn)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        
+
         for mt_obj in mt_object:
             self.mt_dict[mt_object.station] = mt_object
-        
+
         self.fill_data_array(new_edi_dir=new_edi_dir)
-        
-        
-        
