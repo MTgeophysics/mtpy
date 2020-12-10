@@ -617,3 +617,33 @@ def cmap_discretize(cmap, N):
         ]
     # Return colormap object.
     return colors.LinearSegmentedColormap(cmap.name + "_%d" % N, cdict, 1024)
+
+class FixPointNormalize(colors.Normalize):
+    """ 
+    Inspired by https://stackoverflow.com/questions/20144529/shifted-colorbar-matplotlib
+    Subclassing Normalize to obtain a colormap with a fixpoint 
+    somewhere in the middle of the colormap.
+    This may be useful for a `terrain` map, to set the "sea level" 
+    to a color in the blue/turquise range. 
+    """
+    def __init__(self, vmin=None, vmax=None, sealevel=0, col_val = 0.21875, clip=False):
+        # sealevel is the fix point of the colormap (in data units)
+        self.sealevel = sealevel
+        # col_val is the color value in the range [0,1] that should represent the sealevel.
+        self.col_val = col_val
+        colors.Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        x, y = [self.vmin, self.sealevel, self.vmax], [0, self.col_val, 1]
+        return np.ma.masked_array(np.interp(value, x, y))
+    
+# Combine the lower and upper range of the terrain colormap with a gap in the middle
+# to let the coastline appear more prominently.
+# inspired by https://stackoverflow.com/questions/31051488/combining-two-matplotlib-colormaps
+colors_undersea = cm.terrain(np.linspace(0, 0.17, 56))
+colors_land = cm.terrain(np.linspace(0.25, 1, 200))
+
+
+# combine them and build a new colormap
+color_list = np.vstack((colors_undersea, colors_land))
+cut_terrain_map = colors.LinearSegmentedColormap.from_list('cut_terrain', color_list)

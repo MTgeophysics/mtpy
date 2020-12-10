@@ -21,6 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
 import mtpy.utils.calculator as mtcc
+from mtpy.imaging.mtcolors import (FixPointNormalize, cut_terrain_map)
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import (
     mesh_tools as mtmesh,
@@ -1061,7 +1062,11 @@ class Model(object):
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
 
-        imgplot = ax.pcolormesh(x, y, self.surface_dict["topography"])
+        norm = FixPointNormalize(sealevel=0,
+                                 vmax=np.round(self.surface_dict["topography"].max(), -2),
+                                 vmin=np.round(self.surface_dict["topography"].min(), -2))
+        imgplot = ax.pcolormesh(x, y, self.surface_dict["topography"],
+                                cmap=cut_terrain_map, norm=norm)
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1069,7 +1074,7 @@ class Model(object):
             imgplot, cax=cax, use_gridspec=True
         )  # cmap=my_cmap_r, does not work!!
         mycb.outline.set_linewidth(2)
-        mycb.set_label(label="Elevation (metre)", size=12)
+        mycb.set_label(label="Elevation (m)", size=12)
         # make a rotation matrix to rotate data
         # cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
         # sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
@@ -1757,6 +1762,8 @@ class Model(object):
         get_surfacename=False,
         method="nearest",
         fast=True,
+        shift_north=0,
+        shift_east=0,
     ):
         """
         project a surface to the model grid and add resulting elevation data
@@ -1806,8 +1813,8 @@ class Model(object):
 
         # get centre position of model grid in real world coordinates
         x0, y0 = (
-            self.station_locations.center_point.east[0],
-            self.station_locations.center_point.north[0],
+            self.station_locations.center_point.east[0] + shift_east,
+            self.station_locations.center_point.north[0] + shift_north,
         )
 
         if self.mesh_rotation_angle is None:
@@ -1844,14 +1851,6 @@ class Model(object):
             )
         else:
             raise ValueError("'surfacefile' or 'surface' must be provided")
-
-        print(
-            "Elevation data type and shape  *** ",
-            type(elev_mg),
-            elev_mg.shape,
-            len(yg),
-            len(xg),
-        )
 
         # get a name for surface
         if get_surfacename:
@@ -1919,6 +1918,8 @@ class Model(object):
         topography_buffer=None,
         airlayer_type="log_up",
         max_elev=None,
+        shift_east=0,
+        shift_north=0,
     ):
         """
         if air_layers is non-zero, will add topo: read in topograph file,
@@ -1946,11 +1947,13 @@ class Model(object):
         # first, get surface data
         if topographyfile:
             self.surface_dict["topography"] = self.interpolate_elevation2(
-                surfacefile=topographyfile, method=interp_method
+                surfacefile=topographyfile, method=interp_method,
+                shift_east=shift_east, shift_north=shift_north,
             )
         elif surface:
             self.surface_dict["topography"] = self.interpolate_elevation2(
-                surface=surface, method=interp_method
+                surface=surface, method=interp_method,
+                shift_east=shift_east, shift_north=shift_north,
             )
         elif topographyarray:
             self.surface_dict["topography"] = topographyarray
