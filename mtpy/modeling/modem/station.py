@@ -9,9 +9,11 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
+from pathlib import Path
 import numpy as np
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
+
 
 # in module imports
 from .exception import ModEMError
@@ -100,22 +102,14 @@ class Stations(object):
         get mt_objects from a list of files or mt_objects
         """
 
-        if type(input_list) not in [list, np.ndarray]:
-            raise ValueError(
-                "Input list needs to be type list, not {0}".format(type(input_list))
-            )
+        if isinstance(input_list, (list, np.ndarray)):
+            if isinstance(input_list[0], mt.MT):
+                return input_list
 
-        if type(input_list[0]) is mt.MT:
-            return input_list
-
-        if type(input_list[0]) is str:
-            if input_list[0].endswith(".edi"):
+            elif isinstance(input_list[0], (str, Path)):
                 return [mt.MT(fn) for fn in input_list]
-
-            else:
-                raise ModEMError(
-                    "file {0} not supported yet".format(input_list[0][-4:])
-                )
+        else:
+            raise ValueError(f"type {type(input_list)} is not supported yet")
 
     def get_station_locations(self, input_list):
         """

@@ -35,7 +35,7 @@ try:
     from pyevtk.hl import gridToVTK
 except ImportError:
     print(
-        "If you want to write a vtk file for 3d viewing, you need to " "install pyevtk"
+        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
     )
 
 __all__ = ["Model"]

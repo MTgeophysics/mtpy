@@ -31,7 +31,7 @@ try:
     from pyevtk.hl import pointsToVTK
 except ImportError:
     print(
-        "If you want to write a vtk file for 3d viewing, you need to " "install pyevtk"
+        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
     )
 
 
@@ -268,7 +268,8 @@ class Data(object):
 
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-        self.edi_list = edi_list
+        self.mt_dict = None
+        self.edi_list = None
 
         self.error_type_z = "egbert_floor"
         self.error_value_z = 5.0
@@ -290,8 +291,7 @@ class Data(object):
         self.data_period_list = None
 
         self.data_fn = "ModEM_Data.dat"
-        self.save_path = os.getcwd()
-        self.fn_basename = None
+        self.save_path = Path.cwd()
 
         self.formatting = "1"
 
@@ -342,6 +342,10 @@ class Data(object):
                 "Error\n",
             ]
         )
+        
+        # fill mt dict if edi list is not None
+        if edi_list is not None:
+            self.mt_dict = self.make_mt_dict(edi_list)
 
         for key, value in kwargs.items():
             # have to set rotation angle after period list has been set
@@ -374,7 +378,8 @@ class Data(object):
 
     #            self._set_rotation_angle(self.rotation_angle)
 
-    def make_dtype(self, z_shape, t_shape):
+    @staticmethod
+    def make_dtype(z_shape, t_shape):
         """
         reset dtype
         """
@@ -428,11 +433,16 @@ class Data(object):
 
             return h_str.format(error_type, error_value, rotation_angle)
 
-    @property
-    def mt_dict(self):
+    def make_mt_dict(self, edi_list=None):
         """
         get mt_dict from edi file list
         """
+        
+        if edi_list is not None:
+            self.edi_list = edi_list
+        if self.edi_list is None:
+            return 
+        
         mt_dict = {}
         if self.edi_list is None:
             raise ModEMError(
@@ -500,7 +510,7 @@ class Data(object):
 
         return np.array(sorted(list(set(data_period_list)), reverse=False))
 
-    def get_period_list(self, mt_dict):
+    def make_period_list(self, mt_dict):
         """
         make a period list to invert for
         """
@@ -509,7 +519,7 @@ class Data(object):
                 "Inverting periods "
                 + ", ".join([f"{pp:.5E}" for pp in self.period_list])
             )
-            return
+            return self.period_list
 
         data_period_list = self.get_data_periods(mt_dict)
 
@@ -541,21 +551,18 @@ class Data(object):
                 "max_num_periods or a period_list"
             )
         return period_list
+    
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
 
-    def _set_rotation_angle(self, rotation_angle):
+    @rotation_angle.setter
+    def rotation_angle(self, rotation_angle):
         """
         on set rotation angle rotate mt_dict and data_array,
         """
         if self._rotation_angle == rotation_angle:
             return
-
-        #        self.logger.info('Changing rotation angle from {0:.1f} to {1:.1f}'.format(
-        #            self._rotation_angle, rotation_angle))
-        #
-        #        self._rotation_angle = -self._rotation_angle + rotation_angle
-        #
-        #        if self.rotation_angle == 0:
-        #            return
 
         self.logger.info(
             "Changing rotation angle from {0:.1f} to {1:.1f}".format(
@@ -566,7 +573,7 @@ class Data(object):
         self._rotation_angle = rotation_angle
 
         if self.mt_dict is None:
-            self.mt_dict = self.get_mt_dict()
+            self.mt_dict = self.make_mt_dict()
 
         for mt_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[mt_key]
@@ -580,16 +587,7 @@ class Data(object):
                 self._rotation_angle
             )
         )
-        self.data_array = self.fill_data_array()
-
-    def _get_rotation_angle(self):
-        return self._rotation_angle
-
-    rotation_angle = property(
-        fget=_get_rotation_angle,
-        fset=_set_rotation_angle,
-        doc="""Rotate data assuming N=0, E=90""",
-    )
+        self.data_array = self.fill_data_array(self.mt_dict)
 
     def _initialise_empty_data_array(
         self,
@@ -686,7 +684,7 @@ class Data(object):
         """
 
         if self.period_list is None:
-            self.get_period_list()
+            self.period_list = self.make_period_list(mt_dict)
 
         ns = len(list(mt_dict.keys()))
         nf = len(self.period_list)
@@ -849,8 +847,38 @@ class Data(object):
         ]
 
         return np.array(new_per)
+    
+    @property
+    def station_locations(self):
+        """
+        extract station locations from data array
+        """
+        if self.data_array is None:
+            return None
 
-    def _set_station_locations(self, station_locations):
+        station_locations = self.data_array[
+            [
+                "station",
+                "lat",
+                "lon",
+                "north",
+                "east",
+                "elev",
+                "rel_north",
+                "rel_east",
+                "rel_elev",
+                "zone",
+            ]
+        ]
+        stations_obj = Stations(
+            model_epsg=self.model_epsg, model_utm_zone=self.model_utm_zone
+        )
+        stations_obj.station_locations = station_locations
+
+        return stations_obj
+
+    @station_locations.setter
+    def station_locations(self, station_locations):
         """
         take a station_locations array and populate data_array
         """
@@ -893,52 +921,21 @@ class Data(object):
                     self.data_array[d_index]["rel_north"] = s_arr["rel_north"]
                     self.data_array[d_index]["rel_elev"] = s_arr["rel_elev"]
 
-    def _get_station_locations(self):
-        """
-        extract station locations from data array
-        """
-        if self.data_array is None:
-            return None
 
-        station_locations = self.data_array[
-            [
-                "station",
-                "lat",
-                "lon",
-                "north",
-                "east",
-                "elev",
-                "rel_north",
-                "rel_east",
-                "rel_elev",
-                "zone",
-            ]
-        ]
-        stations_obj = Stations(
-            model_epsg=self.model_epsg, model_utm_zone=self.model_utm_zone
-        )
-        stations_obj.station_locations = station_locations
-
-        return stations_obj
-
-    station_locations = property(
-        _get_station_locations, _set_station_locations, doc="""location of stations"""
-    )
-
-    def compute_inv_error(self):
+    def compute_inv_error(self, data_array):
         """
         compute the error from the given parameters
         """
         # copy values over to inversion error
-        self.data_array["z_inv_err"] = self.data_array["z_err"]
-        self.data_array["tip_inv_err"] = self.data_array["tip_err"]
+        data_array["z_inv_err"] = data_array["z_err"]
+        data_array["tip_inv_err"] = data_array["tip_err"]
 
         # compute relative error for tipper
         if "floor" in self.error_type_tipper:
-            t_index = np.where(self.data_array["tip_err"] < self.error_value_tipper)
-            self.data_array["tip_inv_err"][t_index] = self.error_value_tipper
+            t_index = np.where(data_array["tip_err"] < self.error_value_tipper)
+            data_array["tip_inv_err"][t_index] = self.error_value_tipper
         elif "abs" in self.error_type_tipper:
-            self.data_array["tip_inv_err"][:] = self.error_value_tipper
+            data_array["tip_inv_err"][:] = self.error_value_tipper
         else:
             raise DataError(
                 "Unsupported error type (tipper): {}".format(self.error_type_tipper)
@@ -956,12 +953,12 @@ class Data(object):
 
         # compute error for z
         err_value = self.error_value_z / 100.0
-        for ss in range(self.data_array.shape[0]):
-            for ff in range(max([self._t_shape[0], self._z_shape[0]])):
-                d_xx = abs(self.data_array["z"][ss, ff, 0, 0])
-                d_xy = abs(self.data_array["z"][ss, ff, 0, 1])
-                d_yx = abs(self.data_array["z"][ss, ff, 1, 0])
-                d_yy = abs(self.data_array["z"][ss, ff, 1, 1])
+        for ss in range(data_array.shape[0]):
+            for ff in range(max([data_array['z'].shape[1], data_array['tip'].shape[1]])):
+                d_xx = abs(data_array["z"][ss, ff, 0, 0])
+                d_xy = abs(data_array["z"][ss, ff, 0, 1])
+                d_yx = abs(data_array["z"][ss, ff, 1, 0])
+                d_yy = abs(data_array["z"][ss, ff, 1, 1])
                 d = np.array([d_xx, d_xy, d_yx, d_yy])
                 nz = np.nonzero(d)
 
@@ -1018,24 +1015,23 @@ class Data(object):
                 # end for
 
                 if error_type_z_list.size == 1:
-                    self.data_array["z_inv_err"][ss, ff, :, :] = err[0]
+                    data_array["z_inv_err"][ss, ff, :, :] = err[0]
                 else:
                     for ei in np.arange(error_type_z_list.size):
                         ix, iy = np.divmod(ei, 2)
                         if err.shape[1] > 1:
-                            self.data_array["z_inv_err"][ss, ff, ix, iy] = err[
+                            data_array["z_inv_err"][ss, ff, ix, iy] = err[
                                 ei, ix, iy
                             ]
                         else:
-                            self.data_array["z_inv_err"][ss, ff, ix, iy] = err[ei, 0, 0]
-                        # end if
-                    # end for
-                # end if
+                            data_array["z_inv_err"][ss, ff, ix, iy] = err[ei, 0, 0]
 
         # if there is an error floor
         if "floor" in self.error_type_z:
-            f_index = np.where(self.data_array["z_inv_err"] < self.data_array["z_err"])
-            self.data_array["z_inv_err"][f_index] = self.data_array["z_err"][f_index]
+            f_index = np.where(data_array["z_inv_err"] < data_array["z_err"])
+            data_array["z_inv_err"][f_index] = data_array["z_err"][f_index]
+            
+        return data_array
 
     def write_data_file(
         self,
@@ -1086,29 +1082,32 @@ class Data(object):
         """
 
         if save_path is not None:
-            self.save_path = save_path
+            self.save_path = Path(save_path)
         if fn_basename is not None:
             self.data_fn = fn_basename
 
-        self.data_fn = os.path.join(self.save_path, self.data_fn)
+        self.data_fn = self.save_path.joinpath(self.data_fn)
+        if self.mt_dict is None:
+            self.mt_dict = self.make_mt_dict()
 
-        self.get_period_list()
+        self.period_list = self.make_period_list(self.mt_dict)
 
         # rotate data if desired
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
+        
+        # make edis along prescribe periods
         if new_edis:
-            new_edi_dir = os.path.join(
-                self.save_path, "new_edis"
-            )  # output edi files according to selected periods
-            if not os.path.exists(new_edi_dir):
-                os.mkdir(new_edi_dir)
+            new_edi_dir = self.save_path.joinpath("new_edis")
+            if not new_edi_dir.exists():
+                new_edi_dir.mkdir()
         else:
             new_edi_dir = None
 
         # be sure to fill in data array
         if fill:
-            self.fill_data_array(
+            self.data_array = self.fill_data_array(
+                self.mt_dict,
                 new_edi_dir=new_edi_dir,
                 use_original_freq=use_original_freq,
                 longitude_format=longitude_format,
@@ -1179,7 +1178,7 @@ class Data(object):
             d_lines.append("> {0} {1}\n".format(n_per, n_sta))
 
             if compute_error:
-                self.compute_inv_error()
+                self.data_array = self.compute_inv_error(self.data_array)
 
             for ss in range(self.data_array["z"].shape[0]):
                 for ff in range(self.data_array["z"].shape[1]):
