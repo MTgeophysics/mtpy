@@ -10,7 +10,6 @@ ModEM
 
 """
 from __future__ import print_function
-import os
 import csv
 import numpy as np
 import logging
@@ -811,7 +810,7 @@ class Data(object):
                         data_array[ii]["tip_err"][jj] = interp_t.tipper_err[kk, :, :]
 
                 # FZ: try to output a new edi files. Compare with original edi?
-                if new_edi_dir is not None and os.path.isdir(new_edi_dir):
+                if new_edi_dir is not None and Path(new_edi_dir).is_dir():
                     # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
                     mt_obj.Z = interp_z
                     mt_obj.Tipper = interp_t
@@ -826,7 +825,18 @@ class Data(object):
         # BM: If we can't get relative locations from MT object,
         #  then get them from Station object
         if not rel_distance:
-            data_array = self.get_relative_station_locations(mt_dict, data_array)
+            try:
+                data_array = self.get_relative_station_locations(mt_dict, data_array)
+            except ValueError as error:
+                if self.model_epsg is None and self.model_utm_zone is None:
+                    msg = ("Cannot compute relative locations without a " +
+                           "model_epsg or model_utm_zone set.")
+                    self.logger.error(msg)
+                    raise ValueError(msg)
+                else:
+                    self.logger.error(error)
+                    raise ValueError(error)
+                    
 
         return data_array
 
@@ -1350,7 +1360,7 @@ class Data(object):
         return abs_err
 
     def convert_ws3dinv_data_file(
-        self, ws_data_fn, station_fn=None, save_path=None, fn_basename=None
+        self, ws_data_fn, station_fn=None, save_path=None, fn_basename="ws_data_file.dat"
     ):
         """
         convert a ws3dinv data file into ModEM format
@@ -1386,17 +1396,15 @@ class Data(object):
                     station_fn=r"/home/ws3dinv/inv1/WS_Station_Locations.txt")
         """
 
-        if not os.path.isfile(ws_data_fn):
+        if not Path(ws_data_fn).is_file():
             raise ws.WSInputError("Did not find {0}, check path".format(ws_data_fn))
 
         if save_path is not None:
-            self.save_path = save_path
+            save_path = Path(save_path)
         else:
-            self.save_path = os.path.dirname(ws_data_fn)
+            save_path = self.save_path
 
-        if fn_basename is not None:
-            self.fn_basename = fn_basename
-
+        
         # --> get data from data file
         wsd = ws.WSData()
         wsd.read_data_file(ws_data_fn, station_fn=station_fn)
@@ -1475,11 +1483,11 @@ class Data(object):
             self.read_data_file(data_fn)
 
         if ws_data_fn is None:
-            save_path = os.path.dirname(self.data_fn)
-            ws_data_fn = os.path.join(save_path, "WS_Data.dat")
+            save_path = self.save_path
+            ws_data_fn = Path(save_path, "WS_Data.dat")
 
         else:
-            save_path = os.path.dirname(ws_data_fn)
+            save_path = Path(ws_data_fn).parent
 
         station_info = ws.WSStation()
         station_info.east = self.data_array["rel_east"]
@@ -1514,7 +1522,7 @@ class Data(object):
 
         return ws_data.data_fn, station_info.station_fn
 
-    def read_data_file(self, data_fn=None, center_utm=None):
+    def read_data_file(self, data_fn, center_utm=None):
         """ Read ModEM data file
 
        inputs:
@@ -1531,14 +1539,13 @@ class Data(object):
 
         """
 
-        if data_fn is not None:
-            self.data_fn = data_fn
-            self.save_path = os.path.dirname(self.data_fn)
-            self.fn_basename = os.path.basename(self.data_fn)
+        self.data_fn = Path(data_fn)
+        self.save_path = self.data_fn.parent
+        self.fn_basename = self.data_fn.name
 
         if self.data_fn is None:
             raise DataError("data_fn is None, enter a data file to read.")
-        elif os.path.isfile(self.data_fn) is False:
+        elif not self.data_fn.is_file():
             raise DataError("Could not find {0}, check path".format(self.data_fn))
 
         with open(self.data_fn, "r") as dfid:
@@ -1828,9 +1835,9 @@ class Data(object):
         """
 
         if vtk_save_path is None:
-            vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
+            vtk_fn = self.save_path.join_path(vtk_fn_basename)
         else:
-            vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
+            vtk_fn = Path(vtk_save_path, vtk_fn_basename)
 
         pointsToVTK(
             vtk_fn,
@@ -2038,7 +2045,7 @@ class Data(object):
 
         # logger.debug("Re-write data file after adding topo")
         self.write_data_file(
-            fn_basename=os.path.basename(self.data_fn)[:-4] + "_topo.dat",
+            fn_basename=self.data_fn.stem + "_topo.dat",
             fill=False,
             elevation=True,
         )  # (Xi, Yi, Zi) of each station-i may be shifted
@@ -2076,7 +2083,7 @@ class Data(object):
         self.logger.debug("ModEM data file number of periods:", num_periods)
 
         csv_basename = "modem_data_to_phase_tensor"
-        csvfname = os.path.join(dest_dir, "%s.csv" % csv_basename)
+        csvfname = Path(dest_dir, f"{csv_basename}.csv")
 
         csv_header = [
             "Freq",
@@ -2147,8 +2154,8 @@ class Data(object):
                 writer = csv.writer(csvf)
                 writer.writerows(csvrows)
 
-            csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
-            csvfile2 = os.path.join(dest_dir, csv_basename2)
+            csv_basename2 = f"{csv_basename}_{freq:.0f}Hz.csv"
+            csvfile2 = Path(dest_dir, csv_basename2)
 
             with open(csvfile2, "wb") as csvf:  # csvfile  for eachindividual freq
                 writer = csv.writer(csvf)
@@ -2213,6 +2220,9 @@ class Data(object):
         add_mt_dict = {}
         new_mt_dict = dict(self.mt_dict)
         for mt_obj in mt_object:
+            if mt_obj.station in self.mt_dict.keys():
+                self.logger.warning(f"Station {mt_obj.station} already exists, skipping")
+                continue
             add_mt_dict[mt_obj.station] = mt_obj
             new_mt_dict[mt_obj.station] = mt_obj
             
@@ -2220,6 +2230,9 @@ class Data(object):
         add_data_array = self.compute_inv_error(add_data_array)
         
         new_data_array = np.append(self.data_array, add_data_array)
+        # need to sort stations because that is how things are calculated
+        # for station location
+        new_data_array.sort(kind="station")
         new_data_array = self.get_relative_station_locations(new_mt_dict, new_data_array)
         
         return new_data_array, new_mt_dict

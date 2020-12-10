@@ -152,10 +152,10 @@ class MT(object):
         if self.Z.z is not None:
             lines.append(f"\tPeriods: {len(self.Z.freq)}")
             lines.append(
-                f"\t\tPeriod Range:   {1./self.Z.freq.max():.5E}  -- {1./self.Z.freq.min():.5E} s"
+                f"\t\tPeriod Range:   {1./self.Z.freq.max():.5E} -- {1./self.Z.freq.min():.5E} s"
             )
             lines.append(
-                f"\t\tFrequency Range {self.Z.freq.min():.5E}  -- {self.Z.freq.max():.5E} s"
+                f"\t\tFrequency Range {self.Z.freq.min():.5E} -- {self.Z.freq.max():.5E} Hz"
             )
 
         return "\n".join(lines)
