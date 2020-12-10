@@ -689,52 +689,52 @@ class Data(object):
         ns = len(list(mt_dict.keys()))
         nf = len(self.period_list)
 
-        d_array = False
-        if self.data_array is not None:
-            d_arr_copy = self.data_array.copy()
-            d_array = True
+        # d_array = False
+        # if self.data_array is not None:
+        #     d_arr_copy = self.data_array.copy()
+        #     d_array = True
 
         dtype = self.make_dtype((nf, 2, 2), (nf, 1, 2))
         data_array = np.zeros(ns, dtype=dtype)
 
         rel_distance = False
-        for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
-            mt_obj = self.mt_dict[s_key]
-            if d_array:
-                try:
-                    d_index = np.where(d_arr_copy["station"] == s_key)[0][0]
-                    data_array[ii]["station"] = s_key
-                    data_array[ii]["lat"] = d_arr_copy[d_index]["lat"]
-                    data_array[ii]["lon"] = d_arr_copy[d_index]["lon"]
-                    data_array[ii]["east"] = d_arr_copy[d_index]["east"]
-                    data_array[ii]["north"] = d_arr_copy[d_index]["north"]
-                    data_array[ii]["elev"] = d_arr_copy[d_index]["elev"]
-                    data_array[ii]["rel_east"] = d_arr_copy[d_index]["rel_east"]
-                    data_array[ii]["rel_north"] = d_arr_copy[d_index]["rel_north"]
-                    data_array[ii]["rel_elev"] = d_arr_copy[d_index]["rel_elev"]
-                    data_array[:]["zone"] = d_arr_copy[d_index]["zone"]
-                except IndexError:
-                    self.logger.warning(
-                        "Could not find {0} in data_array".format(s_key)
-                    )
-            else:
-                data_array[ii]["station"] = mt_obj.station
-                data_array[ii]["lat"] = mt_obj.latitude
-                data_array[ii]["lon"] = mt_obj.longitude
-                data_array[ii]["east"] = mt_obj.east
-                data_array[ii]["north"] = mt_obj.north
-                data_array[ii]["elev"] = mt_obj.elevation
-                try:
-                    data_array[ii]["rel_east"] = mt_obj.grid_east
-                    data_array[ii]["rel_north"] = mt_obj.grid_north
-                    data_array[ii]["rel_elev"] = mt_obj.grid_elev
-                    rel_distance = True
-                except AttributeError:
-                    self.logger.debug(
-                        "Unable to set relative locations from 'mt_obj' "
-                        "- not filled yet."
-                    )
-                    pass
+        for ii, s_key in enumerate(sorted(mt_dict.keys())):
+            mt_obj = mt_dict[s_key]
+            # if d_array:
+            #     try:
+            #         d_index = np.where(d_arr_copy["station"] == s_key)[0][0]
+            #         data_array[ii]["station"] = s_key
+            #         data_array[ii]["lat"] = d_arr_copy[d_index]["lat"]
+            #         data_array[ii]["lon"] = d_arr_copy[d_index]["lon"]
+            #         data_array[ii]["east"] = d_arr_copy[d_index]["east"]
+            #         data_array[ii]["north"] = d_arr_copy[d_index]["north"]
+            #         data_array[ii]["elev"] = d_arr_copy[d_index]["elev"]
+            #         data_array[ii]["rel_east"] = d_arr_copy[d_index]["rel_east"]
+            #         data_array[ii]["rel_north"] = d_arr_copy[d_index]["rel_north"]
+            #         data_array[ii]["rel_elev"] = d_arr_copy[d_index]["rel_elev"]
+            #         data_array[:]["zone"] = d_arr_copy[d_index]["zone"]
+            #     except IndexError:
+            #         self.logger.warning(
+            #             "Could not find {0} in data_array".format(s_key)
+            #         )
+            # else:
+            data_array[ii]["station"] = mt_obj.station
+            data_array[ii]["lat"] = mt_obj.latitude
+            data_array[ii]["lon"] = mt_obj.longitude
+            data_array[ii]["east"] = mt_obj.east
+            data_array[ii]["north"] = mt_obj.north
+            data_array[ii]["elev"] = mt_obj.elevation
+            try:
+                data_array[ii]["rel_east"] = mt_obj.grid_east
+                data_array[ii]["rel_north"] = mt_obj.grid_north
+                data_array[ii]["rel_elev"] = mt_obj.grid_elev
+                rel_distance = True
+            except AttributeError:
+                self.logger.debug(
+                    "Unable to set relative locations from 'mt_obj' "
+                    "- not filled yet."
+                )
+                pass
 
             # interpolate each station onto the period list
             # check bounds of period list
@@ -826,7 +826,7 @@ class Data(object):
         # BM: If we can't get relative locations from MT object,
         #  then get them from Station object
         if not rel_distance:
-            data_array = self.get_relative_station_locations(self.mt_dict, data_array)
+            data_array = self.get_relative_station_locations(mt_dict, data_array)
 
         return data_array
 
@@ -2164,12 +2164,30 @@ class Data(object):
         """
         Add a station to an existing data object.
         
-        :param fn: DESCRIPTION, defaults to None
-        :type fn: TYPE, optional
-        :param mt_object: DESCRIPTION, defaults to None
-        :type mt_object: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param fn: file name or list of files names to add, defaults to None
+        :type fn: str, Path, list of str or Path, optional
+        :param mt_object: MT objects or list of MT objects, defaults to None
+        :type mt_object: :class:`mtpy.core.mt.MT` or list of :class:`mtpy.core.mt.MT, 
+        optional
+        :return: new data array 
+        :rtype: np.ndarray
+        :return: new_mt_dict
+        :type: dictionary of :class:`mtpy.core.mt.MT` objects
+        
+        .. note:: As long as the added station(s) are within the existing station
+        area the center point will remain the same, if they are not, then the center
+        will change and you will need to adjust your mesh.
+        
+        Example
+        
+        >>> dfn = "/home/mt/test.dat"
+        >>> d = modem.Data()
+        >>> d.read_data_file(dfn)
+        >>> d.data_array, d.mt_dict = d.add_station(fn=[r"/01.edi", r"/02.edi"])
+        >>> d.write_data_file(fn_basename="test_added.dat", 
+        >>> ...               fill=False,
+        >>> ...               compute_error=False,
+        >>> ...               elevation=True)
 
         """
 
@@ -2192,7 +2210,18 @@ class Data(object):
             self.logger.error(msg)
             raise ValueError(msg)
 
+        add_mt_dict = {}
+        new_mt_dict = dict(self.mt_dict)
         for mt_obj in mt_object:
-            self.mt_dict[mt_object.station] = mt_object
-
-        self.fill_data_array(new_edi_dir=new_edi_dir)
+            add_mt_dict[mt_obj.station] = mt_obj
+            new_mt_dict[mt_obj.station] = mt_obj
+            
+        add_data_array = self.fill_data_array(add_mt_dict, new_edi_dir=new_edi_dir)
+        add_data_array = self.compute_inv_error(add_data_array)
+        
+        new_data_array = np.append(self.data_array, add_data_array)
+        new_data_array = self.get_relative_station_locations(new_mt_dict, new_data_array)
+        
+        return new_data_array, new_mt_dict
+        
+        
