@@ -1820,7 +1820,6 @@ class Model(object):
             self.mesh_rotation_angle,
             return_centre=True,
         )
-
         if surfacefile:
             elev_mg = mtmesh.interpolate_elevation_to_grid(
                 xg,
@@ -1853,8 +1852,6 @@ class Model(object):
             len(yg),
             len(xg),
         )
-        # <type 'numpy.ndarray'>  (65, 92), 65 92: it's 2D image with cell index as pixels
-        # np.savetxt('E:/tmp/elev_mg.txt', elev_mg, fmt='%10.5f')
 
         # get a name for surface
         if get_surfacename:

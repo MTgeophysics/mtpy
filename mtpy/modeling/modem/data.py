@@ -1794,6 +1794,7 @@ class Data(object):
             # east,north,zone = gis_tools.project_point_ll2utm(mt_obj.lat,mt_obj.lon,epsg=self.model_epsg)
             self.data_array[ii]["east"] = mt_obj.east
             self.data_array[ii]["north"] = mt_obj.north
+            self.data_array[ii]["zone"] = mt_obj.utm_zone
             self.data_array[ii]["elev"] = mt_obj.elevation
             self.data_array[ii]["rel_elev"] = mt_obj.grid_elev
             self.data_array[ii]["rel_east"] = mt_obj.grid_east
