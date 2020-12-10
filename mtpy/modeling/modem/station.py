@@ -37,7 +37,7 @@ class Stations(object):
     def __init__(self, **kwargs):
 
         self.dtype = [
-            ("station", "|S10"),
+            ("station", "|U10"),
             ("lat", np.float),
             ("lon", np.float),
             ("elev", np.float),
@@ -46,7 +46,7 @@ class Stations(object):
             ("rel_elev", np.float),
             ("east", np.float),
             ("north", np.float),
-            ("zone", "S4"),
+            ("zone", "U4"),
         ]
         self.station_locations = np.zeros(0, dtype=self.dtype)
         self.model_epsg = None
@@ -55,6 +55,45 @@ class Stations(object):
         for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
+                
+    def __str__(self):
+        fmt_dict = dict([
+            ("station", "<8"),
+            ("lat", "<10.4f"),
+            ("lon", "<10.4f"),
+            ("elev", "<8.2f"),
+            ("rel_east", "<13.2f"),
+            ("rel_north", "<13.2f"),
+            ("rel_elev", "<8.2f"),
+            ("east", "<12.2f"),
+            ("north", "<12.2f"),
+            ("zone", "<6"),
+        ])
+        lines = [''.join([f"{n.capitalize():<10}" for n in self.station_locations.dtype.names])]
+        lines.append('-' * 72)
+        for ss in self.station_locations:
+            l = []
+            for k in self.station_locations.dtype.names:
+                l.append(f"{ss[k]:{fmt_dict[k]}}")
+            lines.append(''.join(l))
+            
+        lines.append("\nModel Center:")
+        l = []
+        for n in ["lat", "lon", "elev", "east", "north", "zone"]:
+            l.append(f"{self.center_point[n][0]:{fmt_dict[n]}}")
+        lines.append(''.join(l))
+        
+        lines.append("\nMean Values:")
+        l = []
+        for n in ["lat", "lon", "elev", "east", "north"]:
+            l.append(f"{self.station_locations[n].mean():{fmt_dict[n]}}")
+        lines.append(''.join(l) + f"{self.center_point.zone[0]:<6}")   
+        
+        return '\n'.join(lines)
+    
+    def __repr__(self):
+        return self.__str__()
+                
 
     ## --> define properties that can only be returned and not set
     @property
@@ -224,43 +263,50 @@ class Stations(object):
             ("east", np.float),
             ("north", np.float),
             ("elev", np.float),
-            ("zone", "S4"),
+            ("zone", "U4"),
         ]
         center_location = np.recarray(1, dtype=dtype)
-        #        AK - using the mean here but in get_relative_locations used (max + min)/2, why???
+        
+        # safer to get center from lat and lon if not all zones are the same
+        if not np.all(self.utm_zone == self.utm_zone[0]):
+            center_location['lat'] = self.lat.mean()
+            center_location['lon'] = self.lon.mean()
+            # get the median utm zone
+            if self.model_utm_zone is None:
+                zone = self.utm_zone.copy()
+                zone.sort()
+                center_utm_zone = zone[int(zone.size/2)]
+                center_location["zone"] = center_utm_zone
+            else:
+                center_location["zone"] = self.model_utm_zone
+            
+            east, north, zone = gis_tools.project_point_ll2utm(
+                center_location['lat'], 
+                center_location['lon'], 
+                utm_zone=center_location['zone'][0])
+            
+            center_location['east'] = east
+            center_location['north'] = north
 
-        #        center_point = np.array([self.east.mean(), self.north.mean()])
-        #
-        #        #translate the stations so they are relative to 0,0
-        #        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2
-        #        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2
-        #
-        #        center_point[0] -= east_center
-        #        center_point[1] -= north_center
-        #
-        #        # calculate center point in lat, lon, easting, northing
-        #        center_location['east'] = center_point[0]
-        #        center_location['north'] = center_point[1]
-        center_point = (
-            np.array(
-                [self.east.max() + self.east.min(), self.north.max() + self.north.min()]
+        else:
+            center_location["east"] = self.east.mean()
+            center_location["north"] = self.north.mean()
+    
+            # get the median utm zone
+            zone = self.utm_zone.copy()
+            zone.sort()
+            center_utm_zone = zone[int(zone.size/2)]
+            center_location["zone"] = center_utm_zone
+    
+            center_ll = gis_tools.project_point_utm2ll(
+                float(center_location["east"]),
+                float(center_location["north"]),
+                center_utm_zone,
+                epsg=self.model_epsg,
             )
-            / 2.0
-        )
-        center_location["east"] = center_point[0]
-        center_location["north"] = center_point[1]
-
-        center_location["zone"] = self.utm_zone[0]
-
-        center_ll = gis_tools.project_point_utm2ll(
-            float(center_point[0]),
-            float(center_point[1]),
-            self.utm_zone[0],
-            epsg=self.model_epsg,
-        )
-
-        center_location["lat"] = center_ll[0]
-        center_location["lon"] = center_ll[1]
+    
+            center_location["lat"] = center_ll[0]
+            center_location["lon"] = center_ll[1]
         # BM: Because we are now writing center_point.elev to ModEm
         #  data file, we need to provide it.
         #  The center point elevation is the highest point of the

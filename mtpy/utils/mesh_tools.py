@@ -203,6 +203,21 @@ def interpolate_elevation_to_grid(
         lat, lon, epsg=epsg, utm_zone=utm_zone
     )
     
+    print("elevation points:")
+    print(f"\tlatitude corners: {lat.min():.4f}, {lat.max():.4f}")
+    print(f"\tlongitude corners: {lon.min():.4f}, {lon.max():.4f}")
+    print(f"\teasting corners: {projected_points.easting.min():.2f}, {projected_points.easting.max():.2f} ")
+    print(f"\tnorthing corners: {projected_points.northing.min():.2f}, {projected_points.northing.max():.2f} ")
+    print(f"\tutm_zone : {projected_points.utm_zone[0]}")
+    
+    print("grid points:")
+    print(f"\tlatitude corners: {mlatmin:.4f}, {mlatmax:.4f}")
+    print(f"\tlongitude corners: {mlonmin:.4f}, {mlonmax:.4f}")
+    print(f"\teasting corners: {grid_east.min():.2f}, {grid_east.max():.2f}")
+    print(f"\tnorthing corners: {grid_north.min():.2f}, {grid_north.max():.2f}")
+    print(f"\tutm_zone: {utm_zone}")
+    
+    
     # elevation in model grid
     # first, get lat,lon points of surface grid
     points = np.vstack(
@@ -213,6 +228,12 @@ def interpolate_elevation_to_grid(
     values = elev.flatten()
     # xi, the model grid points to interpolate to
     xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
+    
+    print(points.shape, elev.shape, xi.shape)
+    print(points[:, 0].min(), points[:, 0].max())
+    print(xi[:, 0].min(), xi[:, 0].max())
+    print(points[:, 1].min(), points[:, 1].max())
+    print(xi[:, 1].min(), xi[:, 1].max())
     
     # elevation on the centre of the grid nodes
     elev_mg = spi.griddata(points, values, xi, method=method).reshape(grid_north.shape)
