@@ -22,7 +22,7 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 from mtpy.utils.mttime import MTime, get_now_utc
 import mtpy.core.z as MTz
-from mtpy.core import metadata
+from mtpy.core.metadata import metadata
 
 from mtpy import __version__
 

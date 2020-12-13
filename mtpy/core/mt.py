@@ -13,7 +13,7 @@ import logging
 import numpy as np
 from scipy import interpolate as spi
 
-from mtpy.core import metadata
+from mtpy.core.metadata import metadata
 from mtpy.utils import gis_tools
 import mtpy.core.z as MTz
 import mtpy.analysis.pt as MTpt

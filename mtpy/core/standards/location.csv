@@ -1,9 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-latitude,float,TRUE,number,degrees,latitude of location in datum specified at survey level,none,[ lat ],23.134
-longitude,float,TRUE,number,degrees,longitude of location in datum specified at survey level,none,[ lon | long ],14.23
-elevation,float,TRUE,number,degrees,elevation of location in datum specified at survey level,none,[elev ],123.4
-x,float,FALSE,number,meters,relative distance to the center of the station,none,[east | easting],10.0
-x2,float,FALSE,number,meters,relative distance to the center of the station,none,[east | easting],10.0
-y,float,FALSE,number,meters,relative distance to the center of the station,none,[north | northing],10.0
-y2,float,FALSE,number,meters,relative distance to the center of the station,none,[north | northing],10.0
-z,float,FALSE,number,meters,relative elevation to the center of the station,none,none,10.0

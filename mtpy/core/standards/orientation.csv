@@ -1,3 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-method,string,TRUE,controlled vocabulary,none,method for orienting station layout,[ compass | GPS | theodolite | other ],none,compass
-reference_frame,string,TRUE,controlled vocabulary,none,"Reference frame for station layout.  There are only 2 options geographic and geomagnetic.  Both assume a right-handed coordinate system with North=0 E=90 and vertical positive downward",[ geographic | geomagnetic ],none,geomagnetic

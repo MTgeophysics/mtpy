@@ -1,5 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-id,str,TRUE,free form,none,instrument ID number can be serial number or a designated ID,none,serial,mt01
-manufacturer,str,TRUE,free form,none,who manufactured the instrument,none,none,mt gurus
-type,str,TRUE,free form,none,instrument type,none,none,broadband 32-bit
-model,str,FALSE,free form,none,model version of the instrument,none,none,falcon5
