@@ -1,0 +1,8 @@
+attribute,type,required,style,units,description,options,alias,example
+channels_recorded_auxiliary,str,TRUE,name list,none,list of auxiliary channels recorded,none,none,[T]
+channels_recorded_electric,str,TRUE,name list,none,list of electric channels recorded,none,none,"[Ex | Ey]"
+channels_recorded_magnetic,str,TRUE,name list,none,list of magnetic channels recorded,none,none,"[Hx | Hy | Hz]"
+comments,str,FALSE,free form,none,any comments on the run,none,none,cows chewed cables
+data_type,str,TRUE,controlled vocabulary,none,type of data recoreded for this run,[ RMT | AMT| BBMT | LPMT | ULPMT | other ] ,none,BBMT
+id,str,TRUE,alpha numeric,none,run ID should be station name followed by an alphabet letter for the run,none,none,mt02b
+sample_rate,float,TRUE,number,samples per second,rate of sampling renureded for this run,none,none,100

@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+creation_time,str,TRUE,date time,none,date and time the file was created,none,none,2020-02-08T12:23:40.324600+00:00
+comments,str,FALSE,free form,none,any comments on provenance of the data,none,none,all good
+log,str,FALSE,free form,none,a history of changes made to the data,none,none,2020-02-10T14:24:45+00:00 updated metadata

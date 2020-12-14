@@ -1,0 +1,5 @@
+attribute,type,required,style,units,description,options,alias,example
+name,str,TRUE,free form,none,author name,none,author,person name
+org,str,TRUE,free form,none,organization name,none,organization,mt gurus
+org_url,str,FALSE,url,none,URL of organization,none,none,https://www.mt_gurus.org 
+email,str,TRUE,email,none,email of the contact person,none,none,mt.guru@em.org

@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+name,str,TRUE,name list,none,name of filter applied or to be applies. If more than one filter input as a comma separated list,none,none,"[counts2mv, lowpass_magnetic]"
+applied,bool,TRUE,name list,none,boolean if filter has been applied or not. If more than one filter input as a comma separated list.  Needs to be the same length as name or if only one entry is given it is assumed to apply to all filters listed.,none,none,"[True, False]"
+comments,str,FALSE,name,none,any comments on filters,none,none,low pass is not calibrated

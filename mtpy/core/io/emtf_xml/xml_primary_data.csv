@@ -1,0 +1,2 @@
+attribute,type,required,style,units,description,options,alias,example
+filename,string,TRUE,free form,none,file name of the figure file that displays the data,none,none,example.png

@@ -1,0 +1,3 @@
+attribute,type,required,style,units,description,options,alias,example
+filename,string,TRUE,free form,none,file name of the attached file data,none,none,example.zmm
+description,string,TRUE,free form,none,description of the attached file,none,none,The original used to produce the XML

@@ -1,0 +1,13 @@
+attribute,type,required,style,units,description,options,alias,example
+name,str,TRUE,name list,none,name of filter applied or to be applies. If more than one filter input as a comma separated list,none,none,"[counts2mv, lowpass_magnetic]"
+type,str,TRUE,controlled vocabulary,none,type of filter,[ table | zpk | conversion | gain | time_delay | other ],none,table
+units_in,str,TRUE,alpha numeric,none,name of the input units to the filter. Should be all lowercase and separated with an underscore,none,none,count
+units_out,str,TRUE,alpha numeric,none,name of the output units.  Should be alpha numeric.,none,none,millivolt
+calibration_date,str,FALSE,date,none,latest date of filter calibration,none,none,2/1/2020
+normalization_factor,float,FALSE,number,none,normalization factor for a poles and zeros filter,none,none,2.34
+normalization_frequency,float,FALSE,number,none,normalization frequency for a poles and zeros filter,none,none,1
+cutoff,float,FALSE,number,none,cutoff frequency for filter,none,none,1
+operation,float,FALSE,controlled vocabulary,none,how the filter should be applied,[ mulitply | divide | add | subtract ],none,multiply
+n_poles,int,FALSE,number,none,how many poles are in the filter,none,none,4
+n_zeros,int,FALSE,number,none,how many zeros are in the filter,none,none,2
+conversion_factor,float,FALSE,number,none,unit conversion factor,none,none,100

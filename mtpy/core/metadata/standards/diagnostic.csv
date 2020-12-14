@@ -1,0 +1,3 @@
+attribute,type,required,style,units,description,options,alias,example
+end,float,FALSE,number,none,end value of a diagnostic measurement,none,none,10
+start,float,FALSE,number,none,start value of a diagnostic measurement,none,none,12.3

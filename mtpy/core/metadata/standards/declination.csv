@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+comments,str,FALSE,free form,None,any comments on declination,none,none,estimated from WMM 2016
+model,str,TRUE,controlled vocabulary,None,geomagnetic reference model used to calculate declination,[ EMAG2 | EMM | HDGM | IGRF | WMM | unknown ],none,WMM 
+value,float,TRUE,number,degrees,declination angle relative to geographic north positive clockwise,none,none,12.3

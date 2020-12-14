@@ -1,0 +1,5 @@
+attribute,type,required,style,units,description,options,alias,example
+Description,string,TRUE,free form,none,description of what is in the file; default is magnetotelluric transfer functions,none,none,Magnetotelluric Transfer Functions
+ProductId,string,TRUE,alpha numeric,none,ID given as the archive ID of the station,none,none,USMTArray.NVS11.2020
+SubType,string,TRUE,controlled vocabulary,none,subject data type,[MT_TF],none,MT_TF
+Notes,string,FALSE,free form,none,any notes applicable to the user on data present in the file,none,none,these are notes

@@ -1,0 +1,61 @@
+CHANGELOG METADATA STANDARDS
+================================
+	* ‘/’ in metadata name replaced with ‘.’
+	* removed _type from metadata name
+	* change to all lower case names
+	* change notes to comments
+	* nested all start, end date/times under time_period
+	* removed all datum except at the survey level to make sure everything is consistent.
+	* removed all url cause they never work.
+	
+	* Survey
+		- Changed survey to name
+		- Changed location to geographic_location
+		- nest start and end under time_period
+		- removed acquired_by.email and .url cause redundant, the user can get this from the doi.
+		- added acquired_by.comments as a free field to input any comments
+		- changed id to archive_id
+		- changed net_code to archive_network
+		- removed conditions_of_use because redundant with release_status
+		- added project_lead.name .email, .organization as can be different from acquired by.
+		
+	* Station
+		- nested lat, lon, elevation, declination under location
+		- nested start, end under time_period
+		- nested orientation options under orientation
+		- Remove acquired_by email and url
+		- renamed sta_code to archive_id
+		- renamed name to id
+		- added geographic_name for additional searching
+		- added channel layout
+		- removed declination.epoch and added declination.comments.  Epoch can be attained from the model.
+		
+	* DataLogger
+		- Change battery.start_voltage_d to battery.voltage.start_d
+		
+	* Run
+		- nested start/end under time_period
+		- nested data_logger info under run
+		- added metadata_by.author, metadata_by.comments
+		- changed channels_recorded to channels_recorded_auxiliary, channels_recorded_eletric, channels_recorded_magnetic
+		
+	
+	* Channel
+		- Add 'type' to distinguish what type of metadata is needed.
+		- Add location to auxiliary channels for consistency.
+		- nested lat, lon, elevation, declination under location
+		- changed azimuth to measurement_azimuth for clarity
+		- made most field notes, like ac, dc, contact resistance as optional
+		- changed data_quality to have a rating category --> data_quality.rating.author, data_quality.rating.value, data_quality.rating.method
+		- removed data_quality.warning_flags
+		- changed data_quailty.warning_notes to data_quality.warning_comments
+	
+	* Electric
+		- Change electric.contact_resistance.start_B_d to electric.contact_resitance.start where start can be a list
+
+	* Magnetic
+		- Change magnetic.h_field.start_min_d to magnetic.h_field_min.start
+		Change magnetic.h_field.start_max_d to magnetic.h_field_max.start
+		- nested lat, lon, elevation, declination under location
+		-
+	

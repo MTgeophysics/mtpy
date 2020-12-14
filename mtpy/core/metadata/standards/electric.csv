@@ -1,0 +1,8 @@
+attribute,type,required,style,units,description,options,alias,example
+dipole_length,float,TRUE,number,meters,length of the dipole,none,none,55.25
+contact_resistance.start,float,FALSE,number list,ohms,starting contact resistance; if more than one measurement input as a list of number [1 2 3 ...] ,none,none,"[1.2, 1.4]"
+contact_resistance.end,float,FALSE,number list,ohms,starting contact resistance; if more than one measurement input as a list of number [1 2 3 ...] ,none,none,"[1.5, 1.8]"
+ac.start,float,FALSE,number,volts,starting AC value; if more than one measurement input as a list of number [1 2 3 ...] ,none,none,"[52.1, 55.8]"
+ac.end,float,FALSE,number,volts,ending AC value; if more than one measurement input as a list of number [1 2 3 ...] ,none,none,"[45.3, 49.5]"
+dc.start,float,FALSE,number,volts,starting DC value; if more than one measurement input as a list of number [1 2 3 ...] ,none,none,1.1
+dc.end,float,FALSE,number,volts,ending DC value; if more than one measurement input as a list of number [1 2 3 ...] ,none,none,1.5
