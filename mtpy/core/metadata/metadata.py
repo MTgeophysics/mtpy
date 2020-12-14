@@ -1093,6 +1093,8 @@ class Instrument(Base):
         self.manufacturer = None
         self.type = None
         self.model = None
+        self.name = None
+        self.settings = None
         super().__init__(attr_dict=ATTR_DICT["instrument"], **kwargs)
 
 
