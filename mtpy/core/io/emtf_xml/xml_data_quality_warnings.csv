@@ -1,0 +1,2 @@
+attribute,type,required,style,units,description,options,alias,example
+flag,integer,FALSE,number,none,Flag for data quality,none,none,0

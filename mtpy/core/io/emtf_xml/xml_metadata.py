@@ -5,7 +5,8 @@ Created on Sun Dec 13 20:27:29 2020
 @author: jrpeacock
 """
 
-from mtpy.core.metadata.metadata import (Base, Citation, write_lines)
+from mtpy.core.metadata.metadata import (Base, Citation, Comment, Location, 
+                                         Orientation, write_lines)
 from mtpy.core.io.emtf_xml.xml_schema import XMLStandards
 from mtpy.utils.mttime import MTime
 
@@ -86,3 +87,63 @@ class Copyright(Base):
         super().__init__(attr_dict=ATTR_DICT["xml_copyright"],
                          **kwargs)
     
+class DataQualityNotes(Base):
+    __doc__ = write_lines(ATTR_DICT["xml_data_quality_notes"])
+
+    def __init__(self, **kwargs):
+
+        self.good_from_period = None
+        self.good_to_period = None
+        self.rating = 0
+        self.comments = Comment()
+        super().__init__(attr_dict=ATTR_DICT["xml_data_quality_notes"],
+                         **kwargs)
+        
+class DataQualityWarnings(Base):
+    __doc__ = write_lines(ATTR_DICT["xml_data_quality_warnings"])
+
+    def __init__(self, **kwargs):
+
+        self.flag = 0
+        self.comments = Comment()
+        super().__init__(attr_dict=ATTR_DICT["xml_data_quality_notes"],
+                         **kwargs)
+        
+class Site(Base):
+    __doc__ = write_lines(ATTR_DICT["xml_site"])
+    
+    def __init__(self, **kwargs):
+        self.project = None
+        self.survey = None
+        self.year_collected = None
+        self.country = None
+        self.id = None
+        self.name = None
+        self.acquired_by = None
+        self.location = Location()
+        self.orientation = Orientation()
+        self.run_list = None
+        self._start_dt = MTime()
+        self._end_dt = MTime()
+        
+        super().__init__(attr_dict=ATTR_DICT["xml_site"],
+                         **kwargs)
+        
+    @property
+    def start(self):
+        return self._start_dt.iso_str
+    
+    @start.setter
+    def start(self, value):
+        self._start_dt.from_str(value)
+        
+    @property
+    def end(self):
+        return self._end_dt.iso_str
+    
+    @end.setter
+    def end(self, value):
+        self._end_dt.from_str(value)
+        
+        
+        

@@ -11,6 +11,8 @@ CSV_LIST = [
 	"xml_person.csv",
 	"xml_provenance.csv",
 	"xml_copyright.csv",
+	"xml_data_quality_notes.csv",
+	"xml_data_quality_warnings.csv",
     "xml_emtf.csv",
 	"xml_site.csv",
 ]

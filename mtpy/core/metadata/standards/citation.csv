@@ -5,3 +5,4 @@ title,str,FALSE,free form,none,Full title of the citation,none,none,Paper Title
 year,str,FALSE,date,none,Year of citation,none,none,2020
 volume,str,FALSE,free form,none,Journal volume of the citation,none,none,12
 pages,str,FALSE,free form,none,Page numbers of the citation,none,none,10-15
+journal,str,FALSE,free form,none,Journal title of citation,none,none,Journal of Geophysical Research

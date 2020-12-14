@@ -91,13 +91,32 @@ class XMLStandards:
         emtf_dict.add_dict(self.xml_copyright_dict, "copyright")
         
         return emtf_dict
+    
+    @property
+    def xml_data_quality_notes_dict(self):
+        dq_notes = schema.from_csv(schema.get_level_fn("xml_data_quality_notes",
+                                                   XML_CSV_FN_PATHS))
+        dq_notes.add_dict(self.mt_standards.comment_dict, "comments")
+        return dq_notes
+        
+    @property
+    def xml_data_quality_warnings_dict(self):
+        dq_warnings = schema.from_csv(schema.get_level_fn("xml_data_quality_warnings",
+                                                   XML_CSV_FN_PATHS))
+        dq_warnings.add_dict(self.mt_standards.comment_dict, "comments")
+        return dq_warnings
 
     @property
     def xml_site_dict(self):
         site_dict = schema.from_csv(schema.get_level_fn("xml_site",
                                                         XML_CSV_FN_PATHS))
         site_dict.add_dict(self.mt_standards.location_dict.copy(), "location")
+        site_dict.add_dict(self.xml_data_quality_notes_dict.copy(), 
+                           "data_quality_notes")
+        site_dict.add_dict(self.xml_data_quality_warnings_dict.copy(), 
+                           "data_quality_warnings")
         return site_dict
+     
 
     @property
     def ATTR_DICT(self):
