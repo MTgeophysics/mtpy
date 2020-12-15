@@ -15,6 +15,11 @@ CSV_LIST = [
 	"xml_data_quality_warnings.csv",
     "xml_emtf.csv",
 	"xml_site.csv",
+	"xml_electrode.csv",
+	"xml_dipole.csv",
+	"xml_field_notes.csv",
+	"xml_software.csv",
+	"xml_processing_info.csv",
 ]
 
 XML_CSV_FN_PATHS = [CSV_PATH.joinpath(fn) for fn in CSV_LIST]

@@ -1296,6 +1296,14 @@ class Electrode(Base):
         self.y = 0.0
         self.y2 = 0.0
         super().__init__(attr_dict=ATTR_DICT["electrode"], **kwargs)
+        
+    @property
+    def length(self):
+        return np.sqrt((self.x2 - self.x) ** 2 + (self.y2 - self.y) ** 2)
+    
+    @property
+    def azimuth(self):
+        return np.rad2deg(np.arctan2((self.y2 - self.y), (self.x2 - self.x)))
 
 
 # =============================================================================

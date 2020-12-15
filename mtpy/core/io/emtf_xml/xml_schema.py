@@ -116,6 +116,34 @@ class XMLStandards:
         site_dict.add_dict(self.xml_data_quality_warnings_dict.copy(), 
                            "data_quality_warnings")
         return site_dict
+    
+    @property
+    def xml_electrode_dict(self):
+        return schema.from_csv(schema.get_level_fn("xml_electrode",
+                                                   XML_CSV_FN_PATHS))  
+    
+    @property
+    def xml_dipole_dict(self):
+        dipole_dict = schema.from_csv(schema.get_level_fn("xml_dipole",
+                                                   XML_CSV_FN_PATHS)) 
+        dipole_dict.add_dict(self.xml_electrode_dict, "electrode_01")
+        dipole_dict.add_dict(self.xml_electrode_dict, "electrode_02")
+        
+        return dipole_dict
+    
+    @property
+    def xml_field_notes_dict(self):
+        fn_dict = schema.from_csv(schema.get_level_fn("xml_field_notes",
+                                                      XML_CSV_FN_PATHS))
+        fn_dict.add_dict(self.mt_standards.instrument_dict, "instrument")
+        fn_dict.add_dict(self.xml_dipole_dict, "dipole_01")
+        fn_dict.add_dict(self.xml_dipole_dict, "dioole_02")
+        fn_dict.add_dict(self.mt_standards.instrument_dict, "hx")
+        fn_dict.add_dict(self.mt_standards.instrument_dict, "hy")
+        fn_dict.add_dict(self.mt_standards.instrument_dict, "hz")
+        fn_dict.add_dict(self.mt_standards.time_period_dict)
+        
+        return fn_dict
      
 
     @property
@@ -125,6 +153,7 @@ class XMLStandards:
             [(key, deepcopy(getattr(self, "{0}_dict".format(key)))) for key in keys]
         )
         self.logger.debug("Successfully made ATTR_DICT")
+        
 
     def summarize_standards(
         self, levels=["survey", "station", "run", "auxiliary", "electric", "magnetic"]
