@@ -1818,7 +1818,8 @@ class Data(object):
             self.data_array["north"] = self.data_array["rel_north"] + center_utm[1]
 
     def write_vtk_station_file(
-        self, vtk_save_path=None, vtk_fn_basename="ModEM_stations"
+        self, vtk_save_path=None, vtk_fn_basename="ModEM_stations", geographic=False,
+        shift_east=0, shift_north=0, shift_elev=0,
     ):
         """
         write a vtk file for station locations.  For now this in relative
@@ -1839,14 +1840,23 @@ class Data(object):
             vtk_fn = self.save_path.join_path(vtk_fn_basename)
         else:
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
-
-        pointsToVTK(
-            vtk_fn,
-            self.station_locations.rel_north / 1000.0,
-            self.station_locations.rel_east / 1000.0,
-            self.station_locations.rel_elev / 1000.0,
-            data={"elevation": self.station_locations.rel_elev / 1000.0},
-        )
+        
+        if geographic:
+            pointsToVTK(
+                vtk_fn,
+                self.station_locations.rel_north / 1000.0 + shift_north,
+                self.station_locations.rel_east / 1000.0 + shift_east,
+                self.station_locations.rel_elev / 1000.0 + shift_elev,
+                data={"elevation": self.station_locations.rel_elev / 1000.0},
+            )
+        else:
+            pointsToVTK(
+                    vtk_fn,
+                    self.station_locations.north / 1000.0 + shift_north,
+                    self.station_locations.east / 1000.0 + shift_east,
+                    self.station_locations.elev / 1000.0 + shift_elev,
+                    data={"elevation": self.station_locations.elev / 1000.0},
+                )
 
         self.logger.info("Wrote station file to {0}".format(vtk_fn))
 
@@ -2237,5 +2247,27 @@ class Data(object):
         new_data_array = self.get_relative_station_locations(new_mt_dict, new_data_array)
         
         return new_data_array, new_mt_dict
-        
+    
+    def remove_station(self, name):
+        """
+        Remove a station or stations
+        """
+        if isinstance(name, str):
+            name = [name]
+        for b_station in name:
+            try:
+                s_find = np.where(self.data_array["station"] == b_station)[0][0]
+            except IndexError:
+                msg = f"Could not find {b_station} in data file"
+                self.logger.warn(msg)
+                continue
+            
+            self.data_array[s_find]["z"][:] = 0
+            self.data_array[s_find]["z_err"][:] = 0
+            self.data_array[s_find]["tip"][:] = 0
+            self.data_array[s_find]["tip_err"][:] = 0
+            
+            self.mt_dict.pop(b_station)
+            
+            self.logger.info(f"Removed {b_station} from data file {self.data_fn}")
         

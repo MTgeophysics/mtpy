@@ -1509,7 +1509,8 @@ class Model(object):
         center_z = 0
         self.grid_center = np.array([center_north, center_east, center_z])
 
-    def write_vtk_file(self, vtk_save_path=None, vtk_fn_basename="ModEM_model_res"):
+    def write_vtk_file(self, vtk_save_path=None, vtk_fn_basename="ModEM_model_res",
+                       shift_east=0, shift_north=0, shift_z=0):
         """
         write a vtk file to view in Paraview or other
 
@@ -1532,9 +1533,9 @@ class Model(object):
         # use cellData, this makes the grid properly as grid is n+1
         gridToVTK(
             vtk_fn,
-            self.grid_north / 1000.0,
-            self.grid_east / 1000.0,
-            self.grid_z / 1000.0,
+            self.grid_north / 1000.0 + shift_north,
+            self.grid_east / 1000.0 + shift_east,
+            self.grid_z / 1000.0 + shift_z,
             cellData={"resistivity": self.res_model},
         )
 
