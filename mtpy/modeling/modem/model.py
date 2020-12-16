@@ -1533,9 +1533,9 @@ class Model(object):
         # use cellData, this makes the grid properly as grid is n+1
         gridToVTK(
             vtk_fn,
-            self.grid_north / 1000.0 + shift_north,
-            self.grid_east / 1000.0 + shift_east,
-            self.grid_z / 1000.0 + shift_z,
+            (self.grid_north + shift_north) / 1000.0,
+            (self.grid_east  + shift_east) / 1000.0,
+            (self.grid_z + shift_z) / 1000.0,
             cellData={"resistivity": self.res_model},
         )
 

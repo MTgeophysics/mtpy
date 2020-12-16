@@ -1837,26 +1837,26 @@ class Data(object):
         """
 
         if vtk_save_path is None:
-            vtk_fn = self.save_path.join_path(vtk_fn_basename)
+            vtk_fn = self.save_path.joinpath(vtk_fn_basename)
         else:
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
         
-        if geographic:
+        if not geographic:
             pointsToVTK(
-                vtk_fn,
-                self.station_locations.rel_north / 1000.0 + shift_north,
-                self.station_locations.rel_east / 1000.0 + shift_east,
-                self.station_locations.rel_elev / 1000.0 + shift_elev,
-                data={"elevation": self.station_locations.rel_elev / 1000.0},
+                vtk_fn.as_posix(),
+                (self.station_locations.rel_north + shift_north) / 1000.,
+                (self.station_locations.rel_east + shift_east) / 1000.0,
+                (self.station_locations.rel_elev + shift_elev) / 1000.0,
+                data={"elevation": (self.station_locations.rel_elev + shift_elev) / 1000.0},
             )
         else:
             pointsToVTK(
-                    vtk_fn,
-                    self.station_locations.north / 1000.0 + shift_north,
-                    self.station_locations.east / 1000.0 + shift_east,
-                    self.station_locations.elev / 1000.0 + shift_elev,
-                    data={"elevation": self.station_locations.elev / 1000.0},
-                )
+                vtk_fn.as_posix(),
+                (self.station_locations.north + shift_north) / 1000.,
+                (self.station_locations.east + shift_east) / 1000.0,
+                (self.station_locations.elev + shift_elev) / 1000.0,
+                data={"elevation": (self.station_locations.elev + shift_elev) / 1000.0},
+            )
 
         self.logger.info("Wrote station file to {0}".format(vtk_fn))
 
