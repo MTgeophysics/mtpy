@@ -1444,7 +1444,6 @@ class Model(object):
         # --> get grid center and rotation angle
         if len(ilines) > line_index:
             for iline in ilines[line_index:]:
-                print(iline)
                 ilist = iline.strip().split()
                 # grid center
                 if len(ilist) == 3:
