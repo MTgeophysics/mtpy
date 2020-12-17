@@ -17,6 +17,7 @@ from collections import OrderedDict, defaultdict
 from xml.etree import cElementTree as et
 from xml.dom import minidom
 from operator import itemgetter
+import h5py
 
 # code to convert ini_dict to flattened dictionary
 # default seperater '_'
