@@ -1510,7 +1510,7 @@ class Model(object):
         self.grid_center = np.array([center_north, center_east, center_z])
 
     def write_vtk_file(self, vtk_save_path=None, vtk_fn_basename="ModEM_model_res",
-                       shift_east=0, shift_north=0, shift_z=0):
+                       shift_east=0, shift_north=0, shift_z=0, units='km'):
         """
         write a vtk file to view in Paraview or other
 
@@ -1524,6 +1524,15 @@ class Model(object):
                                   *default* is ModEM_model_res, evtk will add
                                   on the extension .vtr
         """
+        if isinstance(units, str):
+            if units.lower() == 'km':
+                scale = 1./1000.00
+            elif units.lower == "m":
+                scale = 1.0
+            elif units == "ft":
+                scale = 3.2808
+        elif isinstance(units, (int, float)):
+            scale = units
 
         if vtk_save_path is None:
             vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
@@ -1533,9 +1542,9 @@ class Model(object):
         # use cellData, this makes the grid properly as grid is n+1
         gridToVTK(
             vtk_fn,
-            (self.grid_north + shift_north) / 1000.0,
-            (self.grid_east  + shift_east) / 1000.0,
-            (self.grid_z + shift_z) / 1000.0,
+            (self.grid_north + shift_north) * scale,
+            (self.grid_east  + shift_east) * scale,
+            (self.grid_z + shift_z) * scale,
             cellData={"resistivity": self.res_model},
         )
 

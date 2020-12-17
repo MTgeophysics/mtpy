@@ -51,6 +51,9 @@ class Stations(object):
         self.station_locations = np.zeros(0, dtype=self.dtype)
         self.model_epsg = None
         self.model_utm_zone = None
+        self._center_lat = None
+        self._center_lon = None
+        self._center_elev = 0.0
 
         for key in list(kwargs.keys()):
             if hasattr(self, key):
@@ -266,6 +269,30 @@ class Stations(object):
             ("zone", "U4"),
         ]
         center_location = np.recarray(1, dtype=dtype)
+        if self._center_lat is not None and self._center_lon is not None:
+            center_location['lat'] = self._center_lat
+            center_location['lon'] = self._center_lon
+            center_location['elev'] = self._center_elev
+            
+            # get the median utm zone
+            if self.model_utm_zone is None:
+                zone = self.utm_zone.copy()
+                zone.sort()
+                # get the median zone
+                center_utm_zone = zone[int(zone.size/2)]
+                center_location["zone"] = center_utm_zone
+            else:
+                center_location["zone"] = self.model_utm_zone
+            
+            # project center
+            east, north, zone = gis_tools.project_point_ll2utm(
+                center_location['lat'], 
+                center_location['lon'], 
+                utm_zone=center_location['zone'][0])
+            
+            center_location['east'] = east
+            center_location['north'] = north  
+            return center_location
         
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
