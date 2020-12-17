@@ -9,7 +9,7 @@ CSV_LIST = [
     "battery.csv",
     "channel.csv",
     "citation.csv",
-	"comment.csv",
+    "comment.csv",
     "copyright.csv",
     "data_quality.csv",
     "datalogger.csv",

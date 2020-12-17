@@ -90,9 +90,7 @@ import mtpy.imaging.mtcolors as mtcl
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:
-    print(
-        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
-    )
+    print("If you want to write a vtk file for 3d viewing, you need to install pyevtk")
 
 # ==============================================================================
 

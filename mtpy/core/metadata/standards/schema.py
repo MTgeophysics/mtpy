@@ -784,11 +784,11 @@ class Standards:
     @property
     def citation_dict(self):
         return from_csv(get_level_fn("citation"))
-    
+
     @property
     def comment_dict(self):
         return from_csv(get_level_fn("comment"))
-    
+
     @property
     def copyright_dict(self):
         return from_csv(get_level_fn("copyright"))

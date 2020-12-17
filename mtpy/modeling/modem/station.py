@@ -58,45 +58,50 @@ class Stations(object):
         for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
-                
+
     def __str__(self):
-        fmt_dict = dict([
-            ("station", "<8"),
-            ("lat", "<10.4f"),
-            ("lon", "<10.4f"),
-            ("elev", "<8.2f"),
-            ("rel_east", "<13.2f"),
-            ("rel_north", "<13.2f"),
-            ("rel_elev", "<8.2f"),
-            ("east", "<12.2f"),
-            ("north", "<12.2f"),
-            ("zone", "<6"),
-        ])
-        lines = [''.join([f"{n.capitalize():<10}" for n in self.station_locations.dtype.names])]
-        lines.append('-' * 72)
+        fmt_dict = dict(
+            [
+                ("station", "<8"),
+                ("lat", "<10.4f"),
+                ("lon", "<10.4f"),
+                ("elev", "<8.2f"),
+                ("rel_east", "<13.2f"),
+                ("rel_north", "<13.2f"),
+                ("rel_elev", "<8.2f"),
+                ("east", "<12.2f"),
+                ("north", "<12.2f"),
+                ("zone", "<6"),
+            ]
+        )
+        lines = [
+            "".join(
+                [f"{n.capitalize():<10}" for n in self.station_locations.dtype.names]
+            )
+        ]
+        lines.append("-" * 72)
         for ss in self.station_locations:
             l = []
             for k in self.station_locations.dtype.names:
                 l.append(f"{ss[k]:{fmt_dict[k]}}")
-            lines.append(''.join(l))
-            
+            lines.append("".join(l))
+
         lines.append("\nModel Center:")
         l = []
         for n in ["lat", "lon", "elev", "east", "north", "zone"]:
             l.append(f"{self.center_point[n][0]:{fmt_dict[n]}}")
-        lines.append(''.join(l))
-        
+        lines.append("".join(l))
+
         lines.append("\nMean Values:")
         l = []
         for n in ["lat", "lon", "elev", "east", "north"]:
             l.append(f"{self.station_locations[n].mean():{fmt_dict[n]}}")
-        lines.append(''.join(l) + f"{self.center_point.zone[0]:<6}")   
-        
-        return '\n'.join(lines)
-    
+        lines.append("".join(l) + f"{self.center_point.zone[0]:<6}")
+
+        return "\n".join(lines)
+
     def __repr__(self):
         return self.__str__()
-                
 
     ## --> define properties that can only be returned and not set
     @property
@@ -270,68 +275,70 @@ class Stations(object):
         ]
         center_location = np.recarray(1, dtype=dtype)
         if self._center_lat is not None and self._center_lon is not None:
-            center_location['lat'] = self._center_lat
-            center_location['lon'] = self._center_lon
-            center_location['elev'] = self._center_elev
-            
+            center_location["lat"] = self._center_lat
+            center_location["lon"] = self._center_lon
+            center_location["elev"] = self._center_elev
+
             # get the median utm zone
             if self.model_utm_zone is None:
                 zone = self.utm_zone.copy()
                 zone.sort()
                 # get the median zone
-                center_utm_zone = zone[int(zone.size/2)]
+                center_utm_zone = zone[int(zone.size / 2)]
                 center_location["zone"] = center_utm_zone
             else:
                 center_location["zone"] = self.model_utm_zone
-            
+
             # project center
             east, north, zone = gis_tools.project_point_ll2utm(
-                center_location['lat'], 
-                center_location['lon'], 
-                utm_zone=center_location['zone'][0])
-            
-            center_location['east'] = east
-            center_location['north'] = north  
+                center_location["lat"],
+                center_location["lon"],
+                utm_zone=center_location["zone"][0],
+            )
+
+            center_location["east"] = east
+            center_location["north"] = north
             return center_location
-        
+
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
-            center_location['lat'] = self.lat.mean()
-            center_location['lon'] = self.lon.mean()
+            center_location["lat"] = self.lat.mean()
+            center_location["lon"] = self.lon.mean()
             # get the median utm zone
             if self.model_utm_zone is None:
                 zone = self.utm_zone.copy()
                 zone.sort()
-                center_utm_zone = zone[int(zone.size/2)]
+                center_utm_zone = zone[int(zone.size / 2)]
                 center_location["zone"] = center_utm_zone
             else:
                 center_location["zone"] = self.model_utm_zone
-            
+
             east, north, zone = gis_tools.project_point_ll2utm(
-                center_location['lat'], 
-                center_location['lon'], 
-                utm_zone=center_location['zone'][0])
-            
-            center_location['east'] = east
-            center_location['north'] = north
+                center_location["lat"],
+                center_location["lon"],
+                utm_zone=center_location["zone"][0],
+            )
+
+            center_location["east"] = east
+            center_location["north"] = north
 
         else:
             center_location["east"] = self.east.mean()
             center_location["north"] = self.north.mean()
-    
+
             # get the median utm zone
             zone = self.utm_zone.copy()
             zone.sort()
-            center_utm_zone = zone[int(zone.size/2)]
+            center_utm_zone = zone[int(zone.size / 2)]
             center_location["zone"] = center_utm_zone
-    
+
             center_ll = gis_tools.project_point_utm2ll(
                 float(center_location["east"]),
                 float(center_location["north"]),
                 center_utm_zone,
                 epsg=self.model_epsg,
             )
-    
+
             center_location["lat"] = center_ll[0]
             center_location["lon"] = center_ll[1]
         # BM: Because we are now writing center_point.elev to ModEm

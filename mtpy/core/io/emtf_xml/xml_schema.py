@@ -23,8 +23,9 @@ from copy import deepcopy
 
 from mtpy.core.io.emtf_xml import XML_CSV_FN_PATHS
 from mtpy.core.metadata.standards import schema
+
 # =============================================================================
-# 
+#
 # =============================================================================
 
 
@@ -46,77 +47,82 @@ class XMLStandards:
         self.logger = logging.getLogger("{__name__}.{self.__class__.__name__}")
         self.logger.debug("Initiating Standards")
         self.mt_standards = schema.Standards()
-        
+
     @property
     def xml_external_url_dict(self):
-        return schema.from_csv(schema.get_level_fn("xml_external_url",
-                                                   XML_CSV_FN_PATHS))
-    
+        return schema.from_csv(
+            schema.get_level_fn("xml_external_url", XML_CSV_FN_PATHS)
+        )
+
     @property
     def xml_primary_data_dict(self):
-        return schema.from_csv(schema.get_level_fn("xml_primary_data",
-                                                   XML_CSV_FN_PATHS))
+        return schema.from_csv(
+            schema.get_level_fn("xml_primary_data", XML_CSV_FN_PATHS)
+        )
+
     @property
     def xml_attachment_dict(self):
-        return schema.from_csv(schema.get_level_fn("xml_attachment",
-                                                   XML_CSV_FN_PATHS))
-    
+        return schema.from_csv(schema.get_level_fn("xml_attachment", XML_CSV_FN_PATHS))
+
     @property
     def xml_person_dict(self):
-        return schema.from_csv(schema.get_level_fn("xml_person",
-                                                   XML_CSV_FN_PATHS)) 
+        return schema.from_csv(schema.get_level_fn("xml_person", XML_CSV_FN_PATHS))
+
     @property
     def xml_provenance_dict(self):
-        provenance_dict = schema.from_csv(schema.get_level_fn("xml_provenance",
-                                                   XML_CSV_FN_PATHS))     
+        provenance_dict = schema.from_csv(
+            schema.get_level_fn("xml_provenance", XML_CSV_FN_PATHS)
+        )
         provenance_dict.add_dict(self.xml_person_dict, "creator")
         provenance_dict.add_dict(self.xml_person_dict, "submitter")
         return provenance_dict
-    
+
     @property
     def xml_copyright_dict(self):
-        copyright_dict = schema.from_csv(schema.get_level_fn("xml_copyright",
-                                                   XML_CSV_FN_PATHS)) 
+        copyright_dict = schema.from_csv(
+            schema.get_level_fn("xml_copyright", XML_CSV_FN_PATHS)
+        )
         copyright_dict.add_dict(self.mt_standards.citation_dict, "citation")
         return copyright_dict
-           
+
     @property
     def xml_emtf_dict(self):
-        emtf_dict = schema.from_csv(schema.get_level_fn("xml_emtf",
-                                                        XML_CSV_FN_PATHS))
+        emtf_dict = schema.from_csv(schema.get_level_fn("xml_emtf", XML_CSV_FN_PATHS))
         emtf_dict.add_dict(self.xml_external_url_dict, "external_url")
         emtf_dict.add_dict(self.xml_primary_data_dict, "primary_data")
         emtf_dict.add_dict(self.xml_attachment_dict, "attachment")
         emtf_dict.add_dict(self.xml_provenance_dict, "provenance")
         emtf_dict.add_dict(self.xml_copyright_dict, "copyright")
-        
+
         return emtf_dict
-    
+
     @property
     def xml_data_quality_notes_dict(self):
-        dq_notes = schema.from_csv(schema.get_level_fn("xml_data_quality_notes",
-                                                   XML_CSV_FN_PATHS))
+        dq_notes = schema.from_csv(
+            schema.get_level_fn("xml_data_quality_notes", XML_CSV_FN_PATHS)
+        )
         dq_notes.add_dict(self.mt_standards.comment_dict, "comments")
         return dq_notes
-        
+
     @property
     def xml_data_quality_warnings_dict(self):
-        dq_warnings = schema.from_csv(schema.get_level_fn("xml_data_quality_warnings",
-                                                   XML_CSV_FN_PATHS))
+        dq_warnings = schema.from_csv(
+            schema.get_level_fn("xml_data_quality_warnings", XML_CSV_FN_PATHS)
+        )
         dq_warnings.add_dict(self.mt_standards.comment_dict, "comments")
         return dq_warnings
 
     @property
     def xml_site_dict(self):
-        site_dict = schema.from_csv(schema.get_level_fn("xml_site",
-                                                        XML_CSV_FN_PATHS))
+        site_dict = schema.from_csv(schema.get_level_fn("xml_site", XML_CSV_FN_PATHS))
         site_dict.add_dict(self.mt_standards.location_dict.copy(), "location")
-        site_dict.add_dict(self.xml_data_quality_notes_dict.copy(), 
-                           "data_quality_notes")
-        site_dict.add_dict(self.xml_data_quality_warnings_dict.copy(), 
-                           "data_quality_warnings")
+        site_dict.add_dict(
+            self.xml_data_quality_notes_dict.copy(), "data_quality_notes"
+        )
+        site_dict.add_dict(
+            self.xml_data_quality_warnings_dict.copy(), "data_quality_warnings"
+        )
         return site_dict
-     
 
     @property
     def ATTR_DICT(self):

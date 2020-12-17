@@ -21,7 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats as stats, interpolate as spi
 
 import mtpy.utils.calculator as mtcc
-from mtpy.imaging.mtcolors import (FixPointNormalize, cut_terrain_map)
+from mtpy.imaging.mtcolors import FixPointNormalize, cut_terrain_map
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import (
     mesh_tools as mtmesh,
@@ -35,9 +35,7 @@ import mtpy.utils.gocad as mtgocad
 try:
     from pyevtk.hl import gridToVTK
 except ImportError:
-    print(
-        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
-    )
+    print("If you want to write a vtk file for 3d viewing, you need to install pyevtk")
 
 __all__ = ["Model"]
 
@@ -1062,11 +1060,14 @@ class Model(object):
         # plt.imshow(elev_mg) # this upside down
         # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
 
-        norm = FixPointNormalize(sealevel=0,
-                                 vmax=np.round(self.surface_dict["topography"].max(), -2),
-                                 vmin=np.round(self.surface_dict["topography"].min(), -2))
-        imgplot = ax.pcolormesh(x, y, self.surface_dict["topography"],
-                                cmap=cut_terrain_map, norm=norm)
+        norm = FixPointNormalize(
+            sealevel=0,
+            vmax=np.round(self.surface_dict["topography"].max(), -2),
+            vmin=np.round(self.surface_dict["topography"].min(), -2),
+        )
+        imgplot = ax.pcolormesh(
+            x, y, self.surface_dict["topography"], cmap=cut_terrain_map, norm=norm
+        )
         divider = make_axes_locatable(ax)
         # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
@@ -1509,8 +1510,15 @@ class Model(object):
         center_z = 0
         self.grid_center = np.array([center_north, center_east, center_z])
 
-    def write_vtk_file(self, vtk_save_path=None, vtk_fn_basename="ModEM_model_res",
-                       shift_east=0, shift_north=0, shift_z=0, units='km'):
+    def write_vtk_file(
+        self,
+        vtk_save_path=None,
+        vtk_fn_basename="ModEM_model_res",
+        shift_east=0,
+        shift_north=0,
+        shift_z=0,
+        units="km",
+    ):
         """
         write a vtk file to view in Paraview or other
 
@@ -1525,8 +1533,8 @@ class Model(object):
                                   on the extension .vtr
         """
         if isinstance(units, str):
-            if units.lower() == 'km':
-                scale = 1./1000.00
+            if units.lower() == "km":
+                scale = 1.0 / 1000.00
             elif units.lower == "m":
                 scale = 1.0
             elif units == "ft":
@@ -1543,7 +1551,7 @@ class Model(object):
         gridToVTK(
             vtk_fn,
             (self.grid_north + shift_north) * scale,
-            (self.grid_east  + shift_east) * scale,
+            (self.grid_east + shift_east) * scale,
             (self.grid_z + shift_z) * scale,
             cellData={"resistivity": self.res_model},
         )
@@ -1957,13 +1965,17 @@ class Model(object):
         # first, get surface data
         if topographyfile:
             self.surface_dict["topography"] = self.interpolate_elevation2(
-                surfacefile=topographyfile, method=interp_method,
-                shift_east=shift_east, shift_north=shift_north,
+                surfacefile=topographyfile,
+                method=interp_method,
+                shift_east=shift_east,
+                shift_north=shift_north,
             )
         elif surface:
             self.surface_dict["topography"] = self.interpolate_elevation2(
-                surface=surface, method=interp_method,
-                shift_east=shift_east, shift_north=shift_north,
+                surface=surface,
+                method=interp_method,
+                shift_east=shift_east,
+                shift_north=shift_north,
             )
         elif topographyarray:
             self.surface_dict["topography"] = topographyarray

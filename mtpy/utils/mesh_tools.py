@@ -180,7 +180,7 @@ def interpolate_elevation_to_grid(
         grid_east, grid_north = np.meshgrid(grid_east, grid_north)
 
     if fast:
-        #buffer = 1  # use a buffer of 1 degree around mesh-bounds
+        # buffer = 1  # use a buffer of 1 degree around mesh-bounds
         mlatmin, mlonmin = gis_tools.project_point_utm2ll(
             grid_east.min(), grid_north.min(), epsg=epsg, utm_zone=utm_zone
         )
@@ -197,12 +197,12 @@ def interpolate_elevation_to_grid(
         lon = lon[subsetIndices]
         lat = lat[subsetIndices]
         elev = elev[subsetIndices]
-    
+
     # end if
     projected_points = gis_tools.project_point_ll2utm(
         lat, lon, epsg=epsg, utm_zone=utm_zone
     )
-    
+
     # elevation in model grid
     # first, get lat,lon points of surface grid
     points = np.vstack(
@@ -213,7 +213,7 @@ def interpolate_elevation_to_grid(
     values = elev.flatten()
     # xi, the model grid points to interpolate to
     xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
-    
+
     # elevation on the centre of the grid nodes
     elev_mg = spi.griddata(points, values, xi, method=method).reshape(grid_north.shape)
 

@@ -9,6 +9,7 @@
 # ==============================================================================
 from pathlib import Path
 import logging
+from copy import deepcopy
 
 import numpy as np
 from scipy import interpolate as spi
@@ -162,6 +163,9 @@ class MT(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def copy(self):
+        return deepcopy(self)
 
     # ==========================================================================
     # get functions

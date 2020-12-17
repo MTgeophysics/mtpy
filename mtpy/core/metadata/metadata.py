@@ -1153,7 +1153,8 @@ class Citation(Base):
         self.year = None
         self.survey_doi = None
         super().__init__(attr_dict=ATTR_DICT["citation"], **kwargs)
-        
+
+
 # =============================================================================
 # comment
 # =============================================================================
@@ -1164,7 +1165,7 @@ class Comment(Base):
         self.comment = None
         self.author = None
         self._dt = MTime()
-        
+
     @property
     def date(self):
         return self._dt.iso_str
@@ -1172,7 +1173,8 @@ class Comment(Base):
     @date.setter
     def date(self, dt_str):
         self._dt.from_str(dt_str)
-        
+
+
 # ==============================================================================
 # Copyright
 # ==============================================================================
