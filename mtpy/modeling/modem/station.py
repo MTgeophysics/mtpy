@@ -11,6 +11,8 @@ ModEM
 """
 from pathlib import Path
 import numpy as np
+import logging
+
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
 
@@ -35,6 +37,8 @@ class Stations(object):
     """
 
     def __init__(self, **kwargs):
+        
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
             ("station", "|U10"),
@@ -224,19 +228,6 @@ class Stations(object):
         (-) shift left or down
 
         """
-        #
-        #        #remove the average distance to get coordinates in a relative space
-        #        self.station_locations['rel_east'] = self.east-self.east.mean()
-        #        self.station_locations['rel_north'] = self.north-self.north.mean()
-        #
-        #        #translate the stations so they are relative to 0,0
-        #        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2.
-        #        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2.
-        #
-        #
-        #        #remove the average distance to get coordinates in a relative space
-        #        self.station_locations['rel_east'] -= east_center+shift_east
-        #        self.station_locations['rel_north'] -= north_center+shift_north
 
         # translate the stations so they are relative to 0,0
         east_center = (self.east.max() + self.east.min()) / 2.0
@@ -302,8 +293,8 @@ class Stations(object):
 
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
-            center_location["lat"] = self.lat.mean()
-            center_location["lon"] = self.lon.mean()
+            center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.
+            center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.
             # get the median utm zone
             if self.model_utm_zone is None:
                 zone = self.utm_zone.copy()
@@ -323,8 +314,8 @@ class Stations(object):
             center_location["north"] = north
 
         else:
-            center_location["east"] = self.east.mean()
-            center_location["north"] = self.north.mean()
+            center_location["east"] = (self.east.max() + self.east.min()) / 2
+            center_location["north"] = (self.north.max() + self.north.max()) / 2
 
             # get the median utm zone
             zone = self.utm_zone.copy()
@@ -383,23 +374,5 @@ class Stations(object):
         self.station_locations["rel_east"] = new_coords[0, :]
         self.station_locations["rel_north"] = new_coords[1, :]
 
-        print("Rotated stations by {0:.1f} deg clockwise from N".format(rotation_angle))
+        self.logger.info(f"Rotated stations by {rotation_angle:.1f} deg clockwise from N")
 
-    def check_utm_crossing(self):
-        """
-        If the stations cross utm zones, then estimate distance by computing
-        distance on a sphere.
-        """
-        #
-        #        latMid = (Lat1+Lat2 )/2.0;  // or just use Lat1 for slightly less accurate estimate
-        #
-        #
-        #        m_per_deg_lat = 111132.954 - 559.822 * cos( 2.0 * latMid ) + 1.175 * cos( 4.0 * latMid);
-        #        m_per_deg_lon = (3.14159265359/180 ) * 6367449 * cos ( latMid );
-        #
-        #        deltaLat = fabs(Lat1 - Lat2);
-        #        deltaLon = fabs(Lon1 - Lon2);
-        #
-        #        dist_m = sqrt (  pow( deltaLat * m_per_deg_lat,2) + pow( deltaLon * m_per_deg_lon , 2) );
-        #
-        pass
