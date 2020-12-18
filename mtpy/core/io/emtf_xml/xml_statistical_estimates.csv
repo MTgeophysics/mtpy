@@ -1,0 +1,2 @@
+attribute,type,required,style,units,description,options,alias,example
+estimates_list,string,TRUE,name list,none,list of statistical estimates,none,none,[var cov]

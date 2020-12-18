@@ -151,7 +151,30 @@ class XMLStandards:
         fn_dict.add_dict(self.mt_standards.time_period_dict)
         
         return fn_dict
+    
+    @property
+    def xml_software_dict(self):
+        return schema.from_csv(schema.get_level_fn("xml_software",
+                                                   XML_CSV_FN_PATHS)) 
+    
+    @property
+    def xml_processing_info_dict(self):
+        processing_dict = schema.from_csv(schema.get_level_fn("xml_processing_info",
+                                                   XML_CSV_FN_PATHS))
 
+        processing_dict.add_dict(self.xml_software_dict, "processing_software")
+        return processing_dict
+    
+    @property
+    def xml_estimate_dict(self):
+        return schema.from_csv(schema.get_level_fn("xml_estimate",
+                                                   XML_CSV_FN_PATHS)) 
+    
+    @property
+    def xml_statistical_estimates_dict(self):
+        return schema.from_csv(schema.get_level_fn("xml_statistical_estimates",
+                                                   XML_CSV_FN_PATHS))
+    
     @property
     def ATTR_DICT(self):
         keys = [fn.stem for fn in XML_CSV_FN_PATHS]
