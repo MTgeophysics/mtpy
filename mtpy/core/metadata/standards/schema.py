@@ -496,6 +496,8 @@ def from_csv(csv_fn):
     )
     attribute_dict = {}
     for line in lines[1:]:
+        if len(line) < 2:
+            continue
         line_dict = dict(
             [
                 (key, ss.strip())
@@ -782,11 +784,11 @@ class Standards:
     @property
     def citation_dict(self):
         return from_csv(get_level_fn("citation"))
-    
+
     @property
     def comment_dict(self):
         return from_csv(get_level_fn("comment"))
-    
+
     @property
     def copyright_dict(self):
         return from_csv(get_level_fn("copyright"))

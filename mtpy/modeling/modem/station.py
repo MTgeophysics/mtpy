@@ -11,6 +11,8 @@ ModEM
 """
 from pathlib import Path
 import numpy as np
+import logging
+
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
 
@@ -35,6 +37,8 @@ class Stations(object):
     """
 
     def __init__(self, **kwargs):
+        
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
             ("station", "|U10"),
@@ -51,49 +55,57 @@ class Stations(object):
         self.station_locations = np.zeros(0, dtype=self.dtype)
         self.model_epsg = None
         self.model_utm_zone = None
+        self._center_lat = None
+        self._center_lon = None
+        self._center_elev = 0.0
 
         for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
-                
+
     def __str__(self):
-        fmt_dict = dict([
-            ("station", "<8"),
-            ("lat", "<10.4f"),
-            ("lon", "<10.4f"),
-            ("elev", "<8.2f"),
-            ("rel_east", "<13.2f"),
-            ("rel_north", "<13.2f"),
-            ("rel_elev", "<8.2f"),
-            ("east", "<12.2f"),
-            ("north", "<12.2f"),
-            ("zone", "<6"),
-        ])
-        lines = [''.join([f"{n.capitalize():<10}" for n in self.station_locations.dtype.names])]
-        lines.append('-' * 72)
+        fmt_dict = dict(
+            [
+                ("station", "<8"),
+                ("lat", "<10.4f"),
+                ("lon", "<10.4f"),
+                ("elev", "<8.2f"),
+                ("rel_east", "<13.2f"),
+                ("rel_north", "<13.2f"),
+                ("rel_elev", "<8.2f"),
+                ("east", "<12.2f"),
+                ("north", "<12.2f"),
+                ("zone", "<6"),
+            ]
+        )
+        lines = [
+            "".join(
+                [f"{n.capitalize():<10}" for n in self.station_locations.dtype.names]
+            )
+        ]
+        lines.append("-" * 72)
         for ss in self.station_locations:
             l = []
             for k in self.station_locations.dtype.names:
                 l.append(f"{ss[k]:{fmt_dict[k]}}")
-            lines.append(''.join(l))
-            
+            lines.append("".join(l))
+
         lines.append("\nModel Center:")
         l = []
         for n in ["lat", "lon", "elev", "east", "north", "zone"]:
             l.append(f"{self.center_point[n][0]:{fmt_dict[n]}}")
-        lines.append(''.join(l))
-        
+        lines.append("".join(l))
+
         lines.append("\nMean Values:")
         l = []
         for n in ["lat", "lon", "elev", "east", "north"]:
             l.append(f"{self.station_locations[n].mean():{fmt_dict[n]}}")
-        lines.append(''.join(l) + f"{self.center_point.zone[0]:<6}")   
-        
-        return '\n'.join(lines)
-    
+        lines.append("".join(l) + f"{self.center_point.zone[0]:<6}")
+
+        return "\n".join(lines)
+
     def __repr__(self):
         return self.__str__()
-                
 
     ## --> define properties that can only be returned and not set
     @property
@@ -216,19 +228,6 @@ class Stations(object):
         (-) shift left or down
 
         """
-        #
-        #        #remove the average distance to get coordinates in a relative space
-        #        self.station_locations['rel_east'] = self.east-self.east.mean()
-        #        self.station_locations['rel_north'] = self.north-self.north.mean()
-        #
-        #        #translate the stations so they are relative to 0,0
-        #        east_center = (self.rel_east.max()-np.abs(self.rel_east.min()))/2.
-        #        north_center = (self.rel_north.max()-np.abs(self.rel_north.min()))/2.
-        #
-        #
-        #        #remove the average distance to get coordinates in a relative space
-        #        self.station_locations['rel_east'] -= east_center+shift_east
-        #        self.station_locations['rel_north'] -= north_center+shift_north
 
         # translate the stations so they are relative to 0,0
         east_center = (self.east.max() + self.east.min()) / 2.0
@@ -266,45 +265,71 @@ class Stations(object):
             ("zone", "U4"),
         ]
         center_location = np.recarray(1, dtype=dtype)
-        
-        # safer to get center from lat and lon if not all zones are the same
-        if not np.all(self.utm_zone == self.utm_zone[0]):
-            center_location['lat'] = self.lat.mean()
-            center_location['lon'] = self.lon.mean()
+        if self._center_lat is not None and self._center_lon is not None:
+            center_location["lat"] = self._center_lat
+            center_location["lon"] = self._center_lon
+            center_location["elev"] = self._center_elev
+
             # get the median utm zone
             if self.model_utm_zone is None:
                 zone = self.utm_zone.copy()
                 zone.sort()
-                center_utm_zone = zone[int(zone.size/2)]
+                # get the median zone
+                center_utm_zone = zone[int(zone.size / 2)]
                 center_location["zone"] = center_utm_zone
             else:
                 center_location["zone"] = self.model_utm_zone
-            
+
+            # project center
             east, north, zone = gis_tools.project_point_ll2utm(
-                center_location['lat'], 
-                center_location['lon'], 
-                utm_zone=center_location['zone'][0])
-            
-            center_location['east'] = east
-            center_location['north'] = north
+                center_location["lat"],
+                center_location["lon"],
+                utm_zone=center_location["zone"][0],
+            )
+
+            center_location["east"] = east
+            center_location["north"] = north
+            return center_location
+
+        # safer to get center from lat and lon if not all zones are the same
+        if not np.all(self.utm_zone == self.utm_zone[0]):
+            center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.
+            center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.
+            # get the median utm zone
+            if self.model_utm_zone is None:
+                zone = self.utm_zone.copy()
+                zone.sort()
+                center_utm_zone = zone[int(zone.size / 2)]
+                center_location["zone"] = center_utm_zone
+            else:
+                center_location["zone"] = self.model_utm_zone
+
+            east, north, zone = gis_tools.project_point_ll2utm(
+                center_location["lat"],
+                center_location["lon"],
+                utm_zone=center_location["zone"][0],
+            )
+
+            center_location["east"] = east
+            center_location["north"] = north
 
         else:
-            center_location["east"] = self.east.mean()
-            center_location["north"] = self.north.mean()
-    
+            center_location["east"] = (self.east.max() + self.east.min()) / 2
+            center_location["north"] = (self.north.max() + self.north.max()) / 2
+
             # get the median utm zone
             zone = self.utm_zone.copy()
             zone.sort()
-            center_utm_zone = zone[int(zone.size/2)]
+            center_utm_zone = zone[int(zone.size / 2)]
             center_location["zone"] = center_utm_zone
-    
+
             center_ll = gis_tools.project_point_utm2ll(
                 float(center_location["east"]),
                 float(center_location["north"]),
                 center_utm_zone,
                 epsg=self.model_epsg,
             )
-    
+
             center_location["lat"] = center_ll[0]
             center_location["lon"] = center_ll[1]
         # BM: Because we are now writing center_point.elev to ModEm
@@ -349,23 +374,5 @@ class Stations(object):
         self.station_locations["rel_east"] = new_coords[0, :]
         self.station_locations["rel_north"] = new_coords[1, :]
 
-        print("Rotated stations by {0:.1f} deg clockwise from N".format(rotation_angle))
+        self.logger.info(f"Rotated stations by {rotation_angle:.1f} deg clockwise from N")
 
-    def check_utm_crossing(self):
-        """
-        If the stations cross utm zones, then estimate distance by computing
-        distance on a sphere.
-        """
-        #
-        #        latMid = (Lat1+Lat2 )/2.0;  // or just use Lat1 for slightly less accurate estimate
-        #
-        #
-        #        m_per_deg_lat = 111132.954 - 559.822 * cos( 2.0 * latMid ) + 1.175 * cos( 4.0 * latMid);
-        #        m_per_deg_lon = (3.14159265359/180 ) * 6367449 * cos ( latMid );
-        #
-        #        deltaLat = fabs(Lat1 - Lat2);
-        #        deltaLon = fabs(Lon1 - Lon2);
-        #
-        #        dist_m = sqrt (  pow( deltaLat * m_per_deg_lat,2) + pow( deltaLon * m_per_deg_lon , 2) );
-        #
-        pass
