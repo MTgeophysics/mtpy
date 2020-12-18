@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+sign_convention,string,TRUE,controlled vocabulary,none,Sign convention of the processing software output,[ exp(+ i\omega t) | exp(- i\omega t)],none,exp(+ i\omega t)
+processed_by,string,FALSE,free form,none,Names of people who processed the data,none,none,MT Guru
+processing_tag,string,FALSE,free form,none,List of remote references,none,none,mt001-mt002

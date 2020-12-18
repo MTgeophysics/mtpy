@@ -1,0 +1,3 @@
+attribute,type,required,style,units,description,options,alias,example
+location,string,TRUE,controlled vocabulary,none,Direction of electrode,[N | S | E | W | other],none,N
+number,integer,TRUE,number,none,Electrode ID number,none,none,1

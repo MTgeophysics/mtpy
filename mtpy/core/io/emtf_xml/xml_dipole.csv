@@ -1,0 +1,4 @@
+attribute,type,required,style,units,description,options,alias,example
+manfacturer,string,FALSE,free form,none,Name of the manufacturer of the instrument,none,none,MT Gurus
+length,float,FALSE,number,meters,Dipole length,none,none,10
+azimuth,float,FALSE,number,degrees,Azimuth of the dipole relative to coordinate system,none,none,90
