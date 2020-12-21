@@ -2271,16 +2271,10 @@ class Model(object):
             )
             self.res_model[:, :, :] = self.res_initial_value
 
-        shift_east = (
-            geographic_east
-            - (self.nodes_east[0] - self.nodes_east[1] / 2 - self.grid_center[1] / 2)
-            / 1000
-        )
-        shift_north = (
-            geographic_north
-            + (self.nodes_north[0] - self.nodes_north[1] / 2 - self.grid_center[0] / 2)
-            / 1000
-        )
+        shift_east = (geographic_east - (self.nodes_east[0] - self.nodes_east[1] / 2 - self.grid_center[1] / 2)) / 1000.
+        shift_north = (geographic_north+ (self.nodes_north[0] - self.nodes_north[1] / 2 - self.grid_center[0] / 2))  / 1000.
+        
+        shift_elevation = geographic_elevation / 1000.
 
         # --> write file
         with open(save_fn, "w") as ifid:
@@ -2333,7 +2327,7 @@ class Model(object):
                 f"   {shift_east:.3f}       {shift_north:.3f}       (real world coordinates)\n"
             )
             ifid.write("  0.0000000E+00    (rotation)\n")
-            ifid.write(f"   {geographic_elevation:.3f}       (top elevation)\n")
+            ifid.write(f"   {shift_elevation:.3f}       (top elevation)\n")
             ifid.write("\n")
 
         self._logger.info("Wrote file to: {0}".format(save_fn))
