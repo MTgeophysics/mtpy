@@ -13,6 +13,9 @@ from pathlib import Path
 import numpy as np
 import logging
 
+import geopandas as gpd
+from shapely.geometry import Point
+
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
 
@@ -375,4 +378,25 @@ class Stations(object):
         self.station_locations["rel_north"] = new_coords[1, :]
 
         self.logger.info(f"Rotated stations by {rotation_angle:.1f} deg clockwise from N")
+        
+    def write_shp_file(self, shp_fn, epsg=None, default_epsg=4326):
+        """
+        Write a shape file of the station locations using geopandas which only takes
+        in epsg numbers
+        """
+        default_crs = {"init": f"epsg:{default_epsg}"}
+        station_list = []
+        geometry_list = []
+        for ss, lat, lon in zip(self.station, self.lat, self.lon):
+            entry = {"station": ss, "latitude": lat, "longitude": lon}
+            geometry_list.append(Point(lon, lat))
+            station_list.append(entry)
+        sdf = gpd.GeoDataFrame(station_list, 
+                               crs=default_crs,
+                               geometry=geometry_list)
+        if epsg is not None:
+            sdf = sdf.to_crs(epsg=epsg)
+            
+        sdf.to_file(shp_fn)
+
 
