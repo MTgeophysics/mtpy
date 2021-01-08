@@ -1,0 +1,7237 @@
+{
+	"EM_TF": {
+		"Description": "Magnetotelluric Transfer Functions",
+		"ProductId": "USMTArray.NVS11.2020",
+		"SubType": "MT_TF",
+		"Notes": "",
+		"Tags": "impedance,tipper",
+		"ExternalUrl": {
+			"Description": "IRIS DMC MetaData",
+			"Url": "http://www.iris.edu/mda/EM/NVS11"
+		},
+		"PrimaryData": {
+			"Filename": "NVS11-S11_NVS09_NVS11_NVR08-S11_REW09_NVS11.png"
+		},
+		"Attachment": {
+			"Filename": "NVS11-S11_NVS09_NVS11_NVR08-S11_REW09_NVS11.zmm",
+			"Description": "The original used to produce the XML"
+		},
+		"Provenance": {
+			"CreateTime": "2020-10-15T11:25:54",
+			"CreatingApplication": "EMTF File Conversion Utilities 4.0",
+			"Creator": {
+				"Name": "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
+				"Email": "pbedrosian@usgs.gov",
+				"Org": "U.S. Geological Survey",
+				"OrgUrl": "https://www.usgs.gov/natural-hazards/geomagnetism"
+			},
+			"Submitter": {
+				"Name": "Anna Kelbert",
+				"Email": "akelbert@usgs.gov",
+				"Org": "U.S. Geological Survey, Geomagnetism Program",
+				"OrgUrl": "https://www.usgs.gov/natural-hazards/geomagnetism"
+			}
+		},
+		"Copyright": {
+			"Citation": {
+				"Title": "USMTArray USGS Magnetotelluric Transfer Functions 2020",
+				"Authors": "Schultz, A., Pellerin, L., Bedrosian, P., Kelbert, A., Crosbie, J. and the staff of the National Geoelectromagnetic Facility at Oregon State University and their contractors",
+				"Year": "2020",
+				"SurveyDOI": "doi:10.17611/DP/EMTF/USMTARRAY/USGS2020"
+			},
+			"ReleaseStatus": "Unrestricted Release",
+			"ConditionsOfUse": "All data and metadata for this survey are available free of charge and may be copied freely, duplicated and further distributed provided that this data set is cited as the reference, and that the author(s) contributions are acknowledged as detailed in the Acknowledgements. Any papers cited in this file are only for reference. There is no requirement to cite these papers when the data are used. Whenever possible, we ask that the author(s) are notified prior to any publication that makes use of these data.\n While the author(s) strive to provide data and metadata of best possible quality, neither the author(s) of this data set, nor IRIS make any claims, promises, or guarantees about the accuracy, completeness, or adequacy of this information, and expressly disclaim liability for errors and omissions in the contents of this file. Guidelines about the quality or limitations of the data and metadata, as obtained from the author(s), are included for informational purposes only."
+		},
+		"Site": {
+			"Project": "USMTArray",
+			"Survey": "USGS 2020",
+			"YearCollected": "2020",
+			"Country": "USA",
+			"Id": "NVS11",
+			"Name": "Bald Mountain, NV, USA",
+			"Location": {
+				"Latitude": "37.509086",
+				"Longitude": "-115.617720",
+				"Elevation": {
+					"_units": "meters",
+					"__text": "1492.875"
+				},
+				"Declination": {
+					"_epoch": "1995.0",
+					"__text": "11.871"
+				},
+				"_datum": "WGS84"
+			},
+			"Orientation": {
+				"_angle_to_geographic_north": "0.000",
+				"__text": "orthogonal"
+			},
+			"AcquiredBy": "National Geoelectromagnetic Facility",
+			"Start": "2020-06-05T21:18:23",
+			"End": "2020-06-27T20:54:38",
+			"RunList": "NVS11a NVS11b NVS11c",
+			"DataQualityNotes": {
+				"Rating": "5",
+				"GoodFromPeriod": "15.000",
+				"GoodToPeriod": "10000.000",
+				"Comments": {
+					"_author": "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
+					"__text": "great TF from 10 to 10000 secs (or longer)"
+				}
+			},
+			"DataQualityWarnings": {
+				"Flag": "0",
+				"Comments": {
+					"_author": "Jade Crosbie, Paul Bedrosian and Anna Kelbert"
+				}
+			}
+		},
+		"FieldNotes": [
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			},
+			{
+				"Instrument": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": ""
+				},
+				"Magnetometer": {
+					"Manufacturer": "",
+					"Name": "",
+					"Id": "",
+					"Settings": "",
+					"_type": ""
+				},
+				"Dipole": [
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "N",
+								"_number": ""
+							},
+							{
+								"_location": "S",
+								"_number": ""
+							}
+						],
+						"_name": "Ex",
+						"_type": ""
+					},
+					{
+						"Manufacturer": "",
+						"Length": {
+							"_units": "meters",
+							"__text": "0.000"
+						},
+						"Azimuth": {
+							"_units": "degrees",
+							"__text": "0.000"
+						},
+						"Electrode": [
+							{
+								"_location": "E",
+								"_number": ""
+							},
+							{
+								"_location": "W",
+								"_number": ""
+							}
+						],
+						"_name": "Ey",
+						"_type": ""
+					}
+				],
+				"Errors": "",
+				"Start": "",
+				"End": "",
+				"_run": ""
+			}
+		],
+		"ProcessingInfo": {
+			"SignConvention": "exp(+ i\\omega t)",
+			"RemoteRef": {
+				"_type": "Robust Multi-station Reference"
+			},
+			"ProcessedBy": "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
+			"ProcessingSoftware": {
+				"Name": "EMTF",
+				"LastMod": "2015-08-26",
+				"Author": "Gary Egbert"
+			},
+			"ProcessingTag": "NVS11-S11_NVS09_NVS11_NVR08-S11_REW09_NVS11"
+		},
+		"StatisticalEstimates": {
+			"Estimate": [
+				{
+					"Description": "Variance",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/variance.html",
+					"Intention": "error estimate",
+					"Tag": "variance",
+					"_name": "VAR",
+					"_type": "real"
+				},
+				{
+					"Description": "Full covariance between each two TF components",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/covariance.html",
+					"Intention": "error estimate",
+					"Tag": "covariance",
+					"_name": "COV",
+					"_type": "complex"
+				},
+				{
+					"Description": "Inverse Coherent Signal Power Matrix (S)",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/inverse_signal_covariance.html",
+					"Intention": "signal power estimate",
+					"Tag": "inverse_signal_covariance",
+					"_name": "INVSIGCOV",
+					"_type": "complex"
+				},
+				{
+					"Description": "Residual Covariance (N)",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/residual_covariance.html",
+					"Intention": "error estimate",
+					"Tag": "residual_covariance",
+					"_name": "RESIDCOV",
+					"_type": "complex"
+				},
+				{
+					"Description": "Coherence",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/coherence.html",
+					"Intention": "signal coherence",
+					"Tag": "coherence",
+					"_name": "COH",
+					"_type": "complex"
+				},
+				{
+					"Description": "Multiple Coherence",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/multiple_coherence.html",
+					"Intention": "signal coherence",
+					"Tag": "multiple_coherence",
+					"_name": "PREDCOH",
+					"_type": "complex"
+				},
+				{
+					"Description": "Signal Amplitude",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/signal_amplitude.html",
+					"Intention": "signal power estimate",
+					"Tag": "signal_amplitude",
+					"_name": "SIGAMP",
+					"_type": "complex"
+				},
+				{
+					"Description": "Signal Noise",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/signal_noise.html",
+					"Intention": "error estimate",
+					"Tag": "signal_noise",
+					"_name": "SIGNOISE",
+					"_type": "complex"
+				}
+			]
+		},
+		"DataTypes": {
+			"DataType": [
+				{
+					"Description": "MT impedance",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/impedance.html",
+					"Intention": "primary data type",
+					"Tag": "impedance",
+					"_name": "Z",
+					"_type": "complex",
+					"_output": "E",
+					"_input": "H",
+					"_units": "[mV/km]/[nT]"
+				},
+				{
+					"Description": "Vertical Field Transfer Functions (Tipper)",
+					"ExternalUrl": "http://www.iris.edu/dms/products/emtf/tipper.html",
+					"Intention": "primary data type",
+					"Tag": "tipper",
+					"_name": "T",
+					"_type": "complex",
+					"_output": "H",
+					"_input": "H",
+					"_units": "[]"
+				}
+			]
+		},
+		"SiteLayout": {
+			"InputChannels": {
+				"Magnetic": [
+					{
+						"_name": "Hx",
+						"_orientation": "11.9",
+						"_x": "0.0",
+						"_y": "0.0",
+						"_z": "0.0"
+					},
+					{
+						"_name": "Hy",
+						"_orientation": "101.9",
+						"_x": "0.0",
+						"_y": "0.0",
+						"_z": "0.0"
+					}
+				],
+				"_ref": "site",
+				"_units": "m"
+			},
+			"OutputChannels": {
+				"Magnetic": {
+					"_name": "Hz",
+					"_orientation": "11.9",
+					"_x": "0.0",
+					"_y": "0.0",
+					"_z": "0.0"
+				},
+				"Electric": [
+					{
+						"_name": "Ex",
+						"_orientation": "11.9",
+						"_x": "0.0",
+						"_y": "0.0",
+						"_z": "0.0",
+						"_x2": "0.0",
+						"_y2": "0.0",
+						"_z2": "0.0"
+					},
+					{
+						"_name": "Ey",
+						"_orientation": "101.9",
+						"_x": "0.0",
+						"_y": "0.0",
+						"_z": "0.0",
+						"_x2": "0.0",
+						"_y2": "0.0",
+						"_z2": "0.0"
+					}
+				],
+				"_ref": "site",
+				"_units": "m"
+			}
+		},
+		"Data": {
+			"Period": [
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.982464e0 -7.249957e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.585379e0 4.770890e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-7.027621e0 -4.242110e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.492361e-1 -5.984043e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "3.056720e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.455825e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.987252e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "4.507852e-1"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "7.763664e0 -1.151763e-7"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-6.124270e0 2.203000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-6.124270e0 -2.203000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "8.777335e0 -8.648729e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "3.937214e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-3.052568e-2 5.420000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-3.052568e-2 -5.420000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "5.135786e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.303557e-2 -1.407213e-1"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "4.325443e-1 1.084743e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.589838e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.319681e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "7.763664e0 -1.151763e-7"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-6.124270e0 2.203000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-6.124270e0 -2.203000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "8.777335e0 -8.648729e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "7.200000e-4 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "4.654550e0",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.577294e0 -1.047384e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.034669e0 3.546231e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-4.471332e0 -4.876769e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-2.308294e0 -1.669616e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.929720e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.045102e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "2.795260e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "2.962395e-1"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "6.405015e0 4.727162e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-4.533724e0 1.884000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-4.533724e0 -1.884000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "6.787984e0 2.088380e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "3.012826e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-2.695070e-2 1.461000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-2.695070e-2 -1.461000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "4.364174e-2 5.421011e-20"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "2.096326e-1 3.082822e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.734673e-1 2.871820e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.664132e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "4.943010e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "6.405015e0 4.727162e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-4.533724e0 1.884000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-4.533724e0 -1.884000e0"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "6.787984e0 2.088380e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "7.282000e-4 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "5.818180e0",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.571792e0 4.920327e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.334339e0 2.742718e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-4.636661e0 -4.850282e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.697792e0 3.554728e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.747026e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.503403e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "2.531064e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "2.178107e-1"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.483325e0 1.410953e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.995559e0 8.638000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.995559e0 -8.638000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.718674e0 5.737047e-8"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "3.186071e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-3.064100e-2 5.477000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-3.064100e-2 -5.477000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "4.615929e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.273635e-1 -4.222978e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.769190e-1 3.732173e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.943765e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "4.254357e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.483325e0 1.410953e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.995559e0 8.638000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.995559e0 -8.638000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.718674e0 5.737047e-8"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "9.016000e-4 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "7.314290e0",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.647864e0 7.335561e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.053273e0 2.021027e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-2.837727e0 -4.019972e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-2.068864e0 6.984392e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "7.738204e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "6.401685e-2"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "1.063361e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "8.797009e-2"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.255106e0 7.772164e-10"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-1.580576e0 5.215000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-1.580576e0 -5.215000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.692894e0 5.789979e-8"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "2.377251e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-2.307289e-2 1.977000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-2.307289e-2 -1.977000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "3.266749e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "2.973297e-1 -3.372038e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.684997e-1 5.041196e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.408096e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.819460e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.255106e0 7.772164e-10"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-1.580576e0 5.215000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-1.580576e0 -5.215000e-1"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.692894e0 5.789979e-8"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.047000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "9.142860e0",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.094724e0 6.689866e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.543015e0 2.082216e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-2.918986e0 -3.697784e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.640724e0 -4.863866e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.461863e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.275734e-2"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "6.233214e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "3.179197e-2"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.011865e0 2.611572e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-5.667347e-1 -6.298998e-2"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-5.667347e-1 6.299002e-2"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.026134e0 -5.359572e-8"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "2.217774e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-2.188409e-2 4.674000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-2.188409e-2 -4.674000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "3.098226e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "2.736333e-1 1.138740e-1"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.368487e-1 6.544233e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "2.470571e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.260093e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.011865e0 2.611572e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-5.667347e-1 -6.298998e-2"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-5.667347e-1 6.299002e-2"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.026134e0 -5.359572e-8"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.228000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.163636e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.190467e0 1.089201e0"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.227537e0 1.850824e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.650463e0 -3.169176e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.542467e0 -4.737011e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.223409e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "9.767399e-3"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "1.504141e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.200869e-2"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "6.790017e-1 -1.254739e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.270552e-1 -5.011003e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.270552e-1 5.010998e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.420982e-1 -1.889606e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.801777e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.712099e-2 1.282000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.712099e-2 -1.282000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "2.215224e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.993910e-1 -1.184031e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.695384e-1 9.311566e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.053811e-3"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "8.413364e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "6.790017e-1 -1.254739e-8"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.270552e-1 -5.011003e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.270552e-1 5.010998e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.420982e-1 -1.889606e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.552000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.505882e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "9.433998e-1 7.892968e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.945054e0 1.667761e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.281947e0 -2.370239e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.436200e0 -5.742968e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.301356e-3"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.890005e-3"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "1.456653e-3"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "2.115548e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "8.327573e-2 -2.011287e-9"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-3.986580e-2 -3.656000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-3.986580e-2 3.656000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.209443e-1 -2.001129e-10"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.562707e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.434963e-2 6.282000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.434963e-2 -6.282000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.749193e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.837812e-1 -3.908900e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.368486e-1 8.839998e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.598894e-4"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.322130e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "8.327573e-2 -2.011287e-9"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-3.986580e-2 -3.656000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-3.986580e-2 3.656000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.209443e-1 -2.001129e-10"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.920000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.969231e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "9.303272e-1 7.946763e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.739708e0 1.620625e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.125293e0 -2.082376e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.343527e0 -6.666763e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "7.043229e-4"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.230434e-3"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "7.402002e-4"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.293111e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "4.055370e-2 -9.611336e-12"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-1.784796e-2 -5.784001e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-1.784796e-2 5.783999e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.084630e-2 3.560011e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.736766e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.586014e-2 7.659000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.586014e-2 -7.659000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.825234e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.941843e-1 1.948704e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.544447e-1 6.640835e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "9.984322e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.744236e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "4.055370e-2 -9.611336e-12"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-1.784796e-2 -5.784001e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-1.784796e-2 5.783999e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.084630e-2 3.560011e-9"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "2.462000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "2.560000e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "7.251571e-1 7.669688e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.477279e0 1.504870e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-8.907214e-1 -1.758130e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.145057e0 -7.312688e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.689626e-4"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.116883e-4"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "1.698597e-4"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "3.133431e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.005407e-2 1.024039e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-3.781542e-3 -2.005000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-3.781542e-3 2.005000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.854693e-2 -8.300039e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.680539e-2 6.776264e-21"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.514992e-2 2.099000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.514992e-2 -2.099000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.689461e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.780352e-1 4.514630e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.073049e-1 5.575852e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.009185e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.551095e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.005407e-2 1.024039e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-3.781542e-3 -2.005000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-3.781542e-3 2.005000e-3"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.854693e-2 -8.300039e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "2.993000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "3.303226e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.423949e-1 7.035786e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.285503e0 1.323872e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-6.810967e-1 -1.489129e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.014195e0 -6.817786e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "8.196348e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.136996e-4"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "8.243693e-5"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.143564e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.150389e-3 0.000000e0"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-1.214055e-3 -5.499000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-1.214055e-3 5.499000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.144611e-3 -1.355253e-20"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.591404e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.445135e-2 1.054000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.445135e-2 -1.054000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.600596e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.575618e-1 4.146140e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.006719e-1 4.027958e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.798001e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.494184e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.150389e-3 0.000000e0"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-1.214055e-3 -5.499000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-1.214055e-3 5.499000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.144611e-3 -1.355253e-20"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "3.491000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "4.266667e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.217212e-1 6.270511e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.142379e0 1.187129e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-5.345208e-1 -1.243571e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-9.179212e-1 -6.537511e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.284198e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "7.255904e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "5.347270e-5"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "7.342510e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.549739e-3 1.567740e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-8.489545e-4 -3.807000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-8.489545e-4 3.807000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.874261e-3 6.926010e-13"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.488616e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.359626e-2 -2.261000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.359626e-2 2.261000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.506384e-2 6.776264e-21"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.361308e-1 5.076451e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.015116e-1 1.745816e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.489115e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.044753e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.549739e-3 1.567740e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-8.489545e-4 -3.807000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-8.489545e-4 3.807000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.874261e-3 6.926010e-13"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "4.195000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "5.389474e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "3.386837e-1 5.298100e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "9.811572e-1 1.071355e0"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-4.510429e-1 -1.021745e0"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-7.861837e-1 -6.235100e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "3.090541e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.308663e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.011735e-5"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "4.198796e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.118919e-3 -4.037547e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-3.285104e-4 -1.217000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-3.285104e-4 1.217000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.954081e-3 5.037547e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.458546e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.291826e-2 -1.888000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.291826e-2 1.888000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.421354e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.276270e-1 3.680564e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.089107e-1 1.711970e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.064969e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.484721e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.118919e-3 -4.037547e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-3.285104e-4 -1.217000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-3.285104e-4 1.217000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.954081e-3 5.037547e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "5.026000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "6.826667e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.848585e-1 4.570554e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "8.460152e-1 9.746406e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-3.896849e-1 -8.645595e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-6.774586e-1 -5.950554e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "3.325693e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.729740e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.270733e-5"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "4.651577e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.361094e-3 0.000000e0"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.863193e-4 -2.300000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.863193e-4 2.300000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.357906e-3 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.408539e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.241356e-2 -5.269000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.241356e-2 5.269000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.385261e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.205717e-1 3.932439e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.103911e-1 1.004654e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.399657e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.990567e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.361094e-3 0.000000e0"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.863193e-4 -2.300000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.863193e-4 2.300000e-4"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.357906e-3 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "5.928000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "8.533334e1",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.433445e-1 3.941845e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "7.572784e-1 8.841700e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-3.431217e-1 -7.343301e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-6.054445e-1 -5.617845e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.966503e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.974620e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "1.962383e-5"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "2.968388e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.513147e-3 2.627973e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-7.367957e-6 -8.532000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-7.367957e-6 8.532001e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.288853e-3 4.638273e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.299611e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.120245e-2 -2.304000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.120245e-2 2.304000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.296889e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.210669e-1 3.589214e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.128966e-1 8.436626e-3"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "9.650850e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.459831e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.513147e-3 2.627973e-11"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-7.367957e-6 -8.532000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-7.367957e-6 8.532001e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.288853e-3 4.638273e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "6.378000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.024000e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.010858e-1 3.433797e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "6.306719e-1 7.694873e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-2.867282e-1 -6.131128e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-4.989859e-1 -5.064797e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "7.005824e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "9.361731e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "6.527813e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "8.722975e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.837490e-4 -5.788819e-12"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-8.580329e-6 -4.188000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-8.580329e-6 4.188000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.800511e-4 6.698819e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.200143e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-9.768787e-3 -4.141000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-9.768787e-3 4.141000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.118257e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.162397e-1 3.299428e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.149577e-1 5.208020e-3"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.483192e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.990792e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.837490e-4 -5.788819e-12"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-8.580329e-6 -4.188000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-8.580329e-6 4.188000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.800511e-4 6.698819e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "7.680000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.321290e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.639866e-1 2.882641e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "5.341707e-1 6.803896e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-2.449294e-1 -5.108105e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-4.223866e-1 -4.609641e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.358083e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "6.459317e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "4.623283e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "6.852383e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.681491e-4 8.710198e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "6.063138e-6 2.481000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "6.063138e-6 -2.481000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.456509e-4 3.848018e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.183782e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-9.866928e-3 -2.646000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-9.866928e-3 2.646000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.255818e-2 8.470329e-22"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.125077e-1 3.478770e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.273654e-1 1.057978e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.527973e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.228973e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.681491e-4 8.710198e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "6.063138e-6 2.481000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "6.063138e-6 -2.481000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.456509e-4 3.848018e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "9.583000e-3 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.706667e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.344048e-1 2.434803e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.590291e-1 5.912883e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-2.091709e-1 -4.255117e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-3.572048e-1 -4.076804e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.245852e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "6.465339e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "6.070259e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "7.481393e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "4.551019e-4 -1.188254e-12"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.105900e-5 9.364006e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.105900e-5 -9.363994e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.608981e-4 -2.781912e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.152676e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-8.391734e-3 1.322000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-8.391734e-3 -1.322000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.333824e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.140523e-1 3.344290e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.258507e-1 1.513047e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.001570e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.164270e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "4.551019e-4 -1.188254e-12"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-2.105900e-5 9.364006e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-2.105900e-5 -9.363994e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.608981e-4 -2.781912e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.099000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "2.155790e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.112483e-1 2.076333e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.948915e-1 5.172578e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.809085e-1 -3.549423e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-3.052483e-1 -3.621333e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.061357e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "5.606723e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "4.711306e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "6.503981e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.672963e-4 6.036813e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-6.208369e-6 5.511997e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-6.208369e-6 -5.512003e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.690038e-4 1.397211e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.519422e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-8.785909e-3 3.928000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-8.785909e-3 -3.928000e-4"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.762578e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.126143e-1 4.084030e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.224829e-1 2.296151e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.784915e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.225093e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.672963e-4 6.036813e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "-6.208369e-6 5.511997e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "-6.208369e-6 -5.512003e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.690038e-4 1.397211e-11"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.416000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "2.730667e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "9.523331e-2 1.811921e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.414046e-1 4.462112e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.610955e-1 -3.102888e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-2.623333e-1 -3.163921e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.421551e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "7.074263e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "8.193687e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.069146e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.262698e-4 -1.481121e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "2.191359e-5 -1.877000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "2.191359e-5 1.877000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.257302e-4 -2.781879e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.661677e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-8.808657e-3 1.700000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-8.808657e-3 -1.700000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "2.511323e-2 5.421011e-20"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.036254e-1 4.773360e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.205221e-1 3.144072e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.422604e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "7.075637e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "3.262698e-4 -1.481121e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "2.191359e-5 -1.877000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "2.191359e-5 1.877000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.257302e-4 -2.781879e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.662000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "3.413333e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "8.901907e-2 1.551390e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.013992e-1 4.074125e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.436008e-1 -2.673876e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-2.320191e-1 -2.874390e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "6.454956e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "7.924126e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "8.123383e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "9.972293e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.586188e-4 -2.404850e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "2.531336e-5 -2.146000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "2.531336e-5 2.146000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.174812e-4 -5.443515e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "2.495935e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.066179e-2 2.803000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.066179e-2 -2.803000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "3.141065e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "9.605354e-2 5.200711e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.142505e-1 3.405566e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.988756e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.124213e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.586188e-4 -2.404850e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "2.531336e-5 -2.146000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "2.531336e-5 2.146000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.174812e-4 -5.443515e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.929000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "4.096000e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "6.888983e-2 1.305900e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.592494e-1 3.445878e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.204506e-1 -2.230122e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.962798e-1 -2.466900e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.723591e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.881511e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.484108e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "3.686124e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.320225e-4 3.238616e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.553354e-5 -3.069002e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.553354e-5 3.068999e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.396775e-4 7.023348e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "2.062975e-2 -2.710505e-20"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-9.596603e-3 -1.084000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-9.596603e-3 1.084000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "2.639025e-2 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "7.899169e-2 5.441951e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.093257e-1 3.886470e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.174552e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "4.416602e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.320225e-4 3.238616e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.553354e-5 -3.069002e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.553354e-5 3.068999e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.396775e-4 7.023348e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "3.162000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "5.285161e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.782301e-2 1.091047e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.221445e-1 2.922906e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-1.091556e-1 -1.850095e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.685330e-1 -2.076047e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.949082e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.975476e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "2.345520e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "3.580679e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "6.279577e-5 4.399543e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.119046e-5 -1.434000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.119046e-5 1.434000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "9.586423e-5 -5.413454e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "3.103843e-2 -5.421011e-20"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.002401e-2 -1.947000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.002401e-2 1.947000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "3.735157e-2 5.421011e-20"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.907636e-2 6.098393e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "9.575917e-2 4.487344e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.452511e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.270615e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "6.279577e-5 4.399543e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.119046e-5 -1.434000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.119046e-5 1.434000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "9.586423e-5 -5.413454e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "5.498000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "6.826667e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.110738e-2 9.048526e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.959356e-1 2.541599e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-9.736442e-2 -1.569401e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.469374e-1 -1.804953e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.571591e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "3.863902e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.006628e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "4.517560e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.242686e-5 2.481272e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.152161e-5 -1.274000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.152161e-5 1.274000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.877314e-5 -5.323272e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "4.905101e-2 4.235165e-22"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.026384e-2 -1.260000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.026384e-2 1.260000e-5"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "5.734899e-2 4.235165e-22"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.523071e-2 5.800901e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "8.564495e-2 4.765091e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.071251e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "7.619726e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.242686e-5 2.481272e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.152161e-5 -1.274000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.152161e-5 1.274000e-5"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "7.877314e-5 -5.323272e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "9.673000e-2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "8.623158e2",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.654722e-2 7.635097e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.719250e-1 2.216433e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-8.647506e-2 -1.328567e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.318472e-1 -1.605510e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.505578e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.292090e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.098169e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "5.307206e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.666039e-5 -1.202425e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "5.651817e-6 -2.083000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "5.651817e-6 2.083000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.566961e-5 -2.721757e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "9.398130e-2 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-2.069546e-2 5.472000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-2.069546e-2 -5.472000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.162087e-1 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "2.845388e-2 5.258887e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "7.503727e-2 3.814272e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.966595e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.022086e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.666039e-5 -1.202425e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "5.651817e-6 -2.083000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "5.651817e-6 2.083000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.566961e-5 -2.721757e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "2.238000e-1 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.092267e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.133322e-2 6.923792e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.518088e-1 1.922764e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-7.439126e-2 -1.195236e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.148232e-1 -1.418879e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "4.848221e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "7.874904e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "4.513126e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "7.330614e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.918126e-5 7.525944e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "2.404397e-6 -4.676000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "2.404397e-6 4.676000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.739875e-5 1.741965e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.661416e-1 -4.336809e-19"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-2.646822e-2 -1.739000e-2"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-2.646822e-2 1.739000e-2"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.546584e-1 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.481904e-2 5.541393e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.542720e-2 3.223754e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "9.872018e-6"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.603499e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.918126e-5 7.525944e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "2.404397e-6 -4.676000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "2.404397e-6 4.676000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "4.739875e-5 1.741965e-12"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "3.383000e-1 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.365333e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "3.476405e-2 5.900656e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.393898e-1 1.728788e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-7.041017e-2 -1.066212e-1"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.041940e-1 -1.256766e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "3.994790e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "8.456905e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.714405e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "7.863333e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.641651e-5 8.725681e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "3.571066e-6 -4.631000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "3.571066e-6 4.631000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.475349e-5 -2.198096e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "2.433397e-1 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-5.841501e-2 -1.371000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-5.841501e-2 1.371000e-3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "2.262603e-1 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.535077e-3 4.022075e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "7.517021e-2 3.096522e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.347468e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.852566e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.641651e-5 8.725681e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "3.571066e-6 -4.631000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "3.571066e-6 4.631000e-6"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "3.475349e-5 -2.198096e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "8.208000e-1 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.638400e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.724621e-2 4.988524e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.150724e-1 1.452490e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-5.947761e-2 -8.835099e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-8.542621e-2 -1.013452e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "8.296694e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.369003e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "5.245854e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "8.655965e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "8.840938e-6 1.700859e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.527387e-6 7.835000e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.527387e-6 -7.835000e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.458806e-5 7.514107e-17"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "9.384405e-1 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.329910e-1 1.683000e-2"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.329910e-1 -1.683000e-2"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "5.933595e-1 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "-3.023881e-3 3.343610e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.165642e-2 2.240666e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.067625e-5"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "8.361877e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "8.840938e-6 1.700859e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.527387e-6 7.835000e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.527387e-6 -7.835000e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.458806e-5 7.514107e-17"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "5.732000e0 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "2.259862e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.797884e-2 4.271191e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "9.639540e-2 1.230230e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-4.307461e-2 -7.078702e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-7.471883e-2 -9.193191e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "8.760096e-6"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "9.374576e-6"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "8.373433e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "8.960791e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "4.756671e-6 -3.252351e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.083523e-6 4.641000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.083523e-6 -4.641000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.090329e-6 3.252351e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.841644e0 3.469447e-18"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.073184e-1 1.512000e-1"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.073184e-1 -1.512000e-1"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.760356e0 -3.469447e-18"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "-1.361919e-2 1.671028e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.776773e-2 -1.187679e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.101645e-4"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "1.178920e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "4.756671e-6 -3.252351e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.083523e-6 4.641000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.083523e-6 -4.641000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.090329e-6 3.252351e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "2.316000e1 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "3.120762e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.498835e-2 3.610355e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "8.058181e-2 9.844189e-2"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-3.738820e-2 -6.412812e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-6.307835e-2 -6.956355e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.614330e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.512960e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "9.363029e-6"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "8.775089e-6"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.513930e-6 1.049408e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "5.650785e-8 3.219005e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "5.650785e-8 -3.218996e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.356070e-6 -1.040408e-13"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "6.421541e0 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-5.102739e-1 -2.189000e-1"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-5.102739e-1 2.189000e-1"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "3.724459e0 6.938894e-18"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.318736e-3 1.350507e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "7.824138e-2 -2.275877e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.725644e-4"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "3.491696e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "2.513930e-6 1.049408e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "5.650785e-8 3.219005e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "5.650785e-8 -3.218996e-8"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "2.356070e-6 -1.040408e-13"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "1.482000e2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "4.681143e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "2.554689e-2 3.323833e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.994327e-2 8.506488e-2"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-2.336673e-2 -5.504513e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-4.409689e-2 -5.754833e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "6.132655e-5"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "6.291669e-5"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "2.843139e-5"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "2.916858e-5"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.699961e-6 7.942653e-16"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "4.762764e-8 -1.482000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "4.762764e-8 1.482000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.744039e-6 -1.238065e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "3.607527e1 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "3.562840e-1 1.789000e0"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "3.562840e-1 -1.789000e0"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.672473e1 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "2.505769e-2 3.500825e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "6.994992e-2 1.696876e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "8.671500e-4"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "8.896344e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.699961e-6 7.942653e-16"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "4.762764e-8 -1.482000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "4.762764e-8 1.482000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.744039e-6 -1.238065e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "5.101000e2 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "7.281778e3",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "-3.491748e-2 6.181391e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "7.118230e-2 1.118079e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-3.191770e-2 -2.672136e-3"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-1.639252e-2 -4.554390e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "6.433193e-3"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.546718e-3"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "4.817013e-4"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.158143e-4"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.236097e-6 1.088519e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.118204e-6 6.650000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.118204e-6 -6.650000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.258903e-6 3.959930e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.228624e3 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "1.576454e2 4.598000e1"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "1.576454e2 -4.598000e1"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "9.199625e1 0.000000e0"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "3.161899e-1 -1.246560e0"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.805767e-2 -2.873007e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "1.059262e-1"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.546761e-2"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "5.236097e-6 1.088519e-13"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "1.118204e-6 6.650000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "1.118204e-6 -6.650000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "1.258903e-6 3.959930e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "2.023000e4 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.191564e4",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.094775e-1 1.621713e-1"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.293975e-1 2.699317e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "-3.132249e-2 5.372163e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "-3.975123e-4 3.877866e-2"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "1.053210e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "1.013400e-2"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "1.775027e-3"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "1.707934e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "9.331354e-7 1.700859e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "5.697076e-7 5.229000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "5.697076e-7 -5.229000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "8.978647e-7 7.514106e-17"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "1.128678e4 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "2.211374e3 -2.466000e3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "2.211374e3 2.466000e3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "1.902218e3 5.684342e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "-2.702565e-1 -8.027650e-1"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "-5.742693e-1 -1.745364e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "5.386991e-2"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.183373e-2"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "9.331354e-7 1.700859e-15"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "5.697076e-7 5.229000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "5.697076e-7 -5.229000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "8.978647e-7 7.514106e-17"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "5.773000e4 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "1.872457e4",
+					"_units": "secs"
+				},
+				{
+					"Z": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "-1.680058e-1 -9.130748e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "4.179031e-3 1.374534e-1"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "3.148905e-2 6.378339e-2"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "3.587581e-2 -9.532518e-3"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2",
+						"_units": "[mV/km]/[nT]"
+					},
+					"Z.VAR": {
+						"value": [
+							{
+								"_name": "Zxx",
+								"_output": "Ex",
+								"_input": "Hx",
+								"__text": "5.633738e-2"
+							},
+							{
+								"_name": "Zxy",
+								"_output": "Ex",
+								"_input": "Hy",
+								"__text": "2.913051e-2"
+							},
+							{
+								"_name": "Zyx",
+								"_output": "Ey",
+								"_input": "Hx",
+								"__text": "8.791610e-3"
+							},
+							{
+								"_name": "Zyy",
+								"_output": "Ey",
+								"_input": "Hy",
+								"__text": "4.545900e-3"
+							}
+						],
+						"_type": "real",
+						"_size": "2  2"
+					},
+					"Z.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.103507e-6 5.433938e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "6.831819e-7 3.570000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "6.831819e-7 -3.570000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.705931e-7 2.400622e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"Z.RESIDCOV": {
+						"value": [
+							{
+								"_output": "Ex",
+								"_input": "Ex",
+								"__text": "5.105303e4 0.000000e0"
+							},
+							{
+								"_output": "Ex",
+								"_input": "Ey",
+								"__text": "-1.222120e4 2.274000e3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ex",
+								"__text": "-1.222120e4 -2.274000e3"
+							},
+							{
+								"_output": "Ey",
+								"_input": "Ey",
+								"__text": "7.966973e3 5.684342e-14"
+							}
+						],
+						"_type": "complex",
+						"_size": "2  2"
+					},
+					"T": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "7.581653e-1 -1.003783e0"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "5.072961e-1 -6.547711e-1"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2",
+						"_units": "[]"
+					},
+					"T.VAR": {
+						"value": [
+							{
+								"_name": "Tx",
+								"_output": "Hz",
+								"_input": "Hx",
+								"__text": "4.969092e-1"
+							},
+							{
+								"_name": "Ty",
+								"_output": "Hz",
+								"_input": "Hy",
+								"__text": "2.569381e-1"
+							}
+						],
+						"_type": "real",
+						"_size": "1  2"
+					},
+					"T.INVSIGCOV": {
+						"value": [
+							{
+								"_output": "Hx",
+								"_input": "Hx",
+								"__text": "1.103507e-6 5.433938e-14"
+							},
+							{
+								"_output": "Hx",
+								"_input": "Hy",
+								"__text": "6.831819e-7 3.570000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hx",
+								"__text": "6.831819e-7 -3.570000e-7"
+							},
+							{
+								"_output": "Hy",
+								"_input": "Hy",
+								"__text": "5.705931e-7 2.400622e-15"
+							}
+						],
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"T.RESIDCOV": {
+						"value": {
+							"_output": "Hz",
+							"_input": "Hz",
+							"__text": "4.503000e5 0.000000e0"
+						},
+						"_type": "complex",
+						"_size": "1  2"
+					},
+					"_value": "2.912711e4",
+					"_units": "secs"
+				}
+			],
+			"_count": "33"
+		},
+		"PeriodRange": {
+			"_min": "4.654550000",
+			"_max": "29127.111330000"
+		}
+	}
+}
