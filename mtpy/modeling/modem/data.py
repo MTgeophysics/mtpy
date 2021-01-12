@@ -12,7 +12,6 @@ ModEM
 from __future__ import print_function
 import csv
 import numpy as np
-import logging
 from pathlib import Path
 from copy import deepcopy
 
@@ -22,10 +21,12 @@ from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.mtpy_decorator import deprecated
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
 from mtpy.modeling.modem.station import Stations
 from mtpy.modeling.modem.model import Model
+
 
 try:
     from pyevtk.hl import pointsToVTK
@@ -264,7 +265,7 @@ class Data(object):
 
     def __init__(self, edi_list=None, **kwargs):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.mt_dict = None
         self.edi_list = None

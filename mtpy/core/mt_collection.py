@@ -207,6 +207,13 @@ class MTCollection:
         :rtype: :class:`pandas.DataFrame`
 
         """
+        msg = ("Applying bounding box: "
+               f"lon_min = {longitude_min:.6g}, "
+               f"lon_max = {longitude_max:.6g}, "
+               f"lat_min = {latitude_min:.6g}, "
+               f"lat_max = {latitude_max:.6g}")
+        self.logger.debug(msg)
+        
         return self.mt_df.loc[
             (self.mt_df.longitude >= longitude_min) &
             (self.mt_df.longitude <= longitude_max) &

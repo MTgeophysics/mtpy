@@ -70,9 +70,9 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
     logger = logging.getLogger(logger_name)
     logger.propagate = False
     # need to clear the handlers to make sure there is only
-    # one call per logger
+    # one call per logger plus stdout
     if (logger.hasHandlers()):
-        logger.handlers.clear()
+        logger.handlers[:] = logger.handlers[0]
 
     if fn is not None:
         fn = LOG_PATH.joinpath(fn)
