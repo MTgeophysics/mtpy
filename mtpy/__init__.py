@@ -1,17 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+==================
+MTpy
+==================
+
+"""
+
 # define mtpy release version through the variable __version__
 # see https://packaging.python.org/guides/single-sourcing-package-version/
 __version__ = "1.1.5"
 
-import logging
-import os
-from pathlib import Path
-
 # load mtpy default logging config
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import load_configure, get_mtpy_logger
 
-CONFIG_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("utils")
-CONFIG_FILE = Path.joinpath(CONFIG_PATH, "logging.yml")
+load_configure()
 
-MtPyLog.load_configure(CONFIG_FILE)
+debug_logger = get_mtpy_logger(__name__, fn="mtpy_debug", level="debug")
+debug_logger.debug("Starting MTpy Debug Log File")
 
-logging.getLogger("matplotlib").setLevel(logging.WARNING)
+error_logger = get_mtpy_logger("error", fn="mtpy_error", level="error")
+matplotlib_logger = get_mtpy_logger("matplotlib", fn="matplotlib_warn", level="warning") 

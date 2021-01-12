@@ -11,12 +11,32 @@ import yaml
 import logging
 import logging.config
 
+# =============================================================================
+# Global Variables
+# =============================================================================
+LEVEL_DICT = {"debug": logging.DEBUG,
+              "info": logging.INFO,
+              "warning": logging.WARNING,
+              "error": logging.ERROR,
+              "critical": logging.CRITICAL}
 
-# DEBUG is good for debug and development
-# logging.getLogger().setLevel(logging.DEBUG)
+LOG_FORMAT = logging.Formatter(
+    "%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s")
+# Get the configuration file path, should be in same directory as this file
+CONF_PATH = Path(__file__).parent
+CONF_FILE = Path.joinpath(CONF_PATH, "logging_config.yaml")
+
+# make a folder for the logs to go into.
+LOG_PATH = CONF_PATH.parent.parent.joinpath("logs")
+
+if not LOG_PATH.exists():
+    LOG_PATH.mkdir()
+
+if not CONF_FILE.exists():
+    CONF_FILE = None
 
 
-class MtPyLog(object):
+class MTpyLogger(object):
     # def __init__(self, path2configfile=None):
     @staticmethod
     def load_configure(config_fn=None):
@@ -28,48 +48,55 @@ class MtPyLog(object):
         Its default is the logging.yml located in the same dir as this module.
         It can be modofied to use env variables to search for a log config file.
         """
-        if not isinstance(config_fn, Path):
-            config_fn = Path(config_fn)
-
-        if not config_fn.exists():
-            logging.basicConfig()
-
-        elif config_fn.suffix in [".yaml", ".yml"]:
-
-            with open(config_fn, "r") as fid:
-                config_dict = yaml.safe_load(fid)
-            logging.config.dictConfig(config_dict)
-
-            # open root logger
-            logger = logging.getLogger(__name__)
-
-            # make sure everything is working
-            logger.info("Started MTpy")
-            logger.debug("Beginning debug mode for MTpy")
-            debug_fn = logger.root.handlers[1].baseFilename
-            error_fn = logger.root.handlers[2].baseFilename
-
-            logger.info("Debug Log file can be found at {0}".format(debug_fn))
-            logger.info("Error Log file can be found at {0}".format(error_fn))
-
-        elif config_fn.suffix in ["conf", "ini"]:
-            logging.config.fileConfig(config_fn, disable_existing_loggers=False)
-            # must change the default disable_existing_loggers=True to False to
-            # make this behave 100% OK
-        else:
-            raise Exception(
-                "logging configuration file %s is not supported" % config_fn
-            )
+        config_file = Path(config_fn)
+        with open(config_file, "r") as fid:
+            config_dict = yaml.safe_load(fid)
+        logging.config.dictConfig(config_dict)
 
     @staticmethod
-    def get_mtpy_logger(loggername=""):
+    def get_mtpy_logger(logger_name, fn=None, level="debug"):
         """
-        create a named logger (try different)
-        :param loggername: the name (key) of the logger object in this Python interpreter.
-        :return:
+        Create a logger, can write to a separate file.  This will write to
+        the logs folder in the mt_metadata directory.
+    
+        :param logger_name: name of the logger, typically __name__
+        :type logger_name: string
+        :param fn: file name to write to, defaults to None
+        :type fn: TYPE, optional
+        :param level: DESCRIPTION, defaults to "debug"
+        :type level: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+    
         """
-
-        # configured explicitely specifically in logging.conf
-        logger = logging.getLogger(loggername)
-
+    
+        logger = logging.getLogger(logger_name)
+        logger.propagate = False
+        # need to clear the handlers to make sure there is only
+        # one call per logger
+        if (logger.hasHandlers()):
+            logger.handlers.clear()
+    
+        if fn is not None:
+            fn = LOG_PATH.joinpath(fn)
+            exists = False
+            if fn.exists():
+                exists = True
+    
+            if fn.suffix not in [".log"]:
+                fn = Path(fn.parent, f"{fn.stem}.log")
+    
+            fn_handler = logging.FileHandler(fn)
+            fn_handler.setFormatter(LOG_FORMAT)
+            fn_handler.setLevel(LEVEL_DICT[level.lower()])
+            logger.addHandler(fn_handler)
+            if not exists:
+                logger.info(
+                    f"Logging file can be found {logger.handlers[-1].baseFilename}")
+        else:
+            null_handler = logging.NullHandler()
+            null_handler.setFormatter(LOG_FORMAT)
+            null_handler.setLevel(LEVEL_DICT[level.lower()])
+            logger.addHandler(null_handler)
+    
         return logger

@@ -31,7 +31,7 @@ Revised: 5/2020 JP
 # Imports
 # ==============================================================================
 import numpy as np
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils import HAS_GDAL, EPSG_DICT, NEW_GDAL
 
 if HAS_GDAL:
@@ -41,7 +41,7 @@ if HAS_GDAL:
 else:
     import pyproj
 
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 if NEW_GDAL:
     _logger.info("INFO: GDAL version 3 detected")
 

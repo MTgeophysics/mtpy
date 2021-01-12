@@ -25,7 +25,7 @@ from mtpy.utils.exceptions import (
     MTpyError_Tipper,
     MTpyError_input_arguments,
 )
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 
 # ==============================================================================
@@ -1267,7 +1267,7 @@ class Tipper(object):
         """
         initialize
         """
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+        self._logger = get_mtpy_logger(self.__class__.__name__)
         self._tipper = tipper_array
         self._tipper_err = tipper_err_array
         self._freq = freq
