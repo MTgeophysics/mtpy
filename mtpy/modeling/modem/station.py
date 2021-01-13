@@ -44,7 +44,7 @@ class Stations(object):
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
-            ("station", "|U10"),
+            ("station", "|U50"),
             ("lat", np.float),
             ("lon", np.float),
             ("elev", np.float),

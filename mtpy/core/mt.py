@@ -114,11 +114,16 @@ class MT(object):
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
         self.station_metadata.run_list.append(metadata.Run())
-        self.station_metadata.run_list[0].ex = metadata.Electric(component="ex")
-        self.station_metadata.run_list[0].ey = metadata.Electric(component="ey")
-        self.station_metadata.run_list[0].hx = metadata.Magnetic(component="hx")
-        self.station_metadata.run_list[0].hy = metadata.Magnetic(component="hy")
-        self.station_metadata.run_list[0].hz = metadata.Magnetic(component="hz")
+        self.station_metadata.run_list[0].ex = metadata.Electric(
+            component="ex")
+        self.station_metadata.run_list[0].ey = metadata.Electric(
+            component="ey")
+        self.station_metadata.run_list[0].hx = metadata.Magnetic(
+            component="hx")
+        self.station_metadata.run_list[0].hy = metadata.Magnetic(
+            component="hy")
+        self.station_metadata.run_list[0].hz = metadata.Magnetic(
+            component="hz")
 
         self._east = None
         self._north = None
@@ -140,8 +145,10 @@ class MT(object):
         lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
-        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
-        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(
+            f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(
+            f"\tAcquired date: {self.station_metadata.time_period.start_date}")
         lines.append(f"\tLatitude:      {self.latitude:.3f}")
         lines.append(f"\tLongitude:     {self.longitude:.3f}")
         lines.append(f"\tElevation:     {self.elevation:.3f}")
@@ -163,12 +170,12 @@ class MT(object):
 
     def __repr__(self):
         lines = []
-        lines.append("station={self.station}")
-        lines.append("latitude={self.latitude:.2f}")
-        lines.append("longitude={self.longitude:.2f}")
-        lines.append("elevation={self.elevation:.2f}")
-        
-        return f"MT( {lines.join(', ')} )"
+        lines.append(f"station='{self.station}'")
+        lines.append(f"latitude={self.latitude:.2f}")
+        lines.append(f"longitude={self.longitude:.2f}")
+        lines.append(f"elevation={self.elevation:.2f}")
+
+        return f"MT( {(', ').join(lines)} )"
 
     def copy(self):
         return deepcopy(self)
@@ -180,7 +187,7 @@ class MT(object):
     def fn(self):
         """ reference to original data file"""
         return self._fn
-    
+
     @fn.setter
     def fn(self, value):
         """ set file name """
@@ -188,6 +195,8 @@ class MT(object):
             self._fn = Path(value)
             if self._fn.exists():
                 self.read_mt_file(self._fn)
+            else:
+                self.logger.warning(f"Could not find {self._fn} skip reading.")
         except TypeError:
             self._fn = None
 
@@ -195,7 +204,7 @@ class MT(object):
     def latitude(self):
         """Latitude"""
         return self.station_metadata.location.latitude
-    
+
     @latitude.setter
     def latitude(self, latitude):
         """
@@ -215,7 +224,7 @@ class MT(object):
     def longitude(self):
         """Longitude"""
         return self.station_metadata.location.longitude
-    
+
     @longitude.setter
     def longitude(self, longitude):
         """
@@ -235,7 +244,7 @@ class MT(object):
     def elevation(self):
         """Elevation"""
         return self.station_metadata.location.elevation
-    
+
     @elevation.setter
     def elevation(self, elevation):
         """
@@ -247,7 +256,7 @@ class MT(object):
     def east(self):
         """easting (m)"""
         return self._east
-    
+
     @east.setter
     def east(self, easting):
         """
@@ -266,7 +275,7 @@ class MT(object):
     def north(self):
         """northing (m)"""
         return self._north
-    
+
     @north.setter
     def north(self, northing):
         """
@@ -285,14 +294,14 @@ class MT(object):
     def utm_zone(self):
         """utm zone"""
         return self._utm_zone
-    
+
     @utm_zone.setter
     def utm_zone(self, utm_zone):
         """
         set UTM zone
 
         upon setting latitude and longitude are recalculated
-        
+
         TODO: need a validation from utm zone
         """
         self._utm_zone = utm_zone
@@ -301,12 +310,12 @@ class MT(object):
             self.east, self.north, self._utm_zone = gis_tools.project_point_ll2utm(
                 self.latitude, self.longitude, utm_zone=self.utm_zone
             )
-            
+
     @property
     def rotation_angle(self):
         """rotation angle in degrees from north"""
         return self._rotation_angle
-    
+
     @rotation_angle.setter
     def rotation_angle(self, theta_r):
         """
@@ -349,7 +358,7 @@ class MT(object):
     def Tipper(self):
         """mtpy.core.z.Tipper object to hold tipper information"""
         return self._Tipper
-    
+
     @Tipper.setter
     def Tipper(self, t_object):
         """
@@ -367,14 +376,13 @@ class MT(object):
     def station(self):
         """station name"""
         return self.station_metadata.id
-    
+
     @station.setter
     def station(self, station_name):
         """
         set station name
         """
         self.station_metadata.id = station_name
-
 
     @property
     def pt(self):
@@ -385,7 +393,7 @@ class MT(object):
     def ex_metadata(self):
         """ EX metadata """
         return self.station_metadata.run_list[0].ex
-    
+
     @ex_metadata.setter
     def ex_metadata(self, value):
         """ set EX metadata """
@@ -395,7 +403,7 @@ class MT(object):
     def ey_metadata(self):
         """ EY metadata """
         return self.station_metadata.run_list[0].ey
-    
+
     @ey_metadata.setter
     def ey_metadata(self, value):
         """ set EY metadata """
@@ -405,7 +413,7 @@ class MT(object):
     def hx_metadata(self):
         """ HX metadata """
         return self.station_metadata.run_list[0].hx
-    
+
     @hx_metadata.setter
     def hx_metadata(self, value):
         """ set hx metadata """
@@ -415,7 +423,7 @@ class MT(object):
     def hy_metadata(self):
         """ HY metadata """
         return self.station_metadata.run_list[0].hy
-    
+
     @hy_metadata.setter
     def hy_metadata(self, value):
         """ set hy metadata """
@@ -425,7 +433,7 @@ class MT(object):
     def hz_metadata(self):
         """ HZ metadata """
         return self.station_metadata.run_list[0].hz
-    
+
     @hz_metadata.setter
     def hz_metadata(self, value):
         """ set hz metadata """
@@ -440,41 +448,6 @@ class MT(object):
     def rrhy_metadata(self):
         """ RRHY metadata """
         return self.station_metadata.run_list[0].rrhy
-
-    # ==========================================================================
-    # set functions
-    # ==========================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def remove_distortion(self, num_freq=None):
         """
@@ -608,7 +581,8 @@ class MT(object):
             # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
                 raise ValueError(
-                    "New frequency minimum of {0:.5g}".format(new_freq_array.min())
+                    "New frequency minimum of {0:.5g}".format(
+                        new_freq_array.min())
                     + " is smaller than old frequency minimum of {0:.5g}".format(
                         self.Z.freq.min()
                     )
@@ -617,7 +591,8 @@ class MT(object):
                 )
             if self.Z.freq.max() < new_freq_array.max():
                 raise ValueError(
-                    "New frequency maximum of {0:.5g}".format(new_freq_array.max())
+                    "New frequency maximum of {0:.5g}".format(
+                        new_freq_array.max())
                     + "is smaller than old frequency maximum of {0:.5g}".format(
                         self.Z.freq.max()
                     )
@@ -633,7 +608,8 @@ class MT(object):
         )
 
         new_Tipper = MTz.Tipper(
-            tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
+            tipper_array=np.zeros(
+                (new_freq_array.shape[0], 1, 2), dtype="complex"),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
             freq=new_freq_array,
         )
@@ -669,7 +645,8 @@ class MT(object):
                     for ifidx, ifreq in enumerate(new_f):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
-                        fidx = np.where(difference == np.amin(difference))[0][0]
+                        fidx = np.where(
+                            difference == np.amin(difference))[0][0]
                         if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
                             new_f_update.append(ifreq)
                             new_nz_index_update.append(new_nz_index[ifidx])
@@ -773,7 +750,7 @@ class MT(object):
         Write an mt file, the supported file types are EDI and XML.
 
         .. todo:: jtype and Gary Egberts z format
-        
+
         :param fn: full path to file to save to
         :type fn: :class:`pathlib.Path` or string
 
@@ -793,7 +770,7 @@ class MT(object):
                                degrees minutes seconds ('dms') or decimal 
                                degrees ('dd')
         :type latlon_format:  string
-        
+
         :returns: full path to file
         :rtype: string
 
@@ -832,25 +809,25 @@ class MT(object):
 
     def read_mt_file(self, fn, file_type=None):
         """
-        
+
         Read an MT response file.
-    
+
         .. note:: Currently only .edi, .xml, and .j files are supported
-    
+
         :param fn: full path to input file
         :type fn: string
-    
+
         :param file_type: ['edi' | 'j' | 'xml' | ... ]
                           if None, automatically detects file type by
                           the extension.
         :type file_type: string
-    
+
         :Example: ::
-    
+
             >>> import mtpy.core.mt as mt
             >>> mt_obj = mt.MT()
             >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
-    
+
         """
 
         mt_obj = read_file(fn, file_type=file_type)

@@ -402,7 +402,7 @@ class Data(object):
         return "\n".join(lines)
 
     def __repr__(self):
-        return self.__str__()
+        return "modem.Data()"
 
     @staticmethod
     def make_dtype(z_shape, t_shape):
@@ -411,7 +411,7 @@ class Data(object):
         """
 
         dtype = [
-            ("station", "|U10"),
+            ("station", "|U50"),
             ("lat", np.float),
             ("lon", np.float),
             ("elev", np.float),
@@ -1529,7 +1529,7 @@ class Data(object):
         ws_data.z_err = "data"
         z_shape = (self.period_list.size, 2, 2)
         data_dtype = [
-            ("station", "|U10"),
+            ("station", "|U50"),
             ("east", np.float),
             ("north", np.float),
             ("z_data", (np.complex, z_shape)),
@@ -2305,10 +2305,7 @@ class Data(object):
                 continue
 
             new_data_array[s_find] = 0
-            try:
-                new_mt_dict.pop(b_station)
-            except KeyError:
-                pass
+            new_mt_dict.pop(b_station)
 
         return new_data_array[np.where(new_data_array["station"] != "0")], new_mt_dict
 
