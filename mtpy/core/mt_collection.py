@@ -114,6 +114,8 @@ class MTCollection:
             entry["latitude"] = m.latitude
             entry["longitude"] = m.longitude
             entry["elevation"] = m.elevation
+            entry["easting"] = m.east
+            
             entry["acquired_by"] = m.station_metadata.acquired_by.author
             entry["period_min"] = 1./m.Z.freq.max()
             entry["period_max"] = 1./m.Z.freq.min()

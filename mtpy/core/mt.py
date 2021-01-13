@@ -8,7 +8,6 @@
 
 # ==============================================================================
 from pathlib import Path
-import logging
 from copy import deepcopy
 
 import numpy as np
@@ -16,6 +15,7 @@ from scipy import interpolate as spi
 
 from mtpy.core.metadata import metadata
 from mtpy.utils import gis_tools
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 import mtpy.core.z as MTz
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
@@ -108,7 +108,7 @@ class MT(object):
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         # set metadata for the station
         self.survey_metadata = metadata.Survey()
@@ -162,112 +162,25 @@ class MT(object):
         return "\n".join(lines)
 
     def __repr__(self):
-        return self.__str__()
+        lines = []
+        lines.append("station={self.station}")
+        lines.append("latitude={self.latitude:.2f}")
+        lines.append("longitude={self.longitude:.2f}")
+        lines.append("elevation={self.elevation:.2f}")
+        
+        return f"MT( {lines.join(', ')} )"
 
     def copy(self):
         return deepcopy(self)
 
     # ==========================================================================
-    # get functions
+    # Properties
     # ==========================================================================
     @property
     def fn(self):
         """ reference to original data file"""
         return self._fn
-
-    @property
-    def latitude(self):
-        """Latitude"""
-        return self.station_metadata.location.latitude
-
-    @property
-    def longitude(self):
-        """Longitude"""
-        return self.station_metadata.location.longitude
-
-    @property
-    def elevation(self):
-        """Elevation"""
-        return self.station_metadata.location.elevation
-
-    @property
-    def east(self):
-        """easting (m)"""
-        return self._east
-
-    @property
-    def north(self):
-        """northing (m)"""
-        return self._north
-
-    @property
-    def utm_zone(self):
-        """utm zone"""
-        return self._utm_zone
-
-    @property
-    def rotation_angle(self):
-        """rotation angle in degrees from north"""
-        return self._rotation_angle
-
-    @property
-    def Z(self):
-        """mtpy.core.z.Z object to hole impedance tensor"""
-        return self._Z
-
-    @property
-    def Tipper(self):
-        """mtpy.core.z.Tipper object to hold tipper information"""
-        return self._Tipper
-
-    @property
-    def station(self):
-        """station name"""
-        return self.station_metadata.id
-
-    @property
-    def pt(self):
-        """mtpy.analysis.pt.PhaseTensor object to hold phase tensor"""
-        return MTpt.PhaseTensor(z_object=self.Z)
-
-    @property
-    def ex_metadata(self):
-        """ EX metadata """
-        return self.station_metadata.run_list[0].ex
-
-    @property
-    def ey_metadata(self):
-        """ EY metadata """
-        return self.station_metadata.run_list[0].ey
-
-    @property
-    def hx_metadata(self):
-        """ HX metadata """
-        return self.station_metadata.run_list[0].hx
-
-    @property
-    def hy_metadata(self):
-        """ HY metadata """
-        return self.station_metadata.run_list[0].hy
-
-    @property
-    def hz_metadata(self):
-        """ HZ metadata """
-        return self.station_metadata.run_list[0].hz
-
-    @property
-    def rrhx_metadata(self):
-        """ RRHX metadata """
-        return self.station_metadata.run_list[0].rrhx
-
-    @property
-    def rrhy_metadata(self):
-        """ RRHY metadata """
-        return self.station_metadata.run_list[0].rrhy
-
-    # ==========================================================================
-    # set functions
-    # ==========================================================================
+    
     @fn.setter
     def fn(self, value):
         """ set file name """
@@ -278,6 +191,11 @@ class MT(object):
         except TypeError:
             self._fn = None
 
+    @property
+    def latitude(self):
+        """Latitude"""
+        return self.station_metadata.location.latitude
+    
     @latitude.setter
     def latitude(self, latitude):
         """
@@ -293,6 +211,11 @@ class MT(object):
                 datum=self.station_metadata.location.datum,
             )
 
+    @property
+    def longitude(self):
+        """Longitude"""
+        return self.station_metadata.location.longitude
+    
     @longitude.setter
     def longitude(self, longitude):
         """
@@ -308,6 +231,11 @@ class MT(object):
                 datum=self.station_metadata.location.datum,
             )
 
+    @property
+    def elevation(self):
+        """Elevation"""
+        return self.station_metadata.location.elevation
+    
     @elevation.setter
     def elevation(self, elevation):
         """
@@ -315,6 +243,11 @@ class MT(object):
         """
         self.station_metadata.location.elevation = elevation
 
+    @property
+    def east(self):
+        """easting (m)"""
+        return self._east
+    
     @east.setter
     def east(self, easting):
         """
@@ -329,6 +262,11 @@ class MT(object):
                 self.east, self.north, self.utm_zone
             )
 
+    @property
+    def north(self):
+        """northing (m)"""
+        return self._north
+    
     @north.setter
     def north(self, northing):
         """
@@ -343,6 +281,11 @@ class MT(object):
                 self.east, self.north, self.utm_zone
             )
 
+    @property
+    def utm_zone(self):
+        """utm zone"""
+        return self._utm_zone
+    
     @utm_zone.setter
     def utm_zone(self, utm_zone):
         """
@@ -353,14 +296,17 @@ class MT(object):
         TODO: need a validation from utm zone
         """
         self._utm_zone = utm_zone
-        if self.north is not None and self.east is not None:
+        if self.latitude is not None and self.longitude is not None:
             self.logger.debug("Calculating latitude and longitude from UTM")
-            lat, lon = gis_tools.project_point_utm2ll(
-                self.east, self.north, self.utm_zone
+            self.east, self.north, self._utm_zone = gis_tools.project_point_ll2utm(
+                self.latitude, self.longitude, utm_zone=self.utm_zone
             )
-            self.station_metadata.location.latitude = lat
-            self.station_metadata.location.longitude = lon
-
+            
+    @property
+    def rotation_angle(self):
+        """rotation angle in degrees from north"""
+        return self._rotation_angle
+    
     @rotation_angle.setter
     def rotation_angle(self, theta_r):
         """
@@ -382,6 +328,11 @@ class MT(object):
             )
         )
 
+    @property
+    def Z(self):
+        """mtpy.core.z.Z object to hole impedance tensor"""
+        return self._Z
+
     @Z.setter
     def Z(self, z_object):
         """
@@ -394,6 +345,11 @@ class MT(object):
         self._Z = z_object
         self._Z.compute_resistivity_phase()
 
+    @property
+    def Tipper(self):
+        """mtpy.core.z.Tipper object to hold tipper information"""
+        return self._Tipper
+    
     @Tipper.setter
     def Tipper(self, t_object):
         """
@@ -407,6 +363,11 @@ class MT(object):
             self._Tipper.compute_amp_phase()
             self._Tipper.compute_mag_direction()
 
+    @property
+    def station(self):
+        """station name"""
+        return self.station_metadata.id
+    
     @station.setter
     def station(self, station_name):
         """
@@ -414,30 +375,106 @@ class MT(object):
         """
         self.station_metadata.id = station_name
 
+
+    @property
+    def pt(self):
+        """mtpy.analysis.pt.PhaseTensor object to hold phase tensor"""
+        return MTpt.PhaseTensor(z_object=self.Z)
+
+    @property
+    def ex_metadata(self):
+        """ EX metadata """
+        return self.station_metadata.run_list[0].ex
+    
     @ex_metadata.setter
     def ex_metadata(self, value):
         """ set EX metadata """
         self.station_metadata.run_list[0].ex = value
 
+    @property
+    def ey_metadata(self):
+        """ EY metadata """
+        return self.station_metadata.run_list[0].ey
+    
     @ey_metadata.setter
     def ey_metadata(self, value):
         """ set EY metadata """
         self.station_metadata.run_list[0].ey = value
 
+    @property
+    def hx_metadata(self):
+        """ HX metadata """
+        return self.station_metadata.run_list[0].hx
+    
     @hx_metadata.setter
     def hx_metadata(self, value):
         """ set hx metadata """
         self.station_metadata.run_list[0].hx = value
 
+    @property
+    def hy_metadata(self):
+        """ HY metadata """
+        return self.station_metadata.run_list[0].hy
+    
     @hy_metadata.setter
     def hy_metadata(self, value):
         """ set hy metadata """
         self.station_metadata.run_list[0].hy = value
 
+    @property
+    def hz_metadata(self):
+        """ HZ metadata """
+        return self.station_metadata.run_list[0].hz
+    
     @hz_metadata.setter
     def hz_metadata(self, value):
         """ set hz metadata """
         self.station_metadata.run_list[0].hz = value
+
+    @property
+    def rrhx_metadata(self):
+        """ RRHX metadata """
+        return self.station_metadata.run_list[0].rrhx
+
+    @property
+    def rrhy_metadata(self):
+        """ RRHY metadata """
+        return self.station_metadata.run_list[0].rrhy
+
+    # ==========================================================================
+    # set functions
+    # ==========================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def remove_distortion(self, num_freq=None):
         """

@@ -27,7 +27,7 @@ import mtpy.imaging.mtcolors as mtcl
 # ==============================================================================
 #  Plot apparent resistivity and phase
 # ==============================================================================
-from mtpy import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.imaging.mtplottools import PlotSettings
 
 
@@ -350,7 +350,7 @@ class PlotMTResponse(PlotSettings):
         self, z_object=None, t_object=None, pt_obj=None, station="MT Response", **kwargs
     ):
         super(PlotMTResponse, self).__init__()
-        self._logger = MtPyLog.get_mtpy_logger(
+        self._logger = get_mtpy_logger(
             self.__class__.__module__ + "." + self.__class__.__name__
         )
         self.Z = z_object

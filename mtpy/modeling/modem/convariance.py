@@ -13,12 +13,12 @@ import os
 
 import numpy as np
 
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from .exception import CovarianceError
 from .model import Model
 
 try:
-    from evtk.hl import gridToVTK
+    from pyevtk.hl import gridToVTK
 except ImportError:
     print(
         "If you want to write a vtk file for 3d viewing, you need to " "install pyevtk"
@@ -34,7 +34,7 @@ class Covariance(object):
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+        self._logger = get_mtpy_logger(self.__class__.__name__)
 
         self.grid_dimensions = grid_dimensions
         self.smoothing_east = 0.3

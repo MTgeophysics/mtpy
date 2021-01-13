@@ -12,7 +12,6 @@ revised by AK 2017 to bring across functionality from ak branch
 import os.path as op
 
 import numpy as np
-from numpy.lib import recfunctions
 
 from .data import Data
 

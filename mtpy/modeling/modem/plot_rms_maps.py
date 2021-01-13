@@ -17,22 +17,21 @@ Revision History:
         - Allow selection of period by providing period in seconds
 """
 import os
-import logging
 
 import numpy as np
 import geopandas as gpd
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 from matplotlib import colors as colors, pyplot as plt, colorbar as mcb, cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mtpy.utils import basemap_tools
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.gis_tools import epsg_project
-from mtpy.modeling.modem import Data, Residual
+from mtpy.modeling.modem import Residual
 
 __all__ = ["PlotRMSMaps"]
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 
 
 class PlotRMSMaps(object):

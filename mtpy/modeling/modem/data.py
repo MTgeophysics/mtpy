@@ -2305,8 +2305,10 @@ class Data(object):
                 continue
 
             new_data_array[s_find] = 0
-
-            new_mt_dict.pop(b_station)
+            try:
+                new_mt_dict.pop(b_station)
+            except KeyError:
+                pass
 
         return new_data_array[np.where(new_data_array["station"] != "0")], new_mt_dict
 

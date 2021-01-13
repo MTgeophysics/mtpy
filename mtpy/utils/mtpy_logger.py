@@ -68,12 +68,19 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
     """
 
     logger = logging.getLogger(logger_name)
-    logger.propagate = False
     # need to clear the handlers to make sure there is only
     # one call per logger plus stdout
     if (logger.hasHandlers()):
-        logger.handlers[:] = logger.handlers[0]
+        logger.handlers.clear()
+        
+    logger.propagate = False
+    # want to add a stream handler for any Info print statements as stdOut
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(LOG_FORMAT)
+    stream_handler.setLevel(LEVEL_DICT["info"])
+    logger.addHandler(stream_handler)
 
+    # if there is a file name create file in logs directory
     if fn is not None:
         fn = LOG_PATH.joinpath(fn)
         exists = False
@@ -90,6 +97,7 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
         if not exists:
             logger.info(
                 f"Logging file can be found {logger.handlers[-1].baseFilename}")
+    # else, give it a null handler, which will go to default logger.
     else:
         null_handler = logging.NullHandler()
         null_handler.setFormatter(LOG_FORMAT)
