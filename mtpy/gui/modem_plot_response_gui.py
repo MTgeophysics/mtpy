@@ -62,6 +62,7 @@ class PlotResponses(QtWidgets.QWidget):
         self._key = "z"
         self._ax_index = 0
         self.ax_list = None
+        self.phase_flip_comp = None
 
         self.setup_ui()
 
@@ -152,6 +153,18 @@ class PlotResponses(QtWidgets.QWidget):
         self.interpolate_button.setStyleSheet("background-color: #FFB700")
         self.interpolate_button.pressed.connect(self.apply_interpolation)
         
+        self.flip_phase_button = QtWidgets.QPushButton()
+        self.flip_phase_button.setText("Flip Phase")
+        self.flip_phase_button.setStyleSheet("background-color: ##7FFFD4")
+        self.flip_phase_button.pressed.connect(self.apply_flip_phase)
+        
+        self.flip_phase_combo = QtWidgets.QComboBox()
+        self.flip_phase_combo.addItems(["Zx", "Zy", "Tx", "Ty"])
+        self.flip_phase_combo.currentIndexChanged.connect(self.set_phase_flip_comp)
+        flip_phase_layout = QtWidgets.QHBoxLayout()
+        flip_phase_layout.addWidget(self.flip_phase_button)
+        flip_phase_layout.addWidget(self.flip_phase_combo)
+        
         self.undo_button = QtWidgets.QPushButton()
         self.undo_button.setText("Undo")
         self.undo_button.setStyleSheet("background-color: #FA8072")
@@ -186,6 +199,7 @@ class PlotResponses(QtWidgets.QWidget):
         left_layout.addWidget(self.list_widget)
         left_layout.addWidget(self.apply_edits_button)
         left_layout.addWidget(self.interpolate_button)
+        left_layout.addLayout(flip_phase_layout)
         left_layout.addWidget(self.undo_button)
         left_layout.addWidget(self.save_edits_button)
 
@@ -242,7 +256,15 @@ class PlotResponses(QtWidgets.QWidget):
         self.plot()
         
     def apply_undo(self):
-        self.modem_data.mt_dict[self.station] = self._modem_data_copy.mt_dict[self.station]
+        self.modem_data.mt_dict[self.station] = self._modem_data_copy.mt_dict[self.station].copy()
+        self.plot()
+        
+    def set_phase_flip_comp(self, value):
+        print(f"setting to {value}")
+        self.phase_flip_comp = str(value).lower()
+        
+    def apply_flip_phase(self):
+        self.modem_data.data_array, self.modem_data.mt_dict = self.modem_data.flip_phase(self.station, [self.phase_flip_comp])
         self.plot()
         
     def plot(self):
