@@ -484,6 +484,8 @@ class Data(object):
 
         for edi in self.edi_list:
             mt_obj = mt.MT(edi)
+            if mt_obj.station is None:
+                continue
             mt_dict[mt_obj.station] = mt_obj
 
         return mt_dict
@@ -2473,3 +2475,61 @@ class Data(object):
             new_mt_dict[ss] = new_mt_obj
 
         return new_data_array, new_mt_dict
+    
+    def remove_component(self, station, zxx=False, zxy=False, zyy=False, 
+                         zyx=False, tx=False, ty=False):
+        """
+        
+        :param station: DESCRIPTION
+        :type station: TYPE
+        :param zxx: DESCRIPTION, defaults to False
+        :type zxx: TYPE, optional
+        :param zxy: DESCRIPTION, defaults to False
+        :type zxy: TYPE, optional
+        :param zyy: DESCRIPTION, defaults to False
+        :type zyy: TYPE, optional
+        :param zyx: DESCRIPTION, defaults to False
+        :type zyx: TYPE, optional
+        :param tx: DESCRIPTION, defaults to False
+        :type tx: TYPE, optional
+        :param ty: DESCRIPTION, defaults to False
+        :type ty: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        c_dict = {
+            "zxx": {"index": (0, 0), "bool": zxx},
+            "zxy": {"index": (0, 1), "bool": zxy},
+            "zyx": {"index": (1, 0), "bool": zyx},
+            "zyy": {"index": (1, 1), "bool": zyy},
+            "tx": {"index": (0, 0), "bool": tx},
+            "ty": {"index": (0, 1), "bool": ty},
+        } 
+        if not isinstance(station, (list, tuple)):
+            station = [station]
+            
+        new_data_array = self.data_array.copy()
+        new_mt_dict = deepcopy(self.mt_dict)
+        
+        for ss in station:            
+            try:
+                s_find = np.where(self.data_array["station"] == ss)[0][0]
+            except IndexError:
+                msg = f"Could not find {ss} in data file"
+                self.logger.warn(msg)
+                continue
+            for ckey, dd in c_dict.items():
+                if dd["bool"]:
+                    if "z" in ckey:
+                        new_data_array[s_find]["z"][:, dd["index"][0], dd["index"][1]] = 0
+                        new_data_array[s_find]["z_err"][:, dd["index"][0], dd["index"][1]] = 0
+                        new_mt_dict[ss].Z.z[:, dd["index"][0], dd["index"][1]] = 0
+                        new_mt_dict[ss].Z.z_err[:, dd["index"][0], dd["index"][1]] = 0
+                    elif "t" in ckey:
+                        new_data_array[s_find]["tip"][:, dd["index"][0], dd["index"][1]] = 0
+                        new_data_array[s_find]["tip_err"][:, dd["index"][0], dd["index"][1]] = 0
+                        new_mt_dict[ss].Tipper.tipper[:, dd["index"][0], dd["index"][1]] = 0
+                        new_mt_dict[ss].Tipper.tipper_err[:, dd["index"][0], dd["index"][1]] = 0
+
+        return new_data_array, new_mt_dict 

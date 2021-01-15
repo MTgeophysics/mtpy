@@ -25,10 +25,10 @@ import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.analysis.pt as MTpt
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
 
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 
 
 # ==============================================================================
