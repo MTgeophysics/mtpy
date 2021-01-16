@@ -69,27 +69,47 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
 
         # set the actions for the data file menu item
         # set an open option that on click opens a modem file
-        self.action_open_data = QtWidgets.QAction(self)
-        self.action_open_data.setText("&Open")
-        self.action_open_data.setShortcut("Ctrl+o")
-        self.action_open_data.triggered.connect(self.get_data_file)
+        self.data_action_open = QtWidgets.QAction(self)
+        self.data_action_open.setText("&Open")
+        self.data_action_open.setShortcut("Ctrl+o")
+        self.data_action_open.triggered.connect(self.get_data_file)
+        
+        # set an open option that on click opens a modem file
+        self.data_action_new = QtWidgets.QAction(self)
+        self.data_action_new.setText("&New")
+        self.data_action_new.setShortcut("Ctrl+n")
+        self.data_action_new.triggered.connect(self.new_data_file)
 
         # set a close that closes the main window
-        self.action_close = QtWidgets.QAction(self)
-        self.action_close.setText("Close")
-        self.action_close.setShortcut("Ctrl+x")
-        self.action_close.triggered.connect(self.close)
+        self.data_action_close = QtWidgets.QAction(self)
+        self.data_action_close.setText("Close")
+        self.data_action_close.setShortcut("Ctrl+x")
+        self.data_action_close.triggered.connect(self.close)
 
         # set a save option that will eventually save the masked data
-        self.action_save_data = QtWidgets.QAction(self)
-        self.action_save_data.setText("&Save Edits")
-        self.action_save_data.setShortcut("Ctrl+s")
-        self.action_save_data.triggered.connect(self.save_edits)
+        self.data_action_save = QtWidgets.QAction(self)
+        self.data_action_save.setText("&Save Edits")
+        self.data_action_save.setShortcut("Ctrl+s")
+        self.data_action_save.triggered.connect(self.save_edits)
+        
+        # add station(s)
+        self.data_action_add = QtWidgets.QAction(self)
+        self.data_action_add.setText("Add Station(s)")
+        self.data_action_add.triggered.connect(self.add_station)
+        
+        # remove station(s)
+        self.data_action_remove = QtWidgets.QAction(self)
+        self.data_action_remove.setText("Remove Station(s)")
+        self.data_action_remove.triggered.connect(self.remove_station)
+        
 
         # add the action on the menu tab
-        self.menu_data_file.addAction(self.action_open_data)
-        self.menu_data_file.addAction(self.action_close)
-        self.menu_data_file.addAction(self.action_save_data)
+        self.menu_data_file.addAction(self.data_action_open)
+        self.menu_data_file.addAction(self.data_action_new)
+        self.menu_data_file.addAction(self.data_action_add)
+        self.menu_data_file.addAction(self.data_action_remove)
+        self.menu_data_file.addAction(self.data_action_close)
+        self.menu_data_file.addAction(self.data_action_save)
         self.menubar.addAction(self.menu_data_file.menuAction())
 
         # set the action items for the response file
@@ -201,6 +221,26 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             fill=False,
             elevation=True,
         )
+        
+    def new_data_file(self):
+        """build a new data file from scratch"""
+        pass
+        
+    def add_station(self):
+        """
+        Add a station or list of stations from files
+        """
+        pass
+    
+    def remove_station(self):
+        """
+        Remove stations.
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
 
     def get_resp_fn(self):
         """
