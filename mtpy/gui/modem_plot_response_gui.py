@@ -17,7 +17,7 @@ Created on Fri Jan 15 11:47:37 2021
 import os
 
 try:
-    from PyQt5 import QtCore, QtWidgets
+    from PyQt5 import QtCore, QtWidgets, QtGui
 except ImportError:
     raise ImportError("This version needs PyQt5")
 
@@ -63,6 +63,9 @@ class PlotResponses(QtWidgets.QWidget):
         self._ax_index = 0
         self.ax_list = None
         self.phase_flip_comp = None
+        self.add_error_comp = None
+        self.add_t_error = .02
+        self.add_z_error = 5.0
 
         self.setup_ui()
 
@@ -147,24 +150,58 @@ class PlotResponses(QtWidgets.QWidget):
         self.apply_edits_button.setText("Apply Edits")
         self.apply_edits_button.setStyleSheet("background-color: #c6dcff")
         self.apply_edits_button.pressed.connect(self.apply_edits)
-        
+
         self.interpolate_button = QtWidgets.QPushButton()
         self.interpolate_button.setText("Interpolate")
         self.interpolate_button.setStyleSheet("background-color: #FFB700")
         self.interpolate_button.pressed.connect(self.apply_interpolation)
-        
+
         self.flip_phase_button = QtWidgets.QPushButton()
         self.flip_phase_button.setText("Flip Phase")
-        self.flip_phase_button.setStyleSheet("background-color: ##7FFFD4")
+        self.flip_phase_button.setStyleSheet("background-color: #7FFFD4")
         self.flip_phase_button.pressed.connect(self.apply_flip_phase)
-        
+
         self.flip_phase_combo = QtWidgets.QComboBox()
-        self.flip_phase_combo.addItems(["Zx", "Zy", "Tx", "Ty"])
-        self.flip_phase_combo.currentIndexChanged.connect(self.set_phase_flip_comp)
+        self.flip_phase_combo.addItems(["", "Zx", "Zy", "Tx", "Ty"])
+        self.flip_phase_combo.currentIndexChanged.connect(
+            self.set_phase_flip_comp)
         flip_phase_layout = QtWidgets.QHBoxLayout()
         flip_phase_layout.addWidget(self.flip_phase_button)
         flip_phase_layout.addWidget(self.flip_phase_combo)
-        
+
+        self.add_error_button = QtWidgets.QPushButton()
+        self.add_error_button.setText("Add Error")
+        self.add_error_button.setStyleSheet("background-color: #EE82EE")
+        self.add_error_button.pressed.connect(self.apply_add_error)
+
+        self.add_error_combo = QtWidgets.QComboBox()
+        self.add_error_combo.addItems(
+            ["", "Zxx", "Zxy", "Zyx", "Zyy", "Tx", "Ty"])
+        self.add_error_combo.currentIndexChanged.connect(self.set_error_comp)
+        add_error_layout = QtWidgets.QHBoxLayout()
+        add_error_layout.addWidget(self.add_error_button)
+        add_error_layout.addWidget(self.add_error_combo)
+
+        self.add_z_error_text = QtWidgets.QLineEdit(f"{self.add_z_error:.2f}")
+        self.add_z_error_text.setValidator(QtGui.QDoubleValidator(0, 100, 2))
+        self.add_z_error_text.setMaximumWidth(70)
+        self.add_z_error_text.editingFinished.connect(self.set_z_error_value)
+        self.add_z_error_label = QtWidgets.QLabel("Z (%)")
+        self.add_z_error_label.setMaximumWidth(50)
+
+        self.add_t_error_text = QtWidgets.QLineEdit(f"{self.add_t_error:.2f}")
+        self.add_t_error_text.setValidator(QtGui.QDoubleValidator(0, 1, 2))
+        self.add_t_error_text.setMaximumWidth(70)
+        self.add_t_error_text.editingFinished.connect(self.set_t_error_value)
+        self.add_t_error_label = QtWidgets.QLabel("T (abs)")
+        self.add_t_error_label.setMaximumWidth(50)
+        add_z_error_layout = QtWidgets.QHBoxLayout()
+        add_z_error_layout.addWidget(self.add_z_error_label)
+        add_z_error_layout.addWidget(self.add_z_error_text)
+        add_t_error_layout = QtWidgets.QHBoxLayout()
+        add_t_error_layout.addWidget(self.add_t_error_label)
+        add_t_error_layout.addWidget(self.add_t_error_text)
+
         self.undo_button = QtWidgets.QPushButton()
         self.undo_button.setText("Undo")
         self.undo_button.setStyleSheet("background-color: #FA8072")
@@ -200,6 +237,9 @@ class PlotResponses(QtWidgets.QWidget):
         left_layout.addWidget(self.apply_edits_button)
         left_layout.addWidget(self.interpolate_button)
         left_layout.addLayout(flip_phase_layout)
+        left_layout.addLayout(add_error_layout)
+        left_layout.addLayout(add_z_error_layout)
+        left_layout.addLayout(add_t_error_layout)
         left_layout.addWidget(self.undo_button)
         left_layout.addWidget(self.save_edits_button)
 
@@ -249,24 +289,50 @@ class PlotResponses(QtWidgets.QWidget):
 
     def apply_edits(self):
         self.plot()
-        
+
     def apply_interpolation(self):
         mt_obj = self.modem_data.mt_dict[self.station]
         mt_obj.Z, mt_obj.Tipper = mt_obj.interpolate(mt_obj.Z.freq)
         self.plot()
-        
+
     def apply_undo(self):
-        self.modem_data.mt_dict[self.station] = self._modem_data_copy.mt_dict[self.station].copy()
+        self.modem_data.mt_dict[self.station] = self._modem_data_copy.mt_dict[self.station].copy(
+        )
         self.plot()
-        
-    def set_phase_flip_comp(self, value):
-        print(f"setting to {value}")
-        self.phase_flip_comp = str(value).lower()
-        
+
+    def set_phase_flip_comp(self):
+        self.phase_flip_comp = str(self.flip_phase_combo.currentText()).lower()
+
     def apply_flip_phase(self):
-        self.modem_data.data_array, self.modem_data.mt_dict = self.modem_data.flip_phase(self.station, [self.phase_flip_comp])
+        self.modem_data.data_array, self.modem_data.mt_dict = self.modem_data.flip_phase(
+            self.station, [self.phase_flip_comp])
         self.plot()
-        
+
+    def set_error_comp(self):
+        self.add_error_comp = str(self.add_error_combo.currentText()).lower()
+
+    def set_z_error_value(self):
+        try:
+            self.add_z_error = float(self.add_z_error_text.text().strip())
+        except ValueError:
+            self.add_z_error = 1.0
+        self.add_z_error_text.setText(f"{self.add_z_error:.2f}")
+
+    def set_t_error_value(self):
+        try:
+            self.add_t_error = float(self.add_t_error_text.text().strip())
+        except ValueError:
+            self.add_t_error = 0.0
+        self.add_t_error_text.setText(f"{self.add_t_error:.2f}")
+
+    def apply_add_error(self):
+        self.modem_data.data_array, self.modem_data.mt_dict = self.modem_data.add_error(
+            self.station,
+            [self.add_error_comp],
+            z_value=self.add_z_error, 
+            t_value=self.add_t_error)
+        self.plot()
+
     def plot(self):
         """
         plot the data

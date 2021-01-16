@@ -2351,12 +2351,12 @@ class Data(object):
                 raise ValueError(msg)
             p_min = np.where(self.period_list >= min(periods))[0][0]
             p_max = np.where(self.period_list <= max(periods))[0][-1]
-            print(p_min, p_max)
         else:
             p_min = 0
             p_max = len(self.period_list) - 1
 
         new_data_array = self.data_array.copy()
+        new_mt_dict = deepcopy(self.mt_dict)
         for ss in station:
             try:
                 s_find = np.where(self.data_array["station"] == ss)[0][0]
@@ -2374,10 +2374,12 @@ class Data(object):
                     continue
                 if "z" in cc:
                     new_data_array[s_find]["z_err"][p_min:p_max, ii, jj] *= z_value
+                    new_mt_dict[ss].Z.z_err[p_min:p_max, ii, jj] *= z_value
                 elif "t" in cc:
                     new_data_array[s_find]["tip_err"][p_min:p_max, ii, jj] += t_value
+                    new_mt_dict[ss].Tipper.tipper_err[p_min:p_max, ii, jj] += t_value
 
-        return new_data_array
+        return new_data_array, new_mt_dict
 
     def flip_phase(self, station, comp=[]):
         """
@@ -2421,7 +2423,7 @@ class Data(object):
                     new_mt_obj = new_mt_dict[ss].copy()
                     new_mt_obj.Z.z[:, index, :] *= -1
                     new_mt_dict[ss] = new_mt_obj
-                    print("flipped mt_dict with deepcopy mt obj")
+                    
                 elif "t" in cc:
                     new_data_array[s_find]["tip"][:, 0, index] *= -1
                     new_mt_dict[ss].Tipper.tipper[:, 0, index] *= -1
