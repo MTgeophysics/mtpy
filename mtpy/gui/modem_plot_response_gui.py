@@ -143,22 +143,22 @@ class PlotResponses(QtWidgets.QWidget):
 
         self.save_edits_button = QtWidgets.QPushButton()
         self.save_edits_button.setText("Save Edits")
-        self.save_edits_button.setStyleSheet("background-color: #42f489")
+        self.save_edits_button.setStyleSheet("background-color: #FF9E9E")
         self.save_edits_button.pressed.connect(self.save_edits)
 
         self.apply_edits_button = QtWidgets.QPushButton()
         self.apply_edits_button.setText("Apply Edits")
-        self.apply_edits_button.setStyleSheet("background-color: #c6dcff")
+        self.apply_edits_button.setStyleSheet("background-color: #ffab2e")
         self.apply_edits_button.pressed.connect(self.apply_edits)
 
         self.interpolate_button = QtWidgets.QPushButton()
         self.interpolate_button.setText("Interpolate")
-        self.interpolate_button.setStyleSheet("background-color: #FFB700")
+        self.interpolate_button.setStyleSheet("background-color: #ffff30")
         self.interpolate_button.pressed.connect(self.apply_interpolation)
 
         self.flip_phase_button = QtWidgets.QPushButton()
         self.flip_phase_button.setText("Flip Phase")
-        self.flip_phase_button.setStyleSheet("background-color: #7FFFD4")
+        self.flip_phase_button.setStyleSheet("background-color: #A3FF8C")
         self.flip_phase_button.pressed.connect(self.apply_flip_phase)
 
         self.flip_phase_combo = QtWidgets.QComboBox()
@@ -171,7 +171,7 @@ class PlotResponses(QtWidgets.QWidget):
 
         self.add_error_button = QtWidgets.QPushButton()
         self.add_error_button.setText("Add Error")
-        self.add_error_button.setStyleSheet("background-color: #EE82EE")
+        self.add_error_button.setStyleSheet("background-color: #8FFFF0")
         self.add_error_button.pressed.connect(self.apply_add_error)
 
         self.add_error_combo = QtWidgets.QComboBox()
@@ -204,7 +204,7 @@ class PlotResponses(QtWidgets.QWidget):
 
         self.undo_button = QtWidgets.QPushButton()
         self.undo_button.setText("Undo")
-        self.undo_button.setStyleSheet("background-color: #FA8072")
+        self.undo_button.setStyleSheet("background-color: #9C9CFF")
         self.undo_button.pressed.connect(self.apply_undo)
 
         # this is the Canvas Widget that displays the `figure`
@@ -341,6 +341,7 @@ class PlotResponses(QtWidgets.QWidget):
         if self.station is None:
             return
 
+        print(station)
         z_obj = self.modem_data.mt_dict[self.station].Z
         t_obj = self.modem_data.mt_dict[self.station].Tipper
         period = self.modem_data.period_list
@@ -392,6 +393,8 @@ class PlotResponses(QtWidgets.QWidget):
             plot_phase = z_obj.phase
             plot_phase_err = z_obj.phase_err
             h_ratio = [1.5, 1, 0.5]
+            
+        print(plot_res.shape)
 
         # find locations where points have been masked
         nzxx = np.nonzero(z_obj.z[:, 0, 0])[0]
@@ -400,6 +403,8 @@ class PlotResponses(QtWidgets.QWidget):
         nzyy = np.nonzero(z_obj.z[:, 1, 1])[0]
         ntx = np.nonzero(t_obj.tipper[:, 0, 0])[0]
         nty = np.nonzero(t_obj.tipper[:, 0, 1])[0]
+        
+        print(nzxx)
 
         self.figure.clf()
         self.figure.suptitle(str(self.station), fontdict=fontdict)

@@ -73,7 +73,7 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         self.data_action_open.setText("&Open")
         self.data_action_open.setShortcut("Ctrl+o")
         self.data_action_open.triggered.connect(self.get_data_file)
-        
+
         # set an open option that on click opens a modem file
         self.data_action_new = QtWidgets.QAction(self)
         self.data_action_new.setText("&New")
@@ -91,17 +91,16 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         self.data_action_save.setText("&Save Edits")
         self.data_action_save.setShortcut("Ctrl+s")
         self.data_action_save.triggered.connect(self.save_edits)
-        
+
         # add station(s)
         self.data_action_add = QtWidgets.QAction(self)
         self.data_action_add.setText("Add Station(s)")
         self.data_action_add.triggered.connect(self.add_station)
-        
+
         # remove station(s)
         self.data_action_remove = QtWidgets.QAction(self)
         self.data_action_remove.setText("Remove Station(s)")
         self.data_action_remove.triggered.connect(self.remove_station)
-        
 
         # add the action on the menu tab
         self.menu_data_file.addAction(self.data_action_open)
@@ -221,21 +220,48 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             fill=False,
             elevation=True,
         )
-        
+
     def new_data_file(self):
         """build a new data file from scratch"""
         pass
-        
+
     def add_station(self):
         """
         Add a station or list of stations from files
         """
-        pass
-    
+        extensions = "EDI (*.edi);;EMTFXML (*.xml);;ZMM (*.zmm);;J (*.j)"
+        fn_dialog = QtWidgets.QFileDialog()
+        fn_names = fn_dialog.getOpenFileNames(
+            caption="Choose ModEM data file",
+            filter=extensions
+        )
+
+        fn_list = []
+        for ii in range(0, len(fn_names), 2):
+            fn_list += fn_names[ii]
+        fn_list = [Path(fn) for fn in fn_list]
+
+        new_array, new_dict = self.plot_response.modem_data.add_station(
+            fn_list)
+        self.plot_response.modem_data.data_array = new_array
+        self.plot_response.modem_data.mt_dict = new_dict
+
+        # fill list of stations
+        station_list = list(
+            sorted(self.plot_response.modem_data.mt_dict.keys()))
+        self.plot_response.list_widget.clear()
+        for station in station_list:
+            self.plot_response.list_widget.addItem(station)
+
+        if self.plot_response.station is None:
+            self.plot_response.station = station_list[0]
+
+        self.plot_response.plot()
+
     def remove_station(self):
         """
         Remove stations.
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 

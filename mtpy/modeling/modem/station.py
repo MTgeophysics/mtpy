@@ -205,7 +205,9 @@ class Stations(object):
             self.station_locations[ii]["station"] = mt_obj.station
             self.station_locations[ii]["elev"] = mt_obj.elevation
 
-            if (self.model_epsg is not None) or (self.model_utm_zone is not None):
+            if (self.model_epsg is not None) and (self.model_utm_zone is not None):
+                self.logger.debug(f"estimating from UTM Zone {self.model_utm_zone}")
+                self.logger.debug(f"estimating from UTM Zone {self.model_epsg}")
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
                     mt_obj.latitude,
                     mt_obj.longitude,
@@ -216,6 +218,8 @@ class Stations(object):
                 self.station_locations[ii]["north"] = north
                 self.station_locations[ii]["zone"] = utm_zone
             else:
+                self.logger.debug("using east, north from mt object")
+                print(f"station: {mt_obj.station}, East = {mt_obj.east}, north = {mt_obj.north}")
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone

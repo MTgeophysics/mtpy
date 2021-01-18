@@ -305,7 +305,7 @@ class MT(object):
         TODO: need a validation from utm zone
         """
         self._utm_zone = utm_zone
-        if self.latitude is not None and self.longitude is not None:
+        if self.latitude is None and self.longitude is None:
             self.logger.debug("Calculating latitude and longitude from UTM")
             self.east, self.north, self._utm_zone = gis_tools.project_point_ll2utm(
                 self.latitude, self.longitude, utm_zone=self.utm_zone

@@ -5,9 +5,10 @@ Description:
 Author: fei.zhang@ga.gov.au
 
 FZ Last Updated: 2017-12-04
-"""
+JP (2021-01-18) updated to use Path and get relative path locations.
 
-import os
+"""
+from pathlib import Path
 import tempfile
 
 epsg_dict = {
@@ -47,28 +48,13 @@ epsg_dict = {
 }
 
 
-# hack to get the path2/repositoryDir like: C:/Github/mtpy
-MTPY_ROOT = os.path.normpath(
-    os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-)
-
-# print("MTPY_ROOT = ", MTPY_ROOT)
-
-EDI_DATA_DIR = os.path.normpath(os.path.join(MTPY_ROOT, "examples/data/edi_files"))
-EDI_DATA_DIR2 = os.path.normpath(os.path.join(MTPY_ROOT, "examples/data/edi_files_2"))
-
-AUS_TOPO_FILE = os.path.normpath(
-    os.path.join(MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
-)
-SAMPLE_DIR = os.path.normpath(
-    os.path.join(MTPY_ROOT, "examples/model_files")
-)  # r'E:\Githubz\mtpy\examples\model_files'
-
+MTPY_ROOT = Path(__file__).parent.parent
+EDI_DATA_DIR = Path(MTPY_ROOT, "examples/data/edi_files")
+EDI_DATA_DIR2 = Path(MTPY_ROOT, "examples/data/edi_files_2")
+AUS_TOPO_FILE = Path(MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
+SAMPLE_DIR = Path(MTPY_ROOT, "examples/model_files")
 
 SYSTEM_TEMP_DIR = tempfile.gettempdir()
 
 NEW_TEMP_DIR = tempfile.mkdtemp(prefix="mtpy_tmpdir_")
 
-# print("SYSTEM_TEMP_DIR = ", SYSTEM_TEMP_DIR) # in my Windows =  c:\users\u25656\appdata\local\temp\1
-#
-# print ("NEW_TEMP_DIR = ", NEW_TEMP_DIR)
