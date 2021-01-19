@@ -27,6 +27,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
+import matplotlib.widgets as mplwidgets
 
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.modem as modem
@@ -922,6 +923,17 @@ class PlotResponses(QtWidgets.QWidget):
                     prop={"size": max([self.plot_settings.fs, 5])},
                 )
 
+        # make rectangular picker
+        # for ax in self.ax_list:
+        #     a = mplwidgets.RectangleSelector(
+        #     ax,
+        #     self.on_select_rect,
+        #     drawtype="box",
+        #     useblit=True,
+        #     interactive=True,
+        #     button=[1],
+        # )
+
         self.mpl_widget.draw()
 
     def on_pick(self, event):
@@ -1087,6 +1099,7 @@ class PlotResponses(QtWidgets.QWidget):
             # need to redraw the figure
             self._ax.figure.canvas.draw()
 
+
     def in_axes(self, event):
         """
         figure out which axes you just chose the point from
@@ -1135,3 +1148,26 @@ class PlotResponses(QtWidgets.QWidget):
 
                 else:
                     self._key = "tip"
+                    
+    def _get_frequency_range(self, period_01, period_02):
+
+        fmin = min([1.0 / period_01, 1.0 / period_02])
+        fmax = max([1.0 / period_01, 1.0 / period_02])
+        prange = np.where((self.modem_data.period_list >= fmin) & 
+                          (self.modem_data.period_list <= fmax))
+
+        return prange
+                    
+    def on_select_rect(self, eclick, erelease):
+        x1 = eclick.xdata
+        x2 = erelease.xdata
+        print(x1, x2)
+
+        f_idx = self._get_frequency_range(x1, x2)
+
+        for ff in f_idx:
+            self.modem_data.mt_dict[self.station].Z.z[ff, self._comp_index_x, self.comp_index_y] = 0.0 + 0.0 * 1j
+            self.modem_data.mt_dict[self.station].Z.z_err[ff, self._comp_index_x, self.comp_index_y] = 0.0
+
+        self._ax.figure.canvas.draw()
+        self._ax2.figure.canvas.draw()
