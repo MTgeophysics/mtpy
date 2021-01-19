@@ -2304,7 +2304,6 @@ class Data(object):
         for b_station in name:
             try:
                 s_find = np.where(self.data_array["station"] == b_station)[0][0]
-                print(f"removed {b_station}")
             except IndexError:
                 msg = f"Could not find {b_station} in data file"
                 self.logger.warn(msg)

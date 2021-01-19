@@ -64,8 +64,10 @@ class PlotResponses(QtWidgets.QWidget):
         self.ax_list = None
         self.phase_flip_comp = None
         self.add_error_comp = None
+        self.ss_comp = None
         self.add_t_error = .02
         self.add_z_error = 5.0
+        self.static_shift = 1.0
 
         self.setup_ui()
 
@@ -202,6 +204,24 @@ class PlotResponses(QtWidgets.QWidget):
         add_t_error_layout.addWidget(self.add_t_error_label)
         add_t_error_layout.addWidget(self.add_t_error_text)
 
+        self.static_shift_button = QtWidgets.QPushButton()
+        self.static_shift_button.setText("Static Shift")
+        self.static_shift_button.setStyleSheet("background-color: #a7d7cd")
+        self.static_shift_button.pressed.connect(self.apply_static_shift)
+        self.static_shift_button.setMaximumWidth(70)
+        self.static_shift_combo = QtWidgets.QComboBox()
+        self.static_shift_combo.addItems(["", "Zx", "Zy"])
+        self.static_shift_combo.currentIndexChanged.connect(self.set_ss_comp)
+        self.static_shift_combo.setMaximumWidth(40)
+        self.ss_text = QtWidgets.QLineEdit(f"{self.static_shift:.2f}")
+        self.ss_text.setValidator(QtGui.QDoubleValidator(-100, 100, 2))
+        self.ss_text.editingFinished.connect(self.set_ss_value)
+        self.ss_text.setMaximumWidth(40)
+        static_shift_layout = QtWidgets.QHBoxLayout()
+        static_shift_layout.addWidget(self.static_shift_button)
+        static_shift_layout.addWidget(self.static_shift_combo)
+        static_shift_layout.addWidget(self.ss_text)
+
         self.undo_button = QtWidgets.QPushButton()
         self.undo_button.setText("Undo")
         self.undo_button.setStyleSheet("background-color: #9C9CFF")
@@ -240,6 +260,7 @@ class PlotResponses(QtWidgets.QWidget):
         left_layout.addLayout(add_error_layout)
         left_layout.addLayout(add_z_error_layout)
         left_layout.addLayout(add_t_error_layout)
+        left_layout.addLayout(static_shift_layout)
         left_layout.addWidget(self.undo_button)
         left_layout.addWidget(self.save_edits_button)
 
@@ -329,9 +350,40 @@ class PlotResponses(QtWidgets.QWidget):
         self.modem_data.data_array, self.modem_data.mt_dict = self.modem_data.add_error(
             self.station,
             [self.add_error_comp],
-            z_value=self.add_z_error, 
+            z_value=self.add_z_error,
             t_value=self.add_t_error)
         self.plot()
+
+    def set_ss_comp(self):
+        self.ss_comp = str(self.static_shift_combo.currentText()).lower()
+
+    def set_ss_value(self):
+        try:
+            self.static_shift = float(self.ss_text.text().strip())
+        except ValueError:
+            self.static_shift = 1.0
+        self.ss_text.setText(f"{self.static_shift:.2f}")
+
+    def apply_static_shift(self):
+        """
+        Remove static shift
+        """
+
+        # be sure to apply the static shift to the original data
+        if self.ss_comp.lower() == "zx":
+            new_z_obj = self.modem_data.mt_dict[self.station].remove_static_shift(
+                ss_x=self.static_shift
+            )
+            self.modem_data.mt_dict[self.station].Z = new_z_obj
+            self.plot()
+        elif self.ss_comp.lower() == "zy":
+            new_z_obj = self.modem_data.mt_dict[self.station].remove_static_shift(
+                ss_y=self.static_shift
+            )
+            self.modem_data.mt_dict[self.station].Z = new_z_obj
+            self.plot()
+        else:
+            pass
 
     def plot(self):
         """
@@ -392,7 +444,6 @@ class PlotResponses(QtWidgets.QWidget):
             plot_phase = z_obj.phase
             plot_phase_err = z_obj.phase_err
             h_ratio = [1.5, 1, 0.5]
-            
 
         # find locations where points have been masked
         nzxx = np.nonzero(z_obj.z[:, 0, 0])[0]
@@ -401,7 +452,7 @@ class PlotResponses(QtWidgets.QWidget):
         nzyy = np.nonzero(z_obj.z[:, 1, 1])[0]
         ntx = np.nonzero(t_obj.tipper[:, 0, 0])[0]
         nty = np.nonzero(t_obj.tipper[:, 0, 1])[0]
-        
+
         self.figure.clf()
         self.figure.suptitle(str(self.station), fontdict=fontdict)
 
