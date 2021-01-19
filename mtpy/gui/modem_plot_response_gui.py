@@ -341,7 +341,6 @@ class PlotResponses(QtWidgets.QWidget):
         if self.station is None:
             return
 
-        print(station)
         z_obj = self.modem_data.mt_dict[self.station].Z
         t_obj = self.modem_data.mt_dict[self.station].Tipper
         period = self.modem_data.period_list
@@ -394,7 +393,6 @@ class PlotResponses(QtWidgets.QWidget):
             plot_phase_err = z_obj.phase_err
             h_ratio = [1.5, 1, 0.5]
             
-        print(plot_res.shape)
 
         # find locations where points have been masked
         nzxx = np.nonzero(z_obj.z[:, 0, 0])[0]
@@ -404,8 +402,6 @@ class PlotResponses(QtWidgets.QWidget):
         ntx = np.nonzero(t_obj.tipper[:, 0, 0])[0]
         nty = np.nonzero(t_obj.tipper[:, 0, 1])[0]
         
-        print(nzxx)
-
         self.figure.clf()
         self.figure.suptitle(str(self.station), fontdict=fontdict)
 

@@ -219,7 +219,7 @@ class Stations(object):
                 self.station_locations[ii]["zone"] = utm_zone
             else:
                 self.logger.debug("using east, north from mt object")
-                print(f"station: {mt_obj.station}, East = {mt_obj.east}, north = {mt_obj.north}")
+                self.logger.debug(f"station: {mt_obj.station}, East = {mt_obj.east}, north = {mt_obj.north}")
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone

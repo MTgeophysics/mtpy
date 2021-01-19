@@ -819,12 +819,15 @@ class Data(object):
                     if mt_obj.Tipper.tipper is not None:
                         data_array[ii]["tip"][jj] = interp_t.tipper[kk, :, :]
                         data_array[ii]["tip_err"][jj] = interp_t.tipper_err[kk, :, :]
-
+                
+                # need to set the mt_object to have Z and T with same periods
+                # as the data file, otherwise adding a station will not work.
+                mt_obj.Z = interp_z
+                mt_obj.Tipper = interp_t
                 # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None and Path(new_edi_dir).is_dir():
                     # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
-                    mt_obj.Z = interp_z
-                    mt_obj.Tipper = interp_t
+                    
                     mt_obj.write_mt_file(
                         save_dir=new_edi_dir,
                         file_type="edi",
