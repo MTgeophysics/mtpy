@@ -23,6 +23,7 @@ except ImportError:
 
 from mtpy.gui.modem_plot_response_gui import PlotResponses
 from mtpy.gui.response_plot_settings import PlotSettings
+from mtpy.gui.get_stations import GetStations
 
 # ==============================================================================
 
@@ -94,12 +95,12 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
 
         # add station(s)
         self.data_action_add = QtWidgets.QAction(self)
-        self.data_action_add.setText("Add Station(s)")
+        self.data_action_add.setText("Add Stations")
         self.data_action_add.triggered.connect(self.add_station)
 
         # remove station(s)
         self.data_action_remove = QtWidgets.QAction(self)
-        self.data_action_remove.setText("Remove Station(s)")
+        self.data_action_remove.setText("Remove Stations")
         self.data_action_remove.triggered.connect(self.remove_station)
 
         # add the action on the menu tab
@@ -266,7 +267,27 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         :rtype: TYPE
 
         """
-        pass
+        
+        rs = GetStations(stations=list(self.plot_response.modem_data.station_locations.station))
+        rs.exec_()
+        
+        print(f"returned stations {rs.checked_stations}")
+        new_data, new_mtdict = self.plot_response.modem_data.remove_station(rs.checked_stations)
+        self.plot_response.modem_data.data_array = new_data
+        self.plot_response.modem_data.mt_dict = new_mtdict
+        
+        # fill list of stations
+        station_list = list(
+            sorted(self.plot_response.modem_data.mt_dict.keys()))
+        self.plot_response.list_widget.clear()
+        for station in station_list:
+            self.plot_response.list_widget.addItem(station)
+
+        if self.plot_response.station is None:
+            self.plot_response.station = station_list[0]
+        
+        self.plot_response.plot()
+        
 
     def get_resp_fn(self):
         """
@@ -317,6 +338,24 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             self.centralWidget, "Help", help_string
         )
 
+# class GetStations(QtWidgets.QListWidget):
+#     def __init__(self, stations):
+#         self.stations = stations
+#         super().__init__()
+        
+#         # fill list of stations
+#         station_list = sorted(self.stations)
+#         self.list_widget.clear()
+#         for station in station_list:
+#             item = QtWidgets.QListWidgetItem(station)
+#             item.setCheckState(QtCore.Qt.Unchecked)
+#             #item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+#             self.addItem(item)
+    
+#     def get_stations(self):
+#         pass
+            
+        
 
 # ==============================================================================
 # Def Main
