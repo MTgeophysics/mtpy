@@ -338,24 +338,6 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             self.centralWidget, "Help", help_string
         )
 
-# class GetStations(QtWidgets.QListWidget):
-#     def __init__(self, stations):
-#         self.stations = stations
-#         super().__init__()
-        
-#         # fill list of stations
-#         station_list = sorted(self.stations)
-#         self.list_widget.clear()
-#         for station in station_list:
-#             item = QtWidgets.QListWidgetItem(station)
-#             item.setCheckState(QtCore.Qt.Unchecked)
-#             #item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-#             self.addItem(item)
-    
-#     def get_stations(self):
-#         pass
-            
-        
 
 # ==============================================================================
 # Def Main

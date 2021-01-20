@@ -2,7 +2,7 @@
 """
 Created on Fri Jan 15 11:47:37 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -134,7 +134,7 @@ class PlotResponses(QtWidgets.QWidget):
     # ----------------------------
     def setup_ui(self):
         """
-        setup the user interface with list of stations on the left and the 
+        setup the user interface with list of stations on the left and the
         plot on the right.  There will be a button for save edits.
         """
 
@@ -238,6 +238,7 @@ class PlotResponses(QtWidgets.QWidget):
         # be able to edit the data
         self.mpl_widget.mpl_connect("pick_event", self.on_pick)
         self.mpl_widget.mpl_connect("axes_enter_event", self.in_axes)
+        self.mpl_widget.mpl_connect("button_press_event", self.on_pick)
 
         # make sure the figure takes up the entire plottable space
         self.mpl_widget.setSizePolicy(
@@ -271,10 +272,11 @@ class PlotResponses(QtWidgets.QWidget):
         layout.addLayout(mpl_vbox)
 
         self.setLayout(layout)
+        self.mpl_widget.updateGeometry()
 
     def get_station(self, widget_item):
         """
-        get the station name from the clicked station 
+        get the station name from the clicked station
         """
         try:
             self.station = str(widget_item.text())
@@ -924,61 +926,69 @@ class PlotResponses(QtWidgets.QWidget):
                 )
 
         # make rectangular picker
-        # for ax in self.ax_list:
-        #     a = mplwidgets.RectangleSelector(
-        #     ax,
-        #     self.on_select_rect,
-        #     drawtype="box",
-        #     useblit=True,
-        #     interactive=True,
-        #     button=[1],
-        # )
+        for ax, name in zip(self.ax_list, ["rxx", "rxy", "ryx", "ryy", "pxx", "pxy",
+                                     "pyx", "pyy", "txr", "txi", "tyr", "tyi"]):
+            setattr(self, f"rect_{name}", mplwidgets.RectangleSelector(
+                ax,
+                self.on_select_rect,
+                drawtype="box",
+                useblit=True,
+                interactive=True,
+                minspanx=5,
+                minspany=5,
+                spancoords="pixels",
+                button=[1],
+            ))
 
         self.mpl_widget.draw()
 
     def on_pick(self, event):
         """
-        mask a data point when it is clicked on.  
+        mask a data point when it is clicked on.
         """
-        data_point = event.artist
-        data_period = data_point.get_xdata()[event.ind]
-        data_value = data_point.get_ydata()[event.ind]
+        try:
+            data_point=event.artist
+            data_period=data_point.get_xdata()[event.ind]
+            data_value=data_point.get_ydata()[event.ind]
+        except AttributeError:
+            print("Picked a bad point")
+            return
 
         # get the indicies where the data point has been edited
         try:
-            p_index = np.where(
+            p_index=np.where(
                 self.modem_data.period_list == data_period)[0][0]
-            s_index = np.where(self.modem_data.data_array["station"] == self.station)[
+            s_index=np.where(self.modem_data.data_array["station"] == self.station)[
                 0
             ][0]
         except IndexError:
             return
 
         if self._key == "tip":
-            data_value_2 = self.modem_data.mt_dict[self.station].Tipper.tipper[
+            data_value_2=self.modem_data.mt_dict[self.station].Tipper.tipper[
                 p_index, self._comp_index_x, self._comp_index_y
             ]
             if self._ax_index % 2 == 0:
-                data_value_2 = data_value_2.imag
+                data_value_2=data_value_2.imag
             else:
-                data_value_2 = data_value_2.real
+                data_value_2=data_value_2.real
 
         elif self._key == "z":
             if self.plot_z == True:
-                data_value_2 = self.modem_data.mt_dict[self.station].Z.z[
+                data_value_2=self.modem_data.mt_dict[self.station].Z.z[
                     p_index, self._comp_index_x, self._comp_index_y
                 ]
 
                 if self._ax_index % 2 == 0:
-                    data_value_2 = data_value_2.imag
+                    data_value_2=data_value_2.imag
                 else:
-                    data_value_2 = data_value_2.real
+                    data_value_2=data_value_2.real
             elif self.plot_z == False and self._ax_index < 4:
-                data_value_2 = self.modem_data.mt_dict[self.station].Z.phase[
+                data_value_2=self.modem_data.mt_dict[self.station].Z.phase[
                     p_index, self._comp_index_x, self._comp_index_y
                 ]
             elif self.plot_z == False and self._ax_index >= 4:
-                data_value_2 = self.modem_data.mt_dict[self.station].Z.resistivity[
+                data_value_2=self.modem_data.mt_dict[self.station].Z.resistivity[
                     p_index, self._comp_index_x, self._comp_index_y
                 ]
 
@@ -987,16 +997,16 @@ class PlotResponses(QtWidgets.QWidget):
 
             self.modem_data.data_array[s_index][self._key][
                 p_index, self._comp_index_x, self._comp_index_y
-            ] = (0 + 0j)
+            ]=(0 + 0j)
 
             if self._key == "tip":
                 self.modem_data.mt_dict[self.station].Tipper.tipper[
                     p_index, self._comp_index_x, self._comp_index_y
-                ] = (0 + 0j)
+                ]=(0 + 0j)
             elif self._key == "z":
                 self.modem_data.mt_dict[self.station].Z.z[
                     p_index, self._comp_index_x, self._comp_index_y
-                ] = (0 + 0j)
+                ]=(0 + 0j)
 
             # plot the points as masked
             self._ax.plot(
@@ -1026,86 +1036,89 @@ class PlotResponses(QtWidgets.QWidget):
 
             # put the new error into the error array
             if self._key == "tip":
-                err = self.modem_data.mt_dict[self.station].Tipper.tipper_err[
+                err=self.modem_data.mt_dict[self.station].Tipper.tipper_err[
                     p_index, self._comp_index_x, self._comp_index_y
                 ]
-                err = err + abs(err) * self.plot_settings.t_err_increase
+                err=err + self.add_t_error
                 self.modem_data.mt_dict[self.station].Tipper.tipper_err[
                     p_index, self._comp_index_x, self._comp_index_y
-                ] = err
+                ]=err
 
             if self._key == "z":
-                err = self.modem_data.mt_dict[self.station].Z.z_err[
+                err=self.modem_data.mt_dict[self.station].Z.z_err[
                     p_index, self._comp_index_x, self._comp_index_y
                 ]
-                err = err + abs(err) * self.plot_settings.z_err_increase
+                err=err *  self.add_z_error
 
                 self.modem_data.mt_dict[self.station].Z.z_err[
                     p_index, self._comp_index_x, self._comp_index_y
-                ] = err
+                ]=err
 
             self.modem_data.data_array[s_index][self._key + "_err"][
                 p_index, self._comp_index_x, self._comp_index_y
-            ] = err
+            ]=err
 
             # make error bar array
             try:
-                e_index = event.ind[0]
-                eb = self._err_list[self._ax_index][2].get_paths()[
+                e_index=event.ind[0]
+                eb=self._err_list[self._ax_index][2].get_paths()[
                     e_index].vertices
             except IndexError:
                 return
 
             # make ecap array
-            ecap_l = self._err_list[self._ax_index][0].get_data()[1][e_index]
-            ecap_u = self._err_list[self._ax_index][1].get_data()[1][e_index]
+            ecap_l=self._err_list[self._ax_index][0].get_data()[1][e_index]
+            ecap_u=self._err_list[self._ax_index][1].get_data()[1][e_index]
 
             # change apparent resistivity error
             if self._key == "tip":
-                neb_u = eb[0, 1] - \
-                    self.plot_settings.t_err_increase * abs(eb[0, 1])
-                neb_l = eb[1, 1] + \
-                    self.plot_settings.t_err_increase * abs(eb[1, 1])
-                ecap_l = ecap_l - \
-                    self.plot_settings.t_err_increase * abs(ecap_l)
-                ecap_u = ecap_u + \
-                    self.plot_settings.t_err_increase * abs(ecap_u)
+                neb_u=eb[0, 1] - self.add_t_error
+                neb_l=eb[1, 1] + self.add_t_error 
+                ecap_l=ecap_l - self.add_t_error 
+                ecap_u=ecap_u + self.add_t_error 
             elif self._key == "z":
-                neb_u = eb[0, 1] - \
-                    self.plot_settings.z_err_increase * abs(eb[0, 1])
-                neb_l = eb[1, 1] + \
-                    self.plot_settings.z_err_increase * abs(eb[1, 1])
-                ecap_l = ecap_l - \
-                    self.plot_settings.z_err_increase * abs(ecap_l)
-                ecap_u = ecap_u + \
-                    self.plot_settings.z_err_increase * abs(ecap_u)
+                if self.plot_z:
+                    neb_u= eb[0, 1] - self.add_z_error * abs(eb[0, 1])/2
+                    neb_l= eb[1, 1] + self.add_z_error * abs(eb[1, 1])/2
+                    ecap_l= ecap_l - self.add_z_error * abs(eb[0, 1])/2
+                    ecap_u=  ecap_u + self.add_z_error * abs(eb[1, 1])/2
+                elif not self.plot_z:
+                    if self._ax_index < 4:
+                        neb_u= eb[0, 1] - self.add_z_error * np.sqrt(abs(eb[0, 1]))
+                        neb_l= eb[1, 1] + self.add_z_error * np.sqrt(abs(eb[1, 1]))
+                        ecap_l= ecap_l- self.add_z_error * np.sqrt(abs(eb[0, 1]))
+                        ecap_u= ecap_u + self.add_z_error * np.sqrt(abs(eb[1, 1]))
+                    else:
+                        neb_u= eb[0, 1] - self.add_z_error/100 * abs(eb[0, 1])*4
+                        neb_l= eb[1, 1] + self.add_z_error/100 * abs(eb[1, 1])*4
+                        ecap_l= ecap_l - self.add_z_error/100 * abs(eb[0, 1])*4
+                        ecap_u=  ecap_u + self.add_z_error/100 * abs(eb[1, 1])*4
 
             # set the new error bar values
-            eb[0, 1] = neb_u
-            eb[1, 1] = neb_l
+            eb[0, 1]=neb_u
+            eb[1, 1]=neb_l
 
             # reset the error bars and caps
-            ncap_l = self._err_list[self._ax_index][0].get_data()
-            ncap_u = self._err_list[self._ax_index][1].get_data()
-            ncap_l[1][e_index] = ecap_l
-            ncap_u[1][e_index] = ecap_u
+            ncap_l=self._err_list[self._ax_index][0].get_data()
+            ncap_u=self._err_list[self._ax_index][1].get_data()
+            ncap_l[1][e_index]=ecap_l
+            ncap_u[1][e_index]=ecap_u
 
             # set the values
             self._err_list[self._ax_index][0].set_data(ncap_l)
             self._err_list[self._ax_index][1].set_data(ncap_u)
             self._err_list[self._ax_index][2].get_paths()[
-                e_index].vertices = eb
+                e_index].vertices=eb
 
             # need to redraw the figure
             self._ax.figure.canvas.draw()
-
 
     def in_axes(self, event):
         """
         figure out which axes you just chose the point from
         """
 
-        ax_index_dict = {
+        ax_index_dict={
             0: (0, 0),
             1: (0, 1),
             2: (1, 0),
@@ -1120,7 +1133,7 @@ class PlotResponses(QtWidgets.QWidget):
             11: (0, 1),
         }
 
-        ax_pairs = {
+        ax_pairs={
             0: 4,
             1: 5,
             2: 6,
@@ -1135,39 +1148,89 @@ class PlotResponses(QtWidgets.QWidget):
             11: 10,
         }
         # make the axis an attribute
-        self._ax = event.inaxes
+        self._ax=event.inaxes
 
         # find the component index so that it can be masked
         for ax_index, ax in enumerate(self.ax_list):
             if ax == event.inaxes:
-                self._comp_index_x, self._comp_index_y = ax_index_dict[ax_index]
-                self._ax_index = ax_index
-                self._ax2 = self.ax_list[ax_pairs[ax_index]]
+                self._comp_index_x, self._comp_index_y=ax_index_dict[ax_index]
+                self._ax_index=ax_index
+                self._ax2=self.ax_list[ax_pairs[ax_index]]
                 if ax_index < 8:
-                    self._key = "z"
+                    self._key="z"
 
                 else:
-                    self._key = "tip"
-                    
+                    self._key="tip"
+
     def _get_frequency_range(self, period_01, period_02):
 
-        fmin = min([1.0 / period_01, 1.0 / period_02])
-        fmax = max([1.0 / period_01, 1.0 / period_02])
-        prange = np.where((self.modem_data.period_list >= fmin) & 
+        fmin = min([period_01, period_02])
+        fmax = max([period_01, period_02])
+        prange = np.where((self.modem_data.period_list >= fmin) &
                           (self.modem_data.period_list <= fmax))
 
         return prange
-                    
+
     def on_select_rect(self, eclick, erelease):
-        x1 = eclick.xdata
-        x2 = erelease.xdata
-        print(x1, x2)
+        x1=eclick.xdata
+        x2=erelease.xdata
 
         f_idx = self._get_frequency_range(x1, x2)
 
         for ff in f_idx:
-            self.modem_data.mt_dict[self.station].Z.z[ff, self._comp_index_x, self.comp_index_y] = 0.0 + 0.0 * 1j
-            self.modem_data.mt_dict[self.station].Z.z_err[ff, self._comp_index_x, self.comp_index_y] = 0.0
-
+            period = self.modem_data.period_list[ff]
+            if self._key == "z":
+                self._ax.plot(
+                        period, 
+                        self.modem_data.mt_dict[self.station].Z.resistivity[ff, 
+                                                                  self._comp_index_x, 
+                                                                  self._comp_index_y],
+                        color=(0, 0, 0),
+                        marker="x",
+                        ms=self.plot_settings.ms * 2,
+                        mew=4,
+                    )
+                self._ax2.plot(
+                        period, 
+                        self.modem_data.mt_dict[self.station].Z.phase[ff, 
+                                                                  self._comp_index_x, 
+                                                                  self._comp_index_y],
+                        color=(0, 0, 0),
+                        marker="x",
+                        ms=self.plot_settings.ms * 2,
+                        mew=4,
+                    )
+                
+                self.modem_data.mt_dict[self.station].Z.z[ff,
+                                                          self._comp_index_x, self._comp_index_y]=0.0 + 0.0 * 1j
+                self.modem_data.mt_dict[self.station].Z.z_err[ff,
+                                                              self._comp_index_x, self._comp_index_y]=0.0
+            elif self._key == "tip":
+                self._ax.plot(
+                        period, 
+                        self.modem_data.mt_dict[self.station].Tipper.tipper[ff, 
+                                                                  self._comp_index_x, 
+                                                                  self._comp_index_y].real,
+                        color=(0, 0, 0),
+                        marker="x",
+                        ms=self.plot_settings.ms * 2,
+                        mew=4,
+                    )
+                self._ax.plot(
+                        period, 
+                        self.modem_data.mt_dict[self.station].Tipper.tipper[ff, 
+                                                                  self._comp_index_x, 
+                                                                  self._comp_index_y].imag,
+                        color=(0, 0, 0),
+                        marker="x",
+                        ms=self.plot_settings.ms * 2,
+                        mew=4,
+                    )
+                
+                self.modem_data.mt_dict[self.station].Z.z[ff,
+                                                          self._comp_index_x, self._comp_index_y]=0.0 + 0.0 * 1j
+                self.modem_data.mt_dict[self.station].Z.z_err[ff,
+                                                              self._comp_index_x, self._comp_index_y]=0.0
         self._ax.figure.canvas.draw()
         self._ax2.figure.canvas.draw()
+        

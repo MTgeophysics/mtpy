@@ -53,7 +53,7 @@ class PlotSettings(object):
         self.subplot_top = kwargs.pop("subplot_top", 0.93)
         self.subplot_bottom = kwargs.pop("subplot_bottom", 0.08)
 
-        self.z_err_increase = kwargs.pop("z_err_increase", 0.40)
+        self.z_err_increase = kwargs.pop("z_err_increase", 1.5)
         self.t_err_increase = kwargs.pop("t_err_increase", 0.10)
 
         self.legend_loc = kwargs.pop("legend_loc", "upper left")
