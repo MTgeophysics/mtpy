@@ -130,6 +130,10 @@ class PlotResponses(QtWidgets.QWidget):
     def plot_z(self, value):
         self._plot_z = value
         self.plot()
+     
+    @staticmethod
+    def fmt_button(color):
+        return "QPushButton {background-color: " + f"{color}" + "; font-weight: bold}"
 
     # ----------------------------
     def setup_ui(self):
@@ -146,22 +150,22 @@ class PlotResponses(QtWidgets.QWidget):
 
         self.save_edits_button = QtWidgets.QPushButton()
         self.save_edits_button.setText("Save Edits")
-        self.save_edits_button.setStyleSheet("background-color: #FF9E9E")
+        self.save_edits_button.setStyleSheet(self.fmt_button("#FF9E9E"))
         self.save_edits_button.pressed.connect(self.save_edits)
 
         self.apply_edits_button = QtWidgets.QPushButton()
         self.apply_edits_button.setText("Apply Edits")
-        self.apply_edits_button.setStyleSheet("background-color: #ffab2e")
+        self.apply_edits_button.setStyleSheet(self.fmt_button("#ffab2e"))
         self.apply_edits_button.pressed.connect(self.apply_edits)
 
         self.interpolate_button = QtWidgets.QPushButton()
         self.interpolate_button.setText("Interpolate")
-        self.interpolate_button.setStyleSheet("background-color: #ffff30")
+        self.interpolate_button.setStyleSheet(self.fmt_button("#ffff30"))
         self.interpolate_button.pressed.connect(self.apply_interpolation)
 
         self.flip_phase_button = QtWidgets.QPushButton()
         self.flip_phase_button.setText("Flip Phase")
-        self.flip_phase_button.setStyleSheet("background-color: #A3FF8C")
+        self.flip_phase_button.setStyleSheet(self.fmt_button("#A3FF8C"))
         self.flip_phase_button.pressed.connect(self.apply_flip_phase)
 
         self.flip_phase_combo = QtWidgets.QComboBox()
@@ -174,7 +178,7 @@ class PlotResponses(QtWidgets.QWidget):
 
         self.add_error_button = QtWidgets.QPushButton()
         self.add_error_button.setText("Add Error")
-        self.add_error_button.setStyleSheet("background-color: #8FFFF0")
+        self.add_error_button.setStyleSheet(self.fmt_button("#8FFFF0"))
         self.add_error_button.pressed.connect(self.apply_add_error)
 
         self.add_error_combo = QtWidgets.QComboBox()
@@ -207,25 +211,26 @@ class PlotResponses(QtWidgets.QWidget):
 
         self.static_shift_button = QtWidgets.QPushButton()
         self.static_shift_button.setText("Static Shift")
-        self.static_shift_button.setStyleSheet("background-color: #a7d7cd")
+        self.static_shift_button.setStyleSheet(self.fmt_button("#a7d7cd"))
         self.static_shift_button.pressed.connect(self.apply_static_shift)
-        self.static_shift_button.setMaximumWidth(70)
+        self.static_shift_button.setMaximumWidth(80)
         self.static_shift_combo = QtWidgets.QComboBox()
         self.static_shift_combo.addItems(["", "Zx", "Zy"])
         self.static_shift_combo.currentIndexChanged.connect(self.set_ss_comp)
-        self.static_shift_combo.setMaximumWidth(40)
+        self.static_shift_combo.setMaximumWidth(35)
         self.ss_text = QtWidgets.QLineEdit(f"{self.static_shift:.2f}")
         self.ss_text.setValidator(QtGui.QDoubleValidator(-100, 100, 2))
         self.ss_text.editingFinished.connect(self.set_ss_value)
-        self.ss_text.setMaximumWidth(40)
+        self.ss_text.setMaximumWidth(35)
         static_shift_layout = QtWidgets.QHBoxLayout()
+        
         static_shift_layout.addWidget(self.static_shift_button)
         static_shift_layout.addWidget(self.static_shift_combo)
         static_shift_layout.addWidget(self.ss_text)
 
         self.undo_button = QtWidgets.QPushButton()
         self.undo_button.setText("Undo")
-        self.undo_button.setStyleSheet("background-color: #9C9CFF")
+        self.undo_button.setStyleSheet(self.fmt_button("#9C9CFF"))
         self.undo_button.pressed.connect(self.apply_undo)
 
         # this is the Canvas Widget that displays the `figure`
@@ -281,8 +286,8 @@ class PlotResponses(QtWidgets.QWidget):
         try:
             self.station = str(widget_item.text())
         except AttributeError:
-            print("Error: Widget is None")
-
+            self.station = self.list_widget.item(0).text()
+            print(f"Station selected does not exist, setting to {self.station}")
         self.plot()
 
     def file_changed_dfn(self):
@@ -307,7 +312,7 @@ class PlotResponses(QtWidgets.QWidget):
             save_path=os.path.dirname(save_fn),
             fn_basename=os.path.basename(save_fn),
             compute_error=False,
-            fill=False,
+            fill=True,
             elevation=True,
         )
 
@@ -317,6 +322,7 @@ class PlotResponses(QtWidgets.QWidget):
     def apply_interpolation(self):
         mt_obj = self.modem_data.mt_dict[self.station]
         mt_obj.Z, mt_obj.Tipper = mt_obj.interpolate(mt_obj.Z.freq)
+        
         self.plot()
 
     def apply_undo(self):

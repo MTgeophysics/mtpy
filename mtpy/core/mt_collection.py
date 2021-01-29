@@ -115,7 +115,8 @@ class MTCollection:
             entry["longitude"] = m.longitude
             entry["elevation"] = m.elevation
             entry["easting"] = m.east
-            
+            entry["northing"] = m.north
+            entry["utm_zone"] = m.utm_zone
             entry["acquired_by"] = m.station_metadata.acquired_by.author
             entry["period_min"] = 1./m.Z.freq.max()
             entry["period_max"] = 1./m.Z.freq.min()
@@ -129,9 +130,26 @@ class MTCollection:
 
         mt_df = pd.DataFrame(station_list)
         if move_duplicates:
-            mt_df = self._check_for_duplicates()
+            mt_df = self._check_for_duplicates(mt_df)
 
         return mt_df
+    
+    def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
+        """
+        Add stations from a list of files
+        
+        :param fn_list: DESCRIPTION
+        :type fn_list: TYPE
+        :param remove_duplicates: DESCRIPTION, defaults to True
+        :type remove_duplicates: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        new_df = self.make_dataframe_from_file_list(fn_list)
+        return self._check_for_duplicates(self.mt_df.append(new_df, ignore_index=True))
+                
 
     def _check_for_duplicates(self, mt_df, locate="location"):
         """

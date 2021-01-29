@@ -15,6 +15,8 @@ import numpy as np
 from pathlib import Path
 from copy import deepcopy
 
+import matplotlib.pyplot as plt
+
 import mtpy.analysis.pt as pt
 from mtpy.core import mt as mt
 from mtpy.core import z as mtz
@@ -734,6 +736,7 @@ class Data(object):
             data_array[ii]["east"] = mt_obj.east
             data_array[ii]["north"] = mt_obj.north
             data_array[ii]["elev"] = mt_obj.elevation
+            data_array[ii]["zone"] = mt_obj.utm_zone
             try:
                 data_array[ii]["rel_east"] = mt_obj.grid_east
                 data_array[ii]["rel_north"] = mt_obj.grid_north
@@ -815,10 +818,12 @@ class Data(object):
                     jj = np.where(self.period_list == ff)[0][0]
                     data_array[ii]["z"][jj] = interp_z.z[kk, :, :]
                     data_array[ii]["z_err"][jj] = interp_z.z_err[kk, :, :]
+                    data_array[ii]["z_inv_err"][jj] = interp_z.z_err[kk, :, :]
 
                     if mt_obj.Tipper.tipper is not None:
                         data_array[ii]["tip"][jj] = interp_t.tipper[kk, :, :]
                         data_array[ii]["tip_err"][jj] = interp_t.tipper_err[kk, :, :]
+                        data_array[ii]["tip_inv_err"][jj] = interp_t.tipper_err[kk, :, :]
                 
                 # need to set the mt_object to have Z and T with same periods
                 # as the data file, otherwise adding a station will not work.
@@ -2338,8 +2343,8 @@ class Data(object):
         c_dict = {
             "zxx": (0, 0),
             "zxy": (0, 1),
-            "zyx": (0, 0),
-            "zyy": (0, 0),
+            "zyx": (1, 0),
+            "zyy": (1, 1),
             "tx": (0, 0),
             "ty": (0, 1),
         }
@@ -2538,3 +2543,55 @@ class Data(object):
                         new_mt_dict[ss].Tipper.tipper_err[:, dd["index"][0], dd["index"][1]] = 0
 
         return new_data_array, new_mt_dict 
+    
+    def estimate_starting_rho(self):
+        """
+        Estimate starting resistivity from the data.
+        """
+        rho = np.zeros((self.data_array.shape[0], self.period_list.shape[0]))
+        # det_z = np.linalg.det(d_obj.data_array['z'])
+        # mean_z = np.mean(det_z[np.nonzero(det_z)], axis=0)
+        # mean_rho = (.02/(1/d_obj.period_list))*np.abs(mean_z)
+        
+        for ii, d_arr in enumerate(self.data_array):
+            z_obj = mtz.Z(d_arr["z"], freq=1.0 / self.period_list)
+            rho[ii, :] = z_obj.res_det
+        
+        mean_rho = np.apply_along_axis(lambda x: x[np.nonzero(x)].mean(), 0, rho)
+        median_rho = np.apply_along_axis(lambda x: np.median(x[np.nonzero(x)]), 0, rho)
+        
+        fig = plt.figure()
+        
+        ax = fig.add_subplot(1, 1, 1)
+        (l1,) = ax.loglog(self.period_list, mean_rho, lw=2, color=(0.75, 0.25, 0))
+        (l2,) = ax.loglog(self.period_list, median_rho, lw=2, color=(0, 0.25, 0.75))
+        
+        ax.loglog(
+            self.period_list,
+            np.repeat(mean_rho.mean(), self.period_list.size),
+            ls="--",
+            lw=2,
+            color=(0.75, 0.25, 0),
+        )
+        ax.loglog(
+            self.period_list,
+            np.repeat(np.median(median_rho), self.period_list.size),
+            ls="--",
+            lw=2,
+            color=(0, 0.25, 0.75),
+        )
+        
+        ax.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
+        ax.set_ylabel("Resistivity (Ohm-m)", fontdict={"size": 12, "weight": "bold"})
+        
+        ax.legend(
+            [l1, l2],
+            [
+                "Mean = {0:.1f}".format(mean_rho.mean()),
+                "Median = {0:.1f}".format(np.median(median_rho)),
+            ],
+            loc="upper left",
+        )
+        ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
+        
+        plt.show()

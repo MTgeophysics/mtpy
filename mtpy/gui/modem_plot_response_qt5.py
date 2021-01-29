@@ -271,7 +271,6 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         rs = GetStations(stations=list(self.plot_response.modem_data.station_locations.station))
         rs.exec_()
         
-        print(f"returned stations {rs.checked_stations}")
         new_data, new_mtdict = self.plot_response.modem_data.remove_station(rs.checked_stations)
         self.plot_response.modem_data.data_array = new_data
         self.plot_response.modem_data.mt_dict = new_mtdict
@@ -283,7 +282,7 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         for station in station_list:
             self.plot_response.list_widget.addItem(station)
 
-        if self.plot_response.station is None:
+        if self.plot_response.station not in station_list:
             self.plot_response.station = station_list[0]
         
         self.plot_response.plot()
@@ -294,7 +293,7 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         get response file name
         """
 
-        fn_dialog = QtWidgets.QFileDialog(directory=self.dir_path)
+        fn_dialog = QtWidgets.QFileDialog(directory=self.dir_path.as_posix())
         fn = Path(str(
             fn_dialog.getOpenFileName(
                 caption="Choose ModEM response file", filter="(*.dat);; (*.data)"
