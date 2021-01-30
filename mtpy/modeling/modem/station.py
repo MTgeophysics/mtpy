@@ -40,7 +40,7 @@ class Stations(object):
     """
 
     def __init__(self, **kwargs):
-        
+
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
@@ -219,7 +219,9 @@ class Stations(object):
                 self.station_locations[ii]["zone"] = utm_zone
             else:
                 self.logger.debug("using east, north from mt object")
-                self.logger.debug(f"station: {mt_obj.station}, East = {mt_obj.east}, north = {mt_obj.north}")
+                self.logger.debug(
+                    f"station: {mt_obj.station}, East = {mt_obj.east}, north = {mt_obj.north}"
+                )
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone
@@ -300,8 +302,8 @@ class Stations(object):
 
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
-            center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.
-            center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.
+            center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.0
+            center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.0
             # get the median utm zone
             if self.model_utm_zone is None:
                 zone = self.utm_zone.copy()
@@ -381,8 +383,10 @@ class Stations(object):
         self.station_locations["rel_east"] = new_coords[0, :]
         self.station_locations["rel_north"] = new_coords[1, :]
 
-        self.logger.info(f"Rotated stations by {rotation_angle:.1f} deg clockwise from N")
-        
+        self.logger.info(
+            f"Rotated stations by {rotation_angle:.1f} deg clockwise from N"
+        )
+
     def write_shp_file(self, shp_fn, epsg=None, default_epsg=4326):
         """
         Write a shape file of the station locations using geopandas which only takes
@@ -395,12 +399,8 @@ class Stations(object):
             entry = {"station": ss, "latitude": lat, "longitude": lon}
             geometry_list.append(Point(lon, lat))
             station_list.append(entry)
-        sdf = gpd.GeoDataFrame(station_list, 
-                               crs=default_crs,
-                               geometry=geometry_list)
+        sdf = gpd.GeoDataFrame(station_list, crs=default_crs, geometry=geometry_list)
         if epsg is not None:
             sdf = sdf.to_crs(epsg=epsg)
-            
+
         sdf.to_file(shp_fn)
-
-

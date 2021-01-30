@@ -386,7 +386,7 @@ class Data(object):
         if self.data_array is not None:
             lines += [f"\tNumber of stations: {self.data_array.shape[0]}"]
             lines += [f"\tNumber of periods:  {self.period_list.shape[0]}"]
-            lines += ["\tPeriod range:  "]    
+            lines += ["\tPeriod range:  "]
             lines += [f"\t\tMin: {self.period_list.min()} s"]
             lines += [f"\t\tMax: {self.period_list.max()} s"]
             lines += [f"\tRotation angle:     {self.rotation_angle}"]
@@ -823,8 +823,10 @@ class Data(object):
                     if mt_obj.Tipper.tipper is not None:
                         data_array[ii]["tip"][jj] = interp_t.tipper[kk, :, :]
                         data_array[ii]["tip_err"][jj] = interp_t.tipper_err[kk, :, :]
-                        data_array[ii]["tip_inv_err"][jj] = interp_t.tipper_err[kk, :, :]
-                
+                        data_array[ii]["tip_inv_err"][jj] = interp_t.tipper_err[
+                            kk, :, :
+                        ]
+
                 # need to set the mt_object to have Z and T with same periods
                 # as the data file, otherwise adding a station will not work.
                 mt_obj.Z = interp_z
@@ -832,7 +834,7 @@ class Data(object):
                 # FZ: try to output a new edi files. Compare with original edi?
                 if new_edi_dir is not None and Path(new_edi_dir).is_dir():
                     # new_edifile = os.path.join(new_edi_dir, mt_obj.station + '.edi')
-                    
+
                     mt_obj.write_mt_file(
                         save_dir=new_edi_dir,
                         file_type="edi",
@@ -2431,7 +2433,7 @@ class Data(object):
                     new_mt_obj = new_mt_dict[ss].copy()
                     new_mt_obj.Z.z[:, index, :] *= -1
                     new_mt_dict[ss] = new_mt_obj
-                    
+
                 elif "t" in cc:
                     new_data_array[s_find]["tip"][:, 0, index] *= -1
                     new_mt_dict[ss].Tipper.tipper[:, 0, index] *= -1
@@ -2485,9 +2487,10 @@ class Data(object):
             new_mt_dict[ss] = new_mt_obj
 
         return new_data_array, new_mt_dict
-    
-    def remove_component(self, station, zxx=False, zxy=False, zyy=False, 
-                         zyx=False, tx=False, ty=False):
+
+    def remove_component(
+        self, station, zxx=False, zxy=False, zyy=False, zyx=False, tx=False, ty=False
+    ):
         """
         
         :param station: DESCRIPTION
@@ -2515,14 +2518,14 @@ class Data(object):
             "zyy": {"index": (1, 1), "bool": zyy},
             "tx": {"index": (0, 0), "bool": tx},
             "ty": {"index": (0, 1), "bool": ty},
-        } 
+        }
         if not isinstance(station, (list, tuple)):
             station = [station]
-            
+
         new_data_array = self.data_array.copy()
         new_mt_dict = deepcopy(self.mt_dict)
-        
-        for ss in station:            
+
+        for ss in station:
             try:
                 s_find = np.where(self.data_array["station"] == ss)[0][0]
             except IndexError:
@@ -2532,18 +2535,30 @@ class Data(object):
             for ckey, dd in c_dict.items():
                 if dd["bool"]:
                     if "z" in ckey:
-                        new_data_array[s_find]["z"][:, dd["index"][0], dd["index"][1]] = 0
-                        new_data_array[s_find]["z_err"][:, dd["index"][0], dd["index"][1]] = 0
+                        new_data_array[s_find]["z"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] = 0
+                        new_data_array[s_find]["z_err"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] = 0
                         new_mt_dict[ss].Z.z[:, dd["index"][0], dd["index"][1]] = 0
                         new_mt_dict[ss].Z.z_err[:, dd["index"][0], dd["index"][1]] = 0
                     elif "t" in ckey:
-                        new_data_array[s_find]["tip"][:, dd["index"][0], dd["index"][1]] = 0
-                        new_data_array[s_find]["tip_err"][:, dd["index"][0], dd["index"][1]] = 0
-                        new_mt_dict[ss].Tipper.tipper[:, dd["index"][0], dd["index"][1]] = 0
-                        new_mt_dict[ss].Tipper.tipper_err[:, dd["index"][0], dd["index"][1]] = 0
+                        new_data_array[s_find]["tip"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] = 0
+                        new_data_array[s_find]["tip_err"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] = 0
+                        new_mt_dict[ss].Tipper.tipper[
+                            :, dd["index"][0], dd["index"][1]
+                        ] = 0
+                        new_mt_dict[ss].Tipper.tipper_err[
+                            :, dd["index"][0], dd["index"][1]
+                        ] = 0
 
-        return new_data_array, new_mt_dict 
-    
+        return new_data_array, new_mt_dict
+
     def estimate_starting_rho(self):
         """
         Estimate starting resistivity from the data.
@@ -2552,20 +2567,20 @@ class Data(object):
         # det_z = np.linalg.det(d_obj.data_array['z'])
         # mean_z = np.mean(det_z[np.nonzero(det_z)], axis=0)
         # mean_rho = (.02/(1/d_obj.period_list))*np.abs(mean_z)
-        
+
         for ii, d_arr in enumerate(self.data_array):
             z_obj = mtz.Z(d_arr["z"], freq=1.0 / self.period_list)
             rho[ii, :] = z_obj.res_det
-        
+
         mean_rho = np.apply_along_axis(lambda x: x[np.nonzero(x)].mean(), 0, rho)
         median_rho = np.apply_along_axis(lambda x: np.median(x[np.nonzero(x)]), 0, rho)
-        
+
         fig = plt.figure()
-        
+
         ax = fig.add_subplot(1, 1, 1)
         (l1,) = ax.loglog(self.period_list, mean_rho, lw=2, color=(0.75, 0.25, 0))
         (l2,) = ax.loglog(self.period_list, median_rho, lw=2, color=(0, 0.25, 0.75))
-        
+
         ax.loglog(
             self.period_list,
             np.repeat(mean_rho.mean(), self.period_list.size),
@@ -2580,10 +2595,10 @@ class Data(object):
             lw=2,
             color=(0, 0.25, 0.75),
         )
-        
+
         ax.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
         ax.set_ylabel("Resistivity (Ohm-m)", fontdict={"size": 12, "weight": "bold"})
-        
+
         ax.legend(
             [l1, l2],
             [
@@ -2593,5 +2608,5 @@ class Data(object):
             loc="upper left",
         )
         ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
-        
+
         plt.show()

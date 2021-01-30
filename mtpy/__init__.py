@@ -19,4 +19,4 @@ debug_logger = get_mtpy_logger(__name__, fn="mtpy_debug", level="debug")
 debug_logger.debug("Starting MTpy Debug Log File")
 
 error_logger = get_mtpy_logger("error", fn="mtpy_error", level="error")
-matplotlib_logger = get_mtpy_logger("matplotlib", fn="matplotlib_warn", level="warning") 
+matplotlib_logger = get_mtpy_logger("matplotlib", fn="matplotlib_warn", level="warning")

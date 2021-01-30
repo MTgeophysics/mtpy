@@ -346,8 +346,7 @@ class Model(object):
         nodes = np.array(nodes)
         self._nodes_east = nodes
         self.grid_east = np.array(
-            [nodes[0:ii].sum()
-             for ii in range(nodes.size + 1)]  # -nodes.sum() / 2 +
+            [nodes[0:ii].sum() for ii in range(nodes.size + 1)]  # -nodes.sum() / 2 +
         )  # + [shift])#[nodes.sum() / 2]
 
     # Nodes North
@@ -367,8 +366,7 @@ class Model(object):
         nodes = np.array(nodes)
         self._nodes_north = nodes
         self.grid_north = np.array(
-            [nodes[0:ii].sum()
-             for ii in range(nodes.size + 1)]  # -nodes.sum() / 2 +
+            [nodes[0:ii].sum() for ii in range(nodes.size + 1)]  # -nodes.sum() / 2 +
         )  # + [shift])#[nodes.sum() / 2]
 
     @property
@@ -403,8 +401,7 @@ class Model(object):
     @property
     def plot_north(self):
         plot_north = np.array(
-            [self.nodes_north[0:ii].sum()
-             for ii in range(self.nodes_north.size)]
+            [self.nodes_north[0:ii].sum() for ii in range(self.nodes_north.size)]
         )
         return plot_north - plot_north[-1] / 2.0
 
@@ -487,12 +484,10 @@ class Model(object):
             )
         elif self.pad_method == "extent2":
             padding_east = mtmesh.get_padding_cells2(
-                self.cell_size_east, inner_east[-1], self.ew_ext /
-                2.0, self.pad_east
+                self.cell_size_east, inner_east[-1], self.ew_ext / 2.0, self.pad_east
             )
             padding_north = mtmesh.get_padding_cells2(
-                self.cell_size_north, inner_north[-1], self.ns_ext /
-                2.0, self.pad_north
+                self.cell_size_north, inner_north[-1], self.ns_ext / 2.0, self.pad_north
             )
         elif self.pad_method == "stretch":
             padding_east = mtmesh.get_padding_from_stretch(
@@ -512,8 +507,7 @@ class Model(object):
             padding_east + inner_east.max(),
         )
         self.grid_north = np.append(
-            np.append(-1 * padding_north[::-1] +
-                      inner_north.min(), inner_north),
+            np.append(-1 * padding_north[::-1] + inner_north.min(), inner_north),
             padding_north + inner_north.max(),
         )
 
@@ -534,8 +528,7 @@ class Model(object):
         for s_north in sorted(self.station_locations.rel_north):
             try:
                 node_index = np.where(
-                    abs(s_north - self.grid_north) < 0.02 *
-                    self.cell_size_north
+                    abs(s_north - self.grid_north) < 0.02 * self.cell_size_north
                 )[0][0]
                 if s_north - self.grid_north[node_index] > 0:
                     self.grid_north[node_index] -= 0.02 * self.cell_size_north
@@ -552,21 +545,17 @@ class Model(object):
                 )
 
         if self.z_mesh_method == "custom":
-            self.nodes_z, z_grid = self.grid_z[1:] - \
-                self.grid_z[:-1], self.grid_z
+            self.nodes_z, z_grid = self.grid_z[1:] - self.grid_z[:-1], self.grid_z
         elif self.z_mesh_method == "new":
             self.nodes_z, z_grid = self.make_z_mesh_new()
         else:
             raise NameError(
-                'Z mesh method "{}" is not supported'.format(
-                    self.z_mesh_method)
+                'Z mesh method "{}" is not supported'.format(self.z_mesh_method)
             )
 
         # compute grid center
-        center_east = np.round(self.grid_east.min() -
-                               self.grid_east.mean(), -1)
-        center_north = np.round(
-            self.grid_north.min() - self.grid_north.mean(), -1)
+        center_east = np.round(self.grid_east.min() - self.grid_east.mean(), -1)
+        center_north = np.round(self.grid_north.min() - self.grid_north.mean(), -1)
         center_z = 0
 
         # this is the value to the lower left corner from the center.
@@ -585,15 +574,13 @@ class Model(object):
         # --> print out useful information
         print("-" * 15, file=file)
         print(
-            "\tNumber of stations = {0}".format(
-                len(self.station_locations.station)),
+            "\tNumber of stations = {0}".format(len(self.station_locations.station)),
             file=file,
         )
         print("\tDimensions: ", file=file)
         print("\t\te-w = {0}".format(self.grid_east.size), file=file)
         print("\t\tn-s = {0}".format(self.grid_north.size), file=file)
-        print("\t\tz  = {0} (without 7 air layers)".format(
-            self.grid_z.size), file=file)
+        print("\t\tz  = {0} (without 7 air layers)".format(self.grid_z.size), file=file)
         print("\tExtensions: ", file=file)
         print(
             "\t\te-w = {0:.1f} (m)".format(self.nodes_east.__abs__().sum()), file=file
@@ -601,8 +588,7 @@ class Model(object):
         print(
             "\t\tn-s = {0:.1f} (m)".format(self.nodes_north.__abs__().sum()), file=file
         )
-        print(
-            "\t\t0-z = {0:.1f} (m)".format(self.nodes_z.__abs__().sum()), file=file)
+        print("\t\t0-z = {0:.1f} (m)".format(self.nodes_z.__abs__().sum()), file=file)
 
         print(
             "\tStations rotated by: {0:.1f} deg clockwise positive from N".format(
@@ -638,12 +624,10 @@ class Model(object):
         else:
             # round any values less than 100 to the same s.f. as z1_layer
             z_nodes = np.around(
-                log_z[log_z < 100], decimals=-
-                int(np.floor(np.log10(self.z1_layer)))
+                log_z[log_z < 100], decimals=-int(np.floor(np.log10(self.z1_layer)))
             )
             # round any values greater than or equal to 100 to the nearest 100
-            z_nodes = np.append(z_nodes, np.around(
-                log_z[log_z >= 100], decimals=-2))
+            z_nodes = np.append(z_nodes, np.around(log_z[log_z >= 100], decimals=-2))
 
         # index of top of padding
         # itp = len(z_nodes) - 1
@@ -658,8 +642,7 @@ class Model(object):
         # z_nodes = np.hstack([[z1_layer] * n_air, z_nodes])
 
         # make an array of absolute values
-        z_grid = np.array([z_nodes[:ii].sum()
-                           for ii in range(z_nodes.shape[0] + 1)])
+        z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0] + 1)])
 
         return z_nodes, z_grid
 
@@ -691,8 +674,7 @@ class Model(object):
                 )
             n_add_layers = len(add_layers)
         else:
-            add_layers = np.arange(
-                0, n_add_layers * layer_thickness, layer_thickness)
+            add_layers = np.arange(0, n_add_layers * layer_thickness, layer_thickness)
 
         # create a new z grid
         self.grid_z = np.hstack(
@@ -821,8 +803,7 @@ class Model(object):
         north_max = self.grid_north.max()
         for xx in self.grid_east:
             east_line_xlist.extend(
-                [xx * cos_ang + north_min * sin_ang,
-                    xx * cos_ang + north_max * sin_ang]
+                [xx * cos_ang + north_min * sin_ang, xx * cos_ang + north_max * sin_ang]
             )
             east_line_xlist.append(None)
             east_line_ylist.extend(
@@ -832,8 +813,7 @@ class Model(object):
                 ]
             )
             east_line_ylist.append(None)
-        ax1.plot(east_line_xlist, east_line_ylist,
-                 lw=line_width, color=line_color)
+        ax1.plot(east_line_xlist, east_line_ylist, lw=line_width, color=line_color)
 
         north_line_xlist = []
         north_line_ylist = []
@@ -841,17 +821,14 @@ class Model(object):
         east_min = self.grid_east.min()
         for yy in self.grid_north:
             north_line_xlist.extend(
-                [east_min * cos_ang + yy * sin_ang,
-                    east_max * cos_ang + yy * sin_ang]
+                [east_min * cos_ang + yy * sin_ang, east_max * cos_ang + yy * sin_ang]
             )
             north_line_xlist.append(None)
             north_line_ylist.extend(
-                [-east_min * sin_ang + yy * cos_ang, -
-                    east_max * sin_ang + yy * cos_ang]
+                [-east_min * sin_ang + yy * cos_ang, -east_max * sin_ang + yy * cos_ang]
             )
             north_line_ylist.append(None)
-        ax1.plot(north_line_xlist, north_line_ylist,
-                 lw=line_width, color=line_color)
+        ax1.plot(north_line_xlist, north_line_ylist, lw=line_width, color=line_color)
 
         if east_limits is None:
             ax1.set_xlim(
@@ -884,8 +861,7 @@ class Model(object):
             east_line_xlist.append(None)
             east_line_ylist.extend([self.grid_z.min(), self.grid_z.max()])
             east_line_ylist.append(None)
-        ax2.plot(east_line_xlist, east_line_ylist,
-                 lw=line_width, color=line_color)
+        ax2.plot(east_line_xlist, east_line_ylist, lw=line_width, color=line_color)
 
         z_line_xlist = []
         z_line_ylist = []
@@ -944,8 +920,7 @@ class Model(object):
         north_max = self.grid_north.max()
         for xx in self.grid_east:
             east_line_xlist.extend(
-                [xx * cos_ang + north_min * sin_ang,
-                    xx * cos_ang + north_max * sin_ang]
+                [xx * cos_ang + north_min * sin_ang, xx * cos_ang + north_max * sin_ang]
             )
             east_line_xlist.append(None)
             east_line_ylist.extend(
@@ -956,8 +931,7 @@ class Model(object):
             )
             east_line_ylist.append(None)
 
-        plt.plot(east_line_xlist, east_line_ylist,
-                 lw=line_width, color=line_color)
+        plt.plot(east_line_xlist, east_line_ylist, lw=line_width, color=line_color)
 
         north_line_xlist = []
         north_line_ylist = []
@@ -965,18 +939,15 @@ class Model(object):
         east_min = self.grid_east.min()
         for yy in self.grid_north:
             north_line_xlist.extend(
-                [east_min * cos_ang + yy * sin_ang,
-                    east_max * cos_ang + yy * sin_ang]
+                [east_min * cos_ang + yy * sin_ang, east_max * cos_ang + yy * sin_ang]
             )
             north_line_xlist.append(None)
             north_line_ylist.extend(
-                [-east_min * sin_ang + yy * cos_ang, -
-                    east_max * sin_ang + yy * cos_ang]
+                [-east_min * sin_ang + yy * cos_ang, -east_max * sin_ang + yy * cos_ang]
             )
             north_line_ylist.append(None)
 
-        plt.plot(north_line_xlist, north_line_ylist,
-                 lw=line_width, color=line_color)
+        plt.plot(north_line_xlist, north_line_ylist, lw=line_width, color=line_color)
 
         # if east_limits == None:
         #     ax1.set_xlim(plot_east.min() - 50 * self.cell_size_east,
@@ -1029,8 +1000,7 @@ class Model(object):
             east_line_xlist.append(None)
             east_line_ylist.extend([0, self.grid_z.max()])
             east_line_ylist.append(None)
-        ax2.plot(east_line_xlist, east_line_ylist,
-                 lw=line_width, color=line_color)
+        ax2.plot(east_line_xlist, east_line_ylist, lw=line_width, color=line_color)
 
         z_line_xlist = []
         z_line_ylist = []
@@ -1332,8 +1302,7 @@ class Model(object):
                 write_res_model = self.res_model[::-1, :, :]
             else:
                 raise ModelError(
-                    'resistivity scale "{}" is not supported.'.format(
-                        self.res_scale)
+                    'resistivity scale "{}" is not supported.'.format(self.res_scale)
                 )
 
             # write out the layers from resmodel
@@ -1341,8 +1310,7 @@ class Model(object):
                 ifid.write("\n")
                 for ee in range(self.nodes_east.size):
                     for nn in range(self.nodes_north.size):
-                        ifid.write("{0:>13.5E}".format(
-                            write_res_model[nn, ee, zz]))
+                        ifid.write("{0:>13.5E}".format(write_res_model[nn, ee, zz]))
                     ifid.write("\n")
 
             if self.grid_center is None:
@@ -1350,8 +1318,7 @@ class Model(object):
                 center_east = -self.nodes_east.__abs__().sum() / 2
                 center_north = -self.nodes_north.__abs__().sum() / 2
                 center_z = 0
-                self.grid_center = np.array(
-                    [center_north, center_east, center_z])
+                self.grid_center = np.array([center_north, center_east, center_z])
 
             ifid.write(
                 "\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n".format(
@@ -1421,8 +1388,7 @@ class Model(object):
             raise ModelError("model_fn is None, input a model file name")
 
         if os.path.isfile(self.model_fn) is None:
-            raise ModelError(
-                "Cannot find {0}, check path".format(self.model_fn))
+            raise ModelError("Cannot find {0}, check path".format(self.model_fn))
 
         self.save_path = os.path.dirname(self.model_fn)
 
@@ -1439,12 +1405,9 @@ class Model(object):
         log_yn = nsize[4]
 
         # get nodes
-        self.nodes_north = np.array([np.float(nn)
-                                     for nn in ilines[2].strip().split()])
-        self.nodes_east = np.array([np.float(nn)
-                                    for nn in ilines[3].strip().split()])
-        self.nodes_z = np.array([np.float(nn)
-                                 for nn in ilines[4].strip().split()])
+        self.nodes_north = np.array([np.float(nn) for nn in ilines[2].strip().split()])
+        self.nodes_east = np.array([np.float(nn) for nn in ilines[3].strip().split()])
+        self.nodes_z = np.array([np.float(nn) for nn in ilines[4].strip().split()])
 
         self.res_model = np.zeros((n_north, n_east, n_z))
 
@@ -1520,12 +1483,10 @@ class Model(object):
 
         # get number of padding cells
         self.pad_east = np.where(
-            self.nodes_east[0: int(self.nodes_east.size / 2)
-                            ] != self.cell_size_east
+            self.nodes_east[0 : int(self.nodes_east.size / 2)] != self.cell_size_east
         )[0].size
         self.pad_north = np.where(
-            self.nodes_north[0: int(self.nodes_north.size / 2)
-                             ] != self.cell_size_north
+            self.nodes_north[0 : int(self.nodes_north.size / 2)] != self.cell_size_north
         )[0].size
 
     def read_ws_model_file(self, ws_model_fn):
@@ -1599,12 +1560,9 @@ class Model(object):
 
     def print_model_file_summary(self, file=sys.stdout):
         print("=" * 26, file=file)
-        print("  model dimensions = {0}".format(
-            self.res_model.shape), file=file)
-        print(
-            "     * north         {0}".format(self.nodes_north.size), file=file)
-        print(
-            "     * east          {0}".format(self.nodes_east.size), file=file)
+        print("  model dimensions = {0}".format(self.res_model.shape), file=file)
+        print("     * north         {0}".format(self.nodes_north.size), file=file)
+        print("     * east          {0}".format(self.nodes_east.size), file=file)
         print("     * depth         {0}".format(self.nodes_z.size), file=file)
         print("=" * 26, file=file)
 
@@ -1687,8 +1645,8 @@ class Model(object):
         nyin, nxin, nzin = np.array(self.res_model.shape) + 1
 
         gx, gy = mtmesh.rotate_mesh(
-            self.grid_east[clip[0]: nxin - clip[0]],
-            self.grid_north[clip[1]: nyin - clip[1]],
+            self.grid_east[clip[0] : nxin - clip[0]],
+            self.grid_north[clip[1] : nyin - clip[1]],
             origin[:2],
             self.mesh_rotation_angle,
         )
@@ -1712,8 +1670,8 @@ class Model(object):
 
         # resistivity values, clipped to one smaller than grid edges
         resvals = self.res_model[
-            clip[1]: nyin - clip[1] - 1,
-            clip[0]: nxin - clip[0] - 1,
+            clip[1] : nyin - clip[1] - 1,
+            clip[0] : nxin - clip[0] - 1,
             : nzin - clip[2] - 1,
         ]
 
@@ -1747,8 +1705,7 @@ class Model(object):
         self.res_model = sgObj.resistivity
 
         # get nodes and grid locations
-        grideast, gridnorth, gridz = [
-            np.unique(sgObj.grid_xyz[i]) for i in range(3)]
+        grideast, gridnorth, gridz = [np.unique(sgObj.grid_xyz[i]) for i in range(3)]
         # check if sgrid is positive up and convert to positive down if it is
         # (ModEM grid is positive down)
         if sgrid_positive_up:
@@ -2045,8 +2002,7 @@ class Model(object):
             # get core cells
             if topography_buffer is None:
                 topography_buffer = (
-                    5 * (self.cell_size_east ** 2 +
-                         self.cell_size_north ** 2) ** 0.5
+                    5 * (self.cell_size_east ** 2 + self.cell_size_north ** 2) ** 0.5
                 )
             core_cells = mtmesh.get_station_buffer(
                 gcx,
@@ -2074,8 +2030,7 @@ class Model(object):
                 # adjust level to topography min
                 if max_elev is not None:
                     self.grid_z -= max_elev
-                    ztops = np.where(
-                        self.surface_dict["topography"] > max_elev)
+                    ztops = np.where(self.surface_dict["topography"] > max_elev)
                     self.surface_dict["topography"][ztops] = max_elev
                 else:
                     self.grid_z -= topo_core.max()
@@ -2089,14 +2044,12 @@ class Model(object):
                     air_cell_thickness = np.ceil(
                         (topo_core.max() - topo_core_min) / self.n_air_layers
                     )
-                new_air_nodes = np.array(
-                    [air_cell_thickness] * self.n_air_layers)
+                new_air_nodes = np.array([air_cell_thickness] * self.n_air_layers)
 
             if "down" not in airlayer_type:
                 # sum to get grid cell locations
                 new_airlayers = np.array(
-                    [new_air_nodes[:ii].sum()
-                     for ii in range(len(new_air_nodes) + 1)]
+                    [new_air_nodes[:ii].sum() for ii in range(len(new_air_nodes) + 1)]
                 )
                 # maximum topography cell on the grid
                 topo_max_grid = topo_core_min + new_airlayers[-1]
@@ -2119,7 +2072,7 @@ class Model(object):
         )
 
         if "down" not in airlayer_type:
-            new_res_model[:, :, self.n_air_layers:] = self.res_model
+            new_res_model[:, :, self.n_air_layers :] = self.res_model
 
         self.res_model = new_res_model
 
@@ -2128,8 +2081,7 @@ class Model(object):
         bottom = -self.surface_dict["topography"]
         self.assign_resistivity_from_surfacedata(top, bottom, air_resistivity)
         # assign bathymetry
-        self.assign_resistivity_from_surfacedata(
-            np.zeros_like(top), bottom, 0.3)
+        self.assign_resistivity_from_surfacedata(np.zeros_like(top), bottom, 0.3)
 
         return
 
@@ -2177,7 +2129,7 @@ class Model(object):
         ]
         xsize, ysize = x.shape[0], y.shape[0]
         x, y, z = np.meshgrid(
-            x[clip[0]: xsize - clip[0]], y[clip[1]: ysize - clip[1]], z
+            x[clip[0] : xsize - clip[0]], y[clip[1] : ysize - clip[1]], z
         )
 
         # set format for saving data
@@ -2205,8 +2157,7 @@ class Model(object):
         else:
             xp, yp = x, y
 
-        resvals = self.res_model[clip[1]: ysize -
-                                 clip[1], clip[0]: xsize - clip[0]]
+        resvals = self.res_model[clip[1] : ysize - clip[1], clip[0] : xsize - clip[0]]
 
         return xp, yp, z, resvals, fmt
 
@@ -2282,8 +2233,7 @@ class Model(object):
             depthindices = [depth_index]
 
         for k in depthindices:
-            fname = os.path.join(
-                savepath, outfile_basename + "_%1im.xyz" % z[k])
+            fname = os.path.join(savepath, outfile_basename + "_%1im.xyz" % z[k])
 
             # get relevant depth slice
             vals = resvals[:, :, k].flatten()
@@ -2295,8 +2245,9 @@ class Model(object):
 
             np.savetxt(fname, data, fmt=fmt)
 
-    def write_geosoft_xyz(self, save_fn, c_east=0, c_north=0,
-                          c_z=0, pad_north=0, pad_east=0, pad_z=0):
+    def write_geosoft_xyz(
+        self, save_fn, c_east=0, c_north=0, c_z=0, pad_north=0, pad_east=0, pad_z=0
+    ):
         """
         Write a xyz file that Geosoft can read in.
 
@@ -2319,18 +2270,21 @@ class Model(object):
 
         """
 
-        lines = [r"/ ------------------------------------------------------------------------------",
-                 r"/ XYZ  IMPORT [01/25/2021]",
-                 r"/ VOXEL   [.\electrical_resistivity.geosoft_voxel]",
-                 r"/ ------------------------------------------------------------------------------",
-                 r"/ X,Y,Z,Data"]
+        lines = [
+            r"/ ------------------------------------------------------------------------------",
+            r"/ XYZ  IMPORT [01/25/2021]",
+            r"/ VOXEL   [.\electrical_resistivity.geosoft_voxel]",
+            r"/ ------------------------------------------------------------------------------",
+            r"/ X,Y,Z,Data",
+        ]
 
         # --> write model xyz file
         for kk, zz in enumerate(self.grid_z[0:-pad_z]):
             for jj, yy in enumerate(self.grid_east[pad_east:-pad_east]):
                 for ii, xx in enumerate(self.grid_north[pad_north:-pad_north]):
                     lines.append(
-                        f"{yy + c_east:.3f} {xx + c_north:.3f} {-(zz + c_z):.3f} {self.res_model[ii, jj, kk]:.3f}")
+                        f"{yy + c_east:.3f} {xx + c_north:.3f} {-(zz + c_z):.3f} {self.res_model[ii, jj, kk]:.3f}"
+                    )
 
         with open(save_fn, "w") as fid:
             fid.write("\n".join(lines))
@@ -2362,11 +2316,15 @@ class Model(object):
             self.res_model[:, :, :] = self.res_initial_value
 
         shift_east = (
-            geographic_east - (self.nodes_east[0] - self.nodes_east[1] / 2 - self.grid_center[1] / 2)) / 1000.
+            geographic_east
+            - (self.nodes_east[0] - self.nodes_east[1] / 2 - self.grid_center[1] / 2)
+        ) / 1000.0
         shift_north = (
-            geographic_north + (self.nodes_north[0] - self.nodes_north[1] / 2 - self.grid_center[0] / 2)) / 1000.
+            geographic_north
+            + (self.nodes_north[0] - self.nodes_north[1] / 2 - self.grid_center[0] / 2)
+        ) / 1000.0
 
-        shift_elevation = geographic_elevation / 1000.
+        shift_elevation = geographic_elevation / 1000.0
 
         # --> write file
         with open(save_fn, "w") as ifid:
@@ -2406,8 +2364,7 @@ class Model(object):
                 ifid.write(f"{count}\n")
                 for nn in range(self.nodes_north.size):
                     for ee in range(self.nodes_east.size):
-                        ifid.write("{0:>13.5E}".format(
-                            write_res_model[nn, ee, zz]))
+                        ifid.write("{0:>13.5E}".format(write_res_model[nn, ee, zz]))
                     ifid.write("\n")
                 count += 1
 
@@ -2443,17 +2400,27 @@ class Model(object):
         """
 
         # write mesh first
-        lines = [
-            f"{self.nodes_east.size} {self.nodes_north.size} {self.nodes_z.size}"]
-        lines.append(str(self.nodes_east.tolist()).replace(
-            "[", "").replace("]", "").replace(",", ""))
-        lines.append(str(self.nodes_north.tolist()).replace(
-            "[", "").replace("]", "").replace(",", ""))
-        lines.append(str(self.nodes_z.tolist()).replace(
-            "[", "").replace("]", "").replace(",", ""))
-        
+        lines = [f"{self.nodes_east.size} {self.nodes_north.size} {self.nodes_z.size}"]
+        lines.append(
+            str(self.nodes_east.tolist())
+            .replace("[", "")
+            .replace("]", "")
+            .replace(",", "")
+        )
+        lines.append(
+            str(self.nodes_north.tolist())
+            .replace("[", "")
+            .replace("]", "")
+            .replace(",", "")
+        )
+        lines.append(
+            str(self.nodes_z.tolist())
+            .replace("[", "")
+            .replace("]", "")
+            .replace(",", "")
+        )
+
         with open(os.path.join(self.save_path, basename + ".msh"), "w") as fid:
             fid.write("\n".join(lines))
-            
+
         # write model file
-        

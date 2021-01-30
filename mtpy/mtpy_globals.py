@@ -57,4 +57,3 @@ SAMPLE_DIR = Path(MTPY_ROOT, "examples/model_files")
 SYSTEM_TEMP_DIR = tempfile.gettempdir()
 
 NEW_TEMP_DIR = tempfile.mkdtemp(prefix="mtpy_tmpdir_")
-

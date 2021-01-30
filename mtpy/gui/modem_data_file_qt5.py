@@ -19,9 +19,11 @@ try:
 except ImportError:
     raise ImportError("This version needs PyQt5")
 
+
 class ModEMDataFile(QtWidgets.QWidget):
     """
     Widget to build a data file
     
     """
+
     pass

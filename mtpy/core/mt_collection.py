@@ -34,8 +34,9 @@ class MTCollection:
     def __init__(self, mt_path=None):
         self._mt_path = self.check_path(mt_path)
         self.mt_df = None
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}",
-                                      fn="mt_collection")
+        self.logger = get_mtpy_logger(
+            f"{__name__}.{self.__class__.__name__}", fn="mt_collection"
+        )
 
     def __str__(self):
         lines = [f"MT file path: {self.mt_path}"]
@@ -118,8 +119,8 @@ class MTCollection:
             entry["northing"] = m.north
             entry["utm_zone"] = m.utm_zone
             entry["acquired_by"] = m.station_metadata.acquired_by.author
-            entry["period_min"] = 1./m.Z.freq.max()
-            entry["period_max"] = 1./m.Z.freq.min()
+            entry["period_min"] = 1.0 / m.Z.freq.max()
+            entry["period_max"] = 1.0 / m.Z.freq.min()
             entry["n_periods"] = m.Z.freq.size
             entry["survey"] = m.survey_metadata.survey_id
             entry["fn"] = fn
@@ -133,7 +134,7 @@ class MTCollection:
             mt_df = self._check_for_duplicates(mt_df)
 
         return mt_df
-    
+
     def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
         """
         Add stations from a list of files
@@ -146,10 +147,9 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        
+
         new_df = self.make_dataframe_from_file_list(fn_list)
         return self._check_for_duplicates(self.mt_df.append(new_df, ignore_index=True))
-                
 
     def _check_for_duplicates(self, mt_df, locate="location"):
         """
@@ -166,7 +166,8 @@ class MTCollection:
         duplicates = mt_df[mt_df.duplicated(["latitude", "longitude"])]
         if len(duplicates) > 0:
             self.logger.info(
-                f"Found {len(mt_df)} duplicates, moving oldest to 'Duplicates'")
+                f"Found {len(mt_df)} duplicates, moving oldest to 'Duplicates'"
+            )
             dup_path = self.mt_path.joinpath("Duplicates")
             if not dup_path.exists():
                 dup_path.mkdir()
@@ -177,8 +178,7 @@ class MTCollection:
                     fn.rename(new_fn)
                 except FileNotFoundError:
                     self.logger.debug(f"Could not find {fn} --> skipping")
-        mt_df = mt_df.drop_duplicates(
-            subset=["latitude", "longitude"], keep="first")
+        mt_df = mt_df.drop_duplicates(subset=["latitude", "longitude"], keep="first")
 
         return mt_df
 
@@ -227,18 +227,21 @@ class MTCollection:
         :rtype: :class:`pandas.DataFrame`
 
         """
-        msg = ("Applying bounding box: "
-               f"lon_min = {longitude_min:.6g}, "
-               f"lon_max = {longitude_max:.6g}, "
-               f"lat_min = {latitude_min:.6g}, "
-               f"lat_max = {latitude_max:.6g}")
+        msg = (
+            "Applying bounding box: "
+            f"lon_min = {longitude_min:.6g}, "
+            f"lon_max = {longitude_max:.6g}, "
+            f"lat_min = {latitude_min:.6g}, "
+            f"lat_max = {latitude_max:.6g}"
+        )
         self.logger.debug(msg)
-        
+
         return self.mt_df.loc[
-            (self.mt_df.longitude >= longitude_min) &
-            (self.mt_df.longitude <= longitude_max) &
-            (self.mt_df.latitude >= latitude_min) &
-            (self.mt_df.latitude <= latitude_max)]
+            (self.mt_df.longitude >= longitude_min)
+            & (self.mt_df.longitude <= longitude_max)
+            & (self.mt_df.latitude >= latitude_min)
+            & (self.mt_df.latitude <= latitude_max)
+        ]
 
 
 # edi_path = Path(r"c:\Users\jpeacock\OneDrive - DOI\EDI_FILES")

@@ -114,16 +114,11 @@ class MT(object):
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
         self.station_metadata.run_list.append(metadata.Run())
-        self.station_metadata.run_list[0].ex = metadata.Electric(
-            component="ex")
-        self.station_metadata.run_list[0].ey = metadata.Electric(
-            component="ey")
-        self.station_metadata.run_list[0].hx = metadata.Magnetic(
-            component="hx")
-        self.station_metadata.run_list[0].hy = metadata.Magnetic(
-            component="hy")
-        self.station_metadata.run_list[0].hz = metadata.Magnetic(
-            component="hz")
+        self.station_metadata.run_list[0].ex = metadata.Electric(component="ex")
+        self.station_metadata.run_list[0].ey = metadata.Electric(component="ey")
+        self.station_metadata.run_list[0].hx = metadata.Magnetic(component="hx")
+        self.station_metadata.run_list[0].hy = metadata.Magnetic(component="hy")
+        self.station_metadata.run_list[0].hz = metadata.Magnetic(component="hz")
 
         self._east = None
         self._north = None
@@ -145,10 +140,8 @@ class MT(object):
         lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
-        lines.append(
-            f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
-        lines.append(
-            f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
         lines.append(f"\tLatitude:      {self.latitude:.3f}")
         lines.append(f"\tLongitude:     {self.longitude:.3f}")
         lines.append(f"\tElevation:     {self.elevation:.3f}")
@@ -581,8 +574,7 @@ class MT(object):
             # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
                 raise ValueError(
-                    "New frequency minimum of {0:.5g}".format(
-                        new_freq_array.min())
+                    "New frequency minimum of {0:.5g}".format(new_freq_array.min())
                     + " is smaller than old frequency minimum of {0:.5g}".format(
                         self.Z.freq.min()
                     )
@@ -591,8 +583,7 @@ class MT(object):
                 )
             if self.Z.freq.max() < new_freq_array.max():
                 raise ValueError(
-                    "New frequency maximum of {0:.5g}".format(
-                        new_freq_array.max())
+                    "New frequency maximum of {0:.5g}".format(new_freq_array.max())
                     + "is smaller than old frequency maximum of {0:.5g}".format(
                         self.Z.freq.max()
                     )
@@ -608,8 +599,7 @@ class MT(object):
         )
 
         new_Tipper = MTz.Tipper(
-            tipper_array=np.zeros(
-                (new_freq_array.shape[0], 1, 2), dtype="complex"),
+            tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
             freq=new_freq_array,
         )
@@ -645,8 +635,7 @@ class MT(object):
                     for ifidx, ifreq in enumerate(new_f):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
-                        fidx = np.where(
-                            difference == np.amin(difference))[0][0]
+                        fidx = np.where(difference == np.amin(difference))[0][0]
                         if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
                             new_f_update.append(ifreq)
                             new_nz_index_update.append(new_nz_index[ifidx])

@@ -12,6 +12,7 @@ Created on Mon Jan 18 22:12:37 2021
 import sys
 from PyQt5 import QtCore, QtWidgets
 
+
 class GetStations(QtWidgets.QDialog):
     def __init__(self, stations=None, parent=None):
         self.stations = stations
@@ -19,12 +20,11 @@ class GetStations(QtWidgets.QDialog):
         if self.stations is None:
             self.stations = ["mt01", "m102", "mt03"]
         super().__init__(parent)
-        
 
         self.list_widget = QtWidgets.QListWidget()
 
         self.setup_ui()
-        
+
     def setup_ui(self):
         for ss in self.stations:
             item = QtWidgets.QListWidgetItem(ss)
@@ -54,16 +54,16 @@ class GetStations(QtWidgets.QDialog):
         self.setLayout(main_layout)
         self.setWindowTitle("Choose Stations")
         self.show()
-        
+
     def get_stations(self):
         self.checked_stations = []
         for item in self.list_widget.findItems("", QtCore.Qt.MatchContains):
-            if item.checkState()>0:
+            if item.checkState() > 0:
                 self.checked_stations.append(item.text())
         self.close()
-                
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     dialog = GetStations()
     sys.exit(app.exec_())

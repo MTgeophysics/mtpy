@@ -195,11 +195,13 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         """
 
         fn_dialog = QtWidgets.QFileDialog()
-        fn = Path(str(
-            fn_dialog.getOpenFileName(
-                caption="Choose ModEM data file", filter="(*.dat);; (*.data)"
-            )[0]
-        ))
+        fn = Path(
+            str(
+                fn_dialog.getOpenFileName(
+                    caption="Choose ModEM data file", filter="(*.dat);; (*.data)"
+                )[0]
+            )
+        )
 
         self.plot_response.data_fn = fn
         self.dir_path = fn.parent
@@ -209,10 +211,13 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         save edits to another file
         """
         fn_dialog = QtWidgets.QFileDialog()
-        save_fn = Path(str(
-            fn_dialog.getSaveFileName(
-                caption="Choose File to save", filter="*.dat")[0]
-        ))
+        save_fn = Path(
+            str(
+                fn_dialog.getSaveFileName(
+                    caption="Choose File to save", filter="*.dat"
+                )[0]
+            )
+        )
 
         self.plot_response.modem_data.write_data_file(
             save_path=save_fn.parent,
@@ -233,8 +238,7 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         extensions = "EDI (*.edi);;EMTFXML (*.xml);;ZMM (*.zmm);;J (*.j)"
         fn_dialog = QtWidgets.QFileDialog()
         fn_names = fn_dialog.getOpenFileNames(
-            caption="Choose ModEM data file",
-            filter=extensions
+            caption="Choose ModEM data file", filter=extensions
         )
 
         fn_list = []
@@ -242,14 +246,12 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             fn_list += fn_names[ii]
         fn_list = [Path(fn) for fn in fn_list]
 
-        new_array, new_dict = self.plot_response.modem_data.add_station(
-            fn_list)
+        new_array, new_dict = self.plot_response.modem_data.add_station(fn_list)
         self.plot_response.modem_data.data_array = new_array
         self.plot_response.modem_data.mt_dict = new_dict
 
         # fill list of stations
-        station_list = list(
-            sorted(self.plot_response.modem_data.mt_dict.keys()))
+        station_list = list(sorted(self.plot_response.modem_data.mt_dict.keys()))
         self.plot_response.list_widget.clear()
         for station in station_list:
             self.plot_response.list_widget.addItem(station)
@@ -267,26 +269,28 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         :rtype: TYPE
 
         """
-        
-        rs = GetStations(stations=list(self.plot_response.modem_data.station_locations.station))
+
+        rs = GetStations(
+            stations=list(self.plot_response.modem_data.station_locations.station)
+        )
         rs.exec_()
-        
-        new_data, new_mtdict = self.plot_response.modem_data.remove_station(rs.checked_stations)
+
+        new_data, new_mtdict = self.plot_response.modem_data.remove_station(
+            rs.checked_stations
+        )
         self.plot_response.modem_data.data_array = new_data
         self.plot_response.modem_data.mt_dict = new_mtdict
-        
+
         # fill list of stations
-        station_list = list(
-            sorted(self.plot_response.modem_data.mt_dict.keys()))
+        station_list = list(sorted(self.plot_response.modem_data.mt_dict.keys()))
         self.plot_response.list_widget.clear()
         for station in station_list:
             self.plot_response.list_widget.addItem(station)
 
         if self.plot_response.station not in station_list:
             self.plot_response.station = station_list[0]
-        
+
         self.plot_response.plot()
-        
 
     def get_resp_fn(self):
         """
@@ -294,11 +298,13 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         """
 
         fn_dialog = QtWidgets.QFileDialog(directory=self.dir_path.as_posix())
-        fn = Path(str(
-            fn_dialog.getOpenFileName(
-                caption="Choose ModEM response file", filter="(*.dat);; (*.data)"
-            )[0]
-        ))
+        fn = Path(
+            str(
+                fn_dialog.getOpenFileName(
+                    caption="Choose ModEM response file", filter="(*.dat);; (*.data)"
+                )[0]
+            )
+        )
 
         self.plot_response.resp_fn = fn
 
@@ -333,9 +339,7 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
 
         help_string = "\n".join(ll)
 
-        QtWidgets.QMessageBox.information(
-            self.centralWidget, "Help", help_string
-        )
+        QtWidgets.QMessageBox.information(self.centralWidget, "Help", help_string)
 
 
 # ==============================================================================

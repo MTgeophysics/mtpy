@@ -13,6 +13,7 @@ Created on Tue Jan 19 22:47:32 2021
 # Imports
 # =============================================================================
 import sys
+
 try:
     from PyQt5 import QtCore, QtWidgets, QtGui
 except ImportError:
@@ -30,21 +31,22 @@ import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.modem as modem
 
 # =============================================================================
-# Plot stations 
+# Plot stations
 # =============================================================================
+
 
 class PlotStations(QtWidgets.QWidget):
     """
     plot station locations
     """
-    
+
     def __init__(self, station_locations):
         self.station_locations = station_locations
         self.plot_crs = None
-        
+
         super().__init__()
         self.setup_ui()
-        
+
     def setup_ui(self):
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__
@@ -71,16 +73,17 @@ class PlotStations(QtWidgets.QWidget):
         mpl_vbox = QtWidgets.QVBoxLayout()
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.mpl_widget)
-        
+
         self.setLayout(mpl_vbox)
         self.mpl_widget.updateGeometry()
-        
+
     def on_pick(self):
         pass
-    
+
     def in_axes(self):
         pass
- 
+
+
 # ==============================================================================
 # Def Main
 # ==============================================================================
@@ -92,4 +95,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()       
+    main()

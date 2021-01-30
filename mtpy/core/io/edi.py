@@ -2667,7 +2667,7 @@ def read_edi(fn):
         "station_metadata",
     ]:
         setattr(mt_obj, attr, getattr(edi_obj, attr))
-    
+
     # need to set latitude to compute UTM coordinates to make sure station
     # location is estimated for ModEM
     mt_obj.latitude = edi_obj.station_metadata.location.latitude
