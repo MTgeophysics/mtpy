@@ -386,9 +386,9 @@ class Data(object):
         if self.data_array is not None:
             lines += [f"\tNumber of stations: {self.data_array.shape[0]}"]
             lines += [f"\tNumber of periods:  {self.period_list.shape[0]}"]
-            lines += [
-                f"\tPeriod range:       {self.period_list.min()} -- {self.period_list.max()} s"
-            ]
+            lines += ["\tPeriod range:  "]    
+            lines += [f"\t\tMin: {self.period_list.min()} s"]
+            lines += [f"\t\tMax: {self.period_list.max()} s"]
             lines += [f"\tRotation angle:     {self.rotation_angle}"]
             lines += ["\tData center:        "]
             lines += [f"\t\t latitude:  {self.center_point.lat[0]:.4f} deg"]
@@ -404,7 +404,7 @@ class Data(object):
         return "\n".join(lines)
 
     def __repr__(self):
-        return "modem.Data()"
+        return self.__str__()
 
     @staticmethod
     def make_dtype(z_shape, t_shape):
