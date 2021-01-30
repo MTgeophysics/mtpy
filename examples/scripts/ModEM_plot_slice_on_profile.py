@@ -39,5 +39,5 @@ plt.setp(ax.get_yticklabels(),fontsize=fs)
 plt.xlabel('Distance, km',fontsize=fs)
 plt.ylabel('Depth, km',fontsize=fs)
 
-plt.savefig(op.join(savepath,'DepthSlice.png'),
-            dpi=400) # change to your desired figure resolution
+# plt.savefig(op.join(savepath,'DepthSlice.png'),
+#             dpi=400) # change to your desired figure resolution
