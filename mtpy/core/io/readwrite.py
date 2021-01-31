@@ -58,7 +58,11 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 plugins = {
     "edi": {"file_types": ["edi"], "reader": edi.read_edi, "writer": edi.write_edi},
-    "zmm": {"file_types": ["zmm", "zrr"], "reader": zmm.read_zmm, "writer": zmm.write_zmm},
+    "zmm": {
+        "file_types": ["zmm", "zrr"],
+        "reader": zmm.read_zmm,
+        "writer": zmm.write_zmm,
+    },
 }
 
 

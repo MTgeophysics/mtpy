@@ -32,13 +32,13 @@ class Channel(object):
 
         if channel_dict is not None:
             self.from_dict(channel_dict)
-            
+
     def __str__(self):
         lines = ["Channel Metadata:"]
         for key in ["channel", "number", "dl", "azimuth", "tilt"]:
             lines.append(f"\t{key.capitalize()}: {getattr(self, key):<12}")
         return "\n".join(lines)
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -161,7 +161,7 @@ class ZMMHeader(object):
                 if channel_dict["chn_num"] == 0:
                     channel_dict["chn_num"] = self.num_channels
                 setattr(self, comp, Channel(channel_dict))
-                
+
     @property
     def channels_recorded(self):
         channels = []
@@ -170,6 +170,7 @@ class ZMMHeader(object):
             if ch is not None:
                 channels.append(cc)
         return channels
+
 
 class ZMM(ZMMHeader):
     """
@@ -193,15 +194,13 @@ class ZMM(ZMMHeader):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-            
+
     def __str__(self):
         lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
-        lines.append(
-            f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
-        lines.append(
-            f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
         lines.append(f"\tLatitude:      {self.latitude:.3f}")
         lines.append(f"\tLongitude:     {self.longitude:.3f}")
         lines.append(f"\tElevation:     {self.elevation:.3f}")
@@ -529,7 +528,7 @@ class ZMM(ZMMHeader):
         tipper_obj = mtz.Tipper(tipper, error, self.frequencies)
 
         return tipper_obj
-    
+
     @property
     def station_metadata(self):
         sm = metadata.Station()
@@ -546,7 +545,7 @@ class ZMM(ZMMHeader):
         sm.provenance.software.name = "EMTF"
         sm.provenance.software.version = "1"
         sm.transfer_function.runs_processed = sm.run_names
-        
+
         # add information to runs
         for rr in sm.run_list:
             rr.ex = self.ex_metadata
@@ -555,15 +554,15 @@ class ZMM(ZMMHeader):
             rr.hy = self.hy_metadata
             if self.hz_metadata.component in ["hz"]:
                 rr.hz = self.hz_metadata
-        
+
         return sm
-    
+
     @property
     def survey_metadata(self):
         sm = metadata.Survey()
-        
+
         return sm
-    
+
     def _get_electric_metadata(self, comp):
         """
         get electric information from the various metadata
@@ -625,19 +624,18 @@ class ZMM(ZMMHeader):
     @property
     def hz_metadata(self):
         return self._get_magnetic_metadata("hz")
-    
 
 
 def read_zmm(zmm_fn):
     """
     read zmm file
     """
-    
+
     # need to add this here instead of the top is because of recursive
     # importing.  This may not be the best way to do this but works for now
     # so we don't have to break how MTpy structure is setup now.
     from mtpy.core import mt
-    
+
     mt_obj = mt.MT()
     mt_obj._fn = zmm_fn
     mt_obj.logger.debug(f"Reading {zmm_fn} using ZMM class")
@@ -659,6 +657,7 @@ def read_zmm(zmm_fn):
 
     return mt_obj
 
+
 def write_zmm(mt_object, fn=None):
     """
     write a zmm file
@@ -671,5 +670,5 @@ def write_zmm(mt_object, fn=None):
     :rtype: TYPE
 
     """
-    
+
     raise IOError("write_zmm is not implemented yet.")

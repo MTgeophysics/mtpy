@@ -79,7 +79,7 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
         # one call per logger plus stdout
         if logger.hasHandlers():
             logger.handlers.clear()
-    
+
         logger.propagate = False
         # want to add a stream handler for any Info print statements as stdOut
         stream_handler = logging.StreamHandler()

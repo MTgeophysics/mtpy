@@ -323,20 +323,20 @@ class JFile(object):
 
         self.Z = mtz.Z(z_arr, z_err_arr, freq)
         self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq)
-        
+
     @property
     def station_metadata(self):
         sm = metadata.Station()
-        
+
         sm.run_list.append(metadata.Run(id=f"{self.station}a"))
         sm.id = self.station
         sm.data_type = "MT"
-        
+
         sm.channels_recorded = self.Measurement.channels_recorded
         sm.location.latitude = self.metadata_dict["latitude"]
         sm.location.longitude = self.metadata_dict["longitude"]
         sm.location.elevation = self.metadata_dict["elevation"]
-        
+
         # provenance
         sm.acquired_by.author = self.Header.acqby
         sm.provenance.creation_time = self.Header.filedate
@@ -346,14 +346,13 @@ class JFile(object):
         sm.transfer_function.processed_date = self.Header.filedate
         sm.transfer_function.runs_processed = sm.run_names
         # add birrp parameters
-        
-        
+
         return sm
-    
+
     @property
     def survey_metadata(self):
         sm = metadata.Survey()
-        
+
         return sm
 
 
@@ -363,12 +362,12 @@ def _read_j_file(self, j_fn):
         """
 
     from mtpy.core import mt
-    
+
     j_obj = JFile(j_fn)
-    
+
     mt_obj = mt.MT()
     mt_obj._fn = j_fn
-    
+
     for attr in [
         "Z",
         "Tipper",

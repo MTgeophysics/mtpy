@@ -941,7 +941,7 @@ class Edi(object):
         sm.provenance.software.version = self.Header.progvers
         sm.transfer_function.processed_date = self.Header.filedate
         sm.transfer_function.runs_processed = sm.run_names
-        
+
         # dates
         if self.Header.acqdate is not None:
             sm.time_period.start = self.Header.acqdate
@@ -2719,7 +2719,7 @@ def write_edi(mt_object, fn=None):
     edi_obj.Header.datum = mt_object.station_metadata.location.datum
     edi_obj.Header.stdvers = "SEG 1.0"
     edi_obj.Header.units = mt_object.station_metadata.transfer_function.units
-    
+
     ### write notes
     # write comments, which would be anything in the info section from an edi
     if isinstance(mt_object.station_metadata.comments, str):
