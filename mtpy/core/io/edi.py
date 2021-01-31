@@ -2797,11 +2797,10 @@ def write_edi(mt_object, fn=None):
     edi_obj.Measurement.reflon = mt_object.longitude
     edi_obj.Measurement.maxchan = len(mt_object.station_metadata.channels_recorded)
     for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
-        edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
-        # try:
-        #     edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
-        # except AttributeError:
-        #     edi_obj.logger.debug(f"Did not find information on {comp}")
+        try:
+            edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
+        except AttributeError:
+            edi_obj.logger.debug(f"Did not find information on {comp}")
 
     # input data section
     edi_obj.Data.data_type = mt_object.station_metadata.data_type
