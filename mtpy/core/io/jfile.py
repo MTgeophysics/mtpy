@@ -346,6 +346,8 @@ class JFile(object):
         sm.transfer_function.processed_date = self.Header.filedate
         sm.transfer_function.runs_processed = sm.run_names
         # add birrp parameters
+        for key, value in self.header_dict.items():
+            sm.transfer_function.processing_parameters.append(f"{key} = {value}")
 
         return sm
 
@@ -356,7 +358,7 @@ class JFile(object):
         return sm
 
 
-def _read_j_file(self, j_fn):
+def read_jfile(self, j_fn):
     """
         read j file
         """
@@ -381,3 +383,17 @@ def _read_j_file(self, j_fn):
     mt_obj.latitude = j_obj.station_metadata.location.latitude
 
     return mt_obj
+
+def write_jfile(self, mt_obj, fn=None):
+    """
+    
+    :param mt_obj: DESCRIPTION
+    :type mt_obj: TYPE
+    :param fn: DESCRIPTION, defaults to None
+    :type fn: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    raise IOError("write_jfile not implemented yet.")

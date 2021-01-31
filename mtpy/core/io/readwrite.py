@@ -47,12 +47,12 @@ Created on Wed Aug 26 10:32:45 2020
 # =============================================================================
 
 from pathlib import Path
-import logging
 
 from mtpy.utils import filehandling as MTfh
-from mtpy.core.io import edi, zmm
+from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.core.io import edi, zmm, jfile
 
-logger = logging.getLogger(__name__)
+logger = get_mtpy_logger(__name__)
 # =============================================================================
 # generic reader for any file type
 # =============================================================================
@@ -62,6 +62,11 @@ plugins = {
         "file_types": ["zmm", "zrr"],
         "reader": zmm.read_zmm,
         "writer": zmm.write_zmm,
+    },
+    "j": {
+        "file_types": ["j"],
+        "reader": jfile.read_jfile,
+        "writer": jfile.write_jfile,
     },
 }
 
