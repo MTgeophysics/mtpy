@@ -20,11 +20,11 @@ from pathlib import Path
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
-from mtpy.utils.mttime import MTime, get_now_utc
 import mtpy.core.z as MTz
-from mtpy.core.metadata import metadata
-
 from mtpy import __version__
+
+from mt_metadata.utils.mttime import MTime, get_now_utc
+from mt_metadata.transfer_functions import tf as metadata
 
 import scipy.stats.distributions as ssd
 
@@ -908,6 +908,7 @@ class Edi(object):
         sm.survey_id = self.Header.survey
         sm.acquired_by.author = self.Header.acqby
         sm.geographic_name = self.Header.loc
+        sm.country = self.Header.country
 
         for key, value in self.Info.info_dict.items():
             key = key.lower()
@@ -939,6 +940,8 @@ class Edi(object):
         sm.provenance.software.name = self.Header.fileby
         sm.provenance.software.version = self.Header.progvers
         sm.transfer_function.processed_date = self.Header.filedate
+        sm.transfer_function.runs_processed = sm.run_names
+        
         # dates
         if self.Header.acqdate is not None:
             sm.time_period.start = self.Header.acqdate
@@ -2380,7 +2383,7 @@ class DataSection(object):
         self.nfreq = None
         self.sectid = None
         self.nchan = None
-        self.maxblks = None
+        self.maxblks = 999
         self.ex = None
         self.ey = None
         self.hx = None
@@ -2698,6 +2701,7 @@ def write_edi(mt_object, fn=None):
     edi_obj.Header.survey = mt_object.survey_metadata.survey_id
     edi_obj.Header.project = mt_object.survey_metadata.project
     edi_obj.Header.loc = mt_object.survey_metadata.geographic_name
+    edi_obj.Header.country = mt_object.survey_metadata.country
 
     ### fill header information from station
     edi_obj.Header.acqby = mt_object.station_metadata.acquired_by.author
@@ -2715,8 +2719,10 @@ def write_edi(mt_object, fn=None):
     edi_obj.Header.datum = mt_object.station_metadata.location.datum
     edi_obj.Header.stdvers = "SEG 1.0"
     edi_obj.Header.units = mt_object.station_metadata.transfer_function.units
-
+    
     ### write notes
+    # write comments, which would be anything in the info section from an edi
+    edi_obj.Info.info_list += mt_object.station_metadata.comments.split("\n")
     # write transfer function info first
     for k, v in mt_object.station_metadata.transfer_function.to_dict(
         single=True
@@ -2727,9 +2733,6 @@ def write_edi(mt_object, fn=None):
                     edi_obj.Info.info_list.append(item.replace("=", " = "))
             else:
                 edi_obj.Info.info_list.append(f"{k} = {v}")
-
-    # write comments, which would be anything in the info section from an edi
-    edi_obj.Info.info_list += mt_object.station_metadata.comments.split("\n")
 
     # write field notes
     for run in mt_object.station_metadata.run_list:
@@ -2794,16 +2797,17 @@ def write_edi(mt_object, fn=None):
     edi_obj.Measurement.reflon = mt_object.longitude
     edi_obj.Measurement.maxchan = len(mt_object.station_metadata.channels_recorded)
     for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
-        try:
-            edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
-        except AttributeError:
-            edi_obj.logger.debug(f"Did not find information on {comp}")
+        edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
+        # try:
+        #     edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
+        # except AttributeError:
+        #     edi_obj.logger.debug(f"Did not find information on {comp}")
 
     # input data section
     edi_obj.Data.data_type = mt_object.station_metadata.data_type
     edi_obj.Data.nfreq = mt_object.Z.z.shape[0]
     edi_obj.Data.sectid = mt_object.station
-    edi_obj.Data.nchan = len(edi_obj.Measurement.channel_ids)
+    edi_obj.Data.nchan = len(edi_obj.Measurement.channel_ids.keys())
 
     edi_obj.Data.maxblks = 999
     for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
