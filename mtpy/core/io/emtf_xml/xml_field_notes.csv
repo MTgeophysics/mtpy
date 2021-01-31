@@ -1,3 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-errors,string,FALSE,free form,none,Any field errors,none,none,moose ate cables
-run,string,TRUE,free form,none,Run name,none,none,mt001a

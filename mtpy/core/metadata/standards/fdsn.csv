@@ -1,5 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-id,str,FALSE,alpha numeric,none,Given FDSN archive ID name,none,none,MT001
-network,str,FALSE,alpha numeric,none,Given two character FDSN archive network code,none,none,EM
-channel_code,str,FALSE,alpha numeric,none,Three character FDSN channel code,none,none,LQN
-new_epoch,bool,FALSE,name,none,Boolean telling if a new epoch needs to be created or not,none,none,False

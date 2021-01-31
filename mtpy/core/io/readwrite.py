@@ -50,7 +50,7 @@ from pathlib import Path
 import logging
 
 from mtpy.utils import filehandling as MTfh
-from mtpy.core.io import edi
+from mtpy.core.io import edi, zmm
 
 logger = logging.getLogger(__name__)
 # =============================================================================
@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 plugins = {
     "edi": {"file_types": ["edi"], "reader": edi.read_edi, "writer": edi.write_edi},
+    "zmm": {"file_types": ["zmm", "zrr"], "reader": zmm.read_zmm, "writer": zmm.write_zmm},
 }
 
 

@@ -1,3 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-description,string,TRUE,free form,none,description of where the external URL points towards,none,none,IRIS DMC Metadata
-url,string,TRUE,url,none,full URL of where the data is stored,none,none,http://www.iris.edu/mda/EM/NVS11

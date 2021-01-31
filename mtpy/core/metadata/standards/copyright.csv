@@ -1,2 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-release_license,str,TRUE,controlled vocabulary,none,How the data can be used. The options are based on Creative Commons licenses. For details visit https://creativecommons.org/licenses/, [ CC-0 | CC-BY | CC-BY-SA | CC-BY-ND | CC-BY-NC-SA | CC-BY-NC-ND ],none,CC-0

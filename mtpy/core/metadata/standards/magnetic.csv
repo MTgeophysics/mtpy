@@ -1,5 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-h_field_min.start,float,FALSE,number,nT,minimum magnetic field strength at beginning of measurement,none,none,40345.1
-h_field_min.end,float,FALSE,number,nT,minimum magnetic field strength at end of measurement,none,none,50453.2
-h_field_max.start,float,FALSE,number,nT,maximum magnetic field strength at beginning of measurement,none,none,34565.2
-h_field_max.end,float,FALSE,number,nT,maximum magnetic field strength at end of measurement,none,none,34526.1

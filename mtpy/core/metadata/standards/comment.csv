@@ -1,4 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-author,string,FALSE,free form,none,Author who made the comment,none,nome,M. Tee
-date,string,FALSE,date,none,Date the comment was made,none,none,2020-01-21
-comment,string,FALSE,free form,none,Comment string,none,none,This is a comment

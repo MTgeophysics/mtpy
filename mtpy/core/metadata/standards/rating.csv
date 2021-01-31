@@ -1,4 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-author,str,FALSE,free form,none,author of who rated the data,none,none,gradstudet ace
-method,str,FALSE,free form,none,the method used to rate the data,none,none,standard deviation
-value,int,TRUE,number,none,a rating from 1-5 where 1 is bad and 5 is good and 0 if unrated,|0 | 1| 2| 3| 4| 5|,none,4

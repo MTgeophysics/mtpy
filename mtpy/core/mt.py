@@ -152,6 +152,9 @@ class MT(object):
         lines.append(f"\tLatitude:      {self.latitude:.3f}")
         lines.append(f"\tLongitude:     {self.longitude:.3f}")
         lines.append(f"\tElevation:     {self.elevation:.3f}")
+        lines.append("\tDeclination:   ")
+        lines.append(f"\t\tValue:     {self.station_metadata.location.declination.value}")
+        lines.append(f"\t\tModel:     {self.station_metadata.location.declination.model}")
         if self.Z.z is not None:
             lines.append("\tImpedance:     True")
         else:

@@ -1,7 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-name,string,TRUE,free form,none,Name of the statistical estimate,none,none,var
-type,string,TRUE,controlled vocabulary,none,Type of number contained in the estimate, [ real | complex ],none,real
-description,string,TRUE,free form,none,Description of the statistical estimate,none,none,this is an estimate
-external_url,string,TRUE,url,none,Full path to external link that has additional information,none,none,http://www.iris.edu/dms/products/emtf/variance.html
-intention,string,TRUE,controlled vocabulary,none,The intension of the statistical estimate,[ error estimate | signal coherence | signal power estimate | primary data type ],none, error estimate
-tag,string,TRUE,free form,none,A useful tag for the estimate,none,none,tipper

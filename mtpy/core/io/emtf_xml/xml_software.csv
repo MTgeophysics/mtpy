@@ -1,4 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-name,string,FALSE,free form,none,Name of the software used for processing,none,none,EMTF
-last_mod,string,FALSE,date,none,Date the software was last modified,none,none,2020-01-01
-author,string,FALSE,free form,none,Author of the software used for processing,none,none,MT Guru

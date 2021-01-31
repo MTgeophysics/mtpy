@@ -1,8 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-doi,str,TRUE,url,none,full url of the doi number,none,survey_doi,http://doi.###
-authors,str,FALSE,free form,none,author names,none,none,M.Tee A. Roura
-title,str,FALSE,free form,none,Full title of the citation,none,none,Paper Title
-year,str,FALSE,date,none,Year of citation,none,none,2020
-volume,str,FALSE,free form,none,Journal volume of the citation,none,none,12
-pages,str,FALSE,free form,none,Page numbers of the citation,none,none,10-15
-journal,str,FALSE,free form,none,Journal title of citation,none,none,Journal of Geophysical Research

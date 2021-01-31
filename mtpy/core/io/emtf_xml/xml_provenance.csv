@@ -1,3 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-create_time,str,TRUE,date time,none,date and time the file was created,none,none,2020-02-08T12:23:40.324600+00:00
-creating_application,str,TRUE,free form,none,name of the application that created the XML file,none,none,EMTF File Conversion Utilities 4.0

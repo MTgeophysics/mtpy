@@ -2722,7 +2722,8 @@ def write_edi(mt_object, fn=None):
     
     ### write notes
     # write comments, which would be anything in the info section from an edi
-    edi_obj.Info.info_list += mt_object.station_metadata.comments.split("\n")
+    if isinstance(mt_object.station_metadata.comments, str):
+        edi_obj.Info.info_list += mt_object.station_metadata.comments.split("\n")
     # write transfer function info first
     for k, v in mt_object.station_metadata.transfer_function.to_dict(
         single=True
@@ -2799,7 +2800,8 @@ def write_edi(mt_object, fn=None):
     for comp in ["ex", "ey", "hx", "hy", "hz", "rrhx", "rrhy"]:
         try:
             edi_obj.Measurement.from_metadata(getattr(mt_object, f"{comp}_metadata"))
-        except AttributeError:
+        except AttributeError as error:
+            edi_obj.logger.info(error)
             edi_obj.logger.debug(f"Did not find information on {comp}")
 
     # input data section

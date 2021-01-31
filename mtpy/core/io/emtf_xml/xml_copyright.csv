@@ -1,3 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-conditions_of_use,str,TRUE,free form,none,Any notes on conditions of use,none,none,Cite data upon usage.
-release_status,str,TRUE,controlled vocabulary,none,the release status of the data,[ unrestricted release | restricted release ],none,unrestricted release

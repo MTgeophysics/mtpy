@@ -1,5 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-author,str,TRUE,free form,none,author name,none,none,person name
-organization,str,TRUE,free form,none,organization name,none,none,mt gurus
-email,str,TRUE,email,none,email of the contact person,none,none,mt.guru@em.org
-comments,str,FALSE,email,none,email of the contact person,none,none,expert digger

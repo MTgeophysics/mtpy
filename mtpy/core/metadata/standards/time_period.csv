@@ -1,3 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-end,str,TRUE,time,none,end date and time of collection in UTC,none,none,2020-02-04T16:23:45.453670+00:00
-start,str,TRUE,time,none,start date and time of collection in UTC,none,none,2020-02-01T09:23:45.453670+00:00

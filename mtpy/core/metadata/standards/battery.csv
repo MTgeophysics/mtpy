@@ -1,6 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-type,str,FALSE,name,none,battery type,none,none,pb-acid gel cell
-id,str,FALSE,name,none,battery id,none,none,battery01
-voltage.start,float,FALSE,number,volts,starting voltage,none,none,14.3
-voltage.end,float,FALSE,number,volts,end voltage,none,none,12.1
-comments,str,FALSE,name,none,any comment about the battery,none,none,this is a comment

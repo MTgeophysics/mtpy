@@ -12,6 +12,8 @@ import os
 
 import mtpy.core.z as mtz
 
+from mt_metadata.transfer_functions import tf as metadata
+
 # ==============================================================================
 # Class to read j_file
 # ==============================================================================
@@ -321,6 +323,38 @@ class JFile(object):
 
         self.Z = mtz.Z(z_arr, z_err_arr, freq)
         self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq)
+        
+    @property
+    def station_metadata(self):
+        sm = metadata.Station()
+        
+        sm.run_list.append(metadata.Run(id=f"{self.station}a"))
+        sm.id = self.station
+        sm.data_type = "MT"
+        
+        sm.channels_recorded = self.Measurement.channels_recorded
+        sm.location.latitude = self.metadata_dict["latitude"]
+        sm.location.longitude = self.metadata_dict["longitude"]
+        sm.location.elevation = self.metadata_dict["elevation"]
+        
+        # provenance
+        sm.acquired_by.author = self.Header.acqby
+        sm.provenance.creation_time = self.Header.filedate
+        sm.provenance.submitter.author = self.Header.fileby
+        sm.provenance.software.name = "BIRRP"
+        sm.provenance.software.version = "5"
+        sm.transfer_function.processed_date = self.Header.filedate
+        sm.transfer_function.runs_processed = sm.run_names
+        # add birrp parameters
+        
+        
+        return sm
+    
+    @property
+    def survey_metadata(self):
+        sm = metadata.Survey()
+        
+        return sm
 
 
 def _read_j_file(self, j_fn):
@@ -328,18 +362,23 @@ def _read_j_file(self, j_fn):
         read j file
         """
 
-    j_obj = MTj.JFile(j_fn)
+    from mtpy.core import mt
+    
+    j_obj = JFile(j_fn)
+    
+    mt_obj = mt.MT()
+    mt_obj._fn = j_fn
+    
+    for attr in [
+        "Z",
+        "Tipper",
+        "survey_metadata",
+        "station_metadata",
+    ]:
+        setattr(mt_obj, attr, getattr(j_obj, attr))
 
-    self.save_dir = os.path.dirname(j_fn)
-    self.station = os.path.splitext(os.path.basename(j_fn))[0]
+    # need to set latitude to compute UTM coordinates to make sure station
+    # location is estimated for ModEM
+    mt_obj.latitude = j_obj.station_metadata.location.latitude
 
-    self.Z = j_obj.Z
-    self.Tipper = j_obj.Tipper
-
-    self._check_freq_order()
-
-    selt.station_metadata.locationlatitude = j_obj.metadata_dict["latitude"]
-    selt.station_metadata.locationlongitude = j_obj.metadata_dict["longitude"]
-    selt.station_metadata.locationelevation = j_obj.metadata_dict["elevation"]
-
-    self.Notes.info_dict = j_obj.header_dict
+    return mt_obj

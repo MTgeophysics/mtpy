@@ -11,6 +11,8 @@ import numpy as np
 import mtpy.core.z as mtz
 import mtpy.utils.gis_tools as gis_tools
 
+from mt_metadata.transfer_functions import tf as metadata
+
 # ==============================================================================
 class ZMMError(Exception):
     pass
@@ -30,6 +32,15 @@ class Channel(object):
 
         if channel_dict is not None:
             self.from_dict(channel_dict)
+            
+    def __str__(self):
+        lines = ["Channel Metadata:"]
+        for key in ["channel", "number", "dl", "azimuth", "tilt"]:
+            lines.append(f"\t{key.capitalize()}: {getattr(self, key):<12}")
+        return "\n".join(lines)
+    
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def index(self):
@@ -68,6 +79,7 @@ class ZMMHeader(object):
         self.station = None
         self._lat = None
         self._lon = None
+        self.elevation = 0.0
         self.declination = None
         self.num_channels = None
         self.num_freq = None
@@ -80,19 +92,19 @@ class ZMMHeader(object):
         self.hz = None
 
     @property
-    def lat(self):
+    def latitude(self):
         return self._lat
 
-    @lat.setter
-    def lat(self, lat):
+    @latitude.setter
+    def latitude(self, lat):
         self._lat = gis_tools.assert_lat_value(lat)
 
     @property
-    def lon(self):
+    def longitude(self):
         return self._lon
 
-    @lon.setter
-    def lon(self, lon):
+    @longitude.setter
+    def longitude(self, lon):
         self._lon = gis_tools.assert_lon_value(lon)
 
     def read_header(self, z_fn=None):
@@ -125,11 +137,11 @@ class ZMMHeader(object):
                 self.station = line.split(":")[1].strip()
             elif "coordinate" in line:
                 line_list = line.strip().split()
-                self.lat = line_list[1]
+                self.latitude = line_list[1]
                 lon = float(line_list[2])
                 if lon > 180:
                     lon -= 360
-                self.lon = lon
+                self.longitude = lon
 
                 self.declination = float(line_list[-1])
             elif "number" in line:
@@ -149,7 +161,15 @@ class ZMMHeader(object):
                 if channel_dict["chn_num"] == 0:
                     channel_dict["chn_num"] = self.num_channels
                 setattr(self, comp, Channel(channel_dict))
-
+                
+    @property
+    def channels_recorded(self):
+        channels = []
+        for cc in ["ex", "ey", "hx", "hy", "hz"]:
+            ch = getattr(self, cc)
+            if ch is not None:
+                channels.append(cc)
+        return channels
 
 class ZMM(ZMMHeader):
     """
@@ -169,16 +189,58 @@ class ZMM(ZMMHeader):
         self.transfer_functions = None
         self.sigma_e = None
         self.sigma_s = None
-        self.period = None
+        self.periods = None
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+    def __str__(self):
+        lines = [f"Station: {self.station}", "-" * 50]
+        lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
+        lines.append(f"\tProject:       {self.survey_metadata.project}")
+        lines.append(
+            f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(
+            f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(f"\tLatitude:      {self.latitude:.3f}")
+        lines.append(f"\tLongitude:     {self.longitude:.3f}")
+        lines.append(f"\tElevation:     {self.elevation:.3f}")
+        if self.Z.z is not None:
+            lines.append("\tImpedance:     True")
+        else:
+            lines.append("\tImpedance:     False")
+        if self.Tipper.tipper is not None:
+            lines.append("\tTipper:        True")
+        else:
+            lines.append("\tTipper:        False")
+
+        if self.Z.z is not None:
+            lines.append(f"\tN Periods:     {len(self.Z.freq)}")
+
+            lines.append("\tPeriod Range:")
+            lines.append(f"\t\tMin:   {self.periods.min():.5E} s")
+            lines.append(f"\t\tMax:   {self.periods.max():.5E} s")
+
+            lines.append("\tFrequency Range:")
+            lines.append(f"\t\tMin:   {self.frequencies.max():.5E} Hz")
+            lines.append(f"\t\tMax:   {self.frequencies.min():.5E} Hz")
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        lines = []
+        lines.append(f"station='{self.station}'")
+        lines.append(f"latitude={self.latitude:.2f}")
+        lines.append(f"longitude={self.longitude:.2f}")
+        lines.append(f"elevation={self.elevation:.2f}")
+
+        return f"MT( {(', ').join(lines)} )"
 
     @property
-    def frequency(self):
-        if self.period is None:
+    def frequencies(self):
+        if self.periods is None:
             return None
-        return 1.0 / self.period
+        return 1.0 / self.periods
 
     def initialize_arrays(self):
         """
@@ -187,7 +249,7 @@ class ZMM(ZMMHeader):
         if self.num_freq is None:
             return
 
-        self.period = np.zeros(self.num_freq)
+        self.periods = np.zeros(self.num_freq)
         self.transfer_functions = np.zeros(
             (self.num_freq, self.num_channels - 2, 2), dtype=np.complex64
         )
@@ -218,7 +280,7 @@ class ZMM(ZMMHeader):
         ### read each data block and fill the appropriate array
         for ii, period_block in enumerate(self._get_period_blocks()):
             data_block = self._read_period_block(period_block)
-            self.period[ii] = data_block["period"]
+            self.periods[ii] = data_block["period"]
 
             self._fill_tf_array_from_block(data_block["tf"], ii)
             self._fill_sig_array_from_block(data_block["sig"], ii)
@@ -405,7 +467,7 @@ class ZMM(ZMMHeader):
 
         error = np.sqrt(var)
 
-        z_object = mtz.Z(z, error, self.frequency)
+        z_object = mtz.Z(z, error, self.frequencies)
         return z_object
 
     def calculate_tippers(self, angle=0.0):
@@ -464,29 +526,150 @@ class ZMM(ZMMHeader):
         tipper = tipper.reshape((self.num_freq, 1, 2))
         error = error.reshape((self.num_freq, 1, 2))
 
-        tipper_obj = mtz.Tipper(tipper, error, self.frequency)
+        tipper_obj = mtz.Tipper(tipper, error, self.frequencies)
 
         return tipper_obj
+    
+    @property
+    def station_metadata(self):
+        sm = metadata.Station()
+        sm.run_list.append(metadata.Run(id=f"{self.station}a"))
+        sm.id = self.station
+        sm.data_type = "MT"
+        sm.channels_recorded = self.channels_recorded
+        # location
+        sm.location.latitude = self.latitude
+        sm.location.longitude = self.longitude
+        sm.location.elevation = self.elevation
+        sm.location.declination.value = self.declination
+        # provenance
+        sm.provenance.software.name = "EMTF"
+        sm.provenance.software.version = "1"
+        sm.transfer_function.runs_processed = sm.run_names
+        
+        # add information to runs
+        for rr in sm.run_list:
+            rr.ex = self.ex_metadata
+            rr.ey = self.ey_metadata
+            rr.hx = self.hx_metadata
+            rr.hy = self.hy_metadata
+            if self.hz_metadata.component in ["hz"]:
+                rr.hz = self.hz_metadata
+        
+        return sm
+    
+    @property
+    def survey_metadata(self):
+        sm = metadata.Survey()
+        
+        return sm
+    
+    def _get_electric_metadata(self, comp):
+        """
+        get electric information from the various metadata
+        """
+        comp = comp.lower()
+        electric = metadata.Electric()
+        electric.positive.type = "electric"
+        electric.negative.type = "electric"
+        if hasattr(self, comp):
+            meas = getattr(self, comp)
+            electric.measurement_azimuth = meas.azimuth
+            electric.measurement_tilt = meas.tilt
+            electric.component = comp
+            electric.channel_number = meas.number
+            electric.channel_id = meas.number
+
+        return electric
+
+    @property
+    def ex_metadata(self):
+        return self._get_electric_metadata("ex")
+
+    @property
+    def ey_metadata(self):
+        return self._get_electric_metadata("ey")
+
+    def _get_magnetic_metadata(self, comp):
+        """
+        
+        get magnetic metadata from the various sources
+        
+        :param comp: DESCRIPTION
+        :type comp: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        comp = comp.lower()
+        magnetic = metadata.Magnetic()
+        if hasattr(self, comp):
+            meas = getattr(self, comp)
+            magnetic.measurement_azimuth = meas.azimuth
+            magnetic.measurement_tilt = meas.tilt
+            magnetic.component = comp
+            magnetic.channel_number = meas.number
+            magnetic.channel_id = meas.number
+
+        return magnetic
+
+    @property
+    def hx_metadata(self):
+        return self._get_magnetic_metadata("hx")
+
+    @property
+    def hy_metadata(self):
+        return self._get_magnetic_metadata("hy")
+
+    @property
+    def hz_metadata(self):
+        return self._get_magnetic_metadata("hz")
+    
 
 
-def _read_zmm_file(self, zmm_fn):
+def read_zmm(zmm_fn):
     """
     read zmm file
     """
-    if not isinstance(zmm_fn, Path):
-        zmm_fn = Path(zmm_fn)
+    
+    # need to add this here instead of the top is because of recursive
+    # importing.  This may not be the best way to do this but works for now
+    # so we don't have to break how MTpy structure is setup now.
+    from mtpy.core import mt
+    
+    mt_obj = mt.MT()
+    mt_obj._fn = zmm_fn
+    mt_obj.logger.debug(f"Reading {zmm_fn} using ZMM class")
 
-    zmm_obj = MTzmm.ZMM(zmm_fn)
+    zmm_obj = ZMM(zmm_fn)
     zmm_obj.read_zmm_file()
 
-    self.save_dir = zmm_fn.parent
-    self.Z = zmm_obj.Z
-    self.Tipper = zmm_obj.Tipper
+    for attr in [
+        "Z",
+        "Tipper",
+        "survey_metadata",
+        "station_metadata",
+    ]:
+        setattr(mt_obj, attr, getattr(zmm_obj, attr))
 
-    # set location
-    selt.station_metadata.locationlatitude = zmm_obj.lat
-    selt.station_metadata.locationlongitude = zmm_obj.lon
-    selt.station_metadata.locationdeclination = zmm_obj.declination
+    # need to set latitude to compute UTM coordinates to make sure station
+    # location is estimated for ModEM
+    mt_obj.latitude = zmm_obj.station_metadata.location.latitude
 
-    # set station name
-    self.Site.id = zmm_obj.station
+    return mt_obj
+
+def write_zmm(mt_object, fn=None):
+    """
+    write a zmm file
+    
+    :param mt_object: DESCRIPTION
+    :type mt_object: TYPE
+    :param fn: DESCRIPTION, defaults to None
+    :type fn: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    raise IOError("write_zmm is not implemented yet.")

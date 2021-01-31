@@ -1,4 +1,0 @@
-attribute,type,required,style,units,description,options,alias,example
-good_from_period,float,FALSE,number,none,Data are good for periods larger than this number,none,none,0.01
-good_to_period,float,FALSE,number,none,Data are good for periods smaller than this number,none,none,1000
-rating,integer,FALSE,number,none,Rating of the data from 0 to 5 where 5 is the best and 0 is unrated,none,none,4 
