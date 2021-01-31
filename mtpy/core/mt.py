@@ -183,6 +183,25 @@ class MT(object):
 
         return f"MT( {(', ').join(lines)} )"
 
+    def __eq__(self, other):
+        is_equal = True
+        if not isinstance(other, MT):
+            self.logger.info(f"Comparing object is not MT, type {type(other)}")
+            is_equal = False
+        if self.station_metadata != other.station_metadata:
+            self.logger.info("Station metadata is not equal")
+            is_equal = False
+        if self.survey_metadata != other.survey_metadata:
+            self.logger.info("Survey Metadata is not equal")
+            is_equal = False
+        if self.Z != other.Z:
+            self.logger.info("Z is not equal")
+            is_equal = False
+        if self.Tipper != other.Tipper:
+            self.logger.info("Tipper is not equal")
+            is_equal = False
+        return is_equal
+
     def copy(self):
         return deepcopy(self)
 

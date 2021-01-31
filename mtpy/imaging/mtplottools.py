@@ -97,7 +97,7 @@ class MTArrows(object):
     """
 
     def __init__(self, **kwargs):
-        super(MTArrows, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.arrow_size = 2.5
         self.arrow_head_length = 0.15 * self.arrow_size
@@ -189,7 +189,7 @@ class MTEllipse(object):
     """
 
     def __init__(self, **kwargs):
-        super(MTEllipse, self).__init__()
+        super().__init__()
         self.ellipse_size = 2
         self.ellipse_colorby = "phimin"
         self.ellipse_range = (0, 90, 10)
@@ -275,7 +275,7 @@ class PlotSettings(MTArrows, MTEllipse):
     """
 
     def __init__(self, **kwargs):
-        super(PlotSettings, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # figure properties:
         self.fig_num = 1
@@ -283,7 +283,7 @@ class PlotSettings(MTArrows, MTEllipse):
         self.fig_size = None
 
         self.font_size = 7
-        self.marker_size = 4
+        self.marker_size = 2.5
         self.marker_lw = 0.75
         self.lw = 1
         self.plot_title = None
@@ -305,18 +305,18 @@ class PlotSettings(MTArrows, MTEllipse):
         self.strike_tip_marker = ">"
 
         # marker color styles:
-        self.xy_color = (0, 0, 0.75)
-        self.yx_color = (0.75, 0, 0)
-        self.det_color = (0, 0.75, 0)
+        self.xy_color = (0.25, 0.35, 0.75)
+        self.yx_color = (0.75, 0.25, 0.25)
+        self.det_color = (0.25, 0.75, 0.25)
         self.skew_color = (0.85, 0.35, 0)
         self.strike_inv_color = (0.2, 0.2, 0.7)
         self.strike_pt_color = (0.7, 0.2, 0.2)
         self.strike_tip_color = (0.2, 0.7, 0.2)
 
         # marker face color styles:
-        self.xy_mfc = (0, 0, 0.75)
-        self.yx_mfc = (0.75, 0, 0)
-        self.det_mfc = (0, 0.75, 0)
+        self.xy_mfc = (0.25, 0.35, 0.75)
+        self.yx_mfc = (0.75, 0.25, 0.25)
+        self.det_mfc = (0.25, 0.75, 0.25)
         self.skew_mfc = (0.85, 0.35, 0)
         self.strike_inv_mfc = (0.2, 0.2, 0.7)
         self.strike_pt_mfc = (0.7, 0.2, 0.2)

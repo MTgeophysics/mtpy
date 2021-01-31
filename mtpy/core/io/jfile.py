@@ -384,6 +384,7 @@ def read_jfile(self, j_fn):
 
     return mt_obj
 
+
 def write_jfile(self, mt_obj, fn=None):
     """
     
@@ -395,5 +396,5 @@ def write_jfile(self, mt_obj, fn=None):
     :rtype: TYPE
 
     """
-    
+
     raise IOError("write_jfile not implemented yet.")

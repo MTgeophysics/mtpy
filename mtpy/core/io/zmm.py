@@ -2,15 +2,18 @@
 """
 Created on Thu Sep 28 12:34:23 2017
 @author: jrpeacock
+
+Translated from code by B. Murphy.
 """
 
 # ==============================================================================
 # Imports
 # ==============================================================================
 import numpy as np
-import mtpy.core.z as mtz
-import mtpy.utils.gis_tools as gis_tools
 
+import mtpy.core.z as mtz
+from mtpy.utils import gis_tools
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mt_metadata.transfer_functions import tf as metadata
 
 # ==============================================================================
@@ -74,6 +77,7 @@ class ZMMHeader(object):
 
     def __init__(self, z_fn=None, **kwargs):
 
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self.description = None
         self.processing_type = None
         self.station = None
@@ -180,7 +184,6 @@ class ZMM(ZMMHeader):
 
     def __init__(self, z_fn=None, **kwargs):
 
-        #        EgbertHeader.__init__(self, **kwargs)
         super(ZMM, self).__init__()
 
         self.z_fn = z_fn
@@ -268,7 +271,10 @@ class ZMM(ZMMHeader):
 
     def read_zmm_file(self, z_fn=None):
         """
-        Read in Egbert zrr file
+        Read in Egbert zrr/zmm file
+        
+        :param z_fn: full path to zmm/zrr file
+        :type z_fn: string or pathlib.Path
         """
         if z_fn is not None:
             self.z_fn = z_fn
@@ -292,7 +298,9 @@ class ZMM(ZMMHeader):
             self.Tipper = self.calculate_tippers()
         except ZMMError:
             self.Tipper = mtz.Tipper()
-            print("*** No HZ found cannot calculate induction vectors. ***")
+            self.logger.debug(
+                f"No HZ found in {self.z_fn} induction vectors not estimated."
+            )
 
     def _get_period_blocks(self):
         """
@@ -346,8 +354,6 @@ class ZMM(ZMMHeader):
                 for ii in range(0, len(line_list), 2)
             ]
             data_dict[key].append(values)
-            # for ii in range(0, len(line_list), 2):
-            #     data_dict[key].append(complex(line_list[ii], line_list[ii+1]))
 
         return data_dict
 
@@ -404,11 +410,13 @@ class ZMM(ZMMHeader):
 
         # check to see if there are actually electric fields in the TFs
         if not hasattr(self, "ex") or not hasattr(self, "ey"):
-            raise ZMMError(
+            msg = (
                 "Cannot return apparent resistivity and phase "
                 "data because these TFs do not contain electric "
                 "fields as a predicted channel."
             )
+            self.logger.error(msg)
+            raise ZMMError(msg)
 
         # transform the TFs first...
         # build transformation matrix for predictor channels
@@ -545,6 +553,8 @@ class ZMM(ZMMHeader):
         sm.provenance.software.name = "EMTF"
         sm.provenance.software.version = "1"
         sm.transfer_function.runs_processed = sm.run_names
+        sm.transfer_function.software.name = "EMTF"
+        sm.transfer_function.software.version = "1"
 
         # add information to runs
         for rr in sm.run_list:

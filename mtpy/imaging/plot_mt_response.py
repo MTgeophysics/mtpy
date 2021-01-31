@@ -378,50 +378,12 @@ class PlotMTResponse(PlotSettings):
         self.arrow_head_length = 0.03
         self.arrow_head_width = 0.03
         self.arrow_lw = 0.5
-        self.arrow_threshold = 2
-        self.arrow_color_imag = "b"
-        self.arrow_color_real = "k"
-        self.arrow_direction = 0
 
         # ellipse_properties
         self.ellipse_size = 0.25
-        self.ellipse_range = (0, 90, 10)
-        self.ellipse_colorby = "phimin"
-        self.ellipse_cmap = "mt_bl2gr2rd"
         self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
         if self.ellipse_size == 2 and self.ellipse_spacing == 1:
             self.ellipse_size = 0.25
-
-            # figure properties:
-        self.fig_num = 1
-        self.fig_dpi = 150
-        self.fig_size = None
-
-        self.font_size = 7
-        self.marker_size = 3
-        self.marker_lw = 0.5
-        self.lw = 0.5
-        self.plot_title = None
-
-        # line styles:
-        self.xy_ls = ":"
-        self.yx_ls = ":"
-        self.det_ls = ":"
-
-        # marker styles:
-        self.xy_marker = "s"
-        self.yx_marker = "o"
-        self.det_marker = "v"
-
-        # marker color styles:
-        self.xy_color = (0, 0, 0.75)
-        self.yx_color = (0.75, 0, 0)
-        self.det_color = (0, 0.75, 0)
-
-        # marker face color styles:
-        self.xy_mfc = (0, 0, 0.75)
-        self.yx_mfc = (0.75, 0, 0)
-        self.det_mfc = (0, 0.75, 0)
 
         # plot limits
         self.x_limits = None

@@ -946,8 +946,12 @@ class Edi(object):
         if self.Header.acqdate is not None:
             sm.time_period.start = self.Header.acqdate
 
+        # processing information
         for key, value in self.Info.info_dict.items():
             key = key.lower()
+            if "transfer_function" in key:
+                key = key.split("transfer_function.")[1]
+                sm.transfer_function.set_attr_from_name(key, value)
             if "processing" in key:
                 key = key.split("processing")[1]
                 if key in ["software"]:
@@ -958,10 +962,10 @@ class Edi(object):
                     else:
                         sm.transfer_function.remote_references = value.split()
 
-            elif key == "processedby":
+            elif key in ["processedby", "processed_by"]:
                 sm.transfer_function.processed_by.author = value
 
-            elif key == "runlist":
+            elif key in ["runlist", "run_list"]:
                 if value.count(",") > 0:
                     runs = value.split(",")
                 else:
@@ -2731,9 +2735,16 @@ def write_edi(mt_object, fn=None):
         if not v in [None]:
             if k in ["processing_parameters"]:
                 for item in v:
-                    edi_obj.Info.info_list.append(item.replace("=", " = "))
+                    edi_obj.Info.info_list.append(
+                        f"processing_parameters.{item.replace('=', ' = ')}"
+                    )
             else:
-                edi_obj.Info.info_list.append(f"{k} = {v}")
+                edi_obj.Info.info_list.append(f"transfer_function.{k} = {v}")
+
+    # write provenance
+    for k, v in mt_object.station_metadata.provenance.to_dict(single=True).items():
+        if not v in [None, "None", "null"]:
+            edi_obj.Info.info_list.append(f"provenance.{k} = {v}")
 
     # write field notes
     for run in mt_object.station_metadata.run_list:
