@@ -11,30 +11,15 @@ handlers:
         level: INFO
         formatter: standard
         stream: ext://sys.stdout
-    
-    debug_file_handler:
-        class: logging.handlers.RotatingFileHandler
-        level: DEBUG
-        formatter: standard
-        filename: mtpy_debug.log
-        maxBytes: 2485760 # 2MB
-        backupCount: 2
-    
-    warning_file_handler:
-        class: logging.handlers.RotatingFileHandler
-        level: WARNING
-        formatter: standard
-        filename: mtpy_error.log
-        maxBytes: 2485760 # 2MB
-        backupCount: 2
+   
 
 loggers:
     __main__:
         level: DEBUG
-        handlers: [console, debug_file_handler, warning_file_handler]
-        propagate: no
+        handlers: [console]
+        propagate: false
 
 root:
     level: DEBUG
-    handlers: [console, debug_file_handler, warning_file_handler]
-    propogate: yes
+    handlers: [console]
+    propogate: false

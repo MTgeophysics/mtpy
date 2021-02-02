@@ -27,6 +27,25 @@ class TestJFile(unittest.TestCase):
     def setUp(self):
         self.j_fn = list(EDI_DATA_DIR_BB.glob("*.j"))[0]
         self.j_obj = JFile(self.j_fn)
+        
+    def test_location(self):
+        self.assertEqual(0.0, self.j_obj.latitude)
+        self.assertEqual(0.0, self.j_obj.longitude)
+        self.assertEqual(0.0, self.j_obj.elevation)
+    
+    def test_station(self):
+        self.assertEqual("BP05", self.j_obj.station)
+        
+        
+
+class TestReadJFile(unittest.TestCase):
+    """
+    test reading j file into MT object
+    """
+
+    def setUp(self):
+        self.j_fn = list(EDI_DATA_DIR_BB.glob("*.j"))[0]
+        self.j_obj = JFile(self.j_fn)
         self.mt_obj = mt.MT(self.j_fn)
 
     def test_location(self):
@@ -55,6 +74,7 @@ class TestJFile(unittest.TestCase):
                          self.mt_obj.station_metadata.transfer_function.processing_parameters)
         
         
+
 
 # =============================================================================
 # Run
