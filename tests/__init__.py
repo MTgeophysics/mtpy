@@ -2,6 +2,7 @@
 Set paths for testing
 """
 from pathlib import Path
+import shutil
 
 # assume tests is on the root level of mtpy
 TEST_MTPY_ROOT = Path(__file__).parent.parent
@@ -23,6 +24,6 @@ if not TEST_TEMP_DIR.is_dir():
 def make_temp_dir(dir_name, base_dir=TEST_TEMP_DIR):
     _temp_dir = Path(base_dir, dir_name)
     if _temp_dir.is_dir():
-        _temp_dir.rmdir()
+        shutil.rmtree(_temp_dir)
     _temp_dir.mkdir()
     return _temp_dir
