@@ -558,11 +558,12 @@ class ZMM(ZMMHeader):
 
         # add information to runs
         for rr in sm.run_list:
-            rr.ex = self.ex_metadata
-            rr.ey = self.ey_metadata
+            if self.Z.z.size > 1:
+                rr.ex = self.ex_metadata
+                rr.ey = self.ey_metadata
             rr.hx = self.hx_metadata
             rr.hy = self.hy_metadata
-            if self.hz_metadata.component in ["hz"]:
+            if self.Tipper.tipper.size > 1:
                 rr.hz = self.hz_metadata
 
         return sm
