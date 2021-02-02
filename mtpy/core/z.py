@@ -449,10 +449,13 @@ class Z(ResPhase):
             self._logger.error(msg)
             raise MTpyError_Z(msg)
 
-        if self.z != other.z:
+        if (self.z != other.z).all():
             return False
 
-        if self.freq != other.freq:
+        if (self.freq != other.freq).all():
+            return False
+        
+        if (self.z_err != other.z_err).all():
             return False
 
         return True
@@ -1341,10 +1344,13 @@ class Tipper(object):
             self._logger.error(msg)
             raise MTpyError_Tipper(msg)
 
-        if self.z != other.tipper:
+        if (self.tipper != other.tipper).all():
             return False
 
-        if self.freq != other.freq:
+        if (self.freq != other.freq).all():
+            return False
+        
+        if (self.tipper_err != other.tipper_err).all():
             return False
 
         return True

@@ -36,6 +36,46 @@ class JFile(object):
 
         if self.j_fn is not None:
             self.read_j_file()
+            
+    def __str__(self):
+        lines = [f"Station: {self.station}", "-" * 50]
+        lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
+        lines.append(f"\tProject:       {self.survey_metadata.project}")
+        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
+        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(f"\tLatitude:      {self.latitude:.3f}")
+        lines.append(f"\tLongitude:     {self.longitude:.3f}")
+        lines.append(f"\tElevation:     {self.elevation:.3f}")
+        if self.Z.z is not None:
+            lines.append("\tImpedance:     True")
+        else:
+            lines.append("\tImpedance:     False")
+        if self.Tipper.tipper is not None:
+            lines.append("\tTipper:        True")
+        else:
+            lines.append("\tTipper:        False")
+
+        if self.Z.z is not None:
+            lines.append(f"\tN Periods:     {len(self.Z.freq)}")
+
+            lines.append("\tPeriod Range:")
+            lines.append(f"\t\tMin:   {self.periods.min():.5E} s")
+            lines.append(f"\t\tMax:   {self.periods.max():.5E} s")
+
+            lines.append("\tFrequency Range:")
+            lines.append(f"\t\tMin:   {self.frequencies.max():.5E} Hz")
+            lines.append(f"\t\tMax:   {self.frequencies.min():.5E} Hz")
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        lines = []
+        lines.append(f"station='{self.station}'")
+        lines.append(f"latitude={self.latitude:.2f}")
+        lines.append(f"longitude={self.longitude:.2f}")
+        lines.append(f"elevation={self.elevation:.2f}")
+
+        return f"MT( {(', ').join(lines)} )"
 
     @property
     def j_fn(self):
@@ -52,6 +92,44 @@ class JFile(object):
 
         """
         self._jfn = Path(value)
+        
+    @property
+    def latitude(self):
+        return self.metadata_dict["latitude"]
+    
+    @latitude.setter
+    def latitude(self, value):
+        self.metadata_dict["latitude"] = value
+        
+    @property
+    def longitude(self):
+        return self.metadata_dict["longitude"]
+    
+    @longitude.setter
+    def longitude(self, value):
+        self.metadata_dict["longitude"] = value
+        
+    @property
+    def elevation(self):
+        return self.metadata_dict["elevation"]
+    
+    @elevation.setter
+    def elevation(self, value):
+        self.metadata_dict["elevation"] = value
+        
+    @property
+    def periods(self):
+        if not np.all(self.Z.z == 0) and self.Z is not None:
+            return 1./self.Z.freq
+        if not np.all(self.Tipper.tipper == 0) and self.Tipper is not None:
+            return 1./self.Tipper.freq
+        
+    @property
+    def frequencies(self):
+        if not np.all(self.Z.z == 0) and self.Z is not None:
+            return self.Z.freq
+        if not np.all(self.Tipper.tipper == 0) and self.Tipper is not None:
+            return self.Tipper.freq
 
     def _validate_j_file(self):
         """

@@ -42,7 +42,19 @@ class TestJFile(unittest.TestCase):
 
     def test_station(self):
         self.assertEqual(self.j_obj.station, self.mt_obj.station)
+        
+    def test_z(self):
+        self.assertEqual(self.j_obj.Z, self.mt_obj.Z)
+        
+    def test_tipper(self):
+        self.assertEqual(self.j_obj.Tipper, self.mt_obj.Tipper)
 
+    def test_birrp_parameters(self):
+        bp_list = [f"{k} = {v}" for k, v in self.j_obj.header_dict.items()]
+        self.assertEqual(bp_list, 
+                         self.mt_obj.station_metadata.transfer_function.processing_parameters)
+        
+        
 
 # =============================================================================
 # Run
