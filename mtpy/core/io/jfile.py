@@ -36,11 +36,11 @@ class JFile(object):
 
         if self.j_fn is not None:
             self.read_j_file()
-    
+
     @property
     def j_fn(self):
         return self._jfn
-    
+
     @j_fn.setter
     def j_fn(self, value):
         """
@@ -52,7 +52,6 @@ class JFile(object):
 
         """
         self._jfn = Path(value)
-        
 
     def _validate_j_file(self):
         """
@@ -235,7 +234,7 @@ class JFile(object):
         data_lines = [
             j_line for j_line in j_line_list if not ">" in j_line and not "#" in j_line
         ][:]
-        
+
         self.station = data_lines[0].strip()
 
         # sometimes birrp outputs some missing periods, so the best way to deal with
@@ -354,18 +353,16 @@ class JFile(object):
     def station_metadata(self):
         sm = metadata.Station()
         r1 = metadata.Run(id=f"{self.station}a")
-        
+
         if not np.all(self.Z.z == 0):
             r1.ex = metadata.Electric(component="ex", channel_id=1)
             r1.ey = metadata.Electric(component="ey", channel_id=2)
             r1.hx = metadata.Magnetic(component="hx", channel_id=3)
             r1.hy = metadata.Magnetic(component="hy", channel_id=4)
-            
-            
+
         if not np.all(self.Tipper.tipper == 0):
             r1.hz = metadata.Magnetic(component="hz", channel_id=5)
-            
-          
+
         sm.run_list.append(r1)
         sm.id = self.station
         sm.data_type = "MT"

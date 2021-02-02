@@ -9,8 +9,7 @@ TEST_MTPY_ROOT = Path(__file__).parent.parent
 EDI_DATA_DIR = Path(TEST_MTPY_ROOT, "examples/data/edi_files")
 EDI_DATA_DIR2 = Path(TEST_MTPY_ROOT, "examples/data/edi_files_2")
 EDI_DATA_DIR_BB = Path(TEST_MTPY_ROOT, "data/BBMT")
-AUS_TOPO_FILE = Path(
-    TEST_MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
+AUS_TOPO_FILE = Path(TEST_MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
 SAMPLE_DIR = Path(TEST_MTPY_ROOT, "examples/model_files")
 M2D_DIR = Path(TEST_MTPY_ROOT, "examples/data/mare2dem")
 
