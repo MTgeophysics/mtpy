@@ -28,7 +28,17 @@ class TestTransferFunction(unittest.TestCase):
     def test_input_list_periods(self):
         self.tf.periods = [1, 2, 3]
         self.assertIsInstance(self.tf.periods, np.ndarray)
-        self.assertEqual(self.tf.periods.dtype.type, np.float_)    
+        self.assertEqual(self.tf.periods.dtype.type, np.float_)
+        
+        self.tf.periods = [[1, 2, 3]]
+        self.assertIsInstance(self.tf.periods, np.ndarray)
+        self.assertEqual(self.tf.periods.dtype.type, np.float_)
+        
+    def test_input_periods_fail(self):
+        def set_periods(p):
+            self.tf.periods = p
+        self.assertRaises(ValueError, set_periods, [[1, 2, 3], [1, 2, 3]])
+        
     
 # =============================================================================
 # Run
