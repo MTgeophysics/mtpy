@@ -9,6 +9,7 @@ Translated from code by B. Murphy.
 # ==============================================================================
 # Imports
 # ==============================================================================
+from pathlib import Path
 import numpy as np
 
 import mtpy.core.z as mtz
@@ -75,7 +76,7 @@ class ZMMHeader(object):
     Container for Header of an Egbert file
     """
 
-    def __init__(self, z_fn=None, **kwargs):
+    def __init__(self, fn=None, **kwargs):
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self.description = None
@@ -94,6 +95,24 @@ class ZMMHeader(object):
         self.hx = None
         self.hy = None
         self.hz = None
+        self._zfn = None
+        self.fn = fn
+
+    @property
+    def fn(self):
+        return self._zfn
+    
+    @fn.setter
+    def fn(self, value):
+        if value is None:
+            return 
+        value = Path(value)
+        if value.suffix.lower() in [".zmm", ".zrr"]:
+            self._zfn = value
+        else:
+            msg = f"Input file must be a *.zmm or *.zrr file not {value.suffix}"
+            self.logger.error(msg)
+            raise ValueError(msg)
 
     @property
     def latitude(self):
@@ -111,15 +130,15 @@ class ZMMHeader(object):
     def longitude(self, lon):
         self._lon = gis_tools.assert_lon_value(lon)
 
-    def read_header(self, z_fn=None):
+    def read_header(self, fn=None):
         """
         read header information
         """
 
-        if z_fn is not None:
-            self.z_fn = z_fn
+        if fn is not None:
+            self.fn = fn
 
-        with open(self.z_fn, "r") as fid:
+        with open(self.fn, "r") as fid:
             line = fid.readline()
 
             self._header_count = 0
@@ -182,11 +201,11 @@ class ZMM(ZMMHeader):
     
     """
 
-    def __init__(self, z_fn=None, **kwargs):
+    def __init__(self, fn=None, **kwargs):
 
-        super(ZMM, self).__init__()
+        super().__init__()
 
-        self.z_fn = z_fn
+        self.fn = fn
         self._header_count = 0
         self.Z = mtz.Z()
         self.Tipper = mtz.Tipper()
@@ -197,6 +216,9 @@ class ZMM(ZMMHeader):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+            
+        if self.fn is not None:
+            self.read_zmm_file()
 
     def __str__(self):
         lines = [f"Station: {self.station}", "-" * 50]
@@ -269,15 +291,15 @@ class ZMM(ZMMHeader):
         #    this dimension is hard-coded
         self.sigma_s = np.zeros((self.num_freq, 2, 2), dtype=np.complex64)
 
-    def read_zmm_file(self, z_fn=None):
+    def read_zmm_file(self, fn=None):
         """
         Read in Egbert zrr/zmm file
         
-        :param z_fn: full path to zmm/zrr file
-        :type z_fn: string or pathlib.Path
+        :param fn: full path to zmm/zrr file
+        :type fn: string or pathlib.Path
         """
-        if z_fn is not None:
-            self.z_fn = z_fn
+        if fn is not None:
+            self.fn = fn
 
         self.read_header()
         self.initialize_arrays()
@@ -299,7 +321,7 @@ class ZMM(ZMMHeader):
         except ZMMError:
             self.Tipper = mtz.Tipper()
             self.logger.debug(
-                f"No HZ found in {self.z_fn} induction vectors not estimated."
+                f"No HZ found in {self.fn} induction vectors not estimated."
             )
 
     def _get_period_blocks(self):
@@ -307,7 +329,7 @@ class ZMM(ZMMHeader):
         split file into period blocks
         """
 
-        with open(self.z_fn, "r") as fid:
+        with open(self.fn, "r") as fid:
             fn_str = fid.read()
 
         period_strings = fn_str.lower().split("period")

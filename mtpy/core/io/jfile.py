@@ -24,17 +24,17 @@ class JFile(object):
     be able to read and write a j-file
     """
 
-    def __init__(self, j_fn=None):
+    def __init__(self, fn=None):
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self._jfn = None
-        self.j_fn = j_fn
+        self.fn = fn
         self.header_dict = None
         self.metadata_dict = None
         self.Z = None
         self.Tipper = None
         self.station = None
 
-        if self.j_fn is not None:
+        if self.fn is not None:
             self.read_j_file()
             
     def __str__(self):
@@ -78,11 +78,11 @@ class JFile(object):
         return f"MT( {(', ').join(lines)} )"
 
     @property
-    def j_fn(self):
+    def fn(self):
         return self._jfn
 
-    @j_fn.setter
-    def j_fn(self, value):
+    @fn.setter
+    def fn(self, value):
         """
         set file name
         :param value: DESCRIPTION
@@ -91,7 +91,15 @@ class JFile(object):
         :rtype: TYPE
 
         """
-        self._jfn = Path(value)
+        if value is None:
+            return 
+        value = Path(value)
+        if value.suffix in [".j"]:
+            self._jfn = value
+        else:
+            msg = f"Input file must be a *.j file not {value.suffix}"
+            self.logger.error(msg)
+            raise ValueError(msg)
         
     @property
     def latitude(self):
@@ -137,12 +145,12 @@ class JFile(object):
         if they are not.
         """
 
-        if not self.j_fn.exists():
-            msg = f"Could not find {self.j_fn}, check path"
+        if not self.fn.exists():
+            msg = f"Could not find {self.fn}, check path"
             self.logger.error(msg)
             raise NameError(msg)
 
-        with open(self.j_fn, "r", errors="replace") as fid:
+        with open(self.fn, "r", errors="replace") as fid:
             j_lines = fid.readlines()
 
         for variable in ["lat", "lon", "elev"]:
@@ -256,7 +264,7 @@ class JFile(object):
 
         self.header_dict = header_dict
 
-    def read_metadata(self, j_lines=None, j_fn=None):
+    def read_metadata(self, j_lines=None, fn=None):
         """
         read in the metadata of the station, or information of station 
         logistics like: lat, lon, elevation
@@ -281,7 +289,7 @@ class JFile(object):
 
         self.metadata_dict = metadata_dict
 
-    def read_j_file(self, j_fn=None):
+    def read_j_file(self, fn=None):
         """
         read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
     
@@ -299,10 +307,10 @@ class JFile(object):
         z_index_dict = {"zxx": (0, 0), "zxy": (0, 1), "zyx": (1, 0), "zyy": (1, 1)}
         t_index_dict = {"tzx": (0, 0), "tzy": (0, 1)}
 
-        if j_fn is not None:
-            self.j_fn = j_fn
+        if fn is not None:
+            self.fn = fn
 
-        self.logger.debug(f"Reading {self.j_fn}")
+        self.logger.debug(f"Reading {self.fn}")
 
         j_line_list = self._validate_j_file()
 
@@ -374,7 +382,7 @@ class JFile(object):
                 all_periods.append(f_key)
 
         if len(list(t_dict["tzx"].keys())) == 0:
-            self.logger.info(f"Could not find any Tipper data in {self.j_fn}")
+            self.logger.info(f"Could not find any Tipper data in {self.fn}")
             find_tipper = False
 
         else:
@@ -452,7 +460,7 @@ class JFile(object):
         # provenance
         sm.provenance.software.name = "BIRRP"
         sm.provenance.software.version = "5"
-        sm.transfer_function.processed_date = MTime(self.j_fn.stat().st_ctime).iso_str
+        sm.transfer_function.processed_date = MTime(self.fn.stat().st_ctime).iso_str
         sm.transfer_function.runs_processed = sm.run_names
         # add birrp parameters
         for key, value in self.header_dict.items():
@@ -467,21 +475,21 @@ class JFile(object):
         return sm
 
 
-def read_jfile(j_fn):
+def read_jfile(fn):
     """
     Read a .j file output by BIRRP
     
-    :param j_fn: full path to j file
-    :type j_fn: string or :class:`pathlib.Path`
+    :param fn: full path to j file
+    :type fn: string or :class:`pathlib.Path`
     
     """
 
     from mtpy.core import mt
 
-    j_obj = JFile(j_fn)
+    j_obj = JFile(fn)
 
     mt_obj = mt.MT()
-    mt_obj._fn = j_fn
+    mt_obj._fn = fn
 
     for attr in [
         "Z",

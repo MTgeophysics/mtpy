@@ -25,7 +25,7 @@ class TestZMM(unittest.TestCase):
     """
 
     def setUp(self):
-        self.zmm_fn = list(EDI_DATA_DIR_BB.glob("*.j"))[0]
+        self.zmm_fn = list(EDI_DATA_DIR_BB.glob("*.zmm"))[0]
         self.zmm_obj = ZMM(self.zmm_fn)
         
     def test_location(self):
@@ -41,8 +41,16 @@ class TestZMM(unittest.TestCase):
         # file has 2 null periods -999 so size is 12 not 14 like in the file. 
         self.assertEqual(38, self.zmm_obj.periods.size)
         
-    def test_metadata(self):
-        pass
+    def test_has_z(self):
+        self.assertTrue(self.zmm_obj.Z.z.all() != 0)
+        
+    def test_has_tipper(self):
+        self.assertTrue(self.zmm_obj.Tipper.tipper.all() != 0)
+    
+    def test_fail_input_fn(self):
+        def set_fn(fn):
+            self.zmm_obj.fn = fn
+        self.assertRaises(ValueError, set_fn, r"/home/test.edi")
         
 
 class TestReadZMM(unittest.TestCase):
@@ -51,7 +59,7 @@ class TestReadZMM(unittest.TestCase):
     """
 
     def setUp(self):
-        self.zmm_fn = list(EDI_DATA_DIR_BB.glob("*.j"))[0]
+        self.zmm_fn = list(EDI_DATA_DIR_BB.glob("*.zmm"))[0]
         self.zmm_obj = ZMM(self.zmm_fn)
         self.mt_obj = mt.MT(self.zmm_fn)
 
@@ -75,10 +83,10 @@ class TestReadZMM(unittest.TestCase):
     def test_tipper(self):
         self.assertEqual(self.zmm_obj.Tipper, self.mt_obj.Tipper)
 
-    def test_birrp_parameters(self):
-        bp_list = [f"{k} = {v}" for k, v in self.zmm_obj.header_dict.items()]
-        self.assertEqual(bp_list, 
-                         self.mt_obj.station_metadata.transfer_function.processing_parameters)
+    # def test_birrp_parameters(self):
+    #     bp_list = [f"{k} = {v}" for k, v in self.zmm_obj.header_dict.items()]
+    #     self.assertEqual(bp_list, 
+    #                      self.mt_obj.station_metadata.transfer_function.processing_parameters)
         
         
 
