@@ -905,6 +905,11 @@ class Edi(object):
     def survey_metadata(self):
         sm = metadata.Survey()
         sm.project = self.Header.project
+        if sm.project is None:
+            try:
+                sm.project = self.Header.prospect
+            except AttributeError:
+                pass
         sm.survey_id = self.Header.survey
         sm.acquired_by.author = self.Header.acqby
         sm.geographic_name = self.Header.loc
@@ -952,8 +957,8 @@ class Edi(object):
             if "transfer_function" in key:
                 key = key.split("transfer_function.")[1]
                 sm.transfer_function.set_attr_from_name(key, value)
-            if "processing" in key:
-                key = key.split("processing")[1]
+            if "processing." in key:
+                key = key.split("processing.")[1]
                 if key in ["software"]:
                     sm.transfer_function.software.name = value
                 elif key in ["tag"]:

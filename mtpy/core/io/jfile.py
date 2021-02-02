@@ -7,12 +7,14 @@
 """
 
 # ==============================================================================
+from pathlib import Path
 import numpy as np
-import os
 
 import mtpy.core.z as mtz
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 from mt_metadata.transfer_functions import tf as metadata
+from mt_metadata.utils.mttime import MTime
 
 # ==============================================================================
 # Class to read j_file
@@ -23,14 +25,34 @@ class JFile(object):
     """
 
     def __init__(self, j_fn=None):
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self._jfn = None
         self.j_fn = j_fn
         self.header_dict = None
         self.metadata_dict = None
         self.Z = None
         self.Tipper = None
+        self.station = None
 
         if self.j_fn is not None:
             self.read_j_file()
+    
+    @property
+    def j_fn(self):
+        return self._jfn
+    
+    @j_fn.setter
+    def j_fn(self, value):
+        """
+        set file name
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        self._jfn = Path(value)
+        
 
     def _validate_j_file(self):
         """
@@ -38,8 +60,10 @@ class JFile(object):
         if they are not.
         """
 
-        if not os.path.isfile(self.j_fn):
-            raise NameError("Could not find {0}, check path".format(self.j_fn))
+        if not self.j_fn.exists():
+            msg = f"Could not find {self.j_fn}, check path"
+            self.logger.error(msg)
+            raise NameError(msg)
 
         with open(self.j_fn, "r", errors="replace") as fid:
             j_lines = fid.readlines()
@@ -52,7 +76,7 @@ class JFile(object):
                         value = float(line.split("=")[1].strip())
                     except ValueError:
                         value = 0.0
-                        print("changed {0} to 0.0".format(name[1:]))
+                        self.logger.debug(f"Changed {name[1:]} to 0.0")
                     j_lines[ii] = "{0} = {1}\n".format(name, value)
                     break
 
@@ -201,7 +225,7 @@ class JFile(object):
         if j_fn is not None:
             self.j_fn = j_fn
 
-        print("--> Reading {0}".format(self.j_fn))
+        self.logger.debug(f"Reading {self.j_fn}")
 
         j_line_list = self._validate_j_file()
 
@@ -210,7 +234,9 @@ class JFile(object):
 
         data_lines = [
             j_line for j_line in j_line_list if not ">" in j_line and not "#" in j_line
-        ][1:]
+        ][:]
+        
+        self.station = data_lines[0].strip()
 
         # sometimes birrp outputs some missing periods, so the best way to deal with
         # this that I could come up with was to get things into dictionaries with
@@ -220,7 +246,7 @@ class JFile(object):
         # make empty dictionary that have keys as the component
         z_dict = dict([(z_key, {}) for z_key in list(z_index_dict.keys())])
         t_dict = dict([(t_key, {}) for t_key in list(t_index_dict.keys())])
-        for d_line in data_lines:
+        for d_line in data_lines[1:]:
             # check to see if we are at the beginning of a component block, if so
             # set the dictionary key to that value
             if "z" in d_line.lower():
@@ -271,7 +297,7 @@ class JFile(object):
                 all_periods.append(f_key)
 
         if len(list(t_dict["tzx"].keys())) == 0:
-            print("Could not find any Tipper data in {0}".format(self.j_fn))
+            self.logger.info(f"Could not find any Tipper data in {self.j_fn}")
             find_tipper = False
 
         else:
@@ -300,8 +326,8 @@ class JFile(object):
                     z_arr[p_index, kk, ll] = z_value
                     z_err_arr[p_index, kk, ll] = z_dict[z_key][per][2]
                 except KeyError:
-                    print("No value found for period {0:.4g}".format(per))
-                    print("For component {0}".format(z_key))
+                    self.logger.debug(f"No value found for period {per:.4g}")
+                    self.logger.debug(f"For component {z_key}")
             if find_tipper is True:
                 for t_key in sorted(t_index_dict.keys()):
                     kk = t_index_dict[t_key][0]
@@ -311,8 +337,8 @@ class JFile(object):
                         t_arr[p_index, kk, ll] = t_value
                         t_err_arr[p_index, kk, ll] = t_dict[t_key][per][2]
                     except KeyError:
-                        print("No value found for period {0:.4g}".format(per))
-                        print("For component {0}".format(t_key))
+                        self.logger.debug(f"No value found for period {per:.4g}")
+                        self.logger.debug(f"For component {t_key}")
 
         # put the results into mtpy objects
         freq = 1.0 / all_periods
@@ -327,23 +353,31 @@ class JFile(object):
     @property
     def station_metadata(self):
         sm = metadata.Station()
-
-        sm.run_list.append(metadata.Run(id=f"{self.station}a"))
+        r1 = metadata.Run(id=f"{self.station}a")
+        
+        if not np.all(self.Z.z == 0):
+            r1.ex = metadata.Electric(component="ex", channel_id=1)
+            r1.ey = metadata.Electric(component="ey", channel_id=2)
+            r1.hx = metadata.Magnetic(component="hx", channel_id=3)
+            r1.hy = metadata.Magnetic(component="hy", channel_id=4)
+            
+            
+        if not np.all(self.Tipper.tipper == 0):
+            r1.hz = metadata.Magnetic(component="hz", channel_id=5)
+            
+          
+        sm.run_list.append(r1)
         sm.id = self.station
         sm.data_type = "MT"
 
-        sm.channels_recorded = self.Measurement.channels_recorded
         sm.location.latitude = self.metadata_dict["latitude"]
         sm.location.longitude = self.metadata_dict["longitude"]
         sm.location.elevation = self.metadata_dict["elevation"]
 
         # provenance
-        sm.acquired_by.author = self.Header.acqby
-        sm.provenance.creation_time = self.Header.filedate
-        sm.provenance.submitter.author = self.Header.fileby
         sm.provenance.software.name = "BIRRP"
         sm.provenance.software.version = "5"
-        sm.transfer_function.processed_date = self.Header.filedate
+        sm.transfer_function.processed_date = MTime(self.j_fn.stat().st_ctime).iso_str
         sm.transfer_function.runs_processed = sm.run_names
         # add birrp parameters
         for key, value in self.header_dict.items():
@@ -358,10 +392,14 @@ class JFile(object):
         return sm
 
 
-def read_jfile(self, j_fn):
+def read_jfile(j_fn):
     """
-        read j file
-        """
+    Read a .j file output by BIRRP
+    
+    :param j_fn: full path to j file
+    :type j_fn: string or :class:`pathlib.Path`
+    
+    """
 
     from mtpy.core import mt
 
@@ -385,7 +423,7 @@ def read_jfile(self, j_fn):
     return mt_obj
 
 
-def write_jfile(self, mt_obj, fn=None):
+def write_jfile(mt_obj, fn=None):
     """
     
     :param mt_obj: DESCRIPTION

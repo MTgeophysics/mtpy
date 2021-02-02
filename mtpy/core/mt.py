@@ -849,7 +849,7 @@ class MT(object):
 
         if file_type is None:
             file_type = fn_basename.suffix.lower()[1:]
-        if file_type not in ["edi", "xml"]:
+        if file_type not in ["edi", "xml", "j", "zmm", "zrr"]:
             msg = f"File type {file_type} not supported yet."
             self.logger.error(msg)
             raise MTError(msg)
