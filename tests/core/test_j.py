@@ -36,6 +36,13 @@ class TestJFile(unittest.TestCase):
     def test_station(self):
         self.assertEqual("BP05", self.j_obj.station)
         
+    def test_n_periods(self):
+        # file has 2 null periods -999 so size is 12 not 14 like in the file. 
+        self.assertEqual(12, self.j_obj.periods.size)
+        
+    def test_no_tipper(self):
+        self.assertTrue(self.j_obj.Tipper.tipper.all() == 0.0)
+        
         
 
 class TestReadJFile(unittest.TestCase):
