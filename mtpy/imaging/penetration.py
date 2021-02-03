@@ -181,7 +181,7 @@ class Depth2D(ImagingBase):
                 (stations, periods, pen, _) = get_penetration_depth_by_period(
                     pr.edi_list, selected_period, whichrho=self._rho, ptol=self._ptol)
 
-            line_label = "Period=%.2e s" % selected_period
+            line_label = "Period=%.3e s" % selected_period
 
             plt.plot(
                 pr.station_locations,
