@@ -22,7 +22,7 @@ import numpy as np
 import mtpy.core.mt as mt
 from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
 from mtpy.utils.mtpy_decorator import deprecated
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 import logging
 
 # mpl.rcParams['lines.linewidth'] = 2
@@ -32,7 +32,7 @@ import logging
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 # _logger.setLevel(logging.DEBUG)
 _logger.setLevel(logging.INFO)
 

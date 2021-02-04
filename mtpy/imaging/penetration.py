@@ -16,8 +16,7 @@ Revision History:
           period to specified periods
 """
 
-import os
-import sys
+from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -27,14 +26,14 @@ from scipy.interpolate import griddata
 
 import mtpy
 import mtpy.modeling.occam2d_rewrite as occam2d
-from .imaging_base import ImagingBase, ParameterError, ImagingError
+from .imaging_base import ImagingBase, ParameterError
 from mtpy.core import mt as mt
 from mtpy.utils.mtpy_decorator import deprecated
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 # default contains of rholist
 DEFAULT_RHOLIST = {"zxy", "zyx", "det"}
 
@@ -70,7 +69,7 @@ class Depth1D(ImagingBase):
 
     def plot(self):
         if self._data is None or not self._data:
-            raise NotImplemented
+            raise NotImplementedError
         elif self._rholist is None or not self._rholist:
             raise ZComponentError
         elif self._fig is not None:
@@ -568,10 +567,11 @@ def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho="det"):
     stations = []
     latlons = []
     for mt_obj in mt_obj_list:
-        if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
+        if isinstance(mt_obj, (str, Path)) and Path(mt_obj).is_file():
             mt_obj = mt.MT(mt_obj)
         elif not isinstance(mt_obj, mt.MT):
-            raise Exception("Unsupported list of objects %s" % type(mt_obj))
+            msg = f"Unsupported list of objects {type(mt_obj)}"
+            raise Exception(msg)
         # station id
         stations.append(mt_obj.station)
         # latlons
@@ -615,12 +615,13 @@ def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho="det"):
 
 
 def load_edi_files(edi_path, file_list=None):
+    edi_path = Path(edi_path)
 
     if file_list is None:
-        file_list = [ff for ff in os.listdir(edi_path) if ff.endswith("edi")]
+        file_list = list(edi_path.glob("*.edi"))
 
     if edi_path is not None:
-        edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
+        edi_list = [mt.MT(Path(edi_path, edi)) for edi in file_list]
     return edi_list
 
 
