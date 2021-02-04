@@ -225,12 +225,7 @@ class PlotSlices(object):
         self.draw_colorbar = kwargs.pop('draw_colorbar', True)
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.save_format = kwargs.pop('save_format', 'png')
-
-
-        self.current_label_desc = {'N-E': 'Depth',
-                                   'N-Z': 'Easting',
-                                   'E-Z': 'Northing'}
-       
+        
 
         # read data
         self.read_files()
@@ -531,19 +526,8 @@ class PlotSlices(object):
             else:
                 print('Could not find data file {0}'.format(self.data_fn))
 
-        # make grid meshes being sure the indexing is correct
-        self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,
-                                                               self.grid_z,
-                                                               indexing='ij')
-        self.mesh_nz_north, self.mesh_nz_vertical = np.meshgrid(self.grid_north,
-                                                                self.grid_z,
-                                                                indexing='ij')
-        self.mesh_en_east, self.mesh_en_north = np.meshgrid(self.grid_east,
-                                                            self.grid_north,
-                                                            indexing='ij')
-        self.axis_values = {'N-E':self.grid_z,
-                            'N-Z':self.grid_east,
-                            'E-Z':self.grid_north} 
+
+
                 
                 
     def basemap_plot(self, depth, basemap = None,tick_interval=None, save=False, 
@@ -757,7 +741,16 @@ class PlotSlices(object):
         axList = [self.ax_ez, self.ax_nz, self.ax_en, self.ax_map]
         for ax in axList: ax.tick_params(axis='both', length=2)
 
-
+        # make grid meshes being sure the indexing is correct
+        self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,
+                                                               self.grid_z,
+                                                               indexing='ij')
+        self.mesh_nz_north, self.mesh_nz_vertical = np.meshgrid(self.grid_north,
+                                                                self.grid_z,
+                                                                indexing='ij')
+        self.mesh_en_east, self.mesh_en_north = np.meshgrid(self.grid_east,
+                                                            self.grid_north,
+                                                            indexing='ij')
 
         # --> plot east vs vertical
         self._update_ax_ez()
@@ -813,7 +806,12 @@ class PlotSlices(object):
 
         self.current_range = self.z_limits
         self.current_label = 'N-E'
-
+        self.current_label_desc = {'N-E': 'Depth',
+                                   'N-Z': 'Easting',
+                                   'E-Z': 'Northing'}
+        self.axis_values = {'N-E':self.grid_z,
+                            'N-Z':self.grid_east,
+                            'E-Z':self.grid_north}
         self.axis_cursor_colors = {'N-E':'r',
                                    'N-Z':'b',
                                    'E-Z':'g'}
