@@ -18,14 +18,15 @@ class TestZ(TestCase):
     def test_rotate(self):
 
         alpharad = np.deg2rad(self.rotation_angle)
-        rotation_matrix = np.matrix([[np.cos(alpharad),np.sin(alpharad)],
-                                     [-np.sin(alpharad),np.cos(alpharad)]])
+        rotation_matrix = np.matrix([[np.cos(alpharad), -np.sin(alpharad)],
+                                     [np.sin(alpharad), np.cos(alpharad)]])
         
         z_array = self.MT.Z.z.copy()
         
         ztest = z_array[0]
         
-        ztest_rot = np.ma.dot(np.ma.dot(rotation_matrix,ztest),rotation_matrix.T)
+        ztest_rot = np.ma.dot(np.ma.dot(rotation_matrix,ztest), 
+                              rotation_matrix.T)
         
         self.MT.Z.rotate(self.rotation_angle)
         

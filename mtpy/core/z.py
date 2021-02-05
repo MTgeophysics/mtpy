@@ -111,21 +111,12 @@ class ResPhase(object):
             for idx_f in range(self.freq.size):
                 for ii in range(2):
                     for jj in range(2):
-#                        r_err, phi_err = MTcc.z_error2r_phi_error(
-#                            np.real(self._z[idx_f, ii, jj]),
-#                            self._z_err[idx_f, ii, jj],
-#                            np.imag(self._z[idx_f, ii, jj]),
-#                            self._z_err[idx_f, ii, jj])
-
                         r_err, phi_err = MTcc.z_error2r_phi_error(
                                 self._z[idx_f, ii, jj].real,
                                 self._z[idx_f, ii, jj].imag,
                                 self._z_err[idx_f, ii, jj])
                         self._resistivity_err[idx_f, ii, jj] = \
                             self._resistivity[idx_f, ii, jj] * r_err
-#                        self._resistivity_err[idx_f, ii, jj] = \
-#                            0.4 * np.abs(self._z[idx_f, ii, jj]) / \
-#                            self.freq[idx_f] * r_err
                         self._phase_err[idx_f, ii, jj] = phi_err
 
     def set_res_phase(self, res_array, phase_array, freq, res_err_array=None,
@@ -613,12 +604,12 @@ class Z(ResPhase):
 
             if self.z_err is not None:
                 z_rot[idx_freq], z_err_rot[idx_freq] = \
-                    MTcc.rotatematrix_incl_errors(self.z[idx_freq, :, :],
+                    MTcc.rotate_matrix_with_errors(self.z[idx_freq, :, :],
                                                   angle,
                                                   self.z_err[idx_freq, :, :])
             else:
                 z_rot[idx_freq], z_err_rot = \
-                    MTcc.rotatematrix_incl_errors(self.z[idx_freq, :, :],
+                    MTcc.rotate_matrix_with_errors(self.z[idx_freq, :, :],
                                                   angle)
 
         self.z = z_rot
@@ -1521,12 +1512,12 @@ class Tipper(object):
 
             if self.tipper_err is not None:
                 tipper_rot[idx_freq], tipper_err_rot[idx_freq] = \
-                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq, :, :],
+                    MTcc.rotate_vector_with_errors(self.tipper[idx_freq, :, :],
                                                   angle,
                                                   self.tipper_err[idx_freq, :, :])
             else:
                 tipper_rot[idx_freq], tipper_err_rot = \
-                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq, :, :],
+                    MTcc.rotate_vector_with_errors(self.tipper[idx_freq, :, :],
                                                   angle)
 
         self.tipper = tipper_rot

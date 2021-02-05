@@ -302,7 +302,7 @@ class MT(object):
         self._Tipper.rotate(theta_r)
         self.pt.rotate(theta_r)
 
-        print(("Rotated Z, Tipper, Phase Tensor and Zinvariants by"
+        print(("Rotated Z, Tipper, Phase Tensor and Zinvariants by "
                "{0:.3f} degrees".format(self._rotation_angle)))
 
     @Z.setter
