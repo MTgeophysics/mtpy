@@ -1865,9 +1865,9 @@ class Data(object):
         if isinstance(units, str):
             if units.lower() == "km":
                 scale = 1.0 / 1000.00
-            elif units.lower == "m":
+            elif units.lower() == "m":
                 scale = 1.0
-            elif units == "ft":
+            elif units.lower() == "ft":
                 scale = 3.2808
         elif isinstance(units, (int, float)):
             scale = units
@@ -1888,6 +1888,7 @@ class Data(object):
                 },
             )
         else:
+            self.station_locations.model_utm_zone = self.center_point.zone[0]
             pointsToVTK(
                 vtk_fn.as_posix(),
                 (self.station_locations.north + shift_north) * scale,

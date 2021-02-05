@@ -20,6 +20,7 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import griddata
@@ -154,10 +155,10 @@ class Depth2D(ImagingBase):
         self.set_rho(rho)
         self.units = "km"
 
-    def plot(self, tick_params={'fontsize':10}, **kwargs):
+    def plot(self, tick_params={'fontsize':4, "rotation": 45}, **kwargs):
         scale = -1
-        if self.units in ["km, kilometers"]:
-            scale = - 1./1000
+        if self.units in ["km", "kilometers"]:
+            scale = -1./1000
         if self._rho is None:
             raise ZComponentError
         elif self._fig is not None:
@@ -176,6 +177,9 @@ class Depth2D(ImagingBase):
 
         self._fig = plt.figure(figsize=(8, 6), dpi=150)
         self._fig.set_tight_layout(True)
+        self._ax = self._fig.add_subplot(1, 1, 1)
+        self._ax2 = self._ax.twiny()
+        line_list = []
         for selected_period in self._selected_periods:
             if period_by_index:
                 (stations, periods, pen, _) = get_penetration_depth_by_index(
@@ -184,47 +188,56 @@ class Depth2D(ImagingBase):
                 (stations, periods, pen, _) = get_penetration_depth_by_period(
                     pr.edi_list, selected_period, whichrho=self._rho, ptol=self._ptol)
 
-            line_label = "Period=%.2e s" % selected_period
-
-            plt.plot(
-                pr.station_locations,
+            line_label = f"Period={selected_period:.5g} s"
+            l1, =  self._ax.plot(
+                np.array(pr.station_locations) * abs(scale),
                 pen * scale,
                 "--",
                 label=line_label,
                 **kwargs)
-            plt.legend()
+            line_list.append(l1)
+            
+            l1, =  self._ax.fill_between(
+                [np.array(pr.station_locations) * abs(scale),
+                 np.array(pr.station_locations) * abs(scale)],
+                [0, pen * scale],
+                alpha=.5,
+                color=(.65, .65, .65))
+            line_list.append(l1)
 
-        plt.ylabel(
-            'Penetration Depth (Metres) Computed by %s' %
-            self._rho,
+        self._ax.set_ylabel(
+            f'Penetration Depth ({self.units}) Computed by {self._rho}',
             fontsize=fontsize
         )
-        plt.yticks(fontsize=fontsize)
-
-        plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=fontsize)
-        self._logger.debug("stations= %s", stations)
-        self._logger.debug("station locations: %s", pr.station_locations)
-        if pr.station_list is not None:
-            plt.xticks(
-                pr.station_locations,
-                pr.station_list,
-                rotation=45,
-                **tick_params
-                #                rotation='horizontal',
-            )
-        else:  # Are the stations in the same order as the profile generated pr.station_list????
-            plt.xticks(
-                pr.station_locations,
-                stations,
-                rotation=45,
-                **tick_params
-                #                rotation='horizontal',
-            )
+        self._ax.tick_params(which="y", labelsize=fontsize)
+        self._ax.yaxis.set_major_locator(MultipleLocator(10000 * abs(scale)))
+        self._ax.xaxis.set_major_locator(MultipleLocator(10000 * abs(scale)))
+        self._ax.set_xlabel(f"Distance ({self.units})")
+        # flip axis for positive down
+        self._ax.set_ylim(self._ax.get_ylim()[1], self._ax.get_ylim()[0])
 
         # plt.tight_layout()
-        plt.gca().xaxis.tick_top()
-        self._fig.canvas.set_window_title("MT Penetration Depth Profile by %s" % self._rho)
-        plt.legend(loc="lower left")
+        #self._ax.set_xlabel('MT Penetration Depth Profile Over Stations', fontsize=fontsize)
+        
+        self._logger.debug(f"stations= {stations}", stations)
+        self._logger.debug(f"station locations: {pr.station_locations}")
+        self._ax2.set_xlim(self._ax.get_xlim())
+        self._ax2.set_xticks(pr.station_locations * abs(scale))
+        if pr.station_list is not None:
+            self._ax2.set_xticklabels(pr.station_locations, **tick_params)
+        else:  # Are the stations in the same order as the profile generated pr.station_list????
+            self._ax2.set_xticklabels(stations, **tick_params)
+            
+
+        # x1, x2 = self._ax.get_xlim()
+        # print(x1, x2)
+        # self._ax2.set_xticks(np.arange(np.round(x1, -1), np.round(x2, -1), 
+        #                                10000 * abs(scale)))
+        
+        self._fig.canvas.set_window_title(f"MT Penetration Depth Estimated by {self._rho}")
+        self._ax.legend(line_list, loc="lower left")
+        
+        plt.show()
 
     def set_data(self, data):
         # this plot require multiple edi files
@@ -567,7 +580,7 @@ def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho='det'):
 
         pen_depth.append(penetration_depth)
 
-    return stations, periods, pen_depth, latlons
+    return np.array(stations), np.array(periods), np.array(pen_depth), np.array(latlons)
 
 
 def load_edi_files(edi_path, file_list=None):
@@ -654,7 +667,7 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
     # The returned 4 lists should have equal length!!!
     _logger.debug("The length of stations, periods, pen_depth, latlons: %s,%s,%s,%s ", len(stations), len(periods), len(pen_depth), len(latlons) )
 
-    return stations, periods, pen_depth, latlons
+    return np.array(stations), np.array(periods), np.array(pen_depth), np.array(latlons)
 
 
 class ZComponentError(ParameterError):
@@ -688,16 +701,6 @@ def check_period_values(period_list, ptol=0.1):
     else:
         return False
 
-        # pcounter = 0
-        #
-        # for per in period_list:
-        #     if (per > p0 * (1 - ptol)) and (per < p0 * (1 + ptol)):  # approximately equal by <5% error
-        #         pcounter = pcounter + 1
-        #     else:
-        #         logger.warn("Periods NOT Equal!!!  %s != %s", p0, per)
-        #         return False
-        #
-        # return True
 
 
 def get_bounding_box(latlons):
@@ -714,18 +717,6 @@ def get_bounding_box(latlons):
     _logger.debug("Latitude Range: [%.5f, %.5f]", minlat, maxlat)
     _logger.debug("Longitude Range: [%.5f, %.5f]", minlon, maxlon)
 
-    # lats = [tup[0] for tup in latlons]
-    # lons = [tup[1] for tup in latlons]
-    #
-    # minlat = min(lats)
-    # maxlat = max(lats)
-    #
-    # print("Latitude Range:", minlat, maxlat)
-    #
-    # minlon = min(lons)
-    # maxlon = max(lons)
-    #
-    # print("Longitude Range:", minlon, maxlon)
 
     return (minlon, maxlon), (minlat, maxlat)
 

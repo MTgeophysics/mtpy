@@ -50,7 +50,7 @@ def plot2Dprofile(
     ptol=0.05,
     zcomponent="det",
     edi_list=None,
-    tick_params={},
+    tick_params={"fontsize": 10, "rotation": 45},
     save=False,
     savepath=None,
     **kwargs
