@@ -15,13 +15,13 @@ Revision History:
     brenainn.moushall@ga.gov.au 03-04-2020 15:41:39 AEDT:
         - Modify 2D plot profile to take a list of selected periods
           instead of period indicies
+          
+    2020-02-05 (JP): updated to use Path instead of os and glob 
 """
 
-import glob
-import os
+from pathlib import Path
 import sys
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import click
@@ -32,18 +32,12 @@ from mtpy.imaging.penetration import (
     Depth2D,
 )
 
-# mpl.rcParams['lines.linewidth'] = 2
-# mpl.rcParams['lines.color'] = 'r'
-
-# mpl.rcParams['figure.figsize'] = [20, 10]
-
 import mtpy.core.mt as mt
-import mtpy.modeling.occam2d_rewrite as occam2d_new
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 # logger =
 # MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
 # specific
@@ -61,7 +55,8 @@ def plot2Dprofile(
     savepath=None,
     **kwargs
 ):
-    edifiles = glob.glob(os.path.join(edi_dir, "*.edi"))
+    edi_dir = Path(edi_dir)
+    edifiles = list(edi_dir.glob("*.edi"))
 
     _logger.debug("edi files: %s", edifiles)
 
@@ -69,13 +64,14 @@ def plot2Dprofile(
     plot = Depth2D(selected_periods, edis, ptol, zcomponent)
     plot.plot(tick_params, **kwargs)
     if save:
-        if os.path.isdir(savepath):
-            savepath == os.path.join(savepath, "Depth2D.png")
+        if Path(savepath).is_dir():
+            savepath == Path(savepath, "Depth2D.png")
         if savepath is not None:
             plot._fig.savefig(savepath)
         else:
-            savepath = os.path.join(edi_dir, "Depth2D.png")
+            savepath = Path(edi_dir, "Depth2D.png")
     plot.show()
+    return plot
 
 
 def barplot_multi_station_penentration_depth(
@@ -89,15 +85,13 @@ def barplot_multi_station_penentration_depth(
     :return:
     """
 
-    if os.path.isdir(edifiles_dir):
-        edi_dir = edifiles_dir  # "E:/Githubz/mtpy2/tests/data/edifiles/"
-        edifiles_dir = glob.glob(os.path.join(edi_dir, "*.edi"))
+    if Path(edifiles_dir).is_dir():
+        edi_dir = Path(edifiles_dir)  
+        edifiles_dir = list(edi_dir.glob("*.edi"))
         _logger.debug(edifiles_dir)
     else:
         # Assume edifiles_dir is [a list of edi files]
         pass
-
-    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
     # per_index=0,1,2,....
     periods = []
@@ -167,8 +161,8 @@ if __name__ == "__main__old":
             "python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59"
         )
         sys.exit(1)
-    elif os.path.isdir(sys.argv[1]):
-        edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
+    elif Path(sys.argv[1]).is_dir():
+        edi_dir = Path(sys.argv[1])  # the first argument is path2_edi_dir
         # the second,.... will be period index list
         period_index_list = sys.argv[2:]
         print(("period_index_list = {}".format(period_index_list)))
@@ -203,9 +197,9 @@ if __name__ == "__main__old":
     help="Periods seperated by space",
 )
 def plot_penetration_image(input, period_list):
-    if os.path.isdir(input):
+    if Path(input).is_dir():
         period_index_list = period_list.split(" ")
-        plot2Dprofile(input, period_index_list, zcomponent="det")
+        plot2Dprofile(Path(input), period_index_list, zcomponent="det")
     else:
         print("Please provide an edi directory !")
 
