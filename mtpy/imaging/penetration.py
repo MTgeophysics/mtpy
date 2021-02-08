@@ -185,7 +185,7 @@ class Depth2D(ImagingBase):
 
             plt.plot(
                 pr.station_locations,
-                pen,
+                np.array(pen)*1e-3,
                 "--",
                 #                marker="o",
                 #                markersize=12,
@@ -195,10 +195,11 @@ class Depth2D(ImagingBase):
             plt.legend()
 
         plt.ylabel(
-            'Penetration Depth (Metres) Computed by %s' %
+            'Penetration Depth (km) Computed by %s' %
             self._rho,
             fontsize=fontsize
         )
+        plt.gca().invert_yaxis()
         plt.yticks(fontsize=fontsize)
 
         plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=fontsize)
@@ -635,15 +636,15 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
             periods.append(per)
 
             if whichrho == 'zxy':
-                penetration_depth = - scale_param * \
+                penetration_depth = scale_param * \
                     np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
             elif whichrho == 'zyx':
-                penetration_depth = - scale_param * \
+                penetration_depth = scale_param * \
                     np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
             elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
                 # determinant value at the given period index
                 det2 = np.abs(zeta.det[per_index])
-                penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+                penetration_depth = scale_param * np.sqrt(0.2 * per * det2 * per)
             else:
                 _logger.critical(
                     "unsupported method to compute penetration depth: %s",
