@@ -74,7 +74,6 @@ def test_mare2dem_data(ref_output, test_output):
             # Test X, Y, Z are within tolerance (2 decimal places)
             for i, line in enumerate(diff):
                 if line.startswith('-'):
-                    line = list(line)
                     if diff[i + 1].startswith('+'):
                         a = line.split()
                         b = diff[i + 1].split()
