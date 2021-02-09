@@ -530,7 +530,7 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err=None):
     # counter clockwise, I cannot find a good reason for this except that
     # when you plot the strike and phase tensors the look correct with this
     # formulation.
-    rotmat = np.array([[cphi, sphi], [-sphi, cphi]])
+    rotmat = np.array([[cphi, -sphi], [sphi, cphi]])
     # rotmat = np.array([[ cphi, -sphi], [sphi, cphi]])
     rotated_matrix = np.dot(np.dot(rotmat, inmatrix), np.linalg.inv(rotmat))
 
