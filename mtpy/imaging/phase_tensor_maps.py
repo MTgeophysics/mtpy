@@ -733,14 +733,15 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 # if map scale is lat lon set parameters
                 if self.mapscale == "deg":
-                    latlist[ii] = mt.lat
-                    lonlist[ii] = mt.lon
-                    plotx = mt.lon - refpoint[0]
-                    ploty = mt.lat - refpoint[1]
+                    latlist[ii] = mt.latitude
+                    lonlist[ii] = mt.longitude
+                    plotx = mt.longitude - refpoint[0]
+                    ploty = mt.latitude - refpoint[1]
 
                 # if map scale is in meters easting and northing
                 elif self.mapscale == "m":
-                    east, north, zone = gis_tools.project_point_ll2utm(mt.lat, mt.lon)
+                    east, north, zone = gis_tools.project_point_ll2utm(mt.latitude, 
+                                                                       mt.longitude)
 
                     # set the first point read in as a refernce other points
                     if ii == 0:
@@ -772,7 +773,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 # if mapscale is in km easting and northing
                 elif self.mapscale == "km":
-                    east, north, zone = gis_tools.project_point_ll2utm(mt.lat, mt.lon)
+                    east, north, zone = gis_tools.project_point_ll2utm(mt.latitude,
+                                                                       mt.longitude)
                     if ii == 0:
                         zone1 = zone
                         plotx = (east - refpoint[0]) / 1000.0
@@ -1141,7 +1143,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # END: if self.plot_tipper.find('yes') == 0 ---------------------------
 
         # make a grid with color lines
-        lpax.grid(True, alpha=0.3, which="both", color=(0.5, 0.5, 0.5))
+        lpax.grid(True, alpha=0.3, which="major", color=(0.5, 0.5, 0.5), 
+                  zorder=0, lw=.5)
+        lpax.set_axisbelow(True)
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
 
@@ -1230,6 +1234,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
             plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
             self.ref_ax.set_title(r"$\Phi$ = 1")
+            
+        self.ax = lpax
 
         if show:
             # always show, and adjust the figure before saving it below. The
@@ -1464,8 +1470,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
 
                 station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (
-                    mt1.lon,
-                    mt1.lat,
+                    mt1.longitude,
+                    mt1.latitude,
                     mt1.freq[j2],
                 )
             except IndexError:
