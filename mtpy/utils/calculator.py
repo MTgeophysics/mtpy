@@ -127,8 +127,7 @@ def nearest_index(val, array):
     return np.where(diff == min(diff))[0][0]
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers,
-                              increment_factor=0.999):
+def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
@@ -205,7 +204,6 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
                             -inv_matrix[i, k] * inv_matrix[l, j] * inmatrix_err[k, l]
                         )
 
-
                 inv_matrix_err[i, j] = err
 
     return inv_matrix, inv_matrix_err
@@ -245,8 +243,7 @@ def rhophi2z(rho, phi, freq):
     return z
 
 
-def compute_determinant_error(z_array, z_err_array, method='theoretical',
-                              repeats=1000):
+def compute_determinant_error(z_array, z_err_array, method="theoretical", repeats=1000):
     """
     compute the error of the determinant of z using a stochastic method
     seed random z arrays with a normal distribution around the input array
@@ -271,17 +268,20 @@ def compute_determinant_error(z_array, z_err_array, method='theoretical',
 
         arraylist = arraylist.reshape(repeats, z_array.shape[0], 2, 2)
         detlist = np.linalg.det(arraylist)
-        error = np.std(detlist,axis=0)
-    
+        error = np.std(detlist, axis=0)
+
     else:
-        error = np.abs(z_err_array[:, 0, 0] * np.abs(z_array[:, 1, 1]) +\
-                       z_err_array[:, 1, 1] * np.abs(z_array[:, 0, 0]) \
-                       - z_err_array[:, 0, 1]*np.abs(z_array[:, 1, 0]) - \
-                       z_err_array[:, 1, 0]*np.abs(z_array[:, 0, 1]))
-    
+        error = np.abs(
+            z_err_array[:, 0, 0] * np.abs(z_array[:, 1, 1])
+            + z_err_array[:, 1, 1] * np.abs(z_array[:, 0, 0])
+            - z_err_array[:, 0, 1] * np.abs(z_array[:, 1, 0])
+            - z_err_array[:, 1, 0] * np.abs(z_array[:, 0, 1])
+        )
+
     return error
 
-def propagate_error_polar2rect(r,r_error,phi, phi_error):
+
+def propagate_error_polar2rect(r, r_error, phi, phi_error):
     """
         Find error estimations for the transformation from polar to cartesian
         coordinates.
@@ -421,7 +421,6 @@ def z_error2r_phi_error(z_real, z_imag, error):
     return res_rel_err, phi_err
 
 
-
 def old_z_error2r_phi_error(x, x_error, y, y_error):
     """
     Error estimation from rect to polar, but with small variation needed for 
@@ -503,6 +502,7 @@ def old_z_error2r_phi_error(x, x_error, y, y_error):
 # b) use propagation of errors on Z' to obtain the rotated Z'err
 # That is NOT the same as the rotated error matrix Zerr (although the result is similar)
 
+
 def rotate_matrix_with_errors(in_matrix, angle, error=None):
     """
     
@@ -528,13 +528,14 @@ def rotate_matrix_with_errors(in_matrix, angle, error=None):
     :rtype: np.ndarray
 
     """
-   
+
     if in_matrix is None:
-        raise MTex.MTpyError_inputarguments('Matrix must be defined')
+        raise MTex.MTpyError_inputarguments("Matrix must be defined")
 
     if (error is not None) and (in_matrix.shape != error.shape):
-        msg = 'matricies are not the same shape in_matrix={0}, err={1}'.format(
-               in_matrix.shape, error.shape)
+        msg = "matricies are not the same shape in_matrix={0}, err={1}".format(
+            in_matrix.shape, error.shape
+        )
         raise MTex.MTpyError_inputarguments(msg)
 
     try:
@@ -546,31 +547,39 @@ def rotate_matrix_with_errors(in_matrix, angle, error=None):
     sphi = np.sin(phi)
 
     # clockwise rotation matrix is given by [[cos, -sin], [sin, cos]]
-    rot_mat = np.array([[ cphi, -sphi], [sphi, cphi]])
+    rot_mat = np.array([[cphi, -sphi], [sphi, cphi]])
     rotated_matrix = np.dot(np.dot(rot_mat, in_matrix), np.linalg.inv(rot_mat))
 
-    err_mat  = None
-    if (error is not None) :
-        err_orig = np.real(error) 
+    err_mat = None
+    if error is not None:
+        err_orig = np.real(error)
         err_mat = np.zeros_like(error)
 
         # standard propagation of errors:
-        err_mat[0,0] = np.sqrt((cphi**2 * err_orig[0, 0])**2 + \
-                               (cphi * sphi * err_orig[0, 1])**2 + \
-                               (cphi * sphi * err_orig[1, 0])**2 + \
-                               (sphi**2 * err_orig[1, 1])**2)
-        err_mat[0,1] = np.sqrt((cphi**2 * err_orig[0, 1])**2 + \
-                               (cphi * sphi * err_orig[1, 1])**2 + \
-                               (cphi * sphi * err_orig[0, 0])**2 + \
-                               (sphi**2 * err_orig[1, 0])**2)
-        err_mat[1,0] = np.sqrt((cphi**2 * err_orig[1, 0])**2 + \
-                               (cphi * sphi * err_orig[1, 1])**2 +\
-                               (cphi * sphi * err_orig[0, 0])**2 + \
-                               (sphi**2 * err_orig[0, 1])**2)
-        err_mat[1,1] = np.sqrt((cphi**2 * err_orig[1, 1])**2 + \
-                               (cphi * sphi * err_orig[0, 1])**2 + \
-                               (cphi * sphi * err_orig[1, 0])**2 + \
-                               (sphi**2 * err_orig[0, 0])**2)
+        err_mat[0, 0] = np.sqrt(
+            (cphi ** 2 * err_orig[0, 0]) ** 2
+            + (cphi * sphi * err_orig[0, 1]) ** 2
+            + (cphi * sphi * err_orig[1, 0]) ** 2
+            + (sphi ** 2 * err_orig[1, 1]) ** 2
+        )
+        err_mat[0, 1] = np.sqrt(
+            (cphi ** 2 * err_orig[0, 1]) ** 2
+            + (cphi * sphi * err_orig[1, 1]) ** 2
+            + (cphi * sphi * err_orig[0, 0]) ** 2
+            + (sphi ** 2 * err_orig[1, 0]) ** 2
+        )
+        err_mat[1, 0] = np.sqrt(
+            (cphi ** 2 * err_orig[1, 0]) ** 2
+            + (cphi * sphi * err_orig[1, 1]) ** 2
+            + (cphi * sphi * err_orig[0, 0]) ** 2
+            + (sphi ** 2 * err_orig[0, 1]) ** 2
+        )
+        err_mat[1, 1] = np.sqrt(
+            (cphi ** 2 * err_orig[1, 1]) ** 2
+            + (cphi * sphi * err_orig[0, 1]) ** 2
+            + (cphi * sphi * err_orig[1, 0]) ** 2
+            + (sphi ** 2 * err_orig[0, 0]) ** 2
+        )
 
     return rotated_matrix, err_mat
 
@@ -600,16 +609,18 @@ def rotate_vector_with_errors(in_vector, angle, error=None):
     :rtype: np.ndarray
 
     """
-    
+
     if in_vector is None:
-        raise MTex.MTpyError_inputarguments('Vector AND error-vector must'+
-                                            ' be defined')
+        raise MTex.MTpyError_inputarguments(
+            "Vector AND error-vector must" + " be defined"
+        )
 
     if (error is not None) and (in_vector.shape != error.shape):
-        msg = 'matricies are not the same shape in_vector={0}, err={1}'.format(
-               in_vector.shape, error.shape)
+        msg = "matricies are not the same shape in_vector={0}, err={1}".format(
+            in_vector.shape, error.shape
+        )
         raise MTex.MTpyError_inputarguments(msg)
-    
+
     try:
         phi = np.deg2rad(float(angle) % 360)
     except TypeError:
@@ -617,16 +628,16 @@ def rotate_vector_with_errors(in_vector, angle, error=None):
 
     cphi = np.cos(phi)
     sphi = np.sin(phi)
-    
-    rot_mat = np.array([[ cphi, -sphi],[sphi, cphi]])
+
+    rot_mat = np.array([[cphi, -sphi], [sphi, cphi]])
 
     if in_vector.shape == (1, 2):
-        rotated_vector = np.dot(in_vector, np.linalg.inv(rot_mat) )
+        rotated_vector = np.dot(in_vector, np.linalg.inv(rot_mat))
     else:
         rotated_vector = np.dot(rot_mat, in_vector)
 
     err_vector = None
-    if (error is not None):   
+    if error is not None:
         err_vector = np.zeros_like(error)
 
         if error.shape == (1, 2):
@@ -637,8 +648,9 @@ def rotate_vector_with_errors(in_vector, angle, error=None):
     return rotated_vector, err_vector
 
 
-def multiplymatrices_incl_errors(inmatrix1, inmatrix2, 
-                                 inmatrix1_err=None, inmatrix2_err=None):
+def multiplymatrices_incl_errors(
+    inmatrix1, inmatrix2, inmatrix1_err=None, inmatrix2_err=None
+):
 
     if inmatrix1 is None or inmatrix2 is None:
         raise MTex.MTpyError_input_arguments("ERROR - two 2x2 arrays needed as input")

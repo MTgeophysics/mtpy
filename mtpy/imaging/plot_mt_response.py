@@ -755,17 +755,13 @@ class PlotMTResponse(PlotSettings):
             self.axp.set_xlabel("")
 
         # -----plot tipper----------------------------------------------------
-        if self.plot_tipper.find('y') == 0:
+        if self.plot_tipper.find("y") == 0:
 
-            txr = self.Tipper.mag_real * \
-                    np.cos(np.deg2rad(self.Tipper.angle_real))
-            tyr = self.Tipper.mag_real * \
-                    np.sin(np.deg2rad(self.Tipper.angle_real))
+            txr = self.Tipper.mag_real * np.cos(np.deg2rad(self.Tipper.angle_real))
+            tyr = self.Tipper.mag_real * np.sin(np.deg2rad(self.Tipper.angle_real))
 
-            txi = self.Tipper.mag_imag * \
-                    np.cos(np.deg2rad(self.Tipper.angle_imag))
-            tyi = self.Tipper.mag_imag * \
-                    np.sin(np.deg2rad(self.Tipper.angle_imag))
+            txi = self.Tipper.mag_imag * np.cos(np.deg2rad(self.Tipper.angle_imag))
+            tyi = self.Tipper.mag_imag * np.sin(np.deg2rad(self.Tipper.angle_imag))
 
             nt = len(txr)
 
@@ -893,27 +889,24 @@ class PlotMTResponse(PlotSettings):
                 nseg = float((ckmax - ckmin) / (2 * ckstep))
 
             # get the properties to color the ellipses by
-            if self.ellipse_colorby == 'phiminang' or \
-                    self.ellipse_colorby == 'phimin':
+            if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
                 color_array = self.pt.phimin
 
-            elif self.ellipse_colorby == 'phimaxang' or \
-                    self.ellipse_colorby == 'phimax':
+            elif (
+                self.ellipse_colorby == "phimaxang" or self.ellipse_colorby == "phimax"
+            ):
                 color_array = self.pt.phimax
 
-
-            elif self.ellipse_colorby == 'phidet':
+            elif self.ellipse_colorby == "phidet":
                 color_array = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
 
-
-            elif self.ellipse_colorby == 'skew' or \
-                    self.ellipse_colorby == 'skew_seg':
+            elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
                 color_array = self.pt.beta
 
-            elif self.ellipse_colorby == 'ellipticity':
+            elif self.ellipse_colorby == "ellipticity":
                 color_array = self.pt.ellipticity
-                
-            elif self.ellipse_colorby in ['strike', 'azimuth']:
+
+            elif self.ellipse_colorby in ["strike", "azimuth"]:
                 color_array = self.pt.azimuth % 180
                 color_array[np.where(color_array > 90)] -= 180
 
@@ -939,19 +932,23 @@ class PlotMTResponse(PlotSettings):
                 self.axpt.add_patch(ellipd)
 
                 # get ellipse color
-                if cmap.find('seg') > 0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[ii],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax,
-                                                             bounds=bounds))
+                if cmap.find("seg") > 0:
+                    ellipd.set_facecolor(
+                        mtcl.get_plot_color(
+                            color_array[ii],
+                            self.ellipse_colorby,
+                            cmap,
+                            ckmin,
+                            ckmax,
+                            bounds=bounds,
+                        )
+                    )
                 else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[ii],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax))
+                    ellipd.set_facecolor(
+                        mtcl.get_plot_color(
+                            color_array[ii], self.ellipse_colorby, cmap, ckmin, ckmax
+                        )
+                    )
 
             # ----set axes properties-----------------------------------------------
             # --> set tick labels and limits

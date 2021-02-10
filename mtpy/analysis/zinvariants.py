@@ -150,7 +150,7 @@ class Zinvariants:
             **q**          : dependent variable suggesting dimensionality
             
         """
-        # get the length of z to initialize some empty arrays           
+        # get the length of z to initialize some empty arrays
         nz = self.z.shape[0]
 
         # set some empty arrays to put stuff into

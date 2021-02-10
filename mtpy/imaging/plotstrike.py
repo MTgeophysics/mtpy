@@ -182,12 +182,12 @@ class PlotStrike(object):
         self.ring_spacing = 10
         self.ring_limits = None
         self.plot_orthogonal = False
-        
+
         self.font_size = 7
         self.text_pad = 0.6
         self.text_size = self.font_size
         self.polar_limits = (np.deg2rad(-180), np.deg2rad(180))
-            
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -250,12 +250,12 @@ class PlotStrike(object):
             if mt.period.size > nt:
                 nt = mt.period.size
 
-            #-----------get strike angle from invariants----------------------
+            # -----------get strike angle from invariants----------------------
             zinv = Zinvariants(mt.Z)
 
-            # subtract 90 because polar plot assumes 0 is on the x an 90 is 
+            # subtract 90 because polar plot assumes 0 is on the x an 90 is
             # on the y
-            zs = 90 - zinv.strike 
+            zs = 90 - zinv.strike
 
             # fold so the angle goes from 0 to 180
             if self.fold == True:
@@ -271,9 +271,8 @@ class PlotStrike(object):
             mdictinv = dict([(ff, jj) for ff, jj in zip(mt.period, zs)])
             inv_list.append(mdictinv)
 
-
-            #------------get strike from phase tensor strike angle------------
-            # subtract 90 because polar plot assumes 0 is on the x an 90 is 
+            # ------------get strike from phase tensor strike angle------------
+            # subtract 90 because polar plot assumes 0 is on the x an 90 is
             # on the y
             pt = mt.pt
             az = 90 - pt.azimuth
@@ -305,11 +304,11 @@ class PlotStrike(object):
                 tip.tipper = np.zeros((len(mt.period), 1, 2), dtype="complex")
                 tip.compute_components()
 
-            # # subtract 90 because polar plot assumes 0 is on the x an 90 is 
+            # # subtract 90 because polar plot assumes 0 is on the x an 90 is
             # on the y
             tipr = 90 - tip.angle_real
 
-            tipr[np.where(abs(tipr) == 180.)] = np.nan
+            tipr[np.where(abs(tipr) == 180.0)] = np.nan
             tipr[np.where(abs(tipr) == 0)] = np.nan
 
             # fold so the angle goes from 0 to 180
@@ -326,11 +325,9 @@ class PlotStrike(object):
             tiprdict = dict([(ff, jj) for ff, jj in zip(mt.period, tipr)])
             tip_list.append(tiprdict)
 
-        #--> get min and max period
-        self.max_per = np.amax([np.max(list(mm.keys())) for mm in inv_list],
-                               axis=0)
-        self.min_per = np.amin([np.min(list(mm.keys())) for mm in pt_list],
-                               axis=0)
+        # --> get min and max period
+        self.max_per = np.amax([np.max(list(mm.keys())) for mm in inv_list], axis=0)
+        self.min_per = np.amin([np.min(list(mm.keys())) for mm in pt_list], axis=0)
 
         # make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt, nc))
@@ -487,29 +484,29 @@ class PlotStrike(object):
                 # make subplots for invariants and phase tensor azimuths
                 # dependent on vertical or horizontal orientation
 
-                if 'h' in self.plot_orientation:
-                    self.ax_inv = self.fig.add_subplot(n_subplots, nb, jj,
-                                                        polar=True)
-                    self.ax_pt = self.fig.add_subplot(n_subplots, nb, jj + nb,
-                                                       polar=True)
-                elif 'v' in self.plot_orientation:
-                    self.ax_inv = self.fig.add_subplot(nb, n_subplots,
-                                                       jj * n_subplots - 2,
-                                                       polar=True)
-                    self.ax_pt = self.fig.add_subplot(nb, n_subplots, 
-                                                      jj * n_subplots - 1,
-                                                      polar=True)
+                if "h" in self.plot_orientation:
+                    self.ax_inv = self.fig.add_subplot(n_subplots, nb, jj, polar=True)
+                    self.ax_pt = self.fig.add_subplot(
+                        n_subplots, nb, jj + nb, polar=True
+                    )
+                elif "v" in self.plot_orientation:
+                    self.ax_inv = self.fig.add_subplot(
+                        nb, n_subplots, jj * n_subplots - 2, polar=True
+                    )
+                    self.ax_pt = self.fig.add_subplot(
+                        nb, n_subplots, jj * n_subplots - 1, polar=True
+                    )
                 ax_list = [self.ax_inv, self.ax_pt]
                 # vertical orientation
                 if self.plot_tipper:
-                    if 'h' in self.plot_orientation:
-                        self.ax_tip = self.fig.add_subplot(n_subplots, nb,
-                                                           jj + 2 * nb,
-                                                           polar=True)
-                    elif 'v' in self.plot_orientation:
-                        self.ax_tip = self.fig.add_subplot(nb, n_subplots, 
-                                                           jj * n_subplots,
-                                                           polar=True)
+                    if "h" in self.plot_orientation:
+                        self.ax_tip = self.fig.add_subplot(
+                            n_subplots, nb, jj + 2 * nb, polar=True
+                        )
+                    elif "v" in self.plot_orientation:
+                        self.ax_tip = self.fig.add_subplot(
+                            nb, n_subplots, jj * n_subplots, polar=True
+                        )
                     ax_list.append(self.ax_tip)
 
                 # make a list of indicies for each decades
@@ -611,7 +608,7 @@ class PlotStrike(object):
                     axh.yaxis.set_major_locator(MultipleLocator(self.ring_spacing))
 
                     # make a light grid
-                    axh.grid(alpha=.25, zorder=0)
+                    axh.grid(alpha=0.25, zorder=0)
                     axh.set_xlim(self.polar_limits)
 
                     # properties for the invariants
@@ -619,7 +616,6 @@ class PlotStrike(object):
                         # limits need to be rotate 90 counter clockwise because
                         # we already rotated by 90 degrees so the range is
                         # from -90 to 270 with -90 being east
-                        
 
                         # label the plot with the mode value of strike
                         # need to subtract 90 again because the histogram is
@@ -630,39 +626,45 @@ class PlotStrike(object):
                         )
 
                         ### place the estimated strike
-                        axh.text(-np.pi/2, axh.get_ylim()[1] * self.text_pad,
-                                 '{0:.1f}$^o$'.format(inv_mode),
-                                 horizontalalignment='center',
-                                 verticalalignment='baseline',
-                                 fontdict={'size': self.text_size},
-                                 bbox={'facecolor': self.color_inv,
-                                       'alpha': .25})
+                        axh.text(
+                            -np.pi / 2,
+                            axh.get_ylim()[1] * self.text_pad,
+                            "{0:.1f}$^o$".format(inv_mode),
+                            horizontalalignment="center",
+                            verticalalignment="baseline",
+                            fontdict={"size": self.text_size},
+                            bbox={"facecolor": self.color_inv, "alpha": 0.25},
+                        )
 
-                        #--> set title of subplot
-                        if 'h' in self.plot_orientation:
-                            axh.set_title(self.title_dict[bb], fontdict=fd,
-                                          bbox={'facecolor': 'white',
-                                                'alpha': .25})
+                        # --> set title of subplot
+                        if "h" in self.plot_orientation:
+                            axh.set_title(
+                                self.title_dict[bb],
+                                fontdict=fd,
+                                bbox={"facecolor": "white", "alpha": 0.25},
+                            )
 
-                            #--> set the title offset
-                            axh.titleOffsetTrans._t = (0, .1)
-                        elif 'v' in self.plot_orientation:
-                            axh.set_ylabel(self.title_dict[bb], fontdict=fd,
-                                           bbox={'facecolor': 'white',
-                                                 'alpha': .25}, 
-                                           rotation=0,
-                                           labelpad=50)
+                            # --> set the title offset
+                            axh.titleOffsetTrans._t = (0, 0.1)
+                        elif "v" in self.plot_orientation:
+                            axh.set_ylabel(
+                                self.title_dict[bb],
+                                fontdict=fd,
+                                bbox={"facecolor": "white", "alpha": 0.25},
+                                rotation=0,
+                                labelpad=50,
+                            )
                             axh.yaxis.set_label_position("right")
 
                     # set pt axes properties
                     elif aa == 1:
                         # limits go from -180 to 180 as that is how the angle
                         # is calculated
-                        #axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
-                        
-                        pt_median, pt_mode, pt_mean = self.get_stats(plot_pt,
-                                                                     pt_hist,
-                                                                     bb)
+                        # axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
+
+                        pt_median, pt_mode, pt_mean = self.get_stats(
+                            plot_pt, pt_hist, bb
+                        )
 
                         ### put the estimated strike
                         axh.text(
@@ -678,7 +680,7 @@ class PlotStrike(object):
                     # set tipper axes properties
                     elif aa == 2:
                         # limits go from -180 to 180
-                        #axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
+                        # axh.set_xlim(-180 * np.pi / 180, 180 * np.pi / 180)
 
                         tr_median, tr_mode, tr_mean = self.get_stats(tr, tr_hist, bb)
                         ### put the estimated strike
@@ -1338,9 +1340,9 @@ class PlotStrike(object):
             slisttip[kk + 2].append(tpmed)
             slisttip[kk + 3].append(tpmode)
 
-        invfid = open(os.path.join(svpath, 'Strike.invariants'), 'w')
-        ptfid = open(os.path.join(svpath, 'Strike.pt'), 'w')
-        tpfid = open(os.path.join(svpath, 'Strike.tipper'), 'w')
+        invfid = open(os.path.join(svpath, "Strike.invariants"), "w")
+        ptfid = open(os.path.join(svpath, "Strike.pt"), "w")
+        tpfid = open(os.path.join(svpath, "Strike.tipper"), "w")
 
         # ---> write strike from the invariants
         # == > mean

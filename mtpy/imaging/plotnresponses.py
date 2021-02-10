@@ -377,11 +377,11 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         if self.plot_yn == "y":
             self.plot()
 
-    #---need to rotate data on setting rotz
+    # ---need to rotate data on setting rotz
     @property
     def rotation_angle(self):
         return self._rotation_angle
-    
+
     @rotation_angle.setter
     def rotation_angle(self, value):
         """
@@ -389,7 +389,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         """
         for ii, mt in enumerate(self.mt_list):
             mt.rotation_angle = value
-            
+
         self._rotation_angle = value
 
     # --> on setting plot_ make sure to update the order and list
@@ -1127,7 +1127,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     elif self.ellipse_colorby == "ellipticity":
                         colorarray = pt.ellipticity
-                    elif self.ellipse_colorby in ['strike', 'azimuth']:
+                    elif self.ellipse_colorby in ["strike", "azimuth"]:
                         colorarray = self.fold_strike(pt.azimuth)
                         self.ellipse_range = (-90, 90)
                         ckmin = self.ellipse_range[0]
@@ -1933,7 +1933,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # ------plot strike angles----------------------------------------------
                 if self._plot_strike.find("y") == 0:
-                    if self._plot_strike.find('p') > 0:
+                    if self._plot_strike.find("p") > 0:
                         # strike from phase tensor
                         s2 = mt.pt.azimuth
                         s2_err = mt.pt.azimuth_err

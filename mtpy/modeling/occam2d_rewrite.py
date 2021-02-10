@@ -1284,7 +1284,9 @@ class Profile:
             self.elevation_profile[0, :] = np.array(
                 [ss for ss in self.station_locations]
             )
-            self.elevation_profile[1, :] = np.array([edi.elevation for edi in self.edi_list])
+            self.elevation_profile[1, :] = np.array(
+                [edi.elevation for edi in self.edi_list]
+            )
 
         # --> project known elevations onto the profile line
         else:

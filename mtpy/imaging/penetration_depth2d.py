@@ -86,7 +86,7 @@ def barplot_multi_station_penentration_depth(
     """
 
     if Path(edifiles_dir).is_dir():
-        edi_dir = Path(edifiles_dir)  
+        edi_dir = Path(edifiles_dir)
         edifiles_dir = list(edi_dir.glob("*.edi"))
         _logger.debug(edifiles_dir)
     else:

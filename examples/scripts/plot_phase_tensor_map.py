@@ -16,8 +16,8 @@ import mtpy.imaging.phase_tensor_maps as pptmaps
 
 # directory containing edis
 
-#edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
-edipath = '/mtpy/examples/data/ET_edi'
+# edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
+edipath = "/mtpy/examples/data/ET_edi"
 
 # whether or not to save the figure to file
 save = False

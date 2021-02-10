@@ -369,26 +369,26 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             self.ystretch = stretch[1]
 
         # --> set plot properties
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.plot_num = kwargs.pop('plot_num', 1)
-        self.plot_title = kwargs.pop('plot_title', None)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.tscale = kwargs.pop('tscale', 'period')
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.linedir = kwargs.pop('linedir', 'ew')
-        self.font_size = kwargs.pop('font_size', 7)
-        self.station_id = kwargs.pop('station_id', [0, 4])
-        self.ystep = kwargs.pop('ystep', 4)
-        self.xstep = kwargs.pop('xstep', 1)
-        self.xlimits = kwargs.pop('xlimits', None)
-        self.ylimits = kwargs.pop('ylimits', None)
-        self.scale_arrow = kwargs.pop('scale_arrow', False)
-        self.scale_arrow_dict = kwargs.pop('scale_arrow_dict', {})
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.plot_num = kwargs.pop("plot_num", 1)
+        self.plot_title = kwargs.pop("plot_title", None)
+        self.fig_dpi = kwargs.pop("fig_dpi", 300)
+        self.tscale = kwargs.pop("tscale", "period")
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.linedir = kwargs.pop("linedir", "ew")
+        self.font_size = kwargs.pop("font_size", 7)
+        self.station_id = kwargs.pop("station_id", [0, 4])
+        self.ystep = kwargs.pop("ystep", 4)
+        self.xstep = kwargs.pop("xstep", 1)
+        self.xlimits = kwargs.pop("xlimits", None)
+        self.ylimits = kwargs.pop("ylimits", None)
+        self.scale_arrow = kwargs.pop("scale_arrow", False)
+        self.scale_arrow_dict = kwargs.pop("scale_arrow_dict", {})
 
-        if 'size' not in list(self.scale_arrow_dict.keys()):
-            self.scale_arrow_dict['size'] = 1.
-        if 'text_offset_y' not in list(self.scale_arrow_dict.keys()):
-            self.scale_arrow_dict['text_offset_y'] = 0.
+        if "size" not in list(self.scale_arrow_dict.keys()):
+            self.scale_arrow_dict["size"] = 1.0
+        if "text_offset_y" not in list(self.scale_arrow_dict.keys()):
+            self.scale_arrow_dict["text_offset_y"] = 0.0
 
         # --> set induction arrow properties -------------------------------
         self.plot_tipper = kwargs.pop("plot_tipper", "n")
@@ -438,7 +438,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         self.fig.clf()
-        self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
+        self.ax = self.fig.add_subplot(1, 1, 1, aspect="equal")
 
         # FZ: control tick rotation=30 not that good
         plt.xticks(rotation="vertical")
@@ -509,7 +509,7 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             azimuth = pt.azimuth[::-1]
 
             # if there are induction arrows, flip them as pt
-            if 'y' in self.plot_tipper:
+            if "y" in self.plot_tipper:
                 tip = mt.Tipper
                 if tip.mag_real is not None:
                     tmr = tip.mag_real[::-1]
@@ -527,28 +527,29 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 alw = self.arrow_lw
 
             # get the properties to color the ellipses by
-            if self.ellipse_colorby == 'phimin':
+            if self.ellipse_colorby == "phimin":
                 color_array = pt.phimin[::-1]
 
-            elif self.ellipse_colorby == 'phimax':
+            elif self.ellipse_colorby == "phimax":
                 color_array = pt.phimin[::-1]
 
-            elif self.ellipse_colorby == 'phidet':
+            elif self.ellipse_colorby == "phidet":
                 color_array = np.sqrt(abs(pt.det[::-1])) * (180 / np.pi)
 
-            elif self.ellipse_colorby == 'skew' or \
-                    self.ellipse_colorby == 'skew_seg':
+            elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
                 color_array = pt.beta[::-1]
 
-            elif self.ellipse_colorby == 'normalized_skew' or \
-                    self.ellipse_colorby == 'normalized_skew_seg':
+            elif (
+                self.ellipse_colorby == "normalized_skew"
+                or self.ellipse_colorby == "normalized_skew_seg"
+            ):
                 color_array = 2 * pt.beta[::-1]
 
-            elif self.ellipse_colorby == 'ellipticity':
+            elif self.ellipse_colorby == "ellipticity":
                 color_array = pt.ellipticity[::-1]
-            elif self.ellipse_colorby in ['strike', 'azimuth']:
+            elif self.ellipse_colorby in ["strike", "azimuth"]:
                 color_array = pt.azimuth[::-1] % 180
-                color_array[color_array > 90] -= 180                
+                color_array[color_array > 90] -= 180
             else:
                 raise NameError(self.ellipse_colorby + " is not supported")
 
@@ -578,28 +579,33 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 # therefore need to multiply the azimuth by -1 because
                 # it is measured clockwise positive and subtract 90 to put
                 # it in a coordinate system of N=0, E=90
-                ellipd = patches.Ellipse((offset * self.xstretch,
-                                          np.log10(ff) * self.ystretch),
-                                         width=ewidth,
-                                         height=eheight,
-                                         edgecolor='k',
-                                         lw=0.5,
-                                         angle=90 - azimuth[jj])
+                ellipd = patches.Ellipse(
+                    (offset * self.xstretch, np.log10(ff) * self.ystretch),
+                    width=ewidth,
+                    height=eheight,
+                    edgecolor="k",
+                    lw=0.5,
+                    angle=90 - azimuth[jj],
+                )
 
                 # get ellipse color
-                if cmap.find('seg') > 0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[jj],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax,
-                                                             bounds=bounds))
+                if cmap.find("seg") > 0:
+                    ellipd.set_facecolor(
+                        mtcl.get_plot_color(
+                            color_array[jj],
+                            self.ellipse_colorby,
+                            cmap,
+                            ckmin,
+                            ckmax,
+                            bounds=bounds,
+                        )
+                    )
                 else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(color_array[jj],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax))
+                    ellipd.set_facecolor(
+                        mtcl.get_plot_color(
+                            color_array[jj], self.ellipse_colorby, cmap, ckmin, ckmax
+                        )
+                    )
 
                 # == =add the ellipse to the plot == ========
                 self.ax.add_artist(ellipd)
@@ -690,37 +696,37 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         pmax = int(np.ceil(np.log10(plot_periodlist.max())))
 
         # need to sort the offsets and station labels so they plot correctly
-        sdtype = [('offset', np.float), ('station', 'U10')]
-        slist = np.array([(oo, ss) for oo, ss in zip(self.offsetlist,
-                                                     self.stationlist)], dtype=sdtype)
-        offset_sort = np.sort(slist, order='offset')
+        sdtype = [("offset", np.float), ("station", "U10")]
+        slist = np.array(
+            [(oo, ss) for oo, ss in zip(self.offsetlist, self.stationlist)],
+            dtype=sdtype,
+        )
+        offset_sort = np.sort(slist, order="offset")
 
-        self.offsetlist = offset_sort['offset']
-        self.stationlist = offset_sort['station']
+        self.offsetlist = offset_sort["offset"]
+        self.stationlist = offset_sort["station"]
 
         # set y-ticklabels
-        if self.tscale == 'period':
-            yticklabels = [mtpl.labeldict[ii]
-                           for ii in range(pmin, pmax + 1, 1)]
+        if self.tscale == "period":
+            yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)]
 
             self.ax.set_ylabel(
                 "Period (s)", fontsize=self.font_size + 2, fontweight="bold"
             )
 
-        elif self.tscale == 'frequency':
-            yticklabels = [mtpl.labeldict[-ii]
-                           for ii in range(pmin, pmax + 1, 1)]
-            self.ax.set_ylabel('Frequency (Hz)',
-                               fontsize=self.font_size + 2,
-                               fontweight='bold')
+        elif self.tscale == "frequency":
+            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)]
+            self.ax.set_ylabel(
+                "Frequency (Hz)", fontsize=self.font_size + 2, fontweight="bold"
+            )
         # set x-axis label
         self.ax.set_xlabel("Station", fontsize=self.font_size + 2, fontweight="bold")
 
         # --> set tick locations and labels
         # set y-axis major ticks
-        self.ax.yaxis.set_ticks(np.arange(pmin * self.ystretch,
-                                          (pmax + 1) * self.ystretch,
-                                          self.ystretch))
+        self.ax.yaxis.set_ticks(
+            np.arange(pmin * self.ystretch, (pmax + 1) * self.ystretch, self.ystretch)
+        )
 
         # set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
@@ -1198,46 +1204,39 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             tpiazlines.append(tpiazline + "\n")
 
         # write files
-        skfid = open(os.path.join(svpath, 'PseudoSection.skew'), 'w')
+        skfid = open(os.path.join(svpath, "PseudoSection.skew"), "w")
         skfid.writelines(sklines)
         skfid.close()
 
-        phiminfid = open(os.path.join(svpath, 'PseudoSection.phimin'), 'w')
+        phiminfid = open(os.path.join(svpath, "PseudoSection.phimin"), "w")
         phiminfid.writelines(phiminlines)
         phiminfid.close()
 
-        phimaxfid = open(os.path.join(svpath, 'PseudoSection.phimax'),
-                         'w')
+        phimaxfid = open(os.path.join(svpath, "PseudoSection.phimax"), "w")
         phimaxfid.writelines(phimaxlines)
         phimaxfid.close()
 
-        ellipfid = open(os.path.join(svpath, 'PseudoSection.ellipticity'),
-                        'w')
+        ellipfid = open(os.path.join(svpath, "PseudoSection.ellipticity"), "w")
         ellipfid.writelines(elliplines)
         ellipfid.close()
 
-        azfid = open(os.path.join(svpath, 'PseudoSection.azimuth'),
-                     'w')
+        azfid = open(os.path.join(svpath, "PseudoSection.azimuth"), "w")
         azfid.writelines(azimlines)
         azfid.close()
 
-        tprfid = open(os.path.join(svpath, 'PseudoSection.tipper_mag_real'),
-                      'w')
+        tprfid = open(os.path.join(svpath, "PseudoSection.tipper_mag_real"), "w")
         tprfid.writelines(tprlines)
         tprfid.close()
 
-        tprazfid = open(os.path.join(svpath, 'PseudoSection.tipper_ang_real'),
-                        'w')
+        tprazfid = open(os.path.join(svpath, "PseudoSection.tipper_ang_real"), "w")
         tprazfid.writelines(tprazlines)
         tprazfid.close()
 
-        tpifid = open(os.path.join(svpath, 'PseudoSection.tipper_mag_imag'),
-                      'w')
+        tpifid = open(os.path.join(svpath, "PseudoSection.tipper_mag_imag"), "w")
         tpifid.writelines(tpilines)
         tpifid.close()
 
-        tpiazfid = open(os.path.join(svpath, 'PseudoSection.tipper_ang_imag'),
-                        'w')
+        tpiazfid = open(os.path.join(svpath, "PseudoSection.tipper_ang_imag"), "w")
         tpiazfid.writelines(tpiazlines)
         tpiazfid.close()
 

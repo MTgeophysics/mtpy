@@ -628,7 +628,9 @@ class MT(object):
         if period_buffer is not None:
             if 0.0 < period_buffer < 1.0:
                 period_buffer += 1.0
-                self.logger.warning("Period buffer must be > 1. Updating to", period_buffer)
+                self.logger.warning(
+                    "Period buffer must be > 1. Updating to", period_buffer
+                )
 
         # check the bounds of the new frequency array
         if bounds_error:

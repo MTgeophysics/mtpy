@@ -150,11 +150,11 @@ class Stations(object):
     @property
     def station(self):
         return self.station_locations["station"]
-    
+
     @property
     def model_epsg(self):
         return self._model_epsg
-    
+
     @model_epsg.setter
     def model_epsg(self, value):
         """
@@ -162,20 +162,18 @@ class Stations(object):
         """
         self._model_epsg = value
         if self.station_locations.size < 2:
-           for ss, ii in enumerate(self.station_locations):
+            for ss, ii in enumerate(self.station_locations):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
-                    ss["lat"],
-                    ss["lon"],
-                    epsg=self._model_epsg,
+                    ss["lat"], ss["lon"], epsg=self._model_epsg,
                 )
                 self.station_locations[ii]["east"] = east
                 self.station_locations[ii]["north"] = north
                 self.station_locations[ii]["zone"] = utm_zone
-                
+
     @property
     def model_utm_zone(self):
         return self._model_utm_zone
-    
+
     @model_utm_zone.setter
     def model_utm_zone(self, value):
         """
@@ -183,16 +181,14 @@ class Stations(object):
         """
         if value is None:
             return
-        
+
         self.logger.debug(f"Setting model utm zone to {value}")
-        
+
         self._model_utm_zone = value
         if self.station_locations.size > 1:
             for ii, ss in enumerate(self.station_locations):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
-                    ss["lat"],
-                    ss["lon"],
-                    utm_zone=self._model_utm_zone,
+                    ss["lat"], ss["lon"], utm_zone=self._model_utm_zone,
                 )
                 self.station_locations[ii]["east"] = east
                 self.station_locations[ii]["north"] = north

@@ -455,7 +455,7 @@ class Z(ResPhase):
 
         if (self.freq != other.freq).all():
             return False
-        
+
         if (self.z_err != other.z_err).all():
             return False
 
@@ -724,14 +724,13 @@ class Z(ResPhase):
                 angle = 0.0
 
             if self.z_err is not None:
-                z_rot[idx_freq], z_err_rot[idx_freq] = \
-                    MTcc.rotate_matrix_with_errors(self.z[idx_freq, :, :],
-                                                  angle,
-                                                  self.z_err[idx_freq, :, :])
+                z_rot[idx_freq], z_err_rot[idx_freq] = MTcc.rotate_matrix_with_errors(
+                    self.z[idx_freq, :, :], angle, self.z_err[idx_freq, :, :]
+                )
             else:
-                z_rot[idx_freq], z_err_rot = \
-                    MTcc.rotate_matrix_with_errors(self.z[idx_freq, :, :],
-                                                  angle)
+                z_rot[idx_freq], z_err_rot = MTcc.rotate_matrix_with_errors(
+                    self.z[idx_freq, :, :], angle
+                )
 
         self.z = z_rot
         if self.z_err is not None:
@@ -1351,7 +1350,7 @@ class Tipper(object):
 
         if (self.freq != other.freq).all():
             return False
-        
+
         if (self.tipper_err != other.tipper_err).all():
             return False
 
@@ -1807,14 +1806,16 @@ class Tipper(object):
             angle = lo_angles[idx_freq]
 
             if self.tipper_err is not None:
-                tipper_rot[idx_freq], tipper_err_rot[idx_freq] = \
-                    MTcc.rotate_vector_with_errors(self.tipper[idx_freq, :, :],
-                                                  angle,
-                                                  self.tipper_err[idx_freq, :, :])
+                (
+                    tipper_rot[idx_freq],
+                    tipper_err_rot[idx_freq],
+                ) = MTcc.rotate_vector_with_errors(
+                    self.tipper[idx_freq, :, :], angle, self.tipper_err[idx_freq, :, :]
+                )
             else:
-                tipper_rot[idx_freq], tipper_err_rot = \
-                    MTcc.rotate_vector_with_errors(self.tipper[idx_freq, :, :],
-                                                  angle)
+                tipper_rot[idx_freq], tipper_err_rot = MTcc.rotate_vector_with_errors(
+                    self.tipper[idx_freq, :, :], angle
+                )
 
         self.tipper = tipper_rot
         self.tipper_err = tipper_err_rot

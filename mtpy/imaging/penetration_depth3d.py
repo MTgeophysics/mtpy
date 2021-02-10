@@ -315,6 +315,7 @@ def create_penetration_depth_csv(edi_dir, outputcsv, zcomponent="det"):
     :return:
     """
     import csv
+
     edi_dir = Path(edi_dir)
     if not edi_dir.is_dir():
         _logger.error("input edi directory not exists", edi_dir)
@@ -383,6 +384,7 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent="det"):
 
 def plot_many_periods(edi_dir, n_periods=5):
     from mtpy.core.edi_collection import EdiCollection
+
     edidir = Path(edi_dir)
     edilist = list(edi_dir.glob("*.edi"))
 

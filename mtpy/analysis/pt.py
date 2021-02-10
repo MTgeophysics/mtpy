@@ -123,7 +123,7 @@ class PhaseTensor(object):
     @property
     def pt(self):
         return self._pt
-   
+
     @pt.setter
     def pt(self, pt_array):
         """
@@ -263,7 +263,7 @@ class PhaseTensor(object):
     @property
     def freq(self):
         return self._freq
-    
+
     @freq.setter
     def freq(self, lo_freq):
         """
@@ -317,7 +317,6 @@ class PhaseTensor(object):
                         self.logger.debug("Computed singular matrix")
                         self.logger.debug("  --> pt[{0}]=np.zeros((2,2))".format(idx_f))
 
-
         # --> if there is not error to the impedance tensor
         else:
             for idx_f in range(len(self._z)):
@@ -334,13 +333,11 @@ class PhaseTensor(object):
 
         self.rotation_angle = z_object.rotation_angle
 
-
-
     # ---z array---------------------------------------------------------------
     @property
     def z(self):
         return self._z
-    
+
     @z.setter
     def z(self, z_array):
         """
@@ -380,14 +377,11 @@ class PhaseTensor(object):
                         self.logger.debug("Computed singular matrix")
                         self.logger.debug("  --> pt[{0}]=np.zeros((2,2))".format(idx_f))
 
-
-
-
     # ---Z Error array---------------------------------------------------------------
     @property
     def z_err(self):
         return self._z_err
-    
+
     @z_err.setter
     def _set_z_err(self, z_err_array):
         """
@@ -1576,6 +1570,4 @@ def z2pt(z_array, z_err_array=None):
             )
         )
 
-
     return pt_array, pt_err_array
-

@@ -101,11 +101,11 @@ class ZMMHeader(object):
     @property
     def fn(self):
         return self._zfn
-    
+
     @fn.setter
     def fn(self, value):
         if value is None:
-            return 
+            return
         value = Path(value)
         if value.suffix.lower() in [".zmm", ".zrr"]:
             self._zfn = value
@@ -216,7 +216,7 @@ class ZMM(ZMMHeader):
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
-            
+
         if self.fn is not None:
             self.read_zmm_file()
 

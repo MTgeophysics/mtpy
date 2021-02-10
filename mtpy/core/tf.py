@@ -46,7 +46,8 @@ class Index:
 
         for k, v in kwargs.items():
             setattr(self, k, v)
-            
+
+
 class Angles:
     """
     Container for channel angles
@@ -109,8 +110,9 @@ class TransferFunction:
 
     """
 
-    def __init__(self, tf=None, sigma_s=None, sigma_e=None, periods=None,
-                 z_err=None, t_err=None):
+    def __init__(
+        self, tf=None, sigma_s=None, sigma_e=None, periods=None, z_err=None, t_err=None
+    ):
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self._tf = None
         self._sigma_e = None
@@ -134,8 +136,7 @@ class TransferFunction:
         if len(value.shape) > 1:
             if len(value.shape) == 2:
                 if 1 in value.shape:
-                    self.logger.debug(
-                        f"Flattened period array of shape {value.shape}")
+                    self.logger.debug(f"Flattened period array of shape {value.shape}")
                     self._periods = value.flatten()
                     return
 
@@ -167,8 +168,8 @@ class TransferFunction:
         """
 
         self._tf = self._validate_input_array(
-            value,
-            err_msg="Input must be (n_periods, n_predicted, n_predictor)")
+            value, err_msg="Input must be (n_periods, n_predicted, n_predictor)"
+        )
 
     @property
     def sigma_e(self):
@@ -194,8 +195,9 @@ class TransferFunction:
         self._sigma_e = self._validate_input_array(
             value,
             err_msg="Input must be (n_periods, n_predicted, n_predicted)",
-            shapes=True)
-        
+            shapes=True,
+        )
+
     @property
     def sigma_s(self):
         """
@@ -220,8 +222,9 @@ class TransferFunction:
         self._sigma_e = self._validate_input_array(
             value,
             err_msg="Input must be (n_periods, n_predictor, n_predictor)",
-            shapes=True)
-        
+            shapes=True,
+        )
+
     @property
     def z(self):
         """
@@ -231,15 +234,13 @@ class TransferFunction:
         :rtype: TYPE
 
         """
-        
+
         if self.tf is not None:
             return self._calculate_impedance()
-        
-        
-    
 
-    def _validate_input_array(self, value, dtype="complex", err_msg=None, 
-                              test_square=False, test_shape=None):
+    def _validate_input_array(
+        self, value, dtype="complex", err_msg=None, test_square=False, test_shape=None
+    ):
         """
         Make sure the input array has the correct shape and dtype.
         :param array: DESCRIPTION
@@ -248,14 +249,14 @@ class TransferFunction:
         :rtype: TYPE
 
         """
-        dtype_dict = {"complex": np.complex_,
-                      "real": np.float_,
-                      "imaginary": np.float_}
+        dtype_dict = {"complex": np.complex_, "real": np.float_, "imaginary": np.float_}
         value = np.array(value, dtype=dtype_dict[dtype])
 
         if len(value.shape) == 2:
-            self.logger.debug("Assuming input is an estimate at a single period"
-                              + f" reshaping to (1, {value.shape[0]}, {value.shape[1]}")
+            self.logger.debug(
+                "Assuming input is an estimate at a single period"
+                + f" reshaping to (1, {value.shape[0]}, {value.shape[1]}"
+            )
             value = value.reshape((1, value.shape[0], value.shape[1]))
 
         elif len(value.shape) == 3:
@@ -268,25 +269,30 @@ class TransferFunction:
             if test_shape:
                 if len(test_shape) == 2:
                     if not value.shape[1:] != test_shape:
-                        msg = ("Input array must have shape "
-                               + f"(n_periods, {test_shape[0]}, {test_shape[1]}) "
-                               + f"not {value.shape}")
+                        msg = (
+                            "Input array must have shape "
+                            + f"(n_periods, {test_shape[0]}, {test_shape[1]}) "
+                            + f"not {value.shape}"
+                        )
                         self.logger.error(msg)
                         raise ValueError(msg)
         else:
-            msg = (f"{err_msg}, not shape {value.shape}")
+            msg = f"{err_msg}, not shape {value.shape}"
             self.logger.error(msg)
             raise ValueError(msg)
 
         if self.periods is not None:
             if value.shape[0] != self.periods.size:
-                self.logger.warning(f"Number of periods {self.periods.size} is "
-                                    + "Not the same as number of tf entries "
-                                    + f"{value.shape[0]}")
+                self.logger.warning(
+                    f"Number of periods {self.periods.size} is "
+                    + "Not the same as number of tf entries "
+                    + f"{value.shape[0]}"
+                )
         return value
-    
-    def _make_rotation_matrices(self, ch1_angle, ch2_angle, ch1_index, ch2_index, 
-                                rot_angle):
+
+    def _make_rotation_matrices(
+        self, ch1_angle, ch2_angle, ch1_index, ch2_index, rot_angle
+    ):
         """
         make rotation matrix
         
@@ -300,15 +306,15 @@ class TransferFunction:
         
         :return: rotation matrix
         """
-        
+
         u = np.eye(2, 2)
         u[ch1_index, ch1_index] = np.cos(np.deg2rad(ch1_angle - rot_angle))
         u[ch1_index, ch2_index] = np.sin(np.deg2rad(ch1_angle - rot_angle))
         u[ch2_index, ch1_index] = np.cos(np.deg2rad(ch2_angle - rot_angle))
         u[ch2_index, ch2_index] = np.sin(np.deg2rad(ch2_angle - rot_angle))
-        
+
         return u
-    
+
     def calculate_impedance(self, angle=0.0):
         """
         calculate the impedances from the transfer functions
@@ -381,7 +387,7 @@ class TransferFunction:
         error = np.sqrt(var)
 
         return z_object
-    
+
     def calculate_impedance_err(self, angle=0.0):
         """
         Calculate impedance error
