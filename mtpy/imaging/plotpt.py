@@ -177,10 +177,13 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         # --> get mt object
         if fn is not None:
             self._mt = mtpl.MTplot(fn=fn)
+            self.pt = self._mt.pt
         elif z_object is not None:
             self._mt = mtpl.MTplot(z_object=z_object)
+            self.pt = self._mt.pt
         elif mt_object is not None:
             self._mt = mt_object
+            self.pt = self._mt.pt
         elif pt_object is not None:
             self.pt = pt_object
             self._mt = mtpl.MTplot()
@@ -220,21 +223,37 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         self.skew_cutoff = kwargs.pop("skew_cutoff", 3)
         self.ellip_cutoff = kwargs.pop("ellip_cutoff", 0.2)
 
-        # read ellipse dict
-        ellipse_dict = kwargs.pop("ellipse_dict", None)
-        if ellipse_dict is None:
-            self._ellipse_dict = {"size": 0.25}
-        else:
-            self._ellipse_dict = ellipse_dict
-
-        #self._read_ellipse_dict()
-
         self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
 
         self.cb_position = kwargs.pop("cb_position", (0.045, 0.78, 0.015, 0.12))
 
         if self.plot_yn == "y":
             self.plot()
+            
+        #---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+    
+    @rotation_angle.setter
+    def rotation_angle(self, value):
+        """
+        only a single value is allowed
+        """
+        
+        self.pt.rotate(value)
+        self._mt.rotation_angle = value
+            
+        self._rotation_angle = value
+
+    def fold_strike(self, strike):
+        """
+        
+        """
+        strike = strike % 180
+        strike[np.where(strike > 90)] -= 180
+        
+        return strike
 
     def plot(self):
         """
@@ -312,24 +331,13 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                 eheight = 0.01 * self.ellipse_size
                 ewidth = 0.01 * self.ellipse_size
 
-            # ewidth = self.pt.phimax[ii]/self.pt.phimax[ii]*\
-            #                                                  self.ellipse_size
-
-            # alternative scaling
-            # eheight = self.pt.phimin[ii]/max(np.abs(self.pt.phimax[0]))*\
-            #                                                   self.ellipse_size
-            # ewidth = self.pt.phimax[ii]/max(np.abs(self.pt.phimax[0]))*\
-            #                                                   self.ellipse_size
-
             # create an ellipse scaled by phimin and phimax and oriented along
             # the azimuth which is calculated as clockwise but needs to
             # be plotted counter-clockwise hence the negative sign.
-            ellipd = patches.Ellipse(
-                (np.log10(ff) * self.ellipse_spacing, 0),
-                width=ewidth,
-                height=eheight,
-                angle=90 - self.pt.azimuth[ii],
-            )
+            ellipd = patches.Ellipse((np.log10(ff) * self.ellipse_spacing, 0),
+                                     width=ewidth,
+                                     height=eheight,
+                                     angle=90 - self.pt.azimuth[ii])
 
             self.ax1.add_patch(ellipd)
 
@@ -359,7 +367,8 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             np.ceil(np.log10(self._mt.period[-1]) * self.ellipse_spacing),
         )
 
-        self.ax1.set_xlim(xlimits)
+        self.ax1.set_xlim((xlimits[0] * self.ellipse_spacing,
+                           xlimits[1] * self.ellipse_spacing))
         tklabels = []
         xticks = []
         for tk in self.ax1.get_xticks():
@@ -429,12 +438,8 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             np.ceil(np.log10(self._mt.period[-1])),
         )
         self.ax2 = self.fig.add_subplot(3, 2, 3)
-        az = self.pt.azimuth
+        az = self.fold_strike(self.pt.azimuth)
         az_err = self.pt.azimuth_err
-        
-        # put the strike into a coordinate system that goes from -90 to 90
-        az[np.where(az > 90)] -= 180
-        az[np.where(az < -90)] += 180
 
         stlist = []
         stlabel = []
@@ -456,43 +461,34 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         )
 
         stlist.append(ps2[0])
-        stlabel.append("PT")
-        # try:
-        #     strike = self.zinv.strike
-        #     strikeerr = np.nan_to_num(self.zinv.strike_err)
-        #     # put the strike into a coordinate system that goes from -90 to 90
-        #     strike[np.where(strike > 90)] = strike[np.where(strike > 90)] - 180
-        #     strike[np.where(strike < -90)] = strike[np.where(strike < -90)] + 180
+        stlabel.append('PT')
+        try:
+            strike = self.fold_strike(self.zinv.strike)
+            strike_err = np.nan_to_num(self.zinv.strike_err)
 
-        #     # plot invariant strike
-        #     erxy = self.ax2.errorbar(
-        #         self._mt.period,
-        #         strike,
-        #         marker=self.strike_inv_marker,
-        #         ms=self.marker_size,
-        #         mfc=self.strike_inv_color,
-        #         mec=self.strike_inv_color,
-        #         mew=self.marker_lw,
-        #         ls="none",
-        #         yerr=strikeerr,
-        #         ecolor=self.strike_inv_color,
-        #         capsize=self.marker_size,
-        #         elinewidth=self.marker_lw,
-        #     )
+            # plot invariant strike
+            erxy = self.ax2.errorbar(self._mt.period,
+                                     strike,
+                                     marker=self.strike_inv_marker,
+                                     ms=self.marker_size,
+                                     mfc=self.strike_inv_color,
+                                     mec=self.strike_inv_color,
+                                     mew=self.marker_lw,
+                                     ls='none',
+                                     yerr=strike_err,
+                                     ecolor=self.strike_inv_color,
+                                     capsize=self.marker_size,
+                                     elinewidth=self.marker_lw)
 
-        #     stlist.append(erxy[0])
-        #     stlabel.append("Z_inv")
-        # except AttributeError:
-        #     print("Could not get z_invariants from pt, input z if desired.")
+            stlist.append(erxy[0])
+            stlabel.append('Z_inv')
+        except AttributeError:
+            print('Could not get z_invariants from pt, input z if desired.')
 
-        if self._mt.Tipper is not None and (self._mt.Tipper.tipper.all() != 0):
+        if self._mt.Tipper.tipper is not None:
             # strike from tipper
             tp = self._mt.Tipper
-            s3 = tp.angle_real + 90
-
-            # fold to go from -90 to 90
-            s3[np.where(s3 > 90)] = s3[np.where(s3 > 90)] - 180
-            s3[np.where(s3 < -90)] = s3[np.where(s3 < -90)] + 180
+            s3 = self.fold_strike(tp.angle_real)
 
             # plot strike with error bars
             ps3 = self.ax2.errorbar(
@@ -531,7 +527,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         plt.setp(ltext, fontsize=6)  # the legend text fontsize
 
         if self.strike_limits is None:
-            self.strike_limits = (-89.99, 89.99)
+            self.strike_limits = (-94, 94)
 
         self.ax2.set_yscale("linear")
         self.ax2.set_xscale("log", nonposx="clip")
@@ -542,6 +538,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         self.ax2.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
         self.ax2.set_ylabel("Angle (deg)", fontdict=font_dict)
         self.ax2.set_title("Strike", fontdict=font_dictt)
+
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin

@@ -150,8 +150,7 @@ class Zinvariants:
             **q**          : dependent variable suggesting dimensionality
             
         """
-        print("computing invariants")
-        # get the length of z to initialize some empty arrays
+        # get the length of z to initialize some empty arrays           
         nz = self.z.shape[0]
 
         # set some empty arrays to put stuff into
@@ -183,9 +182,6 @@ class Zinvariants:
             ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
 
             if ex == 0.0:
-                print(
-                    "Could not compute invariants for {0:5e} Hz".format(self.freq[ii])
-                )
                 self.inv1[ii] = np.nan
                 self.inv2[ii] = np.nan
                 self.inv3[ii] = np.nan

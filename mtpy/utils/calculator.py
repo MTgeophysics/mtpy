@@ -127,7 +127,8 @@ def nearest_index(val, array):
     return np.where(diff == min(diff))[0][0]
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
+def make_log_increasing_array(z1_layer, target_depth, n_layers,
+                              increment_factor=0.999):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
@@ -204,6 +205,7 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
                             -inv_matrix[i, k] * inv_matrix[l, j] * inmatrix_err[k, l]
                         )
 
+
                 inv_matrix_err[i, j] = err
 
     return inv_matrix, inv_matrix_err
@@ -211,7 +213,8 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
 
 def rhophi2z(rho, phi, freq):
     """
-        Convert impedance-style information given in Rho/Phi format into complex valued Z.
+        Convert impedance-style information given in Rho/Phi format into 
+        complex valued Z.
 
         Input:
         rho - 2x2 array (real) - in Ohm m
@@ -242,7 +245,8 @@ def rhophi2z(rho, phi, freq):
     return z
 
 
-def compute_determinant_error(z_array, z_err_array, method="theoretical", repeats=1000):
+def compute_determinant_error(z_array, z_err_array, method='theoretical',
+                              repeats=1000):
     """
     compute the error of the determinant of z using a stochastic method
     seed random z arrays with a normal distribution around the input array
@@ -267,26 +271,29 @@ def compute_determinant_error(z_array, z_err_array, method="theoretical", repeat
 
         arraylist = arraylist.reshape(repeats, z_array.shape[0], 2, 2)
         detlist = np.linalg.det(arraylist)
-
-        error = np.std(detlist, axis=0)
-
+        error = np.std(detlist,axis=0)
+    
     else:
-        error = np.abs(
-            z_err_array[:, 0, 0] * np.abs(z_array[:, 1, 1])
-            + z_err_array[:, 1, 1] * np.abs(z_array[:, 0, 0])
-            - z_err_array[:, 0, 1] * np.abs(z_array[:, 1, 0])
-            - z_err_array[:, 1, 0] * np.abs(z_array[:, 0, 1])
-        )
-
+        error = np.abs(z_err_array[:, 0, 0] * np.abs(z_array[:, 1, 1]) +\
+                       z_err_array[:, 1, 1] * np.abs(z_array[:, 0, 0]) \
+                       - z_err_array[:, 0, 1]*np.abs(z_array[:, 1, 0]) - \
+                       z_err_array[:, 1, 0]*np.abs(z_array[:, 0, 1]))
+    
     return error
 
-
-def propagate_error_polar2rect(r, r_error, phi, phi_error):
+def propagate_error_polar2rect(r,r_error,phi, phi_error):
     """
-        Find error estimations for the transformation from polar to cartesian coordinates.
+        Find error estimations for the transformation from polar to cartesian
+        coordinates.
 
-        Uncertainties in polar representation define a section of an annulus. Find the 4 corners of this section and additionally the outer boundary point, which is defined by phi = phi0, rho = rho0 + sigma rho.
-        The cartesian "box" defining the uncertainties in x,y is the outer bound around the annulus section, defined by the four outermost points. So check the four corners as well as the outer boundary edge of the section to find the extrema in x znd y. These give you the sigma_x/y. 
+        Uncertainties in polar representation define a section of an annulus.
+        Find the 4 corners of this section and additionally the outer boundary
+        point, which is defined by phi = phi0, rho = rho0 + sigma rho.
+        The cartesian "box" defining the uncertainties in x,y is the outer
+        bound around the annulus section, defined by the four outermost
+        points. So check the four corners as well as the outer boundary edge
+        of the section to find the extrema in x znd y. These give you the
+        sigma_x/y. 
 
     """
 
@@ -359,7 +366,6 @@ def propagate_error_rect2polar(x, x_error, y, y_error):
         phi_err = 0.5 * ((max(tmp1) - min(tmp4)) % 360)
 
     if phi_err > 180:
-        # print phi_err,' -> ',(-phi_err)%360
         phi_err = (-phi_err) % 360
 
     if origin_in_box is True:
@@ -415,27 +421,28 @@ def z_error2r_phi_error(z_real, z_imag, error):
     return res_rel_err, phi_err
 
 
+
 def old_z_error2r_phi_error(x, x_error, y, y_error):
     """
-        Error estimation from rect to polar, but with small variation needed for 
-        MT: the so called 'relative phase error' is NOT the relative phase error,
-        but the ABSOLUTE uncertainty in the angle that corresponds to the relative
-        error in the amplitude. 
+    Error estimation from rect to polar, but with small variation needed for 
+    MT: the so called 'relative phase error' is NOT the relative phase error,
+    but the ABSOLUTE uncertainty in the angle that corresponds to the relative
+    error in the amplitude. 
 
-        So, here we calculate the transformation from rect to polar coordinates, 
-        esp. the absolute/length of the value. Then we find the uncertainty in 
-        this length and calculate the relative error of this. The relative error of
-        the resistivity will be double this value, because it's calculated by taking 
-        the square of this length.
-        
-        The relative uncertainty in length defines a circle around (x,y) 
-        (APPROXIMATION!). The uncertainty in phi is now the absolute of the 
-        angle beween the vector to (x,y) and the origin-vector tangential to the
-        circle.
-        BUT....since the phase angle uncertainty is interpreted with regard to 
-        the resistivity and not the Z-amplitude, we have to look at the square of
-        the length, i.e. the relative error in question has to be halfed to get
-        the correct relationship between resistivity and phase errors!!.
+    So, here we calculate the transformation from rect to polar coordinates, 
+    esp. the absolute/length of the value. Then we find the uncertainty in 
+    this length and calculate the relative error of this. The relative error of
+    the resistivity will be double this value, because it's calculated by taking 
+    the square of this length.
+    
+    The relative uncertainty in length defines a circle around (x,y) 
+    (APPROXIMATION!). The uncertainty in phi is now the absolute of the 
+    angle beween the vector to (x,y) and the origin-vector tangential to the
+    circle.
+    BUT....since the phase angle uncertainty is interpreted with regard to 
+    the resistivity and not the Z-amplitude, we have to look at the square of
+    the length, i.e. the relative error in question has to be halfed to get
+    the correct relationship between resistivity and phase errors!!.
 
     """
 
@@ -454,15 +461,9 @@ def old_z_error2r_phi_error(x, x_error, y, y_error):
         (x - x_error, y + y_error),
     ]
 
-    # check, if origin is within the box:
-    origin_in_box = False
-    if x_error >= np.abs(x) and y_error >= np.abs(y):
-        origin_in_box = True
-
     lo_polar_points = [cmath.polar(np.complex(*i)) for i in lo_points]
 
     lo_rho = [i[0] for i in lo_polar_points]
-    lo_phi = [math.degrees(i[1]) % 360 for i in lo_polar_points]
 
     # uncertainty in amplitude is defined by half the diameter of the box around x,y
     rho_err = 0.5 * (max(lo_rho) - min(lo_rho))
@@ -502,123 +503,142 @@ def old_z_error2r_phi_error(x, x_error, y, y_error):
 # b) use propagation of errors on Z' to obtain the rotated Z'err
 # That is NOT the same as the rotated error matrix Zerr (although the result is similar)
 
+def rotate_matrix_with_errors(in_matrix, angle, error=None):
+    """
+    
+    Rotate a matrix including errors clockwise given an angle in degrees.
+    
+    :param in_matrix: A n x 2 x 2  matrix to rotate 
+    :type inmatrix: np.ndarray
+    
+    :param angle: Angle to rotate by assuming clockwise positive from
+                 0 = north
+    :type angle: float
+    
+    :param error: A n x 2 x 2 matrix of associated errors,
+                        defaults to None
+    :type error: np.ndarray, optional
+    
+    :raises MTex: If input array is incorrect
+    
+    :return: rotated matrix
+    :rtype: np.ndarray
+    
+    :return: rotated matrix errors
+    :rtype: np.ndarray
 
-def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err=None):
+    """
+   
+    if in_matrix is None:
+        raise MTex.MTpyError_inputarguments('Matrix must be defined')
 
-    if inmatrix is None:
-        raise MTex.MTpyError_input_arguments("Matrix AND eror matrix must be defined")
-
-    if (inmatrix_err is not None) and (inmatrix.shape != inmatrix_err.shape):
-        raise MTex.MTpyError_input_arguments(
-            "Matrix and err-matrix shapes do not match: %s - %s"
-            % (str(inmatrix.shape), str(inmatrix_err.shape))
-        )
+    if (error is not None) and (in_matrix.shape != error.shape):
+        msg = 'matricies are not the same shape in_matrix={0}, err={1}'.format(
+               in_matrix.shape, error.shape)
+        raise MTex.MTpyError_inputarguments(msg)
 
     try:
-        degreeangle = angle % 360
-    except:
-        raise MTex.MTpyError_input_arguments(
-            '"Angle" must be a valid number (in degrees)'
-        )
-
-    phi = math.radians(degreeangle)
+        phi = np.deg2rad(float(angle) % 360)
+    except TypeError:
+        raise MTex.MTpyError_inputarguments('"Angle" must be a float')
 
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    # JP: Changed the rotation matrix to be formulated to rotate
-    # counter clockwise, I cannot find a good reason for this except that
-    # when you plot the strike and phase tensors the look correct with this
-    # formulation.
-    rotmat = np.array([[cphi, -sphi], [sphi, cphi]])
-    # rotmat = np.array([[ cphi, -sphi], [sphi, cphi]])
-    rotated_matrix = np.dot(np.dot(rotmat, inmatrix), np.linalg.inv(rotmat))
+    # clockwise rotation matrix is given by [[cos, -sin], [sin, cos]]
+    rot_mat = np.array([[ cphi, -sphi], [sphi, cphi]])
+    rotated_matrix = np.dot(np.dot(rot_mat, in_matrix), np.linalg.inv(rot_mat))
 
-    errmat = None
-    if inmatrix_err is not None:
-        err_orig = np.real(inmatrix_err)
-        errmat = np.zeros_like(inmatrix_err)
+    err_mat  = None
+    if (error is not None) :
+        err_orig = np.real(error) 
+        err_mat = np.zeros_like(error)
 
         # standard propagation of errors:
-        errmat[0, 0] = np.sqrt(
-            (cphi ** 2 * err_orig[0, 0]) ** 2
-            + (cphi * sphi * err_orig[0, 1]) ** 2
-            + (cphi * sphi * err_orig[1, 0]) ** 2
-            + (sphi ** 2 * err_orig[1, 1]) ** 2
-        )
-        errmat[0, 1] = np.sqrt(
-            (cphi ** 2 * err_orig[0, 1]) ** 2
-            + (cphi * sphi * err_orig[1, 1]) ** 2
-            + (cphi * sphi * err_orig[0, 0]) ** 2
-            + (sphi ** 2 * err_orig[1, 0]) ** 2
-        )
-        errmat[1, 0] = np.sqrt(
-            (cphi ** 2 * err_orig[1, 0]) ** 2
-            + (cphi * sphi * err_orig[1, 1]) ** 2
-            + (cphi * sphi * err_orig[0, 0]) ** 2
-            + (sphi ** 2 * err_orig[0, 1]) ** 2
-        )
-        errmat[1, 1] = np.sqrt(
-            (cphi ** 2 * err_orig[1, 1]) ** 2
-            + (cphi * sphi * err_orig[0, 1]) ** 2
-            + (cphi * sphi * err_orig[1, 0]) ** 2
-            + (sphi ** 2 * err_orig[0, 0]) ** 2
-        )
+        err_mat[0,0] = np.sqrt((cphi**2 * err_orig[0, 0])**2 + \
+                               (cphi * sphi * err_orig[0, 1])**2 + \
+                               (cphi * sphi * err_orig[1, 0])**2 + \
+                               (sphi**2 * err_orig[1, 1])**2)
+        err_mat[0,1] = np.sqrt((cphi**2 * err_orig[0, 1])**2 + \
+                               (cphi * sphi * err_orig[1, 1])**2 + \
+                               (cphi * sphi * err_orig[0, 0])**2 + \
+                               (sphi**2 * err_orig[1, 0])**2)
+        err_mat[1,0] = np.sqrt((cphi**2 * err_orig[1, 0])**2 + \
+                               (cphi * sphi * err_orig[1, 1])**2 +\
+                               (cphi * sphi * err_orig[0, 0])**2 + \
+                               (sphi**2 * err_orig[0, 1])**2)
+        err_mat[1,1] = np.sqrt((cphi**2 * err_orig[1, 1])**2 + \
+                               (cphi * sphi * err_orig[0, 1])**2 + \
+                               (cphi * sphi * err_orig[1, 0])**2 + \
+                               (sphi**2 * err_orig[0, 0])**2)
 
-    return rotated_matrix, errmat
+    return rotated_matrix, err_mat
 
 
-def rotatevector_incl_errors(invector, angle, invector_err=None):
-    # check for row or column vector
+def rotate_vector_with_errors(in_vector, angle, error=None):
+    """
+    
+    Rotate a vector including errors clockwise given an angle in degrees.
+    
+    :param in_matrix: A n x 1 x 2  vector to rotate 
+    :type invector: np.ndarray
+    
+    :param angle: Angle to rotate by assuming clockwise positive from
+                 0 = north
+    :type angle: float
+    
+    :param error: A n x 1 x 2 vector of associated errors,
+                        defaults to None
+    :type error: np.ndarray, optional
+    
+    :raises MTex: If input array is incorrect
+    
+    :return: rotated vector
+    :rtype: np.ndarray
+    
+    :return: rotated vector errors
+    :rtype: np.ndarray
 
-    if invector is None:
-        raise MTex.MTpyError_input_arguments("Vector AND error-vector must be defined")
+    """
+    
+    if in_vector is None:
+        raise MTex.MTpyError_inputarguments('Vector AND error-vector must'+
+                                            ' be defined')
 
-    if (invector_err is not None) and (invector.shape != invector_err.shape):
-        raise MTex.MTpyError_input_arguments(
-            "Vector and errror-vector shapes do not match: %s - %s"
-            % (str(invector.shape), str(invector_err.shape))
-        )
-
+    if (error is not None) and (in_vector.shape != error.shape):
+        msg = 'matricies are not the same shape in_vector={0}, err={1}'.format(
+               in_vector.shape, error.shape)
+        raise MTex.MTpyError_inputarguments(msg)
+    
     try:
-        degreeangle = angle % 360
-    except:
-        raise MTex.MTpyError_input_arguments(
-            '"Angle" must be a valid number (in degrees)'
-        )
-
-    phi = math.radians(degreeangle)
+        phi = np.deg2rad(float(angle) % 360)
+    except TypeError:
+        raise MTex.MTpyError_inputarguments('"Angle" must be a float')
 
     cphi = np.cos(phi)
     sphi = np.sin(phi)
+    
+    rot_mat = np.array([[ cphi, -sphi],[sphi, cphi]])
 
-    # JP: Changed the rotation matrix to be formulated to rotate
-    # counter clockwise, I cannot find a good reason for this except that
-    # when you plot the strike and phase tensors the look correct with this
-    # formulation.
-    rotmat = np.array([[cphi, sphi], [-sphi, cphi]])
-    # rotmat = np.array([[ cphi, -sphi],[sphi, cphi]])
-
-    if invector.shape == (1, 2):
-        rotated_vector = np.dot(invector, np.linalg.inv(rotmat))
+    if in_vector.shape == (1, 2):
+        rotated_vector = np.dot(in_vector, np.linalg.inv(rot_mat) )
     else:
-        rotated_vector = np.dot(rotmat, invector)
+        rotated_vector = np.dot(rot_mat, in_vector)
 
-    errvec = None
-    if invector_err is not None:
-        errvec = np.zeros_like(invector_err)
+    err_vector = None
+    if (error is not None):   
+        err_vector = np.zeros_like(error)
 
-        if invector_err.shape == (1, 2):
-            errvec = np.dot(invector_err, np.abs(np.linalg.inv(rotmat)))
+        if error.shape == (1, 2):
+            err_vector = np.dot(error, np.abs(np.linalg.inv(rot_mat)))
         else:
-            errvec = np.dot(np.abs(rotmat), invector_err)
+            err_vector = np.dot(np.abs(rot_mat), error)
 
-    return rotated_vector, errvec
+    return rotated_vector, err_vector
 
 
-def multiplymatrices_incl_errors(
-    inmatrix1, inmatrix2, inmatrix1_err=None, inmatrix2_err=None
-):
+def multiplymatrices_incl_errors(inmatrix1, inmatrix2, 
+                                 inmatrix1_err=None, inmatrix2_err=None):
 
     if inmatrix1 is None or inmatrix2 is None:
         raise MTex.MTpyError_input_arguments("ERROR - two 2x2 arrays needed as input")
@@ -664,20 +684,20 @@ def multiplymatrices_incl_errors(
 
 def reorient_data2D(x_values, y_values, x_sensor_angle=0, y_sensor_angle=90):
     """
-        Re-orient time series data of a sensor pair, which has not been in default (x=0, y=90) orientation.
+    Re-orient time series data of a sensor pair, which has not been in default (x=0, y=90) orientation.
 
-        Input:
-        - x-values - Numpy array
-        - y-values - Numpy array
-        Note: same length for both! - If not, the shorter length is taken 
+    Input:
+    - x-values - Numpy array
+    - y-values - Numpy array
+    Note: same length for both! - If not, the shorter length is taken 
 
-        Optional:
-        - Angle of the x-sensor - measured in degrees, clockwise from North (0) 
-        - Angle of the y-sensor - measured in degrees, clockwise from North (0) 
+    Optional:
+    - Angle of the x-sensor - measured in degrees, clockwise from North (0) 
+    - Angle of the y-sensor - measured in degrees, clockwise from North (0) 
 
-        Output:
-        - corrected x-values (North)
-        - corrected y-values (East)
+    Output:
+    - corrected x-values (North)
+    - corrected y-values (East)
     """
 
     x_values = np.array(x_values)

@@ -355,7 +355,7 @@ class MT(object):
         self._Tipper.rotate(theta_r)
         self.pt.rotate(theta_r)
 
-        print(
+        self.logger.info(
             (
                 "Rotated Z, Tipper, Phase Tensor and Zinvariants by"
                 "{0:.3f} degrees".format(self._rotation_angle)
@@ -628,7 +628,7 @@ class MT(object):
         if period_buffer is not None:
             if 0.0 < period_buffer < 1.0:
                 period_buffer += 1.0
-                print("Warning: period buffer must be > 1. Updating to", period_buffer)
+                self.logger.warning("Period buffer must be > 1. Updating to", period_buffer)
 
         # check the bounds of the new frequency array
         if bounds_error:

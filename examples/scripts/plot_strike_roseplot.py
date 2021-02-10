@@ -12,7 +12,6 @@ import os
 
 os.chdir(r"C:\mtpywin\mtpy")  # change to path where mtpy is installed
 
-
 from mtpy.imaging.plotstrike import PlotStrike
 
 
@@ -25,19 +24,50 @@ savepath = r"C:\mtpywin\mtpy\examples\plots\edi_plots"
 
 
 # gets edi file names as a list
-elst = [
-    op.join(edipath, f) for f in os.listdir(edipath) if (f.endswith(".edi"))
-]  # and f.startswith('GL')
+elst = [op.join(edipath,f) for f in os.listdir(edipath) if (f.endswith('.edi'))]# and f.startswith('GL')
 
 
-strikeplot = PlotStrike(
-    fn_list=elst,
-    fold=False,
-    show_ptphimin=False,
-    plot_type=2  # 1 means divide into separate plots for different decades
-    # 2 means combine all data into one rose plot
-)
-# strikeplot.save_plot(savepath,
-#                     file_format='png',
-#                     fig_dpi=400
-#                     )
+### this will plot the estimated strike duplicated across quadrants
+#  Plot type 2 will plot all estimates of  strike into one ploe 
+strike_plot = PlotStrike(fn_list=elst,
+                         fold=False,
+                         plot_type=2)
+
+# If you want to plot the orthogonal estimation
+strike_plot.plot_orthogonal = True
+strike_plot.fig_num = 2
+strike_plot.plot()
+
+# if you want to plot Tipper strike estimates as well
+strike_plot.plot_orthogonal = False
+strike_plot.plot_tipper = True
+strike_plot.fig_num = 3
+strike_plot.plot()
+
+# if you want to rotate the data
+# note this will rotate the data N30W
+strike_plot.rotation_angle = -30
+strike_plot.fig_num = 4
+strike_plot.plot()
+
+# to rotate back
+strike_plot.rotation_angle = 30
+
+# if you want to plot per decade plots
+strike_plot.plot_type = 1
+strike_plot.fig_num = 5
+strike_plot.text_pad = 1.4
+strike_plot.plot()
+
+# if you want to only look at a few period ranges
+# not the range is given in log10 of the period
+strike_plot.plot_range = [-2, 0] 
+strike_plot.fig_num = 6
+strike_plot.plot()
+
+# if you want a vertical orientation instead of horizontal
+strike_plot.plot_orientation = 'v'
+strike_plot.plot_range = 'data'
+strike_plot.fig_num = 7
+strike_plot.plot()
+
