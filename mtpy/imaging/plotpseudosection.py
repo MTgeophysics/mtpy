@@ -391,7 +391,7 @@ class PlotResPhasePseudoSection(object):
 
         """
 
-        dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
+        dtype = [('station', 'U10'), ('offset', float), ('spot', int)]
         slist = []
         #get offsets
         for ii, mt in enumerate(self.mt_list):
