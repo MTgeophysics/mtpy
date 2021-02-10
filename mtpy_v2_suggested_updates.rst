@@ -9,6 +9,7 @@ General Changes
 	* Use Git Actions for testing, updating version, updating PyPi and Conda
   * Refactor some of the modules to new repositories
   * Suggest putting mt_metadata under MTGeophysics
+  * Create a GIS module for all the functions that we have for plotting, making shapefiles, etc, and maybe leverage cartopy?
 
 Core
 -------
