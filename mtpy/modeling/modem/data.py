@@ -2091,7 +2091,7 @@ class Data(object):
 
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
-        self.center_point.elev = model_object.grid_z[0]
+        self._center_elev = model_object.grid_z[0]
 
         # logger.debug("Re-write data file after adding topo")
         self.write_data_file(

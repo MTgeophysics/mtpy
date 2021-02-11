@@ -393,7 +393,10 @@ class Stations(object):
         #  station. After it's applied, it's the highest point
         #  point of the surface model (this will be set by calling
         #  Data.project_stations_on_topography).
-        center_location["elev"] = -self.elev.max()
+        if self._center_elev:
+            center_location["elev"] = self._center_elev
+        else:
+            center_location["elev"] = -self.elev.max()
 
         return center_location
 
