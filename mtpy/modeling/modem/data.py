@@ -2493,23 +2493,30 @@ class Data(object):
         self, station, zxx=False, zxy=False, zyy=False, zyx=False, tx=False, ty=False
     ):
         """
+        Remove a component for a given station(s)
         
-        :param station: DESCRIPTION
-        :type station: TYPE
-        :param zxx: DESCRIPTION, defaults to False
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
         :type zxx: TYPE, optional
-        :param zxy: DESCRIPTION, defaults to False
+        :param zxy: Z_xy, defaults to False
         :type zxy: TYPE, optional
-        :param zyy: DESCRIPTION, defaults to False
+        :param zyy: Z_yx, defaults to False
         :type zyy: TYPE, optional
-        :param zyx: DESCRIPTION, defaults to False
+        :param zyx: Z_yy, defaults to False
         :type zyx: TYPE, optional
-        :param tx: DESCRIPTION, defaults to False
+        :param tx: T_zx, defaults to False
         :type tx: TYPE, optional
-        :param ty: DESCRIPTION, defaults to False
+        :param ty: T_zy, defaults to False
         :type ty: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: new data array with components removed
+        :rtype: np.ndarray 
+        :return: new mt_dict with components removed
+        :rtype: dictionary
+        
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array, d.mt_dict = d.remove_component("mt01", zxx=True, tx=True)
 
         """
         c_dict = {
@@ -2563,11 +2570,19 @@ class Data(object):
     def estimate_starting_rho(self):
         """
         Estimate starting resistivity from the data.
+        Creates a plot of the mean and median apparent resistivity values.
+        
+        :return: array of the median rho per period
+        :rtype: np.ndarray(n_periods)
+        :return: array of the mean rho per period
+        :rtype: np.ndarray(n_periods)
+        
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> rho_median, rho_mean = d.estimate_starting_rho()
+        
         """
         rho = np.zeros((self.data_array.shape[0], self.period_list.shape[0]))
-        # det_z = np.linalg.det(d_obj.data_array['z'])
-        # mean_z = np.mean(det_z[np.nonzero(det_z)], axis=0)
-        # mean_rho = (.02/(1/d_obj.period_list))*np.abs(mean_z)
 
         for ii, d_arr in enumerate(self.data_array):
             z_obj = mtz.Z(d_arr["z"], freq=1.0 / self.period_list)
@@ -2611,3 +2626,5 @@ class Data(object):
         ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
 
         plt.show()
+        
+        return median_rho, mean_rho
