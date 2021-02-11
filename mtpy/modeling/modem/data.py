@@ -1204,7 +1204,7 @@ class Data(object):
                 )
 
             d_lines.append(
-                f"> {self.rotation_angle}\n"
+                f"> {self.rotation_angle:.3g}\n"
             )  # orientation, need to add at some point
             if elevation:
                 d_lines.append(
