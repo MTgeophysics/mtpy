@@ -1130,7 +1130,7 @@ class Data(object):
         if fn_basename is not None:
             self.data_fn = fn_basename
 
-        self.data_fn = self.save_path.joinpath(self.data_fn)
+        self.data_fn = Path(self.save_path, self.data_fn)
         if self.mt_dict is None:
             self.mt_dict = self.make_mt_dict()
 
