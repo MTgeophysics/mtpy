@@ -1,5 +1,6 @@
 import glob
 import os
+from os.path import dirname as UP
 from unittest import TestCase
 
 from mtpy.core.edi_collection import EdiCollection
@@ -35,13 +36,14 @@ class TestModel(TestCase):
         plt_close('all')
 
 
+mtpydir = UP(UP(UP(UP(os.path.abspath(__file__)))))
 edi_paths = [
-    "data/edifiles",
-    "examples/data/edi2",
-    "examples/data/edi_files",
-    "data/edifiles2",
-    "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
-    "../MT_Datasets/GA_UA_edited_10s-10000s",
+    os.path.join(mtpydir, "data/edifiles"),
+    os.path.join(mtpydir, "examples/data/edi2"),
+    os.path.join(mtpydir, "examples/data/edi_files"),
+    os.path.join(mtpydir, "data/edifiles2"),
+    #"../MT_Datasets/3D_MT_data_edited_fromDuanJM",
+    #"../MT_Datasets/GA_UA_edited_10s-10000s",
 ]
 # epsg to project to. Google epsg 'your projection'
 epsg_code = 28354
