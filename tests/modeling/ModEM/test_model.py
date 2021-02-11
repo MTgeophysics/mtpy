@@ -58,10 +58,10 @@ def _test_gen(edi_path):
         epsg_code=3112
 
         # generate data
-        edi_list=edi_path.glob("*.edi")
-        period_list=EdiCollection(edi_list).select_periods()
+        edi_list = list(edi_path.glob("*.edi"))
+        period_list = EdiCollection(edi_list).select_periods()
 
-        datob=Data(edi_list = edi_list,
+        datob = Data(edi_list = edi_list,
                      inv_mode = '1',
                      period_list = period_list,
                      epsg = epsg_code,
@@ -72,7 +72,7 @@ def _test_gen(edi_path):
         datob.write_data_file(save_path = self._output_dir)
 
         # create mesh grid model object
-        model=Model(stations_object = datob.station_locations,
+        model = Model(stations_object = datob.station_locations,
                       Data = datob,
                       epsg = epsg_code,
                       cell_size_east = 10000, cell_size_north = 10000,  # GA_VIC
