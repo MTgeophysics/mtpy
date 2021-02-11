@@ -23,7 +23,7 @@ from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
 from mtpy.utils.mtpy_decorator import deprecated
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
 from mtpy.modeling.modem.station import Stations
@@ -267,7 +267,7 @@ class Data(object):
 
     def __init__(self, edi_list=None, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = MtPyLog.get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.mt_dict = None
         self.edi_list = None
@@ -731,11 +731,11 @@ class Data(object):
         for ii, s_key in enumerate(sorted(mt_dict.keys())):
             mt_obj = mt_dict[s_key]
             data_array[ii]["station"] = mt_obj.station
-            data_array[ii]["lat"] = mt_obj.latitude
-            data_array[ii]["lon"] = mt_obj.longitude
+            data_array[ii]["lat"] = mt_obj.lat
+            data_array[ii]["lon"] = mt_obj.lon
             data_array[ii]["east"] = mt_obj.east
             data_array[ii]["north"] = mt_obj.north
-            data_array[ii]["elev"] = mt_obj.elevation
+            data_array[ii]["elev"] = mt_obj.elev
             data_array[ii]["zone"] = mt_obj.utm_zone
             try:
                 data_array[ii]["rel_east"] = mt_obj.grid_east
@@ -1741,12 +1741,12 @@ class Data(object):
 
             # if the station data has not been filled yet, fill it
             if not tf_dict[dd[1]]:
-                data_dict[dd[1]].latitude = dd[2]
-                data_dict[dd[1]].longitude = dd[3]
+                data_dict[dd[1]].lat = dd[2]
+                data_dict[dd[1]].lon = dd[3]
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elevation = dd[6]
+                data_dict[dd[1]].elev = dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values
@@ -1802,13 +1802,13 @@ class Data(object):
             self.mt_dict[s_key].Tipper.compute_mag_direction()
 
             self.data_array[ii]["station"] = mt_obj.station
-            self.data_array[ii]["lat"] = mt_obj.latitude
-            self.data_array[ii]["lon"] = mt_obj.longitude
+            self.data_array[ii]["lat"] = mt_obj.lat
+            self.data_array[ii]["lon"] = mt_obj.lon
             # east,north,zone = gis_tools.project_point_ll2utm(mt_obj.lat,mt_obj.lon,epsg=self.model_epsg)
             self.data_array[ii]["east"] = mt_obj.east
             self.data_array[ii]["north"] = mt_obj.north
             self.data_array[ii]["zone"] = mt_obj.utm_zone
-            self.data_array[ii]["elev"] = mt_obj.elevation
+            self.data_array[ii]["elev"] = mt_obj.elev
             self.data_array[ii]["rel_elev"] = mt_obj.grid_elev
             self.data_array[ii]["rel_east"] = mt_obj.grid_east
             self.data_array[ii]["rel_north"] = mt_obj.grid_north

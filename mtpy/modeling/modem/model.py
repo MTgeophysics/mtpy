@@ -18,7 +18,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy import stats as stats, interpolate as spi
+from scipy import stats as stats
 
 import mtpy.utils.calculator as mtcc
 from mtpy.imaging.mtcolors import FixPointNormalize, cut_terrain_map
@@ -28,7 +28,7 @@ from mtpy.utils import (
     gis_tools as gis_tools,
     filehandling as mtfh,
 )
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
@@ -221,7 +221,7 @@ class Model(object):
     """
 
     def __init__(self, stations_object=None, data_object=None, **kwargs):
-        self._logger = get_mtpy_logger(self.__class__.__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         self.station_locations = None
         self.data_obj = None

@@ -17,7 +17,7 @@ from shapely.geometry import Point
 
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 
 
 # in module imports
@@ -41,7 +41,7 @@ class Stations(object):
 
     def __init__(self, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = MtPyLog.get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
             ("station", "|U50"),
@@ -243,10 +243,10 @@ class Stations(object):
         self.station_locations = np.zeros(n_stations, dtype=self.dtype)
         # get station locations in meters
         for ii, mt_obj in enumerate(mt_obj_list):
-            self.station_locations[ii]["lat"] = mt_obj.latitude
-            self.station_locations[ii]["lon"] = mt_obj.longitude
+            self.station_locations[ii]["lat"] = mt_obj.lat
+            self.station_locations[ii]["lon"] = mt_obj.lon
             self.station_locations[ii]["station"] = mt_obj.station
-            self.station_locations[ii]["elev"] = mt_obj.elevation
+            self.station_locations[ii]["elev"] = mt_obj.elev
 
             if (self.model_epsg is not None) or (self.model_utm_zone is not None):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
