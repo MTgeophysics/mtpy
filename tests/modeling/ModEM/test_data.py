@@ -1,7 +1,16 @@
-import difflib
-import glob
+"""
+Test modem.Data
+==================
+
+Make sure that the output is the same as what was previously made.
+
+Should add tests on using the Data class
+
+updated - 2021/02/11 (JP) to use Path
+"""
+from pathlib import Path
 import os
-from os.path import dirname as UP
+import difflib
 import sys
 from unittest import TestCase
 import tarfile
@@ -11,7 +20,7 @@ import matplotlib.pyplot as plt
 from mtpy.core.edi_collection import EdiCollection
 from mtpy.modeling.modem import Data
 # patch that changes the matplotlib behaviour
-from tests import make_temp_dir
+from tests import make_temp_dir, EDI_DATA_LIST
 from tests.imaging import plt_wait, plt_close
 import numpy as np
 
@@ -41,48 +50,31 @@ class TestData(TestCase):
         self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = os.path.normpath(
-            os.path.join(
-                os.path.join(self._temp_dir, 'expected_data_output'),
-                self._testMethodName
-            )
-        )
+        self._expected_output_dir = Path(
+            self._temp_dir, 
+            'expected_data_output',
+            self._testMethodName)
 
         # unzip expected output files
-        tfn = os.path.join(os.path.dirname(__file__), 'test_data.expected.tar.gz')
-
+        tfn = Path(Path(__file__).parent, 'test_data.expected.tar.gz')
         tf = tarfile.open(tfn)
-        output_dir = self._expected_output_dir
         for member in tf.getmembers():
             if (member.isreg()):
                 if (self._testMethodName in member.name):
-
-                    member.name = os.path.basename(member.name)  # remove the path by resetting it
-
-                    tf.extract(member, output_dir)  # extract
+                    member.name = Path(member.name).name  # remove the path by resetting it
+                    tf.extract(member, self._expected_output_dir)  # extract
                 # end if
             # end if
         # end for
 
-        if not os.path.isdir(self._expected_output_dir):
+        if not self._expected_output_dir.is_dir():
             self._expected_output_dir = None
 
     def tearDown(self):
         plt_wait(1)
         plt_close('all')
 
-mtpydir = UP(UP(UP(UP(os.path.abspath(__file__)))))
-edi_paths = [
-    os.path.join(mtpydir, "data/edifiles"),
-    os.path.join(mtpydir, "examples/data/edi2"),
-    os.path.join(mtpydir, "examples/data/edi_files"),
-    os.path.join(mtpydir, "data/edifiles2"),
-    #"../MT_Datasets/3D_MT_data_edited_fromDuanJM",
-    #"../MT_Datasets/GA_UA_edited_10s-10000s",
-]
-# epsg to project to. Google epsg 'your projection'
-epsg_code = 28354
-epsg_code = 3112
+
 
 error_types = [
 #   (test_name, error_type_tipper, error_tpye_z,  error_value_z)
@@ -114,12 +106,13 @@ def _test_gen(edi_path, error_type_tipper, error_type_z, error_value_z):
     """
 
     def test_func(self):
-        if not os.path.isdir(edi_path):
+        if not edi_path.is_dir():
             # input file does not exist, skip test after remove the output dir
             os.rmdir(self._output_dir)
             self.skipTest("edi path does not exist: {}".format(edi_path))
-
-        edi_list = glob.glob(edi_path + '/*.edi')
+        
+        epsg_code = 3112
+        edi_list = list(edi_path.glob('*.edi'))
         period_list = EdiCollection(edi_list).select_periods()
         datob = Data(edi_list=edi_list,
                      inv_mode='1',
@@ -163,7 +156,7 @@ def _test_gen(edi_path, error_type_tipper, error_type_z, error_value_z):
 
 
 # generate tests
-for edi_path in edi_paths:
+for edi_path in EDI_DATA_LIST:
     for name, error_type_tipper, error_type_z, error_value_z in error_types:
         test_func = _test_gen(edi_path, error_type_tipper, error_type_z, error_value_z)
         test_func.__name__ = "test_{}_{}".format(os.path.basename(edi_path), name)
