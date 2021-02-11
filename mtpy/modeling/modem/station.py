@@ -223,7 +223,7 @@ class Stations(object):
             * fills station_locations array
 
         """
-        # print input_list
+        # self.logger.debug input_list
         mt_obj_list = self._get_mt_objs_from_list(input_list)
 
         # if station locations are not input read from the edi files
@@ -314,7 +314,7 @@ class Stations(object):
         ]
         center_location = np.recarray(1, dtype=dtype)
         if self._center_lat is not None and self._center_lon is not None:
-            print("assigning center from user set values")
+            self.logger.debug("assigning center from user set values")
             center_location["lat"] = self._center_lat
             center_location["lon"] = self._center_lon
             center_location["elev"] = self._center_elev
@@ -342,7 +342,7 @@ class Stations(object):
 
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
-            print("Not all stations are in same UTM zone")
+            self.logger.debug("Not all stations are in same UTM zone")
             center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.0
             center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.0
             # get the median utm zone
@@ -367,7 +367,7 @@ class Stations(object):
             center_location["north"] = north
 
         else:
-            print("locating center from UTM grid")
+            self.logger.debug("locating center from UTM grid")
             center_location["east"] = (self.east.max() + self.east.min()) / 2
             center_location["north"] = (self.north.max() + self.north.min()) / 2
 
