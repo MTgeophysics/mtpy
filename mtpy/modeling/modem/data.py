@@ -2003,104 +2003,50 @@ class Data(object):
         )
         return parameter_dict
 
-    def center_stations(self, model_fn, data_fn=None):
+    def center_stations(self, model_obj, data_fn=None):
         """
-        Center station locations to the middle of cells, might be useful for
-        topography.
+        Center station locations to the middle of cells, is useful for
+        topography cause it reduces edge effects of stations close to cell edges.
+        Recalculates rel_east, rel_north to center of model cell.
+        
+        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :type model_obj: :class:`mtpy.modeling.modem.Model`
+        :param data_fn: full path to data file, defaults to None
+        :type data_fn: string or Path, optional
 
-
-        Arguments
-        -----------
-            **data_fn** : string
-                          full path to data file
-
-            **model_fn** : string
-                          full path to model file
-
-            **new_data_fn** : string
-                             full path to new data file
-                             *default* is None, which save as
-                             data_fn_center.dat
-
-        Returns
-        -----------
-            **new_data_fn** : string
-                              full path to new data file
         """
 
         if data_fn is not None:
             self.read_data_file(data_fn)
 
-        m_obj = Model()
-        m_obj.read_model_file(model_fn)
 
         for s_arr in self.station_locations.station_locations:
-            e_index = np.where(m_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
-            n_index = np.where(m_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
+            e_index = np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
+            n_index = np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
 
-            mid_east = m_obj.grid_east[e_index : e_index + 2].mean()
-            mid_north = m_obj.grid_north[n_index : n_index + 2].mean()
+            mid_east = model_obj.grid_east[e_index : e_index + 2].mean()
+            mid_north = model_obj.grid_north[n_index : n_index + 2].mean()
 
             s_index = np.where(self.data_array["station"] == s_arr["station"])[0][0]
 
             self.data_array[s_index]["rel_east"] = mid_east
             self.data_array[s_index]["rel_north"] = mid_north
 
-    def change_data_elevation(self, model_obj, data_fn=None, res_air=1e12):
+    def project_stations_on_topography(self, model_object, air_resistivity=1e12,
+                                       sea_resistivity=0.3, ocean_bottom=False):
         """
-        At each station in the data file rewrite the elevation, so the station is
-        on the surface, not floating in air.
+        Project stations on topography of a given model
 
-        Arguments:
-        ------------------
-            *data_fn* : string
-                        full path to a ModEM data file
-
-            *model_fn* : string
-                        full path to ModEM model file that has elevation
-                        incoorporated.
-
-            *new_data_fn* : string
-                            full path to new data file name.  If None, then
-                            new file name will add _elev.dat to input filename
-
-            *res_air* : float
-                        resistivity of air.  Default is 1E12 Ohm-m
-        Returns:
-        -------------
-            *new_data_fn* : string
-                            full path to new data file.
-        """
-        if data_fn is not None:
-            self.read_data_file(data_fn)
-
-        s_locations = self.station_locations.station_locations.copy()
-
-        # need to subtract one because we are finding the cell next to it
-        for s_arr in s_locations:
-            e_index = np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
-            n_index = np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
-            z_index = np.where(
-                model_obj.res_model[n_index, e_index, :] < res_air * 0.9
-            )[0][0]
-            s_index = np.where(self.data_array["station"] == s_arr["station"])[0][0]
-
-            # elevation needs to be relative to the point (0, 0, 0), where
-            # 0 is the top of the model, the highest point, so the station
-            # elevation is relative to that.
-            self.data_array[s_index]["rel_elev"] = model_obj.nodes_z[0:z_index].sum()
-
-            # need to add in the max elevation to the center point so that
-            # when we read the file later we can adjust the stations
-            self.center_point.elev = model_obj.grid_z[0]
-
-    def project_stations_on_topography(self, model_object, air_resistivity=1e12):
-        """
-        Re-write the data file to change the elevation column.
-        And update covariance mask according topo elevation model.
-        :param model_object:
-        :param air_resistivity:
-        :return:
+        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :type model_obj: :class:`mtpy.modeling.modem.Model`
+        :param air_resistivity: resistivity value of air cells in the model
+        :type air_resistivity:  float
+        :param sea_resistivity: resistivity of sea
+        :type sea_resistivity: float
+        :param ocean_bottom: If True places stations at bottom of sea cells
+        :type ocean_bottom: boolean
+        
+        Recaluclates rel_elev
         """
 
         # sx = self.station_locations.station_locations['rel_east']
@@ -2137,7 +2083,15 @@ class Data(object):
             # otherwise place station at the top of the model
             else:
                 szi = 0
-
+            
+            # estimate ocean bottom stations if requested
+            if ocean_bottom:
+                szi = np.amax(
+                    np.where(
+                        (model_object.res_model[syi, sxi] <= sea_resistivity)
+                    )[0]
+                )
+            
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
 
@@ -2148,22 +2102,14 @@ class Data(object):
             # data elevation needs to be below the topography (as advised by Naser)
             self.data_array["rel_elev"][ss] = topoval + 0.001
 
-            # print('{0} at E={1}, N={2}, z={3}, model_z={4}'.format(sname,
-            #                                                        sxi,
-            #                                                        syi,
-            #                                                        topoval,
-            #                                                        self.data_array['rel_elev'][ss]))
-
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
         self._center_elev = model_object.grid_z[0]
 
-        # logger.debug("Re-write data file after adding topo")
+        self.logger.debug("Re-writing data file after adding topo to "
+                          + self.data_fn.stem + "_topo.dat")
         self.write_data_file(
-            fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,
-        )  # (Xi, Yi, Zi) of each station-i may be shifted
-
-        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+            fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,)
 
         return station_index_x, station_index_y
 
