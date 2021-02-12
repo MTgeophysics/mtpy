@@ -23,7 +23,7 @@ from mtpy.core import mt as mt
 from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
 from mtpy.modeling.modem.station import Stations
@@ -214,7 +214,7 @@ class Data(object):
 
     def __init__(self, edi_list=None, **kwargs):
 
-        self.logger = MtPyLog.get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.mt_dict = None
         self.edi_list = None
