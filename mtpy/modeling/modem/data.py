@@ -47,11 +47,8 @@ class Data(object):
                a linear interpolation of each of the real and imaginary parts
                of the impedance tensor and induction tensor.
                See mtpy.core.mt.MT.interpolate for more details
-
-    Arguments
-    ------------
-        **edi_list** : list
-                       list of full paths to .edi files you want to invert for
+    
+    :param edi_list: list of edi files to read
 
     ====================== ====================================================
     Attributes              Description
@@ -170,77 +167,31 @@ class Data(object):
                            *default* is '+' as positive downwards.
     ====================== ====================================================
 
-    ========================== ================================================
-    Methods                    Description
-    ========================== ================================================
-    center_stations            Center station locations to the middle of cells,
-                               might be useful for topography.
-    change_data_elevation      At each station in the data file rewrite the
-                               elevation, so the station is on the surface,
-                               not floating in air.
-    compute_inv_error          compute the error from the given parameters
-    convert_modem_to_ws        convert a ModEM data file to WS format.
-    convert_ws3dinv_data_file  convert a ws3dinv file to ModEM fomrat,
-                               **Note** this doesn't include tipper data and
-                               you need a station location file like the one
-                               output by mtpy.modeling.ws3dinv
-    fill_data_array            fill the data array from mt_dict
-    filter_periods             Select the periods of the mt_obj that are in
-                               per_array. used to do original freq inversion.
-    get_header_string          reset the header sring for file
-    get_mt_dict                get mt_dict from edi file list
-    get_parameters             get important parameters for documentation
-    get_period_list            make a period list to invert for
-    get_relative_station_locations     get station locations from edi files
-    project_stations_on_topography     This method is used in add_topography().
-                                       It will Re-write the data file to change
-                                       the elevation column. And update
-                                       covariance mask according topo elevation
-                                       model.
-    read_data_file             read in a ModEM data file and fill attributes
-                               data_array, station_locations, period_list,
-                               mt_dict
-    write_data_file            write a ModEM data file
-    write_vtk_station_file     write a vtk file for station locations.  For now
-                               this in relative coordinates.
-    ========================== ================================================
-
 
     :Example 1 --> create inversion period list: ::
 
-        >>> import os
+        >>> from pathlib import Path
         >>> import mtpy.modeling.modem as modem
-        >>> edi_path = r"/home/mt/edi_files"
-        >>> edi_list = [os.path.join(edi_path, edi) \
-                        for edi in os.listdir(edi_path)\
-                        if edi.find('.edi') > 0]
+        >>> edi_path = Path(r"/home/mt/edi_files")
+        >>> edi_list = list(edi_path.glob("*.edi"))
         >>> md = modem.Data(edi_list, period_min=.1, period_max=300,\
-                            max_num_periods=12)
+        >>> ...             max_num_periods=12)
         >>> md.write_data_file(save_path=r"/home/modem/inv1")
+        >>> md
+        
 
     :Example 2 --> set inverions period list from data: ::
 
-        >>> import os
-        >>> import mtpy.core.mt
-        >>> import mtpy.modeling.modem as modem
-        >>> edi_path = r"/home/mt/edi_files"
-        >>> edi_list = [os.path.join(edi_path, edi) \
-                        for edi in os.listdir(edi_path)\
-                        if edi.find('.edi') > 0]
         >>> md = modem.Data(edi_list)
         >>> #get period list from an .edi file
-        >>> mt_obj1 = mt.MT(edi_list[0])
-        >>> inv_period_list = 1./mt_obj1.Z.freq
+        >>> inv_period_list = 1./md.mt_dict["mt01"].Z.freq
         >>> #invert for every third period in inv_period_list
         >>> inv_period_list = inv_period_list[np.arange(0, len(inv_period_list, 3))]
         >>> md.period_list = inv_period_list
-    >>> md.write_data_file(save_path=r"/home/modem/inv1")
+        >>> md.write_data_file(save_path=r"/home/modem/inv1")
 
     :Example 3 --> change error values: ::
 
-        >>> import mtpy.modeling.modem as modem
-        >>> mdr = modem.Data()
-        >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.error_type = 'floor'
         >>> mdr.error_floor = 10
         >>> mdr.error_tipper = .03
@@ -248,9 +199,6 @@ class Data(object):
 
     :Example 4 --> change inversion type: ::
 
-        >>> import mtpy.modeling.modem as modem
-        >>> mdr = modem.Data()
-        >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.inv_mode = '3'
         >>> mdr.write_data_file(save_path=r"/home/modem/inv2")
 
@@ -409,7 +357,14 @@ class Data(object):
     @staticmethod
     def make_dtype(z_shape, t_shape):
         """
-        reset dtype
+        Create data type given shapes of the impedance and tipper arrays
+        
+        :param z_shape: (number of periods, 2, 2)
+        :type z_shape: tuple
+        
+        :param t_shape: (number of periods, 2, 2)
+        :type t_shape: tuple
+        
         """
 
         dtype = [
@@ -436,7 +391,18 @@ class Data(object):
     @staticmethod
     def get_header_string(error_type, error_value, rotation_angle):
         """
-        reset the header sring for file
+        Create the header strings
+        
+        # Created using MTpy calculated egbert_floor error of 5% data rotated 0.0_deg
+        clockwise from N
+        
+        :param error_type: The method to calculate the errors
+        :type error_type: string
+        :param error_value: value of error or error floor
+        :type error_value: float
+        :param rotation_angle: angle data have been rotated by
+        :type rotation_angle: float
+
         """
 
         h_str = []
@@ -463,7 +429,11 @@ class Data(object):
 
     def make_mt_dict(self, edi_list=None):
         """
-        get mt_dict from edi file list
+        Create a dictionary of :class:`mtpy.core.mt.MT` objects to pull data from
+        
+        :param edi_list: list of edi files to read
+        :type edi_list: list of full paths to files
+        
         """
 
         if edi_list is not None:
@@ -494,7 +464,17 @@ class Data(object):
 
     def get_relative_station_locations(self, mt_dict, data_array):
         """
-        get station locations from mt files
+        Compute the relative station locations on a grid where the center is (0, 0) 
+        
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :param data_array: data array 
+        :type data_array: np.ndarray 
+        :return: data_array with relative locations in keys labels 
+        rel_east, rel_north, rel_elev
+        :rtype: np.ndarray 
+
         """
         stations_obj = Stations(
             model_epsg=self.model_epsg, model_utm_zone=self.model_utm_zone
@@ -525,10 +505,11 @@ class Data(object):
         """
          Get an array of unique periods from the data
          
-        :param mt_dict: DESCRIPTION
-        :type mt_dict: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :return: array of unique periods from all stations provided
+        :rtype: np.ndarray
 
         """
         data_period_list = []
@@ -539,8 +520,31 @@ class Data(object):
 
     def make_period_list(self, mt_dict):
         """
-        make a period list to invert for
+        Create an array of periods to invert for.
+        
+        If these parameters are not None, uses them to compute the period array
+            - Data.period_min
+            - Data.period_max
+            - Data.max_num_periods
+            
+        otherwise the period max and period min is estimated from the data.
+        
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :raises: :class:`mtpy.utils.exceptions.DataError` if a parameter is missing
+        
+        .. code-block::
+            :linenos:
+                
+            >>> md = Data()
+            >>> md.period_min = 0.01
+            >>> md.period_max = 1000
+            >>> md.max_num_periods = 23
+            >>> md.make_period_list(mt_dict)
+            
         """
+        
         if self.period_list is not None:
             self.logger.debug(
                 "Inverting periods "
@@ -581,13 +585,19 @@ class Data(object):
 
     @property
     def rotation_angle(self):
+        """ angle to rotated the data by """
         return self._rotation_angle
 
     @rotation_angle.setter
     def rotation_angle(self, rotation_angle):
         """
-        on set rotation angle rotate mt_dict and data_array,
+        When the rotation angle is set rotate MT objects and fill data array with
+        rotated values. 
+        :param rotation_angle: angle 0 is N, 90 E, positive clockwise (degrees)
+        :type rotation_angle: float
+        
         """
+
         if self._rotation_angle == rotation_angle:
             return
 
@@ -709,7 +719,19 @@ class Data(object):
         self, mt_dict, new_edi_dir=None, use_original_freq=False, longitude_format="LON"
     ):
         """
-        fill the data array from mt_dict
+        Populate the data array from values in the :class:`mtpy.core.mt.MT` objects
+        
+        :param mt_dict: DESCRIPTION
+        :type mt_dict: TYPE
+        :param new_edi_dir: DESCRIPTION, defaults to None
+        :type new_edi_dir: TYPE, optional
+        :param use_original_freq: DESCRIPTION, defaults to False
+        :type use_original_freq: TYPE, optional
+        :param longitude_format: DESCRIPTION, defaults to "LON"
+        :type longitude_format: TYPE, optional
+        :raises ValueError: DESCRIPTION
+        :return: DESCRIPTION
+        :rtype: TYPE
 
         """
 
