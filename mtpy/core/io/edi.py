@@ -24,6 +24,7 @@ import mtpy.core.z as MTz
 from mtpy import __version__
 
 from mt_metadata.utils.mttime import MTime, get_now_utc
+from mt_metadata.utils.exceptions import MTTimeError
 from mt_metadata.transfer_functions import tf as metadata
 
 import scipy.stats.distributions as ssd
@@ -1397,8 +1398,8 @@ class Header(object):
             return
         try:
             self._progdate = MTime(value)
-        except MTex.MTTimeError as error:
-            msg = f"Header.progdage must be a date not {value}. {error}"
+        except MTTimeError as error:
+            msg = f"Header.progdate must be a date not {value}. {error}"
             self.logger.debug(msg)
 
     def get_header_list(self):

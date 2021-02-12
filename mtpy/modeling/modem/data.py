@@ -776,8 +776,8 @@ class Data(object):
         for ii, s_key in enumerate(sorted(mt_dict.keys())):
             mt_obj = mt_dict[s_key]
             data_array[ii]["station"] = mt_obj.station
-            data_array[ii]["lat"] = mt_obj.lat
-            data_array[ii]["lon"] = mt_obj.lon
+            data_array[ii]["lat"] = mt_obj.latitude
+            data_array[ii]["lon"] = mt_obj.longitude
             data_array[ii]["east"] = mt_obj.east
             data_array[ii]["north"] = mt_obj.north
             data_array[ii]["elev"] = mt_obj.elev
@@ -1816,8 +1816,8 @@ class Data(object):
 
             # if the station data has not been filled yet, fill it
             if not tf_dict[dd[1]]:
-                data_dict[dd[1]].lat = dd[2]
-                data_dict[dd[1]].lon = dd[3]
+                data_dict[dd[1]].latitude = dd[2]
+                data_dict[dd[1]].longitude = dd[3]
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
@@ -1877,8 +1877,8 @@ class Data(object):
             self.mt_dict[s_key].Tipper.compute_mag_direction()
 
             self.data_array[ii]["station"] = mt_obj.station
-            self.data_array[ii]["lat"] = mt_obj.lat
-            self.data_array[ii]["lon"] = mt_obj.lon
+            self.data_array[ii]["lat"] = mt_obj.latitude
+            self.data_array[ii]["lon"] = mt_obj.longitude
             self.data_array[ii]["east"] = mt_obj.east
             self.data_array[ii]["north"] = mt_obj.north
             self.data_array[ii]["zone"] = mt_obj.utm_zone
