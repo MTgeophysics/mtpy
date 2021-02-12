@@ -18,7 +18,6 @@ from matplotlib.ticker import FormatStrFormatter, LogFormatterSciNotation
 from mtpy.imaging import mtplottools as mtplottools
 from mtpy.modeling.modem import Data, Residual
 from mtpy.core.z import Z, Tipper
-import sys
 
 __all__ = ["PlotResponse"]
 

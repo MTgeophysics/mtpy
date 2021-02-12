@@ -29,7 +29,6 @@ from mtpy.modeling.modem import Data, Model
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog.get_mtpy_logger(__name__)
-# logger.setLevel(logging.DEBUG)
 
 
 class DataModelAnalysis(object):

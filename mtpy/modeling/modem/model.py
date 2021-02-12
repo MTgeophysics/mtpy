@@ -7,6 +7,7 @@ ModEM
 
 # revised by JP 2017
 # revised by AK 2017 to bring across functionality from ak branch
+# revised by JP 2021 updating functionality and updating docs
 
 """
 from __future__ import print_function

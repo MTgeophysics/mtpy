@@ -103,9 +103,8 @@ class ControlInv(object):
             str_fmt = self._string_fmt_dict[key]
             clines.append('{0:<35}: {1:{2}}\n'.format(key, value, str_fmt))
 
-        cfid = file(self.control_fn, 'w')
-        cfid.writelines(clines)
-        cfid.close()
+        with open(self.control_fn, 'w') as cfid:
+            cfid.writelines(clines)
 
         print('Wrote ModEM control file to {0}'.format(self.control_fn))
 
@@ -128,17 +127,16 @@ class ControlInv(object):
         self.save_path = os.path.dirname(self.control_fn)
         self.fn_basename = os.path.basename(self.control_fn)
 
-        cfid = file(self.control_fn, 'r')
-        clines = cfid.readlines()
-        cfid.close()
-        for cline in clines:
-            clist = cline.strip().split(':')
-            if len(clist) == 2:
-
-                try:
-                    self._control_dict[clist[0].strip()] = float(clist[1])
-                except ValueError:
-                    self._control_dict[clist[0].strip()] = clist[1]
+        with open(self.control_fn, 'r') as cfid:
+            clines = cfid.readlines()
+            for cline in clines:
+                clist = cline.strip().split(':')
+                if len(clist) == 2:
+    
+                    try:
+                        self._control_dict[clist[0].strip()] = float(clist[1])
+                    except ValueError:
+                        self._control_dict[clist[0].strip()] = clist[1]
 
         # set attributes
         attr_list = ['output_fn', 'lambda_initial', 'lambda_step',

@@ -7,6 +7,7 @@ ModEM
 
 # revised by JP 2017
 # revised by AK 2017 to bring across functionality from ak branch
+# revised by JP 2021 adding functionality and updating.
 
 """
 from __future__ import print_function
@@ -22,12 +23,10 @@ from mtpy.core import mt as mt
 from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
-from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpylog import MtPyLog
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
 from mtpy.modeling.modem.station import Stations
-from mtpy.modeling.modem.model import Model
 
 
 try:
@@ -466,6 +465,12 @@ class Data(object):
         """
         Compute the relative station locations on a grid where the center is (0, 0) 
         
+        Computes from station locations in mt_dict. 
+        Calls modem.Station().get_station_locations()  
+        
+        If Data._center_lat, Data._center_lon are assigned the center will be 
+        relative to that point.  
+        
         :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
         station names.
         :type mt_dict: dictionary
@@ -474,7 +479,9 @@ class Data(object):
         :return: data_array with relative locations in keys labels 
         rel_east, rel_north, rel_elev
         :rtype: np.ndarray 
-
+        
+        .. seealso:: `mtpy.modeling.modem.station.Stations`
+        
         """
         stations_obj = Stations(
             model_epsg=self.model_epsg, model_utm_zone=self.model_utm_zone
@@ -541,7 +548,7 @@ class Data(object):
             >>> md.period_min = 0.01
             >>> md.period_max = 1000
             >>> md.max_num_periods = 23
-            >>> md.make_period_list(mt_dict)
+            >>> inversion_periods = md.make_period_list(mt_dict)
             
         """
         
@@ -736,6 +743,18 @@ class Data(object):
         :raises ValueError: If cannot compute locations
         :return: data array
         :rtype: np.ndarray
+        
+        .. code-block::
+            :linenos:
+            
+            >>> from pathlib import Path
+            >>> from mtpy.modeling.modem import Data
+            >>> md = Data()
+            >>> md.period_list = [.01, .1, 1, 10, 100]
+            >>> edi_path = Path(r"/home/mt")
+            >>> edi_list = list(edi_path.glob("*.edi"))
+            >>> mt_dict = md.make_mt_dict(edi_list)
+            >>> md.data_array = md.fill_data_array(mt_dict)
 
         """
 
@@ -950,6 +969,7 @@ class Data(object):
         take a station_locations array and populate data_array
         
         :param station_locations: array of station locations
+        :type station_locations: :class:`mtpy.modeling.modem.Station`
         """
         if self.data_array is None:
             dtype = self.make_dtype(
@@ -1010,7 +1030,32 @@ class Data(object):
             - Data.error_value_z
             - Data.error_type_tipper
             - Data.error_value_tiper
+         
+        **Impedance Error Types**
+        
+        =========== ==================================================================
+        Error Type  Calculation                          
+        =========== ================================================================== 
+        egbert      error_value_z $\cdot \sqrt(|(Z_{xy}\cdot Z_{yx}|$)) 
+        mean_od     error_value_z $\cdot (Z_{xy} + Z_{yx})/2$ 
+        eigen       error_value_z $\cdot$ eigenvalues($Z(\omega)$) 
+        median      error_value_z $\cdot$ median($Z(\omega)$)
+        =========== ==================================================================
+        
+        **Tipper Error Types**
+        
+        =========== ==================================================================
+        Error Type  Description                          
+        =========== ================================================================== 
+        abs         A value given to all tipper data 
+        =========== ==================================================================
 
+        .. note:: If floor is added to an error type then any value below that value 
+        will be set to the floor and anything above the floor will remain above.  For
+        example if the error floor is 5 but the measurement error is 7, the error 
+        will be left at 7.  If the measurement error is 3 then it will be changed
+        to 5.
+        
         """
         # copy values over to inversion error
         data_array["z_inv_err"] = data_array["z_err"]
@@ -1401,52 +1446,6 @@ class Data(object):
         self.logger.info("Wrote ModEM data file to {0}".format(self.data_fn))
         return self.data_fn
 
-    @deprecated("error type from GA implementation, not fully tested yet")
-    def _impedance_components_error_meansqr(self, c_key, ss, z_ii, z_jj):
-        """
-        calculate the mean square of errors of a given component over all frequencies for a given station
-        :param c_key:
-        :param ss:
-        :param z_ii:
-        :param z_jj:
-        :return:
-        """
-        abs_err = np.mean(np.square(self.data_array[ss][c_key + "_err"][:, z_ii, z_jj]))
-        return abs_err
-
-    @deprecated("error type from GA implementation, not fully tested yet")
-    def _impedance_components_error_sqr(self, c_key, ff, ss, z_ii, z_jj):
-        """
-        use the square of the error of a given frequency and a given component at the given station
-        :param c_key:
-        :param ff:
-        :param ss:
-        :param z_ii:
-        :param z_jj:
-        :return:
-        """
-        return np.square(self.data_array[ss][c_key + "_err"][ff, z_ii, z_jj])
-
-    @deprecated("error type from GA implementation, not fully tested yet")
-    def _impedance_components_error_stddev(self, c_key, ss, z_ii, z_jj):
-        """
-        calculate the stddev across all frequencies on a given component
-        :param c_key:
-        :param ss:
-        :param z_ii:
-        :param z_jj:
-        :return:
-        """
-        # errors = [self.data_array[ss][c_key + '_err'][freq, z_ii, z_jj] for freq in range(self.data_array['z'].shape[1])]
-        # print errors
-        # abs_err = np.std(errors)
-        # print abs_err
-        errors = self.data_array[ss][c_key + "_err"][:, z_ii, z_jj]
-        # print errors
-        abs_err = np.std(errors)
-        # print abs_err
-        return abs_err
-
     def convert_ws3dinv_data_file(
         self,
         ws_data_fn,
@@ -1628,6 +1627,31 @@ class Data(object):
             * data_array
             * period_list
             * mt_dict
+            
+        .. code-block::
+                
+            >>> md = Data()
+            >>> md.read_data_file(r"/home/modem_data.dat")
+            >>> md
+            ModEM Data Object:
+                Number of stations: 169
+                Number of periods:  22
+               	Period range:  
+               		Min: 0.01 s
+               		Max: 15230.2 s
+               	Rotation angle:     0.0
+               	Data center:        
+               		 latitude:  39.6351 deg
+               		 longitude: -119.8039 deg
+               		 Elevation: 0.0 m
+               		 Easting:   259368.9746 m
+               		 Northing:  4391021.1981 m
+               		 UTM zone:  11S
+               	Model EPSG:         None
+               	Model UTM zone:     None
+               	Impedance data:     True
+               	Tipper data:        True
+            
 
         """
 

@@ -10,24 +10,22 @@ ModEM
 
 """
 import os
-import time
 
 import numpy as np
 from matplotlib import pyplot as plt, gridspec as gridspec, colorbar as mcb
 from matplotlib.colors import Normalize
 from matplotlib.widgets import Button, RadioButtons, SpanSelector
 
-from mtpy.modeling.modem.data import Data
-from mtpy.modeling.modem.data import Model
+from mtpy.modeling.modem import Data, Model
 from mtpy.utils import exceptions as mtex,basemap_tools
-from mtpy.utils.gis_tools import get_epsg,epsg_project
+from mtpy.utils.gis_tools import epsg_project
 from mtpy.utils.calculator import nearest_index
 from mtpy.utils.mesh_tools import rotate_mesh
 
 from mtpy.imaging.seismic import Segy, VelocityModel
 
 from scipy.spatial import cKDTree
-from scipy.interpolate import interp1d, UnivariateSpline
+from scipy.interpolate import interp1d
 from matplotlib import colors,cm
 from matplotlib.ticker import LogLocator
 
