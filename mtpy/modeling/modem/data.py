@@ -2084,13 +2084,16 @@ class Data(object):
             else:
                 szi = 0
             
-            # estimate ocean bottom stations if requested
+            # JP: estimate ocean bottom stations if requested
             if ocean_bottom:
-                szi = np.amax(
-                    np.where(
-                        (model_object.res_model[syi, sxi] <= sea_resistivity)
-                    )[0]
-                )
+                if np.any(model_object.res_model[syi, sxi] <= sea_resistivity):
+                    szi = np.amax(
+                        np.where(
+                            (model_object.res_model[syi, sxi] <= sea_resistivity)
+                        )[0]
+                    )
+                # if the stations are not in the ocean let the previous szi estimation
+                # be used
             
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
