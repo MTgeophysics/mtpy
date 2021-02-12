@@ -40,7 +40,6 @@ class Stations(object):
     """
 
     def __init__(self, **kwargs):
-
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
@@ -223,7 +222,7 @@ class Stations(object):
             * fills station_locations array
 
         """
-        # print input_list
+        # self.logger.debug input_list
         mt_obj_list = self._get_mt_objs_from_list(input_list)
 
         # if station locations are not input read from the edi files
@@ -276,11 +275,13 @@ class Stations(object):
         """
 
         # translate the stations so they are relative to 0,0
-        east_center = (self.east.max() + self.east.min()) / 2.0
-        north_center = (self.north.max() + self.north.min()) / 2.0
+        # east_center = (self.east.max() + self.east.min()) / 2.0
+        # north_center = (self.north.max() + self.north.min()) / 2.0
 
-        self.station_locations["rel_east"] = self.east - east_center
-        self.station_locations["rel_north"] = self.north - north_center
+        # self.station_locations["rel_east"] = self.east - east_center
+        # self.station_locations["rel_north"] = self.north - north_center
+        self.station_locations["rel_east"] = self.east - self.center_point.east[0]
+        self.station_locations["rel_north"] = self.north - self.center_point.north[0]
 
         # BM: Before topograhy is applied to the model, the station
         #  elevation isn't relative to anything (according to
@@ -312,6 +313,7 @@ class Stations(object):
         ]
         center_location = np.recarray(1, dtype=dtype)
         if self._center_lat is not None and self._center_lon is not None:
+            self.logger.debug("assigning center from user set values")
             center_location["lat"] = self._center_lat
             center_location["lon"] = self._center_lon
             center_location["elev"] = self._center_elev
@@ -339,17 +341,23 @@ class Stations(object):
 
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
+            self.logger.debug("Not all stations are in same UTM zone")
+
             center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.0
             center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.0
             # get the median utm zone
             if self.model_utm_zone is None:
+                self.logger.info("Getting median UTM zone of stations for center point")
+
                 zone = self.utm_zone.copy()
                 zone.sort()
                 center_utm_zone = zone[int(zone.size / 2)]
                 center_location["zone"] = center_utm_zone
             else:
+                self.logger.info(f"Using user defined center point UTM zone {self.model_utm_zone}")
                 center_location["zone"] = self.model_utm_zone
 
+            self.logger.info(f"Projecting lat, lon to UTM zone {center_location['zone'][0]}")
             east, north, zone = gis_tools.project_point_ll2utm(
                 center_location["lat"],
                 center_location["lon"],
@@ -360,8 +368,9 @@ class Stations(object):
             center_location["north"] = north
 
         else:
+            self.logger.debug("locating center from UTM grid")
             center_location["east"] = (self.east.max() + self.east.min()) / 2
-            center_location["north"] = (self.north.max() + self.north.max()) / 2
+            center_location["north"] = (self.north.max() + self.north.min()) / 2
 
             # get the median utm zone
             zone = self.utm_zone.copy()
@@ -385,7 +394,10 @@ class Stations(object):
         #  station. After it's applied, it's the highest point
         #  point of the surface model (this will be set by calling
         #  Data.project_stations_on_topography).
-        center_location["elev"] = self.elev.max()
+        if self._center_elev:
+            center_location["elev"] = self._center_elev
+        else:
+            center_location["elev"] = -self.elev.max()
 
         return center_location
 

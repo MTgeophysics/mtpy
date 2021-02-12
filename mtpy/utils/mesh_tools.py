@@ -25,25 +25,29 @@ def grid_centre(grid_edges):
 
 def get_rounding(cell_width):
     """
-    Get the rounding number given the cell width.  Will be the same values as the 
-    width
+    Get the rounding number given the cell width. Will be one significant number less
+    than the cell width. This reduces weird looking meshes.
     
-    :param cell_width: DESCRIPTION
-    :type cell_width: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
-
+    :param cell_width: Width of mesh cell
+    :type cell_width: float
+    :return: digit to round to
+    :rtype: int
+    
+    .. code-block:: python
+        :linenos:
+        
+        >>> from mtpy.utils.mesh_tools import get_rounding
+        >>> get_rounding(9)
+        0
+        >>> get_rounding(90)
+        -1
+        >>> get_rounding(900)
+        -2
+        >>> get_rounding(9000)
+        -3
     """
 
-    if (cell_width > 1) and (cell_width < 10):
-        rounding = 0
-
-    elif (cell_width >= 10) and (cell_width < 100):
-        rounding = -1
-    elif (cell_width >= 100) and (cell_width < 1000):
-        rounding = -2
-    elif (cell_width >= 1000) and (cell_width < 10000):
-        rounding = -3
+    rounding = int(-1 * np.floor(np.log10(cell_width)))
 
     return rounding
 

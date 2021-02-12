@@ -25,14 +25,13 @@ import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.analysis.pt as MTpt
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
 
-_logger = get_mtpy_logger(__name__)
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # ==============================================================================
-
 
 class PlotPhaseTensorMaps(mtpl.PlotSettings):
     """
@@ -369,618 +368,649 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         """
         super(PlotPhaseTensorMaps, self).__init__(**kwargs)
 
-        self.fig = None
-        self.ax_ptm = None
-        self.ax_cb = None
-
-        fn_list = kwargs.pop("fn_list", None)
-        z_object_list = kwargs.pop("z_object_list", None)
-        tipper_object_list = kwargs.pop("tipper_object_list", None)
-        mt_object_list = kwargs.pop("mt_object_list", None)
-        res_object_list = kwargs.pop("res_object_list", None)
+        fn_list = kwargs.pop('fn_list', None)
+        z_object_list = kwargs.pop('z_object_list', None)
+        tipper_object_list = kwargs.pop('tipper_object_list', None)
+        mt_object_list = kwargs.pop('mt_object_list', None)
+        res_object_list = kwargs.pop('res_object_list', None)
 
         # ----set attributes for the class-------------------------
-        self.mt_list = mtpl.get_mtlist(
-            fn_list=fn_list,
-            res_object_list=res_object_list,
-            z_object_list=z_object_list,
-            tipper_object_list=tipper_object_list,
-            mt_object_list=mt_object_list,
-        )
+        self.mt_list = mtpl.get_mtlist(fn_list=fn_list,
+                                       res_object_list=res_object_list,
+                                       z_object_list=z_object_list,
+                                       tipper_object_list=tipper_object_list,
+                                       mt_object_list=mt_object_list)
 
         # set the freq to plot
-        self.plot_freq = 1.0
-        self.ftol = 0.1
-        self.interpolate = True
+        self.plot_freq = kwargs.pop('plot_freq', 1.0)
+        self.ftol = kwargs.pop('ftol', 0.1)
+        self.interpolate = kwargs.pop('interpolate', True)
         # read in map scale
-        self.mapscale = "deg"
+        self.mapscale = kwargs.pop('mapscale', 'deg')
         # map background image
-        self.background_image = None
-        self.bimg_band = None
-        self.bimg_cmap = "viridis"
+        self.background_image = kwargs.pop('background_image', None)
+        self.bimg_band = kwargs.pop('bimg_band', None)
+        self.bimg_cmap = kwargs.pop('bimg_cmap', 'viridis')
 
         # --> set the ellipse properties -------------------
         # set default size to 2
-        if self.mapscale == "deg":
-            self.ellipse_size = 0.05
-            self.arrow_size = 0.05
-            self.arrow_head_length = 0.005
-            self.arrow_head_width = 0.005
-            self.arrow_lw = 0.0005
-            self.xpad = 0.05
-            self.ypad = 0.05
+        if self.mapscale == 'deg':
+            self.ellipse_size = kwargs.pop('ellipse_size', .05)
+            self.arrow_size = kwargs.pop('arrow_size', .05)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', .005)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', .005)
+            self.arrow_lw = kwargs.pop('arrow_lw', .0005)
+            self.xpad = kwargs.pop('xpad', .05)
+            self.ypad = kwargs.pop('xpad', .05)
 
-        elif self.mapscale == "m":
-            self.ellipse_size = 500
-            self.arrow_size = 500
-            self.arrow_head_length = 50
-            self.arrow_head_width = 50
-            self.arrow_lw = 5
-            self.xpad = 500
-            self.ypad = 500
+        elif self.mapscale == 'm':
+            self.ellipse_size = kwargs.pop('ellipse_size', 500)
+            self.arrow_size = kwargs.pop('arrow_size', 500)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', 50)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', 50)
+            self.arrow_lw = kwargs.pop('arrow_lw', 5)
+            self.xpad = kwargs.pop('xpad', 500)
+            self.ypad = kwargs.pop('xpad', 500)
 
-        elif self.mapscale == "km":
-            self.ellipse_size = 0.5
-            self.arrow_size = 0.5
-            self.arrow_head_length = 0.05
-            self.arrow_head_width = 0.05
-            self.arrow_lw = 0.005
-            self.xpad = 0.5
-            self.ypad = 0.5
+        elif self.mapscale == 'km':
+            self.ellipse_size = kwargs.pop('ellipse_size', .5)
+            self.arrow_size = kwargs.pop('arrow_size', .5)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', .05)
+            self.arrow_lw = kwargs.pop('arrow_lw', .005)
+            self.xpad = kwargs.pop('xpad', .5)
+            self.ypad = kwargs.pop('xpad', .5)
 
-        self.minorticks_on = True
+        self.minorticks_on = kwargs.pop('minorticks_on', True)
 
         # --> set colorbar properties---------------------------------
         # set orientation to horizontal
-        self.cb_orientation = "vertical"
-        self.cb_position = None
+        cb_dict = kwargs.pop('cb_dict', {})
+        try:
+            self.cb_orientation = cb_dict['orientation']
+        except KeyError:
+            self.cb_orientation = 'vertical'
+
+        # set the position to middle outside the plot
+        try:
+            self.cb_position = cb_dict['position']
+        except KeyError:
+            self.cb_position = None
 
         # --> set plot properties ------------------------------
         # set some of the properties as attributes much to Lars' discontent
-        self.fig_num = 1
-        self.plot_title = "Phase Tensor Map for "
-        self.fig_dpi = 300
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.plot_num = kwargs.pop('plot_num', 1)
+        self.plot_style = kwargs.pop('plot_style', '1')
+        self.plot_title = kwargs.pop('plot_title', None)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
 
-        self.tscale = "period"
-        self.fig_size = None
-        self.tickstrfmt = "%.2f"
+        self.tscale = kwargs.pop('tscale', 'period')
+        self.fig_size = kwargs.pop('fig_size', [8, 8])
+        self.tickstrfmt = kwargs.pop('tickstrfmt', '%.2f')
 
-        self.font_size = 7
+        self.font_size = kwargs.pop('font_size', 7)
 
-        self.ref_ax_loc = (0.85, 0.1, 0.1, 0.1)
+        self.ref_ax_loc = kwargs.pop('ref_ax_loc', (.85, .1, .1, .1))
         # if rotation angle is an int or float make an array the length of
         # mt_list for plotting purposes
 
+        self._rot_z = kwargs.pop('rot_z', 0)
+        if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
+            self._rot_z = np.array([self._rot_z] * len(self.mt_list))
+
+        # if the rotation angle is an array for rotation of different
+        # freq than repeat that rotation array to the len(mt_list)
+        elif isinstance(self._rot_z, np.ndarray):
+            if self._rot_z.shape[0] != len(self.mt_list):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
+
+        else:
+            pass
+
         # --> set induction arrow properties -------------------------------
-        self.plot_tipper = "n"
+        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
 
         # --> set arrow legend properties -------------------------------
+        arrow_legend_dict = kwargs.pop('arrow_legend_dict', {})
 
-        self.arrow_legend_position = "lower right"
-        self.arrow_legend_xborderpad = 0.2
-        self.arrow_legend_yborderpad = 0.2
-        self.arrow_legend_fontpad = 0.05
-        self.arrow_legend_fontdict = {"size": self.font_size, "weight": "bold"}
+        self.arrow_legend_position = arrow_legend_dict.pop('position', 'lower right')
+
+        # set x-border pad
+        self.arrow_legend_xborderpad = arrow_legend_dict.pop('xborderpad', .2)
+
+        # set y-border pad
+        self.arrow_legend_yborderpad = arrow_legend_dict.pop('yborderpad', .2)
+
+        # set font pad
+        self.arrow_legend_fontpad = arrow_legend_dict.pop('fontpad', .05)
+
+        # set font properties
+        self.arrow_legend_fontdict = arrow_legend_dict.pop('fontdict', {'size': self.font_size,
+                                                                        'weight': 'bold'})
 
         # --> set a central reference point
-        self.plot_reference_point = (0, 0)
+        self.plot_reference_point = kwargs.pop('reference_point', (0, 0))
 
         # --> set station name properties
-        self.plot_station = False
-        self.station_id = (0, 2)
+        station_dict = kwargs.pop('station_dict', None)
+        if station_dict is not None:
+            self.station_id = station_dict.pop('id', (0, 2))
 
-        # set spacing of station name and ellipse
-        self.station_pad = 0.0005
+            # set spacing of station name and ellipse
+            self.station_pad = station_dict.pop('pad', .0005)
 
-        # set font properties of the station label
-        self.station_font_dict = {"size": self.font_size, "weight": "bold"}
+            # set font properties of the station label
+            self.station_font_dict = station_dict.pop('font_dict', {'size': self.font_size,
+                                                                    'weight': 'bold'})
 
-        self.plot_yn = "y"
-        self.save_fn = "/c/tmp"
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.save_fn = kwargs.pop('save_fn', "/c/tmp")
 
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        # By this stage all keyword arguments meant to be set as class properties will have
+        # been processed. Popping all class properties that still exist in kwargs
+        self.kwargs = kwargs
+        for key in vars(self):
+            self.kwargs.pop(key, None)
 
         # --> plot if desired ------------------------
-        if self.plot_yn == "y":
+        if self.plot_yn == 'y':
             self.plot()
+            # self.save_figure(self.save_fn, file_format='png')
 
     # ---need to rotate data on setting rotz
-    @property
-    def rotation_angle(self):
-        return self._rotation_angle
-
-    @rotation_angle.setter
-    def rotation_angle(self, value):
+    def _set_rot_z(self, rot_z):
         """
-        only a single value is allowed
-        """
-        if value == 0:
-            return
-        for ii, mt_obj in enumerate(self.mt_list):
-            mt_obj.rotation_angle = value
-
-        self._rotation_angle = value
-
-    def fold_strike(self, strike):
-        """
-        
-        """
-        strike = strike % 180
-        strike[np.where(strike > 90)] -= 180
-
-        return strike
-
-    def add_raster(self, raster_dict):
-        """
+        need to rotate data when setting z
         """
 
-        # plot raster data if provided and if mapscale is 'deg'
-        if len(raster_dict["lons"]) and self.mapscale == "deg":
-            lons = np.array(raster_dict["lons"])
-            lats = np.array(raster_dict["lats"])
+        # if rotation angle is an int or float make an array the length of
+        # mt_list for plotting purposes
+        if isinstance(rot_z, float) or isinstance(rot_z, int):
+            self._rot_z = np.array([rot_z] * len(self.mt_list))
 
-            # retain masking if a masked array is passed in
-            if type(raster_dict["vals"]) == np.ma.core.MaskedArray:
-                vals = np.ma.masked_array(raster_dict["vals"])
-            else:
-                vals = np.array(raster_dict["vals"])
-
-            if not len(lons) == len(lats) == len(vals):
-                msg = "Raster Lons, Lats and Vals must all have the same length"
-                _logger.error(msg)
-
-            lons -= self.plot_reference_point[0]
-            lats -= self.plot_reference_point[1]
-            levels = raster_dict.pop("levels", 50)
-            cmap = raster_dict.pop("cmap", "rainbow")
-            cbar_title = raster_dict.pop("cbar_title", "Arbitrary Units")
-            triangulation = tri.Triangulation(lons, lats)
-            cbinfo = self.ax_ptm.tricontourf(
-                triangulation,
-                vals,
-                levels=np.linspace(vals.min(), vals.max(), levels),
-                cmap=cmap,
-            )
-            if raster_dict["cbar_position"] is not None:
-                cbax = self.fig.add_axes(raster_dict["cbar_position"])
-            else:
-                cbax, kw = mcb.make_axes(
-                    self.ax_ptm, orientation=self.cb_orientation, shrink=0.35
-                )
-            cbar = self.fig.colorbar(cbinfo, cbax)
-
-            if self.cb_orientation == "horizontal":
-                cbar.ax.set_xlabel(cbar_title)
-                cbar.ax.xaxis.set_label_position("top")
-                cbar.ax.xaxis.set_label_coords(0.5, 1.3)
-            else:
-                cbar.ax.set_ylabel(
-                    cbar_title, fontsize=self.font_size, fontweight="bold"
-                )
-                cbar.ax.yaxis.set_label_position("right")
-                cbar.ax.yaxis.set_label_coords(1.25, 0.5)
-                cbar.ax.yaxis.tick_left()
-                cbar.ax.tick_params(axis="y", direction="in")
-
-        # end if
-
-    def add_tipper(self, tipper_obj, plot_x, plot_y):
-        """
-        
-        :param tipper: DESCRIPTION
-        :type tipper: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        # make some local parameters for easier typing
-        ascale = self.arrow_size
-        adir = self.arrow_direction * np.pi
-
-        # plot real tipper
-        ti = tipper_obj
-        if ti is None:
-            return
-
-        if self.plot_tipper == "yri" or self.plot_tipper == "yr":
-            if ti.mag_real[self.jj] <= self.arrow_threshold:
-                txr = (
-                    ti.mag_real[self.jj]
-                    * ascale
-                    * np.sin((ti.angle_real[self.jj]) * np.pi / 180 + adir)
-                )
-                tyr = (
-                    ti.mag_real[self.jj]
-                    * ascale
-                    * np.cos((ti.angle_real[self.jj]) * np.pi / 180 + adir)
-                )
-
-                self.ax_ptm.arrow(
-                    plot_x,
-                    plot_y,
-                    txr,
-                    tyr,
-                    width=self.arrow_lw,
-                    facecolor=self.arrow_color_real,
-                    edgecolor=self.arrow_color_real,
-                    length_includes_head=False,
-                    head_width=self.arrow_head_width,
-                    head_length=self.arrow_head_length,
-                )
-            else:
-                pass
-
-        # plot imaginary tipper
-        if self.plot_tipper == "yri" or self.plot_tipper == "yi":
-            if ti.mag_imag[self.jj] <= self.arrow_threshold:
-                txi = (
-                    ti.mag_imag[self.jj]
-                    * ascale
-                    * np.sin((ti.angle_imag[self.jj]) * np.pi / 180 + adir)
-                )
-                tyi = (
-                    ti.mag_imag[self.jj]
-                    * ascale
-                    * np.cos((ti.angle_imag[self.jj]) * np.pi / 180 + adir)
-                )
-
-                self.ax_ptm.arrow(
-                    plot_x,
-                    plot_y,
-                    txi,
-                    tyi,
-                    width=self.arrow_lw,
-                    facecolor=self.arrow_color_imag,
-                    edgecolor=self.arrow_color_imag,
-                    length_includes_head=False,
-                    head_width=self.arrow_head_width,
-                    head_length=self.arrow_head_length,
-                )
-
-    def get_xy(self, mt_obj):
-        """
-        """
-        # if map scale is lat lon set parameters
-        if self.mapscale == "deg":
-            plot_x = mt_obj.lon - self.plot_reference_point[0]
-            plot_y = mt_obj.lat - self.plot_reference_point[1]
-
-        # if map scale is in meters easting and northing
-        elif self.mapscale in ["km", "m"]:
-            if self.mapscale == "km":
-                scale = 1.0 / 1000
-            else:
-                scale = 1.0
-            east, north, zone = gis_tools.project_point_ll2utm(mt_obj.lat, mt_obj.lon)
-
-            plot_x *= scale
-            plot_y *= scale
+        # if the rotation angle is an array for rotation of different
+        # freq than repeat that rotation array to the len(mt_list)
+        elif isinstance(rot_z, np.ndarray):
+            if rot_z.shape[0] != len(self.mt_list):
+                self._rot_z = np.repeat(rot_z, len(self.mt_list))
 
         else:
-            raise NameError("mapscale not recognized")
+            pass
 
-        return plot_x, plot_y
+        for ii, mt in enumerate(self.mt_list):
+            mt.rot_z = self._rot_z[ii]
 
-    def get_pt_ellipse(self, pt, plot_x, plot_y):
-        """
-        """
+    def _get_rot_z(self):
+        return self._rot_z
 
-        # --> set local variables
-        phimin = np.nan_to_num(pt.phimin[self.jj])
-        phimax = np.nan_to_num(pt.phimax[self.jj])
-        eangle = np.nan_to_num(pt.azimuth[self.jj])
-
-        if self.ellipse_cmap == "mt_seg_bl2wh2rd":
-            bounds = np.arange(
-                self.ellipse_range[0],
-                self.ellipse_range[1] + self.ellipse_range[2],
-                self.ellipse_range[2],
-            )
-            nseg = float(
-                (self.ellipse_range[1] - self.ellipse_range[0])
-                / (2 * self.ellipse_range[2])
-            )
-
-        # get the properties to color the ellipses by
-        if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
-            colorarray = pt.phimin[self.jj]
-
-        elif self.ellipse_colorby == "phimax":
-            colorarray = pt.phimax[self.jj]
-
-        elif self.ellipse_colorby == "phidet":
-            colorarray = np.sqrt(abs(pt.det[self.jj])) * (180 / np.pi)
-
-        elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
-            colorarray = pt.beta[self.jj]
-
-        elif (
-            self.ellipse_colorby == "normalized_skew"
-            or self.ellipse_colorby == "normalized_skew_seg"
-        ):
-            colorarray = 2 * pt.beta[self.jj]
-
-        elif self.ellipse_colorby == "ellipticity":
-            colorarray = pt.ellipticity[self.jj]
-
-        elif self.ellipse_colorby in ["strike", "azimuth"]:
-            colorarray = pt.azimuth[self.jj] % 180
-            if colorarray > 90:
-                colorarray -= 180
-            self.ellipse_range = (-90, 90)
-
-        else:
-            raise NameError(self.ellipse_colorby + " is not supported")
-
-        # --> get ellipse properties
-        # if the ellipse size is not physically correct make it a dot
-        if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
-            eheight = 0.0000001 * self.ellipse_size
-            ewidth = 0.0000001 * self.ellipse_size
-        else:
-            scaling = self.ellipse_size / phimax
-            eheight = phimin * scaling
-            ewidth = phimax * scaling
-
-        # make an ellipse
-        ellipd = patches.Ellipse(
-            (plot_x, plot_y),
-            width=ewidth,
-            height=eheight,
-            angle=90 - eangle,
-            lw=self.lw,
-        )
-
-        # get ellipse color
-        if self.ellipse_cmap.find("seg") > 0:
-            ellipd.set_facecolor(
-                mtcl.get_plot_color(
-                    colorarray,
-                    self.ellipse_colorby,
-                    self.ellipse_cmap,
-                    self.ellipse_range[0],
-                    self.ellipse_range[1],
-                    bounds=bounds,
-                )
-            )
-        else:
-            ellipd.set_facecolor(
-                mtcl.get_plot_color(
-                    colorarray,
-                    self.ellipse_colorby,
-                    self.ellipse_cmap,
-                    self.ellipse_range[0],
-                    self.ellipse_range[1],
-                )
-            )
-
-        return ellipd
+    rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
+                     doc="""rotation angle(s)""")
 
     # -----------------------------------------------
     # The main plot method for this module
     # -----------------------------------------------
-    def plot(
-        self,
-        fig=None,
-        save_path=None,
-        show=True,
-        raster_dict={
-            "lons": [],
-            "lats": [],
-            "vals": [],
-            "levels": 50,
-            "cmap": "rainbow",
-            "cbar_title": "Arbitrary units",
-            "cbar_position": None,
-        },
-    ):
+    def plot(self, fig=None, save_path=None, show=True,
+             raster_dict={'lons': [], 'lats': [],
+                          'vals': [], 'levels': 50, 'cmap': 'rainbow',
+                          'cbar_title': 'Arbitrary units',
+                          'cbar_position': None}):
         """
         Plots the phase tensor map.
         :param fig: optional figure object
         :param save_path: path to folder for saving plots
         :param show: show plots if True
-        :param raster_dict: Plotting of raster data is currently only 
-                            supported when mapscale='deg'.
-                            This parameter is a dictionary of parameters for 
-                            plotting raster data,
-                            on top of which phase tensor data are plotted.
-                            'lons', 'lats' and 'vals'  are one dimensional 
-                            lists (or numpy arrays) for longitudes, latitudes
-                            and corresponding values, respectively. 'levels', 
-                            'cmap' and 'cbar_title' are the number of levels
-                            to be used in the colormap, the colormap and its
+        :param raster_dict: Plotting of raster data is currently only supported when mapscale='deg'.
+                            This parameter is a dictionary of parameters for plotting raster data,
+                            on top of which phase tensor data are plotted. 'lons', 'lats' and 'vals'
+                            are one dimensional lists (or numpy arrays) for longitudes, latitudes
+                            and corresponding values, respectively. 'levels', 'cmap' and 'cbar_title'
+                            are the number of levels to be used in the colormap, the colormap and its
                             title, respectively.
         """
 
         # set position properties for the plot
-        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = .1
+        plt.rcParams['figure.subplot.right'] = .98
+        plt.rcParams['figure.subplot.bottom'] = .1
+        plt.rcParams['figure.subplot.top'] = .93
+        plt.rcParams['figure.subplot.wspace'] = .55
+        plt.rcParams['figure.subplot.hspace'] = .70
+        # FZ: tweaks to make plot positioned better
+        # plt.rcParams['font.size']=self.font_size
+        # plt.rcParams['figure.subplot.left']=.1
+        # plt.rcParams['figure.subplot.right']=.90
+        # plt.rcParams['figure.subplot.bottom']=.2
+        # plt.rcParams['figure.subplot.top']=.90
+        # plt.rcParams['figure.subplot.wspace']=.70
+        # plt.rcParams['figure.subplot.hspace']=.70
 
+        lpfig = None
+        lpax = None
+        lpax2 = None
         # make figure instance
-        if fig is not None:
-            self.fig = fig
-        else:
+        if(fig is None):
             self.fig = plt.figure(self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi)
-        plt.clf()
+            # self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
 
-        self.ax_ptm = self.fig.add_subplot(1, 1, 1, aspect="equal")
+            # clear the figure if there is already one up
+            plt.clf()
+            lpfig = self.fig
+        else:
+            lpfig = fig
+        # end if
 
-        # plt.locator_params(axis='x', nbins=3)
-        # control number of ticks in axis (nbins ticks)
-        # FZ: control tick rotation=30 not that good
-        plt.xticks(rotation="vertical")
+        lpax = lpfig.add_subplot(1, 1, 1, aspect='equal')
 
-        self.add_raster(raster_dict)
+        # plt.locator_params(axis='x', nbins=3)  # control number of ticks in axis (nbins ticks)
+        plt.xticks(rotation='vertical')  # FZ: control tick rotation=30 not that good
 
-        try:
-            step = float(self.ellipse_range[2])
-        except IndexError:
-            if self.ellipse_cmap == "mt_seg_bl2wh2rd":
-                raise ValueError("Need to input range as (min, max, step)")
+        # get the reference point
+        refpoint = self.plot_reference_point
+
+        # plot raster data if provided and if mapscale is 'deg'
+        if(len(raster_dict['lons']) and self.mapscale == 'deg'):
+            lons = np.array(raster_dict['lons'])
+            lats = np.array(raster_dict['lats'])
+
+            # retain masking if a masked array is passed in
+            if type(raster_dict['vals']) == np.ma.core.MaskedArray:
+                vals = np.ma.masked_array(raster_dict['vals'])
             else:
-                step = 3
-        nseg = float((self.ellipse_range[1] - self.ellipse_range[0]) / (2 * step))
+                vals = np.array(raster_dict['vals'])
+
+            
+
+            lons -= refpoint[0]
+            lats -= refpoint[1]
+            levels = raster_dict.pop('levels', 50)
+            cmap = raster_dict.pop('cmap', 'rainbow')
+            cbar_title = raster_dict.pop('cbar_title', 'Arbitrary Units')
+            
+            # if a 2D array provided, can use contourf and no need to triangulate
+            triangulate = True
+            if len(vals.shape) > 1:
+                if (lons.shape == lats.shape == vals.shape):
+                    triangulate = False
+                elif ((lons.shape == vals.shape[1]) and (lats.shape == vals.shape[0])):
+                    triangulate = False
+
+            if triangulate:
+                assert len(lons) == len(lats) == len(vals), 'Lons, Lats and Vals must all have the same length'
+                triangulation = tri.Triangulation(lons, lats)
+                cbinfo = lpax.tricontourf(triangulation, vals,
+                                          levels=np.linspace(vals.min(), vals.max(), levels),
+                                          cmap=cmap)
+            else:
+                cbinfo = lpax.contourf(lons,lats,vals,
+                                       levels=np.linspace(vals.min(), vals.max(), levels),
+                                          cmap=cmap)
+                
+            if raster_dict['cbar_position'] is not None:
+                cbax = self.fig.add_axes(raster_dict['cbar_position'])
+            else:
+                cbax, kw = mcb.make_axes(lpax,
+                                         orientation=self.cb_orientation,
+                                         shrink=.35)
+            cbar = lpfig.colorbar(cbinfo, cbax)
+
+            if(self.cb_orientation == 'horizontal'):
+                cbar.ax.set_xlabel(cbar_title)
+                cbar.ax.xaxis.set_label_position('top')
+                cbar.ax.xaxis.set_label_coords(.5, 1.3)
+            else:
+                cbar.ax.set_ylabel(cbar_title, fontsize=self.font_size,
+                                   fontweight='bold')
+                cbar.ax.yaxis.set_label_position('right')
+                cbar.ax.yaxis.set_label_coords(1.25, .5)
+                cbar.ax.yaxis.tick_left()
+                cbar.ax.tick_params(axis='y', direction='in')
+
+        # end if
+
+        # set some local parameters
+        es = float(self.ellipse_size)
+        cmap = self.ellipse_cmap
+        ckmin = float(self.ellipse_range[0])
+        ckmax = float(self.ellipse_range[1])
+        try:
+            ckstep = float(self.ellipse_range[2])
+        except IndexError:
+            if cmap == 'mt_seg_bl2wh2rd':
+                raise ValueError('Need to input range as (min, max, step)')
+            else:
+                ckstep = 3
+        nseg = float((ckmax - ckmin) / (2 * ckstep))
         ck = self.ellipse_colorby
 
         # --> set the bounds on the segmented colormap
-        if self.ellipse_cmap == "mt_seg_bl2wh2rd":
-            bounds = np.arange(
-                self.ellipse_range[0], self.ellipse_range[1] + step, step
-            )
+        if cmap == 'mt_seg_bl2wh2rd':
+            bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
 
         # set tick parameters depending on the mapscale
-        if self.mapscale == "deg":
-            self.tickstrfmt = "%.2f"
+        if self.mapscale == 'deg':
+            self.tickstrfmt = '%.2f'
 
-        elif self.mapscale == "m" or self.mapscale == "km":
-            self.tickstrfmt = "%.0f"
+        elif self.mapscale == 'm' or self.mapscale == 'km':
+            self.tickstrfmt = '%.0f'
 
         # make some empty arrays
         elliplist = []
+        latlist = np.zeros(len(self.mt_list))
+        lonlist = np.zeros(len(self.mt_list))
         self.plot_xarr = np.zeros(len(self.mt_list))
         self.plot_yarr = np.zeros(len(self.mt_list))
 
-        for ii, mt_obj in enumerate(self.mt_list):
+        for ii, mt in enumerate(self.mt_list):
 
-            new_z_obj = None
-            new_tipper_obj = None
+            newZ = None
+            newTipper = None
             fidx = 0
-            if self.interpolate:
-                new_z_obj, new_tipper_obj = mt_obj.interpolate(
-                    [self.plot_freq], bounds_error=False
-                )
+            if(self.interpolate):
+                newZ, newTipper = mt.interpolate([self.plot_freq], bounds_error=False)
             else:
-                fidx = np.argmin(np.fabs(mt_obj.Z.freq - self.plot_freq))
+                fidx = np.argmin(np.fabs(mt.Z.freq - self.plot_freq))
 
-            if (
-                not self.interpolate
-                and np.fabs(mt_obj.Z.freq[fidx] - self.plot_freq) < self.ftol
-            ) or (self.interpolate):
+            if((not self.interpolate and np.fabs(mt.Z.freq[fidx] - self.plot_freq) < self.ftol) or
+                    (self.interpolate)):
 
                 self.jj = fidx
+                jj = fidx
 
                 # get phase tensor
-                if not self.interpolate:
-                    pt = mt_obj.pt
+                if(not self.interpolate):
+                    pt = mt.pt
                 else:
-                    new_z_obj.compute_resistivity_phase()
-                    pt = MTpt.PhaseTensor(z_object=new_z_obj)
+                    newZ.compute_resistivity_phase()
+                    pt = MTpt.PhaseTensor(z_object=newZ)
 
-                plot_x, plot_y = self.get_xy(mt_obj)
+                # if map scale is lat lon set parameters
+                if self.mapscale == 'deg':
+                    latlist[ii] = mt.lat
+                    lonlist[ii] = mt.lon
+                    plotx = mt.lon - refpoint[0]
+                    ploty = mt.lat - refpoint[1]
+
+                # if map scale is in meters easting and northing
+                elif self.mapscale == 'm':
+                    east, north, zone = gis_tools.project_point_ll2utm(mt.lat,
+                                                                       mt.lon)
+
+                    # set the first point read in as a refernce other points
+                    if ii == 0:
+                        zone1 = zone
+                        plotx = east - refpoint[0]
+                        ploty = north - refpoint[1]
+
+                    # read in all the other point
+                    else:
+                        # check to make sure the zone is the same this needs
+                        # to be more rigorously done
+                        if zone1 != zone:
+                            print('Zone change at station ' + mt.station)
+                            if zone1[0:2] == zone[0:2]:
+                                pass
+                            elif int(zone1[0:2]) < int(zone[0:2]):
+                                east += 500000
+                            else:
+                                east -= -500000
+                            latlist[ii] = north - refpoint[1]
+                            lonlist[ii] = east - refpoint[0]
+                            plotx = east - refpoint[0]
+                            ploty = north - refpoint[1]
+                        else:
+                            latlist[ii] = north - refpoint[1]
+                            lonlist[ii] = east - refpoint[0]
+                            plotx = east - refpoint[0]
+                            ploty = north - refpoint[1]
+
+                # if mapscale is in km easting and northing
+                elif self.mapscale == 'km':
+                    east, north, zone = gis_tools.project_point_ll2utm(mt.lat,
+                                                                       mt.lon)
+                    if ii == 0:
+                        zone1 = zone
+                        plotx = (east - refpoint[0]) / 1000.
+                        ploty = (north - refpoint[1]) / 1000.
+
+                    else:
+                        if zone1 != zone:
+                            print('Zone change at station ' + mt.station)
+                            if zone1[0:2] == zone[0:2]:
+                                pass
+                            elif int(zone1[0:2]) < int(zone[0:2]):
+                                east += 500000
+                            else:
+                                east -= 500000
+                            latlist[ii] = (north - refpoint[1]) / 1000.
+                            lonlist[ii] = (east - refpoint[0]) / 1000.
+                            plotx = (east - refpoint[0]) / 1000.
+                            ploty = (north - refpoint[1]) / 1000.
+                        else:
+                            latlist[ii] = (north - refpoint[1]) / 1000.
+                            lonlist[ii] = (east - refpoint[0]) / 1000.
+                            plotx = (east - refpoint[0]) / 1000.
+                            ploty = (north - refpoint[1]) / 1000.
+                else:
+                    raise NameError('mapscale not recognized')
+
                 # put the location of each ellipse into an array in x and y
-                self.plot_xarr[ii] = plot_x
-                self.plot_yarr[ii] = plot_y
+                self.plot_xarr[ii] = plotx
+                self.plot_yarr[ii] = ploty
 
-                ellipd = self.get_pt_ellipse(pt, plot_x, plot_y)
+                # --> set local variables
+                phimin = np.nan_to_num(pt.phimin[jj])
+                phimax = np.nan_to_num(pt.phimax[jj])
+                eangle = np.nan_to_num(pt.azimuth[jj])
+
+                # output to csv file:
+                # print('OUTCSV', mt.station, plotx, ploty, phimin, phimax, eangle)
+
+                if cmap == 'mt_seg_bl2wh2rd':
+                    bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
+                    nseg = float((ckmax - ckmin) / (2 * ckstep))
+
+                # get the properties to color the ellipses by
+                if self.ellipse_colorby == 'phiminang' or \
+                        self.ellipse_colorby == 'phimin':
+                    colorarray = pt.phimin[jj]
+
+                elif self.ellipse_colorby == 'phimax':
+                    colorarray = pt.phimax[jj]
+
+                elif self.ellipse_colorby == 'phidet':
+                    colorarray = np.sqrt(abs(pt.det[jj])) * (180 / np.pi)
+
+                elif self.ellipse_colorby == 'skew' or \
+                        self.ellipse_colorby == 'skew_seg':
+                    colorarray = pt.beta[jj]
+
+                elif self.ellipse_colorby == 'normalized_skew' or \
+                        self.ellipse_colorby == 'normalized_skew_seg':
+                    colorarray = 2 * pt.beta[jj]
+
+                elif self.ellipse_colorby == 'ellipticity':
+                    colorarray = pt.ellipticity[jj]
+
+                else:
+                    raise NameError(self.ellipse_colorby + ' is not supported')
+
+                # --> get ellipse properties
+                # if the ellipse size is not physically correct make it a dot
+                if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
+                    eheight = .0000001 * es
+                    ewidth = .0000001 * es
+                else:
+                    scaling = es / phimax
+                    eheight = phimin * scaling
+                    ewidth = phimax * scaling
+
+                # make an ellipse
+                ellipd = patches.Ellipse((plotx, ploty),
+                                         width=ewidth,
+                                         height=eheight,
+                                         angle=90 - eangle,
+                                         lw=self.lw,
+                                         **self.kwargs)
+
+                # get ellipse color
+                if cmap.find('seg') > 0:
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax,
+                                                             bounds=bounds))
+                else:
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax))
 
                 # ==> add ellipse to the plot
                 elliplist.append(ellipd)
-                self.ax_ptm.add_artist(ellipd)
+                lpax.add_artist(ellipd)
 
                 # -----------Plot Induction Arrows---------------------------
-                if self.plot_tipper.find("y") == 0:
-                    # get phase tensor
-                    if not self.interpolate:
-                        new_tipper_obj = mt_obj.Tipper
-                    else:
-                        new_tipper_obj.compute_mag_direction()
+                if self.plot_tipper.find('y') == 0:
 
-                    if mt_obj.Tipper.tipper is None:
-                        continue
-                    self.add_tipper(new_tipper_obj, plot_x, plot_y)
+                    # get tipper
+
+                    if mt.Tipper.tipper is None:
+                        mt.Tipper.tipper = np.zeros((len(mt.period), 1, 2),
+                                                    dtype='complex')
+
+                    # make some local parameters for easier typing
+                    ascale = self.arrow_size
+                    adir = self.arrow_direction * np.pi
+
+                    # plot real tipper
+                    ti = None
+                    if(not self.interpolate):
+                        ti = mt.Tipper
+                    else:
+                        ti = newTipper
+                    # end if
+
+                    if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
+                        if ti.mag_real[jj] <= self.arrow_threshold:
+                            txr = ti.mag_real[jj] * ascale * \
+                                np.sin((ti.angle_real[jj]) * np.pi / 180 + adir)
+                            tyr = ti.mag_real[jj] * ascale * \
+                                np.cos((ti.angle_real[jj]) * np.pi / 180 + adir)
+
+                            lpax.arrow(plotx,
+                                       ploty,
+                                       txr,
+                                       tyr,
+                                       width=self.arrow_lw,
+                                       facecolor=self.arrow_color_real,
+                                       edgecolor=self.arrow_color_real,
+                                       length_includes_head=False,
+                                       head_width=self.arrow_head_width,
+                                       head_length=self.arrow_head_length)
+                        else:
+                            pass
+
+                    # plot imaginary tipper
+                    if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
+                        if ti.mag_imag[jj] <= self.arrow_threshold:
+                            txi = ti.mag_imag[jj] * ascale * \
+                                np.sin((ti.angle_imag[jj]) * np.pi / 180 + adir)
+                            tyi = ti.mag_imag[jj] * ascale * \
+                                np.cos((ti.angle_imag[jj]) * np.pi / 180 + adir)
+
+                            lpax.arrow(plotx,
+                                       ploty,
+                                       txi,
+                                       tyi,
+                                       width=self.arrow_lw,
+                                       facecolor=self.arrow_color_imag,
+                                       edgecolor=self.arrow_color_imag,
+                                       length_includes_head=False,
+                                       head_width=self.arrow_head_width,
+                                       head_length=self.arrow_head_length)
 
                 # ------------Plot station name------------------------------
-                if self.plot_station:
-                    try:
-                        name = mt_obj.station[self.station_id[0] : self.station_id[1]]
-                        self.ax_ptm.text(
-                            plot_x,
-                            plot_y + self.station_pad,
-                            name,
-                            horizontalalignment="center",
-                            verticalalignment="baseline",
-                            fontdict=self.station_font_dict,
-                        )
-                    except AttributeError:
-                        pass
+                try:
+                    lpax.text(plotx,
+                              ploty + self.station_pad,
+                              mt.station[self.station_id[0]:self.station_id[1]],
+                              horizontalalignment='center',
+                              verticalalignment='baseline',
+                              fontdict=self.station_font_dict)
+                except AttributeError:
+                    pass
 
             # ==> print a message if couldn't find the freq
             else:
-                _logger.warn(
-                    "Did not find {0:.5g} Hz for station {1}".format(
-                        self.plot_freq, mt_obj.station
-                    )
-                )
+                _logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station))
 
         # --> set axes properties depending on map scale------------------------
-        if self.mapscale == "deg":
-            self.ax_ptm.set_xlabel(
-                "Longitude", fontsize=self.font_size, fontweight="bold"  # +2,
-            )
-            self.ax_ptm.set_ylabel(
-                "Latitude", fontsize=self.font_size, fontweight="bold"  # +2,
-            )
+        if self.mapscale == 'deg':
+            lpax.set_xlabel('Longitude',
+                            fontsize=self.font_size,  # +2,
+                            fontweight='bold')
+            lpax.set_ylabel('Latitude',
+                            fontsize=self.font_size,  # +2,
+                            fontweight='bold')
 
-        elif self.mapscale == "m":
-            self.ax_ptm.set_xlabel(
-                "Easting (m)", fontsize=self.font_size, fontweight="bold"  # +2,
-            )
-            self.ax_ptm.set_ylabel(
-                "Northing (m)", fontsize=self.font_size, fontweight="bold"  # +2,
-            )
+        elif self.mapscale == 'm':
+            lpax.set_xlabel('Easting (m)',
+                            fontsize=self.font_size,  # +2,
+                            fontweight='bold')
+            lpax.set_ylabel('Northing (m)',
+                            fontsize=self.font_size,  # +2,
+                            fontweight='bold')
 
-        elif self.mapscale == "km":
-            self.ax_ptm.set_xlabel(
-                "Easting (km)", fontsize=self.font_size, fontweight="bold"  # +2,
-            )
-            self.ax_ptm.set_ylabel(
-                "Northing (km)", fontsize=self.font_size, fontweight="bold"  # +2,
-            )
+        elif self.mapscale == 'km':
+            lpax.set_xlabel('Easting (km)',
+                            fontsize=self.font_size,  # +2,
+                            fontweight='bold')
+            lpax.set_ylabel('Northing (km)',
+                            fontsize=self.font_size,  # +2,
+                            fontweight='bold')
 
         # --> set plot limits
         #    need to exclude zero values from the calculation of min/max!!!!
-        self.ax_ptm.set_xlim(
-            self.plot_xarr[self.plot_xarr != 0.0].min() - self.xpad,
-            self.plot_xarr[self.plot_xarr != 0.0].max() + self.xpad,
-        )
-        self.ax_ptm.set_ylim(
-            self.plot_yarr[self.plot_yarr != 0.0].min() - self.xpad,
-            self.plot_yarr[self.plot_xarr != 0.0].max() + self.xpad,
-        )
+        lpax.set_xlim(self.plot_xarr[self.plot_xarr != 0.].min() - self.xpad,
+                      self.plot_xarr[self.plot_xarr != 0.].max() + self.xpad)
+        lpax.set_ylim(self.plot_yarr[self.plot_yarr != 0.].min() - self.xpad,
+                      self.plot_yarr[self.plot_xarr != 0.].max() + self.xpad)
 
         # BM: Now that we have the bounds of the axis, we can plot a
         # background image on the map.
         if self.background_image:
-            plot_geotiff_on_axes(
-                self.background_image,
-                self.ax_ptm,
-                epsg_code=4326,
-                band_number=self.bimg_band,
-                cmap=self.bimg_cmap,
-            )
+            plot_geotiff_on_axes(self.background_image, lpax,
+                                 epsg_code=4326, band_number=self.bimg_band,
+                                 cmap=self.bimg_cmap)
 
         # --> set tick label format
-        self.ax_ptm.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        self.ax_ptm.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        plt.setp(self.ax_ptm.get_xticklabels(), rotation=45)
+        lpax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
+        lpax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
+#       lpax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
+#                                rotation=45)
+        plt.setp(lpax.get_xticklabels(), rotation=45)
 
         # --> set title in period or freq
-        if self.tscale == "period":
-            titlefreq = "{0:.5g} (s)".format(1.0 / self.plot_freq)
+        if self.tscale == 'period':
+            titlefreq = '{0:.5g} (s)'.format(1. / self.plot_freq)
         else:
-            titlefreq = "{0:.5g} (Hz)".format(self.plot_freq)
+            titlefreq = '{0:.5g} (Hz)'.format(self.plot_freq)
 
-        self.ax_ptm.set_title(
-            "{0} {1}".format(self.plot_title, titlefreq),
-            fontsize=self.font_size + 2,
-            fontweight="bold",
-        )
+        if not self.plot_title:
+            lpax.set_title('Phase Tensor Map for ' + titlefreq,
+                           fontsize=self.font_size + 2, fontweight='bold')
+        else:
+            lpax.set_title(self.plot_title + titlefreq,
+                           fontsize=self.font_size + 2, fontweight='bold')
 
         # --> plot induction arrow scale bar -----------------------------------
-        if self.plot_tipper.find("y") == 0:
-            parrx = self.ax_ptm.get_xlim()
-            parry = self.ax_ptm.get_ylim()
+        if self.plot_tipper.find('y') == 0:
+            parrx = lpax.get_xlim()
+            parry = lpax.get_ylim()
             try:
                 axpad = self.arrow_legend_xborderpad
             except AttributeError:
@@ -994,39 +1024,39 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             try:
                 txtpad = self.arrow_legend_fontpad
             except AttributeError:
-                txtpad = 0.25 * self.ellipse_size
+                txtpad = .25 * es
 
             # make arrow legend postion and arrows coordinates
-            if self.arrow_legend_position == "lower right":
+            if self.arrow_legend_position == 'lower right':
                 pax = parrx[1] - axpad
                 pay = parry[0] + aypad
                 # ptx = self.arrow_size
                 # pty = 0
-                txa = parrx[1] - axpad + self.arrow_size / 2.0
+                txa = parrx[1] - axpad + self.arrow_size / 2.
                 # txy = pay+txtpad
 
-            elif self.arrow_legend_position == "upper right":
+            elif self.arrow_legend_position == 'upper right':
                 pax = parrx[1] - axpad
                 pay = parry[1] - aypad
                 # ptx = self.arrow_size
                 # pty = 0
-                txa = parrx[1] - axpad + self.arrow_size / 2.0
+                txa = parrx[1] - axpad + self.arrow_size / 2.
                 # txy = pay+txtpad
 
-            elif self.arrow_legend_position == "lower left":
+            elif self.arrow_legend_position == 'lower left':
                 pax = parrx[0] + axpad
                 pay = parry[0] + aypad
                 # ptx = self.arrow_size
                 # pty = 0
-                txa = parrx[0] + axpad + self.arrow_size / 2.0
+                txa = parrx[0] + axpad + self.arrow_size / 2.
                 # txy = pay+txtpad
 
-            elif self.arrow_legend_position == "upper left":
+            elif self.arrow_legend_position == 'upper left':
                 pax = parrx[0] + axpad
                 pay = parry[1] - aypad
                 # ptx = self.arrow_size
                 # pty = 0
-                txa = parrx[0] + axpad + self.arrow_size / 2.0
+                txa = parrx[0] + axpad + self.arrow_size / 2.
                 # txy = pay+txtpad
             else:
                 pass  # raise NameError('arrowlegend not supported.')
@@ -1036,21 +1066,19 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             pty = 0
             # txy = pay + txtpad
 
-            self.ax_ptm.arrow(
-                pax,
-                pay,
-                ptx,
-                pty,
-                width=self.arrow_lw,
-                facecolor=self.arrow_color_real,
-                edgecolor=self.arrow_color_real,
-                length_includes_head=False,
-                head_width=self.arrow_head_width,
-                head_length=self.arrow_head_length,
-            )
+            lpax.arrow(pax,
+                       pay,
+                       ptx,
+                       pty,
+                       width=self.arrow_lw,
+                       facecolor=self.arrow_color_real,
+                       edgecolor=self.arrow_color_real,
+                       length_includes_head=False,
+                       head_width=self.arrow_head_width,
+                       head_length=self.arrow_head_length)
 
             # FZ: what is this '|T|=1'? and the horizontal line?
-            # self.ax_ptm.text(txa,
+            # lpax.text(txa,
             #              txy,
             #              '|T|=1',
             #              horizontalalignment='center',
@@ -1059,17 +1087,15 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         # END: if self.plot_tipper.find('yes') == 0 ---------------------------
 
         # make a grid with color lines
-        self.ax_ptm.grid(True, alpha=0.3, which="both", color=(0.5, 0.5, 0.5))
-        self.ax_ptm.set_axisbelow(True)
+        lpax.grid(True, alpha=.3, which='both', color=(0.5, 0.5, 0.5))
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
 
         # ==> make a colorbar with appropriate colors
         if self.cb_position is None:
-            self.ax_cb, kw = mcb.make_axes(
-                self.ax_ptm, orientation=self.cb_orientation, shrink=0.35
-            )
-
+            lpax2, kw = mcb.make_axes(lpax,
+                                      orientation=self.cb_orientation,
+                                      shrink=.35)
             # FZ: try to fix colorbar h-position
             # from mpl_toolkits.axes_grid1 import make_axes_locatable
             #
@@ -1079,89 +1105,77 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             # self.ax2 = divider.append_axes("right", size="5%", pad=0.05)
 
         else:
-            self.ax_cb = self.fig.add_axes(self.cb_position)
+            lpax2 = lpfig.add_axes(self.cb_position)
 
-        if self.ellipse_cmap == "mt_seg_bl2wh2rd":
+        if cmap == 'mt_seg_bl2wh2rd':
             # make a color list
-            self.clist = [
-                (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-            ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
+            self.clist = [(cc, cc, 1)
+                          for cc in np.arange(0, 1 + 1. / (nseg), 1. / (nseg))] + \
+                         [(1, cc, cc)
+                          for cc in np.arange(1, -1. / (nseg), -1. / (nseg))]
 
             # make segmented colormap
             mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
 
             # make bounds so that the middle is white
-            bounds = np.arange(
-                self.ellipse_range[0] - self.ellipse_range[2],
-                self.ellipse_range[1] + 2 * self.ellipse_range[2],
-                self.ellipse_range[2],
-            )
+            bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
 
             # normalize the colors
             norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
 
             # make the colorbar
-            self.cb = mcb.ColorbarBase(
-                self.ax_cb,
-                cmap=mt_seg_bl2wh2rd,
-                norm=norms,
-                orientation=self.cb_orientation,
-                ticks=bounds[1:-1],
-            )
+            self.cb = mcb.ColorbarBase(lpax2,
+                                       cmap=mt_seg_bl2wh2rd,
+                                       norm=norms,
+                                       orientation=self.cb_orientation,
+                                       ticks=bounds[1:-1])
         else:
-            if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
-                cmap_input = mtcl.cmapdict[self.ellipse_cmap]
+            if cmap in list(mtcl.cmapdict.keys()):
+                cmap_input = mtcl.cmapdict[cmap]
             else:
-                cmap_input = mtcl.cm.get_cmap(self.ellipse_cmap)
-            self.cb = mcb.ColorbarBase(
-                self.ax_cb,
-                cmap=cmap_input,  # mtcl.cmapdict[cmap],
-                norm=colors.Normalize(
-                    vmin=self.ellipse_range[0], vmax=self.ellipse_range[1]
-                ),
-                orientation=self.cb_orientation,
-            )
+                cmap_input = mtcl.cm.get_cmap(cmap)
+            self.cb = mcb.ColorbarBase(lpax2,
+                                       cmap=cmap_input,  # mtcl.cmapdict[cmap],
+                                       norm=colors.Normalize(vmin=ckmin,
+                                                             vmax=ckmax),
+                                       orientation=self.cb_orientation)
 
         # label the color bar accordingly
-        self.cb.set_label(
-            mtpl.ckdict[ck], fontdict={"size": self.font_size, "weight": "bold"}
-        )
+        self.cb.set_label(mtpl.ckdict[ck],
+                          fontdict={'size': self.font_size, 'weight': 'bold'})
 
         # place the label in the correct location
-        if self.cb_orientation == "horizontal":
-            self.cb.ax.xaxis.set_label_position("top")
-            self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
+        if self.cb_orientation == 'horizontal':
+            self.cb.ax.xaxis.set_label_position('top')
+            self.cb.ax.xaxis.set_label_coords(.5, 1.3)
 
-        elif self.cb_orientation == "vertical":
-            self.cb.ax.yaxis.set_label_position("right")
-            self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
+        elif self.cb_orientation == 'vertical':
+            self.cb.ax.yaxis.set_label_position('right')
+            self.cb.ax.yaxis.set_label_coords(1.25, .5)
             self.cb.ax.yaxis.tick_left()
-            self.cb.ax.tick_params(axis="y", direction="in")
+            self.cb.ax.tick_params(axis='y', direction='in')
 
         # --> add reference ellipse:  (legend of ellipse size=1)
         # FZ: remove the following section if no show of Phi
         show_phi = False  # JingMingDuan does not want to show the black circle - it's not useful
         if show_phi is True:
-            ref_ellip = patches.Ellipse(
-                (0, 0.0), width=self.ellipse_size, height=self.ellipse_size, angle=0
-            )
+            ref_ellip = patches.Ellipse((0, .0),
+                                        width=es,
+                                        height=es,
+                                        angle=0)
             ref_ellip.set_facecolor((0, 0, 0))
-            ref_ax_loc = list(self.ax_cb.get_position().bounds)
-            ref_ax_loc[0] *= 0.95
-            ref_ax_loc[1] -= 0.17
-            ref_ax_loc[2] = 0.1
-            ref_ax_loc[3] = 0.1
-            self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect="equal")
+            ref_ax_loc = list(lpax2.get_position().bounds)
+            ref_ax_loc[0] *= .95
+            ref_ax_loc[1] -= .17
+            ref_ax_loc[2] = .1
+            ref_ax_loc[3] = .1
+            self.ref_ax = lpfig.add_axes(ref_ax_loc, aspect='equal')
             self.ref_ax.add_artist(ref_ellip)
-            self.ref_ax.set_xlim(
-                -self.ellipse_size / 2.0 * 1.05, self.ellipse_size / 2.0 * 1.05
-            )
-            self.ref_ax.set_ylim(
-                -self.ellipse_size / 2.0 * 1.05, self.ellipse_size / 2.0 * 1.05
-            )
+            self.ref_ax.set_xlim(-es / 2. * 1.05, es / 2. * 1.05)
+            self.ref_ax.set_ylim(-es / 2. * 1.05, es / 2. * 1.05)
             plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
             plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-            self.ref_ax.set_title(r"$\Phi$ = 1")
+            self.ref_ax.set_title(r'$\Phi$ = 1')
 
         if show:
             # always show, and adjust the figure before saving it below. The
@@ -1179,14 +1193,8 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         return figfile
 
-    def save_figure(
-        self,
-        save_fn,
-        file_format="pdf",
-        orientation="portrait",
-        fig_dpi=None,
-        close_plot="y",
-    ):
+    def save_figure(self, save_fn, file_format='pdf',
+                    orientation='portrait', fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
 
@@ -1221,7 +1229,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                              * 'n' will leave plot open
         """
 
-        sf = "_{0:.6g}".format(self.plot_freq)
+        sf = '_{0:.6g}'.format(self.plot_freq)
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
@@ -1232,42 +1240,34 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 os.mkdir(save_fn)
 
             # make a file name
-            fname = "PTmap_DPI%s_%s_%sHz.%s" % (
-                str(self.fig_dpi),
-                self.ellipse_colorby,
-                sf,
-                file_format,
-            )
+            fname = 'PTmap_DPI%s_%s_%sHz.%s' % (
+                str(self.fig_dpi), self.ellipse_colorby, sf, file_format)
             path2savefile = os.path.join(save_fn, fname)
-        #            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format, orientation=orientation,
-        #                             bbox_inches='tight')
+#            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format, orientation=orientation,
+#                             bbox_inches='tight')
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
-            file_format = save_fn.split(".")[-1]
-            if file_format is None or file_format not in ["png", "jpg"]:
+            file_format = save_fn.split('.')[-1]
+            if file_format is None or file_format not in ['png', 'jpg']:
                 _logger.error(
-                    "Error: output file name is not correctly provided:", save_fn
-                )
-                raise Exception("output file name is not correctly provided!!!")
+                    "Error: output file name is not correctly provided:",
+                    save_fn)
+                raise Exception(
+                    "output file name is not correctly provided!!!")
 
             path2savefile = save_fn
-            self.fig.savefig(
-                path2savefile,
-                dpi=fig_dpi,
-                format=file_format,
-                orientation=orientation,
-                bbox_inches="tight",
-            )
+            self.fig.savefig(path2savefile, dpi=fig_dpi, format=file_format,
+                             orientation=orientation, bbox_inches='tight')
             # plt.clf()
             # plt.close(self.fig)
 
-        if close_plot == "y":
+        if close_plot == 'y':
             plt.clf()
             plt.close(self.fig)
         else:
             pass
 
         self.fig_fn = save_fn
-        _logger.debug("Saved figure to: %s", self.fig_fn)
+        _logger.debug('Saved figure to: %s', self.fig_fn)
 
     def update_plot(self):
         """
@@ -1284,7 +1284,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         use this function if you updated some attributes and want to re-plot.
         """
 
-        self.fig.clf()
+        plt.close(self.fig)
         self.plot()
 
     def export_params_to_file(self, save_path=None):
@@ -1353,22 +1353,17 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         trazmap = np.zeros((xlist.shape[0], ylist.shape[0]))
         timap = np.zeros((xlist.shape[0], ylist.shape[0]))
         tiazmap = np.zeros((xlist.shape[0], ylist.shape[0]))
-        stationmap = np.zeros((xlist.shape[0], ylist.shape[0]), dtype="|S8")
+        stationmap = np.zeros((xlist.shape[0], ylist.shape[0]), dtype='|S8')
 
-        station_location = {}  # a dict to store all mt_obj stations (lan lat)
+        station_location = {}  # a dict to store all MT stations (lan lat)
 
         # put the information into the zeroed arrays
         for ii in range(nx):
             mt1 = self.mt_list[ii]
 
             # try to find the freq in the freq list of each file
-            freqfind = [
-                ff
-                for ff, f2 in enumerate(mt1.Z.freq)
-                if self.plot_freq * (1 - self.ftol)
-                < f2
-                < self.plot_freq * (1 + self.ftol)
-            ]
+            freqfind = [ff for ff, f2 in enumerate(mt1.Z.freq)
+                        if self.plot_freq * (1 - self.ftol) < f2 < self.plot_freq * (1 + self.ftol)]
             try:
                 j2 = freqfind[0]
                 # freq0 = mt1.Z.freq[j2]  # should use the closest freq from this list found within the tolerance range
@@ -1389,52 +1384,43 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     timap[xyloc[ii, 0], xyloc[ii, 1]] = tp.mag_imag[self.jj]
                     tiazmap[xyloc[ii, 0], xyloc[ii, 1]] = tp.angle_imag[self.jj]
                 try:
-                    stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station[
-                        self.station_id[0] : self.station_id[1]
-                    ]
+                    stationmap[xyloc[ii, 0], xyloc[ii, 1]] = \
+                        mt1.station[self.station_id[0]:self.station_id[1]]
                 except AttributeError:
                     stationmap[xyloc[ii, 0], xyloc[ii, 1]] = mt1.station
 
-                station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (
-                    mt1.longitude,
-                    mt1.latitude,
-                    mt1.freq[j2],
-                )
+                station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (mt1.lon, mt1.lat, mt1.freq[j2])
             except IndexError:
-                _logger.warn(
-                    "Did not find {0:.5g} Hz for station {1}".format(
-                        self.plot_freq, mt1.station
-                    )
-                )
+                _logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
 
         # ----------------------write files-------------------------------------
-        svfn = "Map_{0:.6g}Hz".format(self.plot_freq)
-        ptminfid = open(os.path.join(svpath, svfn + ".phimin"), "w")
-        ptmaxfid = open(os.path.join(svpath, svfn + ".phimax"), "w")
-        ptazmfid = open(os.path.join(svpath, svfn + ".azimuth"), "w")
-        ptskwfid = open(os.path.join(svpath, svfn + ".skew"), "w")
-        ptellfid = open(os.path.join(svpath, svfn + ".ellipticity"), "w")
-        tprmgfid = open(os.path.join(svpath, svfn + ".tipper_mag_real"), "w")
-        tprazfid = open(os.path.join(svpath, svfn + ".tipper_ang_real"), "w")
-        tpimgfid = open(os.path.join(svpath, svfn + ".tipper_mag_imag"), "w")
-        tpiazfid = open(os.path.join(svpath, svfn + ".tipper_ang_imag"), "w")
-        statnfid = open(os.path.join(svpath, svfn + ".station"), "w")
-        tablefid = open(os.path.join(svpath, svfn + ".table"), "w")
+        svfn = 'Map_{0:.6g}Hz'.format(self.plot_freq)
+        ptminfid = open(os.path.join(svpath, svfn + '.phimin'), 'w')
+        ptmaxfid = open(os.path.join(svpath, svfn + '.phimax'), 'w')
+        ptazmfid = open(os.path.join(svpath, svfn + '.azimuth'), 'w')
+        ptskwfid = open(os.path.join(svpath, svfn + '.skew'), 'w')
+        ptellfid = open(os.path.join(svpath, svfn + '.ellipticity'), 'w')
+        tprmgfid = open(os.path.join(svpath, svfn + '.tipper_mag_real'), 'w')
+        tprazfid = open(os.path.join(svpath, svfn + '.tipper_ang_real'), 'w')
+        tpimgfid = open(os.path.join(svpath, svfn + '.tipper_mag_imag'), 'w')
+        tpiazfid = open(os.path.join(svpath, svfn + '.tipper_ang_imag'), 'w')
+        statnfid = open(os.path.join(svpath, svfn + '.station'), 'w')
+        tablefid = open(os.path.join(svpath, svfn + '.table'), 'w')
 
         for ly in range(ylist.shape[0]):
             for lx in range(xlist.shape[0]):
                 # if there is nothing there write some spaces
                 if phiminmap[lx, ly] == 0.0:
-                    ptminfid.write("{0:^8}".format(" "))
-                    ptmaxfid.write("{0:^8}".format(" "))
-                    ptazmfid.write("{0:^8}".format(" "))
-                    ptskwfid.write("{0:^8}".format(" "))
-                    ptellfid.write("{0:^8}".format(" "))
-                    tprmgfid.write("{0:^8}".format(" "))
-                    tprazfid.write("{0:^8}".format(" "))
-                    tpimgfid.write("{0:^8}".format(" "))
-                    tpiazfid.write("{0:^8}".format(" "))
-                    statnfid.write("{0:^8}".format(" "))
+                    ptminfid.write('{0:^8}'.format(' '))
+                    ptmaxfid.write('{0:^8}'.format(' '))
+                    ptazmfid.write('{0:^8}'.format(' '))
+                    ptskwfid.write('{0:^8}'.format(' '))
+                    ptellfid.write('{0:^8}'.format(' '))
+                    tprmgfid.write('{0:^8}'.format(' '))
+                    tprazfid.write('{0:^8}'.format(' '))
+                    tpimgfid.write('{0:^8}'.format(' '))
+                    tpiazfid.write('{0:^8}'.format(' '))
+                    statnfid.write('{0:^8}'.format(' '))
 
                 else:
                     ptminfid.write(mtpl.make_value_str(phiminmap[lx, ly]))
@@ -1446,19 +1432,19 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     tprazfid.write(mtpl.make_value_str(trazmap[lx, ly]))
                     tpimgfid.write(mtpl.make_value_str(timap[lx, ly]))
                     tpiazfid.write(mtpl.make_value_str(tiazmap[lx, ly]))
-                    statnfid.write("{0:^8}".format(stationmap[lx, ly]))
+                    statnfid.write('{0:^8}'.format(stationmap[lx, ly]))
 
             # make sure there is an end of line
-            ptminfid.write("\n")
-            ptmaxfid.write("\n")
-            ptazmfid.write("\n")
-            ptskwfid.write("\n")
-            ptellfid.write("\n")
-            tprmgfid.write("\n")
-            tprazfid.write("\n")
-            tpimgfid.write("\n")
-            tpiazfid.write("\n")
-            statnfid.write("\n")
+            ptminfid.write('\n')
+            ptmaxfid.write('\n')
+            ptazmfid.write('\n')
+            ptskwfid.write('\n')
+            ptellfid.write('\n')
+            tprmgfid.write('\n')
+            tprazfid.write('\n')
+            tpimgfid.write('\n')
+            tpiazfid.write('\n')
+            statnfid.write('\n')
 
         # close the files
         ptminfid.close()
@@ -1474,23 +1460,11 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # --> write the table file
         # write header
-        for ss in [
-            "station",
-            "lon",
-            "lat",
-            "phi_min",
-            "phi_max",
-            "skew",
-            "ellipticity",
-            "azimuth",
-            "tip_mag_re",
-            "tip_ang_re",
-            "tip_mag_im",
-            "tip_ang_im",
-            "frequency",
-        ]:
-            tablefid.write("{0:^12}".format(ss))
-        tablefid.write("\n")
+        for ss in ['station', 'lon', 'lat', 'phi_min', 'phi_max', 'skew', 'ellipticity',
+                   'azimuth', 'tip_mag_re', 'tip_ang_re', 'tip_mag_im',
+                   'tip_ang_im', 'frequency']:
+            tablefid.write('{0:^12}'.format(ss))
+        tablefid.write('\n')
 
         for ii in range(nx):
             xx, yy = xyloc[ii, 0], xyloc[ii, 1]
@@ -1498,54 +1472,45 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                 pass  # station not having the freq
             else:  # only those stations with the given freq
                 # Station
-                tablefid.write("{0:^12}".format(stationmap[xx, yy]))
+                tablefid.write('{0:^12}'.format(stationmap[xx, yy]))
                 # lon
-                tablefid.write(
-                    mtpl.make_value_str(
-                        station_location[stationmap[xx, yy]][0], spacing="{0:^12}"
-                    )
-                )
+                tablefid.write(mtpl.make_value_str(station_location[stationmap[xx, yy]][0], spacing='{0:^12}'))
                 # lat
-                tablefid.write(
-                    mtpl.make_value_str(
-                        station_location[stationmap[xx, yy]][1], spacing="{0:^12}"
-                    )
-                )
+                tablefid.write(mtpl.make_value_str(station_location[stationmap[xx, yy]][1], spacing='{0:^12}'))
                 # phi_min
-                tablefid.write(
-                    mtpl.make_value_str(phiminmap[xx, yy], spacing="{0:^12}")
-                )
+                tablefid.write(mtpl.make_value_str(phiminmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # phi_max
-                tablefid.write(
-                    mtpl.make_value_str(phimaxmap[xx, yy], spacing="{0:^12}")
-                )
+                tablefid.write(mtpl.make_value_str(phimaxmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # beta_skew
-                tablefid.write(mtpl.make_value_str(betamap[xx, yy], spacing="{0:^12}"))
+                tablefid.write(mtpl.make_value_str(betamap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # ellip
-                tablefid.write(mtpl.make_value_str(ellipmap[xx, yy], spacing="{0:^12}"))
+                tablefid.write(mtpl.make_value_str(ellipmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # azimuth
-                tablefid.write(
-                    mtpl.make_value_str(azimuthmap[xx, yy], spacing="{0:^12}")
-                )
+                tablefid.write(mtpl.make_value_str(azimuthmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # tiprmag
-                tablefid.write(mtpl.make_value_str(trmap[xx, yy], spacing="{0:^12}"))
+                tablefid.write(mtpl.make_value_str(trmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # tiprang
-                tablefid.write(mtpl.make_value_str(trazmap[xx, yy], spacing="{0:^12}"))
+                tablefid.write(mtpl.make_value_str(trazmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # tipimag
-                tablefid.write(mtpl.make_value_str(timap[xx, yy], spacing="{0:^12}"))
+                tablefid.write(mtpl.make_value_str(timap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # tipiang
-                tablefid.write(mtpl.make_value_str(tiazmap[xx, yy], spacing="{0:^12}"))
+                tablefid.write(mtpl.make_value_str(tiazmap[xx, yy],
+                                                   spacing='{0:^12}'))
                 # frequency
-                tablefid.write(
-                    mtpl.make_value_str(
-                        station_location[stationmap[xx, yy]][2], spacing="{0:^12}"
-                    )
-                )
-                tablefid.write("\n")
+                tablefid.write(mtpl.make_value_str(station_location[stationmap[xx, yy]][2], spacing='{0:^12}'))
+                tablefid.write('\n')
 
-        tablefid.write("\n")
+        tablefid.write('\n')
 
-        _logger.info("Wrote files to {}".format(svpath))
+        _logger.info('Wrote files to {}'.format(svpath))
 
         return svpath
 
@@ -1566,52 +1531,43 @@ if __name__ == "__main__":
     imaging = os.path.dirname(__file__)
     mtpy = os.path.dirname(imaging)
     base = os.path.dirname(mtpy)
-    examples = os.path.join(base, "examples")
-    data = os.path.join(examples, "data")
-    edidir = os.path.join(data, "edi_files_2")
+    examples = os.path.join(base, 'examples')
+    data = os.path.join(examples, 'data')
+    edidir = os.path.join(data, 'edi_files_2')
 
-    edi_file_list = glob.glob(edidir + "/*.edi")
-    savedir = "/tmp"
+    edi_file_list = glob.glob(edidir + '/*.edi')
+    savedir = '/tmp'
 
     plot_freq = 1e-2
-    ptm_obj = PlotPhaseTensorMaps(
-        fn_list=edi_file_list,
-        plot_freq=plot_freq,
-        ftol=0.2,
-        interpolate=True,
-        xpad=0.02,
-        plot_tipper="yr",
-        edgecolor="k",
-        lw=0.1,
-        alpha=1,
-        minorticks_on=False,
-        ellipse_size=0.2,
-        ellipse_range=[-10, 10, 2],
-        ellipse_colorby="skew",
-        arrow_size=0.5,
-        ellipse_cmap="mt_seg_bl2wh2rd",
-        plot_yn="n",
-    )
+    ptm_obj = PlotPhaseTensorMaps(fn_list=edi_file_list,
+                                  plot_freq=plot_freq,
+                                  ftol=.2,
+                                  interpolate=True,
+                                  xpad=0.02,
+                                  plot_tipper='yr',
+                                  edgecolor='k',
+                                  lw=0.1,
+                                  alpha=1,
+                                  minorticks_on=False,
+                                  ellipse_size=.2,
+                                  ellipse_range=[-10, 10, 2],
+                                  ellipse_colorby='skew',
+                                  arrow_size=0.5,
+                                  ellipse_cmap='mt_seg_bl2wh2rd',
+                                  plot_yn='n')
 
     # generate raster data
     lons, lats = np.meshgrid(np.linspace(136, 140, 50), np.linspace(-19, -22, 50))
-    vals = np.exp(
-        -np.sin(np.radians(lons) * 50) ** 2 - np.cos(np.radians(lats) * 70) ** 3
-    )
+    vals = np.exp(-np.sin(np.radians(lons) * 50)**2 - np.cos(np.radians(lats) * 70)**3)
 
     # plot with raster data
     f = plt.figure(figsize=(8, 6))
-    ptm_obj.plot(
-        fig=f,
-        show=True,
-        raster_dict={
-            "lons": lons.flatten(),
-            "lats": lats.flatten(),
-            "vals": vals.flatten(),
-            "levels": 50,
-            "cmap": "rainbow",
-            "cbar_title": "Arbitrary Units",
-        },
-    )
+    ptm_obj.plot(fig=f, show=True,
+                 raster_dict={'lons': lons.flatten(),
+                              'lats': lats.flatten(),
+                              'vals': vals.flatten(),
+                              'levels': 50,
+                              'cmap': 'rainbow',
+                              'cbar_title': 'Arbitrary Units'})
 
     ptm_obj.export_params_to_file(save_path=savedir)

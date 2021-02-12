@@ -22,7 +22,7 @@ current error:
 """
 
 # import section
-
+from pathlib import Path
 import os
 from unittest import TestCase
 
@@ -44,15 +44,15 @@ class TestModemInputFilesBuilder(TestCase):
         # directory to save created input files
         self._output_dir = make_temp_dir(self._testMethodName, base_dir=self._temp_dir)
 
-        self._expected_output_dir = os.path.join(SAMPLE_DIR, "ModEM")
-        if not os.path.isdir(self._expected_output_dir):
+        self._expected_output_dir = Path(SAMPLE_DIR, 'ModEM')
+        if not self._expected_output_dir.is_dir():
             self._expected_output_dir = None
 
     def test_fun(self):
 
         edipath = EDI_DATA_DIR  # path where edi files are located
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = os.path.join(SAMPLE_DIR, "ModEM")
+        self._expected_output_dir = Path(SAMPLE_DIR, 'ModEM')
 
         # period list (will not include periods outside of the range of the edi file)
         start_period = -2
@@ -61,23 +61,19 @@ class TestModemInputFilesBuilder(TestCase):
         period_list = np.logspace(start_period, stop_period, n_periods)
 
         # list of edi files, search for all files ending with '.edi'
-        edi_list = [
-            os.path.join(edipath, ff)
-            for ff in os.listdir(edipath)
-            if (ff.endswith(".edi"))
-        ]
+        edi_list = list(edipath.glob("*.edi"))
 
-        do = Data(
-            edi_list=edi_list,
-            inv_mode="1",
-            save_path=self._output_dir,
-            period_list=period_list,
-            error_type_z="floor_egbert",
-            error_value_z=5,
-            error_type_tipper="floor_abs",
-            error_value_tipper=0.03,
-            model_epsg=28354,  # model epsg, currently set to utm zone 54
-        )
+        do = Data(edi_list=edi_list,
+                  inv_mode='1',
+                  save_path=self._output_dir,
+                  period_list=period_list,
+                  error_type_z='floor_egbert',
+                  error_value_z=5,
+                  error_type_tipper='floor_abs',
+                  error_value_tipper=.03,
+                  model_epsg=28354  # model epsg, currently set to utm zone 54
+                  )
+
         # BM: write here to fill the data object, but this is not the data file being compared.
         do.write_data_file()
 
@@ -121,22 +117,15 @@ class TestModemInputFilesBuilder(TestCase):
             ("covariance.cov", "covariance.cov"),
             ("ModEM_Model_File.rho", "ModEM_Model_File.rho"),
         ):
-            output_data_file = os.path.normpath(
-                os.path.join(self._output_dir, test_output)
-            )
+            output_data_file = Path(self._output_dir, test_output)
 
-            self.assertTrue(
-                os.path.isfile(output_data_file), "output data file not found"
-            )
+            self.assertTrue(output_data_file.is_file(), "output data file not found")
 
-            expected_data_file = os.path.normpath(
-                os.path.join(self._expected_output_dir, expected_output)
-            )
+            expected_data_file = Path(self._expected_output_dir, expected_output)
 
-            self.assertTrue(
-                os.path.isfile(expected_data_file),
-                "Ref output data file does not exist, nothing to compare with",
-            )
+            self.assertTrue(expected_data_file.is_file(),
+                            "Ref output data file does not exist, nothing to compare with"
+                            )
 
             # print ("Comparing", output_data_file, "and", expected_data_file)
 

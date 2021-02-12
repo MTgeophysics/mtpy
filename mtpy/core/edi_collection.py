@@ -13,7 +13,7 @@ import glob
 import os
 import sys
 
-from logging import INFO
+from logging import INFO,DEBUG,WARNING,ERROR
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -74,6 +74,7 @@ class EdiCollection(object):
             __name__
         )  # __name__ will be  path.to.module OR __main__
         self._logger.setLevel(INFO)
+        #self._logger.setLevel(DEBUG)
 
         if edilist is not None:
             self.edifiles = edilist
@@ -603,15 +604,7 @@ class EdiCollection(object):
 
         p_dict = {}
 
-        csv_header = [
-            "station",
-            "freq",
-            "lon",
-            "lat",
-            "pen_depth_det",
-            "pen_depth_zxy",
-            "pen_depth_zyx",
-        ]
+        csv_header = ['FREQ','STATION',  'LON', 'LAT', 'pen_depth_det', 'pen_depth_zxy', 'pen_depth_zyx']
 
         # convert the period_list into freq array
         freq_list = None
@@ -654,26 +647,13 @@ class EdiCollection(object):
                 )
 
                 for iter in range(len(stations)):
-                    pdlist.append(
-                        [
-                            stations[iter],
-                            freq,
-                            latlons[iter][1],
-                            latlons[iter][0],
-                            pen_depth_det[iter],
-                            pen_depth_zxy[iter],
-                            pen_depth_zyx[iter],
-                        ]
-                    )
+                    pdlist.append([freq, stations[iter], latlons[iter][1], latlons[iter][0], pen_depth_det[iter], pen_depth_zxy[iter], pen_depth_zyx[iter]])
 
-                csv_freq_file = os.path.join(
-                    dest_dir,
-                    "{name[0]}_{freq}Hz{name[1]}".format(
-                        freq=str(freq), name=os.path.splitext(file_name)
-                    ),
-                )
+                csv_freq_file = os.path.join(dest_dir,
+                                             '{name[0]}_{freq}Hz{name[1]}'.format(
+                                                 freq=str(freq), name=os.path.splitext(file_name)))
 
-                with open(csv_freq_file, "w", newline="") as freq_csvf:
+                with open(csv_freq_file, "w",newline="") as freq_csvf:
                     writer_freq = csv.writer(freq_csvf)
                     writer_freq.writerow(csv_header)
                     writer_freq.writerows(pdlist)
@@ -729,30 +709,9 @@ class EdiCollection(object):
         pt_dict = {}
 
         csv_header = [
-            "FREQ",
-            "STATION",
-            "LAT",
-            "LON",
-            "ZXXre",
-            "ZXXim",
-            "ZXYre",
-            "ZXYim",
-            "ZYXre",
-            "ZYXim",
-            "ZYYre",
-            "ZYYim",
-            "TXre",
-            "TXim",
-            "TYre",
-            "TYim",
-            "RHOxx",
-            "RHOxy",
-            "RHOyx",
-            "RHOyy",
-            "PHSxx",
-            "PHSxy",
-            "PHSyx",
-            "PHSyy",
+            'FREQ', 'STATION',  'LON', 'LAT','ZXXre', 'ZXXim',
+            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim', 'TXre', 'TXim', 'TYre', 'TYim',
+            'RHOxx', 'RHOxy', 'RHOyx', 'RHOyy', 'PHSxx', 'PHSxy', 'PHSyx', 'PHSyy'
         ]
 
         freq_list = None
@@ -784,12 +743,11 @@ class EdiCollection(object):
                     pt = MTpt.PhaseTensor(z_object=newZ)
                     ti = newTipper
                     zobj = newZ
-                else:
+                else:  # interpolate is False
                     freq_max = freq * (1 + self.ptol)
                     freq_min = freq * (1 - self.ptol)
-                    f_index_list = np.where(
-                        (mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min)
-                    )
+                    f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+                    f_index_list = f_index_list[0]  # reduce from 3d [f,2,2] to 1d [f]
 
                     pt = mt_obj.pt
                     ti = mt_obj.Tipper
@@ -800,9 +758,9 @@ class EdiCollection(object):
                     self._logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
-                    p_index = f_index_list[0]
+                    the_index = f_index_list[0]  # a single value
 
-                    self._logger.debug("The freqs index %s", f_index_list)
+                    self._logger.debug("The freqs index %s", the_index)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
                     station, lat, lon = (mt_obj.station, mt_obj.lat, mt_obj.lon)
@@ -810,38 +768,29 @@ class EdiCollection(object):
                     resist_phase = mtplottools.ResPhase(z_object=zobj)
                     # resist_phase.compute_res_phase()
 
-                    mt_stat = [
-                        freq,
-                        station,
-                        lat,
-                        lon,
-                        zobj.z[p_index, 0, 0].real,
-                        zobj.z[p_index, 0, 0].imag,
-                        zobj.z[p_index, 0, 1].real,
-                        zobj.z[p_index, 0, 1].imag,
-                        zobj.z[p_index, 1, 0].real,
-                        zobj.z[p_index, 1, 0].imag,
-                        zobj.z[p_index, 1, 1].real,
-                        zobj.z[p_index, 1, 1].imag,
-                        ti.tipper[p_index, 0, 0].real,
-                        ti.tipper[p_index, 0, 0].imag,
-                        ti.tipper[p_index, 0, 1].real,
-                        ti.tipper[p_index, 0, 1].imag,
-                        resist_phase.resxx[p_index],
-                        resist_phase.resxy[p_index],
-                        resist_phase.resyx[p_index],
-                        resist_phase.resyy[p_index],
-                        resist_phase.phasexx[p_index],
-                        resist_phase.phasexy[p_index],
-                        resist_phase.phaseyx[p_index],
-                        resist_phase.phaseyy[p_index],
-                    ]
+                    mt_stat = [freq, station, lon, lat,
+                               zobj.z[the_index, 0, 0].real,
+                               zobj.z[the_index, 0, 0].imag,
+                               zobj.z[the_index, 0, 1].real,
+                               zobj.z[the_index, 0, 1].imag,
+                               zobj.z[the_index, 1, 0].real,
+                               zobj.z[the_index, 1, 0].imag,
+                               zobj.z[the_index, 1, 1].real,
+                               zobj.z[the_index, 1, 1].imag,
+                               ti.tipper[the_index, 0, 0].real,
+                               ti.tipper[the_index, 0, 0].imag,
+                               ti.tipper[the_index, 0, 1].real,
+                               ti.tipper[the_index, 0, 1].imag,
+                               resist_phase.resxx[the_index], resist_phase.resxy[the_index],
+                               resist_phase.resyx[the_index], resist_phase.resyy[the_index],
+                               resist_phase.phasexx[the_index], resist_phase.phasexy[the_index],
+                               resist_phase.phaseyx[the_index], resist_phase.phaseyy[the_index]
+                               ]
                     mtlist.append(mt_stat)
 
                 else:
                     self._logger.warn(
-                        "Freq %s NOT found for this station %s", freq, mt_obj.station
-                    )
+                        'Freq %s NOT found for this station %s *** Skipping it in CSV file', freq, mt_obj.station)
 
             with open(csvfname, "a", newline="") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
@@ -1124,9 +1073,7 @@ class EdiCollection(object):
 
         return min_dist, max_dist
 
-    def calculate_aver_impedance(
-        self, component="det", rotation_angle=0, out_dir="/c/temp"
-    ):
+    def calculate_aver_impedance(self, dest_dir, component="det", rotation_angle=0, interpolate=True):
         """
         calculate the average impedance tensor Z (related to apparent resistivity) of all edi (MT-stations) for each period.
         algorithm:
@@ -1143,31 +1090,21 @@ class EdiCollection(object):
         :return: A_dictionary=: Period->Median_Resist_On_Stations, OVER_ALL-> Median_Resist
         """
 
-        if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
+        if not os.path.exists(dest_dir):
+            os.mkdir(dest_dir)
 
-        self._logger.info("result will be in the dir %s", out_dir)
+        self._logger.info("result will be in the dir %s", dest_dir)
 
         # summary csv file
         csv_basename = "z_average_impedance"
-        csvfname = os.path.join(out_dir, "%s.csv" % csv_basename)
+        csvfname = os.path.join(dest_dir, "%s.csv" % csv_basename)
 
         pt_dict = {}
 
         csv_header = [
-            "FREQ",
-            "STATION",
-            "LAT",
-            "LON",
-            "ZXXre",
-            "ZXXim",
-            "ZXYre",
-            "ZXYim",
-            "ZYXre",
-            "ZYXim",
-            "ZYYre",
-            "ZYYim",
-            "DETERM",
+            'FREQ', 'STATION', 'LON',  'LAT','ZXXre', 'ZXXim',
+            'ZXYre', 'ZXYim', 'ZYXre', 'ZYXim', 'ZYYre', 'ZYYim',
+             "DETERM"
         ]
 
         freq_list = self.all_frequencies
@@ -1182,64 +1119,58 @@ class EdiCollection(object):
                 f_index_list = None
                 zobj = None
 
-                # if (interpolate):
-                if True:
+                if (interpolate):
                     f_index_list = [0]
-
                     newZ, newTipper = mt_obj.interpolate([freq], bounds_error=False)
-
                     zobj = newZ
                 else:
                     freq_max = freq * (1 + self.ptol)
                     freq_min = freq * (1 - self.ptol)
-                    f_index_list = np.where(
-                        (mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min)
-                    )
+                    f_index_list = np.where((mt_obj.Z.freq < freq_max) & (mt_obj.Z.freq > freq_min))
+                    f_index_list = f_index_list[0]  # slice to get the dimension_freq.
 
                     zobj = mt_obj.Z
+
+                    self._logger.debug("Debug interpolate=False f_index_list: %s,%s ", f_index_list, len(f_index_list))
                 # end if
 
-                # print("Debug type(zobj.det) ******", type(zobj.det), zobj.det.size, zobj.det, np.abs(zobj.det[0]))
+                self._logger.debug("Debug zobj.det ****** %s, %s,%s,%s",type(zobj.det), len(zobj.det), zobj.det[0], np.abs(zobj.det[0]))
 
                 if len(f_index_list) > 1:
                     self._logger.warn("more than one freq found %s", f_index_list)
 
                 if len(f_index_list) >= 1:
-                    p_index = f_index_list[0]
+                    the_index = f_index_list[0]
 
-                    self._logger.debug("The freqs index %s", f_index_list)
+                    self._logger.debug("The freqs index %s", the_index)
                     # geographic coord lat long and elevation
                     # long, lat, elev = (mt_obj.lon, mt_obj.lat, 0)
-                    station, lat, lon = (mt_obj.station, mt_obj.lat, mt_obj.lon)
+                    station, lat, lon = (
+                        mt_obj.station, mt_obj.lat, mt_obj.lon)
 
-                    mt_stat = [
-                        freq,
-                        station,
-                        lat,
-                        lon,
-                        zobj.z[p_index, 0, 0].real,
-                        zobj.z[p_index, 0, 0].imag,
-                        zobj.z[p_index, 0, 1].real,
-                        zobj.z[p_index, 0, 1].imag,
-                        zobj.z[p_index, 1, 0].real,
-                        zobj.z[p_index, 1, 0].imag,
-                        zobj.z[p_index, 1, 1].real,
-                        zobj.z[p_index, 1, 1].imag,
-                        np.abs(zobj.det[0]),
-                    ]
+                    mt_stat = [freq, station,lon, lat,
+                               zobj.z[the_index, 0, 0].real,
+                               zobj.z[the_index, 0, 0].imag,
+                               zobj.z[the_index, 0, 1].real,
+                               zobj.z[the_index, 0, 1].imag,
+                               zobj.z[the_index, 1, 0].real,
+                               zobj.z[the_index, 1, 0].imag,
+                               zobj.z[the_index, 1, 1].real,
+                               zobj.z[the_index, 1, 1].imag,
+                               np.abs(zobj.det[the_index])
+                               ]
                     mtlist.append(mt_stat)
 
                 else:
                     self._logger.warn(
-                        "Freq %s NOT found for this station %s", freq, mt_obj.station
-                    )
+                        'Freq %s NOT found for this station %s ***** Skipping it in csv file', freq, mt_obj.station)
 
             with open(csvfname, "a", newline="") as csvf:  # summary csv for all freqs
                 writer = csv.writer(csvf)
                 writer.writerows(mtlist)
 
             csv_basename2 = "%s_%sHz.csv" % (csv_basename, str(freq))
-            csvfile2 = os.path.join(out_dir, csv_basename2)
+            csvfile2 = os.path.join(dest_dir, csv_basename2)
 
             with open(
                 csvfile2, "w", newline=""
@@ -1279,19 +1210,27 @@ if __name__ == "__main__":
 
         outdir = sys.argv[2]
 
-        # obj.show_obj(dest_dir = outdir)
+        #obj.show_obj(dest_dir = outdir)
+        # obj.calculate_aver_impedance(out_dir=outdir)
+        # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
 
         mt_distances = obj.get_stations_distances_stats()
         min_dist = mt_distances.get("MIN_DIST")
         max_dist = mt_distances.get("MAX_DIST")
         print(mt_distances)
 
+        # todo: review this method to consistent column naming. create_phase_tensor_csv
         # obj.create_phase_tensor_csv(outdir)
-        # obj.create_measurement_csv(dest_dir= outdir, interpolate=True)
-        # this function has a bug in the case interpolate=False: check the output csv files you will see a lot of [].
-        # obj.create_measurement_csv(dest_dir= outdir, interpolate=False)  # this function has a bug for interpolate=False
-        # obj.calculate_aver_impedance(out_dir=outdir)
 
-        # obj.create_mt_station_gdf(os.path.join(outdir, 'edi_collection_test.shp'))
+    # When the interploae = True
+        # obj.create_measurement_csv(outdir, interpolate=True)
+        # obj.calculate_aver_impedance(outdir,interpolate=True)
+
+# When the interploae = False
+        obj.create_measurement_csv(outdir, interpolate=False)
+        obj.calculate_aver_impedance(outdir,interpolate=False)
+
         # obj.create_penetration_depth_csv(dest_dir= outdir, period_list=[0.1067,95.33], interpolate=False)
-        obj.create_penetration_depth_csv(dest_dir=outdir, interpolate=False)
+        #obj.create_penetration_depth_csv(outdir, interpolate=False)
+        # todo: interploate=True combine create_penetration_depth_csv into calculate_aver_impedance
+
