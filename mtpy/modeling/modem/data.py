@@ -1940,6 +1940,18 @@ class Data(object):
         z- down [ nez+ | enz- ], defaults to nez+
         :return: full path to VTK file
         :rtype: Path
+        
+        Write VTK file   
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations")
+        
+        Write VTK file in geographic coordinates
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
+        >>> ...                       geographic=True)
+        
+        Write VTK file in geographic coordinates with z+ up
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
+        >>> ...                       geographic=True,
+        >>> ...                       coordinate_system='enz-')
 
         """
         if isinstance(units, str):
@@ -2027,7 +2039,7 @@ class Data(object):
         )
         return parameter_dict
 
-    def center_stations(self, model_obj, data_fn=None):
+    def center_stations(self, model_obj):
         """
         Center station locations to the middle of cells, is useful for
         topography cause it reduces edge effects of stations close to cell edges.
@@ -2035,15 +2047,10 @@ class Data(object):
         
         :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
         :type model_obj: :class:`mtpy.modeling.modem.Model`
-        :param data_fn: full path to data file, defaults to None
-        :type data_fn: string or Path, optional
 
+        
         """
-
-        if data_fn is not None:
-            self.read_data_file(data_fn)
-
-
+        
         for s_arr in self.station_locations.station_locations:
             e_index = np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
             n_index = np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
@@ -2072,9 +2079,6 @@ class Data(object):
         
         Recaluclates rel_elev
         """
-
-        # sx = self.station_locations.station_locations['rel_east']
-        # sy = self.station_locations.station_locations['rel_north']
 
         # find index of each station on grid
         station_index_x = []
