@@ -457,7 +457,8 @@ class Data(object):
             mt_obj = mt.MT(edi)
             if mt_obj.station is None:
                 continue
-            mt_dict[mt_obj.station] = mt_obj
+            # should be more efficient for appending to a dictionary
+            mt_dict.update({mt_obj.station: mt_obj})
 
         return mt_dict
 
@@ -780,7 +781,7 @@ class Data(object):
             data_array[ii]["lon"] = mt_obj.longitude
             data_array[ii]["east"] = mt_obj.east
             data_array[ii]["north"] = mt_obj.north
-            data_array[ii]["elev"] = mt_obj.elev
+            data_array[ii]["elev"] = mt_obj.elevation
             data_array[ii]["zone"] = mt_obj.utm_zone
             try:
                 data_array[ii]["rel_east"] = mt_obj.grid_east
@@ -1821,7 +1822,7 @@ class Data(object):
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elev = dd[6]
+                data_dict[dd[1]].elevation = dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values

@@ -22,6 +22,7 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
 from mtpy import __version__
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 from mt_metadata.utils.mttime import MTime, get_now_utc
 from mt_metadata.utils.exceptions import MTTimeError
@@ -104,7 +105,7 @@ class Edi(object):
     """
 
     def __init__(self, fn=None):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self._fn = None
         self._edi_lines = None
 
