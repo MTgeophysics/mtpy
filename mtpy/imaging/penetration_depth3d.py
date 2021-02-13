@@ -12,7 +12,7 @@ Date:   2017-01-23
 """
 
 import glob
-import os
+from pathlib import Path
 import sys
 
 import matplotlib as mpl
@@ -22,7 +22,7 @@ import numpy as np
 import mtpy.core.mt as mt
 from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
 from mtpy.utils.mtpy_decorator import deprecated
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 import logging
 
 # mpl.rcParams['lines.linewidth'] = 2
@@ -32,7 +32,7 @@ import logging
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 # _logger.setLevel(logging.DEBUG)
 _logger.setLevel(logging.INFO)
 
@@ -94,7 +94,7 @@ def plot_latlon_depth_profile(
         if savepath is None:
             savepath = "C:/tmp"
         savefn = "P3Depth_Period%s.%s" % (image.get_period_fmt(), file_format)
-        path2savefile = os.path.join(savepath, savefn)
+        path2savefile = Path(savepath, savefn)
         image.export_image(path2savefile, dpi=fig_dpi, bbox_inches="tight")
 
     # may want to remove the following 2 lines
@@ -165,13 +165,14 @@ def plot_bar3d_depth(edifiles, per_index, whichrho="det"):
     :return:
     """
 
-    if os.path.isdir(edifiles):
-        edi_dir = edifiles  # "E:/Githubz/mtpy2/tests/data/edifiles/"
-        edifiles = glob.glob(os.path.join(edi_dir, "*.edi"))
+    edifiles = Path(edifiles)
+    if edifiles.is_dir():
+        edifiles = list(edifiles.glob("*.edi"))
         _logger.debug(edifiles)
-    else:
-        # Assume edifiles is [a list of files]
-        pass
+    elif not isinstance(edifiles, (list, tuple)):
+        msg = f"edifiles must be a list of file names, not type {type(edifiles)}"
+        _logger.error(msg)
+        raise ValueError(msg)
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
@@ -221,20 +222,12 @@ def plot_bar3d_depth(edifiles, per_index, whichrho="det"):
     lats = [tup[0] for tup in latlons]
     lons = [tup[1] for tup in latlons]
     minlat = min(lats)
-    maxlat = max(lats)
     minlon = min(lons)
-    maxlon = max(lons)
 
     pixelsize = 0.002  # degree 0.001 = 100meters
     shift = 3
     ref_lat = minlat - shift * pixelsize
     ref_lon = minlon - shift * pixelsize
-
-    xgrids = maxlon - minlon
-    ygrids = maxlat - minlat
-
-    # nx = xgrids / pixelsize
-    # ny = ygrids / pixelsize
 
     # import matplotlib.pyplot as plt
     # import numpy as np
@@ -252,18 +245,10 @@ def plot_bar3d_depth(edifiles, per_index, whichrho="det"):
         # dz.append(-np.abs(pen_depth[iter]))
 
     num_elements = len(xpos)
-    zpos = np.zeros(num_elements)  # zpos = [0,0,0,0,0,0,0,0,0,0]
+    zpos = np.zeros(num_elements)
     dx = np.ones(num_elements)
     dy = np.ones(num_elements)
-    # dz = [1,2,3,4,5,6,7,8,9,10]
 
-    # print(xpos)
-    # print(ypos)
-    # print(zpos)
-    #
-    # print(dx)
-    # print(dy)
-    # print(dz)
     ax1.bar3d(xpos, ypos, zpos, dx, dy, dz, color="r")
 
     # ax1
@@ -275,14 +260,6 @@ def plot_bar3d_depth(edifiles, per_index, whichrho="det"):
     )
     plt.xlabel("Longitude(deg-grid)", fontsize=16)
     plt.ylabel("Latitude(deg-grid)", fontsize=16)
-    # plt.zlabel('Penetration Depth (m)')
-    # bar_width = 0.4
-    # plt.xticks(index + bar_width / 2, stations, rotation='horizontal', fontsize=16)
-    # plt.legend()
-    #
-    # # plt.tight_layout()
-    # plt.gca().xaxis.tick_top()
-    # plt.show()
 
     plt.show()
 
@@ -339,11 +316,12 @@ def create_penetration_depth_csv(edi_dir, outputcsv, zcomponent="det"):
     """
     import csv
 
-    if not os.path.isdir(edi_dir):
+    edi_dir = Path(edi_dir)
+    if not edi_dir.is_dir():
         _logger.error("input edi directory not exists", edi_dir)
         raise Exception("MTPy Exception: EDI Dir not exist")
 
-    edi_files = glob.glob(os.path.join(edi_dir, "*.edi"))
+    edi_files = list(edi_dir.glob("*.edi"))
 
     _logger.debug(edi_files)
 
@@ -404,10 +382,11 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent="det"):
     return outputfile
 
 
-def plot_many_periods(edidir, n_periods=5):
+def plot_many_periods(edi_dir, n_periods=5):
     from mtpy.core.edi_collection import EdiCollection
 
-    edilist = glob.glob(os.path.join(edidir, "*.edi"))
+    edidir = Path(edi_dir)
+    edilist = list(edi_dir.glob("*.edi"))
 
     ediset = EdiCollection(edilist)
     for period_sec in ediset.all_unique_periods[:n_periods]:
@@ -443,17 +422,17 @@ if __name__ == "__main__":
         )
         sys.exit(1)
     elif len(sys.argv) == 2:
-        edi_dir = sys.argv[1]
+        edi_dir = Path(sys.argv[1])
 
-        bname = os.path.basename(os.path.normpath(edi_dir))
+        bname = edi_dir.name
         print("dir base name", bname)
         create_penetration_depth_csv(edi_dir, "/tmp/%s_MT_pen_depths.csv" % bname)
 
         # plot pendepth over multiple periods
         # plot_many_periods( edi_dir )
 
-    elif len(sys.argv) > 2 and os.path.isdir(sys.argv[1]):
-        edi_dir = sys.argv[1]
+    elif len(sys.argv) > 2 and Path(sys.argv[1]).is_dir():
+        edi_dir = Path(sys.argv[1])
 
         per = sys.argv[2]
         print(("The input parameter for period was ", per))

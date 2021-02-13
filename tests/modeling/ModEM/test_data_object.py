@@ -14,7 +14,7 @@ import unittest
 import numpy as np
 
 from mtpy.modeling.modem import Data
-from mtpy.mtpy_globals import EDI_DATA_DIR, EDI_DATA_DIR2
+from tests import EDI_DATA_DIR, EDI_DATA_DIR2
 
 
 class TestModEMData(unittest.TestCase):
@@ -30,7 +30,8 @@ class TestModEMData(unittest.TestCase):
         self.data.data_array = self.data.fill_data_array(self.data.mt_dict)
 
     def test_station_list(self):
-        station_list = [fn.stem for fn in EDI_DATA_DIR.glob("*.edi")]
+        station_list = [fn.stem.replace('c', '') 
+                        for fn in EDI_DATA_DIR.glob("*.edi")]
 
         self.assertListEqual(station_list, self.data.station_locations.station.tolist())
 
@@ -38,9 +39,22 @@ class TestModEMData(unittest.TestCase):
         self.assertEqual(20, self.data.period_list.size)
 
     def test_add_station(self):
+        edi_list = list(EDI_DATA_DIR2.glob("*.edi"))[0:2]
         new_data, new_mt_dict = self.data.add_station(
-            fn=list(EDI_DATA_DIR2.glob("*.edi"))[0:2]
+            fn=edi_list
         )
+        
+        self.assertIn(edi_list[0].stem, new_mt_dict.keys())
+        self.assertIn(edi_list[1].stem, new_mt_dict.keys())
+        self.assertIn(edi_list[0].stem, new_data["station"])
+        self.assertIn(edi_list[1].stem, new_data["station"])
+        
+    def test_remove_station(self):
+        new_data, new_mt_dict = self.data.remove_station("pb23")
+        
+        self.assertNotIn("pb23", new_mt_dict.keys())
+        self.assertNotIn("pb23", new_data["station"])
+    
 
 
 # =============================================================================

@@ -36,7 +36,7 @@ class JFile(object):
 
         if self.fn is not None:
             self.read_j_file()
-            
+
     def __str__(self):
         lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
@@ -92,7 +92,7 @@ class JFile(object):
 
         """
         if value is None:
-            return 
+            return
         value = Path(value)
         if value.suffix in [".j"]:
             self._jfn = value
@@ -100,38 +100,38 @@ class JFile(object):
             msg = f"Input file must be a *.j file not {value.suffix}"
             self.logger.error(msg)
             raise ValueError(msg)
-        
+
     @property
     def latitude(self):
         return self.metadata_dict["latitude"]
-    
+
     @latitude.setter
     def latitude(self, value):
         self.metadata_dict["latitude"] = value
-        
+
     @property
     def longitude(self):
         return self.metadata_dict["longitude"]
-    
+
     @longitude.setter
     def longitude(self, value):
         self.metadata_dict["longitude"] = value
-        
+
     @property
     def elevation(self):
         return self.metadata_dict["elevation"]
-    
+
     @elevation.setter
     def elevation(self, value):
         self.metadata_dict["elevation"] = value
-        
+
     @property
     def periods(self):
         if not np.all(self.Z.z == 0) and self.Z is not None:
-            return 1./self.Z.freq
+            return 1.0 / self.Z.freq
         if not np.all(self.Tipper.tipper == 0) and self.Tipper is not None:
-            return 1./self.Tipper.freq
-        
+            return 1.0 / self.Tipper.freq
+
     @property
     def frequencies(self):
         if not np.all(self.Z.z == 0) and self.Z is not None:

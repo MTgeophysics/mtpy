@@ -1063,8 +1063,8 @@ class Profile:
         utm_zones = np.zeros(self.num_edi)
 
         if self.model_epsg is None:
-            latlist = np.array([mtObj.lat for mtObj in self.edi_list])
-            lonlist = np.array([mtObj.lon for mtObj in self.edi_list])
+            latlist = np.array([mtObj.latitude for mtObj in self.edi_list])
+            lonlist = np.array([mtObj.longitude for mtObj in self.edi_list])
             lonc, latc = centre_point(lonlist, latlist)
             self.model_epsg = get_epsg(latc, lonc)
 
@@ -1083,7 +1083,7 @@ class Profile:
 
             if self.model_epsg is not None:
                 edi.east, edi.north, edi.utm_zone = project_point_ll2utm(
-                    edi.lat, edi.lon, epsg=self.model_epsg
+                    edi.latitude, edi.longitude, epsg=self.model_epsg
                 )
 
             easts[ii] = edi.east
@@ -1284,7 +1284,9 @@ class Profile:
             self.elevation_profile[0, :] = np.array(
                 [ss for ss in self.station_locations]
             )
-            self.elevation_profile[1, :] = np.array([edi.elev for edi in self.edi_list])
+            self.elevation_profile[1, :] = np.array(
+                [edi.elevation for edi in self.edi_list]
+            )
 
         # --> project known elevations onto the profile line
         else:

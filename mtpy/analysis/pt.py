@@ -120,7 +120,12 @@ class PhaseTensor(object):
     #  define get/set functions and properties
     # ==========================================================================
     # ---phase tensor array----------------------------------------
-    def _set_pt(self, pt_array):
+    @property
+    def pt(self):
+        return self._pt
+
+    @pt.setter
+    def pt(self, pt_array):
         """
             Set the attribute 'pt'.
 
@@ -202,13 +207,13 @@ class PhaseTensor(object):
         else:
             pass
 
-    def _get_pt(self):
+    # ---phase tensor Error-----------------------------------------------------
+    @property
+    def pt_err(self):
         return self._pt
 
-    pt = property(_get_pt, _set_pt, doc="Phase tensor array")
-
-    # ---phase tensor Error-----------------------------------------------------
-    def _set_pt_err(self, pt_err_array):
+    @pt_err.setter
+    def pt_err(self, pt_err_array):
         """
             Set the attribute 'pt_err'.
 
@@ -254,17 +259,13 @@ class PhaseTensor(object):
         else:
             pass
 
-    def _get_pt_err(self):
-        return self._pt_err
-
-    pt_err = property(
-        _get_pt_err,
-        _set_pt_err,
-        doc="Phase tensor error array, must be same shape as pt",
-    )
-
     # ---freq------------------------------------------------------------
-    def _set_freq(self, lo_freq):
+    @property
+    def freq(self):
+        return self._freq
+
+    @freq.setter
+    def freq(self, lo_freq):
         """
             Set array of freq.
 
@@ -286,11 +287,6 @@ class PhaseTensor(object):
             self._freq = np.array(lo_freq)
         except:
             self._freq = None
-
-    def _get_freq(self):
-        return self._freq
-
-    freq = property(_get_freq, _set_freq, doc="freq array")
 
     # ---z_object---------------------------------------------------------------
 
@@ -337,20 +333,15 @@ class PhaseTensor(object):
 
         self.rotation_angle = z_object.rotation_angle
 
-    # def _get_z_object(self):
-    #     z_object = MTz.Z(z_array=self._z, z_err_array=self._z_err)
-    #     z_object.freq = self._freq
-    #     z_object.rotation_angle = self.rotation_angle
-
-    #     return z_object
-
-    # _z_object = property(_get_z_object, _set_z_object,
-    #                     doc="class mtpy.core.z.Z")
-
     # ---z array---------------------------------------------------------------
-    def _set_z(self, z_array):
+    @property
+    def z(self):
+        return self._z
+
+    @z.setter
+    def z(self, z_array):
         """
-            Set  Z array as PhaseTensor object attribute.
+        Set  Z array as PhaseTensor object attribute.
         """
 
         self._z = z_array
@@ -386,13 +377,12 @@ class PhaseTensor(object):
                         self.logger.debug("Computed singular matrix")
                         self.logger.debug("  --> pt[{0}]=np.zeros((2,2))".format(idx_f))
 
-    # def _get_z(self):
-    #     return self._z
-
-    # z = property(_get_z, _set_z,
-    #              doc="impedance tensor numpy.array((nf, 2, 2))")
-
     # ---Z Error array---------------------------------------------------------------
+    @property
+    def z_err(self):
+        return self._z_err
+
+    @z_err.setter
     def _set_z_err(self, z_err_array):
         """
             Set  Z-error array as PhaseTensor object attribute.
@@ -437,12 +427,6 @@ class PhaseTensor(object):
                             self.logger.debug(
                                 "  --> pt[{0}]=np.zeros((2,2))".format(idx_f)
                             )
-
-    # def _get_z_err(self):
-    #     return self._z_err
-
-    # z_err = property(_get_z_err, _set_z_err,
-    #                  doc="impedance tensor numpy.array((nf, 2, 2))")
 
     # ==========================================================================
     #  define get methods for read only properties
@@ -821,7 +805,6 @@ class PhaseTensor(object):
         if self.pt is None:
             return None
 
-        #        return self._pi2()[0] + self._pi1()[0]
         return np.degrees(np.arctan(self._pi2()[0] + self._pi1()[0]))
 
     @property
@@ -836,14 +819,12 @@ class PhaseTensor(object):
 
     def rotate(self, alpha):
         """
-            Rotate PT array. Change the rotation angles attribute respectively.
+        Rotate PT array. Change the rotation angles attribute respectively.
 
-            Rotation angle must be given in degrees. All angles are referenced to 
-			geographic North, positive in clockwise direction. 
-			(Mathematically negative!)
+        Rotation angle must be given in degrees. All angles are referenced to 
+        North, positive in clockwise direction. (Mathematically negative!)
 
-            In non-rotated state, X refs to North and Y to East direction.
-
+        In non-rotated state, X refs to North and Y to East direction.
 
         """
 
@@ -902,11 +883,11 @@ class PhaseTensor(object):
                 angle = 0.0
 
             if self.pt_err is not None:
-                pt_rot[idx_freq], pt_err_rot[idx_freq] = MTcc.rotatematrix_incl_errors(
+                pt_rot[idx_freq], pt_err_rot[idx_freq] = MTcc.rotate_matrix_with_errors(
                     self.pt[idx_freq, :, :], angle, self.pt_err[idx_freq, :, :]
                 )
             else:
-                pt_rot[idx_freq], pt_err_rot = MTcc.rotatematrix_incl_errors(
+                pt_rot[idx_freq], pt_err_rot = MTcc.rotate_matrix_with_errors(
                     self.pt[idx_freq, :, :], angle
                 )
 
@@ -1590,31 +1571,3 @@ def z2pt(z_array, z_err_array=None):
         )
 
     return pt_array, pt_err_array
-
-
-def z_object2pt(z_object):
-    """
-        Calculate Phase Tensor from Z object (incl. uncertainties)
-
-        Input:
-        - Z-object : instance of the MTpy Z class
-
-
-        Return:
-        - PT object
-    """
-    #     - PT : nx2x2 real valued Numpy array
-    #     - PT-error : nx2x2 real valued Numpy array
-
-    # """
-
-    try:
-        p = PhaseTensor(z_object=z_object)
-    except:
-        raise MTex.MTpyError_Z("Input argument is not a valid instance of the Z class")
-
-    # pt_array = p.pt
-    # pterr_array = p.pterr
-
-    # return pt_array, pterr_array
-    return p

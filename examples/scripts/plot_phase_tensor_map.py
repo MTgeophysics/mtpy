@@ -15,11 +15,12 @@ import os.path as op
 import mtpy.imaging.phase_tensor_maps as pptmaps
 
 # directory containing edis
+
 # edipath = r'C:\mtpywin\mtpy\examples\data\edi2'
 edipath = "/mtpy/examples/data/ET_edi"
 
 # whether or not to save the figure to file
-save = True
+save = False
 
 # full path to file to save to
 savepath = "/tmp"
@@ -28,8 +29,9 @@ savepath = "/tmp"
 plot_freq = 1e-2
 
 # value to color ellipses by, options are phimin,phimax,skew
-colorby = "skew"
+colorby = "strike"
 ellipse_range = [-9, 9]
+rotation_angle = 0
 
 image_fn = "phase_tensor_map%1is_" % (int(1.0 / plot_freq)) + colorby + ".png"
 
@@ -60,7 +62,7 @@ m = pptmaps.PlotPhaseTensorMaps(
     # ellipse_cmap='mt_seg_bl2wh2rd'
     station_dict={"id": (5, 7)},
     background_image="/mtpy/examples/data/gravity/ET_gravity.tif"
-    #                               bimg_band=1, #  Optional, set to None by default
+    # bimg_band=1, #  Optional, set to None by default
     # bimg_cmap='viridis'  # Optional, set to 'viridis' by default
 )
 

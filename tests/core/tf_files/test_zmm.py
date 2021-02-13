@@ -27,31 +27,32 @@ class TestZMM(unittest.TestCase):
     def setUp(self):
         self.zmm_fn = list(EDI_DATA_DIR_BB.glob("*.zmm"))[0]
         self.zmm_obj = ZMM(self.zmm_fn)
-        
+
     def test_location(self):
         self.assertAlmostEqual(34.727, self.zmm_obj.latitude, 3)
         self.assertAlmostEqual(-115.735, self.zmm_obj.longitude, 3)
         self.assertAlmostEqual(13.10, self.zmm_obj.declination, 3)
         self.assertEqual(0.0, self.zmm_obj.elevation)
-    
+
     def test_station(self):
         self.assertEqual("300", self.zmm_obj.station)
-        
+
     def test_n_periods(self):
-        # file has 2 null periods -999 so size is 12 not 14 like in the file. 
+        # file has 2 null periods -999 so size is 12 not 14 like in the file.
         self.assertEqual(38, self.zmm_obj.periods.size)
-        
+
     def test_has_z(self):
         self.assertTrue(self.zmm_obj.Z.z.all() != 0)
-        
+
     def test_has_tipper(self):
         self.assertTrue(self.zmm_obj.Tipper.tipper.all() != 0)
-    
+
     def test_fail_input_fn(self):
         def set_fn(fn):
             self.zmm_obj.fn = fn
+
         self.assertRaises(ValueError, set_fn, r"/home/test.edi")
-        
+
 
 class TestReadZMM(unittest.TestCase):
     """
@@ -76,19 +77,17 @@ class TestReadZMM(unittest.TestCase):
 
     def test_station(self):
         self.assertEqual(self.zmm_obj.station, self.mt_obj.station)
-        
+
     def test_z(self):
         self.assertEqual(self.zmm_obj.Z, self.mt_obj.Z)
-        
+
     def test_tipper(self):
         self.assertEqual(self.zmm_obj.Tipper, self.mt_obj.Tipper)
 
     # def test_birrp_parameters(self):
     #     bp_list = [f"{k} = {v}" for k, v in self.zmm_obj.header_dict.items()]
-    #     self.assertEqual(bp_list, 
+    #     self.assertEqual(bp_list,
     #                      self.mt_obj.station_metadata.transfer_function.processing_parameters)
-        
-        
 
 
 # =============================================================================

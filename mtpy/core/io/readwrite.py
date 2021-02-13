@@ -57,11 +57,7 @@ logger = get_mtpy_logger(__name__)
 # generic reader for any file type
 # =============================================================================
 plugins = {
-    "edi": {
-        "file_types": ["edi"],
-        "reader": edi.read_edi,
-        "writer": edi.write_edi
-    },
+    "edi": {"file_types": ["edi"], "reader": edi.read_edi, "writer": edi.write_edi},
     "zmm": {
         "file_types": ["zmm", "zrr"],
         "reader": zmm.read_zmm,

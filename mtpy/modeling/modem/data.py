@@ -7,6 +7,7 @@ ModEM
 
 # revised by JP 2017
 # revised by AK 2017 to bring across functionality from ak branch
+# revised by JP 2021 adding functionality and updating.
 
 """
 from __future__ import print_function
@@ -22,12 +23,10 @@ from mtpy.core import mt as mt
 from mtpy.core import z as mtz
 from mtpy.modeling import ws3dinv as ws
 from mtpy.utils import gis_tools as gis_tools
-from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 from mtpy.modeling.modem.exception import ModEMError, DataError
 from mtpy.modeling.modem.station import Stations
-from mtpy.modeling.modem.model import Model
 
 
 try:
@@ -47,11 +46,8 @@ class Data(object):
                a linear interpolation of each of the real and imaginary parts
                of the impedance tensor and induction tensor.
                See mtpy.core.mt.MT.interpolate for more details
-
-    Arguments
-    ------------
-        **edi_list** : list
-                       list of full paths to .edi files you want to invert for
+    
+    :param edi_list: list of edi files to read
 
     ====================== ====================================================
     Attributes              Description
@@ -170,77 +166,31 @@ class Data(object):
                            *default* is '+' as positive downwards.
     ====================== ====================================================
 
-    ========================== ================================================
-    Methods                    Description
-    ========================== ================================================
-    center_stations            Center station locations to the middle of cells,
-                               might be useful for topography.
-    change_data_elevation      At each station in the data file rewrite the
-                               elevation, so the station is on the surface,
-                               not floating in air.
-    compute_inv_error          compute the error from the given parameters
-    convert_modem_to_ws        convert a ModEM data file to WS format.
-    convert_ws3dinv_data_file  convert a ws3dinv file to ModEM fomrat,
-                               **Note** this doesn't include tipper data and
-                               you need a station location file like the one
-                               output by mtpy.modeling.ws3dinv
-    fill_data_array            fill the data array from mt_dict
-    filter_periods             Select the periods of the mt_obj that are in
-                               per_array. used to do original freq inversion.
-    get_header_string          reset the header sring for file
-    get_mt_dict                get mt_dict from edi file list
-    get_parameters             get important parameters for documentation
-    get_period_list            make a period list to invert for
-    get_relative_station_locations     get station locations from edi files
-    project_stations_on_topography     This method is used in add_topography().
-                                       It will Re-write the data file to change
-                                       the elevation column. And update
-                                       covariance mask according topo elevation
-                                       model.
-    read_data_file             read in a ModEM data file and fill attributes
-                               data_array, station_locations, period_list,
-                               mt_dict
-    write_data_file            write a ModEM data file
-    write_vtk_station_file     write a vtk file for station locations.  For now
-                               this in relative coordinates.
-    ========================== ================================================
-
 
     :Example 1 --> create inversion period list: ::
 
-        >>> import os
+        >>> from pathlib import Path
         >>> import mtpy.modeling.modem as modem
-        >>> edi_path = r"/home/mt/edi_files"
-        >>> edi_list = [os.path.join(edi_path, edi) \
-                        for edi in os.listdir(edi_path)\
-                        if edi.find('.edi') > 0]
+        >>> edi_path = Path(r"/home/mt/edi_files")
+        >>> edi_list = list(edi_path.glob("*.edi"))
         >>> md = modem.Data(edi_list, period_min=.1, period_max=300,\
-                            max_num_periods=12)
+        >>> ...             max_num_periods=12)
         >>> md.write_data_file(save_path=r"/home/modem/inv1")
+        >>> md
+        
 
     :Example 2 --> set inverions period list from data: ::
 
-        >>> import os
-        >>> import mtpy.core.mt
-        >>> import mtpy.modeling.modem as modem
-        >>> edi_path = r"/home/mt/edi_files"
-        >>> edi_list = [os.path.join(edi_path, edi) \
-                        for edi in os.listdir(edi_path)\
-                        if edi.find('.edi') > 0]
         >>> md = modem.Data(edi_list)
         >>> #get period list from an .edi file
-        >>> mt_obj1 = mt.MT(edi_list[0])
-        >>> inv_period_list = 1./mt_obj1.Z.freq
+        >>> inv_period_list = 1./md.mt_dict["mt01"].Z.freq
         >>> #invert for every third period in inv_period_list
         >>> inv_period_list = inv_period_list[np.arange(0, len(inv_period_list, 3))]
         >>> md.period_list = inv_period_list
-    >>> md.write_data_file(save_path=r"/home/modem/inv1")
+        >>> md.write_data_file(save_path=r"/home/modem/inv1")
 
     :Example 3 --> change error values: ::
 
-        >>> import mtpy.modeling.modem as modem
-        >>> mdr = modem.Data()
-        >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.error_type = 'floor'
         >>> mdr.error_floor = 10
         >>> mdr.error_tipper = .03
@@ -248,9 +198,6 @@ class Data(object):
 
     :Example 4 --> change inversion type: ::
 
-        >>> import mtpy.modeling.modem as modem
-        >>> mdr = modem.Data()
-        >>> mdr.read_data_file(r"/home/modem/inv1/ModEM_Data.dat")
         >>> mdr.inv_mode = '3'
         >>> mdr.write_data_file(save_path=r"/home/modem/inv2")
 
@@ -409,7 +356,14 @@ class Data(object):
     @staticmethod
     def make_dtype(z_shape, t_shape):
         """
-        reset dtype
+        Create data type given shapes of the impedance and tipper arrays
+        
+        :param z_shape: (number of periods, 2, 2)
+        :type z_shape: tuple
+        
+        :param t_shape: (number of periods, 2, 2)
+        :type t_shape: tuple
+        
         """
 
         dtype = [
@@ -436,7 +390,18 @@ class Data(object):
     @staticmethod
     def get_header_string(error_type, error_value, rotation_angle):
         """
-        reset the header sring for file
+        Create the header strings
+        
+        # Created using MTpy calculated egbert_floor error of 5% data rotated 0.0_deg
+        clockwise from N
+        
+        :param error_type: The method to calculate the errors
+        :type error_type: string
+        :param error_value: value of error or error floor
+        :type error_value: float
+        :param rotation_angle: angle data have been rotated by
+        :type rotation_angle: float
+
         """
 
         h_str = []
@@ -463,7 +428,11 @@ class Data(object):
 
     def make_mt_dict(self, edi_list=None):
         """
-        get mt_dict from edi file list
+        Create a dictionary of :class:`mtpy.core.mt.MT` objects to pull data from
+        
+        :param edi_list: list of edi files to read
+        :type edi_list: list of full paths to files
+        
         """
 
         if edi_list is not None:
@@ -488,13 +457,32 @@ class Data(object):
             mt_obj = mt.MT(edi)
             if mt_obj.station is None:
                 continue
-            mt_dict[mt_obj.station] = mt_obj
+            # should be more efficient for appending to a dictionary
+            mt_dict.update({mt_obj.station: mt_obj})
 
         return mt_dict
 
     def get_relative_station_locations(self, mt_dict, data_array):
         """
-        get station locations from mt files
+        Compute the relative station locations on a grid where the center is (0, 0) 
+        
+        Computes from station locations in mt_dict. 
+        Calls modem.Station().get_station_locations()  
+        
+        If Data._center_lat, Data._center_lon are assigned the center will be 
+        relative to that point.  
+        
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :param data_array: data array 
+        :type data_array: np.ndarray 
+        :return: data_array with relative locations in keys labels 
+        rel_east, rel_north, rel_elev
+        :rtype: np.ndarray 
+        
+        .. seealso:: `mtpy.modeling.modem.station.Stations`
+        
         """
         stations_obj = Stations(
             model_epsg=self.model_epsg, model_utm_zone=self.model_utm_zone
@@ -525,10 +513,11 @@ class Data(object):
         """
          Get an array of unique periods from the data
          
-        :param mt_dict: DESCRIPTION
-        :type mt_dict: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :return: array of unique periods from all stations provided
+        :rtype: np.ndarray
 
         """
         data_period_list = []
@@ -539,8 +528,31 @@ class Data(object):
 
     def make_period_list(self, mt_dict):
         """
-        make a period list to invert for
+        Create an array of periods to invert for.
+        
+        If these parameters are not None, uses them to compute the period array
+            - Data.period_min
+            - Data.period_max
+            - Data.max_num_periods
+            
+        otherwise the period max and period min is estimated from the data.
+        
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :raises: :class:`mtpy.utils.exceptions.DataError` if a parameter is missing
+        
+        .. code-block::
+            :linenos:
+                
+            >>> md = Data()
+            >>> md.period_min = 0.01
+            >>> md.period_max = 1000
+            >>> md.max_num_periods = 23
+            >>> inversion_periods = md.make_period_list(mt_dict)
+            
         """
+        
         if self.period_list is not None:
             self.logger.debug(
                 "Inverting periods "
@@ -581,13 +593,19 @@ class Data(object):
 
     @property
     def rotation_angle(self):
+        """ angle to rotated the data by """
         return self._rotation_angle
 
     @rotation_angle.setter
     def rotation_angle(self, rotation_angle):
         """
-        on set rotation angle rotate mt_dict and data_array,
+        When the rotation angle is set rotate MT objects and fill data array with
+        rotated values. 
+        :param rotation_angle: angle 0 is N, 90 E, positive clockwise (degrees)
+        :type rotation_angle: float
+        
         """
+
         if self._rotation_angle == rotation_angle:
             return
 
@@ -709,7 +727,35 @@ class Data(object):
         self, mt_dict, new_edi_dir=None, use_original_freq=False, longitude_format="LON"
     ):
         """
-        fill the data array from mt_dict
+        Populate the data array from values in the :class:`mtpy.core.mt.MT` objects
+        
+        :param mt_dict: dictionary of :class:`mtpy.core.mt.MT` objects, keys are 
+        station names.
+        :type mt_dict: dictionary
+        :param new_edi_dir: full path to a new folder to write EDI files with the
+        inversion periods, defaults to None
+        :type new_edi_dir: string or Path, optional
+        :param use_original_freq: If True uses original frequencies in the data,
+        defaults to False
+        :type use_original_freq: Boolean, optional
+        :param longitude_format: How to write the EDI file longitude, defaults to "LON"
+        useful if you want to read into Winglink.
+        :type longitude_format: string, optional
+        :raises ValueError: If cannot compute locations
+        :return: data array
+        :rtype: np.ndarray
+        
+        .. code-block::
+            :linenos:
+            
+            >>> from pathlib import Path
+            >>> from mtpy.modeling.modem import Data
+            >>> md = Data()
+            >>> md.period_list = [.01, .1, 1, 10, 100]
+            >>> edi_path = Path(r"/home/mt")
+            >>> edi_list = list(edi_path.glob("*.edi"))
+            >>> mt_dict = md.make_mt_dict(edi_list)
+            >>> md.data_array = md.fill_data_array(mt_dict)
 
         """
 
@@ -864,11 +910,13 @@ class Data(object):
 
     @staticmethod
     def filter_periods(mt_obj, per_array):
-        """Select the periods of the mt_obj that are in per_array.
+        """
+        Select the periods of the mt_obj that are in per_array.
         used to do original freq inversion.
 
-        :param mt_obj:
-        :param per_array:
+        :param mt_obj: MT object for single station
+        :type mt_obj: :class:`mtpy.core.mt.MT`
+        :param per_array: array of periods to map to
         :return: array of selected periods (subset) of the mt_obj
         """
 
@@ -883,7 +931,9 @@ class Data(object):
     @property
     def station_locations(self):
         """
-        extract station locations from data array
+        extract station locations from data array 
+        
+        :returns: :class:`mtpy.modeling.modem.station.Stations`
         """
         if self.data_array is None:
             return None
@@ -918,6 +968,9 @@ class Data(object):
     def station_locations(self, station_locations):
         """
         take a station_locations array and populate data_array
+        
+        :param station_locations: array of station locations
+        :type station_locations: :class:`mtpy.modeling.modem.Station`
         """
         if self.data_array is None:
             dtype = self.make_dtype(
@@ -968,7 +1021,42 @@ class Data(object):
 
     def compute_inv_error(self, data_array):
         """
-        compute the error from the given parameters
+        compute the error from the given parameters for a given data array
+        
+        :param data_array: data array to invert
+        :type data_array: np.ndarray
+        
+        Uses parameters:
+            - Data.error_type_z
+            - Data.error_value_z
+            - Data.error_type_tipper
+            - Data.error_value_tiper
+         
+        **Impedance Error Types**
+        
+        =========== ==================================================================
+        Error Type  Calculation                          
+        =========== ================================================================== 
+        egbert      error_value_z $\cdot \sqrt(|(Z_{xy}\cdot Z_{yx}|$)) 
+        mean_od     error_value_z $\cdot (Z_{xy} + Z_{yx})/2$ 
+        eigen       error_value_z $\cdot$ eigenvalues($Z(\omega)$) 
+        median      error_value_z $\cdot$ median($Z(\omega)$)
+        =========== ==================================================================
+        
+        **Tipper Error Types**
+        
+        =========== ==================================================================
+        Error Type  Description                          
+        =========== ================================================================== 
+        abs         A value given to all tipper data 
+        =========== ==================================================================
+
+        .. note:: If floor is added to an error type then any value below that value 
+        will be set to the floor and anything above the floor will remain above.  For
+        example if the error floor is 5 but the measurement error is 7, the error 
+        will be left at 7.  If the measurement error is 3 then it will be changed
+        to 5.
+        
         """
         # copy values over to inversion error
         data_array["z_inv_err"] = data_array["z_err"]
@@ -1090,39 +1178,50 @@ class Data(object):
         new_edis=False,
     ):
         """
-        write data file for ModEM
-        will save file as save_path/fn_basename
+        
+        :param save_path: full directory to save file to, defaults to None
+        :type save_path: string or Path, optional
+        :param fn_basename: Basename of the saved file, defaults to None
+        :type fn_basename: string, optional
+        :param rotation_angle: Angle to rotate the data to (positive clockwise, N=0),
+        defaults to None
+        :type rotation_angle: float, optional
+        :param compute_error: If True recomputes error give parameters, defaults to True
+        :type compute_error: Boolean, optional
+        :param fill: If True recomputes the data array from given dictionary of 
+        :class:`mtpy.core.mt.MT` objects, defaults to True
+        :type fill: boolean, optional
+        :param elevation: If True adds in elevation from 'rel_elev' column in data
+        array, defaults to False
+        :type elevation: boolean, optional
+        :param use_original_freq: If True use original periods in 
+        :class:`mtpy.core.mt.MT` objects, defaults to False
+        :type use_original_freq: boolean, optional
+        :param longitude_format: If new edis is True uses this format for the 
+        longitude key, defaults to "LON"
+        :type longitude_format: string, optional
+        :param new_edis: if True writes new EDI files with the inversion data
+        to a folder called save_path/new_edis, defaults to False
+        :type new_edis: boolean, optional
 
-        Arguments:
-        ------------
-            **save_path** : string
-                            directory path to save data file to.
-                            *default* is cwd
+        :raises NotImplementedError: If the inversion mode is not supported
+        :raises DataError: :class:`mtpy.utils.exceptions.DataError` if a parameter
+        is missing
+        :return: full path to data file
+        :rtype: Path
 
-            **fn_basename** : string
-                              basename to save data file as
-                              *default* is 'ModEM_Data.dat'
+        .. code-block::
+            :linenos:
 
-            **rotation_angle** : float
-                                angle to rotate the data by assuming N = 0,
-                                E = 90. *default* is 0.0
-
-        Outputs:
-        ----------
-            **data_fn** : string
-                          full path to created data file
-
-        :Example: ::
-
-            >>> import os
+            >>> from pathlib import Path
             >>> import mtpy.modeling.modem as modem
-            >>> edi_path = r"/home/mt/edi_files"
-            >>> edi_list = [os.path.join(edi_path, edi) \
-                            for edi in os.listdir(edi_path)\
-                            if edi.find('.edi') > 0]
+            >>> edi_path = Path(r"/home/mt/edi_files")
+            >>> edi_list = list(edi_path.glob("*.ed"))
             >>> md = modem.Data(edi_list, period_min=.1, period_max=300,\
-                                max_num_periods=12)
+            >>> ...             max_num_periods=12)
             >>> md.write_data_file(save_path=r"/home/modem/inv1")
+            /home/modem/inv1/ModemDataFile.dat
+            
         """
 
         if save_path is not None:
@@ -1130,7 +1229,7 @@ class Data(object):
         if fn_basename is not None:
             self.data_fn = fn_basename
 
-        self.data_fn = self.save_path.joinpath(self.data_fn)
+        self.data_fn = Path(self.save_path, self.data_fn)
         if self.mt_dict is None:
             self.mt_dict = self.make_mt_dict()
 
@@ -1204,7 +1303,7 @@ class Data(object):
                 )
 
             d_lines.append(
-                f"> {self.rotation_angle}\n"
+                f"> {self.rotation_angle:.3g}\n"
             )  # orientation, need to add at some point
             if elevation:
                 d_lines.append(
@@ -1347,52 +1446,6 @@ class Data(object):
 
         self.logger.info("Wrote ModEM data file to {0}".format(self.data_fn))
         return self.data_fn
-
-    @deprecated("error type from GA implementation, not fully tested yet")
-    def _impedance_components_error_meansqr(self, c_key, ss, z_ii, z_jj):
-        """
-        calculate the mean square of errors of a given component over all frequencies for a given station
-        :param c_key:
-        :param ss:
-        :param z_ii:
-        :param z_jj:
-        :return:
-        """
-        abs_err = np.mean(np.square(self.data_array[ss][c_key + "_err"][:, z_ii, z_jj]))
-        return abs_err
-
-    @deprecated("error type from GA implementation, not fully tested yet")
-    def _impedance_components_error_sqr(self, c_key, ff, ss, z_ii, z_jj):
-        """
-        use the square of the error of a given frequency and a given component at the given station
-        :param c_key:
-        :param ff:
-        :param ss:
-        :param z_ii:
-        :param z_jj:
-        :return:
-        """
-        return np.square(self.data_array[ss][c_key + "_err"][ff, z_ii, z_jj])
-
-    @deprecated("error type from GA implementation, not fully tested yet")
-    def _impedance_components_error_stddev(self, c_key, ss, z_ii, z_jj):
-        """
-        calculate the stddev across all frequencies on a given component
-        :param c_key:
-        :param ss:
-        :param z_ii:
-        :param z_jj:
-        :return:
-        """
-        # errors = [self.data_array[ss][c_key + '_err'][freq, z_ii, z_jj] for freq in range(self.data_array['z'].shape[1])]
-        # print errors
-        # abs_err = np.std(errors)
-        # print abs_err
-        errors = self.data_array[ss][c_key + "_err"][:, z_ii, z_jj]
-        # print errors
-        abs_err = np.std(errors)
-        # print abs_err
-        return abs_err
 
     def convert_ws3dinv_data_file(
         self,
@@ -1561,19 +1614,45 @@ class Data(object):
         return ws_data.data_fn, station_info.station_fn
 
     def read_data_file(self, data_fn, center_utm=None):
-        """ Read ModEM data file
-
-       inputs:
-        data_fn = full path to data file name
-        center_utm = option to provide real world coordinates of the center of
-                     the grid for putting the data and model back into
-                     utm/grid coordinates, format [east_0, north_0, z_0]
-
+        """
+        
+        :param data_fn: full path to data file name
+        :type data_fn: string or Path
+        :param center_utm: option to provide real world coordinates of the center of
+        the grid for putting the data and model back into utm/grid coordinates,
+        format [east_0, north_0, z_0], defaults to None
+        :type center_utm: list or tuple, optional
+        :raises DataError: If cannot compute component
 
         Fills attributes:
             * data_array
             * period_list
             * mt_dict
+            
+        .. code-block::
+                
+            >>> md = Data()
+            >>> md.read_data_file(r"/home/modem_data.dat")
+            >>> md
+            ModEM Data Object:
+                Number of stations: 169
+                Number of periods:  22
+               	Period range:  
+               		Min: 0.01 s
+               		Max: 15230.2 s
+               	Rotation angle:     0.0
+               	Data center:        
+               		 latitude:  39.6351 deg
+               		 longitude: -119.8039 deg
+               		 Elevation: 0.0 m
+               		 Easting:   259368.9746 m
+               		 Northing:  4391021.1981 m
+               		 UTM zone:  11S
+               	Model EPSG:         None
+               	Model UTM zone:     None
+               	Impedance data:     True
+               	Tipper data:        True
+            
 
         """
 
@@ -1697,9 +1776,6 @@ class Data(object):
         # make a period dictionary to with key as period and value as index
         period_dict = dict([(per, ii) for ii, per in enumerate(self.period_list)])
 
-        # --> need to sort the data into a useful fashion such that each station
-        #    is an mt object
-
         data_dict = {}
         z_dummy = np.zeros((len(self.period_list), 2, 2), dtype="complex")
         t_dummy = np.zeros((len(self.period_list), 1, 2), dtype="complex")
@@ -1804,11 +1880,10 @@ class Data(object):
             self.data_array[ii]["station"] = mt_obj.station
             self.data_array[ii]["lat"] = mt_obj.latitude
             self.data_array[ii]["lon"] = mt_obj.longitude
-            # east,north,zone = gis_tools.project_point_ll2utm(mt_obj.lat,mt_obj.lon,epsg=self.model_epsg)
             self.data_array[ii]["east"] = mt_obj.east
             self.data_array[ii]["north"] = mt_obj.north
             self.data_array[ii]["zone"] = mt_obj.utm_zone
-            self.data_array[ii]["elev"] = mt_obj.elevation
+            self.data_array[ii]["elev"] = mt_obj.elev
             self.data_array[ii]["rel_elev"] = mt_obj.grid_elev
             self.data_array[ii]["rel_east"] = mt_obj.grid_east
             self.data_array[ii]["rel_north"] = mt_obj.grid_north
@@ -1830,13 +1905,6 @@ class Data(object):
             self.data_array["east"] = self.data_array["rel_east"] + center_utm[0]
             self.data_array["north"] = self.data_array["rel_north"] + center_utm[1]
 
-        # if center_lat is not None and center_lon is not None:
-        #     if not np.isclose(self.station_locations.center_point.lat[0], center_lat):
-        #         print(f"estimated center {self.station_locations.center_point.lat[0]} != {center_lat}")
-        #         self.station_locations._center_lat = center_lat
-        #     if not np.isclose(self.station_locations.center_point.lon[0], center_lon):
-        #         print(f"estimated center {self.station_locations.center_point.lon[0]} != {center_lon}")
-        #         self.station_locations._center_lon = center_lon
 
     def write_vtk_station_file(
         self,
@@ -1847,27 +1915,52 @@ class Data(object):
         shift_north=0,
         shift_elev=0,
         units="km",
+        coordinate_system="nez+",
     ):
         """
-        write a vtk file for station locations.  For now this in relative
-        coordinates.
+        
+        :param vtk_save_path: directory to save vtk file to, defaults to None
+        :type vtk_save_path: string or Path, optional
+        :param vtk_fn_basename: filename basename of vtk file, note that .vtr 
+        extension is automatically added, defaults to "ModEM_stations"
+        :type vtk_fn_basename: string, optional
+        :param geographic: If true puts the grid on geographic coordinates based 
+        on the model_utm_zone, defaults to False
+        :type geographic: boolean, optional
+        :param shift_east: shift in east directions in meters, defaults to 0
+        :type shift_east: float, optional
+        :param shift_north: shift in north direction in meters, defaults to 0
+        :type shift_north: float, optional
+        :param shift_elev: shift in elevation + down in meters, defaults to 0
+        :type shift_elev: float, optional
+        :param units: Units of the spatial grid [ km | m | ft ], defaults to "km"
+        :type units: string, optional
+        :type : string
+        :param coordinate_system: coordinate system for the station, either the
+        normal MT right-hand coordinate system with z+ down or the sinister 
+        z- down [ nez+ | enz- ], defaults to nez+
+        :return: full path to VTK file
+        :rtype: Path
+        
+        Write VTK file   
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations")
+        
+        Write VTK file in geographic coordinates
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
+        >>> ...                       geographic=True)
+        
+        Write VTK file in geographic coordinates with z+ up
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
+        >>> ...                       geographic=True,
+        >>> ...                       coordinate_system='enz-')
 
-        Arguments:
-        -------------
-            **vtk_save_path** : string
-                                directory to save vtk file to.
-                                *default* is Model.save_path
-            **vtk_fn_basename** : string
-                                  filename basename of vtk file
-                                  *default* is ModEM_stations, evtk will add
-                                  on the extension .vtu
         """
         if isinstance(units, str):
             if units.lower() == "km":
                 scale = 1.0 / 1000.00
-            elif units.lower == "m":
+            elif units.lower() == "m":
                 scale = 1.0
-            elif units == "ft":
+            elif units.lower() == "ft":
                 scale = 3.2808
         elif isinstance(units, (int, float)):
             scale = units
@@ -1878,25 +1971,35 @@ class Data(object):
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
 
         if not geographic:
-            pointsToVTK(
-                vtk_fn.as_posix(),
-                (self.station_locations.rel_north + shift_north) * scale,
-                (self.station_locations.rel_east + shift_east) * scale,
-                (self.station_locations.rel_elev + shift_elev) * scale,
-                data={
-                    "elevation": (self.station_locations.rel_elev + shift_elev) * scale
-                },
-            )
+            if coordinate_system == 'nez+':
+                vtk_x = (self.station_locations.rel_north + shift_north) * scale
+                vtk_y = (self.station_locations.rel_east + shift_east) * scale
+                vtk_z = (self.station_locations.rel_elev + shift_elev) * scale
+                extra = (self.station_locations.rel_elev + shift_elev) * scale
+            elif coordinate_system == 'enz-':
+                vtk_x = (self.station_locations.rel_north + shift_north) * scale
+                vtk_y = (self.station_locations.rel_east + shift_east) * scale
+                vtk_z = (self.station_locations.rel_elev + shift_elev) * scale
+                extra = (self.station_locations.rel_elev + shift_elev) * scale
+                
         else:
-            pointsToVTK(
-                vtk_fn.as_posix(),
-                (self.station_locations.north + shift_north) * scale,
-                (self.station_locations.east + shift_east) * scale,
-                (self.station_locations.elev + shift_elev) * scale,
-                data={"elevation": (self.station_locations.elev + shift_elev) * scale},
-            )
+            self.station_locations.model_utm_zone = self.center_point.zone[0]
+            if coordinate_system == 'nez+':
+                vtk_y = (self.station_locations.north + shift_north) * scale
+                vtk_x = (self.station_locations.east + shift_east) * scale
+                vtk_z = -1 * (self.station_locations.elev + shift_elev) * scale
+                extra = -1 * (self.station_locations.elev + shift_elev)
+            elif coordinate_system == 'enz-':
+                vtk_y = (self.station_locations.north + shift_north) * scale
+                vtk_x = (self.station_locations.east + shift_east) * scale
+                vtk_z = -1 * (self.station_locations.elev + shift_elev) * scale
+                extra = -1 * (self.station_locations.elev + shift_elev)
+        
+        # write file
+        pointsToVTK(vtk_fn.as_posix(), vtk_x, vtk_y, vtk_z, data={"elevation": extra})
 
-        self.logger.info("Wrote station file to {0}".format(vtk_fn))
+        self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
+        return vtk_fn
 
     def get_parameters(self):
         """
@@ -1937,108 +2040,46 @@ class Data(object):
         )
         return parameter_dict
 
-    def center_stations(self, model_fn, data_fn=None):
+    def center_stations(self, model_obj):
         """
-        Center station locations to the middle of cells, might be useful for
-        topography.
+        Center station locations to the middle of cells, is useful for
+        topography cause it reduces edge effects of stations close to cell edges.
+        Recalculates rel_east, rel_north to center of model cell.
+        
+        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :type model_obj: :class:`mtpy.modeling.modem.Model`
 
-
-        Arguments
-        -----------
-            **data_fn** : string
-                          full path to data file
-
-            **model_fn** : string
-                          full path to model file
-
-            **new_data_fn** : string
-                             full path to new data file
-                             *default* is None, which save as
-                             data_fn_center.dat
-
-        Returns
-        -----------
-            **new_data_fn** : string
-                              full path to new data file
+        
         """
-
-        if data_fn is not None:
-            self.read_data_file(data_fn)
-
-        m_obj = Model()
-        m_obj.read_model_file(model_fn)
-
+        
         for s_arr in self.station_locations.station_locations:
-            e_index = np.where(m_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
-            n_index = np.where(m_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
+            e_index = np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
+            n_index = np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
 
-            mid_east = m_obj.grid_east[e_index : e_index + 2].mean()
-            mid_north = m_obj.grid_north[n_index : n_index + 2].mean()
+            mid_east = model_obj.grid_east[e_index : e_index + 2].mean()
+            mid_north = model_obj.grid_north[n_index : n_index + 2].mean()
 
             s_index = np.where(self.data_array["station"] == s_arr["station"])[0][0]
 
             self.data_array[s_index]["rel_east"] = mid_east
             self.data_array[s_index]["rel_north"] = mid_north
 
-    def change_data_elevation(self, model_obj, data_fn=None, res_air=1e12):
+    def project_stations_on_topography(self, model_object, air_resistivity=1e12,
+                                       sea_resistivity=0.3, ocean_bottom=False):
         """
-        At each station in the data file rewrite the elevation, so the station is
-        on the surface, not floating in air.
+        Project stations on topography of a given model
 
-        Arguments:
-        ------------------
-            *data_fn* : string
-                        full path to a ModEM data file
-
-            *model_fn* : string
-                        full path to ModEM model file that has elevation
-                        incoorporated.
-
-            *new_data_fn* : string
-                            full path to new data file name.  If None, then
-                            new file name will add _elev.dat to input filename
-
-            *res_air* : float
-                        resistivity of air.  Default is 1E12 Ohm-m
-        Returns:
-        -------------
-            *new_data_fn* : string
-                            full path to new data file.
+        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :type model_obj: :class:`mtpy.modeling.modem.Model`
+        :param air_resistivity: resistivity value of air cells in the model
+        :type air_resistivity:  float
+        :param sea_resistivity: resistivity of sea
+        :type sea_resistivity: float
+        :param ocean_bottom: If True places stations at bottom of sea cells
+        :type ocean_bottom: boolean
+        
+        Recaluclates rel_elev
         """
-        if data_fn is not None:
-            self.read_data_file(data_fn)
-
-        s_locations = self.station_locations.station_locations.copy()
-
-        # need to subtract one because we are finding the cell next to it
-        for s_arr in s_locations:
-            e_index = np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
-            n_index = np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
-            z_index = np.where(
-                model_obj.res_model[n_index, e_index, :] < res_air * 0.9
-            )[0][0]
-            s_index = np.where(self.data_array["station"] == s_arr["station"])[0][0]
-
-            # elevation needs to be relative to the point (0, 0, 0), where
-            # 0 is the top of the model, the highest point, so the station
-            # elevation is relative to that.
-            self.data_array[s_index]["rel_elev"] = model_obj.nodes_z[0:z_index].sum()
-
-            # need to add in the max elevation to the center point so that
-            # when we read the file later we can adjust the stations
-            self.center_point.elev = model_obj.grid_z[0]
-
-    def project_stations_on_topography(self, model_object, air_resistivity=1e12):
-        """
-        Re-write the data file to change the elevation column.
-        And update covariance mask according topo elevation model.
-        :param model_object:
-        :param air_resistivity:
-        :return:
-        """
-
-        # sx = self.station_locations.station_locations['rel_east']
-        # sy = self.station_locations.station_locations['rel_north']
 
         # find index of each station on grid
         station_index_x = []
@@ -2071,7 +2112,18 @@ class Data(object):
             # otherwise place station at the top of the model
             else:
                 szi = 0
-
+            
+            # JP: estimate ocean bottom stations if requested
+            if ocean_bottom:
+                if np.any(model_object.res_model[syi, sxi] <= sea_resistivity):
+                    szi = np.amax(
+                        np.where(
+                            (model_object.res_model[syi, sxi] <= sea_resistivity)
+                        )[0]
+                    )
+                # if the stations are not in the ocean let the previous szi estimation
+                # be used
+            
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
 
@@ -2082,22 +2134,14 @@ class Data(object):
             # data elevation needs to be below the topography (as advised by Naser)
             self.data_array["rel_elev"][ss] = topoval + 0.001
 
-            # print('{0} at E={1}, N={2}, z={3}, model_z={4}'.format(sname,
-            #                                                        sxi,
-            #                                                        syi,
-            #                                                        topoval,
-            #                                                        self.data_array['rel_elev'][ss]))
-
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
-        self.center_point.elev = model_object.grid_z[0]
+        self._center_elev = model_object.grid_z[0]
 
-        # logger.debug("Re-write data file after adding topo")
+        self.logger.debug("Re-writing data file after adding topo to "
+                          + self.data_fn.stem + "_topo.dat")
         self.write_data_file(
-            fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,
-        )  # (Xi, Yi, Zi) of each station-i may be shifted
-
-        # debug self.Data.write_data_file(save_path='/e/tmp', fill=False)
+            fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,)
 
         return station_index_x, station_index_y
 
@@ -2492,23 +2536,30 @@ class Data(object):
         self, station, zxx=False, zxy=False, zyy=False, zyx=False, tx=False, ty=False
     ):
         """
+        Remove a component for a given station(s)
         
-        :param station: DESCRIPTION
-        :type station: TYPE
-        :param zxx: DESCRIPTION, defaults to False
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
         :type zxx: TYPE, optional
-        :param zxy: DESCRIPTION, defaults to False
+        :param zxy: Z_xy, defaults to False
         :type zxy: TYPE, optional
-        :param zyy: DESCRIPTION, defaults to False
+        :param zyy: Z_yx, defaults to False
         :type zyy: TYPE, optional
-        :param zyx: DESCRIPTION, defaults to False
+        :param zyx: Z_yy, defaults to False
         :type zyx: TYPE, optional
-        :param tx: DESCRIPTION, defaults to False
+        :param tx: T_zx, defaults to False
         :type tx: TYPE, optional
-        :param ty: DESCRIPTION, defaults to False
+        :param ty: T_zy, defaults to False
         :type ty: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: new data array with components removed
+        :rtype: np.ndarray 
+        :return: new mt_dict with components removed
+        :rtype: dictionary
+        
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array, d.mt_dict = d.remove_component("mt01", zxx=True, tx=True)
 
         """
         c_dict = {
@@ -2562,11 +2613,19 @@ class Data(object):
     def estimate_starting_rho(self):
         """
         Estimate starting resistivity from the data.
+        Creates a plot of the mean and median apparent resistivity values.
+        
+        :return: array of the median rho per period
+        :rtype: np.ndarray(n_periods)
+        :return: array of the mean rho per period
+        :rtype: np.ndarray(n_periods)
+        
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> rho_median, rho_mean = d.estimate_starting_rho()
+        
         """
         rho = np.zeros((self.data_array.shape[0], self.period_list.shape[0]))
-        # det_z = np.linalg.det(d_obj.data_array['z'])
-        # mean_z = np.mean(det_z[np.nonzero(det_z)], axis=0)
-        # mean_rho = (.02/(1/d_obj.period_list))*np.abs(mean_z)
 
         for ii, d_arr in enumerate(self.data_array):
             z_obj = mtz.Z(d_arr["z"], freq=1.0 / self.period_list)
@@ -2610,3 +2669,5 @@ class Data(object):
         ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
 
         plt.show()
+        
+        return median_rho, mean_rho

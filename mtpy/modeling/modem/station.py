@@ -40,7 +40,6 @@ class Stations(object):
     """
 
     def __init__(self, **kwargs):
-
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.dtype = [
@@ -56,8 +55,8 @@ class Stations(object):
             ("zone", "U4"),
         ]
         self.station_locations = np.zeros(0, dtype=self.dtype)
-        self.model_epsg = None
-        self.model_utm_zone = None
+        self._model_epsg = None
+        self._model_utm_zone = None
         self._center_lat = None
         self._center_lon = None
         self._center_elev = 0.0
@@ -151,6 +150,49 @@ class Stations(object):
     def station(self):
         return self.station_locations["station"]
 
+    @property
+    def model_epsg(self):
+        return self._model_epsg
+
+    @model_epsg.setter
+    def model_epsg(self, value):
+        """
+        set the model epsg number an project east, north 
+        """
+        self._model_epsg = value
+        if self.station_locations.size < 2:
+            for ss, ii in enumerate(self.station_locations):
+                east, north, utm_zone = gis_tools.project_point_ll2utm(
+                    ss["lat"], ss["lon"], epsg=self._model_epsg,
+                )
+                self.station_locations[ii]["east"] = east
+                self.station_locations[ii]["north"] = north
+                self.station_locations[ii]["zone"] = utm_zone
+
+    @property
+    def model_utm_zone(self):
+        return self._model_utm_zone
+
+    @model_utm_zone.setter
+    def model_utm_zone(self, value):
+        """
+        set the model epsg number an project east, north 
+        """
+        if value is None:
+            return
+
+        self.logger.debug(f"Setting model utm zone to {value}")
+
+        self._model_utm_zone = value
+        if self.station_locations.size > 1:
+            for ii, ss in enumerate(self.station_locations):
+                east, north, utm_zone = gis_tools.project_point_ll2utm(
+                    ss["lat"], ss["lon"], utm_zone=self._model_utm_zone,
+                )
+                self.station_locations[ii]["east"] = east
+                self.station_locations[ii]["north"] = north
+                self.station_locations[ii]["zone"] = utm_zone
+
     def _get_mt_objs_from_list(self, input_list):
         """
         get mt_objects from a list of files or mt_objects
@@ -180,7 +222,7 @@ class Stations(object):
             * fills station_locations array
 
         """
-        # print input_list
+        # self.logger.debug input_list
         mt_obj_list = self._get_mt_objs_from_list(input_list)
 
         # if station locations are not input read from the edi files
@@ -205,9 +247,7 @@ class Stations(object):
             self.station_locations[ii]["station"] = mt_obj.station
             self.station_locations[ii]["elev"] = mt_obj.elevation
 
-            if (self.model_epsg is not None) and (self.model_utm_zone is not None):
-                self.logger.debug(f"estimating from UTM Zone {self.model_utm_zone}")
-                self.logger.debug(f"estimating from UTM Zone {self.model_epsg}")
+            if (self.model_epsg is not None) or (self.model_utm_zone is not None):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
                     mt_obj.latitude,
                     mt_obj.longitude,
@@ -218,10 +258,6 @@ class Stations(object):
                 self.station_locations[ii]["north"] = north
                 self.station_locations[ii]["zone"] = utm_zone
             else:
-                self.logger.debug("using east, north from mt object")
-                self.logger.debug(
-                    f"station: {mt_obj.station}, East = {mt_obj.east}, north = {mt_obj.north}"
-                )
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone
@@ -239,11 +275,13 @@ class Stations(object):
         """
 
         # translate the stations so they are relative to 0,0
-        east_center = (self.east.max() + self.east.min()) / 2.0
-        north_center = (self.north.max() + self.north.min()) / 2.0
+        # east_center = (self.east.max() + self.east.min()) / 2.0
+        # north_center = (self.north.max() + self.north.min()) / 2.0
 
-        self.station_locations["rel_east"] = self.east - east_center
-        self.station_locations["rel_north"] = self.north - north_center
+        # self.station_locations["rel_east"] = self.east - east_center
+        # self.station_locations["rel_north"] = self.north - north_center
+        self.station_locations["rel_east"] = self.east - self.center_point.east[0]
+        self.station_locations["rel_north"] = self.north - self.center_point.north[0]
 
         # BM: Before topograhy is applied to the model, the station
         #  elevation isn't relative to anything (according to
@@ -275,6 +313,7 @@ class Stations(object):
         ]
         center_location = np.recarray(1, dtype=dtype)
         if self._center_lat is not None and self._center_lon is not None:
+            self.logger.debug("assigning center from user set values")
             center_location["lat"] = self._center_lat
             center_location["lon"] = self._center_lon
             center_location["elev"] = self._center_elev
@@ -302,17 +341,23 @@ class Stations(object):
 
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
+            self.logger.debug("Not all stations are in same UTM zone")
+
             center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.0
             center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.0
             # get the median utm zone
             if self.model_utm_zone is None:
+                self.logger.info("Getting median UTM zone of stations for center point")
+
                 zone = self.utm_zone.copy()
                 zone.sort()
                 center_utm_zone = zone[int(zone.size / 2)]
                 center_location["zone"] = center_utm_zone
             else:
+                self.logger.info(f"Using user defined center point UTM zone {self.model_utm_zone}")
                 center_location["zone"] = self.model_utm_zone
 
+            self.logger.info(f"Projecting lat, lon to UTM zone {center_location['zone'][0]}")
             east, north, zone = gis_tools.project_point_ll2utm(
                 center_location["lat"],
                 center_location["lon"],
@@ -323,8 +368,9 @@ class Stations(object):
             center_location["north"] = north
 
         else:
+            self.logger.debug("locating center from UTM grid")
             center_location["east"] = (self.east.max() + self.east.min()) / 2
-            center_location["north"] = (self.north.max() + self.north.max()) / 2
+            center_location["north"] = (self.north.max() + self.north.min()) / 2
 
             # get the median utm zone
             zone = self.utm_zone.copy()
@@ -348,7 +394,10 @@ class Stations(object):
         #  station. After it's applied, it's the highest point
         #  point of the surface model (this will be set by calling
         #  Data.project_stations_on_topography).
-        center_location["elev"] = self.elev.max()
+        if self._center_elev:
+            center_location["elev"] = self._center_elev
+        else:
+            center_location["elev"] = -self.elev.max()
 
         return center_location
 

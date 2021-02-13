@@ -1,7 +1,10 @@
 import os
 import os.path as op
+os.chdir(r'C:\mtpywin\mtpy') # change to path to your mtpy installation
 
-os.chdir(r"C:\mtpywin\mtpy")  # change to path to your mtpy installation
+from mtpy.modeling.modem import PlotSlices
+from matplotlib import cm
+
 
 from mtpy.modeling.modem import PlotSlices
 
@@ -34,9 +37,4 @@ pObj = PlotSlices(
     fig_dpi=400,  # change to your preferred file resolution
 )
 
-# pObj.save_path = savepath
-# figs,fpaths = pObj.export_slices(plane='N-E', # options are 'N-Z', 'E-Z', and 'N-E'
-#                                 indexlist=[32], # depth (or east/west) index to plot
-#                                 station_buffer=20e3,
-#                                 save=True,
-#                                 )
+

@@ -7,6 +7,7 @@ ModEM
 
 # revised by JP 2017
 # revised by AK 2017 to bring across functionality from ak branch
+# revised by JP 2021 updating functionality and updating docs
 
 """
 from __future__ import print_function
@@ -18,7 +19,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy import stats as stats, interpolate as spi
+from scipy import stats as stats
 
 import mtpy.utils.calculator as mtcc
 from mtpy.imaging.mtcolors import FixPointNormalize, cut_terrain_map
@@ -167,57 +168,6 @@ class Model(object):
     ==================== ======================================================
 
 
-    ==================== ======================================================
-    Methods              Description
-    ==================== ======================================================
-    add_topography_to_model2    if air_layers is non-zero, will add topo: read
-                                in topograph file, make a surface model.
-                                Call project_stations_on_topography in the end,
-                                which will re-write the .dat file.
-                                If n_airlayers is zero, then cannot add topo
-                                data, only bathymetry is needed.
-    assign_resistivity_from_surfacedata     assign resistivity value to all
-                                            points above or below a surface
-                                            requires the surface_dict attribute
-                                            to exist and contain data for
-                                            surface key (can get this
-                                            information from ascii file using
-                                            project_surface)
-    get_parameters       get important model parameters to write to a file for
-                         documentation later.
-    interpolate_elevation2  project a surface to the model grid and add
-                            resulting elevation data to a dictionary called
-                            surface_dict. Assumes the surface is in lat/long
-                            coordinates (wgs84)
-    make_mesh            makes a mesh from the given specifications
-    make_mesh_from_center   The mesh is built by first finding the center of
-                            the station area. Then cells are added in the north
-                            and east direction with width cell_size_east and
-                            cell_size_north to cover all the station area.
-    make_z_mesh          Create a mesh grid for vertical Earth layers.
-    make_z_mesh_exp      version of make_z_mesh method in order to create
-                         exp-increasing cell sizes from the top layer
-    make_z_mesh_new      new version of make_z_mesh. make_z_mesh and M
-    plot_mesh            plots mesh to make sure everything is good
-    plot_mesh_xy         add mesh grid lines in xy plan north-east map
-    plot_mesh_xz         display the mesh in North-Depth aspect
-    plot_topograph       display topography elevation data together with
-                         station locations on a cell-index N-E map
-    print_mesh_params    print out the mesh-related paramas
-    print_model_file_summary    print out the summary of the model file
-    project_surface      project a surface to the model grid and add resulting
-                         elevation data to a dictionary called surface_dict.
-                         Assumes the surface is in lat/long coordinates (wgs84),
-                         if not, need to supply the epsg of the surface xy
-                         points
-    read_dem_ascii       read in dem which is ascii format
-    read_model_file      read an initial file and return the pertinent
-                         information including grid positions in coordinates
-                         relative to the center point (0,0) and starting model.
-    read_ws_model_file   reads in a WS3INV3D model file
-    write_model_file     writes an initial model file that includes the mesh
-    write_vtk_file       write a vtk file to view in Paraview or other
-    ==================== ======================================================
     """
 
     def __init__(self, stations_object=None, data_object=None, **kwargs):
@@ -977,15 +927,12 @@ class Model(object):
         display the mesh in North-Depth aspect
         :return:
         """
-        station_marker = "v"
-        marker_color = "b"
-        marker_size = 2
 
         line_color = "b"
         line_width = 0.5
 
         # fig = plt.figure(2, dpi=200)
-        fig = plt.figure(dpi=200)
+        plt.figure(dpi=200)
         plt.clf()
         ax2 = plt.gca()
         # ---------------------------------------
@@ -1034,21 +981,6 @@ class Model(object):
         display topography elevation data together with station locations on a cell-index N-E map
         :return:
         """
-        # fig_size = kwargs.pop('fig_size', [6, 6])
-        # fig_dpi = kwargs.pop('fig_dpi', 300)
-        # fig_num = kwargs.pop('fig_num', 1)
-        #
-        # station_marker = kwargs.pop('station_marker', 'v')
-        # marker_color = kwargs.pop('station_color', 'b')
-        # marker_size = kwargs.pop('marker_size', 2)
-        #
-        # line_color = kwargs.pop('line_color', 'k')
-        # line_width = kwargs.pop('line_width', .5)
-        #
-        # plt.rcParams['figure.subplot.hspace'] = .3
-        # plt.rcParams['figure.subplot.wspace'] = .3
-        # plt.rcParams['figure.subplot.left'] = .12
-        # plt.rcParams['font.size'] = 7
 
         # fig = plt.figure(3, dpi=200)
         fig = plt.figure(dpi=200)
@@ -1056,10 +988,6 @@ class Model(object):
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
 
         x, y = np.meshgrid(self.grid_east, self.grid_north)
-        # topography data image
-        # plt.imshow(elev_mg) # this upside down
-        # plt.imshow(elev_mg[::-1])  # this will be correct - water shadow flip of the image
-
         norm = FixPointNormalize(
             sealevel=0,
             vmax=np.round(self.surface_dict["topography"].max(), -2),
@@ -1069,32 +997,12 @@ class Model(object):
             x, y, self.surface_dict["topography"], cmap=cut_terrain_map, norm=norm
         )
         divider = make_axes_locatable(ax)
-        # pad = separation from figure to colorbar
         cax = divider.append_axes("right", size="3%", pad=0.2)
         mycb = plt.colorbar(
             imgplot, cax=cax, use_gridspec=True
         )  # cmap=my_cmap_r, does not work!!
         mycb.outline.set_linewidth(2)
         mycb.set_label(label="Elevation (m)", size=12)
-        # make a rotation matrix to rotate data
-        # cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
-        # sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
-
-        # turns out ModEM has not accomodated rotation of the grid, so for
-        # now we will not rotate anything.
-        # cos_ang = 1
-        # sin_ang = 0
-
-        # --->plot map view
-        # ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
-
-        # plot station locations in grid
-
-        #        sgindex_x = self.station_grid_index[0]
-        #        sgindex_y = self.station_grid_index[1]
-        #
-        #        self._logger.debug("station grid index x: %s" % sgindex_x)
-        #        self._logger.debug("station grid index y: %s" % sgindex_y)
 
         ax.scatter(
             self.station_locations.rel_east,
@@ -1517,26 +1425,46 @@ class Model(object):
         shift_north=0,
         shift_z=0,
         units="km",
+        coordinate_system='nez+',
     ):
         """
-        write a vtk file to view in Paraview or other
-
-        Arguments:
-        -------------
-            **vtk_save_path** : string
-                                directory to save vtk file to.
-                                *default* is Model.save_path
-            **vtk_fn_basename** : string
-                                  filename basename of vtk file
-                                  *default* is ModEM_model_res, evtk will add
-                                  on the extension .vtr
+        Write a VTK file to plot in 3D rendering programs like Paraview
+        
+        :param vtk_save_path: directory to save vtk file to, defaults to None
+        :type vtk_save_path: string or Path, optional
+        :param vtk_fn_basename: filename basename of vtk file, note that .vtr 
+        extension is automatically added, defaults to "ModEM_stations"
+        :type vtk_fn_basename: string, optional
+        :type geographic: boolean, optional
+        :param shift_east: shift in east directions in meters, defaults to 0
+        :type shift_east: float, optional
+        :param shift_north: shift in north direction in meters, defaults to 0
+        :type shift_north: float, optional
+        :param shift_z: shift in elevation + down in meters, defaults to 0
+        :type shift_z: float, optional
+        :param units: Units of the spatial grid [ km | m | ft ], defaults to "km"
+        :type units: string, optional
+        :type : string
+        :param coordinate_system: coordinate system for the station, either the
+        normal MT right-hand coordinate system with z+ down or the sinister 
+        z- down [ nez+ | enz- ], defaults to nez+
+        :return: full path to VTK file
+        :rtype: Path
+        
+        Write VTK file   
+        >>> model.write_vtk_file(vtk_fn_basename="modem_model")
+        
+        Write VTK file in geographic coordinates with z+ up
+        >>> model.write_vtk_station_file(vtk_fn_basename="modem_model",
+        >>> ...                          coordinate_system='enz-')
         """
+
         if isinstance(units, str):
             if units.lower() == "km":
                 scale = 1.0 / 1000.00
-            elif units.lower == "m":
+            elif units.lower() == "m":
                 scale = 1.0
-            elif units == "ft":
+            elif units.lower() == "ft":
                 scale = 3.2808
         elif isinstance(units, (int, float)):
             scale = units
@@ -1547,13 +1475,20 @@ class Model(object):
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
 
         # use cellData, this makes the grid properly as grid is n+1
-        gridToVTK(
-            vtk_fn,
-            (self.grid_north + shift_north) * scale,
-            (self.grid_east + shift_east) * scale,
-            (self.grid_z + shift_z) * scale,
-            cellData={"resistivity": self.res_model},
-        )
+        if coordinate_system == "nez+":
+            vtk_x = (self.grid_north + shift_north) * scale
+            vtk_y = (self.grid_east + shift_east) * scale
+            vtk_z = (self.grid_z + shift_z) * scale
+            cell_data = {"resistivity": self.res_model}
+
+        elif coordinate_system == "enz-":
+            vtk_y = (self.grid_north + shift_north) * scale
+            vtk_x = (self.grid_east + shift_east) * scale
+            vtk_z = -1 * (self.grid_z + shift_z) * scale
+            cell_data = {"resistivity": np.rot90(self.res_model)}
+            
+        gridToVTK(vtk_fn, vtk_x, vtk_y, vtk_z, cellData=cell_data)
+
 
         self._logger.info("Wrote model file to {}".format(vtk_fn))
         self.print_model_file_summary()
@@ -2298,6 +2233,17 @@ class Model(object):
         Note that y is assumed to be S --> N, e is assumed to be W --> E and
         z is positive upwards.  This means that index [0, 0, 0] is the
         southwest corner of the first layer. 
+        
+        :param save_fn: full path to save file to
+        :type save_fn: string or Path
+        :param geographic_east: geographic center in easting (meters)
+        :type geographic_east: float
+        :param geographic_north: geographic center in northing (meters)
+        :type geographic_north: float
+        :param geographic_elevation: elevation of geographic center (meters)
+        :type geographic_elevation: float
+        :return: DESCRIPTION
+        :rtype: TYPE
 
         """
 
@@ -2397,6 +2343,8 @@ class Model(object):
         :return: DESCRIPTION
         :rtype: TYPE
 
+
+        .. note:: not complete yet.
         """
 
         # write mesh first

@@ -34,6 +34,7 @@ __all__ = ["PlotRMSMaps"]
 _logger = get_mtpy_logger(__name__)
 
 
+
 class PlotRMSMaps(object):
     """
     plots the RMS as (data-model)/(error) in map view for all components

@@ -10,7 +10,7 @@ import mtpy.core.mt as mt
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -22,7 +22,7 @@ class ImagingBase:
     """
 
     def __init__(self):
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
+        self._logger = get_mtpy_logger(self.__class__.__name__)
         self._data = None
         self._fig = None
 

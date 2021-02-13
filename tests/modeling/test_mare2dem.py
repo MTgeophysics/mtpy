@@ -96,7 +96,7 @@ def test_mare2dem_data(ref_output, test_output):
     if not files_are_same:
         print("File comparison failed, testing within tolerance")
         with open(ref_output) as r, open(test_output) as t:
-            diff = difflib.unified_diff(r.readlines(), t.readlines())
+            diff = list(difflib.unified_diff(r.readlines(), t.readlines()))
             # Test X, Y, Z are within tolerance (2 decimal places)
             for i, line in enumerate(diff):
                 if line.startswith("-"):

@@ -31,6 +31,7 @@ plotObj = PlotPhaseTensorPseudoSection(
     plot_tipper="yri",  # plot tipper ('y') + 'ri' means real+imag
     font_size=5,
     lw=0.5,
+    rotation_angle=20,
     ellipse_dict={
         "ellipse_colorby": "skew_seg",  # option to colour by phimin, phimax, skew, skew_seg
         "ellipse_range": [-12, 12, 3],
@@ -41,7 +42,6 @@ plotObj = PlotPhaseTensorPseudoSection(
 
 # update ellipse size (tweak for your dataset)
 plotObj.ellipse_size = 2.5
-
 
 plotObj.plot()
 

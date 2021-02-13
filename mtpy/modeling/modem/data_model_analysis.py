@@ -31,6 +31,7 @@ from mtpy.utils.mtpy_logger import get_mtpy_logger
 logger = get_mtpy_logger(__name__)
 
 
+
 class DataModelAnalysis(object):
     def __init__(self, filedat, filerho, plot_orient="ew", **kwargs):
         """Constructor
