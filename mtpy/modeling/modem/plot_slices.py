@@ -584,7 +584,7 @@ class PlotSlices(object):
         
         
         if new_figure:
-            plt.figure()
+            plt.figure(figsize=self.fig_size)
 
         
         # get eastings/northings of mesh
