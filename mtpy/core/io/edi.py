@@ -241,8 +241,6 @@ class Edi(object):
                 "Got elevation from refelev for {0}".format(self.Header.dataid)
             )
 
-        self.logger.debug("Read in edi file for station {0}".format(self.Header.dataid))
-
     def _read_data(self):
         """
         Read either impedance or spectra data depending on what the type is
@@ -2667,6 +2665,7 @@ def read_edi(fn):
     # importing.  This may not be the best way to do this but works for now
     # so we don't have to break how MTpy structure is setup now.
     from mtpy.core import mt
+    st = MTime().now()
 
     edi_obj = Edi()
     edi_obj.read_edi_file(fn)
@@ -2685,6 +2684,9 @@ def read_edi(fn):
     # need to set latitude to compute UTM coordinates to make sure station
     # location is estimated for ModEM
     mt_obj.latitude = edi_obj.station_metadata.location.latitude
+    
+    et = MTime().now()
+    mt_obj.logger.debug(f"Reading EDI for {mt_obj.station} and conversion to MT took {et - st:.2f} seconds")
 
     return mt_obj
 

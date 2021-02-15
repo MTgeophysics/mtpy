@@ -458,7 +458,7 @@ class Data(object):
             if mt_obj.station is None:
                 continue
             # should be more efficient for appending to a dictionary
-            mt_dict.update({mt_obj.station: mt_obj})
+            mt_dict[mt_obj.station] = mt_obj
 
         return mt_dict
 
@@ -701,8 +701,8 @@ class Data(object):
         self.mt_dict = {}
         for i, sname in enumerate(station_names):
             mtObj = mt.MT()
-            mtObj.lat = self.data_array["lat"][i]
-            mtObj.lon = self.data_array["lon"][i]
+            mtObj.latitude = self.data_array["lat"][i]
+            mtObj.longitude = self.data_array["lon"][i]
 
             mtObj.east = self.data_array["east"][i]
             mtObj.north = self.data_array["north"][i]
@@ -1883,7 +1883,7 @@ class Data(object):
             self.data_array[ii]["east"] = mt_obj.east
             self.data_array[ii]["north"] = mt_obj.north
             self.data_array[ii]["zone"] = mt_obj.utm_zone
-            self.data_array[ii]["elev"] = mt_obj.elev
+            self.data_array[ii]["elev"] = mt_obj.elevation
             self.data_array[ii]["rel_elev"] = mt_obj.grid_elev
             self.data_array[ii]["rel_east"] = mt_obj.grid_east
             self.data_array[ii]["rel_north"] = mt_obj.grid_north
@@ -2435,27 +2435,48 @@ class Data(object):
 
         return new_data_array, new_mt_dict
 
-    def flip_phase(self, station, comp=[]):
+    def flip_phase(self, station, zxx=False, zxy=False, zyx=False, zyy=False, tx=False,
+                   ty=False):
         """
         Flip the phase of a station in case its plotting in the wrong quadrant
         
         :param station: name(s) of station to flip phase
         :type station: string or list of strings
-        :param comp: components to flip, valid inputs are zx, zy, tx, ty, defaults to []
-        :type comp: list, optional
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
+        :type zxx: TYPE, optional
+        :param zxy: Z_xy, defaults to False
+        :type zxy: TYPE, optional
+        :param zyy: Z_yx, defaults to False
+        :type zyy: TYPE, optional
+        :param zyx: Z_yy, defaults to False
+        :type zyx: TYPE, optional
+        :param tx: T_zx, defaults to False
+        :type tx: TYPE, optional
+        :param ty: T_zy, defaults to False
+        :type ty: TYPE, optional
         :return: new_data_array
         :rtype: np.ndarray
+        :return: new mt_dict with components removed
+        :rtype: dictionary
         
         >>> d = Data()
         >>> d.read_data_file(r"example/data.dat")
         >>> d.data_array, d.mt_dict = d.flip_phase("mt01", comp=["zx", "tx"])
 
         """
-        c_dict = {"zx": 0, "zy": 1, "tx": 0, "ty": 1}
+        c_dict = {
+            "zxx": {"index": (0, 0), "bool": zxx},
+            "zxy": {"index": (0, 1), "bool": zxy},
+            "zyx": {"index": (1, 0), "bool": zyx},
+            "zyy": {"index": (1, 1), "bool": zyy},
+            "tx": {"index": (0, 0), "bool": tx},
+            "ty": {"index": (0, 1), "bool": ty},
+        }
         if isinstance(station, str):
             station = [station]
-        if isinstance(comp, str):
-            comp = [comp]
+
         new_data_array = self.data_array.copy()
         new_mt_dict = deepcopy(self.mt_dict)
         for ss in station:
@@ -2465,23 +2486,30 @@ class Data(object):
                 msg = f"Could not find {ss} in data file"
                 self.logger.warn(msg)
                 continue
-            for cc in comp:
-                try:
-                    index = c_dict[cc]
-                except KeyError:
-                    msg = f"Component {cc} is not a valid component, skipping"
-                    self.logger.warning(msg)
-                    continue
-                if "z" in cc:
-                    new_data_array[s_find]["z"][:, index, :] *= -1
-                    new_mt_obj = new_mt_dict[ss].copy()
-                    new_mt_obj.Z.z[:, index, :] *= -1
-                    new_mt_dict[ss] = new_mt_obj
-
-                elif "t" in cc:
-                    new_data_array[s_find]["tip"][:, 0, index] *= -1
-                    new_mt_dict[ss].Tipper.tipper[:, 0, index] *= -1
-
+            for ckey, dd in c_dict.items():
+                if dd["bool"]:
+                    if "z" in ckey:
+                        new_data_array[s_find]["z"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] *= -1
+                        new_data_array[s_find]["z_err"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] *= -1
+                        new_mt_dict[ss].Z.z[:, dd["index"][0], dd["index"][1]] *= -1
+                        new_mt_dict[ss].Z.z_err[:, dd["index"][0], dd["index"][1]] *= 1
+                    elif "t" in ckey:
+                        new_data_array[s_find]["tip"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] *= -1
+                        new_data_array[s_find]["tip_err"][
+                            :, dd["index"][0], dd["index"][1]
+                        ] *= -1
+                        new_mt_dict[ss].Tipper.tipper[
+                            :, dd["index"][0], dd["index"][1]
+                        ] *= -1
+                        new_mt_dict[ss].Tipper.tipper_err[
+                            :, dd["index"][0], dd["index"][1]
+                        ] *= -1
         return new_data_array, new_mt_dict
 
     def remove_static_shift(self, station, ss_x=1, ss_y=1):

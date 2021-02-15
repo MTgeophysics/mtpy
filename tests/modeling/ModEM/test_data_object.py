@@ -50,13 +50,27 @@ class TestModEMData(unittest.TestCase):
         self.assertIn(edi_list[1].stem, new_data["station"])
         
     def test_remove_station(self):
-        new_data, new_mt_dict = self.data.remove_station("pb23")
+        new_data, new_mt_dict = self.data.remove_station(["pb27"])
         
-        self.assertNotIn("pb23", new_mt_dict.keys())
-        self.assertNotIn("pb23", new_data["station"])
+        self.assertNotIn("pb27", new_mt_dict.keys())
+        self.assertNotIn("pb27", new_data["station"])
+        
+    def test_remove_component(self):
+        new_data, new_mt_dict = self.data.remove_station("pb23", zxy=True)
     
+        self.assertTrue(new_data["pb23"]["z"][:, 0, 1].all() == 0.0)
+        self.assertTrue(new_mt_dict["pb23"].Z.z[:, 0, 1].all() == 0.0)
+        
+    def test_flip_phase(self):
+        new_data, new_mt_dict = self.data.flip_phase(["pb23", "pb24"], zxx=True, zxy=True)
 
-
+        self.assertEqual(new_mt_dict["pb23"].Z.z[:, 0, :], 
+                         -1 *self.data.mt_dict["pb23"].Z.z[:, 0, :])
+        self.assertEqual(new_mt_dict["pb24"].Z.z[:, 0, :], 
+                         -1 *self.data.mt_dict["pb23"].Z.z[:, 0, :])
+        
+        self.assertEqual(new_data[""].Z.z[:, 0, :], 
+                         -1 *self.data.mt_dict["pb23"].Z.z[:, 0, :])
 # =============================================================================
 # Run
 # =============================================================================

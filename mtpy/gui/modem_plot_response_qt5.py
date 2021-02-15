@@ -24,6 +24,7 @@ except ImportError:
 from mtpy.gui.modem_plot_response_gui import PlotResponses
 from mtpy.gui.response_plot_settings import PlotSettings
 from mtpy.gui.get_stations import GetStations
+from mtpy.gui.plot_stations import PlotStations
 
 # ==============================================================================
 
@@ -205,7 +206,19 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
 
         self.plot_response.data_fn = fn
         self.dir_path = fn.parent
-
+        
+        self.station_plot = PlotStations(self.plot_response.modem_data.station_locations)
+        self.station_plot.plot()
+        print(self.station_plot.station_locations)
+        
+        self.station_plot.show()
+        self.station_plot.stationChanged.connect(self.station_picked)
+        
+        
+    def station_picked(self):
+        self.plot_response.station = self.station_plot.current_station
+        self.plot_response.plot()
+        
     def save_edits(self):
         """
         save edits to another file

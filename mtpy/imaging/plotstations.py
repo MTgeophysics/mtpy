@@ -421,7 +421,7 @@ class PlotStations(object):
         fn_svpath = os.path.join(
             svpath, "StationLocations_{0}.txt".format(self.map_scale)
         )
-        tfid = file(fn_svpath, "w")
+        tfid = open(fn_svpath, "w")
 
         hdr_str = (
             ["{0:<15}".format(hdr_list[0])]

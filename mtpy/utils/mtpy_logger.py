@@ -103,6 +103,7 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
         logger.addHandler(fn_handler)
         if not exists:
             logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
+    # commented this out because it leads to a drastic reduction in processing
     # else, give it a null handler, which will go to default logger.
     # else:
     #     null_handler = logging.NullHandler()
