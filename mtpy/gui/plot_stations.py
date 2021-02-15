@@ -39,6 +39,7 @@ class PlotStations(QtWidgets.QWidget):
         self.plot_crs = None
         self.current_station = None
         self.current_index = 0
+        self.previous_index = 0
         self.text_offset = 0.001
         self.marker_dict = {'ls': "None",
                             "ms": 7,
@@ -155,6 +156,36 @@ class PlotStations(QtWidgets.QWidget):
 
         self.mpl_widget.draw()
         
+    def plot_new_station(self):
+        self.ax.plot(
+            self.station_locations.station_locations["lon"][self.previous_index],
+            self.station_locations.station_locations["lat"][self.previous_index],
+            **self.marker_dict,
+            )
+
+        self.ax.text(
+            self.station_locations.station_locations["lon"][self.previous_index],
+            self.station_locations.station_locations["lat"][self.previous_index] +
+            self.text_offset * np.sign(self.station_locations.station_locations["lat"][self.previous_index]),
+            self.station_locations.station_locations["station"][self.previous_index],
+            fontdict=self.text_dict,
+            )
+        
+        self.ax.plot(
+            self.station_locations.station_locations["lon"][self.current_index],
+            self.station_locations.station_locations["lat"][self.current_index],
+            **self.current_marker_dict
+            )
+
+        self.ax.text(
+            self.station_locations.station_locations["lon"][self.current_index],
+            self.station_locations.station_locations["lat"][self.current_index] +
+            self.text_offset * np.sign(self.station_locations.station_locations["lat"][self.current_index]),
+            self.station_locations.station_locations["station"][self.current_index],
+            **self.current_text_dict
+            )
+        self.ax.figure.canvas.draw()            
+
     def on_pick(self, event):
         try:
             data_point = event.artist
@@ -166,44 +197,17 @@ class PlotStations(QtWidgets.QWidget):
             return
 
         if event.mouseevent.button == 1:
-            self.ax.plot(
-            self.station_locations.station_locations["lon"][self.current_index],
-            self.station_locations.station_locations["lat"][self.current_index],
-            **self.marker_dict,
-            )
+            self.previous_index = int(self.current_index)
 
-            self.ax.text(
-                self.station_locations.station_locations["lon"][self.current_index],
-                self.station_locations.station_locations["lat"][self.current_index] +
-                self.text_offset * np.sign(self.station_locations.station_locations["lat"][self.current_index]),
-                self.current_station,
-                fontdict=self.text_dict,
-                )
-            
             # get the indicies where the data point has been edited
             self.current_index = np.where((self.station_locations.station_locations["lat"] == data_lat) &
                              (self.station_locations.station_locations["lon"] == data_lon))[0][0]
             self.current_station = self.station_locations.station[self.current_index]
             
-            self.ax.plot(
-            data_lon,
-            data_lat,
-            **self.current_marker_dict
-            )
-
-            self.ax.text(
-                data_lon,
-                data_lat + self.text_offset * np.sign(data_lat),
-                self.current_station,
-                **self.current_text_dict
-                )
-            self.ax.figure.canvas.draw()
+            self.plot_new_station()
             
             self.stationChanged.emit()
             print(f"station changed to: {self.current_station}")
-            
-            # except IndexError:
-            #     print("could not find station from picked point")
 
     def in_axes(self, event):
         pass

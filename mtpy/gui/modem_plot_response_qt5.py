@@ -15,6 +15,7 @@ JP 2016
 # ==============================================================================
 import sys
 from pathlib import Path
+import numpy as np
 
 try:
     from PyQt5 import QtCore, QtWidgets
@@ -214,6 +215,12 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         self.station_plot.show()
         self.station_plot.stationChanged.connect(self.station_picked)
         
+        self.plot_response.list_widget.currentItemChanged.connect(self.update_station_map)
+        
+    def update_station_map(self, widget_item):
+        self.station_plot.previous_index = int(self.station_plot.current_index)
+        self.station_plot.current_index = int(np.where(self.plot_response.modem_data.station_locations.station == str(widget_item))[0][0])
+        self.station_plot.plot_new_station()
         
     def station_picked(self):
         self.plot_response.station = self.station_plot.current_station
