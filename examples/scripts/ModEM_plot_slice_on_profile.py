@@ -1,23 +1,20 @@
 
-import os
-import os.path as op
-os.chdir(r'C:/mtpywin/mtpy') # change to your path to your mtpy installation to ensure you are using the correct version.
-
 import matplotlib.pyplot as plt
 from matplotlib import colors
-import numpy as np
 
 from mtpy.modeling.modem import PlotSlices
-wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM'
+from tests import MODEM_DIR, TEST_TEMP_DIR
 
-savepath = r'C:\tmp' # change to your desired save path
+save_path = TEST_TEMP_DIR.joinpath("ModEM")
+if not save_path.exists():
+    save_path.mkdir()
 
-model_fn = op.join(wd,'Modular_MPI_NLCG_004.rho')
-data_fn = op.join(wd,'ModEM_Data.dat')
+model_fn = MODEM_DIR.joinpath('Modular_MPI_NLCG_004.rho')
+data_fn = MODEM_DIR.joinpath('ModEM_Data.dat')
 fs = 8 # fontsize on plot
 
 ps = PlotSlices(model_fn=model_fn, data_fn=data_fn,
-                save_path=wd,
+                save_path=save_path,
                 plot_yn='n')
 
 fig = plt.figure(figsize=[6,3])
