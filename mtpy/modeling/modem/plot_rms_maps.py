@@ -256,18 +256,18 @@ class PlotRMSMaps(object):
         self.residual.get_rms()
         if plot_dict["label"].startswith("$Z"):
             if self.period_index == "all":
-                rms = self.residual.rms_array["rms_z_component_period"][
+                rms = np.nanmean(self.residual.rms_array["rms_z_component_period"][
                     :, :, ii, jj
-                ].mean(axis=1)
+                ], axis=1)
             else:
                 rms = self.residual.rms_array["rms_z_component_period"][
                     :, self.period_index, ii, jj
                 ]
         elif plot_dict["label"].startswith("$T"):
             if self.period_index == "all":
-                rms = self.residual.rms_array["rms_tip_component_period"][
+                rms = np.nanmean(self.residual.rms_array["rms_tip_component_period"][
                     :, :, ii, jj
-                ].mean(axis=1)
+                ], axis=1)
             else:
                 rms = self.residual.rms_array["rms_tip_component_period"][
                     :, self.period_index, ii, jj
