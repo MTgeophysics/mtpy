@@ -4,22 +4,21 @@ Created on Wed Oct 18 10:18:12 2017
 
 @author: u64125
 """
-import os
-os.chdir(r'C:\mtpywin\mtpy') # change this path to the path where mtpy is installed
-import os.path as op
+
+from pathlib import Path
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
-from mtpy.core.edi import Edi
 from mtpy.utils.calculator import get_period_list
+from tests import EDI_DATA_DIR2, TEST_TEMP_DIR, AUS_TOPO_FILE
 
 import numpy as np
 
 # path to save to
-workdir = r'C:\test\ModEM'
+save_dir = TEST_TEMP_DIR.joinpath("ModEM")
+if not save_dir.exists():
+    save_dir.mkdir()
 
-# path where edi files are located
-edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
 
 ## period list (won't include periods outside of the range of the edi file) ###
 ## comment/uncomment your desired method ######################################
@@ -50,16 +49,11 @@ period_list = get_period_list(start_period,stop_period,periods_per_decade,
 ###############################################################################
 
 # list of edi files, search for all files ending with '.edi'
-edi_list = [op.join(edipath,ff) for ff in os.listdir(edipath) if (ff.endswith('.edi'))]
-
-# make the save path if it doesn't exist
-if not op.exists(workdir):
-    os.mkdir(workdir)
-
+edi_list = list(EDI_DATA_DIR2.glob("*.edi"))
 
 do = Data(edi_list=edi_list,
                inv_mode = '1',
-               save_path=workdir,
+               save_path=save_dir,
                period_list=period_list,
                period_buffer = 2, # factor to stretch interpolation by. For example: if period_buffer=2
                                  # then interpolated data points will only be included if they are
@@ -102,13 +96,14 @@ mo = Model(station_locations=do.station_locations,
                 )
 
 mo.make_mesh()
-mo.write_model_file(save_path=workdir)
+mo.write_model_file(save_path=save_dir)
 
 # add topography to res model
 # if the number of air layers is zero - bathymetry only will be added.
 # if the number of air layers is nonzero - topography will be added, discretised into that number of cells 
-mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
-mo.write_model_file(save_path=workdir)
+mo.add_topography_to_model2(AUS_TOPO_FILE)
+mo.plot_topography()
+mo.write_model_file(save_path=save_dir)
 
 # update data elevations
 do.project_stations_on_topography(mo)
