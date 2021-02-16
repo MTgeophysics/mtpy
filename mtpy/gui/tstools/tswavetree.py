@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QVBoxLayout
 
+
 class TSWaveTree(QTreeWidget):
     viewsegments = pyqtSignal(object)
     viewwave = pyqtSignal(object)
@@ -56,10 +57,9 @@ class TSWaveTree(QTreeWidget):
                 if val in selecteditems:
                     child.setSelected(True)
 
-
     def custommenu(self, pos):
         currentitem = self.itemAt(pos)
-        if currentitem.childCount()==0:
+        if currentitem.childCount() == 0:
             menu = QMenu(self)
             actionviewwave = menu.addAction("view waveform")
             actionhidewave = menu.addAction("hide waveform")
@@ -78,7 +78,10 @@ class TSWaveTree(QTreeWidget):
                 currentitem.setSelected(True)
             elif action == actionviewsegment:
                 self.viewsegments.emit(currentitem)
-        elif currentitem.child(0).childCount()>0 and currentitem.child(0).child(0).childCount()==0:
+        elif (
+            currentitem.child(0).childCount() > 0
+            and currentitem.child(0).child(0).childCount() == 0
+        ):
             menu = QMenu(self)
             actionviewgroup = menu.addAction("view all channels")
             actionhidegroup = menu.addAction("hide all channels")
@@ -91,8 +94,6 @@ class TSWaveTree(QTreeWidget):
                 for c in range(currentitem.childCount()):
                     self.hidewave.emit(currentitem.child(c).child(0))
                     currentitem.child(c).child(0).setSelected(False)
-
-
 
                 #
                 #
@@ -108,8 +109,6 @@ class TSWaveTree(QTreeWidget):
                 # wavelistwindow.setWindowTitle('segments in '+currentitem.parent().text(0))
                 # wavelistwindow.setLayout(wavelistwindowlayout)
                 # wavelistwindow.show()
-
-
 
     # def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
     #     menu  = QMenu()

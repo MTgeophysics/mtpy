@@ -552,7 +552,7 @@ class Data(object):
             >>> inversion_periods = md.make_period_list(mt_dict)
             
         """
-        
+
         if self.period_list is not None:
             self.logger.debug(
                 "Inverting periods "
@@ -1905,7 +1905,6 @@ class Data(object):
             self.data_array["east"] = self.data_array["rel_east"] + center_utm[0]
             self.data_array["north"] = self.data_array["rel_north"] + center_utm[1]
 
-
     def write_vtk_station_file(
         self,
         vtk_save_path=None,
@@ -1971,30 +1970,30 @@ class Data(object):
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
 
         if not geographic:
-            if coordinate_system == 'nez+':
+            if coordinate_system == "nez+":
                 vtk_x = (self.station_locations.rel_north + shift_north) * scale
                 vtk_y = (self.station_locations.rel_east + shift_east) * scale
                 vtk_z = (self.station_locations.rel_elev + shift_elev) * scale
                 extra = (self.station_locations.rel_elev + shift_elev) * scale
-            elif coordinate_system == 'enz-':
+            elif coordinate_system == "enz-":
                 vtk_x = (self.station_locations.rel_north + shift_north) * scale
                 vtk_y = (self.station_locations.rel_east + shift_east) * scale
                 vtk_z = (self.station_locations.rel_elev + shift_elev) * scale
                 extra = (self.station_locations.rel_elev + shift_elev) * scale
-                
+
         else:
             self.station_locations.model_utm_zone = self.center_point.zone[0]
-            if coordinate_system == 'nez+':
+            if coordinate_system == "nez+":
                 vtk_y = (self.station_locations.north + shift_north) * scale
                 vtk_x = (self.station_locations.east + shift_east) * scale
                 vtk_z = -1 * (self.station_locations.elev + shift_elev) * scale
                 extra = -1 * (self.station_locations.elev + shift_elev)
-            elif coordinate_system == 'enz-':
+            elif coordinate_system == "enz-":
                 vtk_y = (self.station_locations.north + shift_north) * scale
                 vtk_x = (self.station_locations.east + shift_east) * scale
                 vtk_z = -1 * (self.station_locations.elev + shift_elev) * scale
                 extra = -1 * (self.station_locations.elev + shift_elev)
-        
+
         # write file
         pointsToVTK(vtk_fn.as_posix(), vtk_x, vtk_y, vtk_z, data={"elevation": extra})
 
@@ -2051,7 +2050,7 @@ class Data(object):
 
         
         """
-        
+
         for s_arr in self.station_locations.station_locations:
             e_index = np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
             n_index = np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
@@ -2064,8 +2063,13 @@ class Data(object):
             self.data_array[s_index]["rel_east"] = mid_east
             self.data_array[s_index]["rel_north"] = mid_north
 
-    def project_stations_on_topography(self, model_object, air_resistivity=1e12,
-                                       sea_resistivity=0.3, ocean_bottom=False):
+    def project_stations_on_topography(
+        self,
+        model_object,
+        air_resistivity=1e12,
+        sea_resistivity=0.3,
+        ocean_bottom=False,
+    ):
         """
         Project stations on topography of a given model
 
@@ -2112,18 +2116,18 @@ class Data(object):
             # otherwise place station at the top of the model
             else:
                 szi = 0
-            
+
             # JP: estimate ocean bottom stations if requested
             if ocean_bottom:
                 if np.any(model_object.res_model[syi, sxi] <= sea_resistivity):
                     szi = np.amax(
-                        np.where(
-                            (model_object.res_model[syi, sxi] <= sea_resistivity)
-                        )[0]
+                        np.where((model_object.res_model[syi, sxi] <= sea_resistivity))[
+                            0
+                        ]
                     )
                 # if the stations are not in the ocean let the previous szi estimation
                 # be used
-            
+
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
 
@@ -2138,10 +2142,14 @@ class Data(object):
         #  highest point of surface model.
         self._center_elev = model_object.grid_z[0]
 
-        self.logger.debug("Re-writing data file after adding topo to "
-                          + self.data_fn.stem + "_topo.dat")
+        self.logger.debug(
+            "Re-writing data file after adding topo to "
+            + self.data_fn.stem
+            + "_topo.dat"
+        )
         self.write_data_file(
-            fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,)
+            fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,
+        )
 
         return station_index_x, station_index_y
 
@@ -2435,8 +2443,9 @@ class Data(object):
 
         return new_data_array, new_mt_dict
 
-    def flip_phase(self, station, zxx=False, zxy=False, zyx=False, zyy=False, tx=False,
-                   ty=False):
+    def flip_phase(
+        self, station, zxx=False, zxy=False, zyx=False, zyy=False, tx=False, ty=False
+    ):
         """
         Flip the phase of a station in case its plotting in the wrong quadrant
         
@@ -2697,5 +2706,5 @@ class Data(object):
         ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
 
         plt.show()
-        
+
         return median_rho, mean_rho

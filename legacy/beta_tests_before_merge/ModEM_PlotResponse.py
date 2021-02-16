@@ -26,28 +26,29 @@ AttributeError: 'Z' object has no attribute '_compute_res_phase'
 import os
 import os.path as op
 
-os.chdir(r'C:\Git\mtpy')
+os.chdir(r"C:\Git\mtpy")
 from mtpy.modeling.modem import Data, PlotResponse
 
 #### Inputs ####
-wd = r'C:\Git\mtpy\examples\model_files\ModEM'
-filestem = 'Modular_MPI_NLCG_004'
-datafn = 'ModEM_Data.dat'
-station = 'pb23'
+wd = r"C:\Git\mtpy\examples\model_files\ModEM"
+filestem = "Modular_MPI_NLCG_004"
+datafn = "ModEM_Data.dat"
+station = "pb23"
 plot_z = False
 ################
-respfn = filestem+'.dat'
-
-
+respfn = filestem + ".dat"
 
 
 # plot responses at a station
-ro = PlotResponse(data_fn=op.join(wd,datafn),
-                  resp_fn=op.join(wd,respfn),
-                  plot_type=[station],
-                  plot_z=plot_z,
-                      mtmm='-',mtem='-',
-                      mtmd='.',mted='.',
-#                      res_limits=(.01,1000)
-                  )
+ro = PlotResponse(
+    data_fn=op.join(wd, datafn),
+    resp_fn=op.join(wd, respfn),
+    plot_type=[station],
+    plot_z=plot_z,
+    mtmm="-",
+    mtem="-",
+    mtmd=".",
+    mted=".",
+    #                      res_limits=(.01,1000)
+)
 ro.plot()

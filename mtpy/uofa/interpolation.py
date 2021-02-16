@@ -13,7 +13,7 @@ calibration files (only LEMI coils so far), non evenly sampled data, ...
 
 """
 
-#=================================================================
+# =================================================================
 
 
 import numpy as np
@@ -22,8 +22,7 @@ import cmath
 import sys
 
 
-def interpolate_instrumentresponse(
-        freq, instrument_response, instr_type='lemi'):
+def interpolate_instrumentresponse(freq, instrument_response, instr_type="lemi"):
     """
     interpolate instrument-response style files.
     Wrapper for different calls, varying by type.
@@ -32,11 +31,11 @@ def interpolate_instrumentresponse(
 
     """
 
-    if instr_type.lower() == 'lemi':
+    if instr_type.lower() == "lemi":
         return interpolate_lemi_coils_response(freq, instrument_response)
 
     else:
-        print('\n\tERROR - instrument type', instr_type, ' not implemented yet\n')
+        print("\n\tERROR - instrument type", instr_type, " not implemented yet\n")
         sys.exit()
 
 
@@ -101,10 +100,8 @@ def interpolate_lemi_coils_response(freq, instrument_response):
         logimagval1 = np.log(imagval1)
         logimagval2 = np.log(imagval2)
 
-        interpval_real = np.exp(weight * logrealval1 +
-                                (1 - weight) * logrealval2)
-        interpval_imag = np.exp(weight * logimagval1 +
-                                (1 - weight) * logimagval2)
+        interpval_real = np.exp(weight * logrealval1 + (1 - weight) * logrealval2)
+        interpval_imag = np.exp(weight * logimagval1 + (1 - weight) * logimagval2)
 
     # nominal range goes up to 1000 Hz
     elif 0.4 < freq <= 1000:
@@ -112,17 +109,11 @@ def interpolate_lemi_coils_response(freq, instrument_response):
         interpval_abs = weight * absval1 + (1 - weight) * absval2
         interpval_phi = weight * phival1 + (1 - weight) * phival2
         interpval_real = np.real(
-            cmath.rect(
-                interpval_abs,
-                interpval_phi /
-                180. *
-                np.pi))
+            cmath.rect(interpval_abs, interpval_phi / 180.0 * np.pi)
+        )
         interpval_imag = np.imag(
-            cmath.rect(
-                interpval_abs,
-                interpval_phi /
-                180. *
-                np.pi))
+            cmath.rect(interpval_abs, interpval_phi / 180.0 * np.pi)
+        )
 
     else:
         interpval_real = weight * realval1 + (1 - weight) * realval2

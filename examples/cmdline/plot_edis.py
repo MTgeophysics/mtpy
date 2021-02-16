@@ -61,13 +61,13 @@ def plot_edi_file(edi_file):
     """
 
     # plt.style.use('dark_background')
-    plt.style.use('seaborn-deep')
-    plt.style.use('classic')
+    plt.style.use("seaborn-deep")
+    plt.style.use("classic")
 
     _logger.info("Plotting the edi file %s", edi_file)
 
     mt_obj = mt.MT(edi_file)
-    pt_obj = mt_obj.plot_mt_response(plot_yn='n')
+    pt_obj = mt_obj.plot_mt_response(plot_yn="n")
     pt_obj.plot()
 
     # pt_obj = mt_obj.plot_mt_response(plot_yn='n',plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
@@ -76,19 +76,25 @@ def plot_edi_file(edi_file):
     return
 
 
-
 @click.command()
-@click.option('-d','--directory',type=str,default='examples/data/edi_files',help='directory of edsi files (file/directory')
-@click.option('-c','--count',type=int,default=6, help='every how many edi files')
-def select_plot_edi_files(directory,count):
-    print('Directory of edi files ------> {}'.format(directory))
-    print('Count of files          ------> {}'.format(count))
+@click.option(
+    "-d",
+    "--directory",
+    type=str,
+    default="examples/data/edi_files",
+    help="directory of edsi files (file/directory",
+)
+@click.option("-c", "--count", type=int, default=6, help="every how many edi files")
+def select_plot_edi_files(directory, count):
+    print("Directory of edi files ------> {}".format(directory))
+    print("Count of files          ------> {}".format(count))
     if os.path.isfile(directory):
         plot_edi_file(directory)
     elif os.path.isdir(directory):
-        #plot_edi_dir(edi_path)
+        # plot_edi_dir(edi_path)
         # plot_edi_dir(edi_path,every_how_many_edi=6)
-        plot_edi_dir(directory,every_how_many_edi=count)
+        plot_edi_dir(directory, every_how_many_edi=count)
+
 
 ###############################################################################
 # plot one-by-one edi files in a given dir-path
@@ -97,14 +103,15 @@ def select_plot_edi_files(directory,count):
 #    python  examples/plot_edis.py data/edifiles/
 #    python  examples/plot_edis.py data/edifiles/15125A.edi
 # =============================================================================
-if __name__ == '__main__old':
+if __name__ == "__main__old":
 
     select_plot_edi_files()
 
     if len(sys.argv) < 2:
-        print (
-            "\n please provide path to edi files\n USAGE:  %s path2edifile" %
-            sys.argv[0])
+        print(
+            "\n please provide path to edi files\n USAGE:  %s path2edifile"
+            % sys.argv[0]
+        )
         sys.exit(1)
     else:
         edi_path = sys.argv[1]
@@ -112,8 +119,8 @@ if __name__ == '__main__old':
         if os.path.isfile(edi_path):
             plot_edi_file(edi_path)
         elif os.path.isdir(edi_path):
-            #plot_edi_dir(edi_path)
-            plot_edi_dir(edi_path,every_how_many_edi=6)
+            # plot_edi_dir(edi_path)
+            plot_edi_dir(edi_path, every_how_many_edi=6)
         else:
             _logger.error("Usage %s %s", sys.argv[0], "path2edi")
 ###############################################################################
@@ -123,8 +130,6 @@ if __name__ == '__main__old':
 #           python  examples/cmdline/plot_edis.py --help
 ###############################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     select_plot_edi_files()
-
-

@@ -21,8 +21,8 @@ class LineDir(QGroupBox):
 
     def get_linedir(self):
         if self.ui.radioButton_ns.isChecked():
-            return 'ns'
+            return "ns"
         elif self.ui.radioButton_ew.isChecked():
-            return 'ew'
+            return "ew"
         else:
             return None

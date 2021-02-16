@@ -353,10 +353,14 @@ class Stations(object):
                 center_utm_zone = zone[int(zone.size / 2)]
                 center_location["zone"] = center_utm_zone
             else:
-                self.logger.info(f"Using user defined center point UTM zone {self.model_utm_zone}")
+                self.logger.info(
+                    f"Using user defined center point UTM zone {self.model_utm_zone}"
+                )
                 center_location["zone"] = self.model_utm_zone
 
-            self.logger.info(f"Projecting lat, lon to UTM zone {center_location['zone'][0]}")
+            self.logger.info(
+                f"Projecting lat, lon to UTM zone {center_location['zone'][0]}"
+            )
             east, north, zone = gis_tools.project_point_ll2utm(
                 center_location["lat"],
                 center_location["lon"],

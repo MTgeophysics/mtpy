@@ -21,8 +21,8 @@ Revision History:
 
 from mtpy.utils.shapefiles_creator import create_tensor_tipper_shapefiles
 
-edi_dir = '/path/to/data/dir'
-out_dir = '/path/to/out/dir'
+edi_dir = "/path/to/data/dir"
+out_dir = "/path/to/out/dir"
 # EPSG code of the EDI data.
 src_epsg = 4326
 # EPSG code of the output (i.e. same CRS as the tiff you will be
@@ -30,11 +30,11 @@ src_epsg = 4326
 dst_epsg = 4326
 # List of periods in seconds to plot. Can also provide a single value.
 # The nearest available period will be selected.
-periods = [0., 100.]
+periods = [0.0, 100.0]
 
 
 # To normalise the size of phase tensor ellipses, the two parameters
-# below need to be set. 
+# below need to be set.
 # Set pt_base_size to a reasonable size based on the CRS units,
 # e.g. for 4326 (degrees) use 0.02
 # Set pt_phi_max to a reasonable upper limit based on the data,
@@ -45,8 +45,14 @@ periods = [0., 100.]
 pt_base_size = None
 
 # Create and save shapefiles.
-create_tensor_tipper_shapefiles(edi_dir, out_dir, periods, 
-        pt_base_size=pt_base_size, src_epsg=src_epsg, dst_epsg=dst_epsg)
+create_tensor_tipper_shapefiles(
+    edi_dir,
+    out_dir,
+    periods,
+    pt_base_size=pt_base_size,
+    src_epsg=src_epsg,
+    dst_epsg=dst_epsg,
+)
 
 # Plots the shapefiles as .png. Currently not working due to absence
 # of 'descartes' library.

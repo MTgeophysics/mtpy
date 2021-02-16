@@ -11,8 +11,10 @@ import numpy as np
 def main():
 
     if len(sys.argv) < 3:
-        sys.exit('\n\tERROR - need 2 arguments as input: '
-                 '<input files location> <output file name> \n')
+        sys.exit(
+            "\n\tERROR - need 2 arguments as input: "
+            "<input files location> <output file name> \n"
+        )
 
     indir = sys.argv[1]
     outfilename = sys.argv[2]
@@ -20,14 +22,14 @@ def main():
     indir = op.join(op.abspath(os.curdir), indir)
     print()
     if not op.isdir(indir):
-        print('WARNING - no such directory: %s\n' % (indir))
+        print("WARNING - no such directory: %s\n" % (indir))
         sys.exit()
 
     outfn = op.join(op.abspath(os.curdir), outfilename)
 
     concatenate1station650(indir, outfn)
 
-    print('Downsampled data written to file %s ' % (outfn))
+    print("Downsampled data written to file %s " % (outfn))
 
     print()
 
@@ -45,11 +47,11 @@ def concatenate1station650(indir, outfile):
     lo_files = [op.join(indir, i) for i in lo_files]
 
     if len(lo_files) == 0:
-        print('ERROR - no file in directory %s\n' % (indir))
+        print("ERROR - no file in directory %s\n" % (indir))
         sys.exit()
 
     # open output file
-    Fout = open(outfile, 'w')
+    Fout = open(outfile, "w")
 
     # initialise carrying varibles
     header = False
@@ -59,7 +61,7 @@ def concatenate1station650(indir, outfile):
     W = None
     t0 = None
 
-    print('Browsing/reading files in %s' % (indir))
+    print("Browsing/reading files in %s" % (indir))
 
     # go through files in directory
     for infile in lo_files:
@@ -82,7 +84,7 @@ def concatenate1station650(indir, outfile):
                     W = int(indata[4])
                     t0 = int(indata[5])
 
-                    headerline = '# %d\t%d\t%d\t%d\t%d\n' % (N, E, S, W, t0)
+                    headerline = "# %d\t%d\t%d\t%d\t%d\n" % (N, E, S, W, t0)
 
                     # write to header line
                     Fout.write(headerline)
@@ -92,8 +94,12 @@ def concatenate1station650(indir, outfile):
 
                 # define ongoing line entries as differences to values from
                 # line before
-                currentline = '%d\t%d\t%d\t%d\t\n' % (
-                    indata[1] - N, indata[2] - E, indata[3] - S, indata[4] - W)
+                currentline = "%d\t%d\t%d\t%d\t\n" % (
+                    indata[1] - N,
+                    indata[2] - E,
+                    indata[3] - S,
+                    indata[4] - W,
+                )
                 Fout.write(currentline)
 
                 # update carrying variables
@@ -105,11 +111,11 @@ def concatenate1station650(indir, outfile):
             Fin.close()
 
         except:
-            print('\tWARNING - could not read data from file: %s' % (infile))
+            print("\tWARNING - could not read data from file: %s" % (infile))
             continue
 
     Fout.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -11,14 +11,16 @@
 import numpy as np
 from qtpy.QtWidgets import QGroupBox
 
-from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import Ui_GroupBox_Frequency_Period_Index
+from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_index import (
+    Ui_GroupBox_Frequency_Period_Index,
+)
 
 
 class FrequencyIndex(QGroupBox):
-    _unit_period = 'second'
-    _unit_frequency = 'Hz'
-    _title_period = 'Period'
-    _title_frequency = 'Frequency'
+    _unit_period = "second"
+    _unit_frequency = "Hz"
+    _title_period = "Period"
+    _title_frequency = "Frequency"
 
     def __init__(self, parent, use_period=False):
         QGroupBox.__init__(self, parent)
@@ -31,9 +33,9 @@ class FrequencyIndex(QGroupBox):
     def set_use_period(self, use_period=False):
         self.use_period = use_period
         if self.use_period:
-            title = '%s (%s)' % (self._title_period, self._unit_period)
+            title = "%s (%s)" % (self._title_period, self._unit_period)
         else:
-            title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
+            title = "%s (%s)" % (self._title_frequency, self._unit_frequency)
         self.setTitle(title)
         self._update_frequency()
 
@@ -48,23 +50,47 @@ class FrequencyIndex(QGroupBox):
             all_freqs = self._mt_objs[0].Z.freq
             # print all_freqs
 
-            if all([all_freqs.shape == mt_obj.Z.freq.shape and np.allclose(all_freqs, mt_obj.Z.freq) for mt_obj in
-                    self._mt_objs[1:]]):
+            if all(
+                [
+                    all_freqs.shape == mt_obj.Z.freq.shape
+                    and np.allclose(all_freqs, mt_obj.Z.freq)
+                    for mt_obj in self._mt_objs[1:]
+                ]
+            ):
 
                 if self.use_period:
                     all_freqs = 1.0 / np.array(all_freqs)
 
                 self.ui.listWidget_frequency_period.addItems(
-                    ["%.5f %s" % (value, self._unit_period if self.use_period else self._unit_frequency) for value in
-                     all_freqs])
-                self.ui.listWidget_frequency_period.setCurrentRow(0)  # select the first row by default
+                    [
+                        "%.5f %s"
+                        % (
+                            value,
+                            self._unit_period
+                            if self.use_period
+                            else self._unit_frequency,
+                        )
+                        for value in all_freqs
+                    ]
+                )
+                self.ui.listWidget_frequency_period.setCurrentRow(
+                    0
+                )  # select the first row by default
                 self.ui.listWidget_frequency_period.setEnabled(True)
             else:
-                self.ui.listWidget_frequency_period.addItem("ERROR: frequency lists from stations are not identical")
+                self.ui.listWidget_frequency_period.addItem(
+                    "ERROR: frequency lists from stations are not identical"
+                )
                 self.ui.listWidget_frequency_period.setEnabled(False)
 
     def get_index_list(self):
-        return sorted([index.row() for index in self.ui.listWidget_frequency_period.selectedIndexes()], reverse=False)
+        return sorted(
+            [
+                index.row()
+                for index in self.ui.listWidget_frequency_period.selectedIndexes()
+            ],
+            reverse=False,
+        )
 
 
 class UniqueFrequencies(FrequencyIndex):
@@ -86,7 +112,11 @@ class UniqueFrequencies(FrequencyIndex):
 
             self.ui.listWidget_frequency_period.addItems(
                 [
-                    "%.5f %s" % (value, self._unit_period if self.use_period else self._unit_frequency)
+                    "%.5f %s"
+                    % (
+                        value,
+                        self._unit_period if self.use_period else self._unit_frequency,
+                    )
                     for value in self.unique_freqs
                 ]
             )
@@ -100,5 +130,9 @@ class UniqueFrequencies(FrequencyIndex):
 
     def get_frequency_list(self):
         return sorted(
-            [self.unique_freqs[index.row()] for index in self.ui.listWidget_frequency_period.selectedIndexes()],
-            reverse=False)
+            [
+                self.unique_freqs[index.row()]
+                for index in self.ui.listWidget_frequency_period.selectedIndexes()
+            ],
+            reverse=False,
+        )

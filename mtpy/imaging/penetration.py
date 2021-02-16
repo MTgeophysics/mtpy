@@ -36,7 +36,7 @@ from mtpy.utils.mtpylog import MtPyLog
 # config the logger
 _logger = MtPyLog.get_mtpy_logger(__name__)
 # default contains of rholist
-DEFAULT_RHOLIST = {'zxy', 'zyx', 'det'}
+DEFAULT_RHOLIST = {"zxy", "zyx", "det"}
 
 
 class Depth1D(ImagingBase):
@@ -90,47 +90,56 @@ class Depth1D(ImagingBase):
         periods = 1.0 / freqs
         legendh = []
 
-        if 'zxy' in self._rholist:
+        if "zxy" in self._rholist:
             # One of the 4-components: XY
-            penetration_depth = scale_param * \
-                np.sqrt(zeta.resistivity[:, 0, 1] * periods)
-            periods[penetration_depth==0] = np.nan
-                
+            penetration_depth = scale_param * np.sqrt(
+                zeta.resistivity[:, 0, 1] * periods
+            )
+            periods[penetration_depth == 0] = np.nan
 
             # pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
-            pen_zxy, = plt.loglog(
-                periods, penetration_depth*1e-3, color='#000000', marker='*', label='Zxy')
+            (pen_zxy,) = plt.loglog(
+                periods,
+                penetration_depth * 1e-3,
+                color="#000000",
+                marker="*",
+                label="Zxy",
+            )
             # See
             # http://matplotlib.org/1.3.1/examples/pylab_examples/line_styles.html
 
             legendh.append(pen_zxy)
 
-        if 'zyx' in self._rholist:
-            penetration_depth = scale_param * \
-                np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+        if "zyx" in self._rholist:
+            penetration_depth = scale_param * np.sqrt(
+                zeta.resistivity[:, 1, 0] * periods
+            )
 
-            pen_zyx, = plt.loglog(
-                periods, penetration_depth*1e-3, color='g', marker='o', label='Zyx')
+            (pen_zyx,) = plt.loglog(
+                periods, penetration_depth * 1e-3, color="g", marker="o", label="Zyx"
+            )
             legendh.append(pen_zyx)
 
-        if 'det' in self._rholist:
+        if "det" in self._rholist:
             # determinant array
             det2 = np.abs(zeta.det)
-            det_penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
+            det_penetration_depth = scale_param * np.sqrt(
+                0.2 * periods * det2 * periods
+            )
 
             # pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
-            pen_det, = plt.loglog(
-                periods, det_penetration_depth*1e-3, color='b', marker='^', label='Determinant')
+            (pen_det,) = plt.loglog(
+                periods,
+                det_penetration_depth * 1e-3,
+                color="b",
+                marker="^",
+                label="Determinant",
+            )
             legendh.append(pen_det)
 
         plt.legend(
-            handles=legendh,
-            bbox_to_anchor=(
-                0.1,
-                0.5),
-            loc=3,
-            ncol=1,
-            borderaxespad=0.)
+            handles=legendh, bbox_to_anchor=(0.1, 0.5), loc=3, ncol=1, borderaxespad=0.0
+        )
 
         title = "Penetration Depth for file %s" % self._data.fn
         plt.title(title)
@@ -148,7 +157,7 @@ class Depth2D(ImagingBase):
     depth profile at the given periods vs stations.
     """
 
-    def __init__(self, selected_periods, data=None, ptol=0.05, rho='det'):
+    def __init__(self, selected_periods, data=None, ptol=0.05, rho="det"):
         super(Depth2D, self).__init__()
         self._selected_periods = selected_periods
         self._ptol = ptol
@@ -161,15 +170,15 @@ class Depth2D(ImagingBase):
             raise ZComponentError
         elif self._fig is not None:
             return  # nothing to plot
-        
-        period_by_index = kwargs.pop('period_by_index', False)
+
+        period_by_index = kwargs.pop("period_by_index", False)
 
         pr = occam2d.Profile(edi_list=self._data)
         pr.generate_profile()
         # pr.plot_profile(station_id=[0, 4])
 
-        if 'fontsize' in list(kwargs.keys()):
-            fontsize = kwargs['fontsize']
+        if "fontsize" in list(kwargs.keys()):
+            fontsize = kwargs["fontsize"]
         else:
             fontsize = 16
 
@@ -178,33 +187,34 @@ class Depth2D(ImagingBase):
         for selected_period in self._selected_periods:
             if period_by_index:
                 (stations, periods, pen, _) = get_penetration_depth_by_index(
-                    pr.edi_list, selected_period, whichrho=self._rho)
+                    pr.edi_list, selected_period, whichrho=self._rho
+                )
             else:
                 (stations, periods, pen, _) = get_penetration_depth_by_period(
-                    pr.edi_list, selected_period, whichrho=self._rho, ptol=self._ptol)
+                    pr.edi_list, selected_period, whichrho=self._rho, ptol=self._ptol
+                )
 
             line_label = "Period=%.2e s" % selected_period
 
             plt.plot(
                 pr.station_locations,
-                np.array(pen)*1e-3,
+                np.array(pen) * 1e-3,
                 "--",
                 #                marker="o",
                 #                markersize=12,
                 #                linewidth=2,
                 label=line_label,
-                **kwargs)
+                **kwargs
+            )
             plt.legend()
 
         plt.ylabel(
-            'Penetration Depth (km) Computed by %s' %
-            self._rho,
-            fontsize=fontsize
+            "Penetration Depth (km) Computed by %s" % self._rho, fontsize=fontsize
         )
         plt.gca().invert_yaxis()
         plt.yticks(fontsize=fontsize)
 
-        plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=fontsize)
+        plt.xlabel("MT Penetration Depth Profile Over Stations.", fontsize=fontsize)
         self._logger.debug("stations= %s", stations)
         self._logger.debug("station locations: %s", pr.station_locations)
         if pr.station_list is not None:
@@ -228,7 +238,9 @@ class Depth2D(ImagingBase):
 
         # plt.tight_layout()
         plt.gca().xaxis.tick_top()
-        self._fig.canvas.set_window_title("MT Penetration Depth Profile by %s" % self._rho)
+        self._fig.canvas.set_window_title(
+            "MT Penetration Depth Profile by %s" % self._rho
+        )
         plt.legend(loc="lower left")
 
     def set_data(self, data):
@@ -240,7 +252,9 @@ class Depth2D(ImagingBase):
             self._rho = rho
             self._reset_fig()
         else:
-            self._logger.critical("unsupported method to compute penetratoin depth: %s", rho)
+            self._logger.critical(
+                "unsupported method to compute penetratoin depth: %s", rho
+            )
             # raise Exception("unsupported method to compute penetratoin depth: %s" % rho)
 
 
@@ -253,7 +267,7 @@ class Depth3D(ImagingBase):
     Setting a smaller value for ptol may result less MT sites data included.
     """
 
-    def __init__(self, edis=None, period=None, rho='det', ptol=0.1):
+    def __init__(self, edis=None, period=None, rho="det", ptol=0.1):
         super(Depth3D, self).__init__()
         self._rho = None
         self._period = None
@@ -273,23 +287,29 @@ class Depth3D(ImagingBase):
             # nothing to plot
             return
 
-        period_by_index = kwargs.pop("period_by_index", False)  # search periods by its index in the data file
-        plot_station_id = kwargs.pop("plot_station_id", False)  # plot the id of each station on the image
-        z_unit = kwargs.pop("z_unit", 'km')
+        period_by_index = kwargs.pop(
+            "period_by_index", False
+        )  # search periods by its index in the data file
+        plot_station_id = kwargs.pop(
+            "plot_station_id", False
+        )  # plot the id of each station on the image
+        z_unit = kwargs.pop("z_unit", "km")
 
-        if z_unit not in ('m', 'km'):
+        if z_unit not in ("m", "km"):
             raise ParameterError("z_unit has to be m or km.")
 
         if period_by_index:  # self._period is considered as an index
             if not isinstance(self._period, int):
-                self._logger.warning("period value is not integer but used as an index.")
-            (stations, periods, pendep, latlons) = get_penetration_depth_by_index(self._data,
-                                                                                  int(self._period),
-                                                                                  whichrho=self._rho)
+                self._logger.warning(
+                    "period value is not integer but used as an index."
+                )
+            (stations, periods, pendep, latlons) = get_penetration_depth_by_index(
+                self._data, int(self._period), whichrho=self._rho
+            )
         else:
-            (stations, periods, pendep, latlons) = get_penetration_depth_by_period(self._data,
-                                                                                   self._period,
-                                                                                   whichrho=self._rho, ptol=self._ptol)
+            (stations, periods, pendep, latlons) = get_penetration_depth_by_period(
+                self._data, self._period, whichrho=self._rho, ptol=self._ptol
+            )
 
         if check_period_values(periods, ptol=self._ptol) is False:
 
@@ -299,14 +319,18 @@ class Depth3D(ImagingBase):
             # self._fig.canvas.set_window_title(title)
             # plt.show()
 
-            print("Can NOT use period index, because the indexed-periods are not equal across EDI files as shown below: ")
+            print(
+                "Can NOT use period index, because the indexed-periods are not equal across EDI files as shown below: "
+            )
             print(periods)
 
-            print("***  Plot pendepth3D using the first value from the period list above ***")
+            print(
+                "***  Plot pendepth3D using the first value from the period list above ***"
+            )
 
             self._period = periods[0]
             self.plot(period_by_index=False)
-            #raise ImagingError("MT Periods values are NOT equal! In such case a float value must be selected from the period list")
+            # raise ImagingError("MT Periods values are NOT equal! In such case a float value must be selected from the period list")
         else:
             # good normal case
             period0 = periods[0]
@@ -385,13 +409,13 @@ class Depth3D(ImagingBase):
             grid_x, grid_y = np.mgrid[0:ny_padded:1, 0:nx_padded:1]
 
             # grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
-            grid_z = griddata(points, values, (grid_x, grid_y), method='linear')
+            grid_z = griddata(points, values, (grid_x, grid_y), method="linear")
             # grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
 
             # method='cubic' may cause negative interp values; set them nan to make
             # empty
             grid_z[grid_z < 0] = np.nan
-            if z_unit == 'km':  # change to km
+            if z_unit == "km":  # change to km
                 grid_z = grid_z / 1000.0
 
             # use reverse color map in imshow and the colorbar
@@ -402,13 +426,17 @@ class Depth3D(ImagingBase):
 
             # since matplotlib v2.0 the default interpolation is changed to nearest, use "bilinear" to restore the default behaviour in 1.5.3
             # imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap, interpolation='bilinear', resample=False)
-            imgplot = plt.imshow(grid_z, origin='upper', cmap=my_cmap)
+            imgplot = plt.imshow(grid_z, origin="upper", cmap=my_cmap)
 
             # the stations sample point 1-lon-j, 0-lat-i
-            plt.plot(station_points[:, 1], station_points[:, 0], 'kv', markersize=6, )
+            plt.plot(
+                station_points[:, 1], station_points[:, 0], "kv", markersize=6,
+            )
             # add station id
             if plot_station_id:
-                for label, x, y in zip(stations, station_points[:, 1], station_points[:, 0]):
+                for label, x, y in zip(
+                    stations, station_points[:, 1], station_points[:, 0]
+                ):
                     plt.annotate(label, xy=(x, y), fontsize=9)
 
             # set the axix limit to control white margins
@@ -418,7 +446,9 @@ class Depth3D(ImagingBase):
 
             # adjusted if necessary, the number of grids extended out of the sample points area
             margin = max(padx, pady, min_margin)
-            self._logger.debug("**** station_points shape ***** %s", station_points.shape)
+            self._logger.debug(
+                "**** station_points shape ***** %s", station_points.shape
+            )
             self._logger.debug("**** grid_z shape ***** %s", grid_z.shape)
             self._logger.debug("margin = %s" % margin)
 
@@ -436,29 +466,30 @@ class Depth3D(ImagingBase):
             xticks = np.arange(0, zdep.shape[1], stepx)  # 10, 100
             yticks = np.arange(0, zdep.shape[0], stepy)
 
-            xticks_label = ['%.2f' % (bbox[0][0] + pixelsize * xtick)
-                            for xtick in xticks]  # formatted float numbers
-            yticks_label = ['%.2f' % (bbox[1][0] + pixelsize * ytick)
-                            for ytick in yticks]
+            xticks_label = [
+                "%.2f" % (bbox[0][0] + pixelsize * xtick) for xtick in xticks
+            ]  # formatted float numbers
+            yticks_label = [
+                "%.2f" % (bbox[1][0] + pixelsize * ytick) for ytick in yticks
+            ]
 
             self._logger.debug("xticks_labels= %s", xticks_label)
             self._logger.debug("yticks_labels= %s", yticks_label)
             # make sure the latitude y-axis is correctly labeled.
             yticks_label.reverse()
 
-            plt.xticks(xticks, xticks_label, rotation='0', fontsize=fontsize)
-            plt.yticks(yticks, yticks_label, rotation='horizontal', fontsize=fontsize)
-            ax.set_ylabel('Latitude', fontsize=fontsize)
-            ax.set_xlabel('Longitude', fontsize=fontsize)
+            plt.xticks(xticks, xticks_label, rotation="0", fontsize=fontsize)
+            plt.yticks(yticks, yticks_label, rotation="horizontal", fontsize=fontsize)
+            ax.set_ylabel("Latitude", fontsize=fontsize)
+            ax.set_xlabel("Longitude", fontsize=fontsize)
             ax.tick_params(
-                axis='both',
-                which='major',
-                width=2,
-                length=5,
-                labelsize=fontsize)
+                axis="both", which="major", width=2, length=5, labelsize=fontsize
+            )
             # plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n'
             # % period_fmt)  # Cubic
-            title = "Penetration Depth at the Period=%s seconds \n" % self._period_fmt  # todo is \n necessory?
+            title = (
+                "Penetration Depth at the Period=%s seconds \n" % self._period_fmt
+            )  # todo is \n necessory?
             plt.title(title)  # Cubic
             self._fig.canvas.set_window_title(title)
 
@@ -472,9 +503,11 @@ class Depth3D(ImagingBase):
             divider = make_axes_locatable(ax)
             # pad = separation from figure to colorbar
             cax = divider.append_axes("right", size="3%", pad=0.2)
-            mycb = plt.colorbar(imgplot, cax=cax, use_gridspec=True, cmap=my_cmap)  # cmap=my_cmap_r, does not work!!
+            mycb = plt.colorbar(
+                imgplot, cax=cax, use_gridspec=True, cmap=my_cmap
+            )  # cmap=my_cmap_r, does not work!!
             mycb.outline.set_linewidth(2)
-            mycb.set_label(label='Penetration Depth ({})'.format(z_unit), size=fontsize)
+            mycb.set_label(label="Penetration Depth ({})".format(z_unit), size=fontsize)
             # mycb.set_cmap(my_cmap)
 
         return
@@ -488,7 +521,9 @@ class Depth3D(ImagingBase):
             self._rho = rho
             self._reset_fig()
         else:
-            self._logger.critical("unsupported method to compute penetratoin depth: %s", rho)
+            self._logger.critical(
+                "unsupported method to compute penetratoin depth: %s", rho
+            )
             # raise Exception("unsupported method to compute penetratoin depth: %s" % rho)
 
     def set_period(self, period):
@@ -496,7 +531,9 @@ class Depth3D(ImagingBase):
             self._period = period
             self._reset_fig()
 
-    @deprecated("this function is added only to compatible with the old script penetration_depth3d.py")
+    @deprecated(
+        "this function is added only to compatible with the old script penetration_depth3d.py"
+    )
     def get_period_fmt(self):
         if self._fig is not None:
             return self._period_fmt
@@ -506,7 +543,8 @@ class Depth3D(ImagingBase):
 
 # Utility functions (may need to move to utility module
 
-def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho='det'):
+
+def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho="det"):
     """
     Compute the penetration depth of mt_obj at the given period_index, and using whichrho option.
 
@@ -544,31 +582,34 @@ def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho='det'):
         zeta = mt_obj.Z
 
         if per_index >= len(zeta.freq):
-            _logger.debug(
-                "Number of frequecies (Max per_index)= %s", len(
-                    zeta.freq))
+            _logger.debug("Number of frequecies (Max per_index)= %s", len(zeta.freq))
             raise Exception(
-                "Index out_of_range Error: period index must be less than number of periods in zeta.freq")
+                "Index out_of_range Error: period index must be less than number of periods in zeta.freq"
+            )
 
         per = 1.0 / zeta.freq[per_index]
         periods.append(per)
 
-        if whichrho == 'zxy':
-            penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
-        elif whichrho == 'zyx':
-            penetration_depth = - scale_param * \
-                np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-        elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
+        if whichrho == "zxy":
+            penetration_depth = -scale_param * np.sqrt(
+                zeta.resistivity[per_index, 0, 1] * per
+            )
+        elif whichrho == "zyx":
+            penetration_depth = -scale_param * np.sqrt(
+                zeta.resistivity[per_index, 1, 0] * per
+            )
+        elif whichrho == "det":  # the 2X2 complex Z-matrix's determinant abs value
             # determinant value at the given period index
             det2 = np.abs(zeta.det[per_index])
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         else:
             _logger.critical(
-                "unsupported method to compute penetration depth: %s",
-                whichrho)
+                "unsupported method to compute penetration depth: %s", whichrho
+            )
             # sys.exit(100)
-            raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
+            raise Exception(
+                "unsupported method to compute penetratoin depth: %s" % whichrho
+            )
 
         pen_depth.append(penetration_depth)
 
@@ -584,8 +625,11 @@ def load_edi_files(edi_path, file_list=None):
         edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
     return edi_list
 
+
 # need further refactoring and testing
-def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whichrho='det'):
+def get_penetration_depth_by_period(
+    mt_obj_list, selected_period, ptol=0.1, whichrho="det"
+):
     """
     This is a more generic and useful function to compute the penetration depths
     of a list of edi files at given selected_period (in seconds, NOT freq).
@@ -606,7 +650,9 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
     stations = []
     latlons = []
 
-    _logger.info("Getting nearest period to {} for all stations".format(selected_period))
+    _logger.info(
+        "Getting nearest period to {} for all stations".format(selected_period)
+    )
     for mt_obj in mt_obj_list:
         if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
             mt_obj = mt.MT(mt_obj)
@@ -620,44 +666,63 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
 
         # the attribute Z
         zeta = mt_obj.Z
-        per_index = np.argmin(np.fabs(zeta.freq - 1.0/selected_period))
+        per_index = np.argmin(np.fabs(zeta.freq - 1.0 / selected_period))
         per = 1.0 / zeta.freq[per_index]
 
-        print("********* The period-index=%s coressponding to the selected_period %s"%(per_index, selected_period))
+        print(
+            "********* The period-index=%s coressponding to the selected_period %s"
+            % (per_index, selected_period)
+        )
 
         if abs(selected_period - per) > (selected_period) * ptol:
-            print("************** Different the selected period =", selected_period, per)
-            #periods.append(np.nan)
+            print(
+                "************** Different the selected period =", selected_period, per
+            )
+            # periods.append(np.nan)
             periods.append(selected_period)
             pen_depth.append(np.nan)
-            _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
+            _logger.warning(
+                "Nearest preiod {} on station {} was beyond tolerance of {} ".format(
+                    per, mt_obj.Site.id, ptol
+                )
+            )
             pass
-        else:      # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
+        else:  # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
 
-            print("********* Include this period at the index ", per,  per_index)
+            print("********* Include this period at the index ", per, per_index)
             periods.append(per)
 
-            if whichrho == 'zxy':
-                penetration_depth = scale_param * \
-                    np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
-            elif whichrho == 'zyx':
-                penetration_depth = scale_param * \
-                    np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-            elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
+            if whichrho == "zxy":
+                penetration_depth = scale_param * np.sqrt(
+                    zeta.resistivity[per_index, 0, 1] * per
+                )
+            elif whichrho == "zyx":
+                penetration_depth = scale_param * np.sqrt(
+                    zeta.resistivity[per_index, 1, 0] * per
+                )
+            elif whichrho == "det":  # the 2X2 complex Z-matrix's determinant abs value
                 # determinant value at the given period index
                 det2 = np.abs(zeta.det[per_index])
                 penetration_depth = scale_param * np.sqrt(0.2 * per * det2 * per)
             else:
                 _logger.critical(
-                    "unsupported method to compute penetration depth: %s",
-                    whichrho)
+                    "unsupported method to compute penetration depth: %s", whichrho
+                )
                 # sys.exit(100)
-                raise Exception("unsupported method to compute penetratoin depth: %s" % whichrho)
+                raise Exception(
+                    "unsupported method to compute penetratoin depth: %s" % whichrho
+                )
 
             pen_depth.append(penetration_depth)
 
     # The returned 4 lists should have equal length!!!
-    _logger.debug("The length of stations, periods, pen_depth, latlons: %s,%s,%s,%s ", len(stations), len(periods), len(pen_depth), len(latlons) )
+    _logger.debug(
+        "The length of stations, periods, pen_depth, latlons: %s,%s,%s,%s ",
+        len(stations),
+        len(periods),
+        len(pen_depth),
+        len(latlons),
+    )
 
     return stations, periods, pen_depth, latlons
 
@@ -665,7 +730,11 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
 class ZComponentError(ParameterError):
     def __init__(self, *args, **kwargs):
         if args is None:
-            ParameterError.__init__(self, "please set zcomponent (rho) to either \"zxy\", \"zyx\" or \"det\"", **kwargs)
+            ParameterError.__init__(
+                self,
+                'please set zcomponent (rho) to either "zxy", "zyx" or "det"',
+                **kwargs
+            )
         else:
             ParameterError.__init__(self, *args, **kwargs)
 
@@ -681,7 +750,9 @@ def check_period_values(period_list, ptol=0.1):
     _logger.debug("The Periods List to be checked : %s", period_list)
 
     if not period_list:
-        _logger.error("The MT periods list is empty - No relevant data found in the EDI files.")
+        _logger.error(
+            "The MT periods list is empty - No relevant data found in the EDI files."
+        )
         return False  # what is the sensible default value for this ?
 
     p0 = period_list[0]  # the first value as a ref

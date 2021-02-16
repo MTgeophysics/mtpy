@@ -44,20 +44,20 @@ import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
 import mtpy.uofa.simpleplotCOH as smplpltCOH
 
-#import pdb
+# import pdb
 
-#=========================================================================
+# =========================================================================
 
-#indir = 'BIRRP_Outtape'
-#indir ='L2_All_stations_March_Basic_18Mar'
-#indir = 'birrp_output'
-#indir ='testin'
-indir = '.'
+# indir = 'BIRRP_Outtape'
+# indir ='L2_All_stations_March_Basic_18Mar'
+# indir = 'birrp_output'
+# indir ='testin'
+indir = "."
 
-#outdir = 'qel_collected_L2_All_stations_March_Basic_18Mar'
-outdir = 'testout'
+# outdir = 'qel_collected_L2_All_stations_March_Basic_18Mar'
+outdir = "testout"
 
-date = '140318'
+date = "140318"
 
 # 20
 plot_component_dict = {}  # 'L209':'e','L213':'e','L224':'e','L218':'n'}
@@ -67,16 +67,17 @@ plot_component_dict = {}  # 'L209':'e','L213':'e','L224':'e','L218':'n'}
 # plot_component_dict={'L209':'e','L213':'e','L224':'e','L208':'n','L200':'e','L210':'n','L214':'n'}
 
 
-survey_configfile = op.abspath('/data/temp/nigel/romasurvey.cfg')
+survey_configfile = op.abspath("/data/temp/nigel/romasurvey.cfg")
 instr_resp = op.abspath(
-    '/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
-#instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
+    "/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt"
+)
+# instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
 
-outdir_prefix = ''
+outdir_prefix = ""
 
-string2strip = ['_RR', '_B125']
+string2strip = ["_RR", "_B125"]
 
-#=========================================================================
+# =========================================================================
 
 outdir = op.abspath(outdir)
 
@@ -91,17 +92,17 @@ basedir = op.abspath(os.curdir)
 
 for stationdir in dirs:
 
-    station = stationdir.split('_')[0]
+    station = stationdir.split("_")[0]
 
     stationbase = op.abspath(op.join(indir, stationdir))
 
     os.chdir(stationbase)
 
-    daydirs = os.listdir('.')
+    daydirs = os.listdir(".")
     daydirs = sorted([i for i in daydirs if op.isdir(i)])
 
     for daydir in daydirs:
-        fullday = daydir.split('_')[-1]
+        fullday = daydir.split("_")[-1]
 
         day = int(float(fullday[-2:]))
         month = int(float(fullday[-4:-2]))
@@ -110,22 +111,27 @@ for stationdir in dirs:
         os.chdir(daydir)
         print(op.abspath(os.curdir))
 
-        donefiles = os.listdir('.')
-        donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
+        donefiles = os.listdir(".")
+        donefiles = [i for i in donefiles if i.lower().endswith(".j.done")]
         for df in donefiles:
-            os.rename(df, df.replace('.done', ''))
+            os.rename(df, df.replace(".done", ""))
 
-        lo_old_coh_files = os.listdir('.')
-        lo_old_coh_files = [
-            i for i in lo_old_coh_files if i.lower().endswith('.coh')]
+        lo_old_coh_files = os.listdir(".")
+        lo_old_coh_files = [i for i in lo_old_coh_files if i.lower().endswith(".coh")]
         for i in lo_old_coh_files:
             os.remove(i)
         try:
             outfn, outfn_coh = qel2edi.convert2edi(
-                station, '.', survey_configfile, instr_resp, string2strip=string2strip, datestring=fullday)
+                station,
+                ".",
+                survey_configfile,
+                instr_resp,
+                string2strip=string2strip,
+                datestring=fullday,
+            )
 
         except:
-            print('no information found in folder {0}'.format(op.abspath(os.curdir)))
+            print("no information found in folder {0}".format(op.abspath(os.curdir)))
             continue
         try:
             colfile = edi2col.convert2columns(op.basename(outfn))
@@ -133,8 +139,11 @@ for stationdir in dirs:
             pass
 
         outdir_edi = op.join(
-            basedir, outdir, '{0}{1:02d}{1:02d}{2:02d}'.format(
-                outdir_prefix, year, month, day), 'edi')
+            basedir,
+            outdir,
+            "{0}{1:02d}{1:02d}{2:02d}".format(outdir_prefix, year, month, day),
+            "edi",
+        )
 
         print(outfn, outfn_coh, colfile)
 
@@ -142,13 +151,16 @@ for stationdir in dirs:
             os.makedirs(outdir_edi)
         try:
             shutil.copy(op.basename(outfn), outdir_edi)
-            print('copied EDI file to %s' % (outdir_edi))
+            print("copied EDI file to %s" % (outdir_edi))
         except:
             pass
 
         outdir_coh = op.join(
-            basedir, outdir, '{0}{1:02d}{1:02d}{2:02d}'.format(
-                outdir_prefix, year, month, day), 'coh')
+            basedir,
+            outdir,
+            "{0}{1:02d}{1:02d}{2:02d}".format(outdir_prefix, year, month, day),
+            "coh",
+        )
         if not op.isdir(outdir_coh):
             os.makedirs(outdir_coh)
 
@@ -158,8 +170,11 @@ for stationdir in dirs:
             pass
 
         outdir_cols = op.join(
-            basedir, outdir, '{0}{1:02d}{1:02d}{2:02d}'.format(
-                outdir_prefix, year, month, day), 'columns')
+            basedir,
+            outdir,
+            "{0}{1:02d}{1:02d}{2:02d}".format(outdir_prefix, year, month, day),
+            "columns",
+        )
         if not op.isdir(outdir_cols):
             os.makedirs(outdir_cols)
 
@@ -169,20 +184,22 @@ for stationdir in dirs:
             pass
 
         outdir_plots = op.join(
-            basedir, outdir, '{0}{1:02d}{1:02d}{2:02d}'.format(
-                outdir_prefix, year, month, day), 'plots')
+            basedir,
+            outdir,
+            "{0}{1:02d}{1:02d}{2:02d}".format(outdir_prefix, year, month, day),
+            "plots",
+        )
         if not op.isdir(outdir_plots):
             os.makedirs(outdir_plots)
 
         try:
-            plot_component = 'ne'
+            plot_component = "ne"
             if station.upper() in plot_component_dict:
                 plot_component = plot_component_dict[station.upper()]
 
-            plotfn = smplplt.plotedi(
-                outfn, saveplot=True, component=plot_component)
+            plotfn = smplplt.plotedi(outfn, saveplot=True, component=plot_component)
             shutil.copy(op.basename(plotfn), outdir_plots)
-            print('copied res/phase plot %s' % (plotfn))
+            print("copied res/phase plot %s" % (plotfn))
 
         except:
             pass
@@ -190,15 +207,15 @@ for stationdir in dirs:
         try:
             plotfncoh = smplpltCOH.plotcoh(outfn_coh, saveplot=True)
             shutil.copy(op.basename(plotfncoh), outdir_plots)
-            print('copied coherence plot %s' % (plotfncoh))
+            print("copied coherence plot %s" % (plotfncoh))
 
         except:
             pass
 
-        donefiles = os.listdir('.')
-        donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
+        donefiles = os.listdir(".")
+        donefiles = [i for i in donefiles if i.lower().endswith(".j.done")]
         for df in donefiles:
-            os.rename(df, df.replace('.done', ''))
+            os.rename(df, df.replace(".done", ""))
 
         # pdb.set_trace()
         os.chdir(stationbase)

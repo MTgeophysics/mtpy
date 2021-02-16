@@ -38,13 +38,13 @@ class TestOccam2D(TestCase):
     def setUp(self):
 
         # set the dir to the output from the previously correct run
-        self._expected_output_dir = os.path.join(SAMPLE_DIR, 'Occam2d')
+        self._expected_output_dir = os.path.join(SAMPLE_DIR, "Occam2d")
 
         if not os.path.isdir(self._expected_output_dir):
             self._expected_output_dir = None
 
         # directory to save created input files
-        self._output_dir = make_temp_dir('Occam2d', self._temp_dir)
+        self._output_dir = make_temp_dir("Occam2d", self._temp_dir)
 
     def _main_func(self, edipath):
         """
@@ -55,14 +55,15 @@ class TestOccam2D(TestCase):
         savepath = self._output_dir
 
         # list of stations
-        slst = [edi[0:-4] for edi in os.listdir(edipath) if edi.find('.edi') > 0]
+        slst = [edi[0:-4] for edi in os.listdir(edipath) if edi.find(".edi") > 0]
 
         # create an occam data object
-        ocd = occam2d.Data(edi_path=edipath,
-                           station_list=slst,
-                           #                  interpolate_freq=True,
-                           #                  freq=np.logspace(-3,1,30)
-                           )
+        ocd = occam2d.Data(
+            edi_path=edipath,
+            station_list=slst,
+            #                  interpolate_freq=True,
+            #                  freq=np.logspace(-3,1,30)
+        )
 
         ocd.save_path = savepath
 
@@ -112,7 +113,7 @@ class TestOccam2D(TestCase):
         # make startup file
         ocs = occam2d.Startup()
         ocs.iterations_to_run = 40
-        ocs.data_fn = os.path.join(ocd.save_path, 'OccamDataFile.dat')
+        ocs.data_fn = os.path.join(ocd.save_path, "OccamDataFile.dat")
         ocs.resistivity_start = 2.0
         ocr.get_num_free_params()
         ocs.param_count = ocr.num_free_param
@@ -127,24 +128,31 @@ class TestOccam2D(TestCase):
 
         :return:
         """
-        
+
         outdir = self._main_func(edipath=EDI_DATA_DIR)
 
-        for afile in ('Occam2DMesh', 'Occam2DModel', 'Occam2DStartup'):
+        for afile in ("Occam2DMesh", "Occam2DModel", "Occam2DStartup"):
             output_data_file = os.path.join(outdir, afile)
-            self.assertTrue(os.path.isfile(output_data_file), "output data file not found")
+            self.assertTrue(
+                os.path.isfile(output_data_file), "output data file not found"
+            )
 
             expected_data_file = os.path.join(self._expected_output_dir, afile)
 
-            self.assertTrue(os.path.isfile(expected_data_file),
-                            "Ref output data file does not exist, nothing to compare with"
-                            )
+            self.assertTrue(
+                os.path.isfile(expected_data_file),
+                "Ref output data file does not exist, nothing to compare with",
+            )
 
             print(("Comparing", output_data_file, "and", expected_data_file))
 
-            is_identical, msg = diff_files(output_data_file, expected_data_file, ignores=['Date/Time:'])
+            is_identical, msg = diff_files(
+                output_data_file, expected_data_file, ignores=["Date/Time:"]
+            )
             print(msg)
-            self.assertTrue(is_identical, "The output file is not the same with the baseline file.")
+            self.assertTrue(
+                is_identical, "The output file is not the same with the baseline file."
+            )
 
     def test_plot_model_and_responses(self):
         """
@@ -153,17 +161,17 @@ class TestOccam2D(TestCase):
             """
 
         # path to directory containing inversion files
-        idir = os.path.join(SAMPLE_DIR, 'Occam2d')
+        idir = os.path.join(SAMPLE_DIR, "Occam2d")
 
         # save path, to save plots to
         savepath = self._temp_dir
         offset = 0
 
         # go to model results directory and find the latest iteration file
-        iterfile = 'ITER12.iter'
-        respfile = 'RESP12.resp'
+        iterfile = "ITER12.iter"
+        respfile = "RESP12.resp"
 
-        datafn = 'OccamDataFile.dat'
+        datafn = "OccamDataFile.dat"
         # get the iteration number
         iterno = iterfile[-7:-5]
         outfilename = iterfile[:-5]
@@ -177,33 +185,38 @@ class TestOccam2D(TestCase):
 
         # plot the model
         if plotmodel:
-            plotm = occam2d.PlotModel(iter_fn=os.path.join(idir, iterfile),
-                                      data_fn=os.path.join(idir, datafn),
-                                      station_font_pad=0.5,
-                                      station_font_size=6,
-                                      station_font_rotation=75,
-                                      climits=(0., 2.5),  # colour scale limits
-                                      xpad=xpad,
-                                      dpi=300,  # resolution of figure
-                                      fig_aspect=0.5,  # aspect ratio between horizontal and vertical scale
-                                      ylimits=(0, 10),  # depth limits
-                                      stationid=(-1, 3),  # index of station name to plot
-                                      plot_yn='n')
+            plotm = occam2d.PlotModel(
+                iter_fn=os.path.join(idir, iterfile),
+                data_fn=os.path.join(idir, datafn),
+                station_font_pad=0.5,
+                station_font_size=6,
+                station_font_rotation=75,
+                climits=(0.0, 2.5),  # colour scale limits
+                xpad=xpad,
+                dpi=300,  # resolution of figure
+                fig_aspect=0.5,  # aspect ratio between horizontal and vertical scale
+                ylimits=(0, 10),  # depth limits
+                stationid=(-1, 3),  # index of station name to plot
+                plot_yn="n",
+            )
             plotm.plot()
             if save:
                 plotm.save_figure(
-                    os.path.join(savepath, outfilename + '_resmodel.png'),
-                    close_fig='n')  # this will produce 1 figure .png
+                    os.path.join(savepath, outfilename + "_resmodel.png"), close_fig="n"
+                )  # this will produce 1 figure .png
             plt_wait(1)
 
         # plot the responses
         if plotresponses:
-            plotresponse = occam2d.PlotResponse(os.path.join(idir, datafn),
-                                                resp_fn=os.path.join(idir, respfile),
-                                                plot_type=['pb35', 'pb40']
-                                                )
+            plotresponse = occam2d.PlotResponse(
+                os.path.join(idir, datafn),
+                resp_fn=os.path.join(idir, respfile),
+                plot_type=["pb35", "pb40"],
+            )
             if save:
-                plotresponse.save_figures(savepath, close_fig='n')  # this will produce 2 .pdf file
+                plotresponse.save_figures(
+                    savepath, close_fig="n"
+                )  # this will produce 2 .pdf file
             plt_wait(1)
 
         plt_close()

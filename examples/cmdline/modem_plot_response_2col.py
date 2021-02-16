@@ -21,33 +21,34 @@ import os
 from mtpy.modeling.modem import PlotResponse
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
 
     #### Inputs ####
-    wd = r'E:\Githubz\Alison_Bugs\data'
-    savepath = r'E:\Githubz\Alison_Bugs\output'
+    wd = r"E:\Githubz\Alison_Bugs\data"
+    savepath = r"E:\Githubz\Alison_Bugs\output"
 
-
-    filestem = 'Modular_MPI_NLCG_108'
-    datafn = 'ModEM_Data.dat'
+    filestem = "Modular_MPI_NLCG_108"
+    datafn = "ModEM_Data.dat"
 
     Resist_Only = False
     # True to plot impedance,
     # False for plotting resistivity and phase
 
-    respfn = filestem+'.dat'
-    station = ['GB08','GB09']
+    respfn = filestem + ".dat"
+    station = ["GB08", "GB09"]
 
-    ro = PlotResponse(data_fn=os.path.join(wd,datafn),
-                      resp_fn=os.path.join(wd,respfn),
-                      plot_type=station,
-                      plot_style=1,
-                      plot_z= Resist_Only,
-                      save_plots=True,
-                      ctem='b',ctmm='r',
-    #                  mtem=
-    #                  plot_yn = False,
-    #                  fig_size=[3,2],
-    #                  font_size=4
-                      )
+    ro = PlotResponse(
+        data_fn=os.path.join(wd, datafn),
+        resp_fn=os.path.join(wd, respfn),
+        plot_type=station,
+        plot_style=1,
+        plot_z=Resist_Only,
+        save_plots=True,
+        ctem="b",
+        ctmm="r",
+        #                  mtem=
+        #                  plot_yn = False,
+        #                  fig_size=[3,2],
+        #                  font_size=4
+    )
     ro.plot()

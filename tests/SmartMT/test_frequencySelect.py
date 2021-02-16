@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
 
 
 def _get_mt_objs(edi_path):
-    edi_files = glob.glob(os.path.join(edi_path, '*.edi'))
+    edi_files = glob.glob(os.path.join(edi_path, "*.edi"))
     mt_objs = [mt.MT(os.path.abspath(file_name)) for file_name in edi_files]
     return mt_objs
 
@@ -54,16 +54,26 @@ class TestFrequencySelect(TestCase):
         self.assertTrue(self.app.frequency_select.ui.radioButton_frequency.isChecked())
 
         # test frequency selection
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
 
         _click_area(self.app.frequency_select.ui.checkBox_existing_only, pos_check_box)
@@ -87,16 +97,26 @@ class TestFrequencySelect(TestCase):
         _click_area(self.app.frequency_select.ui.pushButton_clear)
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() == 0)
         # test delete
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
-        _click_area(self.app.frequency_select.histogram,
-                    offset=self.app.frequency_select.histogram.geometry().topLeft())
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
+        _click_area(
+            self.app.frequency_select.histogram,
+            offset=self.app.frequency_select.histogram.geometry().topLeft(),
+        )
         self.assertTrue(self.app.frequency_select.model_selected.rowCount() > 0)
         self.app.frequency_select.ui.listView_selected.selectAll()
         _click_area(self.app.frequency_select.ui.pushButton_delete)

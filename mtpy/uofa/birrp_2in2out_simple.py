@@ -24,16 +24,19 @@ import time
 import mtpy.utils.exceptions as MTex
 
 import mtpy.processing.birrp as MTbp
-#reload(MTbp)
+
+# reload(MTbp)
 
 
 def main():
 
     if len(sys.argv) < 4:
-        print('\nNeed at least 3 arguments: <path to BIRRP executable> '\
-            '<station name> <directory for time series>\n\n'\
-            'Optional arguments: \n [coherence threshold]\n'\
-            ' [start time] \n [end time]\n\n')
+        print(
+            "\nNeed at least 3 arguments: <path to BIRRP executable> "
+            "<station name> <directory for time series>\n\n"
+            "Optional arguments: \n [coherence threshold]\n"
+            " [start time] \n [end time]\n\n"
+        )
         return
 
     try:
@@ -41,7 +44,7 @@ def main():
         if not 0 <= coherence_th <= 1:
             raise
     except:
-        print('coherence value invalid (float from interval [0,1]) - set to 0 instead')
+        print("coherence value invalid (float from interval [0,1]) - set to 0 instead")
         coherence_th = 0
 
     try:
@@ -59,8 +62,8 @@ def main():
 
     if not op.isfile(birrp_exe):
         raise MTex.MTpyError_inputarguments(
-            'Birrp executable not existing: %s' %
-            (birrp_exe))
+            "Birrp executable not existing: %s" % (birrp_exe)
+        )
 
     stationname = sys.argv[2].upper()
 
@@ -69,15 +72,24 @@ def main():
 
     if not op.isdir(ts_dir):
         raise MTex.MTpyError_inputarguments(
-            'Time series directory not existing: %s' %
-            (ts_dir))
+            "Time series directory not existing: %s" % (ts_dir)
+        )
 
     if 1:
-        MTbp.runbirrp_Nin2out_simple(birrp_exe, stationname, ts_dir, coherence_th,
-                                     None, 2, None, starttime, endtime)
+        MTbp.runbirrp_Nin2out_simple(
+            birrp_exe,
+            stationname,
+            ts_dir,
+            coherence_th,
+            None,
+            2,
+            None,
+            starttime,
+            endtime,
+        )
     # except:
     #     print 'ERROR - Could not process input data using BIRRP'
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

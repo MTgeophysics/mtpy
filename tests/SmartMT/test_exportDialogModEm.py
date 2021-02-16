@@ -1,5 +1,3 @@
-
-
 import glob
 import os
 import pprint
@@ -35,7 +33,7 @@ edi_paths = [
     "examples/data/edi_files",
     "../MT_Datasets/3D_MT_data_edited_fromDuanJM",
     "../MT_Datasets/GA_UA_edited_10s-10000s",
-    "data/edifiles2"
+    "data/edifiles2",
 ]
 
 
@@ -56,7 +54,7 @@ class TestExportDialogModEm(TestCase):
         self.dialog.close()
 
     def test_defaults(self):
-        edi_files = glob.glob(os.path.join(edi_paths[0], '*.edi'))
+        edi_files = glob.glob(os.path.join(edi_paths[0], "*.edi"))
         mt_objs = [MT(os.path.abspath(file_name)) for file_name in edi_files]
         self.dialog.set_data(mt_objs)
         _rewrite_text(self.dialog.ui.comboBox_topography_file, AUS_TOPO_FILE)

@@ -15,12 +15,12 @@ import re
 import glob
 
 
-edipath = '.'
+edipath = "."
 
 if not os.path.isdir(edipath):
-    print '\n\tERROR - data path does not exist'
+    print "\n\tERROR - data path does not exist"
     sys.exit()
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 
 # flag for merging closely neighbouring periods:
@@ -49,7 +49,7 @@ use_tipper = False
 
 errorfloor = 5
 
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 header_string = """#Data file \n# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error
 > Full_Impedance \n> exp(-i\omega t)\n> [mV/km]/[nT]
@@ -57,7 +57,7 @@ header_string = """#Data file \n# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Co
 """
 
 
-edilist = glob.glob(os.path.join(edipath, '*.[Ee][Dd][Ii]'))
+edilist = glob.glob(os.path.join(edipath, "*.[Ee][Dd][Ii]"))
 edilist = [os.path.abspath(os.path.join(os.curdir, i)) for i in edilist]
 
 lo_ediobjs = []
@@ -98,12 +98,12 @@ rel_coords[:, 1] = coords[:, 1] - North0
 
 # start Impedance tensor part ---------------------------------------------
 
-header_string += '> {0}  {1}\n'.format(lat0, lon0)
+header_string += "> {0}  {1}\n".format(lat0, lon0)
 
-impstring = ''
+impstring = ""
 periodlist = []
 
-components = ['XX', 'XY', 'YX', 'YY']
+components = ["XX", "XY", "YX", "YY"]
 
 # loop for reading in periods
 # in case merging is requested, updating period
@@ -121,10 +121,15 @@ periodlist = sorted(list(set(periodlist)), reverse=False)
 if merge_periods == True:
 
     # mp.plot_merging(periodlist,merge_threshold,N)
-    #new_periods = mp.merge_periods(periodlist,merge_threshold)
-    new_periods, merging_error = mp.regular_periods(periodlist, merge_threshold, no_periods=N,
-                                                    t_min=Tmin, t_max=Tmax,
-                                                    max_merge_error=merging_error)
+    # new_periods = mp.merge_periods(periodlist,merge_threshold)
+    new_periods, merging_error = mp.regular_periods(
+        periodlist,
+        merge_threshold,
+        no_periods=N,
+        t_min=Tmin,
+        t_max=Tmax,
+        max_merge_error=merging_error,
+    )
 
 else:
     new_periods = periodlist[:]
@@ -187,36 +192,36 @@ for idx_edi, edi in enumerate(lo_ediobjs):
         merge_error = period_dict[str(raw_period)][1]
         try:
             if merge_error is not None:
-                merge_error = float(merge_error) / 100.
+                merge_error = float(merge_error) / 100.0
             else:
                 raise
         except:
-            merge_error = 0.
+            merge_error = 0.0
 
         Z = zval[p]
-        Zerr = z_err[p] * (1. + merge_error)
+        Zerr = z_err[p] * (1.0 + merge_error)
 
-        period_impstring = ''
+        period_impstring = ""
 
         for i in range(2):
             for j in range(2):
                 try:
                     rel_err = Zerr[i, j] / np.abs(Z[i, j])
-                    if rel_err < errorfloor / 100.:
+                    if rel_err < errorfloor / 100.0:
                         raise
                 except:
-                    Zerr[i, j] = errorfloor / 100. * np.abs(Z[i, j])
+                    Zerr[i, j] = errorfloor / 100.0 * np.abs(Z[i, j])
 
                 comp = components[2 * i + j]
-                period_impstring += '{0:.5f}  {1}  '.format(
-                    period, edi.station)
-                period_impstring += '{0:.3f}  {1:.3f}  '.format(
-                    edi.lat, edi.lon)
-                period_impstring += '{0:.3f}  {1:.3f}  {2}  '.format(
-                    northing, easting, 0.)
-                period_impstring += 'Z{0}  {1:.5E}  {2:.5E}  {3:.5E}  '.format(comp, float(np.real(Z[i, j])),
-                                                                               float(np.imag(Z[i, j])), Zerr[i, j])
-                period_impstring += '\n'
+                period_impstring += "{0:.5f}  {1}  ".format(period, edi.station)
+                period_impstring += "{0:.3f}  {1:.3f}  ".format(edi.lat, edi.lon)
+                period_impstring += "{0:.3f}  {1:.3f}  {2}  ".format(
+                    northing, easting, 0.0
+                )
+                period_impstring += "Z{0}  {1:.5E}  {2:.5E}  {3:.5E}  ".format(
+                    comp, float(np.real(Z[i, j])), float(np.imag(Z[i, j])), Zerr[i, j]
+                )
+                period_impstring += "\n"
 
         impstring += period_impstring
 
@@ -224,39 +229,39 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 n_periods = len(set(periodlist))
 
 
-print 'Z periods: ', n_periods
-print 'No. data files:', len(lo_ediobjs)
+print "Z periods: ", n_periods
+print "No. data files:", len(lo_ediobjs)
 
-header_string += '> {0} {1}\n'.format(n_periods, len(lo_ediobjs))
+header_string += "> {0} {1}\n".format(n_periods, len(lo_ediobjs))
 
 # print outstring
-data = open(r'ModEMdata.dat', 'w')
+data = open(r"ModEMdata.dat", "w")
 data.write(header_string)
 data.write(impstring)
 data.close()
 
 
 if use_tipper is False:
-    print '\n\tEND\n\n'
+    print "\n\tEND\n\n"
     sys.exit()
 
 # start Tipper part ---------------------------------------------
 
-errorfloor *= 2.
+errorfloor *= 2.0
 
 # Tipper part
-header_string = ''
+header_string = ""
 header_string += """# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error
 > Full_Vertical_Components \n> exp(-i\omega t)\n> []
 > 0.00
 """
 
-header_string += '> {0}  {1}\n'.format(lat0, lon0)
+header_string += "> {0}  {1}\n".format(lat0, lon0)
 
-tipperstring = ''
+tipperstring = ""
 periodlist = []
 n_periods = 0
-components = ['X', 'Y']
+components = ["X", "Y"]
 
 stationlist = []
 
@@ -284,7 +289,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
         try:
             Terr = tipper_err[i][0]
         except:
-            Terr = np.zeros_like(T, 'float')
+            Terr = np.zeros_like(T, "float")
 
         if np.sum(np.abs(T)) == 0:
             continue
@@ -293,26 +298,27 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
         periodlist.append(period)
 
-        period_tipperstring = ''
+        period_tipperstring = ""
 
         for i in range(2):
 
             try:
                 rel_err = Terr[i] / np.abs(T[i])
-                if rel_err < errorfloor / 100.:
+                if rel_err < errorfloor / 100.0:
                     raise
             except:
-                Terr[i] = errorfloor / 100. * np.abs(T[i])
+                Terr[i] = errorfloor / 100.0 * np.abs(T[i])
 
             comp = components[i]
-            period_tipperstring += '{0:.5f}  {1}  '.format(period, edi.station)
-            period_tipperstring += '{0:.3f}  {1:.3f}  '.format(
-                edi.lat, edi.lon)
-            period_tipperstring += '{0:.3f}  {1:.3f}  {2}  '.format(
-                northing, easting, 0.)
-            period_tipperstring += 'T{0}  {1:.5E}  {2:.5E}  {3:.5E}  '.format(comp, float(np.real(T[i])),
-                                                                              float(np.imag(T[i])), Terr[i])
-            period_tipperstring += '\n'
+            period_tipperstring += "{0:.5f}  {1}  ".format(period, edi.station)
+            period_tipperstring += "{0:.3f}  {1:.3f}  ".format(edi.lat, edi.lon)
+            period_tipperstring += "{0:.3f}  {1:.3f}  {2}  ".format(
+                northing, easting, 0.0
+            )
+            period_tipperstring += "T{0}  {1:.5E}  {2:.5E}  {3:.5E}  ".format(
+                comp, float(np.real(T[i])), float(np.imag(T[i])), Terr[i]
+            )
+            period_tipperstring += "\n"
 
         tipperstring += period_tipperstring
 
@@ -320,15 +326,15 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 n_periods = len(set(periodlist))
 n_stations = len(set(stationlist))
 if use_tipper is True:
-    print 'Tipper periods: ', n_periods, 'stations:', n_stations
+    print "Tipper periods: ", n_periods, "stations:", n_stations
 else:
-    print 'no Tipper information in data file'
+    print "no Tipper information in data file"
 
-header_string += '> {0} {1}\n'.format(n_periods, len(lo_ediobjs))
+header_string += "> {0} {1}\n".format(n_periods, len(lo_ediobjs))
 
 
 if (len(tipperstring) > 0) and (use_tipper is True):
-    data = open(r'ModEMdata.dat', 'a')
+    data = open(r"ModEMdata.dat", "a")
     data.write(header_string)
     data.write(tipperstring.expandtabs(4))
     data.close()

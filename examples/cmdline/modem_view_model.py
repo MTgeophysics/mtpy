@@ -17,7 +17,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=None, **kwargs):
+def plot_model_mesh(
+    modelfile, east_limits=None, north_limits=None, z_limits=None, **kwargs
+):
     """ Plot the model grid/mesh
 
     :param modelfile:  path2/ModEM_Model.ws
@@ -41,9 +43,8 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
     :return:
     """
 
-    line_color = kwargs.pop('line_color', 'k')
-    line_width = kwargs.pop('line_width', .5)
-
+    line_color = kwargs.pop("line_color", "k")
+    line_width = kwargs.pop("line_width", 0.5)
 
     # make a rotation matrix to rotate data
     # cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
@@ -54,52 +55,52 @@ def plot_model_mesh(modelfile, east_limits=None, north_limits=None, z_limits=Non
     cos_ang = 1
     sin_ang = 0
 
-
     # east_line_xlist = [-10,-6, -4, -2,0,2,4,6,10, None, -10,-6, -4, -2,0,2,4,6,10 ]
     # east_line_ylist = [1,1,1,1,1,1,1,1,1, None, 20,20,20,20,20,20,20,20,20]
     # ax1.scatter(east_line_xlist, east_line_ylist, lw=line_width, color=line_color)
     # plt.show()
 
-
     if modelfile is not None:
         with open(modelfile) as modfn:
-            lines= modfn.readlines()
+            lines = modfn.readlines()
 
-        print("How many lines in %s ?== %s "%(modelfile, len(lines)))
+        print("How many lines in %s ?== %s " % (modelfile, len(lines)))
 
         for aline in lines[:5]:
-            aline = aline.strip() # remove leading and trailing white spaces and invisible chars \n
-            if aline.startswith('#'):
-                print ("Header line skipped: ", aline)
-            elif aline.endswith('LOGE'):
-                (ew, ns, depth)= aline.split()[:3]
+            aline = (
+                aline.strip()
+            )  # remove leading and trailing white spaces and invisible chars \n
+            if aline.startswith("#"):
+                print("Header line skipped: ", aline)
+            elif aline.endswith("LOGE"):
+                (ew, ns, depth) = aline.split()[:3]
                 print("cells = ", ew, ns, depth)
             else:  # cell sizes
                 values = aline.split()
-                print("cells: ",len(values))
-                print('Cell sizes: ', values)
+                print("cells: ", len(values))
+                print("Cell sizes: ", values)
 
-                nvalues= np.array(values).astype('float')
-                plt.plot(nvalues, 'o',  lw=line_width, color=line_color)
+                nvalues = np.array(values).astype("float")
+                plt.plot(nvalues, "o", lw=line_width, color=line_color)
                 plt.show()
 
                 # Check the changes in the cell sizes?
                 diffval = np.diff(nvalues)
-                print (diffval)
-                plt.plot(diffval, '*',  lw=line_width, color=line_color)
+                print(diffval)
+                plt.plot(diffval, "*", lw=line_width, color=line_color)
                 plt.show()
+
 
 # ----------------------------------------------------------------------------
 # view a model mesh (x y z) cell sizes
 # python examples/cmdline/modem_view_model.py /e/Data/Modeling/Isa/100hs_flat_BB/Isa_run3_NLCG_048.rho
 if __name__ == "__main__":
 
-    if len(sys.argv)>1:
-        modelfile= sys.argv[1]
+    if len(sys.argv) > 1:
+        modelfile = sys.argv[1]
     else:
         modelfile = None
-        print ("USAGE: python %s path2_model_file.ws|.mod|.rho" % sys.argv[0])
+        print("USAGE: python %s path2_model_file.ws|.mod|.rho" % sys.argv[0])
         sys.exit(1)
 
     plot_model_mesh(modelfile)
-

@@ -70,20 +70,22 @@ class StationSummary(QWidget):
             if mt_obj._edi_obj.Header.loc:
                 self.ui.lineEditLocation.setText(mt_obj._edi_obj.Header.loc)
             if mt_obj.elev:
-                self.ui.lineEditElev.setText('%.5f' % mt_obj.elev)
+                self.ui.lineEditElev.setText("%.5f" % mt_obj.elev)
             if mt_obj.lat:
-                self.ui.lineEditLat.setText('%.5f' % mt_obj.lat)
+                self.ui.lineEditLat.setText("%.5f" % mt_obj.lat)
             if mt_obj.lon:
-                self.ui.lineEditLong.setText('%.5f' % mt_obj.lon)
+                self.ui.lineEditLong.setText("%.5f" % mt_obj.lon)
             if mt_obj._edi_obj.Header.filedate:
                 self.ui.lineEditDate_Acq.setText(mt_obj._edi_obj.Header.filedate)
-            with open(mt_obj.fn, 'r') as edi_file:
+            with open(mt_obj.fn, "r") as edi_file:
                 self.ui.plainTextEdit_edi_text.setPlainText(edi_file.read())
         except Exception as e:
-            QMessageBox.critical(self,
-                                 'Error when displaying station detail',
-                                 e.message(),
-                                 QMessageBox.Close)
+            QMessageBox.critical(
+                self,
+                "Error when displaying station detail",
+                e.message(),
+                QMessageBox.Close,
+            )
 
     def _clear_station_detail(self):
         # clear text

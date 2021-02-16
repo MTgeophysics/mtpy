@@ -8,7 +8,7 @@ ZEN PROCESSING TOOLS
 Created on Fri Sep 16 14:29:43 2016
 @author: jpeacock
 """
-#==============================================================================
+# ==============================================================================
 import numpy as np
 import datetime
 import os
@@ -31,14 +31,14 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MultipleLocator
 
-#==============================================================================
-datetime_fmt = '%Y-%m-%d,%H:%M:%S'
-datetime_sec = '%Y-%m-%d %H:%M:%S'
-#==============================================================================
+# ==============================================================================
+datetime_fmt = "%Y-%m-%d,%H:%M:%S"
+datetime_sec = "%Y-%m-%d %H:%M:%S"
+# ==============================================================================
 
-#==============================================================================
+# ==============================================================================
 # Survey configuration file
-#==============================================================================
+# ==============================================================================
 class SurveyConfig(object):
     """
     survey config class
@@ -81,19 +81,20 @@ class SurveyConfig(object):
         station = 300
         station_type = mt
     """
+
     def __init__(self, **kwargs):
         self.b_instrument_amplification = 1
-        self.b_instrument_type = 'induction coil'
+        self.b_instrument_type = "induction coil"
         self.b_logger_gain = 1
-        self.b_logger_type = 'zen'
+        self.b_logger_type = "zen"
         self.b_xaxis_azimuth = 0
         self.b_yaxis_azimuth = 90
         self.box = 24
-        self.date = '01/01/00'
+        self.date = "01/01/00"
         self.e_instrument_amplification = 1
-        self.e_instrument_type = 'Ag-Agcl electrodes'
+        self.e_instrument_type = "Ag-Agcl electrodes"
         self.e_logger_gain = 1
-        self.e_logger_type = 'zen'
+        self.e_logger_type = "zen"
         self.e_xaxis_azimuth = 0
         self.e_xaxis_length = 100
         self.e_yaxis_azimuth = 90
@@ -103,13 +104,13 @@ class SurveyConfig(object):
         self.hy = 2314
         self.hz = 2334
         self.lat = 0.0
-        self.location = 'Earth'
+        self.location = "Earth"
         self.lon = 0.0
-        self.network = 'USGS'
-        self.notes = 'Generic config file'
-        self.sampling_interval = 'all'
-        self.station = 'mb000'
-        self.station_type = 'mt'
+        self.network = "USGS"
+        self.notes = "Generic config file"
+        self.sampling_interval = "all"
+        self.station = "mb000"
+        self.station_type = "mt"
         self.save_path = None
 
         self.rr_lat = None
@@ -131,36 +132,36 @@ class SurveyConfig(object):
 
         """
         z3d_df.remote = z3d_df.remote.astype(str)
-        s_df = z3d_df[z3d_df.remote == 'False']
+        s_df = z3d_df[z3d_df.remote == "False"]
         s_df.start = pd.to_datetime(s_df.start)
 
-        self.b_xaxis_azimuth = s_df[s_df.component == 'hx'].azimuth.mode()[0]
-        self.b_yaxis_azimuth = s_df[s_df.component == 'hy'].azimuth.mode()[0]
+        self.b_xaxis_azimuth = s_df[s_df.component == "hx"].azimuth.mode()[0]
+        self.b_yaxis_azimuth = s_df[s_df.component == "hy"].azimuth.mode()[0]
         self.box = s_df.zen_num.mode()[0]
         self.date = s_df.start.min().isoformat()
-        self.e_instrument_type = 'Ag-Agcl electrodes'
-        self.e_logger_type = 'zen'
-        self.e_xaxis_azimuth = s_df[s_df.component == 'ex'].azimuth.mode()[0]
-        self.e_xaxis_length = s_df[s_df.component == 'ex'].dipole_length.mode()[0]
-        self.e_yaxis_azimuth = s_df[s_df.component == 'ey'].azimuth.mode()[0]
-        self.e_yaxis_length = s_df[s_df.component == 'hx'].dipole_length.mode()[0]
+        self.e_instrument_type = "Ag-Agcl electrodes"
+        self.e_logger_type = "zen"
+        self.e_xaxis_azimuth = s_df[s_df.component == "ex"].azimuth.mode()[0]
+        self.e_xaxis_length = s_df[s_df.component == "ex"].dipole_length.mode()[0]
+        self.e_yaxis_azimuth = s_df[s_df.component == "ey"].azimuth.mode()[0]
+        self.e_yaxis_length = s_df[s_df.component == "hx"].dipole_length.mode()[0]
         self.elevation = s_df.elevation.median()
-        self.hx = s_df[s_df.component == 'hx'].coil_number.mode()[0]
-        self.hy = s_df[s_df.component == 'hy'].coil_number.mode()[0]
+        self.hx = s_df[s_df.component == "hx"].coil_number.mode()[0]
+        self.hy = s_df[s_df.component == "hy"].coil_number.mode()[0]
         try:
-            self.hz = s_df[s_df.component == 'hz'].coil_number.mode()[0]
+            self.hz = s_df[s_df.component == "hz"].coil_number.mode()[0]
         except IndexError:
-            self.hz = ''
+            self.hz = ""
         self.lat = s_df.latitude.median()
-        self.location = 'Earth'
+        self.location = "Earth"
         self.lon = s_df.longitude.median()
-        self.network = 'USGS'
-        self.notes = 'Generic config file'
-        self.sampling_interval = 'all'
+        self.network = "USGS"
+        self.notes = "Generic config file"
+        self.sampling_interval = "all"
         self.station = s_df.station.mode()[0]
-        self.station_type = 'mt'
+        self.station_type = "mt"
 
-        rr_df = z3d_df[z3d_df.remote == 'True']
+        rr_df = z3d_df[z3d_df.remote == "True"]
         rr_df.start = pd.to_datetime(rr_df.start)
         if len(rr_df) > 0:
             self.rr_lat = []
@@ -183,10 +184,10 @@ class SurveyConfig(object):
 
         if save_path is not None:
             self.save_path = Path(save_path)
-        fn = self.save_path.joinpath('{0}.cfg'.format(self.station))
-        mtcfg.write_dict_to_configfile({self.station:self.__dict__}, fn)
+        fn = self.save_path.joinpath("{0}.cfg".format(self.station))
+        mtcfg.write_dict_to_configfile({self.station: self.__dict__}, fn)
 
-        #('Wrote survey config file to {0}'.format(fn))
+        # ('Wrote survey config file to {0}'.format(fn))
 
         return fn
 
@@ -210,9 +211,10 @@ class SurveyConfig(object):
         for key, value in survey_cfg_dict.items():
             setattr(self, key, value)
 
-#==============================================================================
+
+# ==============================================================================
 # Z3D files to EDI using BIRRP
-#==============================================================================
+# ==============================================================================
 class Z3D2EDI(object):
     """
     go from z3d files to .edi using BIRRP as the processing code
@@ -280,52 +282,67 @@ class Z3D2EDI(object):
         self._max_nread = 20000000
         # number of lines for birrp to skip in file ts header
         self._header_len = 23
-        self._tol_dict = {4096: {'s_diff': 5 * 60 * 4096,
-                                      'min_points': 2**18},
-                               256: {'s_diff': 3 * 3600 * 256,
-                                     'min_points': 2**19},
-                               4: {'s_diff': 4 * 3600 * 4,
-                                   'min_points': 2**14}}
+        self._tol_dict = {
+            4096: {"s_diff": 5 * 60 * 4096, "min_points": 2 ** 18},
+            256: {"s_diff": 3 * 3600 * 256, "min_points": 2 ** 19},
+            4: {"s_diff": 4 * 3600 * 4, "min_points": 2 ** 14},
+        }
 
         # data types for different aspects of getting information
         if sys.version_info[0] == 2:
-            self._ts_fn_dtype = np.dtype([(u'station','S6'),
-                                          (u'npts', np.int),
-                                          (u'df', np.int),
-                                          (u'start_dt', 'S22'),
-                                          (u'end_dt', 'S22'),
-                                          (u'comp', 'S2'),
-                                          (u'fn', 'S100'),
-                                          (u'calibration_fn', 'S100')])
+            self._ts_fn_dtype = np.dtype(
+                [
+                    (u"station", "S6"),
+                    (u"npts", np.int),
+                    (u"df", np.int),
+                    (u"start_dt", "S22"),
+                    (u"end_dt", "S22"),
+                    (u"comp", "S2"),
+                    (u"fn", "S100"),
+                    (u"calibration_fn", "S100"),
+                ]
+            )
 
-            self._birrp_fn_dtype = np.dtype([('fn', 'S100'),
-                                             ('nread', np.int),
-                                             ('nskip', np.int),
-                                             ('comp', 'S2'),
-                                             ('calibration_fn', 'S100'),
-                                             ('rr', np.bool),
-                                             ('rr_num', np.int),
-                                             ('start_dt', 'S22'),
-                                             ('end_dt', 'S22')])
+            self._birrp_fn_dtype = np.dtype(
+                [
+                    ("fn", "S100"),
+                    ("nread", np.int),
+                    ("nskip", np.int),
+                    ("comp", "S2"),
+                    ("calibration_fn", "S100"),
+                    ("rr", np.bool),
+                    ("rr_num", np.int),
+                    ("start_dt", "S22"),
+                    ("end_dt", "S22"),
+                ]
+            )
         elif sys.version_info[0] == 3:
-            self._ts_fn_dtype = np.dtype([('station','U6'),
-                                          ('npts', np.int),
-                                          ('df', np.int),
-                                          ('start_dt', 'U22'),
-                                          ('end_dt', 'U22'),
-                                          ('comp', 'U2'),
-                                          ('fn', 'U100'),
-                                          ('calibration_fn', 'U100')])
+            self._ts_fn_dtype = np.dtype(
+                [
+                    ("station", "U6"),
+                    ("npts", np.int),
+                    ("df", np.int),
+                    ("start_dt", "U22"),
+                    ("end_dt", "U22"),
+                    ("comp", "U2"),
+                    ("fn", "U100"),
+                    ("calibration_fn", "U100"),
+                ]
+            )
 
-            self._birrp_fn_dtype = np.dtype([('fn', 'U100'),
-                                             ('nread', np.int),
-                                             ('nskip', np.int),
-                                             ('comp', 'U2'),
-                                             ('calibration_fn', 'U100'),
-                                             ('rr', np.bool),
-                                             ('rr_num', np.int),
-                                             ('start_dt', 'U22'),
-                                             ('end_dt', 'U22')])
+            self._birrp_fn_dtype = np.dtype(
+                [
+                    ("fn", "U100"),
+                    ("nread", np.int),
+                    ("nskip", np.int),
+                    ("comp", "U2"),
+                    ("calibration_fn", "U100"),
+                    ("rr", np.bool),
+                    ("rr_num", np.int),
+                    ("start_dt", "U22"),
+                    ("end_dt", "U22"),
+                ]
+            )
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -336,7 +353,7 @@ class Z3D2EDI(object):
 
     @station_z3d_dir.setter
     def station_z3d_dir(self, station_z3d_dir):
-        if station_z3d_dir in [None, 'None']:
+        if station_z3d_dir in [None, "None"]:
             self._station_z3d_dir = None
         else:
             self._station_z3d_dir = Path(station_z3d_dir)
@@ -347,7 +364,7 @@ class Z3D2EDI(object):
 
     @rr_station_z3d_dir.setter
     def rr_station_z3d_dir(self, rr_station_z3d_dir):
-        if rr_station_z3d_dir in [None, 'None']:
+        if rr_station_z3d_dir in [None, "None"]:
             self._rr_station_z3d_dir = None
         if isinstance(rr_station_z3d_dir, (str, Path)):
             self._rr_station_z3d_dir = [Path(rr_station_z3d_dir)]
@@ -357,28 +374,27 @@ class Z3D2EDI(object):
     @property
     def station_ts_dir(self):
         if self._station_ts_dir is None:
-            return self.station_z3d_dir.joinpath('TS')
+            return self.station_z3d_dir.joinpath("TS")
         else:
             return self._station_ts_dir
 
     @station_ts_dir.setter
     def station_ts_dir(self, station_ts_dir):
-        if station_ts_dir in [None, 'None']:
+        if station_ts_dir in [None, "None"]:
             self._station_ts_dir = None
         else:
             self._station_ts_dir = Path(station_ts_dir)
 
     @property
     def rr_station_ts_dir(self):
-        if self._rr_station_ts_dir is None and \
-            self._rr_station_z3d_dir is not None:
-            return [p.joinpath('TS') for p in self.rr_station_z3d_dir]
+        if self._rr_station_ts_dir is None and self._rr_station_z3d_dir is not None:
+            return [p.joinpath("TS") for p in self.rr_station_z3d_dir]
         else:
             return self._rr_station_ts_dir
 
     @rr_station_ts_dir.setter
     def rr_station_ts_dir(self, rr_station_ts_dir):
-        if rr_station_ts_dir in [None, 'None']:
+        if rr_station_ts_dir in [None, "None"]:
             self._rr_station_ts_dir = None
         if isinstance(rr_station_ts_dir, (str, Path)):
             self._rr_station_ts_dir = [Path(rr_station_ts_dir)]
@@ -396,26 +412,35 @@ class Z3D2EDI(object):
         """
         self.calibration_path = calibration_path
         if self.calibration_path is None:
-            print('ERROR: Calibration path is None')
+            print("ERROR: Calibration path is None")
             self.calibration_dict = {}
 
         if not isinstance(self.calibration_path, Path):
             self.calibration_path = Path(self.calibration_path)
 
         if not self.calibration_path.exists():
-            print('WARNING: could not find calibration path: '
-                  '{0}'.format(self.calibration_path))
+            print(
+                "WARNING: could not find calibration path: "
+                "{0}".format(self.calibration_path)
+            )
             self.calibration_dict = {}
 
         self.calibration_dict = {}
-        for cal_fn in self.calibration_path.glob('*.csv'):
+        for cal_fn in self.calibration_path.glob("*.csv"):
             cal_num = cal_fn.stem
             self.calibration_dict[cal_num] = cal_fn
 
-    def convert_z3d_to_mtts(self, station_z3d_dir, rr_station_z3d_dir=None,
-                            use_blocks_dict=None, overwrite=False,
-                            combine=True, notch_dict=None,
-                            combine_sampling_rate=4, calibration_path=None):
+    def convert_z3d_to_mtts(
+        self,
+        station_z3d_dir,
+        rr_station_z3d_dir=None,
+        use_blocks_dict=None,
+        overwrite=False,
+        combine=True,
+        notch_dict=None,
+        combine_sampling_rate=4,
+        calibration_path=None,
+    ):
         """
         Convert Z3D files into MTTS objects and write ascii files for input
         into BIRRP.  Will write a survey configuration file that can be read
@@ -485,30 +510,34 @@ class Z3D2EDI(object):
         if rr_station_z3d_dir is not None:
             self.rr_station_z3d_dir = rr_station_z3d_dir
 
-        kw_dict = {'block_dict': use_blocks_dict,
-                   'notch_dict': notch_dict,
-                   'overwrite': overwrite,
-                   'combine': combine,
-                   'combine_sampling_rate': combine_sampling_rate,
-                   'calibration_path': self.calibration_path}
+        kw_dict = {
+            "block_dict": use_blocks_dict,
+            "notch_dict": notch_dict,
+            "overwrite": overwrite,
+            "combine": combine,
+            "combine_sampling_rate": combine_sampling_rate,
+            "calibration_path": self.calibration_path,
+        }
 
         zc_obj = zc.Z3DCollection()
-        station_df, station_csv = zc_obj.from_dir_to_mtts(self.station_z3d_dir,
-                                                          **kw_dict)
+        station_df, station_csv = zc_obj.from_dir_to_mtts(
+            self.station_z3d_dir, **kw_dict
+        )
         if self.rr_station_z3d_dir is not None:
-            kw_dict['remote'] = True
+            kw_dict["remote"] = True
             if not isinstance(self.rr_station_z3d_dir, list):
                 rr_z3d_dir = [self.rr_station_z3d_dir]
             self.rr_station_ts_dir = []
             for rr_path in self.rr_station_z3d_dir:
-                rr_df, rr_csv = zc_obj.from_dir_to_mtts(rr_path,**kw_dict)
+                rr_df, rr_csv = zc_obj.from_dir_to_mtts(rr_path, **kw_dict)
                 station_df = station_df.append(rr_df)
-                self.rr_station_ts_dir.append(Path(rr_path).joinpath('TS'))
+                self.rr_station_ts_dir.append(Path(rr_path).joinpath("TS"))
         processing_csv = Path(station_z3d_dir).joinpath(
-                    '{0}_processing_df.csv'.format(self.station_z3d_dir.name))
+            "{0}_processing_df.csv".format(self.station_z3d_dir.name)
+        )
         station_df.to_csv(processing_csv)
 
-        self.station_ts_dir = Path(station_z3d_dir).joinpath('TS')
+        self.station_ts_dir = Path(station_z3d_dir).joinpath("TS")
 
         # write configuration file for edi, this should be deprecated later
         self.survey_config.from_df(station_df)
@@ -538,17 +567,21 @@ class Z3D2EDI(object):
 
         """
 
-        r_dict = dict([('fn', entry.fn_ascii),
-                       ('nread', nread),
-                       ('nskip', nskip),
-                       ('comp', entry.component),
-                       ('calibration_fn', entry.cal_fn),
-                       ('rr', entry.remote),
-                       ('rr_num', rr_num),
-                       ('start', entry.start),
-                       ('stop', entry.stop),
-                       ('sampling_rate', entry.sampling_rate),
-                       ('station', entry.station)])
+        r_dict = dict(
+            [
+                ("fn", entry.fn_ascii),
+                ("nread", nread),
+                ("nskip", nskip),
+                ("comp", entry.component),
+                ("calibration_fn", entry.cal_fn),
+                ("rr", entry.remote),
+                ("rr_num", rr_num),
+                ("start", entry.start),
+                ("stop", entry.stop),
+                ("sampling_rate", entry.sampling_rate),
+                ("station", entry.station),
+            ]
+        )
         return r_dict
 
     def compare_times(self, entry, start, stop):
@@ -572,25 +605,25 @@ class Z3D2EDI(object):
         """
 
         sr = entry.sampling_rate
-        info_dict = {'nskip': 0, 'nread': 0, 'start_diff': 0, 'end_diff': 0}
+        info_dict = {"nskip": 0, "nread": 0, "start_diff": 0, "end_diff": 0}
 
         # estimate time difference at beginning
         start_time_diff = sr * (start - entry.start).total_seconds()
-        info_dict['start_diff'] = start_time_diff
+        info_dict["start_diff"] = start_time_diff
         # if difference is positive entry starts before station
         if start_time_diff > 0:
-            info_dict['nskip'] = self._header_len + start_time_diff
-            info_dict['nread'] = entry.nread - start_time_diff
+            info_dict["nskip"] = self._header_len + start_time_diff
+            info_dict["nread"] = entry.nread - start_time_diff
         else:
-            info_dict['nskip'] = self._header_len
-            info_dict['nread'] = entry.nread
+            info_dict["nskip"] = self._header_len
+            info_dict["nread"] = entry.nread
 
         # check the end times
         end_time_diff = sr * (entry.stop - stop).total_seconds()
-        info_dict['end_diff'] = end_time_diff
+        info_dict["end_diff"] = end_time_diff
         # if end diff is positive entry ends after station
         if end_time_diff > 0:
-            info_dict['nread'] -= end_time_diff
+            info_dict["nread"] -= end_time_diff
 
         return info_dict
 
@@ -633,14 +666,13 @@ class Z3D2EDI(object):
 
         for entry in block_df.itertuples():
             diff_dict = self.compare_times(entry, b_start, b_stop)
-            for key in ['nskip', 'nread']:
+            for key in ["nskip", "nread"]:
                 block_df.at[entry.Index, key] = diff_dict[key]
 
         block_df.nread = block_df.nread.min()
         return block_df
 
-    def get_birrp_dict(self, df, df_list=[4096, 256, 4],
-                       use_blocks_dict=None):
+    def get_birrp_dict(self, df, df_list=[4096, 256, 4], use_blocks_dict=None):
         """
         Make a dictionary that can be used to write script files for birrp.
         This will align each schedule block.
@@ -675,11 +707,12 @@ class Z3D2EDI(object):
             if sr not in df_list:
                 continue
             sr_list = []
-            sr_df = df[(df.sampling_rate == sr) & (df.remote == 'False')]
-            rr_df = df[(df.sampling_rate == sr) & (df.remote == 'True')]
+            sr_df = df[(df.sampling_rate == sr) & (df.remote == "False")]
+            rr_df = df[(df.sampling_rate == sr) & (df.remote == "True")]
 
-            rr_stations = dict([(rr, ii) for ii, rr in
-                                enumerate(rr_df.station.unique())])
+            rr_stations = dict(
+                [(rr, ii) for ii, rr in enumerate(rr_df.station.unique())]
+            )
 
             # sort through station blocks first
             block_count = 0
@@ -688,24 +721,27 @@ class Z3D2EDI(object):
                 if block not in use_blocks_dict[sr]:
                     continue
                 if block_count > self.max_blocks:
-                    print('WARNING: Max blocks of {0} reached for {1}'.format(
-                          self.max_blocks, sr))
+                    print(
+                        "WARNING: Max blocks of {0} reached for {1}".format(
+                            self.max_blocks, sr
+                        )
+                    )
                     break
                 block_list = []
                 block_df = sr_df[sr_df.block == block]
                 # find the latest start time
                 start = block_df.start.max()
                 stop = block_df.stop.min()
-                if str(stop) == 'NaT':
-                    print('WARNING: Skipping block {0} for {1}.'.format(block,
-                                                                        sr) +
-                          '\n\tReason: no end time')
+                if str(stop) == "NaT":
+                    print(
+                        "WARNING: Skipping block {0} for {1}.".format(block, sr)
+                        + "\n\tReason: no end time"
+                    )
                     continue
 
                 # get information for station block and align
                 for entry in block_df.itertuples():
-                    block_list.append(self.make_block_entry(entry, 0,
-                                                            entry.n_samples))
+                    block_list.append(self.make_block_entry(entry, 0, entry.n_samples))
 
                 # make the block into a dataframe
                 block_birrp_df = self.make_block_df(block_list)
@@ -715,27 +751,38 @@ class Z3D2EDI(object):
                 rr_block_list = []
                 for rr_entry in rr_df.itertuples():
                     if rr_entry.start > stop:
-                        print('INFO: Skipping {0} starts after station'.format(
-                              rr_entry.station))
+                        print(
+                            "INFO: Skipping {0} starts after station".format(
+                                rr_entry.station
+                            )
+                        )
                         continue
                     t_diff = abs((rr_entry.start - start).total_seconds()) * sr
                     # check to see if the difference is within given tolerance
-                    if t_diff <= self._tol_dict[sr]['s_diff']:
+                    if t_diff <= self._tol_dict[sr]["s_diff"]:
                         # check number of samples
                         rr_samples = rr_entry.n_samples - t_diff
-                        if rr_samples < self._tol_dict[sr]['min_points']:
-                            print('WARNING: skipping {0} block {1} df {2} at {3}'.format(
-                                  rr_entry.station, rr_entry.block,
-                                  rr_entry.sampling_rate,
-                                  rr_entry.start) +
-                                  '\n\tNot enough points {0}'.format(rr_samples))
+                        if rr_samples < self._tol_dict[sr]["min_points"]:
+                            print(
+                                "WARNING: skipping {0} block {1} df {2} at {3}".format(
+                                    rr_entry.station,
+                                    rr_entry.block,
+                                    rr_entry.sampling_rate,
+                                    rr_entry.start,
+                                )
+                                + "\n\tNot enough points {0}".format(rr_samples)
+                            )
                         # make a block entry and append
                         else:
-                            rr_block_list.append(self.make_block_entry(rr_entry,
-                                                 0,
-                                                 rr_entry.n_samples,
-                                                 rr_stations[rr_entry.station]))
-                            
+                            rr_block_list.append(
+                                self.make_block_entry(
+                                    rr_entry,
+                                    0,
+                                    rr_entry.n_samples,
+                                    rr_stations[rr_entry.station],
+                                )
+                            )
+
                 # check to make sure there are remote references
                 if len(rr_block_list) > 1:
                     rr_block_birrp_df = self.make_block_df(rr_block_list)
@@ -748,17 +795,22 @@ class Z3D2EDI(object):
                 if blocks_read_total > self._max_nread:
                     dn = blocks_read_total - self.max_nread
                     block_birrp_df.nread = block_birrp_df.nread.mean() - dn
-                    print('WARNING: reached maximum points to read' +
-                          ' {0}. \nCutting last block to {1}.'.format(
-                          self._max_nread, block_birrp_df.nread.mean()))
+                    print(
+                        "WARNING: reached maximum points to read"
+                        + " {0}. \nCutting last block to {1}.".format(
+                            self._max_nread, block_birrp_df.nread.mean()
+                        )
+                    )
 
-            birrp_dict[sr] = np.array([a_df.to_records(index=False) for a_df
-                                       in sr_list])
+            birrp_dict[sr] = np.array(
+                [a_df.to_records(index=False) for a_df in sr_list]
+            )
 
         return birrp_dict
 
-    def write_script_files(self, birrp_arr_dict, save_path=None,
-                           birrp_params_dict={}, **kwargs):
+    def write_script_files(
+        self, birrp_arr_dict, save_path=None, birrp_params_dict={}, **kwargs
+    ):
         """
         Write BIRRP script files for each sampling rate in the given
         dictionary.  This will sort the appropriate parameters from the given
@@ -792,7 +844,7 @@ class Z3D2EDI(object):
 
         # make save path
         if save_path is None:
-            save_path = self.station_ts_dir.joinpath('BF')
+            save_path = self.station_ts_dir.joinpath("BF")
         elif not isinstance(save_path, Path):
             save_path = Path(save_path)
         if not save_path.exists():
@@ -802,7 +854,7 @@ class Z3D2EDI(object):
         # loop through by keys, which should be sampling rates
         for df_key, fn_arr in birrp_arr_dict.items():
             # make a path unique to the sampling rate
-            bf_path = save_path.joinpath('{0:.0f}'.format(df_key))
+            bf_path = save_path.joinpath("{0:.0f}".format(df_key))
             if not bf_path.exists():
                 bf_path.mkdir()
 
@@ -813,37 +865,37 @@ class Z3D2EDI(object):
             try:
                 birrp_script_obj = birrp.ScriptFile(fn_arr=fn_arr)
             except birrp.ScriptFileError as error:
-                print('ERROR: {0}'.format(error))
-                print('WARNING: Skipping script file for {0}'.format(df_key))
+                print("ERROR: {0}".format(error))
+                print("WARNING: Skipping script file for {0}".format(df_key))
                 continue
 
             # get station name
-            remotes = np.where(fn_arr['rr'] == False)
-            station = str(np.unique(fn_arr[remotes]['station'])[0])
+            remotes = np.where(fn_arr["rr"] == False)
+            station = str(np.unique(fn_arr[remotes]["station"])[0])
 
             # add parameters to birrp_params_dict
-            birrp_params_dict['ofil'] = str(bf_path.joinpath(station))
+            birrp_params_dict["ofil"] = str(bf_path.joinpath(station))
             if df_key == 16:
-                birrp_params_dict['nfft'] = 2**16
-                birrp_params_dict['nsctmax'] = 11
+                birrp_params_dict["nfft"] = 2 ** 16
+                birrp_params_dict["nsctmax"] = 11
             if df_key == 4:
-                if birrp_fn_arr['nread'].sum(axis=0)[0] / 2**16 < 6:
-                    birrp_params_dict['nfft'] = 2**15
-                    birrp_params_dict['nsctmax'] = 11
+                if birrp_fn_arr["nread"].sum(axis=0)[0] / 2 ** 16 < 6:
+                    birrp_params_dict["nfft"] = 2 ** 15
+                    birrp_params_dict["nsctmax"] = 11
                 else:
-                    birrp_params_dict['nfft'] = 2**16
-                    birrp_params_dict['nsctmax'] = 12
+                    birrp_params_dict["nfft"] = 2 ** 16
+                    birrp_params_dict["nsctmax"] = 12
 
             birrp_script_obj.from_dict(birrp_params_dict)
 
             # write script file
-            b_script = bf_path.joinpath('{0}.script'.format(station))
+            b_script = bf_path.joinpath("{0}.script".format(station))
             try:
                 birrp_script_obj.write_script_file(script_fn=b_script)
             except ValueError as error:
-                print(fn_arr['fn'])
+                print(fn_arr["fn"])
                 raise ValueError(error)
-                
+
             # write a birrp parameter configuration file
             birrp_script_obj.write_config_file(bf_path.joinpath(station))
             script_fn_list.append(birrp_script_obj.script_fn)
@@ -862,37 +914,43 @@ class Z3D2EDI(object):
         """
 
         if script_fn_list is None:
-            raise IOError('Need to input a script file or list of script files')
+            raise IOError("Need to input a script file or list of script files")
 
         if birrp_exe is not None:
             self.birrp_exe = birrp_exe
-
 
         if type(script_fn_list) is list:
             self.edi_fn = []
             for script_fn in script_fn_list:
                 out_str = birrp.run(self.birrp_exe, script_fn)
-                print('INFO: BIRRP Processing \n {0}'.format(out_str))
+                print("INFO: BIRRP Processing \n {0}".format(out_str))
 
                 output_path = os.path.dirname(script_fn)
                 try:
-                    self.edi_fn.append(self.write_edi_file(output_path,
-                                       survey_config_fn=self.survey_config_fn,
-                                       birrp_config_fn=self.birrp_config_fn))
+                    self.edi_fn.append(
+                        self.write_edi_file(
+                            output_path,
+                            survey_config_fn=self.survey_config_fn,
+                            birrp_config_fn=self.birrp_config_fn,
+                        )
+                    )
                 except Exception as error:
-                    print('ERROR: {0} did not run properly'.format(script_fn))
-                    print('ERROR: {0}'.format(error))
+                    print("ERROR: {0} did not run properly".format(script_fn))
+                    print("ERROR: {0}".format(error))
 
         elif type(script_fn_list) is str:
             out_str = birrp.run(self.birrp_exe, script_fn_list)
 
             output_path = os.path.dirname(script_fn_list)
-            self.edi_fn = self.write_edi_file(output_path,
-                                      survey_config_fn=self.survey_config_fn,
-                                      birrp_config_fn=self.birrp_config_fn)
+            self.edi_fn = self.write_edi_file(
+                output_path,
+                survey_config_fn=self.survey_config_fn,
+                birrp_config_fn=self.birrp_config_fn,
+            )
 
-    def write_edi_file(self, birrp_output_path, survey_config_fn=None,
-                       birrp_config_fn=None):
+    def write_edi_file(
+        self, birrp_output_path, survey_config_fn=None, birrp_config_fn=None
+    ):
         """
         Write an edi file from outputs of BIRRP
 
@@ -913,20 +971,22 @@ class Z3D2EDI(object):
             self.survey_config_fn = survey_config_fn
 
         if self.survey_config_fn is None:
-            ts_find = birrp_output_path.find('TS')
+            ts_find = birrp_output_path.find("TS")
             if ts_find > 0:
-                ts_dir = birrp_output_path[0:ts_find+2]
+                ts_dir = birrp_output_path[0 : ts_find + 2]
                 for fn in os.listdir(ts_dir):
-                    if fn[-4:] == '.cfg':
+                    if fn[-4:] == ".cfg":
                         self.survey_config_fn = os.path.join(ts_dir, fn)
                         self.survey_config.read_survey_config_file(
-                            self.survey_config_fn, 
-                            self.station_z3d_dir.name)
+                            self.survey_config_fn, self.station_z3d_dir.name
+                        )
 
-        j2edi_obj = birrp.J2Edi(station=self.survey_config.station,
-                                survey_config_fn=self.survey_config_fn,
-                                birrp_dir=birrp_output_path,
-                                birrp_config_fn=self.birrp_config_fn)
+        j2edi_obj = birrp.J2Edi(
+            station=self.survey_config.station,
+            survey_config_fn=self.survey_config_fn,
+            birrp_dir=birrp_output_path,
+            birrp_config_fn=self.birrp_config_fn,
+        )
 
         edi_fn = j2edi_obj.write_edi_file()
 
@@ -961,25 +1021,34 @@ class Z3D2EDI(object):
                 if fn_size < 3000:
                     self.edi_fn.remove(edi_fn)
                 if len(self.edi_fn) == 0:
-                    raise ValueError('No good .edi files where produced')
-            resp_plot = plotnresponses.PlotMultipleResponses(fn_list=self.edi_fn,
-                                                         plot_style='compare',
-                                                         plot_tipper='yri')
+                    raise ValueError("No good .edi files where produced")
+            resp_plot = plotnresponses.PlotMultipleResponses(
+                fn_list=self.edi_fn, plot_style="compare", plot_tipper="yri"
+            )
         elif type(self.edi_fn) is str:
             if os.path.getsize(self.edi_fn) < 3000:
-                raise ValueError('No good .edi files where produced')
-            resp_plot = plotresponse.PlotResponse(fn=self.edi_fn,
-                                                  plot_tipper='yri')
+                raise ValueError("No good .edi files where produced")
+            resp_plot = plotresponse.PlotResponse(fn=self.edi_fn, plot_tipper="yri")
 
         return resp_plot
 
-    def process_data(self, df_fn=None, df_list=[4096, 256, 4], plot=True,
-                     notch_dict={}, use_blocks_dict=None,  overwrite=False,
-                     sr_dict={4096:(1000., 4),
-                              1024:(3.99, 1.),
-                              256:(3.99, .126),
-                              4:(.125, .0001)},
-                     birrp_param_dict={}, **kwargs):
+    def process_data(
+        self,
+        df_fn=None,
+        df_list=[4096, 256, 4],
+        plot=True,
+        notch_dict={},
+        use_blocks_dict=None,
+        overwrite=False,
+        sr_dict={
+            4096: (1000.0, 4),
+            1024: (3.99, 1.0),
+            256: (3.99, 0.126),
+            4: (0.125, 0.0001),
+        },
+        birrp_param_dict={},
+        **kwargs
+    ):
         """
         process_data is a convinience function that will process Z3D files
         and output an .edi file.  The workflow is to convert Z3D files to
@@ -1078,20 +1147,19 @@ class Z3D2EDI(object):
         else:
             # skip the block dict, want to look through all the files to get the
             # data frame.
-            kw_dict = {'use_blocks_dict': None,
-                       'overwrite': overwrite}
-            z3d_df, cfn = self.convert_z3d_to_mtts(self.station_z3d_dir,
-                                                   self.rr_station_z3d_dir,
-                                                   **kw_dict)
+            kw_dict = {"use_blocks_dict": None, "overwrite": overwrite}
+            z3d_df, cfn = self.convert_z3d_to_mtts(
+                self.station_z3d_dir, self.rr_station_z3d_dir, **kw_dict
+            )
         # make birrp dictionary
-        birrp_dict = self.get_birrp_dict(z3d_df,
-                                         df_list=df_list,
-                                         use_blocks_dict=use_blocks_dict)
+        birrp_dict = self.get_birrp_dict(
+            z3d_df, df_list=df_list, use_blocks_dict=use_blocks_dict
+        )
 
         # write script files for birrp
-        sfn_list = self.write_script_files(birrp_dict,
-                                           birrp_params_dict=birrp_param_dict,
-                                           **kwargs)
+        sfn_list = self.write_script_files(
+            birrp_dict, birrp_params_dict=birrp_param_dict, **kwargs
+        )
 
         # run birrp
         self.run_birrp(sfn_list)
@@ -1110,15 +1178,19 @@ class Z3D2EDI(object):
 
         et = datetime.datetime.now()
         t_diff = (et - st).total_seconds()
-        print('INFO: All processing took {0:02.0f}:{1:02.0f} minutes'.format(
-              t_diff // 60, t_diff % 60))
+        print(
+            "INFO: All processing took {0:02.0f}:{1:02.0f} minutes".format(
+                t_diff // 60, t_diff % 60
+            )
+        )
 
         return r_plot, comb_edi_fn, z3d_df
 
-    def combine_edi_files(self, edi_fn_list,
-                          sr_dict={4096:(1000., 4),
-                                   256:(3.99, .126),
-                                   4:(.125, .00001)}):
+    def combine_edi_files(
+        self,
+        edi_fn_list,
+        sr_dict={4096: (1000.0, 4), 256: (3.99, 0.126), 4: (0.125, 0.00001)},
+    ):
         """
         combine the different edi files that are computed for each sampling
         rate. For now just a simple cutoff
@@ -1145,19 +1217,23 @@ class Z3D2EDI(object):
         """
 
         if isinstance(edi_fn_list, str):
-            print('WARNING: Only one edi file, skipping combining')
+            print("WARNING: Only one edi file, skipping combining")
             return edi_fn_list
 
         if len(edi_fn_list) == 1:
-            print('WARNING: Only one edi file, skipping combining')
+            print("WARNING: Only one edi file, skipping combining")
             return edi_fn_list[0]
 
-        data_arr = np.zeros(100,
-                            dtype=[('freq', np.float),
-                                   ('z', (np.complex, (2, 2))),
-                                   ('z_err', (np.float, (2, 2))),
-                                   ('tipper', (np.complex, (2, 2))),
-                                   ('tipper_err', (np.float, (2, 2)))])
+        data_arr = np.zeros(
+            100,
+            dtype=[
+                ("freq", np.float),
+                ("z", (np.complex, (2, 2))),
+                ("z_err", (np.float, (2, 2))),
+                ("tipper", (np.complex, (2, 2))),
+                ("tipper_err", (np.float, (2, 2))),
+            ],
+        )
 
         count = 0
         for edi_fn in edi_fn_list:
@@ -1169,46 +1245,57 @@ class Z3D2EDI(object):
                 try:
                     edi_obj = mtedi.Edi(edi_fn)
                     # locate frequency range
-                    f_index = np.where((edi_obj.Z.freq >= sr_dict[sr_key][1]) &
-                                       (edi_obj.Z.freq <= sr_dict[sr_key][0]))
+                    f_index = np.where(
+                        (edi_obj.Z.freq >= sr_dict[sr_key][1])
+                        & (edi_obj.Z.freq <= sr_dict[sr_key][0])
+                    )
 
-
-                    data_arr['freq'][count:count+len(f_index[0])] = edi_obj.Z.freq[f_index]
-                    data_arr['z'][count:count+len(f_index[0])] = edi_obj.Z.z[f_index]
-                    data_arr['z_err'][count:count+len(f_index[0])] = edi_obj.Z.z_err[f_index]
+                    data_arr["freq"][count : count + len(f_index[0])] = edi_obj.Z.freq[
+                        f_index
+                    ]
+                    data_arr["z"][count : count + len(f_index[0])] = edi_obj.Z.z[
+                        f_index
+                    ]
+                    data_arr["z_err"][
+                        count : count + len(f_index[0])
+                    ] = edi_obj.Z.z_err[f_index]
                     if edi_obj.Tipper.tipper is not None:
-                        data_arr['tipper'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper[f_index]
-                        data_arr['tipper_err'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper_err[f_index]
+                        data_arr["tipper"][
+                            count : count + len(f_index[0])
+                        ] = edi_obj.Tipper.tipper[f_index]
+                        data_arr["tipper_err"][
+                            count : count + len(f_index[0])
+                        ] = edi_obj.Tipper.tipper_err[f_index]
 
                     count += len(f_index[0])
                 except IndexError:
                     pass
-                    print('ERROR: Something went wrong with processing {0}'.format(edi_fn))
+                    print(
+                        "ERROR: Something went wrong with processing {0}".format(edi_fn)
+                    )
 
             else:
                 pass
-                print('WARNING: {0} was not in combining dictionary'.format(sr_key))
+                print("WARNING: {0} was not in combining dictionary".format(sr_key))
 
         # now replace
-        data_arr = data_arr[np.nonzero(data_arr['freq'])]
-        sort_index = np.argsort(data_arr['freq'])
+        data_arr = data_arr[np.nonzero(data_arr["freq"])]
+        sort_index = np.argsort(data_arr["freq"])
 
         # check to see if the sorted indexes are descending or ascending,
         # make sure that frequency is descending
-        if data_arr['freq'][0] > data_arr['freq'][1]:
+        if data_arr["freq"][0] > data_arr["freq"][1]:
             sort_index = sort_index[::-1]
 
         data_arr = data_arr[sort_index]
-        new_z = mtedi.MTz.Z(data_arr['z'],
-                            data_arr['z_err'],
-                            data_arr['freq'])
+        new_z = mtedi.MTz.Z(data_arr["z"], data_arr["z_err"], data_arr["freq"])
 
         # check for all zeros in tipper, meaning there is only
         # one unique value
-        if np.unique(data_arr['tipper']).size > 1:
-            new_t = mtedi.MTz.Tipper(data_arr['tipper'],
-                                     data_arr['tipper_err'],
-                                     data_arr['freq'])
+        if np.unique(data_arr["tipper"]).size > 1:
+            new_t = mtedi.MTz.Tipper(
+                data_arr["tipper"], data_arr["tipper_err"], data_arr["freq"]
+            )
 
         else:
             new_t = mtedi.MTz.Tipper()
@@ -1218,15 +1305,18 @@ class Z3D2EDI(object):
         edi_obj.Tipper = new_t
         edi_obj.Data_sect.nfreq = new_z.z.shape[0]
 
-        n_edi_fn = Path.joinpath(Path(self.station_ts_dir),
-                                 '{0}_comb.edi'.format(Path(self.station_ts_dir).name))
+        n_edi_fn = Path.joinpath(
+            Path(self.station_ts_dir),
+            "{0}_comb.edi".format(Path(self.station_ts_dir).name),
+        )
         # n_edi_fn = os.path.join(self.station_z3d_dir,
         #                         '{0}_comb.edi'.format(os.path.basename(self.station_z3d_dir)))
         n_edi_fn = edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
 
         return n_edi_fn
 
-#==============================================================================
+
+# ==============================================================================
 
 # this should capture all the print statements from zen
 class Capturing(list):
@@ -1236,18 +1326,23 @@ class Capturing(list):
         sys.stdout = self._stringio = StringIO()
         # sys.stdout = self._stringio = BytesIO()
         return self
+
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
         sys.stdout = self._stdout
 
 
-#==============================================================================
-def compute_mt_response(survey_dir, station='mt000', copy_date=None,
-                        birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe",
-                        ant_calibrations=r"c:\MT\Ant_calibrations",
-                        process_df_list=[256],
-                        use_blocks_dict={256:[0, 1]},
-                        notch_dict={256:None}):
+# ==============================================================================
+def compute_mt_response(
+    survey_dir,
+    station="mt000",
+    copy_date=None,
+    birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe",
+    ant_calibrations=r"c:\MT\Ant_calibrations",
+    process_df_list=[256],
+    use_blocks_dict={256: [0, 1]},
+    notch_dict={256: None},
+):
     """
     This code will down load Z3D files from a Zen that is in SD Mode,
     convert the Z3D files to ascii format, then process them for each
@@ -1321,36 +1416,38 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     station_z3d_dir = os.path.join(survey_dir, station)
 
     st = datetime.datetime.now()
-    #--> Copy data from files
+    # --> Copy data from files
     try:
         if copy_date is None:
             zen.copy_from_sd(station, save_path=survey_dir)
         else:
-            zen.copy_from_sd(station, save_path=survey_dir,
-                             copy_date=copy_date, copy_type='after')
+            zen.copy_from_sd(
+                station, save_path=survey_dir, copy_date=copy_date, copy_type="after"
+            )
     except IOError:
         pass
-        print('ERROR: No files copied from SD cards')
-        print('INFO: Looking in  {0} for Z3D files'.format(station_z3d_dir))
+        print("ERROR: No files copied from SD cards")
+        print("INFO: Looking in  {0} for Z3D files".format(station_z3d_dir))
 
-    #--> process data
+    # --> process data
 
     with Capturing() as output:
         z2edi = Z3D2EDI(station_z3d_dir)
         z2edi.birrp_exe = birrp_exe
         z2edi.calibration_path = ant_calibrations
         try:
-            rp = z2edi.process_data(df_list=process_df_list,
-                                    use_blocks_dict=use_blocks_dict)
+            rp = z2edi.process_data(
+                df_list=process_df_list, use_blocks_dict=use_blocks_dict
+            )
         except mtex.MTpyError_inputarguments:
-            print('WARNING: Data not good!! Did not produce a proper .edi file')
+            print("WARNING: Data not good!! Did not produce a proper .edi file")
             et = datetime.datetime.now()
-            print('--> took {0} seconds'.format((et-st).total_seconds()))
+            print("--> took {0} seconds".format((et - st).total_seconds()))
             rp = None
 
-    #--> write log file
-    log_fid = open(os.path.join(station_z3d_dir, 'Processing.log'), 'w')
-    log_fid.write('\n'.join(output))
+    # --> write log file
+    log_fid = open(os.path.join(station_z3d_dir, "Processing.log"), "w")
+    log_fid.write("\n".join(output))
     log_fid.close()
 
     return rp

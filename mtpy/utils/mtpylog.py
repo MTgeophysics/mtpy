@@ -7,6 +7,7 @@ see also: http://www.cdotson.com/2015/11/python-logging-best-practices/
 """
 
 import os
+
 # import json
 import yaml
 import logging
@@ -22,7 +23,7 @@ class MtPyLog(object):
     # def __init__(self, path2configfile=None):
     @staticmethod
     def load_configure(path2configfile=None):
-    # def load_configure(path2configfile='logging.yml'):
+        # def load_configure(path2configfile='logging.yml'):
         """
         configure/setup the logging according to the input configfile
 
@@ -32,41 +33,39 @@ class MtPyLog(object):
         """
         configfile = path2configfile
 
-        if configfile is None or configfile == '':
+        if configfile is None or configfile == "":
             logging.basicConfig()
-        elif configfile.endswith('yaml') or configfile.endswith('yml'):
+        elif configfile.endswith("yaml") or configfile.endswith("yml"):
 
             this_module_file_path = os.path.abspath(__file__)
 
             logging.info("module file: %s", this_module_file_path)
 
             yaml_path = os.path.join(
-                os.path.dirname(this_module_file_path),
-                path2configfile)
-            logging.info('Effective yaml configuration file %s', yaml_path)
+                os.path.dirname(this_module_file_path), path2configfile
+            )
+            logging.info("Effective yaml configuration file %s", yaml_path)
 
             if os.path.exists(yaml_path):
-                with open(yaml_path, 'rt') as f:
+                with open(yaml_path, "rt") as f:
                     config = yaml.safe_load(f.read())
                 logging.config.dictConfig(config)
             else:
-                logging.exception(
-                    "the config yaml file %s does not exist?", yaml_path)
+                logging.exception("the config yaml file %s does not exist?", yaml_path)
 
-        elif configfile.endswith('.conf') or configfile.endswith('.ini'):
-            logging.config.fileConfig(
-                configfile, disable_existing_loggers=False)
+        elif configfile.endswith(".conf") or configfile.endswith(".ini"):
+            logging.config.fileConfig(configfile, disable_existing_loggers=False)
             # must change the default disable_existing_loggers=True to False to
             # make this behave 100% OK
-        elif configfile.endswith('.json'):
+        elif configfile.endswith(".json"):
             pass
         else:
             raise Exception(
-                "logging configuration file %s is not supported" %
-                configfile)
+                "logging configuration file %s is not supported" % configfile
+            )
 
     @staticmethod
-    def get_mtpy_logger(loggername=''):
+    def get_mtpy_logger(loggername=""):
         """
         create a named logger (try different)
         :param loggername: the name (key) of the logger object in this Python interpreter.
@@ -84,7 +83,7 @@ def test_none_configfile():
 
     print(("starting", this_fun_name))
     # 1 user provides config file to use from envar or other methods
-    UsersOwnConfigFile = ''  # ''logging.yaml'
+    UsersOwnConfigFile = ""  # ''logging.yaml'
     # 2 construct a MtPyLog object
     myobj = MtPyLog(UsersOwnConfigFile)
     # 3 create a named-logger object
@@ -97,16 +96,16 @@ def test_none_configfile():
     print((logger, id(logger), logger.level, logger.handlers))
 
     # 4 use the named-logger
-    logger.debug(this_fun_name + ' debug message')
-    logger.info(this_fun_name + ' info message')
-    logger.warn(this_fun_name + ' warn message')
-    logger.error(this_fun_name + ' error message')
-    logger.critical(this_fun_name + ' critical message')
+    logger.debug(this_fun_name + " debug message")
+    logger.info(this_fun_name + " info message")
+    logger.warn(this_fun_name + " warn message")
+    logger.error(this_fun_name + " error message")
+    logger.critical(this_fun_name + " critical message")
 
     print(("End of: ", this_fun_name))
 
 
-def test_yaml_configfile(yamlfile='logging.yml'):
+def test_yaml_configfile(yamlfile="logging.yml"):
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
     print(("starting", this_fun_name))
 
@@ -134,16 +133,16 @@ def test_yaml_configfile(yamlfile='logging.yml'):
     # print(logger, id(logger), logger.name,logger.level, logger.handlers)
 
     # 4 use the named-logger
-    logger.debug(this_fun_name + ' debug message')
-    logger.info(this_fun_name + ' info message')
-    logger.warn(this_fun_name + ' warn message')
-    logger.error(this_fun_name + ' error message')
-    logger.critical(this_fun_name + ' critical message')
+    logger.debug(this_fun_name + " debug message")
+    logger.info(this_fun_name + " info message")
+    logger.warn(this_fun_name + " warn message")
+    logger.error(this_fun_name + " error message")
+    logger.critical(this_fun_name + " critical message")
 
     print(("End of: ", this_fun_name))
 
 
-def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
+def test_ini_configfile(UsersOwnConfigFile="logging.conf"):
     this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
     print(("starting", this_fun_name))
 
@@ -171,11 +170,11 @@ def test_ini_configfile(UsersOwnConfigFile='logging.conf'):
     # print(logger, id(logger), logger.name,logger.level, logger.handlers)
 
     # 4 use the named-logger
-    logger.debug(this_fun_name + ' debug message')
-    logger.info(this_fun_name + ' info message')
-    logger.warn(this_fun_name + ' warn message')
-    logger.error(this_fun_name + ' error message')
-    logger.critical(this_fun_name + ' critical message')
+    logger.debug(this_fun_name + " debug message")
+    logger.info(this_fun_name + " info message")
+    logger.warn(this_fun_name + " warn message")
+    logger.error(this_fun_name + " error message")
+    logger.critical(this_fun_name + " critical message")
 
     print(("End of: ", this_fun_name))
 
@@ -198,10 +197,10 @@ if __name__ == "__main__":
     #
     # test_ini_configfile()
 
-    test_yaml_configfile(yamlfile='logging.yml')
+    test_yaml_configfile(yamlfile="logging.yml")
 
     # 1 user decide what config file to use from envar or other methods
-    UsersOwnConfigFile = ''  # ''logging.yaml'
+    UsersOwnConfigFile = ""  # ''logging.yaml'
     # 2 construct a MtPyLog object
     myobj = MtPyLog.load_configure(UsersOwnConfigFile)
     # 3 create a named-logger object
@@ -214,11 +213,11 @@ if __name__ == "__main__":
 
     # 4 use the named-logger
     print((logger, id(logger), logger.name, logger.level, logger.handlers))
-    logger.debug('debug message')
-    logger.info('info message')
-    logger.warn('warn message')
-    logger.error('error message')
-    logger.critical('critical message')
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warn("warn message")
+    logger.error("error message")
+    logger.critical("critical message")
 
     # now what happen to logging default?  logging has been configured
     logging.debug("End: how about the old logging format?")

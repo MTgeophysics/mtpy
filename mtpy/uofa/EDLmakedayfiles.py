@@ -29,17 +29,20 @@ import os.path as op
 import mtpy.utils.exceptions as MTex
 
 import mtpy.utils.filehandling as MTfh
-#reload(MTfh)
+
+# reload(MTfh)
 
 
 def main():
 
     if len(sys.argv) < 3:
-        sys.exit('\nNeed at least 4 arguments: \n\n '
-                 '<path to files> \n <sampling in seconds> \n'
-                 '<output dir> \n <stationname>\n'
-                 '[optional: <recursive flag -R>]\n'
-                 '(set this option for including all subfolders)\n\n')
+        sys.exit(
+            "\nNeed at least 4 arguments: \n\n "
+            "<path to files> \n <sampling in seconds> \n"
+            "<output dir> \n <stationname>\n"
+            "[optional: <recursive flag -R>]\n"
+            "(set this option for including all subfolders)\n\n"
+        )
 
     print()
 
@@ -53,8 +56,8 @@ def main():
         optionals = sys.argv[3:]
         for o in optionals:
             o = o.strip()
-            if o[0] == '-':
-                if o[1].lower() == 'r':
+            if o[0] == "-":
+                if o[1].lower() == "r":
                     recursive = True
                 continue
             elif outdir is None:
@@ -67,7 +70,7 @@ def main():
     if stationname is not None:
         # check, if it's actually a comma-separated list:
         try:
-            stationlist = stationname.split(',')
+            stationlist = stationname.split(",")
             if len(stationlist) > 1:
                 multiple_stations = True
                 stationlist = [i.upper() for i in stationlist]
@@ -82,14 +85,14 @@ def main():
     pathname = op.abspath(op.realpath(pathname_raw))
 
     if not op.isdir(pathname):
-        sys.exit('Data file(s) path not existing: {0}\n'.format(pathname))
+        sys.exit("Data file(s) path not existing: {0}\n".format(pathname))
 
     try:
         sampling = float(sys.argv[2])
         if sampling <= 0:
             raise
     except:
-        sys.exit('Second argument must be sampling interval in seconds (int/float)')
+        sys.exit("Second argument must be sampling interval in seconds (int/float)")
 
     if recursive is True:
         lo_folders = []
@@ -101,18 +104,22 @@ def main():
                         content_of_folder = os.listdir(curr_folder)
                         # print curr_folder
                         lof_station = [
-                            i for i in content_of_folder if stationname.lower() in i.lower()]
+                            i
+                            for i in content_of_folder
+                            if stationname.lower() in i.lower()
+                        ]
                         if len(lof_station) > 0:
                             lo_folders.append(curr_folder)
         pathname = list(set(lo_folders))
 
     if len(pathname) == 0:
         sys.exit(
-            '\n\tERROR - No (sub-) folders for stations {0} found\n'.format(stationlist))
+            "\n\tERROR - No (sub-) folders for stations {0} found\n".format(stationlist)
+        )
 
     for stationname in stationlist:
-        print('....\n')
-        print('processing station ', stationname.upper())
+        print("....\n")
+        print("processing station ", stationname.upper())
         # if pathname[0] is not None:
         #     station_pathname = [i for i in pathname if stationname.lower() in i.lower()]
         #     if len(station_pathname) == 0:
@@ -122,23 +129,24 @@ def main():
 
         try:
             MTfh.EDL_make_dayfiles(
-                station_pathname,
-                sampling,
-                stationname.upper(),
-                outdir)
+                station_pathname, sampling, stationname.upper(), outdir
+            )
         except MTex.MTpyError_inputarguments:
             if stationname is None:
-                sys.exit('\n\tERROR - No data found in (sub-)folders\n')
+                sys.exit("\n\tERROR - No data found in (sub-)folders\n")
             else:
                 sys.exit(
-                    '\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
+                    "\n\tERROR - No data found in (sub-)folders for station {0}\n".format(
+                        stationname.upper()
+                    )
+                )
         except MemoryError:
-            sys.exit('\n\tERROR - Not enough memory to store temporary arrays!\n')
+            sys.exit("\n\tERROR - Not enough memory to store temporary arrays!\n")
         except:
-            sys.exit('\n\tERROR - could not process (sub-)folders')
+            sys.exit("\n\tERROR - could not process (sub-)folders")
 
-    print('\n')
+    print("\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

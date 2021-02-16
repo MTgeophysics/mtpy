@@ -12,31 +12,40 @@ import matplotlib
 from mtpy.utils.mtpylog import MtPyLog
 from tests import TEST_DIR, make_temp_dir, TEST_TEMP_DIR
 
-if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
-    matplotlib.use('svg')
+if os.name == "posix" and "DISPLAY" not in os.environ:
+    print(
+        "MATPLOTLIB: No Display found, using non-interactive svg backend",
+        file=sys.stderr,
+    )
+    matplotlib.use("svg")
     import matplotlib.pyplot as plt
+
     MTPY_TEST_HAS_DISPLAY = False
 else:
     # matplotlib.use('svg')
     import matplotlib.pyplot as plt
+
     MTPY_TEST_HAS_DISPLAY = True
     plt.ion()
 
-MtPyLog.get_mtpy_logger(__name__).info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
+MtPyLog.get_mtpy_logger(__name__).info(
+    "Testing using matplotlib backend {}".format(matplotlib.rcParams["backend"])
+)
 
 
 def reset_matplotlib():
     # save some important params
-    interactive = matplotlib.rcParams['interactive']
-    backend = matplotlib.rcParams['backend']
+    interactive = matplotlib.rcParams["interactive"]
+    backend = matplotlib.rcParams["backend"]
     # reset
     matplotlib.rcdefaults()  # reset the rcparams to default
     # recover
-    matplotlib.rcParams['backend'] = backend
-    matplotlib.rcParams['interactive'] = interactive
+    matplotlib.rcParams["backend"] = backend
+    matplotlib.rcParams["interactive"] = interactive
     logger = MtPyLog().get_mtpy_logger(__name__)
-    logger.info("Testing using matplotlib backend {}".format(matplotlib.rcParams['backend']))
+    logger.info(
+        "Testing using matplotlib backend {}".format(matplotlib.rcParams["backend"])
+    )
 
 
 class ImageCompare(object):
@@ -50,26 +59,30 @@ class ImageCompare(object):
 
     def __init__(self, *args, **kwargs):
         self.baseline_dir = kwargs.pop(
-            'baseline_dir',
+            "baseline_dir",
             # 'tests/baseline_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
-            os.path.normpath(os.path.join(TEST_DIR, 'baseline_images'))
+            os.path.normpath(os.path.join(TEST_DIR, "baseline_images")),
         )
         self.result_dir = kwargs.pop(
-            'result_dir',
+            "result_dir",
             # 'tests/result_images/matplotlib_{ver}'.format(ver=matplotlib.__version__).replace('.', '_')
-            os.path.normpath(os.path.join(TEST_TEMP_DIR, 'image_compare_tests'))
+            os.path.normpath(os.path.join(TEST_TEMP_DIR, "image_compare_tests")),
         )
-        self.filename = kwargs.pop('filename', None)
-        self.extensions = kwargs.pop('extensions', ['png'])
-        self.savefig_kwargs = kwargs.pop('savefig_kwargs', {'dpi': 80})
-        self.tolerance = kwargs.pop('tolerance', 2)
-        self.fig_size = kwargs.pop('fig_size', None)
-        self.is_compare_image = self.to_bool(os.getenv('MTPY_TEST_COMPARE_IMAGE', False))
+        self.filename = kwargs.pop("filename", None)
+        self.extensions = kwargs.pop("extensions", ["png"])
+        self.savefig_kwargs = kwargs.pop("savefig_kwargs", {"dpi": 80})
+        self.tolerance = kwargs.pop("tolerance", 2)
+        self.fig_size = kwargs.pop("fig_size", None)
+        self.is_compare_image = self.to_bool(
+            os.getenv("MTPY_TEST_COMPARE_IMAGE", False)
+        )
         self._logger = MtPyLog().get_mtpy_logger(__name__)
         self._logger.info(
-            "Image Comparison Test: {stat}".format(stat="ENABLED" if self.is_compare_image else "DISABLED")
+            "Image Comparison Test: {stat}".format(
+                stat="ENABLED" if self.is_compare_image else "DISABLED"
+            )
         )
-        self.on_fail = kwargs.pop('on_fail', None)
+        self.on_fail = kwargs.pop("on_fail", None)
         self.on_compare_fail = kwargs.pop("on_compare_fail", None)
         self.on_empty_image = kwargs.pop("on_empty_image", None)
 
@@ -87,10 +100,10 @@ class ImageCompare(object):
         else:
             filename = self.filename
 
-        filename = filename.replace('[', '_').replace(']', '_').replace('/', '_')
-        filename = filename.strip(' _')
+        filename = filename.replace("[", "_").replace("]", "_").replace("/", "_")
+        filename = filename.strip(" _")
 
-        test_suite_name = original.__module__.split('.')[-1]
+        test_suite_name = original.__module__.split(".")[-1]
 
         @functools.wraps(original)
         def new_test_func(*args, **kwargs):
@@ -98,10 +111,13 @@ class ImageCompare(object):
                 result = original.__func__(*args, **kwargs)
             else:
                 result = original(*args, **kwargs)
-            for baseline_image, test_image, baseline_rcparams, test_rcparams in self._get_baseline_result_pairs(
-                    test_suite_name,
-                    filename,
-                    self.extensions
+            for (
+                baseline_image,
+                test_image,
+                baseline_rcparams,
+                test_rcparams,
+            ) in self._get_baseline_result_pairs(
+                test_suite_name, filename, self.extensions
             ):
                 # save image
                 fig = plt.gcf()
@@ -111,11 +127,16 @@ class ImageCompare(object):
                         fig.set_tight_layout(True)
                     fig.savefig(test_image, **self.savefig_kwargs)
                     import pytest
+
                     if self.is_compare_image and os.path.exists(baseline_image):
-                        msg = compare_images(baseline_image, test_image, tol=self.tolerance)
+                        msg = compare_images(
+                            baseline_image, test_image, tol=self.tolerance
+                        )
                         if msg is not None:
                             msg += "\n"
-                            msg += self.compare_rcParam(baseline_rcparams, test_rcparams)
+                            msg += self.compare_rcParam(
+                                baseline_rcparams, test_rcparams
+                            )
                             # print image in base64
                             # print("====================")
                             # print("Expected Image:")
@@ -139,25 +160,34 @@ class ImageCompare(object):
                         # checking if the created image is empty
                         # verify(test_image) # if issues with test_image, nonexistent? raise exception.
                         actual_image = matplotlib.pyplot.imread(test_image)
-                        actual_image = actual_image[:, :, :3]  # remove the alpha channel (if exists)
+                        actual_image = actual_image[
+                            :, :, :3
+                        ]  # remove the alpha channel (if exists)
                         import numpy as np
+
                         if np.any(actual_image):
                             self.print_image_testing_note(file=sys.stderr)
                             if self.is_compare_image:
-                                pytest.skip("Image file not found for comparison test "
-                                            "(This is expected for new tests.)\nGenerated Image: "
-                                            "\n\t{test}".format(test=test_image))
+                                pytest.skip(
+                                    "Image file not found for comparison test "
+                                    "(This is expected for new tests.)\nGenerated Image: "
+                                    "\n\t{test}".format(test=test_image)
+                                )
                             else:
-                                self._logger.info("\nGenerated Image: {test}".format(test=test_image))
+                                self._logger.info(
+                                    "\nGenerated Image: {test}".format(test=test_image)
+                                )
                         else:
                             # empty image created
                             if self.on_empty_image is not None:
                                 self.on_empty_image()
                             if self.on_fail is not None:
                                 self.on_fail()
-                            pytest.fail("Image file not found for comparison test "
-                                        "(This is expected for new tests.),"
-                                        " but the new image created is empty.")
+                            pytest.fail(
+                                "Image file not found for comparison test "
+                                "(This is expected for new tests.),"
+                                " but the new image created is empty."
+                            )
             return result
 
         return new_test_func
@@ -175,28 +205,12 @@ class ImageCompare(object):
                 os.makedirs(result)
 
         for ext in extensions:
-            name = '{fname}.{ext}'.format(fname=fname, ext=ext)
-            rc_name = '{fname}_rcParams.txt'.format(fname=fname)
-            yield os.path.normpath(
-                os.path.join(
-                    baseline,
-                    name
-                )
-            ), os.path.normpath(
-                os.path.join(
-                    result,
-                    name
-                )
-            ), os.path.normpath(
-                os.path.join(
-                    baseline,
-                    rc_name
-                )
-            ), os.path.normpath(
-                os.path.join(
-                    result,
-                    rc_name
-                )
+            name = "{fname}.{ext}".format(fname=fname, ext=ext)
+            rc_name = "{fname}_rcParams.txt".format(fname=fname)
+            yield os.path.normpath(os.path.join(baseline, name)), os.path.normpath(
+                os.path.join(result, name)
+            ), os.path.normpath(os.path.join(baseline, rc_name)), os.path.normpath(
+                os.path.join(result, rc_name)
             )
 
     @staticmethod
@@ -204,16 +218,21 @@ class ImageCompare(object):
         with open(image_file_name, "rb") as image_file:
             image_data = image_file.read()
             print(
-                "<img src=\"data:image/{};base64,{}\" style=\"display:block; max-width:800px; width: auto; height: "
-                "auto;\" />".format(
+                '<img src="data:image/{};base64,{}" style="display:block; max-width:800px; width: auto; height: '
+                'auto;" />'.format(
                     os.path.splitext(image_file_name)[1].strip(" ."),
-                    image_data.encode("base64")))
+                    image_data.encode("base64"),
+                )
+            )
 
     @staticmethod
     def print_image_testing_note(file=sys.stdout):
         print("====================", file=file)
         print("matplotlib Version: " + matplotlib.__version__, file=file)
-        print("NOTE: The test result may be different in different versions of matplotlib.", file=file)
+        print(
+            "NOTE: The test result may be different in different versions of matplotlib.",
+            file=file,
+        )
         print("====================", file=file)
 
     @staticmethod
@@ -224,12 +243,17 @@ class ImageCompare(object):
             with open(baseline_rcparams, "r") as fbaserc:
                 with open(test_rcparams, "r") as ftestrc:
                     import difflib
-                    lines = [line for line in difflib.unified_diff(
-                        fbaserc.readlines(),
-                        ftestrc.readlines(),
-                        fromfile="baseline",
-                        tofile="test",
-                        n=0)]
+
+                    lines = [
+                        line
+                        for line in difflib.unified_diff(
+                            fbaserc.readlines(),
+                            ftestrc.readlines(),
+                            fromfile="baseline",
+                            tofile="test",
+                            n=0,
+                        )
+                    ]
                     if lines:
                         msg += "  Found differences:\n    " + "    ".join(lines)
                     else:
@@ -241,12 +265,13 @@ class ImageCompare(object):
     def to_bool(self, param):
         if isinstance(param, str) and param:
             param = param.lower()
-            if param in ('true', '1', 't'):
+            if param in ("true", "1", "t"):
                 return True
-            elif param in ('false', 'f', '0'):
+            elif param in ("false", "f", "0"):
                 return False
         else:
             return bool(param)
+
 
 ImageCompare._thread_lock = threading.Lock()
 ImageCompare.print_image_testing_note(file=sys.stderr)
@@ -259,11 +284,11 @@ class ImageTestCase(TestCase):
     def setUpClass(cls):
         _thread_lock.acquire()
         reset_matplotlib()
-        cls._temp_dir = make_temp_dir(cls.__name__.split('.')[-1])
+        cls._temp_dir = make_temp_dir(cls.__name__.split(".")[-1])
 
     @classmethod
     def tearDownClass(cls):
-        plt_close('all')
+        plt_close("all")
         _thread_lock.release()
 
     def setUp(self):

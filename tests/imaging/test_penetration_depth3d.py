@@ -12,7 +12,9 @@ class TestPenetration_depth3d(ImageTestCase):
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period_index(self):
-        plot_latlon_depth_profile(self._edifiles_small, 10, 'det', showfig=False, savefig=False)
+        plot_latlon_depth_profile(
+            self._edifiles_small, 10, "det", showfig=False, savefig=False
+        )
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot_latlon_depth_profile_period(self):
@@ -20,7 +22,9 @@ class TestPenetration_depth3d(ImageTestCase):
 
     def test_plot_latlon_depth_profile_no_period(self):
         with self.assertRaises(Exception):
-            plot_latlon_depth_profile(self._edifiles_small, showfig=False, savefig=False)
+            plot_latlon_depth_profile(
+                self._edifiles_small, showfig=False, savefig=False
+            )
 
     def test_plot_many_periods(self):
         plot_many_periods(self._edifiles_small, n_periods=3)

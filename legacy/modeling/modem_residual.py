@@ -20,16 +20,20 @@ reload(mtgocad)
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:
-    print ('If you want to write a vtk file for 3d viewing, you need download '
-           'and install evtk from https://bitbucket.org/pauloh/pyevtk')
+    print (
+        "If you want to write a vtk file for 3d viewing, you need download "
+        "and install evtk from https://bitbucket.org/pauloh/pyevtk"
+    )
 
-    print ('Note: if you are using Windows you should build evtk first with'
-           'either MinGW or cygwin using the command: \n'
-           '    python setup.py build -compiler=mingw32  or \n'
-           '    python setup.py build -compiler=cygwin')
+    print (
+        "Note: if you are using Windows you should build evtk first with"
+        "either MinGW or cygwin using the command: \n"
+        "    python setup.py build -compiler=mingw32  or \n"
+        "    python setup.py build -compiler=cygwin"
+    )
 
 
-class Residual():
+class Residual:
     """
     class to contain residuals for each data point, and rms values for each
     station
@@ -108,8 +112,8 @@ class Residual():
 
     def __init__(self, **kwargs):
 
-        self.workdir = kwargs.pop('workdir', '.')
-        self.residual_fn = kwargs.pop('residual_fn', None)
+        self.workdir = kwargs.pop("workdir", ".")
+        self.residual_fn = kwargs.pop("residual_fn", None)
 
         return
 
@@ -124,8 +128,12 @@ class Residual():
             return
 
         # pass relevant arguments through residual object
-        for att in ['center_position_EN', 'data_period_list',
-                    'wave_sign_impedance', 'wave_sign_tipper']:
+        for att in [
+            "center_position_EN",
+            "data_period_list",
+            "wave_sign_impedance",
+            "wave_sign_tipper",
+        ]:
             if hasattr(resObj, att):
                 setattr(self, att, getattr(resObj, att))
 
@@ -134,11 +142,13 @@ class Residual():
 
         # append some new fields to contain rms values
         self.rms_array = resObj.station_locations.copy()
-        for fieldname in ['rms', 'rms_z', 'rms_tip']:
-            self.rms_array = recfunctions.append_fields(self.rms_array.copy(),
-                                                        fieldname,
-                                                        np.zeros(len(resObj.station_locations)),
-                                                        usemask=False)
+        for fieldname in ["rms", "rms_z", "rms_tip"]:
+            self.rms_array = recfunctions.append_fields(
+                self.rms_array.copy(),
+                fieldname,
+                np.zeros(len(resObj.station_locations)),
+                usemask=False,
+            )
 
     def calculate_residual_from_data(self, data_fn=None, resp_fn=None):
 
@@ -146,10 +156,12 @@ class Residual():
         respObj = self._read_resp_file(resp_fn=resp_fn)
 
         self.residual_array = dataObj.data_array
-        for comp in ['z', 'tip']:
-            self.residual_array[comp] = self.residual_array[comp] - respObj.data_array[comp]
+        for comp in ["z", "tip"]:
+            self.residual_array[comp] = (
+                self.residual_array[comp] - respObj.data_array[comp]
+            )
 
-        dataObj.fn_basename = respObj.fn_basename[:-3] + 'res'
+        dataObj.fn_basename = respObj.fn_basename[:-3] + "res"
 
         dataObj.write_data_file(fill=False, compute_error=False)
 
@@ -163,8 +175,12 @@ class Residual():
             return
 
         # pass relevant arguments through residual object
-        for att in ['center_position_EN', 'data_period_list',
-                    'wave_sign_impedance', 'wave_sign_tipper']:
+        for att in [
+            "center_position_EN",
+            "data_period_list",
+            "wave_sign_impedance",
+            "wave_sign_tipper",
+        ]:
             if hasattr(dataObj, att):
                 setattr(self, att, getattr(dataObj, att))
 
@@ -180,8 +196,12 @@ class Residual():
             return
 
         # pass relevant arguments through residual object
-        for att in ['center_position_EN', 'data_period_list',
-                    'wave_sign_impedance', 'wave_sign_tipper']:
+        for att in [
+            "center_position_EN",
+            "data_period_list",
+            "wave_sign_impedance",
+            "wave_sign_tipper",
+        ]:
             if hasattr(respObj, att):
                 setattr(self, att, getattr(respObj, att))
 
@@ -200,16 +220,16 @@ class Residual():
         rms_valuelist_z = np.zeros(0)
         rms_valuelist_tip = np.zeros(0)
 
-        for stname in self.rms_array['station']:
+        for stname in self.rms_array["station"]:
             rms_valuelist = []
-            sta_ind = np.where(self.rms_array['station'] == stname)[0][0]
-            sta_indd = np.where(self.residual_array['station'] == stname)[0][0]
+            sta_ind = np.where(self.rms_array["station"] == stname)[0][0]
+            sta_indd = np.where(self.residual_array["station"] == stname)[0][0]
             resvals = self.residual_array[sta_indd]
             znorm, tipnorm = None, None
-            if np.amax(np.abs(resvals['z'])) > 0:
+            if np.amax(np.abs(resvals["z"])) > 0:
                 # sum over absolute value of z
                 # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                znorm = np.abs(resvals['z']) / (np.real(resvals['z_err']) * 2. ** 0.5)
+                znorm = np.abs(resvals["z"]) / (np.real(resvals["z_err"]) * 2.0 ** 0.5)
                 znorm = znorm[np.all(np.isfinite(znorm), axis=(1, 2))]
 
                 # append individual normalised errors to a master list for all stations
@@ -217,13 +237,17 @@ class Residual():
                 rms_valuelist_z = np.append(rms_valuelist_z, znorm.flatten())
 
                 # normalised error for separate components
-                rms_z_comp[sta_ind] = (((znorm ** 2.).sum(axis=0)) / (znorm.shape[0])) ** 0.5
+                rms_z_comp[sta_ind] = (
+                    ((znorm ** 2.0).sum(axis=0)) / (znorm.shape[0])
+                ) ** 0.5
                 rms_valuelist.append(rms_z_comp[sta_ind])
 
-            if np.amax(np.abs(resvals['tip'])) > 0:
+            if np.amax(np.abs(resvals["tip"])) > 0:
                 # sum over absolute value of tipper
                 # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                tipnorm = np.abs(resvals['tip']) / (np.real(resvals['tip_err']) * 2. ** 0.5)
+                tipnorm = np.abs(resvals["tip"]) / (
+                    np.real(resvals["tip_err"]) * 2.0 ** 0.5
+                )
                 tipnorm = tipnorm[np.all(np.isfinite(tipnorm), axis=(1, 2))]
 
                 # append individual normalised errors to a master list for all stations
@@ -231,41 +255,55 @@ class Residual():
                 rms_valuelist_tip = np.append(rms_valuelist_tip, tipnorm.flatten())
 
                 # normalised error for separate components
-                rms_tip_comp[sta_ind] = (((tipnorm ** 2.).sum(axis=0)) / len(tipnorm)) ** 0.5
+                rms_tip_comp[sta_ind] = (
+                    ((tipnorm ** 2.0).sum(axis=0)) / len(tipnorm)
+                ) ** 0.5
                 rms_valuelist.append(rms_tip_comp[sta_ind])
 
             rms_valuelist = np.vstack(rms_valuelist).flatten()
 
-            rms_value = ((rms_valuelist ** 2.).sum() / rms_valuelist.size) ** 0.5
+            rms_value = ((rms_valuelist ** 2.0).sum() / rms_valuelist.size) ** 0.5
 
-            self.rms_array[sta_ind]['rms'] = rms_value
+            self.rms_array[sta_ind]["rms"] = rms_value
 
             if znorm is not None:
-                self.rms_array[sta_ind]['rms_z'] = ((rms_z_comp[sta_ind] ** 2.).sum() / rms_z_comp[sta_ind].size) ** 0.5
+                self.rms_array[sta_ind]["rms_z"] = (
+                    (rms_z_comp[sta_ind] ** 2.0).sum() / rms_z_comp[sta_ind].size
+                ) ** 0.5
             if tipnorm is not None:
-                self.rms_array[sta_ind]['rms_tip'] = ((rms_tip_comp[sta_ind] ** 2.).sum() / rms_z_comp[
-                    sta_ind].size) ** 0.5
+                self.rms_array[sta_ind]["rms_tip"] = (
+                    (rms_tip_comp[sta_ind] ** 2.0).sum() / rms_z_comp[sta_ind].size
+                ) ** 0.5
 
-        self.rms = np.mean(rms_valuelist_all ** 2.) ** 0.5
-        self.rms_z = np.mean(rms_valuelist_z ** 2.) ** 0.5
-        self.rms_tip = np.mean(rms_valuelist_tip ** 2.) ** 0.5
+        self.rms = np.mean(rms_valuelist_all ** 2.0) ** 0.5
+        self.rms_z = np.mean(rms_valuelist_z ** 2.0) ** 0.5
+        self.rms_tip = np.mean(rms_valuelist_tip ** 2.0) ** 0.5
 
     def write_rms_to_file(self):
         """
         write rms station data to file
         """
 
-        fn = op.join(self.workdir, 'rms_values.dat')
+        fn = op.join(self.workdir, "rms_values.dat")
 
-        if not hasattr(self, 'rms'):
+        if not hasattr(self, "rms"):
             self.get_rms()
 
-        headerlist = ['station', 'lon', 'lat', 'rel_east', 'rel_north', 'rms', 'rms_z', 'rms_tip']
+        headerlist = [
+            "station",
+            "lon",
+            "lat",
+            "rel_east",
+            "rel_north",
+            "rms",
+            "rms_z",
+            "rms_tip",
+        ]
 
         dtype = []
         for val in headerlist:
-            if val == 'station':
-                dtype.append((val, 'S10'))
+            if val == "station":
+                dtype.append((val, "S10"))
             else:
                 dtype.append((val, np.float))
 
@@ -273,6 +311,11 @@ class Residual():
         for val in headerlist:
             savelist[val] = self.rms_array[val]
 
-        header = ' '.join(headerlist)
+        header = " ".join(headerlist)
 
-        np.savetxt(fn, savelist, header=header, fmt=['%s', '%.6f', '%.6f', '%.1f', '%.1f', '%.3f', '%.3f', '%.3f'])
+        np.savetxt(
+            fn,
+            savelist,
+            header=header,
+            fmt=["%s", "%.6f", "%.6f", "%.1f", "%.1f", "%.3f", "%.3f", "%.3f"],
+        )

@@ -41,41 +41,53 @@ def readOutputFile(outputfile):
 
     """
 
-    ofid = open(outputfile, 'r')
+    ofid = open(outputfile, "r")
     lines = ofid.readlines()
 
     idict = {}
     stationlst = []
 
     # get title line
-    titleline = lines[1].replace('"', '')
-    titleline = titleline.rstrip().split(',')
-    title = titleline[1].split(':')[1]
-    profile = titleline[0].split(':')[1]
+    titleline = lines[1].replace('"', "")
+    titleline = titleline.rstrip().split(",")
+    title = titleline[1].split(":")[1]
+    profile = titleline[0].split(":")[1]
     inversiontype = lines[2].rstrip()
 
-    dkeys = ['obsresyx', 'obsphaseyx', 'modresyx', 'modphaseyx', 'obsresxy',
-             'obsphasexy', 'modresxy', 'modphasexy', 'obshzres', 'obshzphase',
-             'modhzres', 'modhzphase', 'period']
+    dkeys = [
+        "obsresyx",
+        "obsphaseyx",
+        "modresyx",
+        "modphaseyx",
+        "obsresxy",
+        "obsphasexy",
+        "modresxy",
+        "modphasexy",
+        "obshzres",
+        "obshzphase",
+        "modhzres",
+        "modhzphase",
+        "period",
+    ]
 
     for line in lines[3:]:
-        if line.find('Data for station') == 0:
-            station = line.rstrip().split(':')[1][1:]
+        if line.find("Data for station") == 0:
+            station = line.rstrip().split(":")[1][1:]
             idict[station] = {}
             stationlst.append(station)
-            print('Read in station: ', station)
+            print("Read in station: ", station)
             for key in dkeys:
                 idict[station][key] = []
-        elif line.find('RMS') == 0:
-            idict[station]['rms'] = float(line.strip().split(' = ')[1])
-        elif line.find('==') == 0:
+        elif line.find("RMS") == 0:
+            idict[station]["rms"] = float(line.strip().split(" = ")[1])
+        elif line.find("==") == 0:
             pass
         else:
             linelst = line.split()
             if len(linelst) == len(dkeys):
                 for kk, key in enumerate(dkeys):
                     try:
-                        if key.find('phase') >= 0:
+                        if key.find("phase") >= 0:
                             idict[station][key].append(-1 * float(linelst[kk]))
                         else:
                             idict[station][key].append(float(linelst[kk]))
@@ -88,38 +100,43 @@ def readOutputFile(outputfile):
     # data points.
 
     # get the median of period lists for survey
-    plst = np.median(np.array([idict[station]['period'] for station in stationlst]),
-                     axis=0)
+    plst = np.median(
+        np.array([idict[station]["period"] for station in stationlst]), axis=0
+    )
     # length of period
     nperiod = len(plst)
 
     # make a dictionary of period indicies
-    pdict = dict([('%2.4g' % key, ii) for ii, key in enumerate(plst)])
+    pdict = dict([("%2.4g" % key, ii) for ii, key in enumerate(plst)])
 
     # make a dictionary of indicies for spots to put res_ij and phase_ij
     wldict = {}
     for dkey in dkeys:
-        if dkey[0:3].find('obs') == 0:
+        if dkey[0:3].find("obs") == 0:
             wldict[dkey] = (dkey[3:], 0)
-        elif dkey[0:3].find('mod') == 0:
+        elif dkey[0:3].find("mod") == 0:
             wldict[dkey] = (dkey[3:], 1)
 
     # make empty arrays to put things into
     asize = (2, nperiod)
-    rplst = [{'station': station,
-              'resxy': np.zeros(asize),
-              'resyx': np.zeros(asize),
-              'phasexy': np.zeros(asize),
-              'phaseyx': np.zeros(asize),
-              'hzres': np.zeros(asize),
-              'hzphase': np.zeros(asize),
-              } for ii, station in enumerate(stationlst)]
+    rplst = [
+        {
+            "station": station,
+            "resxy": np.zeros(asize),
+            "resyx": np.zeros(asize),
+            "phasexy": np.zeros(asize),
+            "phaseyx": np.zeros(asize),
+            "hzres": np.zeros(asize),
+            "hzphase": np.zeros(asize),
+        }
+        for ii, station in enumerate(stationlst)
+    ]
 
     # put information into the corresponding arrays
     for rpdict in rplst:
-        station = rpdict['station']
+        station = rpdict["station"]
         for kk in range(nperiod):
-            ii = pdict['%2.4g' % idict[station]['period'][kk]]
+            ii = pdict["%2.4g" % idict[station]["period"][kk]]
             for dkey in dkeys[:-1]:
                 rkey, jj = wldict[dkey]
                 try:
@@ -131,7 +148,7 @@ def readOutputFile(outputfile):
     return idict, rplst, plst, stationlst, [title, profile, inversiontype]
 
 
-def plotResponses(outputfile, maxcol=8, plottype='all', **kwargs):
+def plotResponses(outputfile, maxcol=8, plottype="all", **kwargs):
     """
     plotResponse will plot the responses modeled from winglink against the 
     observed data.
@@ -153,16 +170,17 @@ def plotResponses(outputfile, maxcol=8, plottype='all', **kwargs):
     nstations = len(idict)
 
     # plot all responses onto one plot
-    if plottype == 'all':
+    if plottype == "all":
         maxcol = 8
         nrows = int(np.ceil(nstations / float(maxcol)))
 
         fig = plt.figure(1, [14, 10])
-        gs = gridspec.GridSpec(nrows, 1, wspace=.15, left=.03)
+        gs = gridspec.GridSpec(nrows, 1, wspace=0.15, left=0.03)
         count = 0
         for rr in range(nrows):
-            g1 = gridspec.GridSpecFromSubplotSpec(6, maxcol, subplot_spec=gs[rr],
-                                                  hspace=.15, wspace=.05)
+            g1 = gridspec.GridSpecFromSubplotSpec(
+                6, maxcol, subplot_spec=gs[rr], hspace=0.15, wspace=0.05
+            )
             count = rr * (maxcol)
             for cc in range(maxcol):
                 try:
@@ -172,116 +190,219 @@ def plotResponses(outputfile, maxcol=8, plottype='all', **kwargs):
                 # plot resistivity
                 axr = plt.Subplot(fig, g1[:4, cc])
                 fig.add_subplot(axr)
-                axr.loglog(idict[station]['period'], idict[station]['obsresxy'],
-                           's', ms=2, color='b', mfc='b')
-                axr.loglog(idict[station]['period'], idict[station]['modresxy'],
-                           '*', ms=5, color='r', mfc='r')
-                axr.loglog(idict[station]['period'], idict[station]['obsresyx'],
-                           'o', ms=2, color='c', mfc='c')
-                axr.loglog(idict[station]['period'], idict[station]['modresyx'],
-                           'x', ms=5, color='m', mfc='m')
-                axr.set_title(station + '; rms= %.2f' % idict[station]['rms'],
-                              fontdict={'size': 12, 'weight': 'bold'})
+                axr.loglog(
+                    idict[station]["period"],
+                    idict[station]["obsresxy"],
+                    "s",
+                    ms=2,
+                    color="b",
+                    mfc="b",
+                )
+                axr.loglog(
+                    idict[station]["period"],
+                    idict[station]["modresxy"],
+                    "*",
+                    ms=5,
+                    color="r",
+                    mfc="r",
+                )
+                axr.loglog(
+                    idict[station]["period"],
+                    idict[station]["obsresyx"],
+                    "o",
+                    ms=2,
+                    color="c",
+                    mfc="c",
+                )
+                axr.loglog(
+                    idict[station]["period"],
+                    idict[station]["modresyx"],
+                    "x",
+                    ms=5,
+                    color="m",
+                    mfc="m",
+                )
+                axr.set_title(
+                    station + "; rms= %.2f" % idict[station]["rms"],
+                    fontdict={"size": 12, "weight": "bold"},
+                )
                 axr.grid(True)
-                axr.set_xticklabels(['' for ii in range(10)])
+                axr.set_xticklabels(["" for ii in range(10)])
                 if cc > 0:
-                    axr.set_yticklabels(['' for ii in range(6)])
+                    axr.set_yticklabels(["" for ii in range(6)])
 
                 # plot phase
                 axp = plt.Subplot(fig, g1[-2:, cc])
                 fig.add_subplot(axp)
-                axp.semilogx(idict[station]['period'],
-                             np.array(idict[station]['obsphasexy']),
-                             's', ms=2, color='b', mfc='b')
-                axp.semilogx(idict[station]['period'],
-                             np.array(idict[station]['modphasexy']),
-                             '*', ms=5, color='r', mfc='r')
-                axp.semilogx(idict[station]['period'],
-                             np.array(idict[station]['obsphaseyx']),
-                             'o', ms=2, color='c', mfc='c')
-                axp.semilogx(idict[station]['period'],
-                             np.array(idict[station]['modphaseyx']),
-                             'x', ms=5, color='m', mfc='m')
+                axp.semilogx(
+                    idict[station]["period"],
+                    np.array(idict[station]["obsphasexy"]),
+                    "s",
+                    ms=2,
+                    color="b",
+                    mfc="b",
+                )
+                axp.semilogx(
+                    idict[station]["period"],
+                    np.array(idict[station]["modphasexy"]),
+                    "*",
+                    ms=5,
+                    color="r",
+                    mfc="r",
+                )
+                axp.semilogx(
+                    idict[station]["period"],
+                    np.array(idict[station]["obsphaseyx"]),
+                    "o",
+                    ms=2,
+                    color="c",
+                    mfc="c",
+                )
+                axp.semilogx(
+                    idict[station]["period"],
+                    np.array(idict[station]["modphaseyx"]),
+                    "x",
+                    ms=5,
+                    color="m",
+                    mfc="m",
+                )
                 axp.set_ylim(0, 90)
                 axp.grid(True)
                 axp.yaxis.set_major_locator(MultipleLocator(30))
                 axp.yaxis.set_minor_locator(MultipleLocator(5))
 
                 if cc == 0 and rr == 0:
-                    axr.legend(['$Obs_{xy}$', '$Mod_{xy}$', '$Obs_{yx}$',
-                                '$Mod_{yx}$'],
-                               loc=2, markerscale=1, borderaxespad=.05,
-                               labelspacing=.08,
-                               handletextpad=.15, borderpad=.05)
+                    axr.legend(
+                        ["$Obs_{xy}$", "$Mod_{xy}$", "$Obs_{yx}$", "$Mod_{yx}$"],
+                        loc=2,
+                        markerscale=1,
+                        borderaxespad=0.05,
+                        labelspacing=0.08,
+                        handletextpad=0.15,
+                        borderpad=0.05,
+                    )
                 if cc == 0:
-                    axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                                   fontdict={'size': 12, 'weight': 'bold'})
-                    axp.set_ylabel('Phase (deg)',
-                                   fontdict={'size': 12, 'weight': 'bold'})
-                    axr.yaxis.set_label_coords(-.08, .5)
-                    axp.yaxis.set_label_coords(-.08, .5)
+                    axr.set_ylabel(
+                        "App. Res. ($\Omega \cdot m$)",
+                        fontdict={"size": 12, "weight": "bold"},
+                    )
+                    axp.set_ylabel(
+                        "Phase (deg)", fontdict={"size": 12, "weight": "bold"}
+                    )
+                    axr.yaxis.set_label_coords(-0.08, 0.5)
+                    axp.yaxis.set_label_coords(-0.08, 0.5)
 
                 if cc > 0:
-                    axr.set_yticklabels(['' for ii in range(6)])
-                    axp.set_yticklabels(['' for ii in range(6)])
+                    axr.set_yticklabels(["" for ii in range(6)])
+                    axp.set_yticklabels(["" for ii in range(6)])
                 if rr == nrows - 1:
-                    axp.set_xlabel('Period (s)',
-                                   fontdict={'size': 12, 'weight': 'bold'})
+                    axp.set_xlabel(
+                        "Period (s)", fontdict={"size": 12, "weight": "bold"}
+                    )
 
     # plot each respones in a different figure
-    elif plottype == '1':
-        gs = gridspec.GridSpec(6, 2, wspace=.05)
+    elif plottype == "1":
+        gs = gridspec.GridSpec(6, 2, wspace=0.05)
         for ii, station in enumerate(stationlst):
             fig = plt.figure(ii + 1, [7, 8])
 
             # plot resistivity
             axr = fig.add_subplot(gs[:4, :])
 
-            axr.loglog(idict[station]['period'], idict[station]['obsresxy'],
-                       's', ms=2, color='b', mfc='b')
-            axr.loglog(idict[station]['period'], idict[station]['modresxy'],
-                       '*', ms=5, color='r', mfc='r')
-            axr.loglog(idict[station]['period'], idict[station]['obsresyx'],
-                       'o', ms=2, color='c', mfc='c')
-            axr.loglog(idict[station]['period'], idict[station]['modresyx'],
-                       'x', ms=5, color='m', mfc='m')
-            axr.set_title(station + '; rms= %.2f' % idict[station]['rms'],
-                          fontdict={'size': 12, 'weight': 'bold'})
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["obsresxy"],
+                "s",
+                ms=2,
+                color="b",
+                mfc="b",
+            )
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["modresxy"],
+                "*",
+                ms=5,
+                color="r",
+                mfc="r",
+            )
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["obsresyx"],
+                "o",
+                ms=2,
+                color="c",
+                mfc="c",
+            )
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["modresyx"],
+                "x",
+                ms=5,
+                color="m",
+                mfc="m",
+            )
+            axr.set_title(
+                station + "; rms= %.2f" % idict[station]["rms"],
+                fontdict={"size": 12, "weight": "bold"},
+            )
             axr.grid(True)
-            axr.set_xticklabels(['' for ii in range(10)])
+            axr.set_xticklabels(["" for ii in range(10)])
 
             # plot phase
             axp = fig.add_subplot(gs[-2:, :])
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['obsphasexy']),
-                         's', ms=2, color='b', mfc='b')
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['modphasexy']),
-                         '*', ms=5, color='r', mfc='r')
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['obsphaseyx']),
-                         'o', ms=2, color='c', mfc='c')
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['modphaseyx']),
-                         'x', ms=5, color='m', mfc='m')
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["obsphasexy"]),
+                "s",
+                ms=2,
+                color="b",
+                mfc="b",
+            )
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["modphasexy"]),
+                "*",
+                ms=5,
+                color="r",
+                mfc="r",
+            )
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["obsphaseyx"]),
+                "o",
+                ms=2,
+                color="c",
+                mfc="c",
+            )
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["modphaseyx"]),
+                "x",
+                ms=5,
+                color="m",
+                mfc="m",
+            )
             axp.set_ylim(0, 90)
             axp.grid(True)
             axp.yaxis.set_major_locator(MultipleLocator(10))
             axp.yaxis.set_minor_locator(MultipleLocator(1))
 
-            axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                           fontdict={'size': 12, 'weight': 'bold'})
-            axp.set_ylabel('Phase (deg)',
-                           fontdict={'size': 12, 'weight': 'bold'})
-            axp.set_xlabel('Period (s)', fontdict={
-                           'size': 12, 'weight': 'bold'})
-            axr.legend(['$Obs_{xy}$', '$Mod_{xy}$', '$Obs_{yx}$',
-                        '$Mod_{yx}$'],
-                       loc=2, markerscale=1, borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15, borderpad=.05)
-            axr.yaxis.set_label_coords(-.05, .5)
-            axp.yaxis.set_label_coords(-.05, .5)
+            axr.set_ylabel(
+                "App. Res. ($\Omega \cdot m$)", fontdict={"size": 12, "weight": "bold"}
+            )
+            axp.set_ylabel("Phase (deg)", fontdict={"size": 12, "weight": "bold"})
+            axp.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
+            axr.legend(
+                ["$Obs_{xy}$", "$Mod_{xy}$", "$Obs_{yx}$", "$Mod_{yx}$"],
+                loc=2,
+                markerscale=1,
+                borderaxespad=0.05,
+                labelspacing=0.08,
+                handletextpad=0.15,
+                borderpad=0.05,
+            )
+            axr.yaxis.set_label_coords(-0.05, 0.5)
+            axp.yaxis.set_label_coords(-0.05, 0.5)
 
     else:
         pstationlst = []
@@ -290,64 +411,113 @@ def plotResponses(outputfile, maxcol=8, plottype='all', **kwargs):
         for station in stationlst:
             for pstation in plottype:
                 if station.find(pstation) >= 0:
-                    print('plotting ', station)
+                    print("plotting ", station)
                     pstationlst.append(station)
 
-        gs = gridspec.GridSpec(6, 2, wspace=.05, left=.1)
+        gs = gridspec.GridSpec(6, 2, wspace=0.05, left=0.1)
         for ii, station in enumerate(pstationlst):
             fig = plt.figure(ii + 1, [7, 7])
 
             # plot resistivity
             axr = fig.add_subplot(gs[:4, :])
 
-            axr.loglog(idict[station]['period'], idict[station]['obsresxy'],
-                       's', ms=2, color='b', mfc='b')
-            axr.loglog(idict[station]['period'], idict[station]['modresxy'],
-                       '*', ms=5, color='r', mfc='r')
-            axr.loglog(idict[station]['period'], idict[station]['obsresyx'],
-                       'o', ms=2, color='c', mfc='c')
-            axr.loglog(idict[station]['period'], idict[station]['modresyx'],
-                       'x', ms=5, color='m', mfc='m')
-            axr.set_title(station + '; rms= %.2f' % idict[station]['rms'],
-                          fontdict={'size': 12, 'weight': 'bold'})
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["obsresxy"],
+                "s",
+                ms=2,
+                color="b",
+                mfc="b",
+            )
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["modresxy"],
+                "*",
+                ms=5,
+                color="r",
+                mfc="r",
+            )
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["obsresyx"],
+                "o",
+                ms=2,
+                color="c",
+                mfc="c",
+            )
+            axr.loglog(
+                idict[station]["period"],
+                idict[station]["modresyx"],
+                "x",
+                ms=5,
+                color="m",
+                mfc="m",
+            )
+            axr.set_title(
+                station + "; rms= %.2f" % idict[station]["rms"],
+                fontdict={"size": 12, "weight": "bold"},
+            )
             axr.grid(True)
-            axr.set_xticklabels(['' for ii in range(10)])
+            axr.set_xticklabels(["" for ii in range(10)])
 
             # plot phase
             axp = fig.add_subplot(gs[-2:, :])
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['obsphasexy']),
-                         's', ms=2, color='b', mfc='b')
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['modphasexy']),
-                         '*', ms=5, color='r', mfc='r')
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['obsphaseyx']),
-                         'o', ms=2, color='c', mfc='c')
-            axp.semilogx(idict[station]['period'],
-                         np.array(idict[station]['modphaseyx']),
-                         'x', ms=5, color='m', mfc='m')
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["obsphasexy"]),
+                "s",
+                ms=2,
+                color="b",
+                mfc="b",
+            )
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["modphasexy"]),
+                "*",
+                ms=5,
+                color="r",
+                mfc="r",
+            )
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["obsphaseyx"]),
+                "o",
+                ms=2,
+                color="c",
+                mfc="c",
+            )
+            axp.semilogx(
+                idict[station]["period"],
+                np.array(idict[station]["modphaseyx"]),
+                "x",
+                ms=5,
+                color="m",
+                mfc="m",
+            )
             axp.set_ylim(0, 90)
             axp.grid(True)
             axp.yaxis.set_major_locator(MultipleLocator(10))
             axp.yaxis.set_minor_locator(MultipleLocator(1))
 
-            axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                           fontdict={'size': 12, 'weight': 'bold'})
-            axp.set_ylabel('Phase (deg)',
-                           fontdict={'size': 12, 'weight': 'bold'})
-            axp.set_xlabel('Period (s)', fontdict={
-                           'size': 12, 'weight': 'bold'})
-            axr.legend(['$Obs_{xy}$', '$Mod_{xy}$', '$Obs_{yx}$',
-                        '$Mod_{yx}$'],
-                       loc=2, markerscale=1, borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15, borderpad=.05)
-            axr.yaxis.set_label_coords(-.05, .5)
-            axp.yaxis.set_label_coords(-.05, .5)
+            axr.set_ylabel(
+                "App. Res. ($\Omega \cdot m$)", fontdict={"size": 12, "weight": "bold"}
+            )
+            axp.set_ylabel("Phase (deg)", fontdict={"size": 12, "weight": "bold"})
+            axp.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
+            axr.legend(
+                ["$Obs_{xy}$", "$Mod_{xy}$", "$Obs_{yx}$", "$Mod_{yx}$"],
+                loc=2,
+                markerscale=1,
+                borderaxespad=0.05,
+                labelspacing=0.08,
+                handletextpad=0.15,
+                borderpad=0.05,
+            )
+            axr.yaxis.set_label_coords(-0.05, 0.5)
+            axp.yaxis.set_label_coords(-0.05, 0.5)
 
 
-def readModelFile(modelfile, profiledirection='ew'):
+def readModelFile(modelfile, profiledirection="ew"):
     """
     readModelFile reads in the XYZ txt file output by Winglink.    
 
@@ -358,7 +528,7 @@ def readModelFile(modelfile, profiledirection='ew'):
                             fix
     """
 
-    mfid = open(modelfile, 'r')
+    mfid = open(modelfile, "r")
     lines = mfid.readlines()
     nlines = len(lines)
 
@@ -368,7 +538,7 @@ def readModelFile(modelfile, profiledirection='ew'):
     rho = np.zeros(nlines)
     clst = []
     # file starts from the bottom of the model grid in X Y Z Rho coordinates
-    if profiledirection == 'ew':
+    if profiledirection == "ew":
         for ii, line in enumerate(lines):
             linestr = line.split()
             X[ii] = float(linestr[0])

@@ -50,7 +50,9 @@ class PlotOption(QWidget):
                 self.plotOptions.append(child)
                 self.ui.comboBoxSelect_Plot.addItem(name)
             else:
-                raise Exception("Duplicated Plot Name: %s in class %s" % (name, child.__name__))
+                raise Exception(
+                    "Duplicated Plot Name: %s in class %s" % (name, child.__name__)
+                )
 
         # busy overlay
         self._busy_overlay = BusyOverlay(self)
@@ -69,7 +71,9 @@ class PlotOption(QWidget):
 
     def resizeEvent(self, event):
         size = event.size()
-        size.setHeight(size.height() - self.ui.pushButton_plot.height())  # give space to the buttons
+        size.setHeight(
+            size.height() - self.ui.pushButton_plot.height()
+        )  # give space to the buttons
         self._busy_overlay.resize(size)
         # self._busy_overlay.resize(event.size())
         event.accept()
@@ -115,7 +119,7 @@ class PlotOption(QWidget):
     def _plotting_error(self, msg, trace):
         msg_box = QMessageBox(self)
         msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setText('Plotting Error')
+        msg_box.setText("Plotting Error")
         msg_box.setInformativeText(msg)
         msg_box.setDetailedText(trace)
         msg_box.setStandardButtons(QMessageBox.Close)
@@ -129,8 +133,12 @@ class PlotOption(QWidget):
         if fig:
             # self._fig.show()
             widget = MPLCanvasWidget(fig)
-            self._parent.create_subwindow(widget, "%s" % self._current_plot.plot_name(), override=False,
-                                          tooltip=self._current_plot.get_plot_tooltip())
+            self._parent.create_subwindow(
+                widget,
+                "%s" % self._current_plot.plot_name(),
+                override=False,
+                tooltip=self._current_plot.get_plot_tooltip(),
+            )
 
     def update_ui(self):
         if self._current_plot is not None:

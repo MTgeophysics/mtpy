@@ -7,7 +7,7 @@ from tests import TEST_MTPY_ROOT, make_temp_dir
 def test_read_write():
     # path2edi = 'data/AMT/15125A_spe.edi'
     output_dir = make_temp_dir(__name__)
-    path2edi = os.path.normpath(os.path.join(TEST_MTPY_ROOT, 'data/AMT/15125A_imp.edi'))
+    path2edi = os.path.normpath(os.path.join(TEST_MTPY_ROOT, "data/AMT/15125A_imp.edi"))
 
     edi_obj = Edi(edi_fn=path2edi)
     # change the latitude

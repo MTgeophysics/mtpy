@@ -27,8 +27,12 @@ class PlotParameter(QGroupBox):
         # dpi
         self.ui.spinBox_dpi.valueChanged.connect(self._dpi_changed)
         # inches
-        self.ui.doubleSpinBox_width_inches.valueChanged.connect(self._width_inches_changed)
-        self.ui.doubleSpinBox_height_inches.valueChanged.connect(self._height_inches_changed)
+        self.ui.doubleSpinBox_width_inches.valueChanged.connect(
+            self._width_inches_changed
+        )
+        self.ui.doubleSpinBox_height_inches.valueChanged.connect(
+            self._height_inches_changed
+        )
         # pixels
         self.ui.spinBox_width_pixels.valueChanged.connect(self._width_pixels_changed)
         self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
@@ -103,16 +107,12 @@ class PlotParameter(QGroupBox):
 
     def _width_inches_changed(self, width):
         self.ui.spinBox_width_pixels.blockSignals(True)
-        self.ui.spinBox_width_pixels.setValue(
-            width * self.ui.spinBox_dpi.value()
-        )
+        self.ui.spinBox_width_pixels.setValue(width * self.ui.spinBox_dpi.value())
         self.ui.spinBox_width_pixels.blockSignals(False)
 
     def _height_inches_changed(self, height):
         self.ui.spinBox_height_pixels.blockSignals(True)
-        self.ui.spinBox_height_pixels.setValue(
-            height * self.ui.spinBox_dpi.value()
-        )
+        self.ui.spinBox_height_pixels.setValue(height * self.ui.spinBox_dpi.value())
         self.ui.spinBox_height_pixels.blockSignals(False)
 
     def customized_figure_title(self):
@@ -138,16 +138,17 @@ class PlotParameter(QGroupBox):
 
     def get_title_font_dict(self):
         font_properties = {
-            'x': self.ui.doubleSpinBox_x.value(),
-            'y': self.ui.doubleSpinBox_y.value(),
-            'horizontalalignment': self._horizontalalignment[
-                self.ui.comboBox_horizontal_alignment.currentIndex()],
-            'verticalalignment': self._verticalalignment[
+            "x": self.ui.doubleSpinBox_x.value(),
+            "y": self.ui.doubleSpinBox_y.value(),
+            "horizontalalignment": self._horizontalalignment[
+                self.ui.comboBox_horizontal_alignment.currentIndex()
+            ],
+            "verticalalignment": self._verticalalignment[
                 self.ui.comboBox_vertical_alignment.currentIndex()
             ],
-            'fontsize': self.ui.spinBox_fontsize.value()
+            "fontsize": self.ui.spinBox_fontsize.value(),
         }
         return font_properties
 
-    _horizontalalignment = ['right', 'center', 'left']
-    _verticalalignment = ['top', 'center', 'bottom', 'baseline']
+    _horizontalalignment = ["right", "center", "left"]
+    _verticalalignment = ["top", "center", "bottom", "baseline"]

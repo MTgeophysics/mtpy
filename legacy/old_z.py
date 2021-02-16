@@ -17,19 +17,23 @@ from matplotlib.ticker import MultipleLocator
 import mtpy.utils.gis_tools
 
 # make a custom colormap to use for plotting
-ptcmapdict = {'red': ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),
-              'green': ((0.0, 0.0, 1.0), (1.0, 0.0, 1.0)),
-              'blue': ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0))}
-ptcmap = LinearSegmentedColormap('ptcmap', ptcmapdict, 256)
+ptcmapdict = {
+    "red": ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),
+    "green": ((0.0, 0.0, 1.0), (1.0, 0.0, 1.0)),
+    "blue": ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+}
+ptcmap = LinearSegmentedColormap("ptcmap", ptcmapdict, 256)
 
 # resistivity tensor map for calcluating apparent resistivity
-rtcmapdict = {'red': ((0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
-              'green': ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
-              'blue': ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0))}
-rtcmap = LinearSegmentedColormap('rtcmap', rtcmapdict, 256)
+rtcmapdict = {
+    "red": ((0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
+    "green": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
+    "blue": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0)),
+}
+rtcmap = LinearSegmentedColormap("rtcmap", rtcmapdict, 256)
 
 # spacing for text files
-tsp = '   '
+tsp = "   "
 
 
 class Edi(object):
@@ -41,9 +45,9 @@ class Edi(object):
 
     def __init__(self, edifilename, ncol=5):
         self.edifn = edifilename
-        self.header = {'text': []}
-        self.info = {'text': []}
-        self.measurement = {'text': []}
+        self.header = {"text": []}
+        self.info = {"text": []}
+        self.measurement = {"text": []}
         self.lat = 0
         self.lon = 0
         self.elevation = 0
@@ -79,155 +83,166 @@ class Edi(object):
             >>> edi1.readEDI(verbose=True)
         """
         # open up file
-        edifid = file(self.edifn, 'r')
+        edifid = file(self.edifn, "r")
         # read all the lines from that file
         edilines = edifid.readlines()
         edifid.close()
 
-        #---Read in the information about the measurement---------
-        gdict = {'head': self.header,
-                 'info': self.info,
-                 'definemeas': self.measurement,
-                 'mtsect': {'text': []},
-                 'emapsect': {'text': []},
-                 'comp': {}}
+        # ---Read in the information about the measurement---------
+        gdict = {
+            "head": self.header,
+            "info": self.info,
+            "definemeas": self.measurement,
+            "mtsect": {"text": []},
+            "emapsect": {"text": []},
+            "comp": {},
+        }
 
         # get indexes of important information
         edict = {}
         for ii, eline in enumerate(edilines):
 
-            if eline.find('FREQ') > 0:
-                edict['freq'] = ii
+            if eline.find("FREQ") > 0:
+                edict["freq"] = ii
                 continue
-            if eline.find('SPECTRASECT') > 0:
-                edict['spectra'] = ii
+            if eline.find("SPECTRASECT") > 0:
+                edict["spectra"] = ii
                 continue
-            if eline.find('>ZROT') >= 0:
-                if 'zrot' not in edict:
-                    edict['zrot'] = ii
+            if eline.find(">ZROT") >= 0:
+                if "zrot" not in edict:
+                    edict["zrot"] = ii
                 continue
             # elif eline.find('IMPEDANCE')>0:
             #    if eline.find('ROTATION')>0:
             #        edict['zrot']=ii
             #    else:
             #        edict['z']=ii
-            if eline.find('>Z') >= 0:
-                if 'z' not in edict:
-                    edict['z'] = ii
+            if eline.find(">Z") >= 0:
+                if "z" not in edict:
+                    edict["z"] = ii
                 continue
 
-            if eline.find('TIPPER') > 0:
-                if eline.find('ROTATION') > 0:
-                    edict['trot'] = ii
+            if eline.find("TIPPER") > 0:
+                if eline.find("ROTATION") > 0:
+                    edict["trot"] = ii
                 else:
-                    edict['tipper'] = ii
+                    edict["tipper"] = ii
 
-        #-------Read in header information------------------------
+        # -------Read in header information------------------------
         ii = 0
         while isinstance(ii, int):
 
             eline = edilines[ii]
-            if eline.find('SPECTRA') >= 0:
+            if eline.find("SPECTRA") >= 0:
                 ii = None
-            elif eline.find('IMPEDANCE') >= 0:
+            elif eline.find("IMPEDANCE") >= 0:
                 ii = None
-            elif eline.find('FREQUENCIES') >= 0:
+            elif eline.find("FREQUENCIES") >= 0:
                 ii = None
-            elif eline.find('>END') >= 0:
+            elif eline.find(">END") >= 0:
                 ii = None
                 continue
             else:
                 # get the block header
-                if eline.find('>') == 0 or eline.find('>') == 1:
-                    es = eline.find('>')
+                if eline.find(">") == 0 or eline.find(">") == 1:
+                    es = eline.find(">")
                     # For definemeas
-                    if eline.find('=') > 0 and eline.find('ACQCHAN') == -1:
-                        if eline.find('INFO') > 0:
-                            gkey = eline[es + 1:].strip().split()[0].lower()
+                    if eline.find("=") > 0 and eline.find("ACQCHAN") == -1:
+                        if eline.find("INFO") > 0:
+                            gkey = eline[es + 1 :].strip().split()[0].lower()
                         else:
-                            gkey = eline[es + 2:].strip().lower()
+                            gkey = eline[es + 2 :].strip().lower()
                     # for a comment block
-                    elif eline.find('!') > 0:
+                    elif eline.find("!") > 0:
                         pass
                     # for the measurement channels
-                    elif eline.find('ACQCHAN') > 0:
-                        gkey = 'comp'
+                    elif eline.find("ACQCHAN") > 0:
+                        gkey = "comp"
                         eline = eline.strip().split()
-                        mid = eline[1].split('=')[1]
-                        mtype = eline[2].split('=')[1]
-                        gdict['comp'][mid] = mtype
+                        mid = eline[1].split("=")[1]
+                        mtype = eline[2].split("=")[1]
+                        gdict["comp"][mid] = mtype
                     # for the normal block header
                     else:
-                        gkey = eline[eline.find('>') + 1:].strip().lower()
+                        gkey = eline[eline.find(">") + 1 :].strip().lower()
                 # for each block header put the information into a dictionary
                 else:
                     eline = eline.strip()
                     # for a line with that can be separated by an =
-                    if eline.find('=') > 0 and eline.find('CHTYPE') == -1 and \
-                            eline.find('mV') == -1:
-                        eline = eline.split('=')
-                        gdict[gkey][eline[0]] = eline[1].replace('"', '')
+                    if (
+                        eline.find("=") > 0
+                        and eline.find("CHTYPE") == -1
+                        and eline.find("mV") == -1
+                    ):
+                        eline = eline.split("=")
+                        gdict[gkey][eline[0]] = eline[1].replace('"', "")
                     # all other lines
-                    elif eline.find('=') == -1 and eline.find(':') > 0:
-                        gdict[gkey]['text'].append(eline.strip())
+                    elif eline.find("=") == -1 and eline.find(":") > 0:
+                        gdict[gkey]["text"].append(eline.strip())
                 ii += 1
 
         # get latitude from the header
         try:
-            latstr = gdict['head']['LAT']
+            latstr = gdict["head"]["LAT"]
 
         # if it isn't in the header it should be in the definemeas
         except KeyError:
             try:
-                latstr = gdict['definemeas']['REFLAT']
+                latstr = gdict["definemeas"]["REFLAT"]
             # if it isn't there then need to find it else where
             except KeyError:
-                print 'Did not find Latitude'
+                print "Did not find Latitude"
 
         # change from hh:mm:ss to decimal deg
-        if latstr.find(':') >= 0:
-            latlst = latstr.split(':')
-            latstr = str(int(latlst[0])) + '.' + str(float(latlst[1]) / 60
-                                                     + float(latlst[2]) / 3600)[2:]
+        if latstr.find(":") >= 0:
+            latlst = latstr.split(":")
+            latstr = (
+                str(int(latlst[0]))
+                + "."
+                + str(float(latlst[1]) / 60 + float(latlst[2]) / 3600)[2:]
+            )
             self.lat = float(latstr)
         else:
             self.lat = float(latstr)
 
         # get longitude from header
         try:
-            lonstr = gdict['head']['LONG']
+            lonstr = gdict["head"]["LONG"]
 
         # if it isn't in the header it should be in the definemeas
         except KeyError:
             try:
-                lonstr = gdict['definemeas']['REFLONG']
+                lonstr = gdict["definemeas"]["REFLONG"]
             except KeyError:
-                print 'Did not find Longitude'
+                print "Did not find Longitude"
 
         # change from hh:mm:ss to decimal deg
-        if lonstr.find(':') >= 0:
-            lonlst = lonstr.split(':')
-            lonstr = str(int(lonlst[0])) + '.' + str(float(lonlst[1]) / 60
-                                                     + float(lonlst[2]) / 3600)[2:]
+        if lonstr.find(":") >= 0:
+            lonlst = lonstr.split(":")
+            lonstr = (
+                str(int(lonlst[0]))
+                + "."
+                + str(float(lonlst[1]) / 60 + float(lonlst[2]) / 3600)[2:]
+            )
             self.lon = float(lonstr)
         else:
             self.lon = float(lonstr)
 
         # get elevation
         try:
-            self.elevation = float(gdict['head']['ELEV'])
+            self.elevation = float(gdict["head"]["ELEV"])
         except KeyError:
             if verbose:
-                print 'Did not find elevation for ', self.edifn
+                print "Did not find elevation for ", self.edifn
 
-        #======================================================================
+        # ======================================================================
         #         Get frequency, impedance and tipper
-        #======================================================================
-        #-------------------Get Frequencies------------------------------------
+        # ======================================================================
+        # -------------------Get Frequencies------------------------------------
         try:
-            ii = edict['freq']
+            ii = edict["freq"]
             # get number of frequencies
-            nf = int(edilines[ii].strip().split('//')[1])
+            nf = int(edilines[ii].strip().split("//")[1])
             # initialize some arrays
             self.frequency = np.zeros(nf)
 
@@ -235,7 +250,7 @@ class Edi(object):
             kk = 0
             ii += 1
             while isinstance(kk, int):
-                if edilines[ii].find('>') >= 0 or edilines[ii].find('*') > 0:
+                if edilines[ii].find(">") >= 0 or edilines[ii].find("*") > 0:
                     kk = None
                 else:
                     eline = edilines[ii].strip().split()
@@ -243,61 +258,58 @@ class Edi(object):
                         self.ncol = len(eline)
                     for nn, estr in enumerate(eline):
                         try:
-                            self.frequency[
-                                kk * (self.ncol - 1) + nn + kk] = float(estr)
+                            self.frequency[kk * (self.ncol - 1) + nn + kk] = float(estr)
                         except IndexError:
                             pass
                     kk += 1
                     ii += 1
         except KeyError:
             if verbose:
-                print 'Did not find frequencies in ', self.edifn
+                print "Did not find frequencies in ", self.edifn
 
-        #-------------Get impedance from spectra---------------------------
+        # -------------Get impedance from spectra---------------------------
         try:
-            ii = edict['spectra'] + 1
+            ii = edict["spectra"] + 1
             # make a dictionary with a list to put the component order into
-            gdict['spectraset'] = {'comporder': {}}
+            gdict["spectraset"] = {"comporder": {}}
 
             cc = 0
             # get header information about how the spectra is stored
             while isinstance(ii, int):
                 eline = edilines[ii]
                 # stop at the first spectra block
-                if eline.find('>SPECTRA') == 0:
+                if eline.find(">SPECTRA") == 0:
                     jj = ii
                     ii = None
                 # get the spectraset information
                 else:
-                    gkey = 'spectraset'
+                    gkey = "spectraset"
                     # general information
-                    if eline.find('=') > 0:
-                        eline = eline.strip().split('=')
-                        gdict[gkey][eline[0]] = eline[1].replace('"', '')
+                    if eline.find("=") > 0:
+                        eline = eline.strip().split("=")
+                        gdict[gkey][eline[0]] = eline[1].replace('"', "")
                     # get component order
                     else:
                         try:
                             estr = eline.strip()
                             try:
-                                gdict[gkey]['comporder'][gdict['comp'][estr]]
-                                gdict[gkey]['comporder'][
-                                    gdict['comp'][estr] + 'R'] = cc
+                                gdict[gkey]["comporder"][gdict["comp"][estr]]
+                                gdict[gkey]["comporder"][gdict["comp"][estr] + "R"] = cc
                             except KeyError:
-                                gdict[gkey]['comporder'][
-                                    gdict['comp'][estr]] = cc
+                                gdict[gkey]["comporder"][gdict["comp"][estr]] = cc
 
                             cc += 1
                         except KeyError:
                             pass
                     ii += 1
             # defind values of number of frequencies and number of channels
-            nf = int(gdict['spectraset']['NFREQ'])
-            nc = int(gdict['spectraset']['NCHAN'])
+            nf = int(gdict["spectraset"]["NFREQ"])
+            nc = int(gdict["spectraset"]["NCHAN"])
 
             # set some empty arrays to put stuff into
-            self.z = np.zeros((nf, 2, 2), dtype='complex')
+            self.z = np.zeros((nf, 2, 2), dtype="complex")
             self.zvar = np.zeros((nf, 2, 2))
-            self.tipper = np.zeros((nf, 2), dtype='complex')
+            self.tipper = np.zeros((nf, 2), dtype="complex")
             self.tippervar = np.zeros((nf, 2))
             self.frequency = np.zeros(nf)
             bw = np.zeros(nf)
@@ -309,17 +321,17 @@ class Edi(object):
             while isinstance(kk, int):
                 eline = edilines[jj]
                 # get information from the spectra line block
-                if eline.find('>SPECTRA') == 0:
+                if eline.find(">SPECTRA") == 0:
                     eline = eline.strip().split()
                     for ee in eline:
-                        estr = ee.split('=')
-                        if estr[0] == 'FREQ':
+                        estr = ee.split("=")
+                        if estr[0] == "FREQ":
                             self.frequency[kk] = float(estr[1])
-                        elif estr[0] == 'ROTSPEC':
+                        elif estr[0] == "ROTSPEC":
                             self.zrot[kk] = float(estr[1])
-                        elif estr[0] == 'BW':
+                        elif estr[0] == "BW":
                             bw[kk] = float(estr[1])
-                        elif estr[0] == 'AVGT':
+                        elif estr[0] == "AVGT":
                             avgt[kk] = float(estr[1])
                         else:
                             pass
@@ -329,7 +341,7 @@ class Edi(object):
                     kk += 1
                     jj += 1
                 # stop once all the spectra have been read
-                elif eline.find('>') == 0 and eline.find('SPECTRA') == -1:
+                elif eline.find(">") == 0 and eline.find("SPECTRA") == -1:
                     kk = None
                 # put the spectra values into the pre-defined array
                 else:
@@ -340,58 +352,70 @@ class Edi(object):
                             spectra[ll, nn] = float(eline[nn])
                     # get spectra in a useable order such that all values are
                     # complex in the upper right hand triangle
-                    spect = np.zeros((nc, nc), dtype='complex')
+                    spect = np.zeros((nc, nc), dtype="complex")
                     for ll in range(nc):
                         for nn in range(ll, nc):
-                            spect[ll, nn] = spectra[
-                                nn, ll] - 1j * spectra[ll, nn]
+                            spect[ll, nn] = spectra[nn, ll] - 1j * spectra[ll, nn]
 
                     # calculate the impedance from the spectra
-                    cdict = gdict['spectraset']['comporder']
-                    bx = cdict['HX']
-                    by = cdict['HY']
-                    ex = cdict['EX']
-                    ey = cdict['EY']
+                    cdict = gdict["spectraset"]["comporder"]
+                    bx = cdict["HX"]
+                    by = cdict["HY"]
+                    ex = cdict["EX"]
+                    ey = cdict["EY"]
                     try:
-                        bz = cdict['HZ']
+                        bz = cdict["HZ"]
                     except KeyError:
-                        print 'No HZ'
+                        print "No HZ"
                     try:
-                        bxr = cdict['HXR']
-                        byr = cdict['HYR']
+                        bxr = cdict["HXR"]
+                        byr = cdict["HYR"]
                     except KeyError:
-                        print 'No remote reference'
+                        print "No remote reference"
 
                     # get impedance from the spectra
-                    zdet = (spect[bx, bxr] * spect[by, byr]) -\
-                        (spect[bx, byr] * spect[by, bxr])
-                    self.z[kk - 1, 0, 0] = ((spect[ex, bxr] * spect[by, byr]) -
-                                            (spect[ex, byr] * spect[by, bxr])) / zdet
-                    self.z[kk - 1, 0, 1] = ((spect[ex, byr] * spect[bx, bxr]) -
-                                            (spect[ex, bxr] * spect[bx, byr])) / zdet
-                    self.z[kk - 1, 1, 0] = ((spect[ey, bxr] * spect[by, byr]) -
-                                            (spect[ey, byr] * spect[by, bxr])) / zdet
-                    self.z[kk - 1, 1, 1] = ((spect[ey, byr] * spect[bx, bxr]) -
-                                            (spect[ey, bxr] * spect[bx, byr])) / zdet
+                    zdet = (spect[bx, bxr] * spect[by, byr]) - (
+                        spect[bx, byr] * spect[by, bxr]
+                    )
+                    self.z[kk - 1, 0, 0] = (
+                        (spect[ex, bxr] * spect[by, byr])
+                        - (spect[ex, byr] * spect[by, bxr])
+                    ) / zdet
+                    self.z[kk - 1, 0, 1] = (
+                        (spect[ex, byr] * spect[bx, bxr])
+                        - (spect[ex, bxr] * spect[bx, byr])
+                    ) / zdet
+                    self.z[kk - 1, 1, 0] = (
+                        (spect[ey, bxr] * spect[by, byr])
+                        - (spect[ey, byr] * spect[by, bxr])
+                    ) / zdet
+                    self.z[kk - 1, 1, 1] = (
+                        (spect[ey, byr] * spect[bx, bxr])
+                        - (spect[ey, bxr] * spect[bx, byr])
+                    ) / zdet
 
                     # get tipper from the spectra
-                    self.tipper[kk - 1, 0] = ((spect[bx, bz] * spect[by, by].real) -
-                                              (spect[by, bz] * spect[bx, by])) / zdet
+                    self.tipper[kk - 1, 0] = (
+                        (spect[bx, bz] * spect[by, by].real)
+                        - (spect[by, bz] * spect[bx, by])
+                    ) / zdet
 
                     # need to put in conjugate because of coordinate system
-                    self.tipper[kk - 1, 1] = ((spect[by, bz].conj() * spect[bx, bx].real) -
-                                              (spect[bx, bz].conj() * spect[bx, by])) / zdet
+                    self.tipper[kk - 1, 1] = (
+                        (spect[by, bz].conj() * spect[bx, bx].real)
+                        - (spect[bx, bz].conj() * spect[bx, by])
+                    ) / zdet
 
         except KeyError:
             if verbose:
-                print 'Did not find spectra information for ', self.edifn
+                print "Did not find spectra information for ", self.edifn
 
-        #--------------Get Impedance Rotation angles----------------------
+        # --------------Get Impedance Rotation angles----------------------
         try:
-            ii = edict['zrot']
+            ii = edict["zrot"]
 
             # get number of frequencies
-            nf = int(edilines[ii].strip().split('//')[1])
+            nf = int(edilines[ii].strip().split("//")[1])
 
             # initialize some arrays
             self.zrot = np.zeros(nf)
@@ -400,7 +424,7 @@ class Edi(object):
             kk = 0
             ii += 1
             while isinstance(kk, int):
-                if edilines[ii].find('>') >= 0 or edilines[ii].find('*') > 0:
+                if edilines[ii].find(">") >= 0 or edilines[ii].find("*") > 0:
                     kk = None
                 else:
                     eline = edilines[ii].strip().split()
@@ -408,8 +432,7 @@ class Edi(object):
                         self.ncol = len(eline)
                     for nn, estr in enumerate(eline):
                         try:
-                            self.zrot[kk * (self.ncol - 1) +
-                                      nn + kk] = float(estr)
+                            self.zrot[kk * (self.ncol - 1) + nn + kk] = float(estr)
                         except IndexError:
                             pass
                     kk += 1
@@ -417,41 +440,42 @@ class Edi(object):
 
         except KeyError:
             if verbose:
-                print 'Did not find impedance rotation block for ', self.edifn
+                print "Did not find impedance rotation block for ", self.edifn
 
-        #--------------Get impedance--------------------------------------
+        # --------------Get impedance--------------------------------------
         try:
-            ii = edict['z']
+            ii = edict["z"]
 
             # define a dictionary of indecies to put information into z array
-            zdict = dict([('ZXX', (0, 0)), ('ZXY', (0, 1)), ('ZYX', (1, 0)),
-                          ('ZYY', (1, 1))])
+            zdict = dict(
+                [("ZXX", (0, 0)), ("ZXY", (0, 1)), ("ZYX", (1, 0)), ("ZYY", (1, 1))]
+            )
 
             # initialize some arrays
-            nf = int(edilines[ii].strip().split('//')[1])
-            self.z = np.zeros((nf, 2, 2), dtype='complex')
+            nf = int(edilines[ii].strip().split("//")[1])
+            self.z = np.zeros((nf, 2, 2), dtype="complex")
             self.zvar = np.zeros((nf, 2, 2))
-            self.tipper = np.zeros((nf, 2), dtype='complex')
+            self.tipper = np.zeros((nf, 2), dtype="complex")
             self.tippervar = np.zeros((nf, 2))
             self.trot = np.zeros(nf)
             try:
-                edict['zrot']
+                edict["zrot"]
             except KeyError:
                 self.zrot = np.zeros(nf)
 
             kk = 0
             while isinstance(kk, int):
                 eline = edilines[ii]
-                if eline.find('>') == 0 or eline.find('>') == 1:
-                    es = eline.find('>')
-                    if eline.find('Z') == -1 and eline.find('IMP') == -1:
+                if eline.find(">") == 0 or eline.find(">") == 1:
+                    es = eline.find(">")
+                    if eline.find("Z") == -1 and eline.find("IMP") == -1:
                         kk = None
                         jj = ii
                     else:
                         eline = eline.strip().split()
                         zkey = eline[0][1:4]
                         zcomp = eline[0][4:]
-                        if zkey != 'ZRO' and zkey.find('!') == -1:
+                        if zkey != "ZRO" and zkey.find("!") == -1:
                             z0 = zdict[zkey][0]
                             z1 = zdict[zkey][1]
 
@@ -459,47 +483,48 @@ class Edi(object):
                         ii += 1
                 else:
                     eline = eline.strip().split()
-                    if zkey == 'ZRO':
+                    if zkey == "ZRO":
                         for nn, estr in enumerate(eline):
                             try:
-                                self.zrot[kk * (self.ncol - 1) +
-                                          nn + kk] = float(estr)
+                                self.zrot[kk * (self.ncol - 1) + nn + kk] = float(estr)
                             except IndexError:
                                 pass
-                    elif zcomp == 'R':
+                    elif zcomp == "R":
                         for nn, estr in enumerate(eline):
                             try:
-                                self.z[kk * (self.ncol - 1) + nn +
-                                       kk, z0, z1] = float(estr)
+                                self.z[kk * (self.ncol - 1) + nn + kk, z0, z1] = float(
+                                    estr
+                                )
                             except IndexError:
                                 pass
-                    elif zcomp == 'I':
+                    elif zcomp == "I":
                         for nn, estr in enumerate(eline):
                             try:
-                                self.z[kk * (self.ncol - 1) + nn + kk, z0, z1] =\
-                                    self.z[kk * (self.ncol - 1) + nn + kk, z0, z1] +\
-                                    1j * float(estr)
+                                self.z[kk * (self.ncol - 1) + nn + kk, z0, z1] = self.z[
+                                    kk * (self.ncol - 1) + nn + kk, z0, z1
+                                ] + 1j * float(estr)
                             except IndexError:
                                 pass
-                    elif zcomp == '.VAR':
+                    elif zcomp == ".VAR":
                         for nn, estr in enumerate(eline):
                             try:
-                                self.zvar[kk * (self.ncol - 1) + nn + kk, z0, z1] =\
-                                    float(estr)
+                                self.zvar[
+                                    kk * (self.ncol - 1) + nn + kk, z0, z1
+                                ] = float(estr)
                             except IndexError:
                                 pass
                     ii += 1
                     kk += 1
         except KeyError:
             if verbose:
-                print 'Did not find impedance information for ', self.edifn
+                print "Did not find impedance information for ", self.edifn
 
-        #--------------Get Tipper Rotation angles----------------------
+        # --------------Get Tipper Rotation angles----------------------
         try:
-            ii = edict['trot'] + 1
+            ii = edict["trot"] + 1
 
             # get number of frequencies
-            nf = int(edilines[ii].strip().split('//')[1])
+            nf = int(edilines[ii].strip().split("//")[1])
 
             # initialize some arrays
             self.trot = np.zeros(nf)
@@ -508,7 +533,7 @@ class Edi(object):
             kk = 0
             ii += 1
             while isinstance(kk, int):
-                if edilines[ii].find('!') > 0 or edilines[ii].find('*') > 0:
+                if edilines[ii].find("!") > 0 or edilines[ii].find("*") > 0:
                     kk = None
                 else:
                     eline = edilines[ii].strip().split()
@@ -516,8 +541,7 @@ class Edi(object):
                         self.ncol = len(eline)
                     for nn, estr in enumerate(eline):
                         try:
-                            self.trot[kk * (self.ncol - 1) +
-                                      nn + kk] = float(estr)
+                            self.trot[kk * (self.ncol - 1) + nn + kk] = float(estr)
                         except IndexError:
                             pass
                     kk += 1
@@ -525,58 +549,60 @@ class Edi(object):
 
         except KeyError:
             if verbose:
-                print 'Did not find Tipper rotation block for ', self.edifn
+                print "Did not find Tipper rotation block for ", self.edifn
 
-        #-----Get Tipper Information-----------
+        # -----Get Tipper Information-----------
         try:
-            ii = edict['tipper'] + 1
-            tdict = dict([('TX', 0), ('TY', 1)])
+            ii = edict["tipper"] + 1
+            tdict = dict([("TX", 0), ("TY", 1)])
 
             kk = 0
             while isinstance(kk, int):
                 eline = edilines[ii]
-                if eline.find('>') == 0 or eline.find('>') == 1:
-                    es = eline.find('>')
-                    if eline.find('T', es, es + 2) == -1:
+                if eline.find(">") == 0 or eline.find(">") == 1:
+                    es = eline.find(">")
+                    if eline.find("T", es, es + 2) == -1:
                         kk = None
                         jj = ii
                     else:
                         eline = eline.strip().split()
                         tkey = eline[0][1:3]
                         tcomp = eline[0][3:]
-                        if tkey != 'TR' and tkey.find('!') == -1:
+                        if tkey != "TR" and tkey.find("!") == -1:
                             z0 = tdict[tkey]
 
                         kk = 0
                         ii += 1
                 else:
                     eline = eline.strip().split()
-                    if tkey == 'TR':
+                    if tkey == "TR":
                         for nn, estr in enumerate(eline):
                             try:
-                                self.trot[kk * (self.ncol - 1) +
-                                          nn + kk] = float(estr)
+                                self.trot[kk * (self.ncol - 1) + nn + kk] = float(estr)
                             except IndexError:
                                 pass
-                    if tcomp == 'R' or tcomp == 'R.EXP':
+                    if tcomp == "R" or tcomp == "R.EXP":
+                        for nn, estr in enumerate(eline):
+                            try:
+                                self.tipper[kk * (self.ncol - 1) + nn + kk, z0] = float(
+                                    estr
+                                )
+                            except IndexError:
+                                pass
+                    elif tcomp == "I" or tcomp == "I.EXP":
                         for nn, estr in enumerate(eline):
                             try:
                                 self.tipper[
-                                    kk * (self.ncol - 1) + nn + kk, z0] = float(estr)
+                                    kk * (self.ncol - 1) + nn + kk, z0
+                                ] += 1j * float(estr)
                             except IndexError:
                                 pass
-                    elif tcomp == 'I' or tcomp == 'I.EXP':
+                    elif tcomp == "VAR.EXP" or ".VAR":
                         for nn, estr in enumerate(eline):
                             try:
-                                self.tipper[kk * (self.ncol - 1) + nn + kk, z0] +=\
-                                    1j * float(estr)
-                            except IndexError:
-                                pass
-                    elif tcomp == 'VAR.EXP' or '.VAR':
-                        for nn, estr in enumerate(eline):
-                            try:
-                                self.tippervar[kk * (self.ncol - 1) + nn + kk, z0] =\
-                                    float(estr)
+                                self.tippervar[
+                                    kk * (self.ncol - 1) + nn + kk, z0
+                                ] = float(estr)
                             except IndexError:
                                 pass
                     ii += 1
@@ -584,9 +610,9 @@ class Edi(object):
 
         except KeyError:
             if verbose:
-                print 'Did not find Tipper information for ', self.edifn
+                print "Did not find Tipper information for ", self.edifn
 
-        self.period = 1. / self.frequency
+        self.period = 1.0 / self.frequency
         if self.period[0] > self.period[-1]:
             self.period = self.period[::-1]
             self.frequency = self.frequency[::-1]
@@ -595,10 +621,19 @@ class Edi(object):
             self.tipper = self.tipper[::-1, :]
             self.tipvar = self.tippervar[::-1, :]
 
-            print 'Flipped to descending frequency'
+            print "Flipped to descending frequency"
 
-    def rewriteedi(self, znew=None, zvarnew=None, freqnew=None, newfile='y',
-                   tipnew=None, tipvarnew=None, thetar=0, ext='dr'):
+    def rewriteedi(
+        self,
+        znew=None,
+        zvarnew=None,
+        freqnew=None,
+        newfile="y",
+        tipnew=None,
+        tipvarnew=None,
+        thetar=0,
+        ext="dr",
+    ):
         """
         rewriteedi(edifile) will rewrite an edifile say if it needs to be
         rotated or distortion removed.
@@ -656,11 +691,11 @@ class Edi(object):
 
         # get direcotry path make one if not there
         dirpath = os.path.dirname(self.edifn)
-        if newfile == 'y':
+        if newfile == "y":
             drdirpath = os.path.join(dirpath, ext.upper())
             if not os.path.exists(drdirpath):
                 os.mkdir(drdirpath)
-                print 'Made directory: ', drdirpath
+                print "Made directory: ", drdirpath
             else:
                 pass
             # copy files into a common directory
@@ -669,29 +704,31 @@ class Edi(object):
             while count < 10:
                 drpath = os.path.dirname(drpath)
                 for folder in os.listdir(drpath):
-                    if folder.find('EDIfiles') >= 0:
-                        edifolderyn = 'y'
-                        drcopypath = os.path.join(drpath, 'EDIfiles')
+                    if folder.find("EDIfiles") >= 0:
+                        edifolderyn = "y"
+                        drcopypath = os.path.join(drpath, "EDIfiles")
                         if os.path.exists(drcopypath):
-                            if not os.path.exists(os.path.join(drcopypath,
-                                                               ext.upper())):
+                            if not os.path.exists(
+                                os.path.join(drcopypath, ext.upper())
+                            ):
                                 os.mkdir(os.path.join(drcopypath, ext.upper()))
-                                print 'Made directory ', os.path.join(drcopypath,
-                                                                      ext.upper())
+                                print "Made directory ", os.path.join(
+                                    drcopypath, ext.upper()
+                                )
                     else:
-                        edifolderyn = 'n'
+                        edifolderyn = "n"
                         drcopypath = os.path.dirname(drdirpath)
                 count += 1
 
             # get new file name
-            nedibn = os.path.basename(self.edifn)[:-4] + ext.lower() + '.edi'
+            nedibn = os.path.basename(self.edifn)[:-4] + ext.lower() + ".edi"
             # open a new edifile
-            newedifid = open(os.path.join(drdirpath, nedibn), 'w')
+            newedifid = open(os.path.join(drdirpath, nedibn), "w")
 
         else:
-            nedibn = os.path.basename(self.edifn)[:-4] + 'c.edi'
-            newedifid = open(os.path.join(dirpath, nedibn), 'w')
-            edifolderyn = 'n'
+            nedibn = os.path.basename(self.edifn)[:-4] + "c.edi"
+            newedifid = open(os.path.join(dirpath, nedibn), "w")
+            edifolderyn = "n"
 
         # if there is no znew then rotate the data
         if znew is None:
@@ -711,10 +748,13 @@ class Edi(object):
                     self.thetar = thetar
                 print self.thetar
                 # make rotation matrix
-                rotmatrix = np.array([[np.cos(self.thetar), np.sin(self.thetar)],
-                                      [-np.sin(self.thetar), np.cos(self.thetar)]])
-                trotmatrix = np.array(
-                    [np.cos(self.thetar), np.sin(self.thetar)])
+                rotmatrix = np.array(
+                    [
+                        [np.cos(self.thetar), np.sin(self.thetar)],
+                        [-np.sin(self.thetar), np.cos(self.thetar)],
+                    ]
+                )
+                trotmatrix = np.array([np.cos(self.thetar), np.sin(self.thetar)])
 
                 # fill in rotation for impedances (zrot)
                 self.zrot = np.zeros_like(self.frequency)
@@ -722,16 +762,16 @@ class Edi(object):
 
                 # rotate the data
                 for rr in range(len(self.frequency)):
-                    self.znew[rr] = np.dot(rotmatrix, np.dot(self.z[rr],
-                                                             rotmatrix.T))
-                    self.zvarnew[rr] = np.dot(rotmatrix, np.dot(self.zvar[rr],
-                                                                rotmatrix.T))
-                    self.tippernew[rr] = np.dot(trotmatrix,
-                                                np.dot(self.tipper[rr],
-                                                       trotmatrix.T))
-                    self.tippervarnew[rr] = np.dot(trotmatrix,
-                                                   np.dot(self.tippervar[rr],
-                                                          trotmatrix.T))
+                    self.znew[rr] = np.dot(rotmatrix, np.dot(self.z[rr], rotmatrix.T))
+                    self.zvarnew[rr] = np.dot(
+                        rotmatrix, np.dot(self.zvar[rr], rotmatrix.T)
+                    )
+                    self.tippernew[rr] = np.dot(
+                        trotmatrix, np.dot(self.tipper[rr], trotmatrix.T)
+                    )
+                    self.tippervarnew[rr] = np.dot(
+                        trotmatrix, np.dot(self.tippervar[rr], trotmatrix.T)
+                    )
             # otherwise read in the new Z
             else:
                 self.znew = self.z
@@ -753,26 +793,26 @@ class Edi(object):
             self.thetar = 0.0
 
         # open existing edi file
-        edifid = open(self.edifn, 'r')
+        edifid = open(self.edifn, "r")
 
         # read existing edi file and find where impedances start and number of
         # frequencies
         edilines = edifid.readlines()
         spot = []
         for ii, line in enumerate(edilines):
-            if line.find('>FREQ') >= 0:
+            if line.find(">FREQ") >= 0:
                 spot.append(ii)
-            if line.find('IMPEDANCES') >= 0:
+            if line.find("IMPEDANCES") >= 0:
                 spot.append(ii)
-            if line.find('SPECTRA') >= 0:
+            if line.find("SPECTRA") >= 0:
                 spot.append(ii)
 
         # write lines until the frequency list or spectra
-        for ll, line in enumerate(edilines[0:spot[0] - 1]):
+        for ll, line in enumerate(edilines[0 : spot[0] - 1]):
             newedifid.write(line)
 
-        newedifid.write('>!****FREQUENCIES****!' + '\n')
-        #write in frequencies
+        newedifid.write(">!****FREQUENCIES****!" + "\n")
+        # write in frequencies
         # if there is a new frequency list
         if freqnew is not None:
             # get number of frequencies
@@ -780,166 +820,208 @@ class Edi(object):
 
             # get order of frequencies
             if freqnew[0] < freqnew[-1]:
-                order = 'INC'
+                order = "INC"
             else:
-                order = 'DEC'
+                order = "DEC"
 
             # write frequency header
-            newedifid.write('>FREQ' + tsp + 'NFREQ=' + str(int(nfreq)) + tsp +
-                            'ORDER=' + order + tsp + '// ' + str(int(nfreq)) + '\n')
+            newedifid.write(
+                ">FREQ"
+                + tsp
+                + "NFREQ="
+                + str(int(nfreq))
+                + tsp
+                + "ORDER="
+                + order
+                + tsp
+                + "// "
+                + str(int(nfreq))
+                + "\n"
+            )
             for kk in range(int(nfreq)):
-                newedifid.write(tsp + '{0:+.6E}'.format(freqnew[kk]))
-                if np.remainder(float(kk) + 1, 5.) == 0:
-                    newedifid.write('\n')
-            newedifid.write('\n')
+                newedifid.write(tsp + "{0:+.6E}".format(freqnew[kk]))
+                if np.remainder(float(kk) + 1, 5.0) == 0:
+                    newedifid.write("\n")
+            newedifid.write("\n")
 
         # from the start of file to where impedances start write from existing
         # edifile
         else:
             # get order of frequencies
             if self.frequency[0] < self.frequency[-1]:
-                order = 'INC'
+                order = "INC"
             else:
-                order = 'DEC'
+                order = "DEC"
 
             nfreq = len(self.frequency)
             # write frequency header
-            newedifid.write('>FREQ' + tsp + 'NFREQ=' + str(int(nfreq)) + tsp + 'ORDER=' +
-                            order + tsp + '// ' + str(int(nfreq)) + '\n')
+            newedifid.write(
+                ">FREQ"
+                + tsp
+                + "NFREQ="
+                + str(int(nfreq))
+                + tsp
+                + "ORDER="
+                + order
+                + tsp
+                + "// "
+                + str(int(nfreq))
+                + "\n"
+            )
             for kk in range(int(nfreq)):
-                newedifid.write(tsp + '{0:+.6E}'.format(self.frequency[kk]))
-                if np.remainder(float(kk) + 1, 5.) == 0:
-                    newedifid.write('\n')
-            newedifid.write('\n')
+                newedifid.write(tsp + "{0:+.6E}".format(self.frequency[kk]))
+                if np.remainder(float(kk) + 1, 5.0) == 0:
+                    newedifid.write("\n")
+            newedifid.write("\n")
 
         # write in rotation block for impedance tensor
-        newedifid.write('>!****IMPEDANCE ROTATION ANGLES****!\n')
-        newedifid.write('>ZROT // {0}\n'.format(int(nfreq)))
+        newedifid.write(">!****IMPEDANCE ROTATION ANGLES****!\n")
+        newedifid.write(">ZROT // {0}\n".format(int(nfreq)))
         for ss in range(nfreq):
-            newedifid.write(tsp + '{0:+.4f}'.format(self.thetar * 180 / np.pi))
-            if np.remainder(ss + 1.0, 5.) == 0:
-                newedifid.write('\n')
-        if np.remainder(ss + 1., 5.) != 0:
-            newedifid.write('\n')
+            newedifid.write(tsp + "{0:+.4f}".format(self.thetar * 180 / np.pi))
+            if np.remainder(ss + 1.0, 5.0) == 0:
+                newedifid.write("\n")
+        if np.remainder(ss + 1.0, 5.0) != 0:
+            newedifid.write("\n")
 
         # write in impedance information
-        newedifid.write('>!****IMPEDANCES****!' +
-                        ' Rotated {0:.0f} clockwise\n'.format(self.thetar *
-                                                              180 / np.pi))
+        newedifid.write(
+            ">!****IMPEDANCES****!"
+            + " Rotated {0:.0f} clockwise\n".format(self.thetar * 180 / np.pi)
+        )
 
         # create an implst to make code simpler
-        implst = [['ZXXR', 0, 0], ['ZXXI', 0, 0], ['ZXX.VAR', 0, 0], ['ZXYR', 0, 1],
-                  ['ZXYI', 0, 1], ['ZXY.VAR', 0, 1], [
-                      'ZYXR', 1, 0], ['ZYXI', 1, 0],
-                  ['ZYX.VAR', 1, 0], ['ZYYR', 1, 1], ['ZYYI', 1, 1], ['ZYY.VAR', 1, 1]]
+        implst = [
+            ["ZXXR", 0, 0],
+            ["ZXXI", 0, 0],
+            ["ZXX.VAR", 0, 0],
+            ["ZXYR", 0, 1],
+            ["ZXYI", 0, 1],
+            ["ZXY.VAR", 0, 1],
+            ["ZYXR", 1, 0],
+            ["ZYXI", 1, 0],
+            ["ZYX.VAR", 1, 0],
+            ["ZYYR", 1, 1],
+            ["ZYYI", 1, 1],
+            ["ZYY.VAR", 1, 1],
+        ]
         # write new impedances and variances
         for jj, imp in enumerate(implst):
             mm = imp[1]
             nn = imp[2]
-            newedifid.write('>' +
-                            imp[0] +
-                            ' ROT=ZROT // ' +
-                            str(int(nfreq)) +
-                            '\n')
-            if imp[0].find('.') == -1:
-                if imp[0].find('R') >= 0:
+            newedifid.write(">" + imp[0] + " ROT=ZROT // " + str(int(nfreq)) + "\n")
+            if imp[0].find(".") == -1:
+                if imp[0].find("R") >= 0:
                     for kk in range(int(nfreq)):
                         newedifid.write(
-                            tsp + '{0:+.6E}'.format(self.znew.real[kk, mm, nn]))
+                            tsp + "{0:+.6E}".format(self.znew.real[kk, mm, nn])
+                        )
                         if kk > 0:
-                            if np.remainder(float(kk) + 1, 5.) == 0:
-                                newedifid.write('\n')
+                            if np.remainder(float(kk) + 1, 5.0) == 0:
+                                newedifid.write("\n")
                         else:
                             pass
-                elif imp[0].find('I') >= 0:
+                elif imp[0].find("I") >= 0:
                     for kk in range(int(nfreq)):
                         newedifid.write(
-                            tsp + '{0:+.6E}'.format(self.znew.imag[kk, mm, nn]))
+                            tsp + "{0:+.6E}".format(self.znew.imag[kk, mm, nn])
+                        )
                         if kk > 0:
-                            if np.remainder(float(kk) + 1, 5.) == 0:
-                                newedifid.write('\n')
+                            if np.remainder(float(kk) + 1, 5.0) == 0:
+                                newedifid.write("\n")
                         else:
                             pass
             else:
                 for kk in range(int(nfreq)):
-                    newedifid.write(tsp +
-                                    '{0:+.6E}'.format(self.zvarnew[kk, mm, nn]))
+                    newedifid.write(tsp + "{0:+.6E}".format(self.zvarnew[kk, mm, nn]))
                     if kk > 0:
-                        if np.remainder(float(kk) + 1, 5.) == 0:
-                            newedifid.write('\n')
+                        if np.remainder(float(kk) + 1, 5.0) == 0:
+                            newedifid.write("\n")
                     else:
                         pass
-            if np.remainder(kk + 1., 5.) != 0:
-                newedifid.write('\n')
+            if np.remainder(kk + 1.0, 5.0) != 0:
+                newedifid.write("\n")
 
-        newedifid.write('>!****TIPPER****!' + '\n')
-        tiplst = [['TXR', 0], ['TXI', 0], ['TX.VAR', 0], ['TYR', 1], ['TYI', 1],
-                  ['TY.VAR', 1]]
+        newedifid.write(">!****TIPPER****!" + "\n")
+        tiplst = [
+            ["TXR", 0],
+            ["TXI", 0],
+            ["TX.VAR", 0],
+            ["TYR", 1],
+            ["TYI", 1],
+            ["TY.VAR", 1],
+        ]
 
         for jj, tip in enumerate(tiplst):
             mm = tip[1]
-            newedifid.write('>' + tip[0] + ' // ' + str(int(nfreq)) + '\n')
-            if tip[0].find('.') == -1:
-                if tip[0].find('R') >= 0:
+            newedifid.write(">" + tip[0] + " // " + str(int(nfreq)) + "\n")
+            if tip[0].find(".") == -1:
+                if tip[0].find("R") >= 0:
                     for kk in range(int(nfreq)):
                         newedifid.write(
-                            tsp + '{0:+.6E}'.format(self.tippernew.real[kk, mm]))
+                            tsp + "{0:+.6E}".format(self.tippernew.real[kk, mm])
+                        )
                         if kk > 0:
-                            if np.remainder(float(kk) + 1, 5.) == 0:
-                                newedifid.write('\n')
+                            if np.remainder(float(kk) + 1, 5.0) == 0:
+                                newedifid.write("\n")
                         else:
                             pass
-                    if np.remainder(kk + 1., 5.) != 0:
-                        newedifid.write('\n')
-                elif tip[0].find('I') >= 0:
+                    if np.remainder(kk + 1.0, 5.0) != 0:
+                        newedifid.write("\n")
+                elif tip[0].find("I") >= 0:
                     for kk in range(int(nfreq)):
                         newedifid.write(
-                            tsp + '{0:+.6E}'.format(self.tippernew.imag[kk, mm]))
+                            tsp + "{0:+.6E}".format(self.tippernew.imag[kk, mm])
+                        )
                         if kk > 0:
-                            if np.remainder(float(kk) + 1, 5.) == 0:
-                                newedifid.write('\n')
+                            if np.remainder(float(kk) + 1, 5.0) == 0:
+                                newedifid.write("\n")
                         else:
                             pass
-                    if np.remainder(kk + 1., 5.) != 0:
-                        newedifid.write('\n')
+                    if np.remainder(kk + 1.0, 5.0) != 0:
+                        newedifid.write("\n")
             else:
                 for kk in range(int(nfreq)):
                     newedifid.write(
-                        tsp + '{0:+.6E}'.format(self.tippervarnew.real[kk, mm]))
+                        tsp + "{0:+.6E}".format(self.tippervarnew.real[kk, mm])
+                    )
                     if kk > 0:
-                        if np.remainder(float(kk) + 1, 5.) == 0:
-                            newedifid.write('\n')
+                        if np.remainder(float(kk) + 1, 5.0) == 0:
+                            newedifid.write("\n")
                     else:
                         pass
-                if np.remainder(kk + 1., 5.) != 0:
-                    newedifid.write('\n')
-        newedifid.write('\n')
-        newedifid.write('>END')
+                if np.remainder(kk + 1.0, 5.0) != 0:
+                    newedifid.write("\n")
+        newedifid.write("\n")
+        newedifid.write(">END")
 
         edifid.close()
         newedifid.close()
         # copy file to a common folder
-        if edifolderyn == 'y':
-            if newfile == 'y':
-                shutil.copy(os.path.join(drdirpath, newedifile),
-                            os.path.join(drcopypath, ext.upper(), newedifile))
-                print 'Copied new edifile to: ', os.path.join(drcopypath,
-                                                              ext.upper(),
-                                                              newedifile)
+        if edifolderyn == "y":
+            if newfile == "y":
+                shutil.copy(
+                    os.path.join(drdirpath, newedifile),
+                    os.path.join(drcopypath, ext.upper(), newedifile),
+                )
+                print "Copied new edifile to: ", os.path.join(
+                    drcopypath, ext.upper(), newedifile
+                )
             else:
-                shutil.copy(os.path.join(dirpath, newedifile),
-                            os.path.join(drcopypath, newedifile))
-                print 'Copied new edifile to: ', os.path.join(drcopypath,
-                                                              newedifile)
+                shutil.copy(
+                    os.path.join(dirpath, newedifile),
+                    os.path.join(drcopypath, newedifile),
+                )
+                print "Copied new edifile to: ", os.path.join(drcopypath, newedifile)
         else:
             pass
-        if newfile == 'y':
+        if newfile == "y":
             self.nedifn = os.path.join(drdirpath, nedibn)
 
         else:
             self.nedifn = os.path.join(dirpath, nedibn)
 
-        print 'Made file: ', self.nedifn
+        print "Made file: ", self.nedifn
 
 
 class Z(Edi):
@@ -956,9 +1038,9 @@ class Z(Edi):
 
         # define some parameters to be filled
         self.edifn = edifn
-        self.header = {'text': []}
-        self.info = {'text': []}
-        self.measurement = {'text': []}
+        self.header = {"text": []}
+        self.info = {"text": []}
+        self.measurement = {"text": []}
         self.lat = 0
         self.lon = 0
         self.elevation = 0
@@ -974,8 +1056,8 @@ class Z(Edi):
         Edi.readEDI(self)
 
         # define some parameters needed from older version
-        self.period = 1. / self.frequency
-        self.station = self.header['DATAID']
+        self.period = 1.0 / self.frequency
+        self.station = self.header["DATAID"]
 
     def getInvariants(self, thetar=0):
         """
@@ -1087,7 +1169,7 @@ class Z(Edi):
         # rotated identity matrix for static shift removal
         im = np.array([[0, -1], [1, 0]])
         for ii, ellip in enumerate(pt.ellipticity):
-            if ellip < .1:
+            if ellip < 0.1:
                 X = z[ii].real
                 Y = z[ii].imag
                 # calculate static shift factor
@@ -1103,52 +1185,111 @@ class Z(Edi):
             else:
                 pass
         if len(zd) == 0:
-            print 'There is no 1D structure for this station'
+            print "There is no 1D structure for this station"
             self.D = np.zeros((2, 2))
             self.nedifn = self.edifn
         else:
             # estimate distortion matrix
             zd = np.array(zd)
-            D = np.array([[zd[:, 0, 0].mean(), zd[:, 0, 1].mean()],
-                          [zd[:, 1, 0].mean(), zd[:, 1, 1].mean()]])
-            Dvar = np.array([[zd[:, 0, 0].std(), zd[:, 0, 1].std()],
-                             [zd[:, 1, 0].std(), zd[:, 1, 1].std()]])
+            D = np.array(
+                [
+                    [zd[:, 0, 0].mean(), zd[:, 0, 1].mean()],
+                    [zd[:, 1, 0].mean(), zd[:, 1, 1].mean()],
+                ]
+            )
+            Dvar = np.array(
+                [
+                    [zd[:, 0, 0].std(), zd[:, 0, 1].std()],
+                    [zd[:, 1, 0].std(), zd[:, 1, 1].std()],
+                ]
+            )
             Dinv = np.linalg.inv(D)
             # remove distortion as (D^-1)Z[ii]
-            zdr = np.array([np.dot(np.linalg.inv(D), z[ii])
-                            for ii in range(len(z))])
+            zdr = np.array([np.dot(np.linalg.inv(D), z[ii]) for ii in range(len(z))])
 
             # estimate errors
             zvardr = np.zeros_like(z)
             for jj in range(len(z)):
                 X = z[jj].real
                 Xvar = zvar[jj].real
-                zvardr[jj, 0, 0] = np.sqrt((Dinv[0, 0] * X[0, 0] *
-                                            np.sqrt((Dvar[1, 1] / Dinv[0, 0])**2 +
-                                                    (Xvar[0, 0] / X[0, 0])**2))**2 + (Dinv[0, 1] * X[1, 0]
-                                                                                      * np.sqrt((Dvar[0, 1] / Dinv[0, 1])**2 +
-                                                                                                (Xvar[0, 1] / X[0, 1])**2))**2)
-                zvardr[jj, 0, 1] = np.sqrt((Dinv[0, 0] * X[0, 1] *
-                                            np.sqrt((Dvar[1, 1] / Dinv[0, 0])**2 +
-                                                    (Xvar[0, 1] / X[0, 1])**2))**2 + (Dinv[0, 1] * X[1, 1]
-                                                                                      * np.sqrt((Dvar[0, 1] / Dinv[0, 1])**2 +
-                                                                                                (Xvar[1, 1] / X[1, 1])**2))**2)
-                zvardr[jj, 1, 0] = np.sqrt((Dinv[1, 0] * X[0, 0] *
-                                            np.sqrt((Dvar[1, 0] / Dinv[1, 0])**2 +
-                                                    (Xvar[0, 0] / X[0, 0])**2))**2 + (Dinv[1, 1] * X[1, 0]
-                                                                                      * np.sqrt((Dvar[0, 0] / Dinv[1, 1])**2 +
-                                                                                                (Xvar[1, 0] / X[1, 0])**2))**2)
-                zvardr[jj, 1, 1] = np.sqrt((Dinv[1, 0] * X[1, 0] *
-                                            np.sqrt((Dvar[1, 0] / Dinv[1, 0])**2 +
-                                                    (Xvar[0, 1] / X[0, 1])**2))**2 + (Dinv[1, 1] * X[1, 1]
-                                                                                      * np.sqrt((Dvar[1, 1] / Dinv[1, 1])**2 +
-                                                                                                (Xvar[1, 1] / X[1, 1])**2))**2)
+                zvardr[jj, 0, 0] = np.sqrt(
+                    (
+                        Dinv[0, 0]
+                        * X[0, 0]
+                        * np.sqrt(
+                            (Dvar[1, 1] / Dinv[0, 0]) ** 2 + (Xvar[0, 0] / X[0, 0]) ** 2
+                        )
+                    )
+                    ** 2
+                    + (
+                        Dinv[0, 1]
+                        * X[1, 0]
+                        * np.sqrt(
+                            (Dvar[0, 1] / Dinv[0, 1]) ** 2 + (Xvar[0, 1] / X[0, 1]) ** 2
+                        )
+                    )
+                    ** 2
+                )
+                zvardr[jj, 0, 1] = np.sqrt(
+                    (
+                        Dinv[0, 0]
+                        * X[0, 1]
+                        * np.sqrt(
+                            (Dvar[1, 1] / Dinv[0, 0]) ** 2 + (Xvar[0, 1] / X[0, 1]) ** 2
+                        )
+                    )
+                    ** 2
+                    + (
+                        Dinv[0, 1]
+                        * X[1, 1]
+                        * np.sqrt(
+                            (Dvar[0, 1] / Dinv[0, 1]) ** 2 + (Xvar[1, 1] / X[1, 1]) ** 2
+                        )
+                    )
+                    ** 2
+                )
+                zvardr[jj, 1, 0] = np.sqrt(
+                    (
+                        Dinv[1, 0]
+                        * X[0, 0]
+                        * np.sqrt(
+                            (Dvar[1, 0] / Dinv[1, 0]) ** 2 + (Xvar[0, 0] / X[0, 0]) ** 2
+                        )
+                    )
+                    ** 2
+                    + (
+                        Dinv[1, 1]
+                        * X[1, 0]
+                        * np.sqrt(
+                            (Dvar[0, 0] / Dinv[1, 1]) ** 2 + (Xvar[1, 0] / X[1, 0]) ** 2
+                        )
+                    )
+                    ** 2
+                )
+                zvardr[jj, 1, 1] = np.sqrt(
+                    (
+                        Dinv[1, 0]
+                        * X[1, 0]
+                        * np.sqrt(
+                            (Dvar[1, 0] / Dinv[1, 0]) ** 2 + (Xvar[0, 1] / X[0, 1]) ** 2
+                        )
+                    )
+                    ** 2
+                    + (
+                        Dinv[1, 1]
+                        * X[1, 1]
+                        * np.sqrt(
+                            (Dvar[1, 1] / Dinv[1, 1]) ** 2 + (Xvar[1, 1] / X[1, 1]) ** 2
+                        )
+                    )
+                    ** 2
+                )
             # make new edi file. need to flip zdr and zvardr back to normal order
             # for edi file.
             self.rewriteedi(znew=zdr, zvarnew=zvardr.real)
             self.D = D
 
-    def removeStaticShift(self, stol=.2, dm=1000, fspot=20):
+    def removeStaticShift(self, stol=0.2, dm=1000, fspot=20):
         """
         Will remove static shift by calculating the median of respones of near
         by stations, within dm.  If the ratio of the station response to the
@@ -1194,8 +1335,11 @@ class Z(Edi):
         edipath = os.path.dirname(self.edifn)
 
         # make a list of filename from edipath
-        edilst = [os.path.join(edipath, dedifile)
-                  for dedifile in os.listdir(edipath) if dedifile.find('.edi') > 0]
+        edilst = [
+            os.path.join(edipath, dedifile)
+            for dedifile in os.listdir(edipath)
+            if dedifile.find(".edi") > 0
+        ]
 
         rp = ResPhase(self.z, self.period)
         # loop over files to find nearby stations
@@ -1207,9 +1351,9 @@ class Z(Edi):
             zk = Edi(kedi)
             zk.readEDI()
             zone, dn, de = mtpy.utils.gis_tools.ll_to_utm(23, zk.lat, zk.lon)
-            deltad = np.sqrt((dn - northing)**2 + (de - easting)**2)
+            deltad = np.sqrt((dn - northing) ** 2 + (de - easting) ** 2)
             if deltad <= dm:
-                zkrp = ResPhase(zk.z, 1. / zk.frequency)
+                zkrp = ResPhase(zk.z, 1.0 / zk.frequency)
                 resxlst.append(zkrp.resxy[0:fspot])
                 resylst.append(zkrp.resyx[0:fspot])
                 statlst.append(kk)
@@ -1224,10 +1368,10 @@ class Z(Edi):
         # see if it is within the tolerance level
         if staticx < 1 - stol or staticx > 1 + stol:
             znewss[:, 0, :] = self.z[:, 0, :] / np.sqrt(staticx)
-            print 'X-Shifted ' + self.station + ' by ' + str(1 / np.sqrt(staticx))
-            xyn = 'y'
+            print "X-Shifted " + self.station + " by " + str(1 / np.sqrt(staticx))
+            xyn = "y"
         else:
-            xyn = 'n'
+            xyn = "n"
 
         # calculate static shift of y-components
         staticy = np.mean(rp.resyx[0:fspot] / np.median(resylst))
@@ -1235,18 +1379,18 @@ class Z(Edi):
         # see if it is within the tolerance level
         if staticy < 1 - stol or staticy > 1 + stol:
             znewss[:, 1, :] = self.z[:, 1, :] / np.sqrt(staticy)
-            print 'Y-Shifted ' + self.station + ' by ' + str(1 / np.sqrt(staticy))
-            yyn = 'y'
+            print "Y-Shifted " + self.station + " by " + str(1 / np.sqrt(staticy))
+            yyn = "y"
         else:
-            yyn = 'n'
+            yyn = "n"
 
         # if there was a correction write a new edi file
-        if xyn == 'y' or yyn == 'y':
-            self.rewriteedi(znew=znewss, zvarnew=self.zvar, ext='SS')
+        if xyn == "y" or yyn == "y":
+            self.rewriteedi(znew=znewss, zvarnew=self.zvar, ext="SS")
 
         # if no correction was made return the same edifile
         else:
-            print 'No Static Shift Correction for ', self.station
+            print "No Static Shift Correction for ", self.station
 
     def getResPhase(self, ffactor=1, thetar=0):
         """
@@ -1274,8 +1418,9 @@ class Z(Edi):
 
         """
 
-        return ResPhase(self.z, self.period, zvar=self.zvar, rotz=thetar,
-                        ffactor=ffactor)
+        return ResPhase(
+            self.z, self.period, zvar=self.zvar, rotz=thetar, ffactor=ffactor
+        )
 
     def getResTensor(self, thetar=0, rotate=180):
         """
@@ -1303,12 +1448,22 @@ class Z(Edi):
 
         """
 
-        return ResistivityTensor(self.z, self.frequency, rotz=thetar,
-                                 rotate=rotate)
+        return ResistivityTensor(self.z, self.frequency, rotz=thetar, rotate=rotate)
 
-    def plotResPhase(self, thetar=0, fignum=1, plottype=1, title=None, ffactor=1,
-                     savefigfilename=None, dpi=None, fmt=None, orientation=None,
-                     phaselimits=(0, 90), reslimits=None):
+    def plotResPhase(
+        self,
+        thetar=0,
+        fignum=1,
+        plottype=1,
+        title=None,
+        ffactor=1,
+        savefigfilename=None,
+        dpi=None,
+        fmt=None,
+        orientation=None,
+        phaselimits=(0, 90),
+        reslimits=None,
+    ):
         """
         Will plot the apparent resistivity and phase for TE and TM modes or all
         modes.  If there is tipper data it will be plotted at the bottom as
@@ -1368,100 +1523,146 @@ class Z(Edi):
         if dpi is None:
             dpi = 100
 
-        rp = ResPhase(self.z, self.period, zvar=self.zvar, rotz=thetar,
-                      ffactor=ffactor)
+        rp = ResPhase(self.z, self.period, zvar=self.zvar, rotz=thetar, ffactor=ffactor)
         tp = Tipper(self.tipper, rott=thetar)
         if tp.magreal[0] == 0.0 and tp.magimag[0] == 0.0:
-            tpyn = 'n'
+            tpyn = "n"
         else:
-            tpyn = 'y'
+            tpyn = "y"
 
-        plt.rcParams['font.size'] = 10
-        plt.rcParams['figure.subplot.left'] = .13
-        plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .1
-        plt.rcParams['figure.subplot.top'] = .95
-        plt.rcParams['figure.subplot.wspace'] = .25
-        plt.rcParams['figure.subplot.hspace'] = .05
+        plt.rcParams["font.size"] = 10
+        plt.rcParams["figure.subplot.left"] = 0.13
+        plt.rcParams["figure.subplot.right"] = 0.98
+        plt.rcParams["figure.subplot.bottom"] = 0.1
+        plt.rcParams["figure.subplot.top"] = 0.95
+        plt.rcParams["figure.subplot.wspace"] = 0.25
+        plt.rcParams["figure.subplot.hspace"] = 0.05
         # plt.rcParams['font.family']='helvetica'
-        fontdict = {'size': 14, 'weight': 'bold'}
+        fontdict = {"size": 14, "weight": "bold"}
 
-        if tpyn == 'y':
-            gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1], hspace=.05)
-        if tpyn == 'n':
-            gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], hspace=.05)
+        if tpyn == "y":
+            gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1], hspace=0.05)
+        if tpyn == "n":
+            gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], hspace=0.05)
 
         # make figure for xy,yx components
         if plottype == 1 or plottype == 3:
             fig = plt.figure(fignum, [8, 10], dpi=dpi)
             plt.clf()
-            gs.update(hspace=.05, wspace=.15, left=.1)
+            gs.update(hspace=0.05, wspace=0.15, left=0.1)
         elif plottype == 2:
             fig = plt.figure(fignum, [10, 10], dpi=dpi)
             plt.clf()
-            gs.update(hspace=.05, wspace=.15, left=.07)
+            gs.update(hspace=0.05, wspace=0.15, left=0.07)
 
-        #---------plot the apparent resistivity--------------------------------
+        # ---------plot the apparent resistivity--------------------------------
         if plottype == 1 or plottype == 3:
-            if tpyn == 'n':
+            if tpyn == "n":
                 ax = fig.add_subplot(gs[0, :])
                 ax2 = fig.add_subplot(gs[1, :], sharex=ax)
-                ax.yaxis.set_label_coords(-.055, 0.5)
-                ax2.yaxis.set_label_coords(-.055, 0.5)
-            if tpyn == 'y':
+                ax.yaxis.set_label_coords(-0.055, 0.5)
+                ax2.yaxis.set_label_coords(-0.055, 0.5)
+            if tpyn == "y":
                 ax = fig.add_subplot(gs[0, :])
                 ax2 = fig.add_subplot(gs[1, :], sharex=ax)
                 ax5 = fig.add_subplot(gs[2, :], sharex=ax)
-                ax.yaxis.set_label_coords(-.055, 0.5)
-                ax2.yaxis.set_label_coords(-.055, 0.5)
-                ax5.yaxis.set_label_coords(-.055, 0.5)
+                ax.yaxis.set_label_coords(-0.055, 0.5)
+                ax2.yaxis.set_label_coords(-0.055, 0.5)
+                ax5.yaxis.set_label_coords(-0.055, 0.5)
         elif plottype == 2:
-            if tpyn == 'n':
+            if tpyn == "n":
                 ax = fig.add_subplot(gs[0, 0])
                 ax2 = fig.add_subplot(gs[1, 0], sharex=ax)
-                ax.yaxis.set_label_coords(-.075, 0.5)
-                ax2.yaxis.set_label_coords(-.075, 0.5)
-            if tpyn == 'y':
+                ax.yaxis.set_label_coords(-0.075, 0.5)
+                ax2.yaxis.set_label_coords(-0.075, 0.5)
+            if tpyn == "y":
                 ax = fig.add_subplot(gs[0, 0])
                 ax2 = fig.add_subplot(gs[1, 0], sharex=ax)
                 ax5 = fig.add_subplot(gs[2, :], sharex=ax)
-                ax.yaxis.set_label_coords(-.075, 0.5)
-                ax2.yaxis.set_label_coords(-.075, 0.5)
-                ax5.yaxis.set_label_coords(-.075, 0.5)
+                ax.yaxis.set_label_coords(-0.075, 0.5)
+                ax2.yaxis.set_label_coords(-0.075, 0.5)
+                ax5.yaxis.set_label_coords(-0.075, 0.5)
 
-        #--------Plot Resistivity----------------------------------------------
-        erxy = ax.errorbar(self.period, rp.resxy, marker='s', ms=4, mfc='None',
-                           mec='b', mew=1, ls='None', yerr=rp.resxyerr, ecolor='b')
-        eryx = ax.errorbar(self.period, rp.resyx, marker='o', ms=4, mfc='None',
-                           mec='r', mew=1, ls='None', yerr=rp.resyxerr, ecolor='r')
-        #ax.set_xlabel('Period (s)',fontdict=fontdict)
+        # --------Plot Resistivity----------------------------------------------
+        erxy = ax.errorbar(
+            self.period,
+            rp.resxy,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="b",
+            mew=1,
+            ls="None",
+            yerr=rp.resxyerr,
+            ecolor="b",
+        )
+        eryx = ax.errorbar(
+            self.period,
+            rp.resyx,
+            marker="o",
+            ms=4,
+            mfc="None",
+            mec="r",
+            mew=1,
+            ls="None",
+            yerr=rp.resyxerr,
+            ecolor="r",
+        )
+        # ax.set_xlabel('Period (s)',fontdict=fontdict)
         pylab.setp(ax.get_xticklabels(), visible=False)
-        ax.set_ylabel('app. res. ($\mathbf{\Omega \cdot m}$)',
-                      fontdict=fontdict)
-        ax.set_yscale('log')
-        ax.set_xscale('log')
-        ax.set_xlim(xmin=10**(np.floor(np.log10(self.period[0]))),
-                    xmax=10**(np.ceil(np.log10(self.period[-1]))))
+        ax.set_ylabel("app. res. ($\mathbf{\Omega \cdot m}$)", fontdict=fontdict)
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+        ax.set_xlim(
+            xmin=10 ** (np.floor(np.log10(self.period[0]))),
+            xmax=10 ** (np.ceil(np.log10(self.period[-1]))),
+        )
         if reslimits is not None:
-            ax.set_ylim(ymin=10**reslimits[0], ymax=10**reslimits[1])
+            ax.set_ylim(ymin=10 ** reslimits[0], ymax=10 ** reslimits[1])
         ax.grid(True)
-        ax.legend((erxy[0], eryx[0]), ('$E_x/B_y$', '$E_y/B_x$'), loc=3,
-                  markerscale=1, borderaxespad=.01, labelspacing=.07,
-                  handletextpad=.2, borderpad=.02)
+        ax.legend(
+            (erxy[0], eryx[0]),
+            ("$E_x/B_y$", "$E_y/B_x$"),
+            loc=3,
+            markerscale=1,
+            borderaxespad=0.01,
+            labelspacing=0.07,
+            handletextpad=0.2,
+            borderpad=0.02,
+        )
 
-        #-----Plot the phase---------------------------------------------------
+        # -----Plot the phase---------------------------------------------------
 
-        ax2.errorbar(self.period, rp.phasexy, marker='s', ms=4, mfc='None', mec='b',
-                     mew=1, ls='None', yerr=rp.phasexyerr, ecolor='b')
-        ax2.errorbar(self.period, np.array(rp.phaseyx) + 180, marker='o', ms=4,
-                     mfc='None', mec='r', mew=1, ls='None', yerr=rp.phaseyxerr,
-                     ecolor='r')
-        if tpyn == 'y':
+        ax2.errorbar(
+            self.period,
+            rp.phasexy,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="b",
+            mew=1,
+            ls="None",
+            yerr=rp.phasexyerr,
+            ecolor="b",
+        )
+        ax2.errorbar(
+            self.period,
+            np.array(rp.phaseyx) + 180,
+            marker="o",
+            ms=4,
+            mfc="None",
+            mec="r",
+            mew=1,
+            ls="None",
+            yerr=rp.phaseyxerr,
+            ecolor="r",
+        )
+        if tpyn == "y":
             pylab.setp(ax2.get_xticklabels(), visible=False)
-        elif tpyn == 'n':
-            ax2.set_xlabel('period (s)', fontdict)
-        ax2.set_ylabel('phase (deg)', fontdict)
-        ax2.set_xscale('log')
+        elif tpyn == "n":
+            ax2.set_xlabel("period (s)", fontdict)
+        ax2.set_ylabel("phase (deg)", fontdict)
+        ax2.set_xscale("log")
 
         # check the phase to see if any point are outside of [0:90]
         ax2.set_ylim(phaselimits)
@@ -1471,40 +1672,86 @@ class Z(Edi):
 
         # Add xx and yy components to the plot
         if plottype == 2:
-            #---------plot the apparent resistivity----------------------------
+            # ---------plot the apparent resistivity----------------------------
             ax3 = fig.add_subplot(gs[0, 1], sharex=ax)
-            ax3.yaxis.set_label_coords(-.1, 0.5)
-            erxx = ax3.errorbar(self.period, rp.resxx, marker='s', ms=4, mfc='None',
-                                mec='b', mew=1, ls='None', yerr=rp.resxxerr,
-                                ecolor='b')
-            eryy = ax3.errorbar(self.period, rp.resyy, marker='o', ms=4, mfc='None',
-                                mec='r', mew=1, ls='None', yerr=rp.resyyerr,
-                                ecolor='r')
-            ax3.set_yscale('log')
-            ax3.set_xscale('log')
+            ax3.yaxis.set_label_coords(-0.1, 0.5)
+            erxx = ax3.errorbar(
+                self.period,
+                rp.resxx,
+                marker="s",
+                ms=4,
+                mfc="None",
+                mec="b",
+                mew=1,
+                ls="None",
+                yerr=rp.resxxerr,
+                ecolor="b",
+            )
+            eryy = ax3.errorbar(
+                self.period,
+                rp.resyy,
+                marker="o",
+                ms=4,
+                mfc="None",
+                mec="r",
+                mew=1,
+                ls="None",
+                yerr=rp.resyyerr,
+                ecolor="r",
+            )
+            ax3.set_yscale("log")
+            ax3.set_xscale("log")
             pylab.setp(ax3.get_xticklabels(), visible=False)
 
-            ax3.set_xlim(xmin=10**(np.floor(np.log10(self.period[0]))),
-                         xmax=10**(np.ceil(np.log10(self.period[-1]))))
+            ax3.set_xlim(
+                xmin=10 ** (np.floor(np.log10(self.period[0]))),
+                xmax=10 ** (np.ceil(np.log10(self.period[-1]))),
+            )
             ax3.grid(True)
-            ax3.legend((erxx[0], eryy[0]), ('$E_x/B_x$', '$E_y/B_y$'), loc=3,
-                       markerscale=1, borderaxespad=.01, labelspacing=.07,
-                       handletextpad=.2, borderpad=.02)
+            ax3.legend(
+                (erxx[0], eryy[0]),
+                ("$E_x/B_x$", "$E_y/B_y$"),
+                loc=3,
+                markerscale=1,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.02,
+            )
 
-            #-----Plot the phase-----------------------------------------------
+            # -----Plot the phase-----------------------------------------------
             ax4 = fig.add_subplot(gs[1, 1], sharex=ax3)
 
-            ax4.yaxis.set_label_coords(-.1, 0.5)
-            ax4.errorbar(self.period, rp.phasexx, marker='s', ms=4, mfc='None',
-                         mec='b', mew=1, ls='None', yerr=rp.phasexxerr, ecolor='b')
-            ax4.errorbar(self.period, np.array(rp.phaseyy), marker='o', ms=4,
-                         mfc='None', mec='r', mew=1, ls='None', yerr=rp.phaseyyerr,
-                         ecolor='r')
-            if tpyn == 'y':
+            ax4.yaxis.set_label_coords(-0.1, 0.5)
+            ax4.errorbar(
+                self.period,
+                rp.phasexx,
+                marker="s",
+                ms=4,
+                mfc="None",
+                mec="b",
+                mew=1,
+                ls="None",
+                yerr=rp.phasexxerr,
+                ecolor="b",
+            )
+            ax4.errorbar(
+                self.period,
+                np.array(rp.phaseyy),
+                marker="o",
+                ms=4,
+                mfc="None",
+                mec="r",
+                mew=1,
+                ls="None",
+                yerr=rp.phaseyyerr,
+                ecolor="r",
+            )
+            if tpyn == "y":
                 pylab.setp(ax4.get_xticklabels(), visible=False)
             else:
-                ax4.set_xlabel('period (s)', fontdict)
-            ax4.set_xscale('log')
+                ax4.set_xlabel("period (s)", fontdict)
+            ax4.set_xscale("log")
             ax4.set_ylim(ymin=-180, ymax=180)
             ax4.yaxis.set_major_locator(MultipleLocator(30))
             ax4.yaxis.set_minor_locator(MultipleLocator(5))
@@ -1513,22 +1760,47 @@ class Z(Edi):
         # Add determinant to the plot
         if plottype == 3:
 
-            #-------Plot resistivity-------------------------------------------
-            erdet = ax.errorbar(self.period, rp.resdet, marker='d', ms=4, mfc='None',
-                                mec='g', mew=1, ls='None', yerr=rp.resdeterr,
-                                ecolor='g')
+            # -------Plot resistivity-------------------------------------------
+            erdet = ax.errorbar(
+                self.period,
+                rp.resdet,
+                marker="d",
+                ms=4,
+                mfc="None",
+                mec="g",
+                mew=1,
+                ls="None",
+                yerr=rp.resdeterr,
+                ecolor="g",
+            )
 
-            ax.legend((erxy[0], eryx[0], erdet[0]), ('$E_x/B_y$', '$E_y/B_x$',
-                                                     '$\det(\mathbf{\hat{Z}})$'), loc=3, markerscale=1,
-                      borderaxespad=.01, labelspacing=.07, handletextpad=.2,
-                      borderpad=.02)
+            ax.legend(
+                (erxy[0], eryx[0], erdet[0]),
+                ("$E_x/B_y$", "$E_y/B_x$", "$\det(\mathbf{\hat{Z}})$"),
+                loc=3,
+                markerscale=1,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.02,
+            )
 
-            #-----Plot the phase-----------------------------------------------
+            # -----Plot the phase-----------------------------------------------
 
-            ax2.errorbar(self.period, rp.phasedet, marker='d', ms=4, mfc='None',
-                         mec='g', mew=1, ls='None', yerr=rp.phasedeterr, ecolor='g')
+            ax2.errorbar(
+                self.period,
+                rp.phasedet,
+                marker="d",
+                ms=4,
+                mfc="None",
+                mec="g",
+                mew=1,
+                ls="None",
+                yerr=rp.phasedeterr,
+                ecolor="g",
+            )
 
-        if tpyn == 'y':
+        if tpyn == "y":
             txr = tp.magreal * np.cos(tp.anglereal * np.pi / 180)
             tyr = tp.magreal * np.sin(tp.anglereal * np.pi / 180)
 
@@ -1539,57 +1811,94 @@ class Z(Edi):
 
             for aa in range(nt):
                 if np.log10(self.period[aa]) < 0:
-                    hwidth = .1 * self.period[aa]
-                    hheight = .01 * self.period[aa]
+                    hwidth = 0.1 * self.period[aa]
+                    hheight = 0.01 * self.period[aa]
                 else:
-                    hwidth = .2 / self.period[aa]
-                    hheight = .01 / self.period[aa]
+                    hwidth = 0.2 / self.period[aa]
+                    hheight = 0.01 / self.period[aa]
                 overhang = 1
-                ax5.arrow(self.period[aa], 0, txr[aa], tyr[aa], lw=2, facecolor='k',
-                          edgecolor='k', head_width=hwidth, head_length=hheight,
-                          length_includes_head=False, overhang=overhang)
-                ax5.arrow(self.period[aa], 0, txi[aa], tyi[aa], lw=2, facecolor='b',
-                          edgecolor='b', length_includes_head=False)
+                ax5.arrow(
+                    self.period[aa],
+                    0,
+                    txr[aa],
+                    tyr[aa],
+                    lw=2,
+                    facecolor="k",
+                    edgecolor="k",
+                    head_width=hwidth,
+                    head_length=hheight,
+                    length_includes_head=False,
+                    overhang=overhang,
+                )
+                ax5.arrow(
+                    self.period[aa],
+                    0,
+                    txi[aa],
+                    tyi[aa],
+                    lw=2,
+                    facecolor="b",
+                    edgecolor="b",
+                    length_includes_head=False,
+                )
 
-            ax5.plot(self.period, [0] * nt, 'k')
-            ax5.set_xscale('log')
-            line1 = ax5.plot(0, 0, 'k')
-            line2 = ax5.plot(0, 0, 'b')
-#            ax5.set_xlim(xmin=10**np.floor(np.log10(period[0])),
-#                         xmax=10**np.ceil(np.log10(period[-1])))
-            ax5.yaxis.set_major_locator(MultipleLocator(.2))
+            ax5.plot(self.period, [0] * nt, "k")
+            ax5.set_xscale("log")
+            line1 = ax5.plot(0, 0, "k")
+            line2 = ax5.plot(0, 0, "b")
+            #            ax5.set_xlim(xmin=10**np.floor(np.log10(period[0])),
+            #                         xmax=10**np.ceil(np.log10(period[-1])))
+            ax5.yaxis.set_major_locator(MultipleLocator(0.2))
 
-            ax5.legend([line1[0], line2[0]], ['real', 'imag'], loc='upper left', markerscale=1,
-                       borderaxespad=.01, labelspacing=.07, handletextpad=.2, borderpad=.02)
-            ax5.set_xlabel(
-                'period (s)', fontdict={
-                    'size': 12, 'weight': 'bold'})
-            ax5.set_ylabel('tipper', fontdict={'size': 12, 'weight': 'bold'})
+            ax5.legend(
+                [line1[0], line2[0]],
+                ["real", "imag"],
+                loc="upper left",
+                markerscale=1,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.02,
+            )
+            ax5.set_xlabel("period (s)", fontdict={"size": 12, "weight": "bold"})
+            ax5.set_ylabel("tipper", fontdict={"size": 12, "weight": "bold"})
 
             ax5.set_ylim([-1, 1])
             ax5.grid(True)
 
         # make title and show
         if title is not None:
-            plt.suptitle(title, fontsize=14, fontweight='bold')
+            plt.suptitle(title, fontsize=14, fontweight="bold")
         else:
-            plt.suptitle(self.station, fontsize=14, fontweight='bold')
+            plt.suptitle(self.station, fontsize=14, fontweight="bold")
         plt.show()
         if savefigfilename is not None:
             if dpi is None:
                 dpi = 100
             if format is None:
-                format = 'pdf'
+                format = "pdf"
             if orientation is None:
-                orientation = 'landscape'
-            fig.savefig(savefigfilename, dpi=dpi, format=format,
-                        orientation=orientation)
+                orientation = "landscape"
+            fig.savefig(
+                savefigfilename, dpi=dpi, format=format, orientation=orientation
+            )
             plt.clf()
             plt.close(fig)
 
-    def plotPTAll(self, xspacing=6, esize=5, fignum=1, thetar=0, save='n',
-                  savepath=None, fmt='pdf', coordrot=180, ptmm=None, rpmm=None,
-                  dpi=300, restensor='n'):
+    def plotPTAll(
+        self,
+        xspacing=6,
+        esize=5,
+        fignum=1,
+        thetar=0,
+        save="n",
+        savepath=None,
+        fmt="pdf",
+        coordrot=180,
+        ptmm=None,
+        rpmm=None,
+        dpi=300,
+        restensor="n",
+    ):
         """
         Will plot phase tensor, strike angle, min and max phase angle,
         azimuth, skew, and ellipticity as subplots on one plot.  It can plot
@@ -1652,13 +1961,13 @@ class Z(Edi):
         """
 
         # Set plot parameters
-        plt.rcParams['font.size'] = 8
-        plt.rcParams['figure.subplot.left'] = .1
-        plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .1
-        plt.rcParams['figure.subplot.top'] = .95
-        plt.rcParams['figure.subplot.wspace'] = .21
-        plt.rcParams['figure.subplot.hspace'] = .5
+        plt.rcParams["font.size"] = 8
+        plt.rcParams["figure.subplot.left"] = 0.1
+        plt.rcParams["figure.subplot.right"] = 0.98
+        plt.rcParams["figure.subplot.bottom"] = 0.1
+        plt.rcParams["figure.subplot.top"] = 0.95
+        plt.rcParams["figure.subplot.wspace"] = 0.21
+        plt.rcParams["figure.subplot.hspace"] = 0.5
 
         fs = 8
         tfs = 10
@@ -1668,18 +1977,15 @@ class Z(Edi):
         plt.clf()
 
         pt = PhaseTensor(self.z, self.zvar, rotate=coordrot, rotz=thetar)
-        rp = ResistivityTensor(
-            self.z,
-            self.frequency,
-            rotate=coordrot,
-            rotz=thetar)
+        rp = ResistivityTensor(self.z, self.frequency, rotate=coordrot, rotz=thetar)
         zinv = Zinvariants(self.z, rotz=thetar)
         # tipper=Tipper(rott=thetar)
         period = self.period
         n = len(period)
 
-        pperiod = np.logspace(np.floor(np.log10(period[0])),
-                              np.ceil(np.log10(period[-1])), 10 * n)
+        pperiod = np.logspace(
+            np.floor(np.log10(period[0])), np.ceil(np.log10(period[-1])), 10 * n
+        )
 
         if rpmm is None:
             rpmin = min(np.log10(rp.rhodet))
@@ -1695,44 +2001,45 @@ class Z(Edi):
             ptmin = float(ptmm[0]) * np.pi / 180
             ptmax = float(ptmm[1]) * np.pi / 180
 
-        #-------------plotPhaseTensor-----------------------------------
-        ax1 = fig.add_subplot(3, 1, 1, aspect='equal')
+        # -------------plotPhaseTensor-----------------------------------
+        ax1 = fig.add_subplot(3, 1, 1, aspect="equal")
         for ii in range(n):
             # make sure the ellipses will be visable
             scaling = esize / pt.phimax[ii]
             eheight = pt.phimin[ii] * scaling
             ewidth = pt.phimax[ii] * scaling
 
-            rheight = rp.rhomin[ii] / \
-                max([rp.rhomin[ii], rp.rhomax[ii]]) * esize
-            rwidth = rp.rhomax[ii] / \
-                max([rp.rhomin[ii], rp.rhomax[ii]]) * esize
+            rheight = rp.rhomin[ii] / max([rp.rhomin[ii], rp.rhomax[ii]]) * esize
+            rwidth = rp.rhomax[ii] / max([rp.rhomin[ii], rp.rhomax[ii]]) * esize
 
             # create an ellipse scaled by phimin and phimax and oriented along
             # the azimuth
-            ellip = Ellipse((xspacing * ii, 0), width=ewidth,
-                            height=eheight,
-                            angle=pt.azimuth[ii])
+            ellip = Ellipse(
+                (xspacing * ii, 0), width=ewidth, height=eheight, angle=pt.azimuth[ii]
+            )
 
-            if pt.phimin[ii] < 0 or pt.phimin[ii] == 'nan':
+            if pt.phimin[ii] < 0 or pt.phimin[ii] == "nan":
                 cvars = 0
             else:
                 cvars = (pt.phimin[ii] - ptmin) / (ptmax - ptmin)
                 if cvars > 1.0:
                     cvars = 1
 
-            ellip.set_facecolor((1, 1 - cvars, .1))
+            ellip.set_facecolor((1, 1 - cvars, 0.1))
 
             ax1.add_artist(ellip)
 
             # resistivity tensor
-            if restensor == 'y':
-                rellip = Ellipse((xspacing * ii, 3 + esize), width=rwidth,
-                                 height=rheight,
-                                 angle=rp.rhoazimuth[ii])
+            if restensor == "y":
+                rellip = Ellipse(
+                    (xspacing * ii, 3 + esize),
+                    width=rwidth,
+                    height=rheight,
+                    angle=rp.rhoazimuth[ii],
+                )
 
                 cvar = (np.log10(rp.rhodet[ii]) - rpmin) / (rpmax - rpmin)
-                if cvar > .5:
+                if cvar > 0.5:
                     if cvar > 1:
                         rellip.set_facecolor((0, 0, 1))
                     else:
@@ -1751,59 +2058,63 @@ class Z(Edi):
         xticklabels = []
         for xx in np.arange(start=0, stop=n, step=5):
             if period[xx] < 100:
-                xticklabels.append('{0:.2g}'.format(period[xx]))
+                xticklabels.append("{0:.2g}".format(period[xx]))
             elif period[xx] > 100 and period[xx] < 1000:
-                xticklabels.append('{0:.3g}'.format(period[xx]))
+                xticklabels.append("{0:.3g}".format(period[xx]))
             elif period[xx] > 1000 and period[xx] < 10000:
-                xticklabels.append('{0:.4g}'.format(period[xx]))
-        plt.xlabel('Period (s)', fontsize=8, fontweight='bold')
-        #plt.title('Phase Tensor Ellipses for '+stationstr,fontsize=14)
-        plt.xticks(np.arange(start=0, stop=xspacing * n, step=5 * xspacing),
-                   xticklabels)
-        if restensor == 'y':
+                xticklabels.append("{0:.4g}".format(period[xx]))
+        plt.xlabel("Period (s)", fontsize=8, fontweight="bold")
+        # plt.title('Phase Tensor Ellipses for '+stationstr,fontsize=14)
+        plt.xticks(
+            np.arange(start=0, stop=xspacing * n, step=5 * xspacing), xticklabels
+        )
+        if restensor == "y":
             ax1.set_ylim(-esize, 2 * esize + 3)
         else:
             ax1.set_ylim(-esize, esize)
         ax1.set_xlim(-xspacing, n * xspacing + 3)
-        ax1.grid(alpha=.3)
+        ax1.grid(alpha=0.3)
         plt.setp(ax1.get_yticklabels(), visible=False)
 
         # add colorbar for PT
         cbpt = fig.add_subplot(3, 32, 1)
         cbpt.set_axis_off()
-        if restensor == 'y':
-            ax1cbpt = make_axes(
-                ax1,
-                shrink=.7,
-                orientation='vertical',
-                pad=.005)
+        if restensor == "y":
+            ax1cbpt = make_axes(ax1, shrink=0.7, orientation="vertical", pad=0.005)
         else:
-            ax1cbpt = make_axes(
-                ax1, shrink=.7, orientation='vertical', pad=.01)
-        cb1 = ColorbarBase(ax1cbpt[0], cmap=ptcmap,
-                           norm=Normalize(vmin=ptmin * 180 / np.pi,
-                                          vmax=ptmax * 180 / np.pi),
-                           orientation='vertical')
+            ax1cbpt = make_axes(ax1, shrink=0.7, orientation="vertical", pad=0.01)
+        cb1 = ColorbarBase(
+            ax1cbpt[0],
+            cmap=ptcmap,
+            norm=Normalize(vmin=ptmin * 180 / np.pi, vmax=ptmax * 180 / np.pi),
+            orientation="vertical",
+        )
         cb1.set_ticks([ptmin * 180 / np.pi, ptmax * 180 / np.pi])
-        cb1.set_ticklabels(['{0:.0f}'.format(ptmin * 180 / np.pi),
-                            '{0:.0f}'.format(ptmax * 180 / np.pi)])
+        cb1.set_ticklabels(
+            [
+                "{0:.0f}".format(ptmin * 180 / np.pi),
+                "{0:.0f}".format(ptmax * 180 / np.pi),
+            ]
+        )
 
         # add color bar for RT
-        if restensor == 'y':
+        if restensor == "y":
             cbrt = fig.add_subplot(3, 32, 1)
             cbrt.set_axis_off()
-            ax1cbrt = make_axes(
-                ax1, shrink=.7, orientation='vertical', pad=.01)
-            cb2 = ColorbarBase(ax1cbrt[0], cmap=rtcmap,
-                               norm=Normalize(vmin=10**rpmin,
-                                              vmax=10**rpmax),
-                               orientation='vertical')
+            ax1cbrt = make_axes(ax1, shrink=0.7, orientation="vertical", pad=0.01)
+            cb2 = ColorbarBase(
+                ax1cbrt[0],
+                cmap=rtcmap,
+                norm=Normalize(vmin=10 ** rpmin, vmax=10 ** rpmax),
+                orientation="vertical",
+            )
             cb2.draw_all()
-            cb2.set_ticks([10**rpmin, 10**rpmax])
-            cb2.set_ticklabels(['{0:.2g}'.format(10**rpmin),
-                                '{0:.5g}'.format(10**rpmax)])
+            cb2.set_ticks([10 ** rpmin, 10 ** rpmax])
+            cb2.set_ticklabels(
+                ["{0:.2g}".format(10 ** rpmin), "{0:.5g}".format(10 ** rpmax)]
+            )
 
-        #---------------plotStrikeAngle-----------------------------------
+        # ---------------plotStrikeAngle-----------------------------------
 
         az = 90 - np.array(pt.azimuth)
         azvar = np.array(pt.azimuthvar)
@@ -1819,37 +2130,63 @@ class Z(Edi):
         ax2 = plt.subplot(3, 2, 3)
 
         # plot invariant strike
-        erxy = ax2.errorbar(period, strike,
-                            marker='s', ms=4, mfc='None',
-                            mec='c', mew=1, ls='None',
-                            yerr=zinv.strikeerr,
-                            ecolor='c')
+        erxy = ax2.errorbar(
+            period,
+            strike,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="c",
+            mew=1,
+            ls="None",
+            yerr=zinv.strikeerr,
+            ecolor="c",
+        )
         # plot phase tensor strike
-        eraz = ax2.errorbar(period, az, marker='o', ms=4,
-                            mfc='None', mec='purple', mew=1,
-                            ls='None', yerr=azvar, ecolor='purple')
+        eraz = ax2.errorbar(
+            period,
+            az,
+            marker="o",
+            ms=4,
+            mfc="None",
+            mec="purple",
+            mew=1,
+            ls="None",
+            yerr=azvar,
+            ecolor="purple",
+        )
 
-        ax2.legend((erxy[0], eraz[0]), ('Strike', 'Azimuth'), loc='lower left',
-                   markerscale=.2, borderaxespad=.01, labelspacing=.1,
-                   handletextpad=.2, ncol=2, borderpad=.1, columnspacing=.1)
+        ax2.legend(
+            (erxy[0], eraz[0]),
+            ("Strike", "Azimuth"),
+            loc="lower left",
+            markerscale=0.2,
+            borderaxespad=0.01,
+            labelspacing=0.1,
+            handletextpad=0.2,
+            ncol=2,
+            borderpad=0.1,
+            columnspacing=0.1,
+        )
         leg = plt.gca().get_legend()
         ltext = leg.get_texts()  # all the text.Text instance in the legend
-        plt.setp(ltext, fontsize=6)    # the legend text fontsize
+        plt.setp(ltext, fontsize=6)  # the legend text fontsize
 
-        ax2.set_yscale('linear')
-        ax2.set_xscale('log')
-        ax2.set_xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
-                     xmin=10**(np.floor(np.log10(period[0]))))
+        ax2.set_yscale("linear")
+        ax2.set_xscale("log")
+        ax2.set_xlim(
+            xmax=10 ** (np.ceil(np.log10(period[-1]))),
+            xmin=10 ** (np.floor(np.log10(period[0]))),
+        )
         ax2.set_ylim(ymin=-95, ymax=95)
         ax2.yaxis.set_major_locator(MultipleLocator(20))
         ax2.yaxis.set_minor_locator(MultipleLocator(5))
-        ax2.grid(True, alpha=.3)
-        #plt.xlabel('Period (s)',fontsize=fs,fontweight='bold')
-        ax2.set_ylabel('Angle (deg)', fontsize=fs, fontweight='bold')
-        ax2.set_title('Strike Angle, Azimuth', fontsize=tfs,
-                      fontweight='bold')
+        ax2.grid(True, alpha=0.3)
+        # plt.xlabel('Period (s)',fontsize=fs,fontweight='bold')
+        ax2.set_ylabel("Angle (deg)", fontsize=fs, fontweight="bold")
+        ax2.set_title("Strike Angle, Azimuth", fontsize=tfs, fontweight="bold")
 
-        #---------plot Min & Max Phase-----------------------------------------
+        # ---------plot Min & Max Phase-----------------------------------------
 
         minphi = pt.phiminang
         minphivar = pt.phiminangvar
@@ -1857,99 +2194,150 @@ class Z(Edi):
         maxphivar = pt.phimaxangvar
 
         ax3 = plt.subplot(3, 2, 4, sharex=ax2)
-        ermin = plt.errorbar(period, minphi, marker='o', ms=4,
-                             mfc='None', mec='r', mew=1, ls='None',
-                             yerr=minphivar, ecolor='r')
-        ermax = plt.errorbar(period, maxphi, marker='s', ms=4,
-                             mfc='None', mec='b', mew=1,
-                             ls='None', yerr=maxphivar,
-                             ecolor='b')
-        ax3.set_xscale('log')
-        ax3.set_yscale('linear')
-        plt.legend((ermin[0], ermax[0]), ('$\phi_{min}$', '$\phi_{max}$'),
-                   loc='lower left', markerscale=.2, borderaxespad=.01,
-                   labelspacing=.1, handletextpad=.2, ncol=2, borderpad=.01,
-                   columnspacing=.01)
+        ermin = plt.errorbar(
+            period,
+            minphi,
+            marker="o",
+            ms=4,
+            mfc="None",
+            mec="r",
+            mew=1,
+            ls="None",
+            yerr=minphivar,
+            ecolor="r",
+        )
+        ermax = plt.errorbar(
+            period,
+            maxphi,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="b",
+            mew=1,
+            ls="None",
+            yerr=maxphivar,
+            ecolor="b",
+        )
+        ax3.set_xscale("log")
+        ax3.set_yscale("linear")
+        plt.legend(
+            (ermin[0], ermax[0]),
+            ("$\phi_{min}$", "$\phi_{max}$"),
+            loc="lower left",
+            markerscale=0.2,
+            borderaxespad=0.01,
+            labelspacing=0.1,
+            handletextpad=0.2,
+            ncol=2,
+            borderpad=0.01,
+            columnspacing=0.01,
+        )
         leg = plt.gca().get_legend()
         ltext = leg.get_texts()  # all the text.Text instance in the legend
-        plt.setp(ltext, fontsize=6.5)    # the legend text fontsize
-        plt.xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
-                 xmin=10**(np.floor(np.log10(period[0]))))
+        plt.setp(ltext, fontsize=6.5)  # the legend text fontsize
+        plt.xlim(
+            xmax=10 ** (np.ceil(np.log10(period[-1]))),
+            xmin=10 ** (np.floor(np.log10(period[0]))),
+        )
         plt.ylim(ymin=0, ymax=90)
-        plt.grid(True, alpha=.3)
-        #plt.xlabel('Period (s)',fontsize=fs,fontweight='bold')
-        plt.ylabel('Phase (deg)', fontsize=fs, fontweight='bold')
-        plt.title('$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$',
-                  fontsize=tfs, fontweight='bold')
+        plt.grid(True, alpha=0.3)
+        # plt.xlabel('Period (s)',fontsize=fs,fontweight='bold')
+        plt.ylabel("Phase (deg)", fontsize=fs, fontweight="bold")
+        plt.title(
+            "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$",
+            fontsize=tfs,
+            fontweight="bold",
+        )
 
-        #-----------------------plotSkew---------------------------------------
+        # -----------------------plotSkew---------------------------------------
 
         skew = pt.beta
         skewvar = pt.betavar
 
         ax5 = plt.subplot(3, 2, 5, sharex=ax2)
-        erskew = plt.errorbar(period, skew, marker='s', ms=4,
-                              mfc='None', mec='g', mew=1,
-                              ls='None', yerr=skewvar,
-                              ecolor='g')
-        ax5.plot(pperiod, [2] * (n * 10), '--k', lw=1)
-        ax5.plot(pperiod, [-2] * (n * 10), '--k', lw=1)
-        ax5.set_xscale('log')
-        ax5.set_yscale('linear')
+        erskew = plt.errorbar(
+            period,
+            skew,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="g",
+            mew=1,
+            ls="None",
+            yerr=skewvar,
+            ecolor="g",
+        )
+        ax5.plot(pperiod, [2] * (n * 10), "--k", lw=1)
+        ax5.plot(pperiod, [-2] * (n * 10), "--k", lw=1)
+        ax5.set_xscale("log")
+        ax5.set_yscale("linear")
         ax5.yaxis.set_major_locator(MultipleLocator(2))
-        plt.xlim(xmax=10**(np.ceil(np.log10(period[-1]))), xmin=10**(
-            np.floor(np.log10(period[0]))))
+        plt.xlim(
+            xmax=10 ** (np.ceil(np.log10(period[-1]))),
+            xmin=10 ** (np.floor(np.log10(period[0]))),
+        )
         plt.ylim(ymin=skew.min() - 2, ymax=skew.max() + 2)
-        plt.grid(True, alpha=.3)
-        plt.xlabel('Period (s)', fontsize=fs, fontweight='bold')
-        plt.ylabel('Skew Angle (deg)', fontsize=fs, fontweight='bold')
-        plt.title('Skew Angle', fontsize=tfs, fontweight='bold')
+        plt.grid(True, alpha=0.3)
+        plt.xlabel("Period (s)", fontsize=fs, fontweight="bold")
+        plt.ylabel("Skew Angle (deg)", fontsize=fs, fontweight="bold")
+        plt.title("Skew Angle", fontsize=tfs, fontweight="bold")
 
-        #----------------------plotEllipticity--------------------------------
+        # ----------------------plotEllipticity--------------------------------
 
         ellipticity = pt.ellipticity
         ellipticityvar = pt.ellipticityvar
 
         ax6 = plt.subplot(3, 2, 6, sharex=ax2)
-        erskew = plt.errorbar(period, ellipticity, marker='s',
-                              ms=4, mfc='None', mec='orange', mew=1,
-                              ls='None', yerr=ellipticityvar,
-                              ecolor='orange')
-        ax6.set_xscale('log')
-        ax6.set_yscale('linear')
-        ax6.plot(pperiod, [.2] * (n * 10), '--k', lw=1)
-        ax6.yaxis.set_major_locator(MultipleLocator(.1))
-        plt.xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
-                 xmin=10**(np.floor(np.log10(period[0]))))
+        erskew = plt.errorbar(
+            period,
+            ellipticity,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="orange",
+            mew=1,
+            ls="None",
+            yerr=ellipticityvar,
+            ecolor="orange",
+        )
+        ax6.set_xscale("log")
+        ax6.set_yscale("linear")
+        ax6.plot(pperiod, [0.2] * (n * 10), "--k", lw=1)
+        ax6.yaxis.set_major_locator(MultipleLocator(0.1))
+        plt.xlim(
+            xmax=10 ** (np.ceil(np.log10(period[-1]))),
+            xmin=10 ** (np.floor(np.log10(period[0]))),
+        )
         plt.ylim(ymin=0, ymax=1)
         # plt.yticks(range(10),np.arange(start=0,stop=1,step=.1))
-        plt.grid(True, alpha=.3)
-        plt.xlabel('Period (s)', fontsize=fs, fontweight='bold')
-        plt.ylabel('$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$',
-                   fontsize=fs, fontweight='bold')
-        plt.title('Ellipticity', fontsize=tfs, fontweight='bold')
+        plt.grid(True, alpha=0.3)
+        plt.xlabel("Period (s)", fontsize=fs, fontweight="bold")
+        plt.ylabel(
+            "$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$",
+            fontsize=fs,
+            fontweight="bold",
+        )
+        plt.title("Ellipticity", fontsize=tfs, fontweight="bold")
         # plt.suptitle(self.z.station,fontsize=tfs,fontweight='bold')
-        plt.suptitle('Phase Tensor Elements for: ' + self.station, fontsize=12,
-                     fontweight='bold')
+        plt.suptitle(
+            "Phase Tensor Elements for: " + self.station, fontsize=12, fontweight="bold"
+        )
 
-        if save == 'y':
-            if savepath.find('.') == -1:
+        if save == "y":
+            if savepath.find(".") == -1:
                 if not os.path.exists(savepath):
                     os.mkdir(self.savepath)
-                print 'Made Directory: ' + savepath
+                print "Made Directory: " + savepath
                 fig.savefig(
-                    os.path.join(
-                        savepath,
-                        self.station +
-                        'All.' +
-                        fmt),
-                    fmt=fmt)
-                print 'Saved figure to: ' + os.path.join(self.savepath,
-                                                         self.z[0].station + 'All.' + fmt)
+                    os.path.join(savepath, self.station + "All." + fmt), fmt=fmt
+                )
+                print "Saved figure to: " + os.path.join(
+                    self.savepath, self.z[0].station + "All." + fmt
+                )
                 plt.close()
             else:
                 fig.savefig(savepath, fmt=fmt)
-        elif save == 'n':
+        elif save == "n":
             pass
 
     def plotTipper(self, thetar=0, fignum=1, plotnum=1, dpi=100):
@@ -1980,8 +2368,7 @@ class Z(Edi):
             >>> z1.plotTipper(plotnum=2)
         """
 
-        rp = ResPhase(self.z, self.period, zvar=self.zvar, rotz=thetar,
-                      ffactor=1)
+        rp = ResPhase(self.z, self.period, zvar=self.zvar, rotz=thetar, ffactor=1)
         tip = Tipper(self.tipper, rott=thetar)
 
         period = self.period
@@ -1993,67 +2380,114 @@ class Z(Edi):
         txi = tip.magimag * np.cos(tip.angleimag * np.pi / 180)
         tyi = tip.magimag * np.sin(tip.angleimag * np.pi / 180)
 
-        plt.rcParams['font.size'] = 10
-        plt.rcParams['figure.subplot.left'] = .13
-        plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .1
-        plt.rcParams['figure.subplot.top'] = .95
-        plt.rcParams['figure.subplot.wspace'] = .25
-        plt.rcParams['figure.subplot.hspace'] = .05
+        plt.rcParams["font.size"] = 10
+        plt.rcParams["figure.subplot.left"] = 0.13
+        plt.rcParams["figure.subplot.right"] = 0.98
+        plt.rcParams["figure.subplot.bottom"] = 0.1
+        plt.rcParams["figure.subplot.top"] = 0.95
+        plt.rcParams["figure.subplot.wspace"] = 0.25
+        plt.rcParams["figure.subplot.hspace"] = 0.05
         # plt.rcParams['font.family']='helvetica'
-        fontdict = {'size': 14, 'weight': 'bold'}
+        fontdict = {"size": 14, "weight": "bold"}
 
-        gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1], hspace=.05)
+        gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1], hspace=0.05)
 
         # make figure for xy,yx components
         if plotnum == 1 or plotnum == 3:
             fig = plt.figure(fignum, [8, 10], dpi=dpi)
-            gs.update(hspace=.05, wspace=.15, left=.1)
+            gs.update(hspace=0.05, wspace=0.15, left=0.1)
         elif plotnum == 2:
             fig = plt.figure(fignum, [10, 10], dpi=dpi)
-            gs.update(hspace=.05, wspace=.15, left=.07)
+            gs.update(hspace=0.05, wspace=0.15, left=0.07)
 
-        #---------plot the apparent resistivity--------------------------------
+        # ---------plot the apparent resistivity--------------------------------
         if plotnum == 1 or plotnum == 3:
             ax = plt.subplot(gs[0, :])
             ax2 = plt.subplot(gs[1, :])
             ax3 = plt.subplot(gs[2, :])
-            ax.yaxis.set_label_coords(-.055, 0.5)
-            ax2.yaxis.set_label_coords(-.055, 0.5)
-            ax3.yaxis.set_label_coords(-.055, 0.5)
+            ax.yaxis.set_label_coords(-0.055, 0.5)
+            ax2.yaxis.set_label_coords(-0.055, 0.5)
+            ax3.yaxis.set_label_coords(-0.055, 0.5)
         elif plotnum == 2:
             ax = plt.subplot(gs[0, 0])
             ax2 = plt.subplot(gs[1, 0])
-            ax.yaxis.set_label_coords(-.075, 0.5)
-            ax2.yaxis.set_label_coords(-.075, 0.5)
+            ax.yaxis.set_label_coords(-0.075, 0.5)
+            ax2.yaxis.set_label_coords(-0.075, 0.5)
 
-        erxy = ax.errorbar(period, rp.resxy, marker='s', ms=4, mfc='None', mec='b',
-                           mew=1, ls='None', yerr=rp.resxyerr, ecolor='b')
-        eryx = ax.errorbar(period, rp.resyx, marker='o', ms=4, mfc='None', mec='r',
-                           mew=1, ls='None', yerr=rp.resyxerr, ecolor='r')
-        #ax.set_xlabel('Period (s)',fontdict=fontdict)
+        erxy = ax.errorbar(
+            period,
+            rp.resxy,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="b",
+            mew=1,
+            ls="None",
+            yerr=rp.resxyerr,
+            ecolor="b",
+        )
+        eryx = ax.errorbar(
+            period,
+            rp.resyx,
+            marker="o",
+            ms=4,
+            mfc="None",
+            mec="r",
+            mew=1,
+            ls="None",
+            yerr=rp.resyxerr,
+            ecolor="r",
+        )
+        # ax.set_xlabel('Period (s)',fontdict=fontdict)
         pylab.setp(ax.get_xticklabels(), visible=False)
-        ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                      fontdict=fontdict)
-        ax.set_yscale('log')
-        ax.set_xscale('log')
-        ax.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
-                    xmax=10**(np.ceil(np.log10(period[-1]))))
+        ax.set_ylabel("App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=fontdict)
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+        ax.set_xlim(
+            xmin=10 ** (np.floor(np.log10(period[0]))),
+            xmax=10 ** (np.ceil(np.log10(period[-1]))),
+        )
         ax.grid(True)
-        ax.legend((erxy[0], eryx[0]), ('$E_x/B_y$', '$E_y/B_x$'), loc=3,
-                  markerscale=1, borderaxespad=.01, labelspacing=.07,
-                  handletextpad=.2, borderpad=.02)
+        ax.legend(
+            (erxy[0], eryx[0]),
+            ("$E_x/B_y$", "$E_y/B_x$"),
+            loc=3,
+            markerscale=1,
+            borderaxespad=0.01,
+            labelspacing=0.07,
+            handletextpad=0.2,
+            borderpad=0.02,
+        )
 
-        #-----Plot the phase---------------------------------------------------
+        # -----Plot the phase---------------------------------------------------
 
-        ax2.errorbar(period, rp.phasexy, marker='s', ms=4, mfc='None', mec='b',
-                     mew=1, ls='None', yerr=rp.phasexyerr, ecolor='b')
-        ax2.errorbar(period, np.array(rp.phaseyx) + 180, marker='o', ms=4,
-                     mfc='None', mec='r', mew=1, ls='None', yerr=rp.phaseyxerr,
-                     ecolor='r')
-        ax2.set_xlabel('Period (s)', fontdict)
-        ax2.set_ylabel('Phase (deg)', fontdict)
-        ax2.set_xscale('log')
+        ax2.errorbar(
+            period,
+            rp.phasexy,
+            marker="s",
+            ms=4,
+            mfc="None",
+            mec="b",
+            mew=1,
+            ls="None",
+            yerr=rp.phasexyerr,
+            ecolor="b",
+        )
+        ax2.errorbar(
+            period,
+            np.array(rp.phaseyx) + 180,
+            marker="o",
+            ms=4,
+            mfc="None",
+            mec="r",
+            mew=1,
+            ls="None",
+            yerr=rp.phaseyxerr,
+            ecolor="r",
+        )
+        ax2.set_xlabel("Period (s)", fontdict)
+        ax2.set_ylabel("Phase (deg)", fontdict)
+        ax2.set_xscale("log")
         # ax2.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
         #         xmax=10**(np.ceil(np.log10(period[-1]))))
         # check the phase to see if any point are outside of [0:90]
@@ -2077,39 +2511,66 @@ class Z(Edi):
         ax2.yaxis.set_minor_locator(MultipleLocator(1))
         ax2.grid(True)
 
-        #------Plot Tipper-----------------------------------------------------
+        # ------Plot Tipper-----------------------------------------------------
 
-        ml = 2 * (np.ceil(np.log10(period[-1])) -
-                  np.floor(np.log10(period[0]))) / nt
+        ml = 2 * (np.ceil(np.log10(period[-1])) - np.floor(np.log10(period[0]))) / nt
 
         for aa in range(nt):
             if np.log10(period[aa]) < 0:
-                hwidth = .1 * period[aa]
-                hheight = .01 * period[aa]
+                hwidth = 0.1 * period[aa]
+                hheight = 0.01 * period[aa]
             else:
-                hwidth = .2 / period[aa]
-                hheight = .01 / period[aa]
+                hwidth = 0.2 / period[aa]
+                hheight = 0.01 / period[aa]
             overhang = 1
-            ax3.arrow(period[aa], 0, txr[aa], tyr[aa], lw=2, facecolor='k',
-                      edgecolor='k', head_width=hwidth, head_length=hheight,
-                      length_includes_head=False, overhang=overhang)
-            ax3.arrow(period[aa], 0, txi[aa], tyi[aa], lw=2, facecolor='b',
-                      edgecolor='b', length_includes_head=False)
+            ax3.arrow(
+                period[aa],
+                0,
+                txr[aa],
+                tyr[aa],
+                lw=2,
+                facecolor="k",
+                edgecolor="k",
+                head_width=hwidth,
+                head_length=hheight,
+                length_includes_head=False,
+                overhang=overhang,
+            )
+            ax3.arrow(
+                period[aa],
+                0,
+                txi[aa],
+                tyi[aa],
+                lw=2,
+                facecolor="b",
+                edgecolor="b",
+                length_includes_head=False,
+            )
 
-        ax3.plot(period, [0] * nt, 'k')
-        ax3.set_xscale('log')
-        line1 = ax3.plot(0, 0, 'k')
-        line2 = ax3.plot(0, 0, 'b')
-        ax3.set_xlim(xmin=10**np.floor(np.log10(period[0])),
-                     xmax=10**np.ceil(np.log10(period[-1])))
-        ax3.yaxis.set_major_locator(MultipleLocator(.1))
+        ax3.plot(period, [0] * nt, "k")
+        ax3.set_xscale("log")
+        line1 = ax3.plot(0, 0, "k")
+        line2 = ax3.plot(0, 0, "b")
+        ax3.set_xlim(
+            xmin=10 ** np.floor(np.log10(period[0])),
+            xmax=10 ** np.ceil(np.log10(period[-1])),
+        )
+        ax3.yaxis.set_major_locator(MultipleLocator(0.1))
 
-        ax3.legend([line1[0], line2[0]], ['Real', 'Imag'], loc='upper left', markerscale=1,
-                   borderaxespad=.01, labelspacing=.07, handletextpad=.2, borderpad=.02)
-        ax3.set_xlabel('Period (s)', fontdict={'size': 12, 'weight': 'bold'})
-        ax3.set_ylabel('Tipper', fontdict={'size': 12, 'weight': 'bold'})
+        ax3.legend(
+            [line1[0], line2[0]],
+            ["Real", "Imag"],
+            loc="upper left",
+            markerscale=1,
+            borderaxespad=0.01,
+            labelspacing=0.07,
+            handletextpad=0.2,
+            borderpad=0.02,
+        )
+        ax3.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
+        ax3.set_ylabel("Tipper", fontdict={"size": 12, "weight": "bold"})
 
-        ax3.set_ylim([tyi.min() - .1, tyr.max() + .1])
+        ax3.set_ylim([tyi.min() - 0.1, tyr.max() + 0.1])
         ax3.grid(True)
 
         plt.show()
@@ -2186,13 +2647,16 @@ class PhaseTensor:
             if abs(self.thetar) > 2 * np.pi:
                 self.thetar = self.thetar * (np.pi / 180)
             # make rotation matrix
-            rotmatrix = np.array([[np.cos(self.thetar), np.sin(self.thetar)],
-                                  [-np.sin(self.thetar), np.cos(self.thetar)]])
+            rotmatrix = np.array(
+                [
+                    [np.cos(self.thetar), np.sin(self.thetar)],
+                    [-np.sin(self.thetar), np.cos(self.thetar)],
+                ]
+            )
             # rotate the data
             for rr in range(nz):
                 self.z[rr] = np.dot(rotmatrix, np.dot(self.z[rr], rotmatrix.T))
-                self.zvar[rr] = np.dot(rotmatrix, np.dot(self.zvar[rr],
-                                                         rotmatrix.T))
+                self.zvar[rr] = np.dot(rotmatrix, np.dot(self.zvar[rr], rotmatrix.T))
 
         for ii in range(nz):
             X = self.z[ii].real
@@ -2217,93 +2681,143 @@ class PhaseTensor:
             else:
                 phi = np.dot(np.linalg.inv(X), Y)
             # put variance into standard deviation
-            zvar = self.zvar[ii]**2
+            zvar = self.zvar[ii] ** 2
             # create a matrix for errors to be calculated
             dphi = np.zeros(np.shape(z[ii]))
             # compute determinate of X
             detX = np.linalg.det(X)
             # calculate the deteriminate of the error matrix
-            ddet = np.sqrt((X[0, 0] * X[1, 1])**2 * ((zvar[0, 0] / X[0, 0])**2 +
-                                                     (zvar[1, 1] / X[1, 1])**2) + (X[1, 0] * X[0, 1])**2 * (
-                (zvar[0, 1] / X[0, 1])**2 + (zvar[1, 0] / X[1, 0])**2))
+            ddet = np.sqrt(
+                (X[0, 0] * X[1, 1]) ** 2
+                * ((zvar[0, 0] / X[0, 0]) ** 2 + (zvar[1, 1] / X[1, 1]) ** 2)
+                + (X[1, 0] * X[0, 1]) ** 2
+                * ((zvar[0, 1] / X[0, 1]) ** 2 + (zvar[1, 0] / X[1, 0]) ** 2)
+            )
             # calculate errors for each component of the matrix ala Caldwell
             # 2004
-            dphi[0, 0] = np.sqrt((X[1, 1] * Y[0, 0])**2 * ((zvar[1, 1] / X[1, 1])**2 +
-                                                           (zvar[0, 0] / Y[0, 0])**2) + (X[0, 1] * Y[1, 0])**2 * (
-                (zvar[0, 1] / X[0, 1])**2 + (zvar[1, 0] / X[1, 0])**2))
-            dphi[0, 1] = np.sqrt((X[1, 1] * Y[0, 1])**2 * ((zvar[1, 1] / X[1, 1])**2 +
-                                                           (zvar[0, 1] / Y[0, 1])**2) + (X[0, 1] * Y[1, 1])**2 * (
-                (zvar[0, 1] / X[0, 1])**2 + (zvar[1, 1] / X[1, 1])**2))
-            dphi[1, 0] = np.sqrt((X[0, 1] * Y[1, 0])**2 * ((zvar[0, 0] / X[0, 0])**2 +
-                                                           (zvar[1, 0] / Y[1, 0])**2) + (X[1, 0] * Y[0, 0])**2 * (
-                (zvar[1, 0] / X[1, 0])**2 + (zvar[0, 0] / X[0, 0])**2))
-            dphi[1, 1] = np.sqrt((X[0, 0] * Y[1, 1])**2 * ((zvar[0, 0] / X[0, 0])**2 +
-                                                           (zvar[1, 1] / Y[1, 1])**2) + (X[1, 0] * Y[0, 1])**2 * (
-                (zvar[1, 0] / X[1, 0])**2 + (zvar[0, 1] / X[0, 1])**2))
+            dphi[0, 0] = np.sqrt(
+                (X[1, 1] * Y[0, 0]) ** 2
+                * ((zvar[1, 1] / X[1, 1]) ** 2 + (zvar[0, 0] / Y[0, 0]) ** 2)
+                + (X[0, 1] * Y[1, 0]) ** 2
+                * ((zvar[0, 1] / X[0, 1]) ** 2 + (zvar[1, 0] / X[1, 0]) ** 2)
+            )
+            dphi[0, 1] = np.sqrt(
+                (X[1, 1] * Y[0, 1]) ** 2
+                * ((zvar[1, 1] / X[1, 1]) ** 2 + (zvar[0, 1] / Y[0, 1]) ** 2)
+                + (X[0, 1] * Y[1, 1]) ** 2
+                * ((zvar[0, 1] / X[0, 1]) ** 2 + (zvar[1, 1] / X[1, 1]) ** 2)
+            )
+            dphi[1, 0] = np.sqrt(
+                (X[0, 1] * Y[1, 0]) ** 2
+                * ((zvar[0, 0] / X[0, 0]) ** 2 + (zvar[1, 0] / Y[1, 0]) ** 2)
+                + (X[1, 0] * Y[0, 0]) ** 2
+                * ((zvar[1, 0] / X[1, 0]) ** 2 + (zvar[0, 0] / X[0, 0]) ** 2)
+            )
+            dphi[1, 1] = np.sqrt(
+                (X[0, 0] * Y[1, 1]) ** 2
+                * ((zvar[0, 0] / X[0, 0]) ** 2 + (zvar[1, 1] / Y[1, 1]) ** 2)
+                + (X[1, 0] * Y[0, 1]) ** 2
+                * ((zvar[1, 0] / X[1, 0]) ** 2 + (zvar[0, 1] / X[0, 1]) ** 2)
+            )
             # rotate the error matrix
             dphi = np.rot90(dphi, 2)
             # finish calculating the errors
-            dphi[0, 0] = (phi[0, 0] / detX)**2 * np.sqrt((dphi[0, 0] / phi[0, 0])**2 +
-                                                         (ddet / detX)**2)
-            dphi[0, 1] = (phi[0, 1] / detX)**2 * np.sqrt((dphi[0, 1] / phi[0, 1])**2 +
-                                                         (ddet / detX)**2)
-            dphi[1, 0] = (phi[1, 0] / detX)**2 * np.sqrt((dphi[1, 0] / phi[1, 0])**2 +
-                                                         (ddet / detX)**2)
-            dphi[1, 1] = (phi[1, 1] / detX)**2 * np.sqrt((dphi[1, 1] / phi[1, 1])**2 +
-                                                         (ddet / detX)**2)
+            dphi[0, 0] = (phi[0, 0] / detX) ** 2 * np.sqrt(
+                (dphi[0, 0] / phi[0, 0]) ** 2 + (ddet / detX) ** 2
+            )
+            dphi[0, 1] = (phi[0, 1] / detX) ** 2 * np.sqrt(
+                (dphi[0, 1] / phi[0, 1]) ** 2 + (ddet / detX) ** 2
+            )
+            dphi[1, 0] = (phi[1, 0] / detX) ** 2 * np.sqrt(
+                (dphi[1, 0] / phi[1, 0]) ** 2 + (ddet / detX) ** 2
+            )
+            dphi[1, 1] = (phi[1, 1] / detX) ** 2 * np.sqrt(
+                (dphi[1, 1] / phi[1, 1]) ** 2 + (ddet / detX) ** 2
+            )
 
             # Calculate Trace of Phi and error of trace of phi
             tr = phi[0, 0] + phi[1, 1]
-            trvar = np.sqrt(dphi[0, 0]**2 + dphi[1, 1]**2)
+            trvar = np.sqrt(dphi[0, 0] ** 2 + dphi[1, 1] ** 2)
 
             # Calculate skew of phi and the cooresponding error
             skew = phi[0, 1] - phi[1, 0]
-            skewvar = np.sqrt(dphi[0, 1]**2 + dphi[1, 1]**2)
+            skewvar = np.sqrt(dphi[0, 1] ** 2 + dphi[1, 1] ** 2)
 
             # calculate the determinate and determinate error of phi
             phidet = abs(np.linalg.det(phi))
-            phidetvar = np.sqrt((np.sqrt((dphi[0, 0] / phi[0, 0])**2 + (
-                dphi[1, 1] / phi[1, 1])**2) * phi[0, 0] * phi[1, 1])**2 + (
-                np.sqrt((dphi[0, 1] / phi[0, 1])**2 + (
-                    dphi[1, 0] / phi[1, 0])**2) * phi[0, 1] * phi[1, 0])**2)
+            phidetvar = np.sqrt(
+                (
+                    np.sqrt(
+                        (dphi[0, 0] / phi[0, 0]) ** 2 + (dphi[1, 1] / phi[1, 1]) ** 2
+                    )
+                    * phi[0, 0]
+                    * phi[1, 1]
+                )
+                ** 2
+                + (
+                    np.sqrt(
+                        (dphi[0, 1] / phi[0, 1]) ** 2 + (dphi[1, 0] / phi[1, 0]) ** 2
+                    )
+                    * phi[0, 1]
+                    * phi[1, 0]
+                )
+                ** 2
+            )
 
             # calculate reverse trace and error
             revtr = phi[0, 0] - phi[1, 1]
-            revtrvar = np.sqrt(dphi[0, 0]**2 + dphi[1, 1]**2)
+            revtrvar = np.sqrt(dphi[0, 0] ** 2 + dphi[1, 1] ** 2)
 
             # calculate reverse skew and error
             revskew = phi[1, 0] + phi[0, 1]
-            revskewvar = np.sqrt(phi[0, 1]**2 + dphi[1, 0]**2)
+            revskewvar = np.sqrt(phi[0, 1] ** 2 + dphi[1, 0] ** 2)
 
             # calculate skew angle beta and error
-            beta = .5 * (np.arctan2(skew, tr) * 180 / np.pi)
-            betavar = abs(np.arctan(skew * tr * np.sqrt((skewvar / skew)**2 + (
-                trvar / tr)**2)) * 180 / np.pi)
+            beta = 0.5 * (np.arctan2(skew, tr) * 180 / np.pi)
+            betavar = abs(
+                np.arctan(
+                    skew * tr * np.sqrt((skewvar / skew) ** 2 + (trvar / tr) ** 2)
+                )
+                * 180
+                / np.pi
+            )
 
             # calculate angle alpha corresponding to phase tensor's
             # dependence on coordinate system
-            alpha = .5 * (np.arctan2(revskew, revtr) * 180 / np.pi)
-            alphavar = abs(.5 * np.arctan(revskew * revtr * np.sqrt(
-                (revskewvar / revskew)**2 + (revtrvar / revtr)**2)) * 180 / np.pi)
+            alpha = 0.5 * (np.arctan2(revskew, revtr) * 180 / np.pi)
+            alphavar = abs(
+                0.5
+                * np.arctan(
+                    revskew
+                    * revtr
+                    * np.sqrt((revskewvar / revskew) ** 2 + (revtrvar / revtr) ** 2)
+                )
+                * 180
+                / np.pi
+            )
 
             # calculate azimuth as angle between major axis and x-axis
             azimuth = alpha - beta
-            azimuthvar = np.sqrt(alphavar**2 + betavar**2)
+            azimuthvar = np.sqrt(alphavar ** 2 + betavar ** 2)
 
             # calulate maximum value for phi
-            phimax = np.sqrt((.5 * tr)**2 + (.5 * skew)**2) +\
-                np.sqrt(abs((.5 * tr)**2 + (.5 * skew)**2 - np.sqrt(phidet)**2))
-            phimaxvar = .5 * np.sqrt(2 * trvar**2 + 2 * skewvar**2) + .5 * np.sqrt(
-                2 * trvar**2 + 2 * skewvar**2 + phidetvar)
+            phimax = np.sqrt((0.5 * tr) ** 2 + (0.5 * skew) ** 2) + np.sqrt(
+                abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2 - np.sqrt(phidet) ** 2)
+            )
+            phimaxvar = 0.5 * np.sqrt(
+                2 * trvar ** 2 + 2 * skewvar ** 2
+            ) + 0.5 * np.sqrt(2 * trvar ** 2 + 2 * skewvar ** 2 + phidetvar)
 
             # calculate minimum value for phi
             if np.linalg.det(phi) >= 0:
-                phimin = np.sqrt((.5 * tr)**2 + (.5 * skew)**2) -\
-                    np.sqrt((.5 * tr)**2 + (.5 * skew)**2 - np.sqrt(phidet)**2)
+                phimin = np.sqrt((0.5 * tr) ** 2 + (0.5 * skew) ** 2) - np.sqrt(
+                    (0.5 * tr) ** 2 + (0.5 * skew) ** 2 - np.sqrt(phidet) ** 2
+                )
 
             elif np.linalg.det(phi) < 0:
-                phimin = np.sqrt((.5 * tr)**2 + (.5 * skew)**2) - np.sqrt(abs(
-                    (.5 * tr)**2 + (.5 * skew)**2 - np.sqrt(phidet)**2))
+                phimin = np.sqrt((0.5 * tr) ** 2 + (0.5 * skew) ** 2) - np.sqrt(
+                    abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2 - np.sqrt(phidet) ** 2)
+                )
 
             # set the variance in phimin to that of phimax
             phiminvar = phimaxvar
@@ -2315,9 +2829,14 @@ class PhaseTensor:
             phimaxangvar = (180 / np.pi) * np.arctan(np.array(phimaxvar))
 
             ellipticity = (phimaxang - phiminang) / (phimaxang + phiminang)
-            ellipticityvar = ellipticity * np.sqrt(phimaxangvar**2 +
-                                                   phiminangvar**2) * np.sqrt((1 / (phimaxang - phiminang))**2 +
-                                                                              (1 / (phimaxang + phiminang))**2)
+            ellipticityvar = (
+                ellipticity
+                * np.sqrt(phimaxangvar ** 2 + phiminangvar ** 2)
+                * np.sqrt(
+                    (1 / (phimaxang - phiminang)) ** 2
+                    + (1 / (phimaxang + phiminang)) ** 2
+                )
+            )
 
             phidet = phimin * phimax
             phidetvar = phiminvar * phimaxvar
@@ -2422,55 +2941,73 @@ class ResPhase:
             if abs(self.thetar) > 2 * np.pi:
                 self.thetar = self.thetar * (np.pi / 180)
             # make rotation matrix
-            rotmatrix = np.array([[np.cos(self.thetar), np.sin(self.thetar)],
-                                  [-np.sin(self.thetar), np.cos(self.thetar)]])
+            rotmatrix = np.array(
+                [
+                    [np.cos(self.thetar), np.sin(self.thetar)],
+                    [-np.sin(self.thetar), np.cos(self.thetar)],
+                ]
+            )
             # rotate the data
             for rr in range(nz):
                 self.z[rr] = np.dot(rotmatrix, np.dot(self.z[rr], rotmatrix.T))
-                self.zvar[rr] = np.dot(
-                    rotmatrix, np.dot(
-                        self.zvar[rr], rotmatrix.T))
+                self.zvar[rr] = np.dot(rotmatrix, np.dot(self.zvar[rr], rotmatrix.T))
 
         # calculate resistivity and phase components
         for jj in range(nz):
-            wt = (.2 * self.period[jj]) * ffactor
-            self.resxx[jj] = wt * abs(self.z[jj, 0, 0])**2
-            self.resxy[jj] = wt * abs(self.z[jj, 0, 1])**2
-            self.resyx[jj] = wt * abs(self.z[jj, 1, 0])**2
-            self.resyy[jj] = wt * abs(self.z[jj, 1, 1])**2
+            wt = (0.2 * self.period[jj]) * ffactor
+            self.resxx[jj] = wt * abs(self.z[jj, 0, 0]) ** 2
+            self.resxy[jj] = wt * abs(self.z[jj, 0, 1]) ** 2
+            self.resyx[jj] = wt * abs(self.z[jj, 1, 0]) ** 2
+            self.resyy[jj] = wt * abs(self.z[jj, 1, 1]) ** 2
 
-            self.resxxerr[jj] = 2 * wt * \
-                abs(self.z[jj, 0, 0]) * np.sqrt(self.zvar[jj, 0, 0])
-            self.resxyerr[jj] = 2 * wt * \
-                abs(self.z[jj, 0, 1]) * np.sqrt(self.zvar[jj, 0, 1])
-            self.resyxerr[jj] = 2 * wt * \
-                abs(self.z[jj, 1, 0]) * np.sqrt(self.zvar[jj, 1, 0])
-            self.resyyerr[jj] = 2 * wt * \
-                abs(self.z[jj, 1, 1]) * np.sqrt(self.zvar[jj, 1, 1])
+            self.resxxerr[jj] = (
+                2 * wt * abs(self.z[jj, 0, 0]) * np.sqrt(self.zvar[jj, 0, 0])
+            )
+            self.resxyerr[jj] = (
+                2 * wt * abs(self.z[jj, 0, 1]) * np.sqrt(self.zvar[jj, 0, 1])
+            )
+            self.resyxerr[jj] = (
+                2 * wt * abs(self.z[jj, 1, 0]) * np.sqrt(self.zvar[jj, 1, 0])
+            )
+            self.resyyerr[jj] = (
+                2 * wt * abs(self.z[jj, 1, 1]) * np.sqrt(self.zvar[jj, 1, 1])
+            )
 
-            self.phasexx[jj] = (np.arctan2(self.z[jj, 0, 0].imag,
-                                           self.z[jj, 0, 0].real) * (180 / np.pi)) % 360
-            self.phasexy[jj] = (np.arctan2(self.z[jj, 0, 1].imag,
-                                           self.z[jj, 0, 1].real) * (180 / np.pi)) % 360
+            self.phasexx[jj] = (
+                np.arctan2(self.z[jj, 0, 0].imag, self.z[jj, 0, 0].real) * (180 / np.pi)
+            ) % 360
+            self.phasexy[jj] = (
+                np.arctan2(self.z[jj, 0, 1].imag, self.z[jj, 0, 1].real) * (180 / np.pi)
+            ) % 360
             # if not 0 <= self.phasexy[jj] <= 90:
             #     print self.phasexy[jj]
             #     self.phasexy[jj] = ((self.phasexy[jj]))%90
-            self.phaseyx[jj] = (np.arctan2(self.z[jj, 1, 0].imag,
-                                           self.z[jj, 1, 0].real) * (180 / np.pi)) % 360
+            self.phaseyx[jj] = (
+                np.arctan2(self.z[jj, 1, 0].imag, self.z[jj, 1, 0].real) * (180 / np.pi)
+            ) % 360
             # if not 180 <= self.phaseyx[jj] <= 270:
             #     self.phaseyx[jj] = ((self.phaseyx[jj])+180)%360
 
-            self.phaseyy[jj] = (np.arctan2(self.z[jj, 1, 1].imag,
-                                           self.z[jj, 1, 1].real) * (180 / np.pi)) % 360
+            self.phaseyy[jj] = (
+                np.arctan2(self.z[jj, 1, 1].imag, self.z[jj, 1, 1].real) * (180 / np.pi)
+            ) % 360
 
-            self.phasexxerr[jj] = np.sqrt(self.zvar[
-                                          jj, 0, 0] / ((self.z[jj, 0, 0].imag)**2 + (self.z[jj, 0, 0].real)**2)) * (180 / np.pi)
-            self.phasexyerr[jj] = np.sqrt(self.zvar[
-                                          jj, 0, 1] / ((self.z[jj, 0, 1].imag)**2 + (self.z[jj, 0, 1].real)**2)) * (180 / np.pi)
-            self.phaseyxerr[jj] = np.sqrt(self.zvar[
-                                          jj, 1, 0] / ((self.z[jj, 1, 0].imag)**2 + (self.z[jj, 1, 0].real)**2)) * (180 / np.pi)
-            self.phaseyyerr[jj] = np.sqrt(self.zvar[
-                                          jj, 1, 1] / ((self.z[jj, 1, 1].imag)**2 + (self.z[jj, 1, 1].real)**2)) * (180 / np.pi)
+            self.phasexxerr[jj] = np.sqrt(
+                self.zvar[jj, 0, 0]
+                / ((self.z[jj, 0, 0].imag) ** 2 + (self.z[jj, 0, 0].real) ** 2)
+            ) * (180 / np.pi)
+            self.phasexyerr[jj] = np.sqrt(
+                self.zvar[jj, 0, 1]
+                / ((self.z[jj, 0, 1].imag) ** 2 + (self.z[jj, 0, 1].real) ** 2)
+            ) * (180 / np.pi)
+            self.phaseyxerr[jj] = np.sqrt(
+                self.zvar[jj, 1, 0]
+                / ((self.z[jj, 1, 0].imag) ** 2 + (self.z[jj, 1, 0].real) ** 2)
+            ) * (180 / np.pi)
+            self.phaseyyerr[jj] = np.sqrt(
+                self.zvar[jj, 1, 1]
+                / ((self.z[jj, 1, 1].imag) ** 2 + (self.z[jj, 1, 1].real) ** 2)
+            ) * (180 / np.pi)
 
             # old
             # self.phasexxerr[jj]=np.arcsin(self.zvar[jj,0,0]/
@@ -2486,15 +3023,12 @@ class ResPhase:
             # apparent resistivity
             zdet = np.sqrt(np.linalg.det(self.z[jj]))
             zdetvar = np.linalg.det(self.zvar[jj])
-            self.resdet[jj] = wt * abs(zdet)**2
-            self.resdeterr[jj] = wt * \
-                np.abs(zdet + zdetvar)**2 - self.resdet[jj]
+            self.resdet[jj] = wt * abs(zdet) ** 2
+            self.resdeterr[jj] = wt * np.abs(zdet + zdetvar) ** 2 - self.resdet[jj]
 
             # phase
-            self.phasedet[jj] = np.arctan2(
-                zdet.imag, zdet.real) * (180 / np.pi)
-            self.phasedeterr[jj] = np.arcsin(
-                zdetvar / abs(zdet)) * (180 / np.pi)
+            self.phasedet[jj] = np.arctan2(zdet.imag, zdet.real) * (180 / np.pi)
+            self.phasedeterr[jj] = np.arcsin(zdetvar / abs(zdet)) * (180 / np.pi)
 
 
 class Tipper:
@@ -2528,34 +3062,33 @@ class Tipper:
             if abs(self.thetar) > 2 * np.pi:
                 self.thetar = self.thetar * (np.pi / 180)
             # make rotation matrix
-            rotmatrix = np.array([[np.cos(self.thetar), np.sin(self.thetar)],
-                                  [-np.sin(self.thetar), np.cos(self.thetar)]])
+            rotmatrix = np.array(
+                [
+                    [np.cos(self.thetar), np.sin(self.thetar)],
+                    [-np.sin(self.thetar), np.cos(self.thetar)],
+                ]
+            )
             # rotate the data
             for rr in range(nt):
-                self.tipper[rr] = np.dot(rotmatrix, np.dot(self.tipper[rr],
-                                                           rotmatrix.T))
+                self.tipper[rr] = np.dot(
+                    rotmatrix, np.dot(self.tipper[rr], rotmatrix.T)
+                )
         # get the magnitude
         self.magreal = np.sqrt(
-            self.tipper[
-                :,
-                0].real**2 +
-            self.tipper[
-                :,
-                1].real**2)
+            self.tipper[:, 0].real ** 2 + self.tipper[:, 1].real ** 2
+        )
         self.magimag = np.sqrt(
-            self.tipper[
-                :,
-                0].imag**2 +
-            self.tipper[
-                :,
-                1].imag**2)
+            self.tipper[:, 0].imag ** 2 + self.tipper[:, 1].imag ** 2
+        )
 
         # get the angle, need to make both parts negative to get it into the
         # parkinson convention where the arrows point towards the conductor
-        self.anglereal = np.arctan2(-self.tipper[:, 1].real,
-                                    -self.tipper[:, 0].real) * 180 / np.pi
-        self.angleimag = np.arctan2(-self.tipper[:, 1].imag,
-                                    -self.tipper[:, 0].imag) * 180 / np.pi
+        self.anglereal = (
+            np.arctan2(-self.tipper[:, 1].real, -self.tipper[:, 0].real) * 180 / np.pi
+        )
+        self.angleimag = (
+            np.arctan2(-self.tipper[:, 1].imag, -self.tipper[:, 0].imag) * 180 / np.pi
+        )
 
 
 class Zinvariants:
@@ -2596,22 +3129,26 @@ class Zinvariants:
             if abs(self.thetar) > 2 * np.pi:
                 self.thetar = self.thetar * (np.pi / 180)
             # make rotation matrix
-            rotmatrix = np.array([[np.cos(self.thetar), np.sin(self.thetar)],
-                                  [-np.sin(self.thetar), np.cos(self.thetar)]])
+            rotmatrix = np.array(
+                [
+                    [np.cos(self.thetar), np.sin(self.thetar)],
+                    [-np.sin(self.thetar), np.cos(self.thetar)],
+                ]
+            )
             # rotate the data
             for rr in range(nz):
                 self.z[rr] = np.dot(rotmatrix, np.dot(self.z[rr], rotmatrix.T))
 
         for ii in range(nz):
             # compute invariant parameters
-            x1 = .5 * (self.z[ii, 0, 0].real + self.z[ii, 1, 1].real)
-            x2 = .5 * (self.z[ii, 0, 1].real + self.z[ii, 1, 0].real)
-            x3 = .5 * (self.z[ii, 0, 0].real - self.z[ii, 1, 1].real)
-            x4 = .5 * (self.z[ii, 0, 1].real - self.z[ii, 1, 0].real)
-            e1 = .5 * (self.z[ii, 0, 0].imag + self.z[ii, 1, 1].imag)
-            e2 = .5 * (self.z[ii, 0, 1].imag + self.z[ii, 1, 0].imag)
-            e3 = .5 * (self.z[ii, 0, 0].imag - self.z[ii, 1, 1].imag)
-            e4 = .5 * (self.z[ii, 0, 1].imag - self.z[ii, 1, 0].imag)
+            x1 = 0.5 * (self.z[ii, 0, 0].real + self.z[ii, 1, 1].real)
+            x2 = 0.5 * (self.z[ii, 0, 1].real + self.z[ii, 1, 0].real)
+            x3 = 0.5 * (self.z[ii, 0, 0].real - self.z[ii, 1, 1].real)
+            x4 = 0.5 * (self.z[ii, 0, 1].real - self.z[ii, 1, 0].real)
+            e1 = 0.5 * (self.z[ii, 0, 0].imag + self.z[ii, 1, 1].imag)
+            e2 = 0.5 * (self.z[ii, 0, 1].imag + self.z[ii, 1, 0].imag)
+            e3 = 0.5 * (self.z[ii, 0, 0].imag - self.z[ii, 1, 1].imag)
+            e4 = 0.5 * (self.z[ii, 0, 1].imag - self.z[ii, 1, 0].imag)
             ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
             d12 = (x1 * e2 - x2 * e1) / ex
             d34 = (x3 * e4 - x4 * e3) / ex
@@ -2619,10 +3156,10 @@ class Zinvariants:
             d24 = (x2 * e4 - x4 * e2) / ex
             d41 = (x4 * e1 - x1 * e4) / ex
             d23 = (x2 * e3 - x3 * e2) / ex
-            inv1 = np.sqrt(x4**2 + x1**2)
-            inv2 = np.sqrt(e4**2 + e1**2)
-            inv3 = np.sqrt(x2**2 + x3**2) / inv1
-            inv4 = np.sqrt(e2**2 + e3**2) / inv2
+            inv1 = np.sqrt(x4 ** 2 + x1 ** 2)
+            inv2 = np.sqrt(e4 ** 2 + e1 ** 2)
+            inv3 = np.sqrt(x2 ** 2 + x3 ** 2) / inv1
+            inv4 = np.sqrt(e2 ** 2 + e3 ** 2) / inv2
             s12 = (x1 * e2 + x2 * e1) / ex
             s34 = (x3 * e4 + x4 * e3) / ex
             s13 = (x1 * e3 + x3 * e1) / ex
@@ -2631,10 +3168,10 @@ class Zinvariants:
             s23 = (x2 * e3 + x3 * e2) / ex
             inv5 = s41 * ex / (inv1 * inv2)
             inv6 = d41 * ex / (inv1 * inv2)
-            q = np.sqrt((d12 - d34)**2 + (d13 + d24)**2)
+            q = np.sqrt((d12 - d34) ** 2 + (d13 + d24) ** 2)
             inv7 = (d41 - d23) / q
-            strikeang = .5 * np.arctan2(d12 - d34, d13 + d24) * (180 / np.pi)
-            strikeangerr = abs(.5 * np.arcsin(inv7)) * (180 / np.pi)
+            strikeang = 0.5 * np.arctan2(d12 - d34, d13 + d24) * (180 / np.pi)
+            strikeangerr = abs(0.5 * np.arcsin(inv7)) * (180 / np.pi)
             self.inv1[ii] = inv1
             self.inv2[ii] = inv2
             self.inv3[ii] = inv3
@@ -2698,8 +3235,12 @@ class ResistivityTensor:
             if abs(self.thetar) > 2 * np.pi:
                 self.thetar = self.thetar * (np.pi / 180)
             # make rotation matrix
-            rotmatrix = np.array([[np.cos(self.thetar), np.sin(self.thetar)],
-                                  [-np.sin(self.thetar), np.cos(self.thetar)]])
+            rotmatrix = np.array(
+                [
+                    [np.cos(self.thetar), np.sin(self.thetar)],
+                    [-np.sin(self.thetar), np.cos(self.thetar)],
+                ]
+            )
             # rotate the data
             for rr in range(nz):
                 self.z[rr] = np.dot(rotmatrix, np.dot(self.z[rr], rotmatrix.T))
@@ -2712,57 +3253,83 @@ class ResistivityTensor:
                 pass
 
         self.gamma = np.zeros_like(self.z)
-        self.gamma[:, 0, 0] = -frequency**2 * \
-            (Y[:, 1, 1] * Y[:, 0, 0] - Y[:, 1, 0] * Y[:, 1, 0])
-        self.gamma[:, 0, 1] = -frequency**2 * \
-            (Y[:, 1, 1] * (Y[:, 0, 1] - Y[:, 1, 0]))
-        self.gamma[:, 1, 0] = -frequency**2 * \
-            (Y[:, 0, 0] * (Y[:, 1, 0] - Y[:, 0, 1]))
-        self.gamma[:, 1, 1] = -frequency**2 * \
-            (Y[:, 1, 1] * Y[:, 0, 0] - Y[:, 0, 1] * Y[:, 0, 1])
+        self.gamma[:, 0, 0] = -(frequency ** 2) * (
+            Y[:, 1, 1] * Y[:, 0, 0] - Y[:, 1, 0] * Y[:, 1, 0]
+        )
+        self.gamma[:, 0, 1] = -(frequency ** 2) * (
+            Y[:, 1, 1] * (Y[:, 0, 1] - Y[:, 1, 0])
+        )
+        self.gamma[:, 1, 0] = -(frequency ** 2) * (
+            Y[:, 0, 0] * (Y[:, 1, 0] - Y[:, 0, 1])
+        )
+        self.gamma[:, 1, 1] = -(frequency ** 2) * (
+            Y[:, 1, 1] * Y[:, 0, 0] - Y[:, 0, 1] * Y[:, 0, 1]
+        )
 
         self.rho = np.zeros_like(self.gamma.imag)
         for ii, gg in enumerate(self.gamma):
             try:
-                self.rho[ii] = .2 * frequency[ii] * np.linalg.inv(gg.imag)
+                self.rho[ii] = 0.2 * frequency[ii] * np.linalg.inv(gg.imag)
             except np.linalg.LinAlgError:
                 pass
 
-        self.rhodet = np.sqrt(abs(np.array([np.linalg.det(rr)
-                                            for rr in self.rho])))
+        self.rhodet = np.sqrt(abs(np.array([np.linalg.det(rr) for rr in self.rho])))
 
-        pi1 = .5 * np.sqrt((self.rho[:, 0, 0] - self.rho[:, 1, 1])**2 +
-                           (self.rho[:, 0, 1] + self.rho[:, 1, 0])**2)
-        pi2 = .5 * np.sqrt((self.rho[:, 0, 0] + self.rho[:, 1, 1])**2 +
-                           (self.rho[:, 0, 1] - self.rho[:, 1, 0])**2)
+        pi1 = 0.5 * np.sqrt(
+            (self.rho[:, 0, 0] - self.rho[:, 1, 1]) ** 2
+            + (self.rho[:, 0, 1] + self.rho[:, 1, 0]) ** 2
+        )
+        pi2 = 0.5 * np.sqrt(
+            (self.rho[:, 0, 0] + self.rho[:, 1, 1]) ** 2
+            + (self.rho[:, 0, 1] - self.rho[:, 1, 0]) ** 2
+        )
 
         self.rhomax = pi1 + pi2
         self.rhomin = pi2 - pi1
 
-        self.rhoalpha = .5 * np.arctan((self.rho[:, 0, 1] + self.rho[:, 1, 0]) /
-                                       (self.rho[:, 0, 0] - self.rho[:, 1, 1])) * (180 / np.pi)
-        self.rhobeta = .5 * np.arctan((self.rho[:, 0, 1] - self.rho[:, 1, 0]) /
-                                      (self.rho[:, 0, 0] - self.rho[:, 1, 1])) * (180 / np.pi)
+        self.rhoalpha = (
+            0.5
+            * np.arctan(
+                (self.rho[:, 0, 1] + self.rho[:, 1, 0])
+                / (self.rho[:, 0, 0] - self.rho[:, 1, 1])
+            )
+            * (180 / np.pi)
+        )
+        self.rhobeta = (
+            0.5
+            * np.arctan(
+                (self.rho[:, 0, 1] - self.rho[:, 1, 0])
+                / (self.rho[:, 0, 0] - self.rho[:, 1, 1])
+            )
+            * (180 / np.pi)
+        )
         self.rhoazimuth = self.rhoalpha - self.rhobeta
 
         self.eps = np.zeros_like(self.gamma.real)
         for ii, gg in enumerate(self.gamma):
             try:
-                self.eps[ii] = .2 * frequency[ii] * np.linalg.inv(gg.real)
+                self.eps[ii] = 0.2 * frequency[ii] * np.linalg.inv(gg.real)
             except np.linalg.LinAlgError:
                 pass
 
-        self.epsdet = np.sqrt(abs(np.array([np.linalg.det(rr)
-                                            for rr in self.eps])))
+        self.epsdet = np.sqrt(abs(np.array([np.linalg.det(rr) for rr in self.eps])))
 
-        self.epsmax = .5 * np.sqrt((self.eps[:, 0, 0] - self.eps[:, 1, 1])**2 +
-                                   (self.eps[:, 0, 1] + self.eps[:, 1, 0])**2)
-        self.epsmin = .5 * np.sqrt((self.eps[:, 0, 0] + self.eps[:, 1, 1])**2 +
-                                   (self.eps[:, 0, 1] - self.eps[:, 1, 0])**2)
-        self.epsalpha = .5 * np.arctan((self.eps[:, 0, 1] + self.eps[:, 1, 0]) /
-                                       (self.eps[:, 0, 0] - self.eps[:, 1, 1]))
-        self.epsbeta = .5 * np.arctan((self.eps[:, 0, 1] - self.eps[:, 1, 0]) /
-                                      (self.eps[:, 0, 0] - self.eps[:, 1, 1]))
+        self.epsmax = 0.5 * np.sqrt(
+            (self.eps[:, 0, 0] - self.eps[:, 1, 1]) ** 2
+            + (self.eps[:, 0, 1] + self.eps[:, 1, 0]) ** 2
+        )
+        self.epsmin = 0.5 * np.sqrt(
+            (self.eps[:, 0, 0] + self.eps[:, 1, 1]) ** 2
+            + (self.eps[:, 0, 1] - self.eps[:, 1, 0]) ** 2
+        )
+        self.epsalpha = 0.5 * np.arctan(
+            (self.eps[:, 0, 1] + self.eps[:, 1, 0])
+            / (self.eps[:, 0, 0] - self.eps[:, 1, 1])
+        )
+        self.epsbeta = 0.5 * np.arctan(
+            (self.eps[:, 0, 1] - self.eps[:, 1, 0])
+            / (self.eps[:, 0, 0] - self.eps[:, 1, 1])
+        )
         self.epsazimuth = self.epsalpha - self.epsbeta
 
 
@@ -2819,24 +3386,28 @@ class PhaseTensorResidual:
             # calculate reverse skew and error
             revskew = phi[1, 0] + phi[0, 1]
 
-            beta = .5 * np.arctan2(skew, tr) * (180 / np.pi)
-            alpha = .5 * np.arctan2(revskew, revtr) * (180 / np.pi)
+            beta = 0.5 * np.arctan2(skew, tr) * (180 / np.pi)
+            alpha = 0.5 * np.arctan2(revskew, revtr) * (180 / np.pi)
 
             # need to figure out why azimuth is off by 90 deg
-            azimuth = (alpha - beta)
+            azimuth = alpha - beta
 
             # calculate phimax
-            phimax = np.sqrt(abs((.5 * tr)**2 + (.5 * skew)**2)) +\
-                np.sqrt(abs((.5 * tr)**2 + (.5 * skew)**2 - np.sqrt(phidet)**2))
+            phimax = np.sqrt(abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2)) + np.sqrt(
+                abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2 - np.sqrt(phidet) ** 2)
+            )
 
             # calculate minimum value for phi
             if phidet >= 0:
-                phimin = np.sqrt(abs((.5 * tr)**2 + (.5 * skew)**2)) -\
-                    np.sqrt(abs((.5 * tr)**2 + (.5 * skew)
-                                ** 2 - np.sqrt(phidet)**2))
+                phimin = np.sqrt(abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2)) - np.sqrt(
+                    abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2 - np.sqrt(phidet) ** 2)
+                )
             elif phidet < 0:
-                phimin = -1 * np.sqrt(abs((.5 * tr)**2 + (.5 * skew)**2)) - np.sqrt(abs(
-                    (.5 * tr)**2 + (.5 * skew)**2 - (np.sqrt(phidet))**2))
+                phimin = -1 * np.sqrt(
+                    abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2)
+                ) - np.sqrt(
+                    abs((0.5 * tr) ** 2 + (0.5 * skew) ** 2 - (np.sqrt(phidet)) ** 2)
+                )
 
             ecolor = (abs(phi.min()) + abs(phi.max())) / 2
 
@@ -2881,27 +3452,35 @@ class ResistivityTensorResidual:
         rt2 = ResistivityTensor(z2, frequency, rotz=rotz, rotate=rotatecoord)
 
         for ii in range(nf):
-            rho = np.eye(2) -\
-                (np.dot(np.linalg.inv(rt2.rho[ii]), rt1.rho[ii]) +
-                 np.dot(rt1.rho[ii], np.linalg.inv(rt2.rho[ii]))) / 2
+            rho = (
+                np.eye(2)
+                - (
+                    np.dot(np.linalg.inv(rt2.rho[ii]), rt1.rho[ii])
+                    + np.dot(rt1.rho[ii], np.linalg.inv(rt2.rho[ii]))
+                )
+                / 2
+            )
 
-            pi1 = .5 * np.sqrt((rho[0, 0] - rho[1, 1])
-                               ** 2 + (rho[0, 1] + rho[1, 0])**2)
-            pi2 = .5 * np.sqrt((rho[0, 0] + rho[1, 1])
-                               ** 2 + (rho[0, 1] - rho[1, 0])**2)
+            pi1 = 0.5 * np.sqrt(
+                (rho[0, 0] - rho[1, 1]) ** 2 + (rho[0, 1] + rho[1, 0]) ** 2
+            )
+            pi2 = 0.5 * np.sqrt(
+                (rho[0, 0] + rho[1, 1]) ** 2 + (rho[0, 1] - rho[1, 0]) ** 2
+            )
 
             rhomax = pi1 + pi2
             rhomin = pi2 - pi1
 
-            alpha = .5 * \
-                np.arctan((rho[0, 1] + rho[1, 0]) / (rho[0, 0] - rho[1, 1]))
-            beta = .5 * \
-                np.arctan((rho[0, 1] - rho[1, 0]) / (rho[0, 0] + rho[1, 1]))
+            alpha = 0.5 * np.arctan((rho[0, 1] + rho[1, 0]) / (rho[0, 0] - rho[1, 1]))
+            beta = 0.5 * np.arctan((rho[0, 1] - rho[1, 0]) / (rho[0, 0] + rho[1, 1]))
 
             azimuth = (alpha - beta) * 180 / np.pi
 
-            ecolor = np.sign(rt1.rhomax[ii] - rt2.rhomin[ii]) *\
-                (abs(rho.min()) + abs(rho.max())) / 2
+            ecolor = (
+                np.sign(rt1.rhomax[ii] - rt2.rhomin[ii])
+                * (abs(rho.min()) + abs(rho.max()))
+                / 2
+            )
 
             rhodet = rt1.rhodet[ii] - rt2.rhodet[ii]
 

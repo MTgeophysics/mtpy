@@ -20,6 +20,7 @@ import mtpy.utils.exceptions as MTex
 
 # =================================================================
 
+
 def correct_for_instrument_response(data, samplingrate, responsedata):
     """
     Correct input time series for instrument response.
@@ -40,8 +41,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
 
     N = len(data)
     if N < 1:
-        raise MTex.MTpyError_ts_data(
-            'Error - Length of TS to correct is zero!')
+        raise MTex.MTpyError_ts_data("Error - Length of TS to correct is zero!")
 
     # use double sided cosine taper function
     window = MTfi.tukey(N, 0.2)
@@ -57,7 +57,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     # zero pad data for significantly faster fft - NO, Numpy does not do that
     # automatically
     padded_data = np.zeros((2 ** next2power))
-    padded_data[:len(tapered_data)] = tapered_data
+    padded_data[: len(tapered_data)] = tapered_data
 
     # bandpass data for excluding all frequencies that are not covered by the
     # known instrument response
@@ -66,7 +66,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
 
     # get the spectrum of the data
     data_spectrum = np.fft.rfft(bp_data)
-    data_freqs = np.fft.fftfreq(len(bp_data), 1. / samplingrate)
+    data_freqs = np.fft.fftfreq(len(bp_data), 1.0 / samplingrate)
 
     # and the same for the instrument
     instr_spectrum = responsedata[:, 1] + np.complex(0, 1) * responsedata[:, 2]
@@ -78,7 +78,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     # return data_freqs,data_spectrum,instr_freqs,instr_spectrum
 
     # now correct for all frequencies on the data_freqs-axis:
-    corrected_spectrum = np.zeros((len(data_spectrum)), 'complex')
+    corrected_spectrum = np.zeros((len(data_spectrum)), "complex")
     for i in range(len(data_spectrum)):
         freq = data_freqs[i]
         spec = data_spectrum[i]
@@ -86,7 +86,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
         # this is effectively a boxcar window - maybe to be replaced by proper
         # windowing function ?
         if not (freqmin <= np.abs(freq) <= freqmax):
-            print 'no instrument response in this frequency range - spectrum set to zero here: ', freq
+            print "no instrument response in this frequency range - spectrum set to zero here: ", freq
             corrected_spectrum[i] = 0  # spec
             # lo_mags.append([np.abs(spec),np.abs(corrected_spectrum[i]), 0 ])
             # lo_freqs.append([freq,0,0,0,0,0,0])

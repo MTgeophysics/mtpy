@@ -16,8 +16,19 @@ import webbrowser
 
 import sip
 from qtpy import QtCore
-from qtpy.QtWidgets import QMainWindow, QWidget, qApp, QMessageBox, QFileDialog, QDialog, QWizard, QMdiArea, QAction, \
-    QMdiSubWindow, QApplication
+from qtpy.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    qApp,
+    QMessageBox,
+    QFileDialog,
+    QDialog,
+    QWizard,
+    QMdiArea,
+    QAction,
+    QMdiSubWindow,
+    QApplication,
+)
 
 from qtpy import QT_VERSION
 import matplotlib
@@ -63,14 +74,19 @@ class StartGUI(QMainWindow):
 
         # set station viewer
         self._station_viewer = StationViewer(self, file_handler=self._file_handler)
-        self._station_viewer.ui.pushButton_plot.clicked.connect(self.plot_selected_station)
+        self._station_viewer.ui.pushButton_plot.clicked.connect(
+            self.plot_selected_station
+        )
         self._station_viewer.selection_changed.connect(self._selected_station_changed)
         self.ui.stackedWidget.addWidget(self._station_viewer)
 
         # set plot option widget
-        self._plot_option = PlotOption(self, self._file_handler, self._station_viewer.selected_stations)
+        self._plot_option = PlotOption(
+            self, self._file_handler, self._station_viewer.selected_stations
+        )
         self._plot_option.ui.pushButton_back.clicked.connect(
-            lambda x: self.ui.stackedWidget.setCurrentWidget(self._station_viewer))
+            lambda x: self.ui.stackedWidget.setCurrentWidget(self._station_viewer)
+        )
         self._station_viewer.selection_changed.connect(self._plot_option.data_changed)
         self.ui.stackedWidget.addWidget(self._plot_option)
 
@@ -80,7 +96,7 @@ class StartGUI(QMainWindow):
 
         self._station_summary = None
 
-        self._progress_bar = ProgressBar(title='Loading files...')
+        self._progress_bar = ProgressBar(title="Loading files...")
         self.subwindows = {}
         # enable export if the activated subwindow is a image window
         self.ui.mdiArea.subWindowActivated.connect(self._subwindow_activated)
@@ -97,7 +113,9 @@ class StartGUI(QMainWindow):
         self.ui.actionExit.triggered.connect(qApp.quit)
         self.ui.actionOpen_edi_File.triggered.connect(self.file_dialog)
         self.ui.actionOpen_edi_Folder.triggered.connect(self.folder_dialog)
-        self.ui.actionShow_Station_Summary.triggered.connect(self._toggle_station_summary)
+        self.ui.actionShow_Station_Summary.triggered.connect(
+            self._toggle_station_summary
+        )
         self.ui.actionWindowed_View.triggered.connect(self._toggle_windowed_tabbed_view)
         self.ui.actionTabbed_View.triggered.connect(self._toggle_windowed_tabbed_view)
         self.ui.actionTile_Windows.triggered.connect(self._tile_windows)
@@ -106,9 +124,15 @@ class StartGUI(QMainWindow):
         self.ui.actionClose_All_Images.triggered.connect(self._close_all_images)
         self.ui.actionExport.triggered.connect(self._export_image)
         self.ui.actionExport_ModEM_Data.triggered.connect(self._export_modem)
-        self.ui.actionCreate_Shape_File_From_Stations.triggered.connect(self._export_shape_file)
-        self.ui.actionCreate_Phase_Tensor_csv_file.triggered.connect(self._export_phase_tensor_csv)
-        self.ui.actionCreate_Measurement_csv_file.triggered.connect(self._export_measurement_csv)
+        self.ui.actionCreate_Shape_File_From_Stations.triggered.connect(
+            self._export_shape_file
+        )
+        self.ui.actionCreate_Phase_Tensor_csv_file.triggered.connect(
+            self._export_phase_tensor_csv
+        )
+        self.ui.actionCreate_Measurement_csv_file.triggered.connect(
+            self._export_measurement_csv
+        )
         # not yet impleneted
         self.ui.actionAbout.triggered.connect(self.dummy_action)
         self.ui.actionClose_Project.triggered.connect(self.dummy_action)
@@ -125,13 +149,20 @@ class StartGUI(QMainWindow):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText("You are about to create measurement .csv files.")
-        msg.setInformativeText("Please select an output directory after click \"OK\"\n"
-                               "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
+        msg.setInformativeText(
+            'Please select an output directory after click "OK"\n'
+            'For the list of .edi files (stations) included in the creation, please click "Show Details"'
+        )
         msg.setWindowTitle("Note")
         msg.setDetailedText(
-            "\n".join(["{station} ({fn})".format(
-                station=station, fn=self._file_handler.station2ref(station)
-            ) for station in self._station_viewer.selected_stations])
+            "\n".join(
+                [
+                    "{station} ({fn})".format(
+                        station=station, fn=self._file_handler.station2ref(station)
+                    )
+                    for station in self._station_viewer.selected_stations
+                ]
+            )
         )
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
@@ -145,20 +176,27 @@ class StartGUI(QMainWindow):
                     dir_name = dialog.selectedFiles()[0]
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
-                        QMessageBox.information(self, "NOTE",
-                                                "Please select a directory to save the created .csv files.")
+                        QMessageBox.information(
+                            self,
+                            "NOTE",
+                            "Please select a directory to save the created .csv files.",
+                        )
                         dir_name = None  # will read again
                 else:
                     break
             if dir_name is not None:
                 collect = EdiCollection(
                     mt_objs=[
-                        self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                        self._file_handler.get_MT_obj(
+                            self._file_handler.station2ref(station)
+                        )
                         for station in self._station_viewer.selected_stations
                     ]
                 )
                 collect.create_measurement_csv(dir_name)
-                QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                QMessageBox.information(
+                    self, "Creation Completed", "Output written to %s" % dir_name
+                )
                 webbrowser.open(dir_name)
 
     def _export_phase_tensor_csv(self):
@@ -166,13 +204,20 @@ class StartGUI(QMainWindow):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText("You are about to create phase tensor .csv files.")
-        msg.setInformativeText("Please select an output directory after click \"OK\"\n"
-                               "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
+        msg.setInformativeText(
+            'Please select an output directory after click "OK"\n'
+            'For the list of .edi files (stations) included in the creation, please click "Show Details"'
+        )
         msg.setWindowTitle("Note")
         msg.setDetailedText(
-            "\n".join(["{station} ({fn})".format(
-                station=station, fn=self._file_handler.station2ref(station)
-            ) for station in self._station_viewer.selected_stations])
+            "\n".join(
+                [
+                    "{station} ({fn})".format(
+                        station=station, fn=self._file_handler.station2ref(station)
+                    )
+                    for station in self._station_viewer.selected_stations
+                ]
+            )
         )
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
@@ -186,20 +231,27 @@ class StartGUI(QMainWindow):
                     dir_name = dialog.selectedFiles()[0]
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
-                        QMessageBox.information(self, "NOTE",
-                                                "Please select a directory to save the created .csv files.")
+                        QMessageBox.information(
+                            self,
+                            "NOTE",
+                            "Please select a directory to save the created .csv files.",
+                        )
                         dir_name = None  # will read again
                 else:
                     break
             if dir_name is not None:
                 collect = EdiCollection(
                     mt_objs=[
-                        self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                        self._file_handler.get_MT_obj(
+                            self._file_handler.station2ref(station)
+                        )
                         for station in self._station_viewer.selected_stations
                     ]
                 )
                 collect.create_phase_tensor_csv(dir_name)
-                QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                QMessageBox.information(
+                    self, "Creation Completed", "Output written to %s" % dir_name
+                )
                 webbrowser.open(dir_name)
 
     def _export_shape_file(self, *args, **kwargs):
@@ -207,13 +259,20 @@ class StartGUI(QMainWindow):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText("You are about to create shape files.")
-        msg.setInformativeText("Please select an output directory after click \"OK\"\n"
-                               "For the list of .edi files (stations) included in the creation, please click \"Show Details\"")
+        msg.setInformativeText(
+            'Please select an output directory after click "OK"\n'
+            'For the list of .edi files (stations) included in the creation, please click "Show Details"'
+        )
         msg.setWindowTitle("Note")
         msg.setDetailedText(
-            "\n".join(["{station} ({fn})".format(
-                station=station, fn=self._file_handler.station2ref(station)
-            ) for station in self._station_viewer.selected_stations])
+            "\n".join(
+                [
+                    "{station} ({fn})".format(
+                        station=station, fn=self._file_handler.station2ref(station)
+                    )
+                    for station in self._station_viewer.selected_stations
+                ]
+            )
         )
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
@@ -227,20 +286,27 @@ class StartGUI(QMainWindow):
                     dir_name = dialog.selectedFiles()[0]
                     dir_name = str(dir_name)
                     if not os.path.isdir(dir_name):
-                        QMessageBox.information(self, "NOTE",
-                                                "Please select a directory to save the created shape files.")
+                        QMessageBox.information(
+                            self,
+                            "NOTE",
+                            "Please select a directory to save the created shape files.",
+                        )
                         dir_name = None  # will read again
                 else:
                     break
             if dir_name is not None:
                 collect = EdiCollection(
                     mt_objs=[
-                        self._file_handler.get_MT_obj(self._file_handler.station2ref(station))
+                        self._file_handler.get_MT_obj(
+                            self._file_handler.station2ref(station)
+                        )
                         for station in self._station_viewer.selected_stations
                     ]
                 )
                 collect.create_mt_station_gdf(dir_name)
-                QMessageBox.information(self, "Creation Completed", "Output written to %s" % dir_name)
+                QMessageBox.information(
+                    self, "Creation Completed", "Output written to %s" % dir_name
+                )
                 webbrowser.open(dir_name)
 
     def _export_image(self, *args, **kwargs):
@@ -252,10 +318,12 @@ class StartGUI(QMainWindow):
             except Exception as e:
                 frm = inspect.trace()[-1]
                 mod = inspect.getmodule(frm[0])
-                QMessageBox.critical(self,
-                                     'Exporting Error',
-                                     "{}: {}".format(mod.__name__, e.message),
-                                     QMessageBox.Close)
+                QMessageBox.critical(
+                    self,
+                    "Exporting Error",
+                    "{}: {}".format(mod.__name__, e.message),
+                    QMessageBox.Close,
+                )
 
     def _export_modem(self, *args, **kwargs):
         mt_objs = []
@@ -283,14 +351,20 @@ class StartGUI(QMainWindow):
             subwindow.close()
 
     def _toggle_windowed_tabbed_view(self, *args, **kwargs):
-        if self.ui.actionTabbed_View.isEnabled() and self.ui.actionTabbed_View.isChecked():
+        if (
+            self.ui.actionTabbed_View.isEnabled()
+            and self.ui.actionTabbed_View.isChecked()
+        ):
             self.ui.actionTabbed_View.setEnabled(False)
             self.ui.actionWindowed_View.setEnabled(True)
             self.ui.actionWindowed_View.setChecked(False)
             self.ui.actionTile_Windows.setEnabled(False)
             self.ui.actionCascade_Windows.setEnabled(False)
             self.ui.mdiArea.setViewMode(QMdiArea.TabbedView)
-        elif self.ui.actionWindowed_View.isEnabled() and self.ui.actionWindowed_View.isChecked():
+        elif (
+            self.ui.actionWindowed_View.isEnabled()
+            and self.ui.actionWindowed_View.isChecked()
+        ):
             self.ui.actionWindowed_View.setEnabled(False)
             self.ui.actionTabbed_View.setEnabled(True)
             self.ui.actionTabbed_View.setChecked(False)
@@ -304,8 +378,8 @@ class StartGUI(QMainWindow):
             # set the initial directory to HOME
             dialog.setDirectory(os.path.expanduser("~"))
             self._is_file_dialog_opened = True
-        dialog.setWindowTitle('Open .edi Files...')
-        dialog.setNameFilter('.edi files (*.edi)')
+        dialog.setWindowTitle("Open .edi Files...")
+        dialog.setNameFilter(".edi files (*.edi)")
         dialog.setFileMode(QFileDialog.ExistingFiles)
         if dialog.exec_() == QDialog.Accepted:
             file_list = dialog.selectedFiles()
@@ -318,7 +392,9 @@ class StartGUI(QMainWindow):
     def _add_files(self, file_list, group_id=DEFAULT_GROUP_NAME):
         for file_ref in file_list:
             try:
-                self._file_handler.add_file(os.path.abspath(str(file_ref)), group_id=group_id)
+                self._file_handler.add_file(
+                    os.path.abspath(str(file_ref)), group_id=group_id
+                )
             except FileHandlingException as exp:
                 self._logger.warning(exp.message)
             except Exception as exp:
@@ -330,8 +406,9 @@ class StartGUI(QMainWindow):
             self.ui.stackedWidget.setCurrentWidget(self._plot_option)
         else:
             self._logger.info("nothing to plot")
-            QMessageBox.information(self, "NOTE",
-                                    "Please load and select station data for visualization.")
+            QMessageBox.information(
+                self, "NOTE", "Please load and select station data for visualization."
+            )
 
     def folder_dialog(self, *args, **kwargs):
         dialog = QFileDialog(self)
@@ -346,11 +423,18 @@ class StartGUI(QMainWindow):
             if dialog.exec_() == QDialog.Accepted:
                 dir_name = dialog.selectedFiles()[0]
                 dir_name = str(dir_name)
-                file_list = [os.path.join(dir_name, edi) for edi in os.listdir(dir_name) if edi.endswith("edi")]
+                file_list = [
+                    os.path.join(dir_name, edi)
+                    for edi in os.listdir(dir_name)
+                    if edi.endswith("edi")
+                ]
                 if not file_list:
                     # empty list
-                    QMessageBox.information(self, "NOTE",
-                                            "Directory does not contain any .edi file, please select again.")
+                    QMessageBox.information(
+                        self,
+                        "NOTE",
+                        "Directory does not contain any .edi file, please select again.",
+                    )
                     dir_name = None  # will read again
                 else:
                     self._progress_bar.setMaximumValue(len(file_list))
@@ -374,13 +458,17 @@ class StartGUI(QMainWindow):
 
     def _update_station_summary(self):
         if not self._station_summary:
-            self._station_summary = StationSummary(self, self._file_handler,
-                                                   self._station_viewer.selected_stations)
+            self._station_summary = StationSummary(
+                self, self._file_handler, self._station_viewer.selected_stations
+            )
             # connect to tree view to update summary
             self._station_viewer.ui.treeWidget_stations.selectionModel().selectionChanged.connect(
-                self._station_summary.update_view)
+                self._station_summary.update_view
+            )
             # connect to handle selection_changed signal from station_viewer
-            self._station_viewer.selection_changed.connect(self._station_summary.update_view)
+            self._station_viewer.selection_changed.connect(
+                self._station_summary.update_view
+            )
 
     def _selected_station_changed(self):
         enable = bool(self._station_viewer.selected_stations)
@@ -468,18 +556,23 @@ class StartGUI(QMainWindow):
                         subwindow.hide()
 
     @deprecated(
-        "This is an dummy action that should be used only when the required function hasn't been implemented")
+        "This is an dummy action that should be used only when the required function hasn't been implemented"
+    )
     def dummy_action(self, *args, **kwargs):
         pass
 
 
 if __name__ == "__main__":
     if __debug__:
-        MtPyLog.load_configure(os.path.join(os.path.abspath("tests"), "logging.yml"))  # debug only
+        MtPyLog.load_configure(
+            os.path.join(os.path.abspath("tests"), "logging.yml")
+        )  # debug only
         # handle uncaught exceptions to log as since PYQT5.5 will not display any uncaught exceptions
         # ref: http://pyqt.sourceforge.net/Docs/PyQt5/incompatibilities.html#unhandled-python-exceptions
         logger = MtPyLog.get_mtpy_logger(__name__)
-        sys.excepthook = lambda exc_type, exc_value, exc_trace: logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_trace))
+        sys.excepthook = lambda exc_type, exc_value, exc_trace: logger.error(
+            "Uncaught exception", exc_info=(exc_type, exc_value, exc_trace)
+        )
 
     app = QApplication.instance()
     if app is None:

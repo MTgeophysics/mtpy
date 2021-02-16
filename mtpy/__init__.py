@@ -1,4 +1,3 @@
-
 # define mtpy release version through the variable __version__
 # see https://packaging.python.org/guides/single-sourcing-package-version/
 __version__ = "1.1.5"
@@ -10,4 +9,4 @@ from mtpy.utils.mtpylog import MtPyLog
 
 MtPyLog.load_configure()
 
-logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger("matplotlib").setLevel(logging.WARNING)

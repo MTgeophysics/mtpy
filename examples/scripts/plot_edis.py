@@ -20,24 +20,29 @@ from mtpy.core import mt
 try:
     # PACK_ROOT = os.environ['PACK_ROOT']
     # mtpy_path = os.path.join(PACK_ROOT, 'mtpy')
-    mtpy_path = os.environ['MTPY_ROOT']
+    mtpy_path = os.environ["MTPY_ROOT"]
 except:
-    print("Define environment variable MTPY_ROOT to be the mtpy source code (clone) directory.")
+    print(
+        "Define environment variable MTPY_ROOT to be the mtpy source code (clone) directory."
+    )
     raise Exception("MTPY_ROOT var not defined")
 
-os.chdir(mtpy_path) # change to your path to your mtpy installation
+os.chdir(mtpy_path)  # change to your path to your mtpy installation
 
-edi_path = os.path.join(mtpy_path, 'examples', 'data', 'edi_files')
+edi_path = os.path.join(mtpy_path, "examples", "data", "edi_files")
 edi_path = r"C:/Githubz/mtpy/data/edifiles/"
-edi_list = [os.path.join(edi_path, ff) for ff in os.listdir(edi_path) if ff.endswith('.edi')]
+edi_list = [
+    os.path.join(edi_path, ff) for ff in os.listdir(edi_path) if ff.endswith(".edi")
+]
 
 temp_dir = tempfile.gettempdir()
-print('Using temporary directory ' + temp_dir)
+print("Using temporary directory " + temp_dir)
 savepath = temp_dir
 
 for edi_file in edi_list[:3]:
     mt_obj = mt.MT(edi_file)
-    pt_obj = mt_obj.plot_mt_response(plot_yn='n')
+    pt_obj = mt_obj.plot_mt_response(plot_yn="n")
     pt_obj.plot()
-    pt_obj.save_plot(os.path.join(savepath, os.path.basename(edi_file)[:-4]+'.png'), 
-            fig_dpi=400) # change to your preferred file resolution
+    pt_obj.save_plot(
+        os.path.join(savepath, os.path.basename(edi_file)[:-4] + ".png"), fig_dpi=400
+    )  # change to your preferred file resolution

@@ -28,6 +28,7 @@ class TestGUIPlotPenetrationDepth2D(SmartMTGUITestCase):
         _click_area(plot_gui._z_component_ui.ui.radioButton_zyx, self._pos_check_box)
         self._plot()
 
+
 class TestGUIPlotPenetrationDepth2D(SmartMTGUITestCase):
     def test_all(self):
         plot_gui = self._switch_to_plot(Depth3D)  # type: Depth3D
@@ -35,7 +36,10 @@ class TestGUIPlotPenetrationDepth2D(SmartMTGUITestCase):
         # select random frequency by randomly click on the frequency selection gui
         # repeat a few time in case some of the random clicks are not valid
         for i in range(3):
-            _click_area(plot_gui._frequency_period_ui.histogram, offset=plot_gui._frequency_period_ui.histogram.geometry().topLeft())
+            _click_area(
+                plot_gui._frequency_period_ui.histogram,
+                offset=plot_gui._frequency_period_ui.histogram.geometry().topLeft(),
+            )
 
         _click_area(plot_gui._z_component_ui.ui.radioButton_det, self._pos_check_box)
         _click_area(plot_gui._z_unit_ui.ui.radioButton_m)

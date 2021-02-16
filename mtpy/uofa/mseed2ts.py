@@ -30,16 +30,19 @@ import fnmatch
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.mseed as MTms
 import mtpy.utils.filehandling as MTfh
-#reload(MTfh)
-#reload(MTex)
-#reload(MTms)
+
+# reload(MTfh)
+# reload(MTex)
+# reload(MTms)
 
 
 def main():
 
     if len(sys.argv) < 2:
-        sys.exit('\n\tNeed at least 1 argument:\n\n <path to files>\n[optional:'
-                 '<output dir>] \n')
+        sys.exit(
+            "\n\tNeed at least 1 argument:\n\n <path to files>\n[optional:"
+            "<output dir>] \n"
+        )
 
     outdir = None
 
@@ -56,10 +59,11 @@ def main():
 
     if not op.isdir(indir):
         raise MTex.MTpyError_inputarguments(
-            'Data file(s) path not existing: {0}'.format(indir))
+            "Data file(s) path not existing: {0}".format(indir)
+        )
 
     # define output directory for storing miniSeed files
-    #outpath = op.join(os.curdir,'miniSeed')
+    # outpath = op.join(os.curdir,'miniSeed')
     if outdir is not None:
         try:
             outpath = op.abspath(op.join(os.curdir, outdir))
@@ -71,11 +75,13 @@ def main():
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print('Cannot generate writable output directory {0} - using generic'\
-                ' location "ascii" instead'.format(outpath))
+            print(
+                "Cannot generate writable output directory {0} - using generic"
+                ' location "ascii" instead'.format(outpath)
+            )
             outdir = None
     if outdir is None:
-        outpath = op.join(os.curdir, 'ascii')
+        outpath = op.join(os.curdir, "ascii")
         try:
             if not op.exists(outpath):
                 try:
@@ -85,8 +91,10 @@ def main():
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            sys.exit('Error ! - Cannot generate writable output directory '
-                     '"ascii" - abort...')
+            sys.exit(
+                "Error ! - Cannot generate writable output directory "
+                '"ascii" - abort...'
+            )
     outdir = op.abspath(outpath)
 
     lo_dirs = []
@@ -109,28 +117,33 @@ def main():
             lo_outdirs.append(outpath)
     except:
         raise MTex.MTpyError_inputarguments(
-            'ERROR - Cannot set up output directory {0}'.format(outpath))
+            "ERROR - Cannot set up output directory {0}".format(outpath)
+        )
 
     for idx_ipath, inpath in enumerate(lo_indirs):
-        lo_infiles = [i for i in os.listdir(inpath) if
-                      op.isfile(op.abspath(op.join(inpath, i)))]
+        lo_infiles = [
+            i for i in os.listdir(inpath) if op.isfile(op.abspath(op.join(inpath, i)))
+        ]
 
-        lo_outfiles = [op.abspath(op.join(lo_outdirs[idx_ipath], i)) for
-                       i in lo_infiles]
+        lo_outfiles = [
+            op.abspath(op.join(lo_outdirs[idx_ipath], i)) for i in lo_infiles
+        ]
 
         lo_infiles = [op.abspath(op.join(inpath, i)) for i in lo_infiles]
 
         for idx_fn, fn in enumerate(lo_infiles):
 
-            print('reading file {0}'.format(fn))
+            print("reading file {0}".format(fn))
             try:
                 outfn = MTms.convertfile_miniseed2ts(fn, lo_outfiles[idx_fn])
 
-                print('wrote file(s) {0}'.format(outfn))
+                print("wrote file(s) {0}".format(outfn))
             except:
-                print('Warning - file {0} is not in valid miniseed  format!!!'.format(fn))
+                print(
+                    "Warning - file {0} is not in valid miniseed  format!!!".format(fn)
+                )
                 continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

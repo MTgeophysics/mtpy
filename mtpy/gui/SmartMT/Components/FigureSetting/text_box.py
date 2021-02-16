@@ -21,7 +21,9 @@ class TextBox(QGroupBox):
 
         self._point_size = point_size
         self._key_size = key_size
-        self.ui.comboBox_size.model().item(len(self._size_keys)).setEnabled(self._point_size)
+        self.ui.comboBox_size.model().item(len(self._size_keys)).setEnabled(
+            self._point_size
+        )
 
         # connect signal
         self.ui.checkBox_size.stateChanged.connect(self._size_state_changed)
@@ -33,19 +35,23 @@ class TextBox(QGroupBox):
         self.ui.doubleSpinBox_x.editingFinished.connect(self._update_slider_x)
         self.ui.doubleSpinBox_y.editingFinished.connect(self._update_slider_y)
 
-        self.ui.horizontalSlider_x_pad.valueChanged.connect(self._x_pad_slider_value_changed)
-        self.ui.horizontalSlider_y_pad.valueChanged.connect(self._y_pad_slider_value_changed)
+        self.ui.horizontalSlider_x_pad.valueChanged.connect(
+            self._x_pad_slider_value_changed
+        )
+        self.ui.horizontalSlider_y_pad.valueChanged.connect(
+            self._y_pad_slider_value_changed
+        )
         self.ui.doubleSpinBox_x_pad.editingFinished.connect(self._update_slider_x_pad)
         self.ui.doubleSpinBox_y_pad.editingFinished.connect(self._update_slider_y_pad)
 
     _size_keys = [
-        'xx-small',
-        'x-small',
-        'small',
-        'medium',
-        'large',
-        'x-large',
-        'xx-large'
+        "xx-small",
+        "x-small",
+        "small",
+        "medium",
+        "large",
+        "x-large",
+        "xx-large",
     ]
 
     def _location_x_changed(self, p_int):
@@ -98,9 +104,11 @@ class TextBox(QGroupBox):
 
     def get_size(self):
         if self.ui.checkBox_size.isChecked():
-            return self._size_keys[self.ui.comboBox_size.currentIndex()] \
-                if self.ui.comboBox_size.currentIndex() < len(self._size_keys) \
+            return (
+                self._size_keys[self.ui.comboBox_size.currentIndex()]
+                if self.ui.comboBox_size.currentIndex() < len(self._size_keys)
                 else self.ui.spinBox_size.value()
+            )
         else:
             return None
 

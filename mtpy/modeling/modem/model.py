@@ -1425,7 +1425,7 @@ class Model(object):
         shift_north=0,
         shift_z=0,
         units="km",
-        coordinate_system='nez+',
+        coordinate_system="nez+",
     ):
         """
         Write a VTK file to plot in 3D rendering programs like Paraview
@@ -1458,7 +1458,7 @@ class Model(object):
         >>> model.write_vtk_station_file(vtk_fn_basename="modem_model",
         >>> ...                          coordinate_system='enz-')
         """
-        
+
         if isinstance(units, str):
             if units.lower() == "km":
                 scale = 1.0 / 1000.00
@@ -1486,7 +1486,7 @@ class Model(object):
             vtk_x = (self.grid_east + shift_east) * scale
             vtk_z = -1 * (self.grid_z + shift_z) * scale
             cell_data = {"resistivity": np.rot90(self.res_model)}
-            
+
         gridToVTK(vtk_fn, vtk_x, vtk_y, vtk_z, cellData=cell_data)
 
         self._logger.info("Wrote model file to {}".format(vtk_fn))
@@ -2167,7 +2167,9 @@ class Model(object):
             depthindices = [depth_index]
 
         for k in depthindices:
-            fname = os.path.join(savepath, outfile_basename + "_%1im.xyz" % self.grid_z[k])
+            fname = os.path.join(
+                savepath, outfile_basename + "_%1im.xyz" % self.grid_z[k]
+            )
 
             # get relevant depth slice
             vals = resvals[:, :, k].flatten()

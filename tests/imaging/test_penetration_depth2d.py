@@ -27,33 +27,36 @@ class TestPenetration_depth2d(ImageTestCase):
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_det(self):
-        plot2Dprofile(self._edifiles, self._period_list, zcomponent='det')
+        plot2Dprofile(self._edifiles, self._period_list, zcomponent="det")
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_zxy(self):
-        plot2Dprofile(self._edifiles, self._period_list, zcomponent='zxy')
+        plot2Dprofile(self._edifiles, self._period_list, zcomponent="zxy")
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_zyx(self):
-        plot2Dprofile(self._edifiles, self._period_list, zcomponent='zyx')
+        plot2Dprofile(self._edifiles, self._period_list, zcomponent="zyx")
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_det_indices(self):
-        plot2Dprofile(self._edifiles, self._period_indices, zcomponent='det',
-                      period_by_index=True)
+        plot2Dprofile(
+            self._edifiles, self._period_indices, zcomponent="det", period_by_index=True
+        )
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_zxy_indices(self):
-        plot2Dprofile(self._edifiles, self._period_indices, zcomponent='zxy',
-                      period_by_index=True)
+        plot2Dprofile(
+            self._edifiles, self._period_indices, zcomponent="zxy", period_by_index=True
+        )
 
     @ImageCompare(fig_size=(8, 6))
     def test_plot2Dprofile_zyx_indices(self):
-        plot2Dprofile(self._edifiles, self._period_indices, zcomponent='zyx',
-                      period_by_index=True)
+        plot2Dprofile(
+            self._edifiles, self._period_indices, zcomponent="zyx", period_by_index=True
+        )
 
     def test_plot2Dprofile_wrong_rho(self):
         try:
-            plot2Dprofile(self._edifiles, self._period_list, zcomponent='dat')
+            plot2Dprofile(self._edifiles, self._period_list, zcomponent="dat")
         except Exception:
             pass

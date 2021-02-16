@@ -138,10 +138,11 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 # all ploting function are moved to class Depth1D in penetration
 
 
-def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det'],fig_dpi=400,savefile=None):
+def plot_edi_dir(edi_path, rholist=["zxy", "zyx", "det"], fig_dpi=400, savefile=None):
     """ plot edi files from the input directory edi_path
     """
     import glob
+
     edi_files = glob.glob(os.path.join(edi_path, "*.edi"))
 
     _logger.debug(edi_files)
@@ -150,12 +151,12 @@ def plot_edi_dir(edi_path, rholist=['zxy', 'zyx', 'det'],fig_dpi=400,savefile=No
         # for efile in edi_files[:2]:
         # logger.debug("plotting %s", efile)
         # eo = mtedi.Edi(filename=efile)
-        plot_edi_file(efile, rholist=rholist,fig_dpi=fig_dpi,savefile=savefile)
+        plot_edi_file(efile, rholist=rholist, fig_dpi=fig_dpi, savefile=savefile)
 
     return
 
 
-def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None, fig_dpi=400):
+def plot_edi_file(edifile, rholist=["zxy", "zyx", "det"], savefile=None, fig_dpi=400):
     """
     Plot the input edi_file
     Args:
@@ -170,7 +171,7 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None, fig_dpi
     image = Depth1D(mt_obj, rholist)
     image.plot()
     if savefile:
-        image.export_image(savefile,dpi=fig_dpi)
+        image.export_image(savefile, dpi=fig_dpi)
     image.show()
 
 
@@ -186,21 +187,24 @@ def plot_edi_file(edifile, rholist=['zxy', 'zyx', 'det'], savefile=None, fig_dpi
 # python  mtpy/imaging/penetration_depth1d.py
 # tests/data/edifiles/15125A.edi
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print((
-            "\n please provide path to edi files\n USAGE:  %s path2edifile" %
-            sys.argv[0]))
+        print(
+            (
+                "\n please provide path to edi files\n USAGE:  %s path2edifile"
+                % sys.argv[0]
+            )
+        )
         sys.exit(1)
     else:
         edi_path = sys.argv[1]
 
         if os.path.isfile(edi_path):
-            plot_edi_file(edi_path, savefile='C:/temp/pen_depth.jpg')
+            plot_edi_file(edi_path, savefile="C:/temp/pen_depth.jpg")
             # rholist can be any of ['zxy','zyx','det'], default all of them
         elif os.path.isdir(edi_path):  # choose a suitable function below at run
             # plot_edi_dir(edi_path )
-            plot_edi_dir(edi_path, rholist=['det'])
+            plot_edi_dir(edi_path, rholist=["det"])
         else:
             _logger.error("Usage %s %s", sys.argv[0], "path2edi")

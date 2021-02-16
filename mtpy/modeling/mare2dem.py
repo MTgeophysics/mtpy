@@ -52,7 +52,9 @@ def points_o2d_to_m2d(eastings, northings, profile_length=None):
     """
     converted_points = []
     if profile_length is None:
-        profile_length = line_length(eastings[0], northings[0], eastings[-1], northings[-1])
+        profile_length = line_length(
+            eastings[0], northings[0], eastings[-1], northings[-1]
+        )
     mid = profile_length / 2
     for e, n in zip(eastings, northings):
         point = line_length(e, n, eastings[0], northings[0])
@@ -65,7 +67,14 @@ def points_o2d_to_m2d(eastings, northings, profile_length=None):
     return np.array(converted_points)
 
 
-def plot(m2d_profile, profile_elevation, site_locations, site_elevations, site_names, figsize=None):
+def plot(
+    m2d_profile,
+    profile_elevation,
+    site_locations,
+    site_elevations,
+    site_names,
+    figsize=None,
+):
     """
     Generate line plot of Mare2DEM profile and site locations against
     elevation.
@@ -88,8 +97,15 @@ def plot(m2d_profile, profile_elevation, site_locations, site_elevations, site_n
         figsize.
     """
     fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(m2d_profile, profile_elevation, 'b', label='M2D Profile')
-    ax.plot(site_locations, site_elevations, color='r', marker='*', linestyle='None', label='Sites')
+    ax.plot(m2d_profile, profile_elevation, "b", label="M2D Profile")
+    ax.plot(
+        site_locations,
+        site_elevations,
+        color="r",
+        marker="*",
+        linestyle="None",
+        label="Sites",
+    )
     for y, z, name in zip(site_locations, site_elevations, site_names):
         ax.annotate(name, (y, z), rotation=45)
     ax.invert_yaxis()
@@ -139,8 +155,9 @@ def get_profile_specs(o2d_data, site_easts, site_norths):
     mare_origin_y = (site_norths.min() + site_norths.max()) / 2
     # UTM zone of Mare2D profile
     epsg = o2d_data.model_epsg
-    projected_origin = gis_tools.project_point_utm2ll(mare_origin_x, mare_origin_y,
-                                                      None, epsg=epsg)
+    projected_origin = gis_tools.project_point_utm2ll(
+        mare_origin_x, mare_origin_y, None, epsg=epsg
+    )
     utm_zone = gis_tools.get_utm_zone(projected_origin[0], projected_origin[1])[2]
     return (x0, y0, x1, y1, mare_origin_x, mare_origin_y, epsg, utm_zone)
 
@@ -192,8 +209,9 @@ def generate_profile_line(site_easts, site_norths, x0, y0, x1, y1, elevation_sam
     return o2d_easts, o2d_norths
 
 
-def occam2d_to_mare2dem(o2d_data, rot_o2d_data, surface_file, elevation_sample_n=300,
-                        flip_elevation=True):
+def occam2d_to_mare2dem(
+    o2d_data, rot_o2d_data, surface_file, elevation_sample_n=300, flip_elevation=True
+):
     """
     Converts Occam2D profile to Mare2D format, giving station locations
     with elevations in Mare2D format. The elevation is interpolated from
@@ -265,22 +283,38 @@ def occam2d_to_mare2dem(o2d_data, rot_o2d_data, surface_file, elevation_sample_n
     site_names = np.array(site_names)
 
     # Non-rotated profile
-    x0, y0, x1, y1, mox, moy, epsg, uz = \
-        get_profile_specs(o2d_data, site_easts_orig, site_norths_orig)
-    prof_easts, prof_norths = \
-        generate_profile_line(site_easts_orig, site_norths_orig, x0, y0, x1, y1, elevation_sample_n)
+    x0, y0, x1, y1, mox, moy, epsg, uz = get_profile_specs(
+        o2d_data, site_easts_orig, site_norths_orig
+    )
+    prof_easts, prof_norths = generate_profile_line(
+        site_easts_orig, site_norths_orig, x0, y0, x1, y1, elevation_sample_n
+    )
     # Rotated profile
-    rot_x0, rot_y0, rot_x1, rot_y1, rot_mox, rot_moy, rot_epsg, rot_uz = \
-        get_profile_specs(rot_o2d_data, site_easts_proj, site_norths_proj)
-    rot_prof_easts, rot_prof_norths = \
-        generate_profile_line(site_easts_proj, site_norths_proj, rot_x0, rot_y0, rot_x1, rot_y1,
-                              elevation_sample_n)
+    (
+        rot_x0,
+        rot_y0,
+        rot_x1,
+        rot_y1,
+        rot_mox,
+        rot_moy,
+        rot_epsg,
+        rot_uz,
+    ) = get_profile_specs(rot_o2d_data, site_easts_proj, site_norths_proj)
+    rot_prof_easts, rot_prof_norths = generate_profile_line(
+        site_easts_proj,
+        site_norths_proj,
+        rot_x0,
+        rot_y0,
+        rot_x1,
+        rot_y1,
+        elevation_sample_n,
+    )
 
     # Interpolate elevation across profile points as a grid
     # We want the elevation of the non-rotated profile line
     elevation = mesh_tools.interpolate_elevation_to_grid(
-        prof_easts, prof_norths, epsg=epsg, surfacefile=surface_file,
-        method='cubic')
+        prof_easts, prof_norths, epsg=epsg, surfacefile=surface_file, method="cubic"
+    )
     elevation = elevation * -1 if flip_elevation else elevation
 
     # Get profile elevation (which is a straight line through the elevation grid)
@@ -305,8 +339,15 @@ def occam2d_to_mare2dem(o2d_data, rot_o2d_data, surface_file, elevation_sample_n
     sort_inds = np.argsort(site_easts_proj)
     site_names = site_names[sort_inds]
 
-    return ((rot_mox, rot_moy), rot_uz, site_locations, site_elevations, site_names,
-            m2d_profile, profile_elevation)
+    return (
+        (rot_mox, rot_moy),
+        rot_uz,
+        site_locations,
+        site_elevations,
+        site_names,
+        m2d_profile,
+        profile_elevation,
+    )
 
 
 def write_elevation_file(m2d_profile, profile_elevation, savepath=None):
@@ -320,14 +361,25 @@ def write_elevation_file(m2d_profile, profile_elevation, savepath=None):
     savepath : str or bytes, optional
         Full path including file of where to save elevation file.
     """
-    elevation_model = np.stack((m2d_profile, profile_elevation), axis=1).astype(np.float64)
+    elevation_model = np.stack((m2d_profile, profile_elevation), axis=1).astype(
+        np.float64
+    )
     if savepath is None:
-        savepath = os.path.join(os.getcwd(), 'elevation.txt')
+        savepath = os.path.join(os.getcwd(), "elevation.txt")
     np.savetxt(savepath, elevation_model)
 
 
-def write_mare2dem_data(o2d_filepath, site_locations, site_elevations, site_names,
-                        mare_origin, utm_zone, gstrike, solve_statics=False, savepath=None):
+def write_mare2dem_data(
+    o2d_filepath,
+    site_locations,
+    site_elevations,
+    site_names,
+    mare_origin,
+    utm_zone,
+    gstrike,
+    solve_statics=False,
+    savepath=None,
+):
     """
     Uses an Occam2D data file and site locations + elevations to
     generate a MARE2DEM data file.
@@ -375,11 +427,11 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations, site_name
     o2d_types = []
     o2d_datums = []
     o2d_errors = []
-    with open(o2d_filepath, 'r') as f:
+    with open(o2d_filepath, "r") as f:
         read_data = f.readlines()
         reading_data = False
         for line in read_data:
-            if line.startswith('SITE '):
+            if line.startswith("SITE "):
                 reading_data = True
                 continue
             elif reading_data:
@@ -402,12 +454,14 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations, site_name
     types = np.vectorize(lambda x: type_conversion.get(x, x))(types)
     # Put into dataframe for easier stringifying
     # Note: TX# == RX# == site ID for MT stations
-    data_df = pd.DataFrame((types, freqs, sites, sites, datums, errors), dtype=np.object).T
+    data_df = pd.DataFrame(
+        (types, freqs, sites, sites, datums, errors), dtype=np.object
+    ).T
     # Bit of a hack: add the '!' to the data frame header because the 'type' integer is small
     # enough that the 'Type' header will have no left whitespace padding, so we can't prepend
     # it with '!' without throwing off the alignment.
-    data_df.columns = ['! Type', 'Freq #', 'Tx #', 'Rx #', 'Data', 'StdErr']
-    data_str = data_df.to_string(index=False, float_format=lambda x: '%.4f' % x)
+    data_df.columns = ["! Type", "Freq #", "Tx #", "Rx #", "Data", "StdErr"]
+    data_str = data_df.to_string(index=False, float_format=lambda x: "%.4f" % x)
 
     # Prepare data for the Reciever block
     # Zeros of shape (n_sites) for X (as float), Theta, Alpha, Beta and Length (ints) columns
@@ -419,45 +473,69 @@ def write_mare2dem_data(o2d_filepath, site_locations, site_elevations, site_name
     # According to original script, need to reread the Occam2D file to get stations in the correct
     # order
     if isinstance(solve_statics, bool):
-        statics = np.ones(site_locations.shape, dtype=np.int8) if solve_statics else zero_ints
+        statics = (
+            np.ones(site_locations.shape, dtype=np.int8) if solve_statics else zero_ints
+        )
     else:
         statics = np.zeros(site_locations.shape)
         for sn in solve_statics:
             statics[np.where(site_names == sn)] = 1
     # Put into dataframe for easier stringifying
-    recv_df = pd.DataFrame((x_col, site_locations, site_elevations, t_col, a_col, b_col, l_col,
-                            statics, site_names)).T
-    recv_df.columns = ['X', 'Y', 'Z', 'Theta', 'Alpha', 'Beta', 'Length', 'SolveStatic', 'Name']
-    recv_str = list(recv_df.to_string(index=False, float_format=lambda x: '%.6f' % x))
+    recv_df = pd.DataFrame(
+        (
+            x_col,
+            site_locations,
+            site_elevations,
+            t_col,
+            a_col,
+            b_col,
+            l_col,
+            statics,
+            site_names,
+        )
+    ).T
+    recv_df.columns = [
+        "X",
+        "Y",
+        "Z",
+        "Theta",
+        "Alpha",
+        "Beta",
+        "Length",
+        "SolveStatic",
+        "Name",
+    ]
+    recv_str = list(recv_df.to_string(index=False, float_format=lambda x: "%.6f" % x))
     # Replace the first char of header with Mare2DEM comment symbol '!'
     # This way the header is correct but Pandas handles the alignment and spacing
-    recv_str[0] = '!'
+    recv_str[0] = "!"
     recv_str = "".join(recv_str)
 
     o2d_data = o2d.Data()
     o2d_data.read_data_file(o2d_filepath)
 
     if savepath is None:
-        savepath = os.path.join(os.getcwd(), 'Mare2D_data.txt')
-    with open(savepath, 'w') as output:
+        savepath = os.path.join(os.getcwd(), "Mare2D_data.txt")
+    with open(savepath, "w") as output:
         # 1. header
-        fstring = 'Format:  EMData_2.2\n'
-        fstring += 'UTM of x,y origin (UTM zone, N, E, 2D strike):'
+        fstring = "Format:  EMData_2.2\n"
+        fstring += "UTM of x,y origin (UTM zone, N, E, 2D strike):"
         gstrike = float(gstrike)
-        fstring += ' {:s}{:>13.1f}{:>13.1f}\t{:f}\n'.format(
-            utm_zone, mare_origin[0], mare_origin[1], gstrike)
+        fstring += " {:s}{:>13.1f}{:>13.1f}\t{:f}\n".format(
+            utm_zone, mare_origin[0], mare_origin[1], gstrike
+        )
 
         # 2. frequencies
-        fstring += '# MT Frequencies:    {}\n'.format(len(o2d_data.freq))
-        fstring += '\n'.join([str(round(f, 8)) for f in o2d_data.freq])
+        fstring += "# MT Frequencies:    {}\n".format(len(o2d_data.freq))
+        fstring += "\n".join([str(round(f, 8)) for f in o2d_data.freq])
 
         # 3. receiver info
-        fstring += '\n# MT Receivers:      {}\n'.format(len(site_names))
+        fstring += "\n# MT Receivers:      {}\n".format(len(site_names))
         fstring += recv_str
-        fstring += '\n'
+        fstring += "\n"
 
         # 4. data
-        fstring += '# Data:       {}\n'.format(len(datums))
+        fstring += "# Data:       {}\n".format(len(datums))
         fstring += data_str
 
         output.write(fstring)

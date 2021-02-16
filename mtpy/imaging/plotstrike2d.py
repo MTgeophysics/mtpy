@@ -5,7 +5,7 @@ Created on Thu May 30 18:28:24 2013
 @author: jpeacock-pr
 """
 
-#==============================================================================
+# ==============================================================================
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +14,7 @@ from matplotlib.ticker import MultipleLocator
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.analysis.geometry as MTgy
 
-#==============================================================================
+# ==============================================================================
 
 
 class PlotStrike2D(object):
@@ -166,20 +166,22 @@ class PlotStrike2D(object):
 
     def __init__(self, **kwargs):
 
-        fn_list = kwargs.pop('fn_list', None)
-        z_object_list = kwargs.pop('z_object_list', None)
-        tipper_object_list = kwargs.pop('tipper_object_list', None)
-        mt_object_list = kwargs.pop('mt_object_list', None)
+        fn_list = kwargs.pop("fn_list", None)
+        z_object_list = kwargs.pop("z_object_list", None)
+        tipper_object_list = kwargs.pop("tipper_object_list", None)
+        mt_object_list = kwargs.pop("mt_object_list", None)
 
-        #------Set attributes of the class-----------------
+        # ------Set attributes of the class-----------------
 
-        #--> get the inputs into a list of mt objects
-        self.mt_list = mtpl.get_mtlist(fn_list=fn_list,
-                                       z_object_list=z_object_list,
-                                       tipper_object_list=tipper_object_list,
-                                       mt_object_list=mt_object_list)
+        # --> get the inputs into a list of mt objects
+        self.mt_list = mtpl.get_mtlist(
+            fn_list=fn_list,
+            z_object_list=z_object_list,
+            tipper_object_list=tipper_object_list,
+            mt_object_list=mt_object_list,
+        )
 
-        self._rot_z = kwargs.pop('rot_z', 0)
+        self._rot_z = kwargs.pop("rot_z", 0)
         if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
             self._rot_z = np.array([self._rot_z] * len(self.mt_list))
 
@@ -192,55 +194,55 @@ class PlotStrike2D(object):
         else:
             pass
 
-        #--> set plot properties
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.fig_size = kwargs.pop('fig_size', [7, 5])
+        # --> set plot properties
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_dpi = kwargs.pop("fig_dpi", 300)
+        self.fig_size = kwargs.pop("fig_size", [7, 5])
 
-        self.plot_num = kwargs.pop('plot_num', 1)
-        self.plot_type = kwargs.pop('plot_type', 2)
-        self.plot_title = kwargs.pop('plot_title', None)
-        self.plot_range = kwargs.pop('plot_range', 'data')
-        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
+        self.plot_num = kwargs.pop("plot_num", 1)
+        self.plot_type = kwargs.pop("plot_type", 2)
+        self.plot_title = kwargs.pop("plot_title", None)
+        self.plot_range = kwargs.pop("plot_range", "data")
+        self.plot_tipper = kwargs.pop("plot_tipper", "n")
 
-        self.period_tolerance = kwargs.pop('period_tolerance', .05)
-        self.pt_error_floor = kwargs.pop('pt_error_floor', None)
-        self.fold = kwargs.pop('fold', True)
-        self.bin_width = kwargs.pop('bin_width', 5)
-        self.skew_threshold = kwargs.pop('skew_threshold', 3)
+        self.period_tolerance = kwargs.pop("period_tolerance", 0.05)
+        self.pt_error_floor = kwargs.pop("pt_error_floor", None)
+        self.fold = kwargs.pop("fold", True)
+        self.bin_width = kwargs.pop("bin_width", 5)
+        self.skew_threshold = kwargs.pop("skew_threshold", 3)
 
-        self.font_size = kwargs.pop('font_size', 7)
+        self.font_size = kwargs.pop("font_size", 7)
 
-        text_dict = kwargs.pop('text_dict', {})
+        text_dict = kwargs.pop("text_dict", {})
         try:
-            self.text_pad = text_dict['pad']
+            self.text_pad = text_dict["pad"]
         except KeyError:
             self.text_pad = 0.6
 
         try:
-            self.text_size = text_dict['size']
+            self.text_size = text_dict["size"]
         except KeyError:
             self.text_size = self.font_size
 
         # make a dictionary for plotting titles
         self.title_dict = {}
-        self.title_dict[-5] = '10$^{-5}$--10$^{-4}$s'
-        self.title_dict[-4] = '10$^{-4}$--10$^{-3}$s'
-        self.title_dict[-3] = '10$^{-3}$--10$^{-2}$s'
-        self.title_dict[-2] = '10$^{-2}$--10$^{-1}$s'
-        self.title_dict[-1] = '10$^{-1}$--10$^{0}$s'
-        self.title_dict[0] = '10$^{0}$--10$^{1}$s'
-        self.title_dict[1] = '10$^{1}$--10$^{2}$s'
-        self.title_dict[2] = '10$^{2}$--10$^{3}$s'
-        self.title_dict[3] = '10$^{3}$--10$^{4}$s'
-        self.title_dict[4] = '10$^{4}$--10$^{5}$s'
-        self.title_dict[5] = '10$^{5}$--10$^{6}$s'
+        self.title_dict[-5] = "10$^{-5}$--10$^{-4}$s"
+        self.title_dict[-4] = "10$^{-4}$--10$^{-3}$s"
+        self.title_dict[-3] = "10$^{-3}$--10$^{-2}$s"
+        self.title_dict[-2] = "10$^{-2}$--10$^{-1}$s"
+        self.title_dict[-1] = "10$^{-1}$--10$^{0}$s"
+        self.title_dict[0] = "10$^{0}$--10$^{1}$s"
+        self.title_dict[1] = "10$^{1}$--10$^{2}$s"
+        self.title_dict[2] = "10$^{2}$--10$^{3}$s"
+        self.title_dict[3] = "10$^{3}$--10$^{4}$s"
+        self.title_dict[4] = "10$^{4}$--10$^{5}$s"
+        self.title_dict[5] = "10$^{5}$--10$^{6}$s"
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        if self.plot_yn == "y":
             self.plot()
 
-    #---need to rotate data on setting rotz
+    # ---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
         """
         need to rotate data when setting z
@@ -266,18 +268,17 @@ class PlotStrike2D(object):
     def _get_rot_z(self):
         return self._rot_z
 
-    rot_z = property(fget=_get_rot_z, fset=_set_rot_z,
-                     doc="""rotation angle(s)""")
+    rot_z = property(fget=_get_rot_z, fset=_set_rot_z, doc="""rotation angle(s)""")
 
     def plot(self):
 
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .07
-        plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .09
-        plt.rcParams['figure.subplot.top'] = .90
-        plt.rcParams['figure.subplot.wspace'] = .2
-        plt.rcParams['figure.subplot.hspace'] = .4
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = 0.07
+        plt.rcParams["figure.subplot.right"] = 0.98
+        plt.rcParams["figure.subplot.bottom"] = 0.09
+        plt.rcParams["figure.subplot.top"] = 0.90
+        plt.rcParams["figure.subplot.wspace"] = 0.2
+        plt.rcParams["figure.subplot.hspace"] = 0.4
 
         bw = self.bin_width
         histrange = (0, 360)
@@ -293,7 +294,7 @@ class PlotStrike2D(object):
 
         for dd, mt in enumerate(self.mt_list):
 
-            #--> set the period
+            # --> set the period
             period = mt.period
 
             # get maximum length of periods
@@ -301,10 +302,11 @@ class PlotStrike2D(object):
                 nt = len(period)
 
             # estimate where only the 2D sections are
-            dim_2d = MTgy.dimensionality(z_object=mt._Z,
-                                         skew_threshold=self.skew_threshold)
+            dim_2d = MTgy.dimensionality(
+                z_object=mt._Z, skew_threshold=self.skew_threshold
+            )
             index_2d = np.where(dim_2d == 2)[0]
-            #------------get strike from phase tensor strike angle-------------
+            # ------------get strike from phase tensor strike angle-------------
             pt = mt.pt
             az = (90 - pt.azimuth[index_2d]) % 360
             az_err = pt.azimuth_err[index_2d]
@@ -317,32 +319,29 @@ class PlotStrike2D(object):
                 az[np.where(az_err > self.pt_error_floor)] = 0.0
 
             # make a dictionary of strikes with keys as period
-            mdictpt = dict([(ff, jj)
-                            for ff, jj in zip(mt.period[index_2d], az)])
+            mdictpt = dict([(ff, jj) for ff, jj in zip(mt.period[index_2d], az)])
             ptlist.append(mdictpt)
 
-            #-----------get tipper strike------------------------------------
+            # -----------get tipper strike------------------------------------
             tip = mt.Tipper
             if tip.tipper is None:
-                tip.tipper = np.zeros((len(mt.period), 1, 2),
-                                              dtype='complex')
+                tip.tipper = np.zeros((len(mt.period), 1, 2), dtype="complex")
                 tip.compute_components()
 
             # needs to be negative because measures clockwise
             tipr = -tip.angle_real[index_2d]
 
-            tipr[np.where(tipr == 180.)] = 0.0
-            tipr[np.where(tipr == -180.)] = 0.0
+            tipr[np.where(tipr == 180.0)] = 0.0
+            tipr[np.where(tipr == -180.0)] = 0.0
 
             # make sure the angle is between 0 and 360
             tipr = tipr % 360
 
             # make a dictionary of strikes with keys as period
-            tiprdict = dict([(ff, jj)
-                             for ff, jj in zip(mt.period[index_2d], tipr)])
+            tiprdict = dict([(ff, jj) for ff, jj in zip(mt.period[index_2d], tipr)])
             tiprlist.append(tiprdict)
 
-        #--> get min and max period
+        # --> get min and max period
         maxper = np.max([np.max(list(mm.keys())) for mm in ptlist if list(mm.keys())])
         minper = np.min([np.min(list(mm.keys())) for mm in ptlist if list(mm.keys())])
 
@@ -351,11 +350,7 @@ class PlotStrike2D(object):
         medtipr = np.zeros((nt, nc))
 
         # make a list of periods from the longest period list
-        plist = np.logspace(
-            np.log10(minper),
-            np.log10(maxper),
-            num=nt,
-            base=10)
+        plist = np.logspace(np.log10(minper), np.log10(maxper), num=nt, base=10)
         pdict = dict([(ii, jj) for jj, ii in enumerate(plist)])
 
         self._plist = plist
@@ -365,8 +360,9 @@ class PlotStrike2D(object):
             mperiod = list(mm.keys())
             for jj, mp in enumerate(mperiod):
                 for kk in list(pdict.keys()):
-                    if mp > kk * (1 - self.period_tolerance) and \
-                            mp < kk * (1 + self.period_tolerance):
+                    if mp > kk * (1 - self.period_tolerance) and mp < kk * (
+                        1 + self.period_tolerance
+                    ):
                         ll = pdict[kk]
                         medpt[ll, ii] = ptlist[ii][mp]
                         medtipr[ll, ii] = tiprlist[ii][mp]
@@ -377,85 +373,88 @@ class PlotStrike2D(object):
         self._medpt = medpt
         self._medtp = medtipr
 
-        #-----Plot Histograms of the strike angles-----------------------------
-        if self.plot_range == 'data':
-            brange = np.arange(np.floor(np.log10(minper)),
-                               np.ceil(np.log10(maxper)), 1)
+        # -----Plot Histograms of the strike angles-----------------------------
+        if self.plot_range == "data":
+            brange = np.arange(np.floor(np.log10(minper)), np.ceil(np.log10(maxper)), 1)
         else:
-            brange = np.arange(np.floor(self.plot_range[0]),
-                               np.ceil(self.plot_range[1]), 1)
+            brange = np.arange(
+                np.floor(self.plot_range[0]), np.ceil(self.plot_range[1]), 1
+            )
 
         self._brange = brange
 
         # font dictionary
-        fd = {'size': self.font_size, 'weight': 'normal'}
+        fd = {"size": self.font_size, "weight": "normal"}
 
-        #------------------plot indivdual decades------------------------------
+        # ------------------plot indivdual decades------------------------------
         if self.plot_type == 1:
             # plot specs
-            plt.rcParams['figure.subplot.hspace'] = .3
-            plt.rcParams['figure.subplot.wspace'] = .3
+            plt.rcParams["figure.subplot.hspace"] = 0.3
+            plt.rcParams["figure.subplot.wspace"] = 0.3
 
             self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
             plt.clf()
             nb = len(brange)
             for jj, bb in enumerate(brange, 1):
                 # make subplots for invariants and phase tensor azimuths
-                if self.plot_tipper == 'n':
+                if self.plot_tipper == "n":
                     self.axhpt = self.fig.add_subplot(1, nb, jj, polar=True)
                     axlist = [self.axhpt]
 
-                if self.plot_tipper == 'y':
+                if self.plot_tipper == "y":
                     self.axhpt = self.fig.add_subplot(2, nb, jj, polar=True)
-                    self.axhtip = self.fig.add_subplot(2, nb, jj + nb,
-                                                       polar=True)
+                    self.axhtip = self.fig.add_subplot(2, nb, jj + nb, polar=True)
                     axlist = [self.axhpt, self.axhtip]
 
                 # make a list of indicies for each decades
                 binlist = []
                 for ii, ff in enumerate(plist):
-                    if ff > 10**bb and ff < 10**(bb + 1):
+                    if ff > 10 ** bb and ff < 10 ** (bb + 1):
                         binlist.append(ii)
 
                 # extract just the subset for each decade
                 gg = medpt[binlist, :]
-                if self.plot_tipper == 'y':
+                if self.plot_tipper == "y":
                     tr = medtipr[binlist, :]
 
                     # compute the historgram for the tipper strike
-                    trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                          bins=int(360/bw),
-                                          range=histrange)
+                    trhist = np.histogram(
+                        tr[np.nonzero(tr)].flatten(),
+                        bins=int(360 / bw),
+                        range=histrange,
+                    )
 
                     # make a bar graph with each bar being width of bw degrees
-                    bartr = self.axhtip.bar((trhist[1][:-1]) * np.pi / 180,
-                                            trhist[0],
-                                            width=bw * np.pi / 180)
+                    bartr = self.axhtip.bar(
+                        (trhist[1][:-1]) * np.pi / 180,
+                        trhist[0],
+                        width=bw * np.pi / 180,
+                    )
 
                     # set color of the bars according to the number in that bin
                     # tipper goes from dark blue (low) to light blue (high)
                     for cc, bar in enumerate(bartr):
                         try:
-                            fc = float(trhist[0][cc]) / trhist[0].max() * .9
+                            fc = float(trhist[0][cc]) / trhist[0].max() * 0.9
                         except ZeroDivisionError:
                             fc = 1.0
                         bar.set_facecolor((0, 1 - fc / 2, fc))
 
                 # estimate the histogram for the decade for invariants and pt
-                pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                      bins=int(360/bw),
-                                      range=histrange)
+                pthist = np.histogram(
+                    gg[np.nonzero(gg)].flatten(), bins=int(360 / bw), range=histrange
+                )
 
                 # plot the histograms
-                self.barpt = self.axhpt.bar((pthist[1][:-1]) * np.pi / 180,
-                                            pthist[0],
-                                            width=bw * np.pi / 180)
+                self.barpt = self.axhpt.bar(
+                    (pthist[1][:-1]) * np.pi / 180, pthist[0], width=bw * np.pi / 180
+                )
 
                 # set the color of the bars according to the number in that bin
                 # pt goes from green (low) to orange (high)
                 for cc, bar in enumerate(self.barpt):
                     try:
-                        fc = float(pthist[0][cc]) / pthist[0].max() * .8
+                        fc = float(pthist[0][cc]) / pthist[0].max() * 0.8
                     except ZeroDivisionError:
                         fc = 1.0
                     bar.set_facecolor((fc, 1 - fc, 0))
@@ -463,16 +462,14 @@ class PlotStrike2D(object):
                 # make axis look correct with N to the top at 90.
                 for aa, axh in enumerate(axlist):
                     # set multiple locator to be every 15 degrees
-                    axh.xaxis.set_major_locator(
-                        MultipleLocator(30 * np.pi / 180))
+                    axh.xaxis.set_major_locator(MultipleLocator(30 * np.pi / 180))
 
                     # set labels on the correct axis
-                    axh.xaxis.set_ticklabels(['', 'E', '', '',
-                                              'N', '', '',
-                                              'W', '', '',
-                                              'S', '', ''])
+                    axh.xaxis.set_ticklabels(
+                        ["", "E", "", "", "N", "", "", "W", "", "", "S", "", ""]
+                    )
                     # make a light grid
-                    axh.grid(alpha=.25)
+                    axh.grid(alpha=0.25)
 
                     # set pt axes properties
                     if aa == 0:
@@ -481,37 +478,48 @@ class PlotStrike2D(object):
                         axh.set_xlim(0, 2 * np.pi)
 
                         # label plot with the mode of the strike angle
-                        ptmode = (90 - pthist[1][np.where(
-                                  pthist[0] == pthist[0].max())[0][0]]) % 360
+                        ptmode = (
+                            90 - pthist[1][np.where(pthist[0] == pthist[0].max())[0][0]]
+                        ) % 360
 
                         ptmedian = (90 - np.median(gg[np.nonzero(gg)])) % 360
 
                         ptmean = (90 - np.mean(gg[np.nonzero(gg)])) % 360
 
-                        axh.text(np.pi, axh.get_ylim()[1] * self.text_pad,
-                                 '{0:.1f}$^o$'.format(ptmode),
-                                 horizontalalignment='center',
-                                 verticalalignment='baseline',
-                                 fontdict={'size': self.text_size},
-                                 bbox={'facecolor': (.9, .9, 0), 'alpha': .25})
+                        axh.text(
+                            np.pi,
+                            axh.get_ylim()[1] * self.text_pad,
+                            "{0:.1f}$^o$".format(ptmode),
+                            horizontalalignment="center",
+                            verticalalignment="baseline",
+                            fontdict={"size": self.text_size},
+                            bbox={"facecolor": (0.9, 0.9, 0), "alpha": 0.25},
+                        )
 
                         # print out the results for the strike angles
-                        print('-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
-                                                                                     10**(bb + 1)))
-                        print('   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
-                            ptmedian,
-                            ptmode,
-                            ptmean))
+                        print(
+                            "-----Period Range {0:.3g} to {1:.3g} (s)-----".format(
+                                10 ** bb, 10 ** (bb + 1)
+                            )
+                        )
+                        print(
+                            "   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}".format(
+                                ptmedian, ptmode, ptmean
+                            )
+                        )
 
-                        if self.plot_tipper != 'y':
-                            print('\n')
+                        if self.plot_tipper != "y":
+                            print("\n")
 
-                         #--> set title of subplot
-                        axh.set_title(self.title_dict[bb], fontdict=fd,
-                                      bbox={'facecolor': 'white', 'alpha': .25})
+                        # --> set title of subplot
+                        axh.set_title(
+                            self.title_dict[bb],
+                            fontdict=fd,
+                            bbox={"facecolor": "white", "alpha": 0.25},
+                        )
 
-                        #--> set the title offset
-                        axh.titleOffsetTrans._t = (0, .1)
+                        # --> set the title offset
+                        axh.titleOffsetTrans._t = (0, 0.1)
 
                     # set tipper axes properties
                     elif aa == 1:
@@ -519,66 +527,78 @@ class PlotStrike2D(object):
                         axh.set_xlim(0, 2 * np.pi)
 
                         # label plot with mode
-                        tpmode = (90 - trhist[1][np.where(
-                                  trhist[0] == trhist[0].max())[0][0]]) % 360
+                        tpmode = (
+                            90 - trhist[1][np.where(trhist[0] == trhist[0].max())[0][0]]
+                        ) % 360
 
                         tpmedian = (90 - np.median(tr[np.nonzero(tr)])) % 360
 
                         tpmean = (90 - np.mean(tr[np.nonzero(tr)])) % 360
 
-                        axh.text(np.pi, axh.get_ylim()[1] * self.text_pad,
-                                 '{0:.1f}$^o$'.format(tpmode),
-                                 horizontalalignment='center',
-                                 verticalalignment='baseline',
-                                 fontdict={'size': self.text_size},
-                                 bbox={'facecolor': (0, .1, .9), 'alpha': .25})
+                        axh.text(
+                            np.pi,
+                            axh.get_ylim()[1] * self.text_pad,
+                            "{0:.1f}$^o$".format(tpmode),
+                            horizontalalignment="center",
+                            verticalalignment="baseline",
+                            fontdict={"size": self.text_size},
+                            bbox={"facecolor": (0, 0.1, 0.9), "alpha": 0.25},
+                        )
 
                         # print out statistics for strike angle
-                        print('   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
-                            tpmedian,
-                            tpmode,
-                            tpmode))
-                        print('\n')
+                        print(
+                            "   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}".format(
+                                tpmedian, tpmode, tpmode
+                            )
+                        )
+                        print("\n")
                         if nb > 5:
-                            axh.set_title(self.title_dict[bb], fontdict=fd,
-                                          bbox={'facecolor': 'white', 'alpha': .25})
+                            axh.set_title(
+                                self.title_dict[bb],
+                                fontdict=fd,
+                                bbox={"facecolor": "white", "alpha": 0.25},
+                            )
 
                     # set plot labels
                     if jj == 1:
                         if aa == 0:
-                            axh.set_ylabel('PT Azimuth', fontdict=fd,
-                                           labelpad=self.font_size,
-                                           bbox={'facecolor': (.9, .9, 0),
-                                                 'alpha': .25})
+                            axh.set_ylabel(
+                                "PT Azimuth",
+                                fontdict=fd,
+                                labelpad=self.font_size,
+                                bbox={"facecolor": (0.9, 0.9, 0), "alpha": 0.25},
+                            )
                         elif aa == 1:
-                            axh.set_ylabel('Tipper Strike', fd,
-                                           labelpad=self.font_size,
-                                           bbox={'facecolor': (0, .1, .9),
-                                                 'alpha': 0.25})
+                            axh.set_ylabel(
+                                "Tipper Strike",
+                                fd,
+                                labelpad=self.font_size,
+                                bbox={"facecolor": (0, 0.1, 0.9), "alpha": 0.25},
+                            )
 
                     plt.setp(axh.yaxis.get_ticklabels(), visible=False)
 
-            print('Note: North is assumed to be 0 and the strike angle is measured' +\
-                  'clockwise positive.')
+            print(
+                "Note: North is assumed to be 0 and the strike angle is measured"
+                + "clockwise positive."
+            )
 
             plt.show()
 
-        #------------------Plot strike angles for all period ranges------------
+        # ------------------Plot strike angles for all period ranges------------
         elif self.plot_type == 2:
             # plot specs
-            plt.rcParams['figure.subplot.left'] = .07
-            plt.rcParams['figure.subplot.right'] = .98
-            plt.rcParams['figure.subplot.bottom'] = .100
-            plt.rcParams['figure.subplot.top'] = .88
-            plt.rcParams['figure.subplot.hspace'] = .3
-            plt.rcParams['figure.subplot.wspace'] = .2
+            plt.rcParams["figure.subplot.left"] = 0.07
+            plt.rcParams["figure.subplot.right"] = 0.98
+            plt.rcParams["figure.subplot.bottom"] = 0.100
+            plt.rcParams["figure.subplot.top"] = 0.88
+            plt.rcParams["figure.subplot.hspace"] = 0.3
+            plt.rcParams["figure.subplot.wspace"] = 0.2
 
-            self.fig = plt.figure(self.fig_num,
-                                  self.fig_size,
-                                  dpi=self.fig_dpi)
+            self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             # make subplots for invariants and phase tensor azimuths
-            if self.plot_tipper == 'n':
+            if self.plot_tipper == "n":
                 self.axhpt = self.fig.add_subplot(1, 1, 1, polar=True)
                 axlist = [self.axhpt]
             else:
@@ -587,43 +607,46 @@ class PlotStrike2D(object):
                 axlist = [self.axhpt, self.axhtip]
 
             # make a list of indicies for each decades
-            binlist = [pdict[ff] for ff in plist
-                       if ff > 10**brange.min() and ff < 10**brange.max()]
+            binlist = [
+                pdict[ff]
+                for ff in plist
+                if ff > 10 ** brange.min() and ff < 10 ** brange.max()
+            ]
 
             # extract just the subset for each decade
             gg = medpt[binlist, :]
 
             # estimate the histogram for the decade for invariants and pt
-            pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                  bins=int(360/bw),
-                                  range=histrange)
+            pthist = np.histogram(
+                gg[np.nonzero(gg)].flatten(), bins=int(360 / bw), range=histrange
+            )
 
             # plot the histograms
-            self.barpt = self.axhpt.bar((pthist[1][:-1]) * np.pi / 180,
-                                        pthist[0],
-                                        width=bw * np.pi / 180)
+            self.barpt = self.axhpt.bar(
+                (pthist[1][:-1]) * np.pi / 180, pthist[0], width=bw * np.pi / 180
+            )
 
             # set color of pt from green (low) to orange (high count)
             for cc, bar in enumerate(self.barpt):
-                fc = float(pthist[0][cc]) / pthist[0].max() * .8
+                fc = float(pthist[0][cc]) / pthist[0].max() * 0.8
                 bar.set_facecolor((fc, 1 - fc, 0))
 
             # plot tipper if desired
-            if self.plot_tipper == 'y':
+            if self.plot_tipper == "y":
                 tr = self._medtp[binlist, :]
 
-                trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                      bins=int(360/bw),
-                                      range=histrange)
+                trhist = np.histogram(
+                    tr[np.nonzero(tr)].flatten(), bins=int(360 / bw), range=histrange
+                )
 
-                self.bartr = self.axhtip.bar((trhist[1][:-1]) * np.pi / 180,
-                                             trhist[0],
-                                             width=bw * np.pi / 180)
+                self.bartr = self.axhtip.bar(
+                    (trhist[1][:-1]) * np.pi / 180, trhist[0], width=bw * np.pi / 180
+                )
 
                 # set tipper color from dark blue (low) to light blue (high)
                 for cc, bar in enumerate(self.bartr):
                     try:
-                        fc = float(trhist[0][cc]) / trhist[0].max() * .9
+                        fc = float(trhist[0][cc]) / trhist[0].max() * 0.9
                         bar.set_facecolor((0, 1 - fc / 2, fc))
                     except ZeroDivisionError:
                         pass
@@ -640,80 +663,106 @@ class PlotStrike2D(object):
                 plt.setp(axh.yaxis.get_ticklabels(), visible=False)
 
                 # place the correct label at the cardinal directions
-                axh.xaxis.set_ticklabels(['', 'E', '', '',
-                                          'N', '', '',
-                                          'W', '', '',
-                                          'S', '', ''])
+                axh.xaxis.set_ticklabels(
+                    ["", "E", "", "", "N", "", "", "W", "", "", "S", "", ""]
+                )
 
                 # set pt axes properties
                 if aa == 0:
                     axh.set_ylim(0, pthist[0].max())
 
-                    ptmode = (90 - pthist[1][np.where(
-                              pthist[0] == pthist[0].max())[0][0]]) % 360
+                    ptmode = (
+                        90 - pthist[1][np.where(pthist[0] == pthist[0].max())[0][0]]
+                    ) % 360
 
                     ptmedian = (90 - np.median(gg[np.nonzero(gg)])) % 360
 
                     ptmean = (90 - np.mean(gg[np.nonzero(gg)])) % 360
 
-                    axh.text(170 * np.pi / 180, axh.get_ylim()[1] * .65,
-                             '{0:.1f}$^o$'.format(ptmode),
-                             horizontalalignment='center',
-                             verticalalignment='baseline',
-                             fontdict={'size': self.text_size},
-                             bbox={'facecolor': (.9, .9, 0), 'alpha': 0.25})
+                    axh.text(
+                        170 * np.pi / 180,
+                        axh.get_ylim()[1] * 0.65,
+                        "{0:.1f}$^o$".format(ptmode),
+                        horizontalalignment="center",
+                        verticalalignment="baseline",
+                        fontdict={"size": self.text_size},
+                        bbox={"facecolor": (0.9, 0.9, 0), "alpha": 0.25},
+                    )
 
                     # print results of strike analysis for pt
-                    print('-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**brange[0],
-                                                                                 10**brange[-1]))
-                    print('   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
-                        ptmedian,
-                        ptmode,
-                        ptmean))
+                    print(
+                        "-----Period Range {0:.3g} to {1:.3g} (s)-----".format(
+                            10 ** brange[0], 10 ** brange[-1]
+                        )
+                    )
+                    print(
+                        "   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}".format(
+                            ptmedian, ptmode, ptmean
+                        )
+                    )
 
-                    if self.plot_tipper != 'y':
-                        print('\n')
+                    if self.plot_tipper != "y":
+                        print("\n")
 
-                    axh.set_title('PT Azimuth', fontdict=fd,
-                                  bbox={'facecolor': (.9, .9, 0), 'alpha': 0.25})
+                    axh.set_title(
+                        "PT Azimuth",
+                        fontdict=fd,
+                        bbox={"facecolor": (0.9, 0.9, 0), "alpha": 0.25},
+                    )
 
                 # set tipper axes properties
                 elif aa == 2:
                     axh.set_ylim(0, trhist[0].max())
 
-                    tpmode = (90 - trhist[1][np.where(
-                              trhist[0] == trhist[0].max())[0][0]]) % 360
+                    tpmode = (
+                        90 - trhist[1][np.where(trhist[0] == trhist[0].max())[0][0]]
+                    ) % 360
 
                     tpmedian = (90 - np.median(tr[np.nonzero(tr)])) % 360
 
                     tpmean = (90 - np.mean(tr[np.nonzero(tr)])) % 360
 
-                    axh.text(170 * np.pi / 180, axh.get_ylim()[1] * .65,
-                             '{0:.1f}$^o$'.format(tpmode),
-                             horizontalalignment='center',
-                             verticalalignment='baseline',
-                             fontdict={'size': self.text_size},
-                             bbox={'facecolor': (0, .1, .9), 'alpha': 0.25})
+                    axh.text(
+                        170 * np.pi / 180,
+                        axh.get_ylim()[1] * 0.65,
+                        "{0:.1f}$^o$".format(tpmode),
+                        horizontalalignment="center",
+                        verticalalignment="baseline",
+                        fontdict={"size": self.text_size},
+                        bbox={"facecolor": (0, 0.1, 0.9), "alpha": 0.25},
+                    )
 
-                    print('   *Tipper Stike:  median={0:.1f} mode={1:.1f} mean={2:.1f}\n'.format(
-                        tpmedian,
-                        tpmode,
-                        tpmean))
+                    print(
+                        "   *Tipper Stike:  median={0:.1f} mode={1:.1f} mean={2:.1f}\n".format(
+                            tpmedian, tpmode, tpmean
+                        )
+                    )
 
-                    axh.set_title('Tipper Strike', fontdict=fd,
-                                  bbox={'facecolor': (0, .1, .9), 'alpha': 0.25})
+                    axh.set_title(
+                        "Tipper Strike",
+                        fontdict=fd,
+                        bbox={"facecolor": (0, 0.1, 0.9), "alpha": 0.25},
+                    )
 
                 # move title up a little to make room for labels
-                axh.titleOffsetTrans._t = (0, .15)
+                axh.titleOffsetTrans._t = (0, 0.15)
 
             # remind the user what the assumptions of the strike angle are
-            print('Note: North is assumed to be 0 and the strike angle is ' +\
-                  'measured clockwise positive.')
+            print(
+                "Note: North is assumed to be 0 and the strike angle is "
+                + "measured clockwise positive."
+            )
 
             plt.show()
 
-    def save_plot(self, save_fn, file_format='pdf',
-                  orientation='portrait', fig_dpi=None, close_plot='y'):
+    def save_plot(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_plot="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -762,8 +811,9 @@ class PlotStrike2D(object):
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+            self.fig.savefig(
+                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
+            )
             # plt.clf()
             # plt.close(self.fig)
 
@@ -771,11 +821,12 @@ class PlotStrike2D(object):
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
 
-            save_fn = os.path.join(save_fn, 'StrikeAnalysis_' + file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+            save_fn = os.path.join(save_fn, "StrikeAnalysis_" + file_format)
+            self.fig.savefig(
+                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
+            )
 
-        if close_plot == 'y':
+        if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -783,7 +834,7 @@ class PlotStrike2D(object):
             pass
 
         self.fig_fn = save_fn
-        print('Saved figure to: ' + self.fig_fn)
+        print("Saved figure to: " + self.fig_fn)
 
     def update_plot(self):
         """
@@ -844,7 +895,7 @@ class PlotStrike2D(object):
             try:
                 svpath = os.path.dirname(self.mt_list[0].fn)
             except TypeError:
-                raise IOError('Need to input save_path, could not find path')
+                raise IOError("Need to input save_path, could not find path")
 
         else:
             svpath = save_path
@@ -859,15 +910,15 @@ class PlotStrike2D(object):
         # set the bin width
         bw = self.bin_width
 
-        slistinv = [['station']]
-        slistpt = [['station']]
-        slisttip = [['station']]
+        slistinv = [["station"]]
+        slistpt = [["station"]]
+        slisttip = [["station"]]
 
         # calculate the strikes for the different period bands
         for jj, bb in enumerate(self._brange):
-            tstr = self.title_dict[bb].replace('$', '')
-            tstr = tstr.replace('{', '').replace('}', '').replace('^', 'e')
-            tstr = tstr.replace('s', '(s)')
+            tstr = self.title_dict[bb].replace("$", "")
+            tstr = tstr.replace("{", "").replace("}", "").replace("^", "e")
+            tstr = tstr.replace("s", "(s)")
             slistinv[0].append(tstr)
             slistpt[0].append(tstr)
             slisttip[0].append(tstr)
@@ -886,10 +937,10 @@ class PlotStrike2D(object):
 
                 bnlist = []
                 for nn, per in enumerate(mt.period):
-                    if per > 10**bb and per < 10**(bb + 1):
+                    if per > 10 ** bb and per < 10 ** (bb + 1):
                         bnlist.append(nn)
 
-                #---> strike from invariants
+                # ---> strike from invariants
                 zs = 90 - zinv.strike[bnlist]
                 # fold so the angle goes from 0 to 180
                 if self.fold == True:
@@ -901,40 +952,37 @@ class PlotStrike2D(object):
                 elif self.fold == False:
                     pass
 
-                zshist = np.histogram(zs[np.nonzero(zs)].flatten(),
-                                      bins=int(360/bw),
-                                      range=histrange)
+                zshist = np.histogram(
+                    zs[np.nonzero(zs)].flatten(), bins=int(360 / bw), range=histrange
+                )
 
-                #==============================================================
+                # ==============================================================
                 # For putting the values into a useful text file
                 # need to subtract 90 from the values to put them into
                 # coordinates where north is 0 and east is 90, which is
                 # different from plotting where east in the plotting function
                 # is equal to 0 and north is 90, measuring counter-clockwise
-                #==============================================================
+                # ==============================================================
 
-                #==> compute mean
+                # ==> compute mean
                 invmean = 90 - zs.mean()
                 if invmean < 0:
                     invmean += 360
                 invmed = 90 - np.median(zs)
 
-                #==> compute median
+                # ==> compute median
                 if invmed < 0:
                     invmed += 360
 
-                #==> compute mode
-                invmode = 90 - zshist[1][np.where(
-                    zshist[0] == zshist[0].max())[0][0]]
+                # ==> compute mode
+                invmode = 90 - zshist[1][np.where(zshist[0] == zshist[0].max())[0][0]]
                 if invmode < 0:
                     invmode += 360
 
-                #==> append to list
-                slistinv[kk].append((invmean,
-                                     invmed,
-                                     invmode))
+                # ==> append to list
+                slistinv[kk].append((invmean, invmed, invmode))
 
-                #---> strike from phase tensor
+                # ---> strike from phase tensor
                 az = pt.azimuth[0][bnlist]
                 # fold so the angle goes from 0 to 180
                 if self.fold == True:
@@ -956,23 +1004,21 @@ class PlotStrike2D(object):
                     ptmed1 += 360
 
                 # == > compute mode
-                azhist = np.histogram(az[np.nonzero(az)].flatten(),
-                                      bins=int(360/bw),
-                                      range=histrange)
-                ptmode1 = 90 - azhist[1][np.where(
-                    azhist[0] == azhist[0].max())[0][0]]
+                azhist = np.histogram(
+                    az[np.nonzero(az)].flatten(), bins=int(360 / bw), range=histrange
+                )
+                ptmode1 = 90 - azhist[1][np.where(azhist[0] == azhist[0].max())[0][0]]
                 if ptmode1 < 0:
                     ptmode1 += 360
 
-                slistpt[kk].append((ptmean1,
-                                    ptmed1,
-                                    ptmode1))
+                slistpt[kk].append((ptmean1, ptmed1, ptmode1))
 
-                #---> strike from tipper
+                # ---> strike from tipper
                 # needs to be negative because measures clockwise
                 if tp._Tipper.tipper is None:
-                    tp._Tipper.tipper = np.zeros((len(mt.period), 1, 2),
-                                                 dtype='complex')
+                    tp._Tipper.tipper = np.zeros(
+                        (len(mt.period), 1, 2), dtype="complex"
+                    )
                     tp.compute_components()
 
                 tipr = -tp.angle_real[bnlist]
@@ -980,42 +1026,40 @@ class PlotStrike2D(object):
                 # fold so the angle goes from 0 to 180
                 if self.fold == True:
                     tipr[np.where(tipr > 90)] = tipr[np.where(tipr > 90)] - 180
-                    tipr[np.where(tipr < -90)
-                         ] = tipr[np.where(tipr < -90)] + 180
+                    tipr[np.where(tipr < -90)] = tipr[np.where(tipr < -90)] + 180
 
                 # leave as the total unit circle 0 to 360
                 elif self.fold == False:
                     tipr[np.where(tipr < 0)] = tipr[np.where(tipr < 0)] + 360
 
-                tphist = np.histogram(tipr[np.nonzero(tipr)].flatten(),
-                                      bins=int(360/bw),
-                                      range=histrange)
+                tphist = np.histogram(
+                    tipr[np.nonzero(tipr)].flatten(),
+                    bins=int(360 / bw),
+                    range=histrange,
+                )
 
-                #==> compute mean
+                # ==> compute mean
                 tpmean1 = 90 - tipr.mean()
                 if tpmean1 < 0:
                     tpmean1 += 360
 
-                #==> compute median
+                # ==> compute median
                 tpmed1 = 90 - np.median(tipr)
                 if tpmed1 < 0:
                     tpmed1 += 360
 
-                #==> compute mode
-                tpmode1 = 90 - tphist[1][np.where(
-                    tphist[0] == tphist[0].max())[0][0]]
+                # ==> compute mode
+                tpmode1 = 90 - tphist[1][np.where(tphist[0] == tphist[0].max())[0][0]]
                 if tpmode1 < 0:
                     tpmode1 += 360
 
-                #--> append statistics to list
-                slisttip[kk].append((tpmean1,
-                                     tpmed1,
-                                     tpmode1))
+                # --> append statistics to list
+                slisttip[kk].append((tpmean1, tpmed1, tpmode1))
 
             # make a list of indicies for each decades
             binlist = []
             for ii, ff in enumerate(self._plist):
-                if ff > 10**bb and ff < 10**(bb + 1):
+                if ff > 10 ** bb and ff < 10 ** (bb + 1):
                     binlist.append(ii)
 
             # extract just the subset for each decade
@@ -1024,32 +1068,32 @@ class PlotStrike2D(object):
             tr = self._medtp[binlist, :]
 
             # estimate the histogram for the decade for invariants and pt
-            invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
-                                   bins=int(360/bw),
-                                   range=histrange)
-            pthist = np.histogram(gg[np.nonzero(gg)].flatten(),
-                                  bins=int(360/bw),
-                                  range=histrange)
+            invhist = np.histogram(
+                hh[np.nonzero(hh)].flatten(), bins=int(360 / bw), range=histrange
+            )
+            pthist = np.histogram(
+                gg[np.nonzero(gg)].flatten(), bins=int(360 / bw), range=histrange
+            )
 
-            trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
-                                  bins=int(360/bw),
-                                  range=histrange)
+            trhist = np.histogram(
+                tr[np.nonzero(tr)].flatten(), bins=int(360 / bw), range=histrange
+            )
 
-            #--> include the row for mean, median and mode for each parameter
+            # --> include the row for mean, median and mode for each parameter
             if jj == 0:
-                slistinv.append(['mean'])
-                slistinv.append(['median'])
-                slistinv.append(['mode'])
+                slistinv.append(["mean"])
+                slistinv.append(["median"])
+                slistinv.append(["mode"])
 
-                slistpt.append(['mean'])
-                slistpt.append(['median'])
-                slistpt.append(['mode'])
+                slistpt.append(["mean"])
+                slistpt.append(["median"])
+                slistpt.append(["mode"])
 
-                slisttip.append(['mean'])
-                slisttip.append(['median'])
-                slisttip.append(['mode'])
+                slisttip.append(["mean"])
+                slisttip.append(["median"])
+                slisttip.append(["mode"])
 
-            #--> compute mean, median and mode for invariants
+            # --> compute mean, median and mode for invariants
             # == > mean
             imean = 90 - np.mean(hh[np.nonzero(hh)])
             if imean < 0:
@@ -1061,17 +1105,16 @@ class PlotStrike2D(object):
                 imed += 360
 
             # == > mode
-            imode = 90 - invhist[1][np.where(
-                invhist[0] == invhist[0].max())[0][0]]
+            imode = 90 - invhist[1][np.where(invhist[0] == invhist[0].max())[0][0]]
             if imode < 0:
                 imode += 360
 
-            #--> add them to the list of estimates
+            # --> add them to the list of estimates
             slistinv[kk + 1].append(imean)
             slistinv[kk + 2].append(imed)
             slistinv[kk + 3].append(imode)
 
-            #--> compute pt statistics
+            # --> compute pt statistics
             # == > mean
             ptmean = 90 - np.mean(gg[np.nonzero(gg)])
             if ptmean < 0:
@@ -1083,17 +1126,16 @@ class PlotStrike2D(object):
                 ptmed += 360
 
             # == > mode
-            ptmode = 90 - pthist[1][np.where(
-                pthist[0] == pthist[0].max())[0][0]]
+            ptmode = 90 - pthist[1][np.where(pthist[0] == pthist[0].max())[0][0]]
             if ptmode < 0:
                 ptmode += 360
 
-            #--> add the statistics to the parameter list
+            # --> add the statistics to the parameter list
             slistpt[kk + 1].append(ptmean)
             slistpt[kk + 2].append(ptmed)
             slistpt[kk + 3].append(ptmode)
 
-            #--> compute tipper statistics
+            # --> compute tipper statistics
             # == > mean
             tpmean = 90 - np.mean(tipr[np.nonzero(tipr)])
             if tpmean < 0:
@@ -1105,178 +1147,159 @@ class PlotStrike2D(object):
                 tpmed += 360
 
             # == > mode
-            tpmode = 90 - trhist[1][np.where(
-                trhist[0] == trhist[0].max())[0][0]]
+            tpmode = 90 - trhist[1][np.where(trhist[0] == trhist[0].max())[0][0]]
             if tpmode < 0:
                 tpmode += 360
 
-            #--> add the statistics to parameter list
+            # --> add the statistics to parameter list
             slisttip[kk + 1].append(tpmean)
             slisttip[kk + 2].append(tpmed)
             slisttip[kk + 3].append(tpmode)
 
-        invfid = file(os.path.join(svpath, 'Strike.invariants'), 'w')
-        ptfid = file(os.path.join(svpath, 'Strike.pt'), 'w')
-        tpfid = file(os.path.join(svpath, 'Strike.tipper'), 'w')
+        invfid = file(os.path.join(svpath, "Strike.invariants"), "w")
+        ptfid = file(os.path.join(svpath, "Strike.pt"), "w")
+        tpfid = file(os.path.join(svpath, "Strike.tipper"), "w")
 
-        #---> write strike from the invariants
+        # ---> write strike from the invariants
         # == > mean
-        invfid.write('-' * 20 + 'MEAN' + '-' * 20 + '\n')
+        invfid.write("-" * 20 + "MEAN" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slistinv):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    invfid.write('{0:^16}'.format(l2))
+                    invfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        invfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        invfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            invfid.write('{0:^16}'.format(
-                                         '{0: .2f}'.format(l2[0])))
+                            invfid.write("{0:^16}".format("{0: .2f}".format(l2[0])))
                         except IndexError:
-                            invfid.write('{0:^16}'.format(
-                                         '{0: .2f}'.format(l2)))
-            invfid.write('\n')
+                            invfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            invfid.write("\n")
 
         # == > median
-        invfid.write('-' * 20 + 'MEDIAN' + '-' * 20 + '\n')
+        invfid.write("-" * 20 + "MEDIAN" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slistinv):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    invfid.write('{0:^16}'.format(l2))
+                    invfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        invfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        invfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            invfid.write('{0:^16}'.format(
-                                         '{0: .2f}'.format(l2[1])))
+                            invfid.write("{0:^16}".format("{0: .2f}".format(l2[1])))
                         except IndexError:
-                            invfid.write('{0:^16}'.format(
-                                         '{0: .2f}'.format(l2)))
-            invfid.write('\n')
+                            invfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            invfid.write("\n")
 
         # == > mode
-        invfid.write('-' * 20 + 'MODE' + '-' * 20 + '\n')
+        invfid.write("-" * 20 + "MODE" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slistinv):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    invfid.write('{0:^16}'.format(l2))
+                    invfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        invfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        invfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            invfid.write('{0:^16}'.format(
-                                         '{0: .2f}'.format(l2[2])))
+                            invfid.write("{0:^16}".format("{0: .2f}".format(l2[2])))
                         except IndexError:
-                            invfid.write('{0:^16}'.format(
-                                         '{0: .2f}'.format(l2)))
-            invfid.write('\n')
+                            invfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            invfid.write("\n")
         invfid.close()
 
-        #---> write the phase tensor text files
-        ptfid.write('-' * 20 + 'MEAN' + '-' * 20 + '\n')
+        # ---> write the phase tensor text files
+        ptfid.write("-" * 20 + "MEAN" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slistpt):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    ptfid.write('{0:^16}'.format(l2))
+                    ptfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        ptfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        ptfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            ptfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2[0])))
+                            ptfid.write("{0:^16}".format("{0: .2f}".format(l2[0])))
                         except IndexError:
-                            ptfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2)))
-            ptfid.write('\n')
+                            ptfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            ptfid.write("\n")
 
-        ptfid.write('-' * 20 + 'MEDIAN' + '-' * 20 + '\n')
+        ptfid.write("-" * 20 + "MEDIAN" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slistpt):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    ptfid.write('{0:^16}'.format(l2))
+                    ptfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        ptfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        ptfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            ptfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2[1])))
+                            ptfid.write("{0:^16}".format("{0: .2f}".format(l2[1])))
                         except IndexError:
-                            ptfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2)))
-            ptfid.write('\n')
+                            ptfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            ptfid.write("\n")
 
-        ptfid.write('-' * 20 + 'MODE' + '-' * 20 + '\n')
+        ptfid.write("-" * 20 + "MODE" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slistpt):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    ptfid.write('{0:^16}'.format(l2))
+                    ptfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        ptfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        ptfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            ptfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2[2])))
+                            ptfid.write("{0:^16}".format("{0: .2f}".format(l2[2])))
                         except IndexError:
-                            ptfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2)))
-            ptfid.write('\n')
+                            ptfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            ptfid.write("\n")
         ptfid.close()
 
-        #---> write the tipper text files
-        tpfid.write('-' * 20 + 'MEAN' + '-' * 20 + '\n')
+        # ---> write the tipper text files
+        tpfid.write("-" * 20 + "MEAN" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slisttip):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    tpfid.write('{0:^16}'.format(l2))
+                    tpfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        tpfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        tpfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            tpfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2[0])))
+                            tpfid.write("{0:^16}".format("{0: .2f}".format(l2[0])))
                         except IndexError:
-                            tpfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2)))
-            tpfid.write('\n')
+                            tpfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            tpfid.write("\n")
 
-        tpfid.write('-' * 20 + 'MEDIAN' + '-' * 20 + '\n')
+        tpfid.write("-" * 20 + "MEDIAN" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slisttip):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    tpfid.write('{0:^16}'.format(l2))
+                    tpfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        tpfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        tpfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            tpfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2[1])))
+                            tpfid.write("{0:^16}".format("{0: .2f}".format(l2[1])))
                         except IndexError:
-                            tpfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2)))
-            tpfid.write('\n')
+                            tpfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            tpfid.write("\n")
 
-        tpfid.write('-' * 20 + 'MODE' + '-' * 20 + '\n')
+        tpfid.write("-" * 20 + "MODE" + "-" * 20 + "\n")
         for ii, l1 in enumerate(slisttip):
             for jj, l2 in enumerate(l1):
                 if ii == 0:
-                    tpfid.write('{0:^16}'.format(l2))
+                    tpfid.write("{0:^16}".format(l2))
                 else:
                     if jj == 0:
-                        tpfid.write('{0:>16}'.format(l2 + ' ' * 6))
+                        tpfid.write("{0:>16}".format(l2 + " " * 6))
                     else:
                         try:
-                            tpfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2[2])))
+                            tpfid.write("{0:^16}".format("{0: .2f}".format(l2[2])))
                         except IndexError:
-                            tpfid.write('{0:^16}'.format(
-                                '{0: .2f}'.format(l2)))
-            tpfid.write('\n')
+                            tpfid.write("{0:^16}".format("{0: .2f}".format(l2)))
+            tpfid.write("\n")
         tpfid.close()
