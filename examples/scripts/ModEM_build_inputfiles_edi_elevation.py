@@ -4,22 +4,19 @@ Created on Wed Oct 18 10:18:12 2017
 
 @author: u64125
 """
-import os
-os.chdir(r'C:\mtpywin\mtpy') # change this path to the path where mtpy is installed
-import os.path as op
+
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
-from mtpy.core.edi import Edi
 from mtpy.utils.calculator import get_period_list
-
+from tests import EDI_DATA_DIR2, TEST_TEMP_DIR
 import numpy as np
 
 # path to save to
-workdir = r'C:\test\ModEM'
+workdir = TEST_TEMP_DIR.joinpath("ModEM")
+if not workdir.exists():
+    workdir.mkdir()
 
-# path where edi files are located
-edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
 
 ## period list (won't include periods outside of the range of the edi file) ###
 ## comment/uncomment your desired method ######################################
@@ -50,11 +47,7 @@ period_list = get_period_list(start_period,stop_period,periods_per_decade,
 ###############################################################################
 
 # list of edi files, search for all files ending with '.edi'
-edi_list = [op.join(edipath,ff) for ff in os.listdir(edipath) if (ff.endswith('.edi'))]
-
-# make the save path if it doesn't exist
-if not op.exists(workdir):
-    os.mkdir(workdir)
+edi_list = list(EDI_DATA_DIR2.glob("*.edi"))
 
 
 do = Data(edi_list=edi_list,
