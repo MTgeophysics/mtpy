@@ -32,7 +32,8 @@ class TestModEMData(unittest.TestCase):
     def test_station_list(self):
         station_list = [fn.stem.replace("c", "") for fn in EDI_DATA_DIR.glob("*.edi")]
 
-        self.assertListEqual(station_list, self.data.station_locations.station.tolist())
+        self.assertListEqual(sorted(station_list), 
+                             sorted(self.data.station_locations.station.tolist()))
 
     def test_period_range(self):
         self.assertEqual(20, self.data.period_list.size)
