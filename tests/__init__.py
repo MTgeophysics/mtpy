@@ -18,6 +18,7 @@ EDI_DATA_LIST =[EDI_DATA_DIR, EDI_DATA_DIR2, EDI_DATA_DIR_3, EDI_DATA_DIR_4]
 AUS_TOPO_FILE = Path(TEST_MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
 SAMPLE_DIR = Path(TEST_MTPY_ROOT, "examples/model_files")
 M2D_DIR = Path(TEST_MTPY_ROOT, "examples/data/mare2dem")
+MODEM_DIR = Path(TEST_MTPY_ROOT, "examples/model_files/ModEM_2")
 
 # set temporary directory for tests
 TEST_DIR = Path(__file__).parent

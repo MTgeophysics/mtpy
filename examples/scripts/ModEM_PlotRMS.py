@@ -14,21 +14,15 @@ Revision History:
         - Allow specifying period in seconds
         - Add plotting on geotiff background
 """
-import os
-
-os.chdir(r'C:\mtpywin\mtpy')
-
-import os.path as op
-
-import numpy as np
+from tests import MODEM_DIR, TEST_TEMP_DIR
 
 from mtpy.modeling.modem import PlotRMSMaps
 
-wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
-savepath = r'C:\tmp'
 
-filestem = op.join(wd,'Modular_MPI_NLCG_004')
-resid_fn=op.join(wd,filestem + '.res')
+resid_fn = MODEM_DIR.joinpath('Modular_MPI_NLCG_004.res')
+save_path = TEST_TEMP_DIR.joinpath("ModEM")
+if not save_path.exists():
+    save_path.mkdir()
 
 # Parameter explanations (TODO: add to user guide):
 
@@ -68,8 +62,8 @@ probj = PlotRMSMaps(resid_fn,
 # subdirectories labelled with component and period within this
 # directory.
 
-probj.create_shapefiles(dst_epsg=4326, save_path=savepath)
+probj.create_shapefiles(dst_epsg=4326, save_path=save_path)
 
-probj.save_figure(save_path=savepath,
+probj.save_figure(save_path=save_path,
                   save_fig_dpi = 400 # change to your preferred figure resolution
                   )
