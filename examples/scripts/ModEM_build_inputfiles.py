@@ -5,7 +5,6 @@ Created on Wed Oct 18 10:18:12 2017
 @author: u64125
 """
 
-from pathlib import Path
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance

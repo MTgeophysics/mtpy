@@ -4,22 +4,17 @@ Created on Wed Oct 18 10:18:12 2017
 
 @author: u64125
 """
-import os
-os.chdir(r'C:\mtpywin\mtpy') # change this path to the path where mtpy is installed
-import os.path as op
+
 from mtpy.modeling.modem import Model
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Covariance
-from mtpy.core.edi import Edi
 from mtpy.utils.calculator import get_period_list
-
-import numpy as np
+from tests import EDI_DATA_DIR2, TEST_TEMP_DIR, AUS_TOPO_FILE
 
 # path to save to
-workdir = r'C:\test\ModEM'
-
-# path where edi files are located
-edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
+workdir = TEST_TEMP_DIR.joinpath("ModEM")
+if not workdir.exists():
+    workdir.mkdir()
 
 ## period list (won't include periods outside of the range of the edi file) ###
 ## comment/uncomment your desired method ######################################
@@ -50,12 +45,7 @@ period_list = get_period_list(start_period,stop_period,periods_per_decade,
 ###############################################################################
 
 # list of edi files, search for all files ending with '.edi'
-edi_list = [op.join(edipath,ff) for ff in os.listdir(edipath) if (ff.endswith('.edi'))]
-
-# make the save path if it doesn't exist
-if not op.exists(workdir):
-    os.mkdir(workdir)
-
+edi_list = list(EDI_DATA_DIR2.glob("*.edi"))
 
 do = Data(edi_list=edi_list,
                inv_mode = '1',
@@ -70,7 +60,7 @@ do = Data(edi_list=edi_list,
                error_type_tipper = 'floor_abs', # type of error to set in tipper, 
                                                 # floor_abs is an absolute value set as a floor
                error_value_tipper =.03,
-               rotation_angle = -20,
+               rotation_angle = -45,
                model_epsg=28354 # model epsg, currently set to utm zone 54. 
                                 # See http://spatialreference.org/ to find the epsg code for your projection
                )
@@ -94,7 +84,6 @@ mo = Model(stations_object=do.station_locations,
                 pad_method='stretch', # method for calculating padding
                 z_mesh_method='new',
                 z_target_depth=120000, # depth to bottom of core model (padding after this depth)
-#                rotation_angle = -45
                 )
 
 mo.make_mesh()
@@ -102,8 +91,9 @@ mo.write_model_file(save_path=workdir)
 mo.plot_mesh()
 
 ## add topography to res model
-#mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
-#mo.write_model_file(save_path=workdir)
+mo.add_topography_to_model2(AUS_TOPO_FILE)
+mo.plot_topography()
+mo.write_model_file(save_path=workdir)
 
 # update data elevations
 do.project_stations_on_topography(mo)
