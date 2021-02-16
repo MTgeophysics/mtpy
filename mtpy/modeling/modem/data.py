@@ -376,7 +376,7 @@ class Data(object):
             ("rel_elev", np.float),
             ("east", np.float),
             ("north", np.float),
-            ("zone", "|S4"),
+            ("zone", "|U4"),
             ("z", (np.complex, z_shape)),
             ("z_err", (np.float, z_shape)),
             ("z_inv_err", (np.float, z_shape)),

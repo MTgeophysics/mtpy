@@ -218,7 +218,6 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         self.plot_response.list_widget.currentItemChanged.connect(self.update_station_map)
         
     def update_station_map(self, widget_item):
-        print(widget_item)
         self.station_plot.previous_index = int(self.station_plot.current_index)
         self.station_plot.current_index = int(np.where(self.plot_response.modem_data.station_locations.station == self.plot_response.station)[0][0])
         self.station_plot.plot_new_station()
