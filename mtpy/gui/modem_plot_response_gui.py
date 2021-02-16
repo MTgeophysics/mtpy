@@ -170,7 +170,7 @@ class PlotResponses(QtWidgets.QWidget):
         self.flip_phase_button.pressed.connect(self.apply_flip_phase)
 
         self.flip_phase_combo = QtWidgets.QComboBox()
-        self.flip_phase_combo.addItems(["", "Zx", "Zy", "Tx", "Ty"])
+        self.flip_phase_combo.addItems(["", "Zxx", "Zxy", "Zyx", "Zyy", "Tx", "Ty"])
         self.flip_phase_combo.currentIndexChanged.connect(self.set_phase_flip_comp)
         flip_phase_layout = QtWidgets.QHBoxLayout()
         flip_phase_layout.addWidget(self.flip_phase_button)
@@ -336,7 +336,7 @@ class PlotResponses(QtWidgets.QWidget):
         (
             self.modem_data.data_array,
             self.modem_data.mt_dict,
-        ) = self.modem_data.flip_phase(self.station, [self.phase_flip_comp])
+        ) = self.modem_data.flip_phase(self.station, **{self.phase_flip_comp: True})
         self.plot()
 
     def set_error_comp(self):
