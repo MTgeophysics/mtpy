@@ -14,12 +14,12 @@ import numpy as np
 from mtpy.utils import convert_modem_data_to_geogrid as conv
 from mtpy.modeling import occam2d as o2d
 from mtpy.modeling import mare2dem as m2d
-from tests import M2D_DIR, EDI_DATA_DIR2, AUS_TOPO_FILE
+from tests import M2D_DIR, EDI_DATA_DIR2, AUS_TOPO_FILE, TEST_TEMP_DIR
 
 
 @pytest.fixture()
 def ref_output():
-    return os.path.join(M2D_DIR, 'Mare2Ddata.dat')
+    return M2D_DIR.joinpath('Mare2Ddata.dat')
 
 
 @pytest.fixture()
@@ -73,7 +73,7 @@ def test_mare2dem_data(ref_output, test_output):
             diff = list(difflib.unified_diff(r.readlines(), t.readlines()))
             # Test X, Y, Z are within tolerance (2 decimal places)
             for i, line in enumerate(diff):
-                if line.startswith('-'):
+                if line.startswith('-') and line.count('-') == 1:
                     if diff[i + 1].startswith('+'):
                         a = line.split()
                         b = diff[i + 1].split()

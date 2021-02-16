@@ -1389,7 +1389,6 @@ class Profile():
         ax.legend([m1, m2], ['Projected', 'Original'], loc='upper left',
                   prop={'size': fs})
         plt.show()
-        plt.savefig('/tmp/profile_angle0.png')
 
 
 class Regularization(Mesh):
