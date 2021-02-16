@@ -2167,7 +2167,7 @@ class Model(object):
             depthindices = [depth_index]
 
         for k in depthindices:
-            fname = os.path.join(savepath, outfile_basename + "_%1im.xyz" % z[k])
+            fname = os.path.join(savepath, outfile_basename + "_%1im.xyz" % self.grid_z[k])
 
             # get relevant depth slice
             vals = resvals[:, :, k].flatten()
