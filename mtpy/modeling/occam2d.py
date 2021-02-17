@@ -1389,10 +1389,10 @@ class Profile:
             self.generate_profile()
 
         fig = plt.figure(fig_num, figsize=fig_size, dpi=fig_dpi)
-        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        ax1 = fig.add_subplot(1, 1, 1, aspect="equal")
 
         for edi in self.edi_list:
-            (m1,) = ax.plot(
+            (m1,) = ax1.plot(
                 edi.projected_east,
                 edi.projected_north,
                 marker=marker,
@@ -1402,7 +1402,7 @@ class Profile:
                 color=lc,
             )
 
-            (m2,) = ax.plot(
+            (m2,) = ax1.plot(
                 edi.east,
                 edi.north,
                 marker=marker,
@@ -1413,7 +1413,7 @@ class Profile:
             )
 
             if station_id is None:
-                ax.text(
+                ax1.text(
                     edi.projected_east,
                     edi.projected_north * 1.00025,
                     edi.station,
@@ -1422,7 +1422,7 @@ class Profile:
                     fontdict={"size": fs, "weight": "bold"},
                 )
             else:
-                ax.text(
+                ax1.text(
                     edi.projected_east,
                     edi.projected_north * 1.00025,
                     edi.station[station_id[0] : station_id[1]],
@@ -1436,25 +1436,25 @@ class Profile:
         easts = np.array([edi.east for edi in self.edi_list])
         norths = np.array([edi.north for edi in self.edi_list])
 
-        ploty = sp.polyval(self.profile_line, easts)
-        ax.plot(easts, ploty, lw=lw, color=lc)
-        ax.set_title("Original/Projected Stations")
-        ax.set_ylim(
+        ploty = np.polyval(self.profile_line, easts)
+        ax1.plot(easts, ploty, lw=lw, color=lc)
+        ax1.set_title("Original/Projected Stations")
+        ax1.set_ylim(
             (
                 min([norths.min(), pnorths.min()]) * 0.999,
                 max([norths.max(), pnorths.max()]) * 1.001,
             )
         )
-        ax.set_xlim(
+        ax1.set_xlim(
             (
                 min([easts.min(), peasts.min()]) * 0.98,
                 max([easts.max(), peasts.max()]) * 1.02,
             )
         )
-        ax.set_xlabel("Easting (m)", fontdict={"size": fs + 2, "weight": "bold"})
-        ax.set_ylabel("Northing (m)", fontdict={"size": fs + 2, "weight": "bold"})
-        ax.grid(alpha=0.5)
-        ax.legend(
+        ax1.set_xlabel("Easting (m)", fontdict={"size": fs + 2, "weight": "bold"})
+        ax1.set_ylabel("Northing (m)", fontdict={"size": fs + 2, "weight": "bold"})
+        ax1.grid(alpha=0.5)
+        ax1.legend(
             [m1, m2], ["Projected", "Original"], loc="upper left", prop={"size": fs}
         )
         plt.show()

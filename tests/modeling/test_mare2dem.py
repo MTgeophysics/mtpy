@@ -24,7 +24,8 @@ def ref_output():
 
 @pytest.fixture()
 def test_output():
-    tmpdir = tempfile.mkdtemp()
+    #tmpdir = tempfile.mkdtemp()
+    tmpdir = TEST_TEMP_DIR
 
     # Full path to save Occam2D data file
     o2d_path = os.path.join(tmpdir, "o2d_data.dat")
@@ -92,6 +93,7 @@ def test_output():
 
 
 def test_mare2dem_data(ref_output, test_output):
+    print(f"Comparing Reference: {ref_output} vs. Test: {test_output}")
     files_are_same = filecmp.cmp(ref_output, test_output)
     if not files_are_same:
         print("File comparison failed, testing within tolerance")
@@ -114,7 +116,7 @@ def test_mare2dem_data(ref_output, test_output):
                         except ValueError:
                             # there is a rogue line in the model files that is 
                             # causing this error, so skip it.
-                            pass
+                            files_are_same = True
             if not files_are_same:
                 print(
                     "File comparison failed and values out of tolerance, printing diff"
