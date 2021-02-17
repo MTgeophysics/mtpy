@@ -3845,7 +3845,7 @@ class PlotResponse:
                 )
 
                 rlistte.append(rte[0])
-                llistte.append("$Obs_{TE}$")
+                llistte.append(r"$Obs_{TE}$")
             else:
                 rte = [None, [None, None, None], [None, None, None]]
 
@@ -3867,7 +3867,7 @@ class PlotResponse:
                 )
 
                 rlisttm.append(rtm[0])
-                llisttm.append("$Obs_{TM}$")
+                llisttm.append(r"$Obs_{TM}$")
             else:
                 rtm = [None, [None, None, None], [None, None, None]]
             # --------------------plot phase--------------------------------
@@ -4326,7 +4326,7 @@ class PlotResponse:
                 plt.setp(axr.xaxis.get_ticklabels(), visible=False)
                 if aa == 0:
                     axr.set_ylabel(
-                        "App. Res. ($\Omega \cdot m$)",
+                        r"App. Res. ($\Omega \cdot m$)",
                         fontdict={"size": self.font_size + 2, "weight": "bold"},
                     )
 
@@ -4785,7 +4785,7 @@ class PlotModel(Model):
         )
 
         cb.set_label(
-            "Resistivity ($\Omega \cdot$m)",
+            r"Resistivity ($\Omega \cdot$m)",
             fontdict={"size": self.font_size + 1, "weight": "bold"},
         )
         cb.set_ticks(np.arange(int(self.climits[0]), int(self.climits[1]) + 1))
@@ -5682,14 +5682,14 @@ class PlotPseudoSection(object):
             r"$\rho_{TE-Model}$",
             r"$\rho_{TM-Data}$",
             r"$\rho_{TM-Model}$",
-            "$\phi_{TE-Data}$",
-            "$\phi_{TE-Model}$",
-            "$\phi_{TM-Data}$",
-            "$\phi_{TM-Model}$",
-            "$\Re e\{T_{Data}\}$",
-            "$\Re e\{T_{Model}\}$",
-            "$\Im m\{T_{Data}\}$",
-            "$\Im m\{T_{Model}\}$",
+            r"$\phi_{TE-Data}$",
+            r"$\phi_{TE-Model}$",
+            r"$\phi_{TM-Data}$",
+            r"$\phi_{TM-Model}$",
+            r"$\Re e\{T_{Data}\}$",
+            r"$\Re e\{T_{Model}\}$",
+            r"$\Im m\{T_{Data}\}$",
+            r"$\Im m\{T_{Model}\}$",
         ]
 
         self.phase_limits_te = kwargs.pop("phase_limits_te", (-5, 95))
@@ -6077,11 +6077,11 @@ class PlotPseudoSection(object):
                             ),
                         )
                         cb.set_label(
-                            "App. Res. ($\Omega \cdot$m)",
+                            r"App. Res. ($\Omega \cdot$m)",
                             fontdict={"size": self.font_size + 1, "weight": "bold"},
                         )
                         cb.set_label(
-                            "Resistivity ($\Omega \cdot$m)",
+                            r"Resistivity ($\Omega \cdot$m)",
                             fontdict={"size": self.font_size + 1, "weight": "bold"},
                         )
                         cb.set_ticks(
@@ -6290,7 +6290,7 @@ class PlotPseudoSection(object):
                         ),
                     )
                     cb.set_label(
-                        "App. Res. ($\Omega \cdot$m)",
+                        r"App. Res. ($\Omega \cdot$m)",
                         fontdict={"size": self.font_size + 1, "weight": "bold"},
                     )
                     cb.set_ticks(
@@ -6632,10 +6632,10 @@ class PlotMisfitPseudoSection(object):
         self.label_list = [
             r"$\rho_{TE}$",
             r"$\rho_{TM}$",
-            "$\phi_{TE}$",
-            "$\phi_{TM}$",
-            "$\Re e\{T\}$",
-            "$\Im m\{T\}$",
+            r"$\phi_{TE}$",
+            r"$\phi_{TM}$",
+            r"$\Re e\{T\}$",
+            r"$\Im m\{T\}$",
         ]
 
         self.phase_limits_te = kwargs.pop("phase_limits_te", (-10, 10))
@@ -6875,7 +6875,7 @@ class PlotMisfitPseudoSection(object):
                     ),
                 )
                 cb.set_label(
-                    "Log$_{10}$ App. Res. ($\Omega \cdot$m)",
+                    r"Log$_{10}$ App. Res. ($\Omega \cdot$m)",
                     fontdict={"size": self.font_size + 1, "weight": "bold"},
                 )
             # te phase
