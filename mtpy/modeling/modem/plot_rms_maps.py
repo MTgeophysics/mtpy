@@ -501,7 +501,6 @@ class PlotRMSMaps(object):
         """
         plot the misfit as a map instead of points
         """
-        rms_1 = 1.0 / self.rms_max
 
         if self.tick_locator is None:
             x_locator = np.round(
