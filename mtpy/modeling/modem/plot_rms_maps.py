@@ -270,7 +270,6 @@ class PlotRMSMaps(object):
                 ]
 
         filt = np.nan_to_num(rms).astype(bool) #.reshape(self.residual.rms_array.size)
-        print(filt.shape, rms.shape)
 
         if len(rms[filt]) == 0:
             _logger.warning(
