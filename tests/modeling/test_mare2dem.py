@@ -11,7 +11,6 @@ from copy import deepcopy
 import pytest
 import numpy as np
 
-from mtpy.utils import convert_modem_data_to_geogrid as conv
 from mtpy.modeling import occam2d as o2d
 from mtpy.modeling import mare2dem as m2d
 from tests import M2D_DIR, EDI_DATA_DIR2, AUS_TOPO_FILE, TEST_TEMP_DIR
