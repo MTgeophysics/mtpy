@@ -23,8 +23,8 @@ def ref_output():
 
 @pytest.fixture()
 def test_output():
-    #tmpdir = tempfile.mkdtemp()
-    tmpdir = TEST_TEMP_DIR
+    tmpdir = tempfile.mkdtemp()
+    # tmpdir = TEST_TEMP_DIR
 
     # Full path to save Occam2D data file
     o2d_path = os.path.join(tmpdir, "o2d_data.dat")
