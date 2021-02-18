@@ -67,7 +67,7 @@ def test_output():
 
 def test_mare2dem_data(ref_output, test_output):
     files_are_same = filecmp.cmp(ref_output, test_output)
-    tol = 1e-2
+    tol = 1
     if not files_are_same:
         print("File comparison failed, testing within tolerance")
         with open(ref_output) as r, open(test_output) as t:
@@ -82,6 +82,8 @@ def test_mare2dem_data(ref_output, test_output):
                             try:
                                 ax, ay, az = float(a[0]), float(a[1]), float(a[2])
                                 bx, by, bz = float(b[0]), float(b[1]), float(b[2])
+                                print(ax,ay,az)
+                                print(bx,by,bz)
                                 files_are_same = (np.abs(ax-bx) < tol and \
                                                   np.abs(ay-by) < tol and \
                                                       np.abs(az-bz) < tol)
