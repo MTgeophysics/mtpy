@@ -14,6 +14,7 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mtpy.analysis.zinvariants import Zinvariants
 import mtpy.imaging.mtplottools as mtpl
+from mtpy.utils.calculator import roundsf
 
 #==============================================================================
 
@@ -236,10 +237,35 @@ class PlotStrike(object):
         nt = 0
         kk = 0
         
+        
+        # get period list
+        period_arr = []
+        sf=4
+        for mt in self.mt_list:
+            period_arr = np.append(period_arr,1./mt.Z.freq)
+        self.period_arr = np.unique(roundsf(period_arr,sf))
+        nt = len(self.period_arr)
+
+        # make empty arrays to put data into for easy manipulation
+        medinv = np.zeros((nt, nc))
+        medpt = np.zeros((nt, nc))
+        medtipr = np.zeros((nt, nc))        
+
+
+
         for dd, mt in enumerate(self.mt_list):
             
-            if mt.period.size > nt:
-                nt = mt.period.size
+            # interpolate onto period array that has all periods in dataset
+            # use very small buffer around frequencies to ensure only periods
+            # that are in original mt object are included in this array
+            mt.Z, mt.Tipper = mt.interpolate(1./self.period_arr,
+                                             bounds_error=False,
+                                             period_buffer=10**(-sf+1))
+
+            # mt.period = self.period
+            
+            # if mt.period.size > nt:
+            #     nt = mt.period.size
             #-----------get strike angle from invariants-----------------------
             zinv = Zinvariants(mt.Z)
 
@@ -261,8 +287,9 @@ class PlotStrike(object):
                 zs %= 360
                 
             # make a dictionary of strikes with keys as period
-            mdictinv = dict([(ff, jj) for ff, jj in zip(mt.period, zs)])
-            inv_list.append(mdictinv)
+            # mdictinv = dict([(ff, jj) for ff, jj in zip(self.period_arr, zs)])
+            # inv_list.append(mdictinv)
+            medinv[:,dd] = zs
 
             #------------get strike from phase tensor strike angle-------------
             pt = mt.pt
@@ -286,13 +313,15 @@ class PlotStrike(object):
                 az %= 360
                 
             # make a dictionary of strikes with keys as period
-            mdictpt = dict([(ff, jj) for ff, jj in zip(mt.period, az)])
-            pt_list.append(mdictpt)
+            # mdictpt = dict([(ff, jj) for ff, jj in zip(self.period_arr, az)])
+            # pt_list.append(mdictpt)
+            
+            medpt[:,dd] = az
 
             #-----------get tipper strike------------------------------------
             tip = mt.Tipper
             if tip.tipper is None:
-                tip.tipper = np.zeros((len(mt.period), 1, 2),
+                tip.tipper = np.zeros((len(self.period_arr), 1, 2),
                                               dtype='complex')
                 tip.compute_components()
 
@@ -312,39 +341,37 @@ class PlotStrike(object):
                 tipr[np.where(tipr == 360.0)] = 0.0
 
             # make a dictionary of strikes with keys as period
-            tiprdict = dict([(ff, jj) for ff, jj in zip(mt.period, tipr)])
-            tip_list.append(tiprdict)
+            # tiprdict = dict([(ff, jj) for ff, jj in zip(self.period_arr, tipr)])
+            # tip_list.append(tiprdict)
+            medtipr[:,dd] = tipr
 
         #--> get min and max period
-        self.max_per = np.amax([np.max(list(mm.keys())) for mm in inv_list], axis=0)
-        self.min_per = np.amin([np.min(list(mm.keys())) for mm in pt_list], axis=0)
+        self.max_per = np.amax(self.period_arr)#[np.max(list(mm.keys())) for mm in inv_list], axis=0)
+        self.min_per = np.amin(self.period_arr)#[np.min(list(mm.keys())) for mm in pt_list], axis=0)
 
-        # make empty arrays to put data into for easy manipulation
-        medinv = np.zeros((nt, nc))
-        medpt = np.zeros((nt, nc))
-        medtipr = np.zeros((nt, nc))
+
 
         # make a list of periods from the longest period list
-        self.period_arr = np.logspace(np.log10(self.min_per),
-                                      np.log10(self.max_per),
-                                      num=nt,
-                                      base=10)
+        # self.period_arr = np.logspace(np.log10(self.min_per),
+        #                               np.log10(self.max_per),
+        #                               num=nt,
+        #                               base=10)
         self.period_dict = dict([(ii, jj) for jj, ii in 
                                  enumerate(self.period_arr)])
 
-        # put data into arrays
-        for ii, mm in enumerate(inv_list):
-            mperiod = mm.keys()
-            for jj, mp in enumerate(mperiod):
-                for kk in self.period_dict.keys():
-                    if mp > kk * (1 - self.period_tolerance) and \
-                            mp < kk * (1 + self.period_tolerance):
-                        ll = self.period_dict[kk]
-                        medinv[ll, ii] = inv_list[ii][mp]
-                        medpt[ll, ii] = pt_list[ii][mp]
-                        medtipr[ll, ii] = tip_list[ii][mp]
-                    else:
-                        pass
+        # # put data into arrays
+        # for ii, mm in enumerate(inv_list):
+        #     mperiod = mm.keys()
+        #     for jj, mp in enumerate(mperiod):
+        #         for kk in self.period_dict.keys():
+        #             if mp > kk * (1 - self.period_tolerance) and \
+        #                     mp < kk * (1 + self.period_tolerance):
+        #                 ll = self.period_dict[kk]
+        #                 medinv[ll, ii] = inv_list[ii][mp]
+        #                 medpt[ll, ii] = pt_list[ii][mp]
+        #                 medtipr[ll, ii] = tip_list[ii][mp]
+        #             else:
+        #                 pass
         
         # make the arrays local variables
         self.med_inv = medinv
@@ -496,7 +523,7 @@ class PlotStrike(object):
                 # make a list of indicies for each decades
                 bin_list = []
                 for ii, ff in enumerate(self.period_arr):
-                    if ff > 10**bb and ff < 10**(bb + 1):
+                    if ff > 10**bb and ff <= 10**(bb + 1):
                         bin_list.append(ii)
 
                 # extract just the subset for each decade
