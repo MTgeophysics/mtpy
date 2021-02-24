@@ -262,6 +262,8 @@ class Stations(object):
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone
+                print(f"{mt_obj.station}: {mt_obj.east} E, {mt_obj.north} N, {mt_obj.utm_zone}")
+                print(type(mt_obj.utm_zone))
 
         # get relative station locations
         self.calculate_rel_locations()
