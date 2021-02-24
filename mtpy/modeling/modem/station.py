@@ -262,7 +262,7 @@ class Stations(object):
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone
-            print(f"{mt_obj.station}: {mt_obj.utm_zone} {type(mt_obj.utm_zone)}")
+            print(f"{mt_obj.station}: {mt_obj.utm_zone} {type(mt_obj.utm_zone)}, {mt_obj.east:.2f} E, {mt_obj.north:.2f} N")
 
         print("Center Point: \n", self.center_point)
         # get relative station locations
