@@ -262,9 +262,7 @@ class Stations(object):
                 self.station_locations[ii]["east"] = mt_obj.east
                 self.station_locations[ii]["north"] = mt_obj.north
                 self.station_locations[ii]["zone"] = mt_obj.utm_zone
-            print(f"{mt_obj.station}: {mt_obj.utm_zone} {type(mt_obj.utm_zone)}, {mt_obj.east:.2f} E, {mt_obj.north:.2f} N")
 
-        print("Center Point: \n", self.center_point)
         # get relative station locations
         self.calculate_rel_locations()
 
@@ -317,9 +315,9 @@ class Stations(object):
         center_location = np.recarray(1, dtype=dtype)
         if self._center_lat is not None and self._center_lon is not None:
             self.logger.debug("assigning center from user set values")
-            center_location["lat"] = self._center_lat
-            center_location["lon"] = self._center_lon
-            center_location["elev"] = self._center_elev
+            center_location.lat[0] = self._center_lat
+            center_location.lon[0] = self._center_lon
+            center_location.elev[0] = self._center_elev
 
             # get the median utm zone
             if self.model_utm_zone is None:
@@ -327,71 +325,71 @@ class Stations(object):
                 zone.sort()
                 # get the median zone
                 center_utm_zone = zone[int(zone.size / 2)]
-                center_location["zone"] = center_utm_zone
+                center_location.zone[0] = center_utm_zone
             else:
-                center_location["zone"] = self.model_utm_zone
+                center_location.zone[0] = self.model_utm_zone
 
             # project center
             east, north, zone = gis_tools.project_point_ll2utm(
-                center_location["lat"],
-                center_location["lon"],
-                utm_zone=center_location["zone"][0],
+                center_location.lat[0],
+                center_location.lon[0],
+                utm_zone=center_location.zone[0],
             )
 
-            center_location["east"] = east
-            center_location["north"] = north
+            center_location.east[0] = east
+            center_location.north[0] = north
             return center_location
 
         # safer to get center from lat and lon if not all zones are the same
         if not np.all(self.utm_zone == self.utm_zone[0]):
             self.logger.debug("Not all stations are in same UTM zone")
-            center_location["lat"] = (self.lat.max() + self.lat.min()) / 2.0
-            center_location["lon"] = (self.lon.max() + self.lon.min()) / 2.0
+            center_location.lat[0] = (self.lat.max() + self.lat.min()) / 2.0
+            center_location.lon[0] = (self.lon.max() + self.lon.min()) / 2.0
             # get the median utm zone
             if self.model_utm_zone is None:
                 self.logger.info("Getting median UTM zone of stations for center point")
                 zone = self.utm_zone.copy()
                 zone.sort()
                 center_utm_zone = zone[int(zone.size / 2)]
-                center_location["zone"] = center_utm_zone
+                center_location.zone[0] = center_utm_zone
             else:
                 self.logger.info(
                     f"Using user defined center point UTM zone {self.model_utm_zone}"
                 )
-                center_location["zone"] = self.model_utm_zone
+                center_location.zone[0] = self.model_utm_zone
 
             self.logger.info(
-                f"Projecting lat, lon to UTM zone {center_location['zone'][0]}"
+                f"Projecting lat, lon to UTM zone {center_location.zone[0]}"
             )
             east, north, zone = gis_tools.project_point_ll2utm(
-                center_location["lat"],
-                center_location["lon"],
-                utm_zone=center_location["zone"][0],
+                center_location.lat[0],
+                center_location.lon[0],
+                utm_zone=center_location.zone[0],
             )
 
-            center_location["east"] = east
-            center_location["north"] = north
+            center_location.east[0] = east
+            center_location.north[0] = north
 
         else:
             self.logger.debug("locating center from UTM grid")
-            center_location["east"] = (self.east.max() + self.east.min()) / 2
-            center_location["north"] = (self.north.max() + self.north.min()) / 2
+            center_location.east[0] = (self.east.max() + self.east.min()) / 2
+            center_location.north[0] = (self.north.max() + self.north.min()) / 2
 
             # get the median utm zone
             zone = self.utm_zone.copy()
             zone.sort()
             center_utm_zone = zone[int(zone.size / 2)]
-            center_location["zone"] = center_utm_zone
+            center_location.zone[0] = center_utm_zone
 
             center_ll = gis_tools.project_point_utm2ll(
-                float(center_location["east"]),
-                float(center_location["north"]),
-                center_utm_zone,
+                center_location.east[0],
+                center_location.north[0],
+                center_location.zone[0],
                 epsg=self.model_epsg,
             )
 
-            center_location["lat"] = center_ll[0]
-            center_location["lon"] = center_ll[1]
+            center_location.lat[0] = center_ll[0]
+            center_location.lon[0] = center_ll[1]
         # BM: Because we are now writing center_point.elev to ModEm
         #  data file, we need to provide it.
         #  The center point elevation is the highest point of the
@@ -400,9 +398,9 @@ class Stations(object):
         #  point of the surface model (this will be set by calling
         #  Data.project_stations_on_topography).
         if self._center_elev:
-            center_location["elev"] = self._center_elev
+            center_location.elev[0] = self._center_elev
         else:
-            center_location["elev"] = -self.elev.max()
+            center_location.elev[0] = -self.elev.max()
 
         return center_location
 
