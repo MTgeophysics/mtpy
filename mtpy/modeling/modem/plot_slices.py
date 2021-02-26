@@ -605,7 +605,7 @@ class PlotSlices(object):
         depthIdx = nearest_index(depth, self._mcz * self.dscale)
 
         if new_figure:
-            plt.figure()
+            plt.figure(figsize=self.fig_size)
 
         # get eastings/northings of mesh
         ge, gn = self.md_model.grid_east, self.md_model.grid_north

@@ -94,6 +94,7 @@ def test_output():
 def test_mare2dem_data(ref_output, test_output):
     print(f"Comparing Reference: {ref_output} vs. Test: {test_output}")
     files_are_same = filecmp.cmp(ref_output, test_output)
+    tol = 1
     if not files_are_same:
         print("File comparison failed, testing within tolerance")
         with open(ref_output) as r, open(test_output) as t:
@@ -116,6 +117,7 @@ def test_mare2dem_data(ref_output, test_output):
                             # there is a rogue line in the model files that is 
                             # causing this error, so skip it.
                             files_are_same = True
+
             if not files_are_same:
                 print(
                     "File comparison failed and values out of tolerance, printing diff"
