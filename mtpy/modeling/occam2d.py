@@ -2464,11 +2464,12 @@ class Data(Profile):
         # loop over mt object in edi_list and use a counter starting at 1
         # because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
-
+            station_freq = edi.Z.freq
+            interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
+                                             (self.freq <= station_freq.max()))] 
             if self.freq_tol is None:
-                station_freq = edi.Z.freq
-                interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
-                                                 (self.freq <= station_freq.max()))]
+               
+
                 # interpolate data onto given frequency list
                 z_interp, t_interp = edi.interpolate(interp_freq)
                 #                z_interp._compute_res_phase()
@@ -2484,8 +2485,8 @@ class Data(Profile):
                     tipper = None
                     tipper_err = None
             else:
-                station_freq = edi.Z.freq
                 rho = edi.Z.resistivity
+                rho_err = edi.Z.resistivity_err
                 phi = edi.Z.phase
                 tipper = edi.Tipper.tipper
                 tipper_err = edi.Tipper.tipper_err
@@ -2496,10 +2497,14 @@ class Data(Profile):
             for freq_num, frequency in enumerate(self.freq):
                 if self.freq_tol is not None:
                     try:
-                        f_index = np.where((station_freq >= frequency * (1 - self.freq_tol)) &
-                                           (station_freq <= frequency * (1 + self.freq_tol)))[0][0]
+                        # list of indices within tolerance
+                        f_index_list = np.where((station_freq >= frequency * (1 - self.freq_tol)) &
+                                                (station_freq <= frequency * (1 + self.freq_tol)))[0]
+                        # closest frequency
+                        diff = np.abs(station_freq[f_index_list] - frequency)
+                        f_index = f_index_list[np.where(diff==np.amin(diff))]
 
-                    except IndexError:
+                    except ValueError:
                         f_index = None
                 else:
                     # skip, if the listed frequency is not available for the station
