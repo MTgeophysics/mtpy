@@ -438,21 +438,76 @@ class Stations(object):
         self.logger.info(
             f"Rotated stations by {rotation_angle:.1f} deg clockwise from N"
         )
-
-    def write_shp_file(self, shp_fn, epsg=None, default_epsg=4326):
+        
+    def to_geopd(self, epsg=None, default_epsg=4326):
         """
-        Write a shape file of the station locations using geopandas which only takes
-        in epsg numbers
+        create a geopandas dataframe 
+        
+        :param epsg: EPSG number to project to
+        :type epsg: integer, defaults to None
+        :param default_epsg: the default EPSG number that the stations are
+        referenced to
+        :type default_epsg: integer, defaults to 4326
+        
         """
+        
         default_crs = {"init": f"epsg:{default_epsg}"}
         station_list = []
         geometry_list = []
-        for ss, lat, lon in zip(self.station, self.lat, self.lon):
-            entry = {"station": ss, "latitude": lat, "longitude": lon}
-            geometry_list.append(Point(lon, lat))
+        for sarr in self.station_locations:
+            entry = {"station": sarr["station"],
+                     "latitude": sarr["lat"], 
+                     "longitude": sarr["lon"],
+                     "elevation": sarr["elev"],
+                     "easting": sarr["east"],
+                     "northing": sarr["north"],
+                     "utm_zone": sarr["zone"],
+                     "model_east": sarr["rel_east"],
+                     "model_north": sarr["rel_north"],
+                     "model_elev": sarr["rel_elev"]}
+            geometry_list.append(Point(sarr["lon"], sarr["lat"]))
             station_list.append(entry)
         sdf = gpd.GeoDataFrame(station_list, crs=default_crs, geometry=geometry_list)
         if epsg is not None:
             sdf = sdf.to_crs(epsg=epsg)
+            
+        return sdf
+
+    def to_shp(self, shp_fn, epsg=None, default_epsg=4326):
+        """
+        Write a shape file of the station locations using geopandas which only takes
+        in epsg numbers
+        
+        :param shp_fn: full path to new shapefile
+        :type shp_fn: string
+        :param epsg: EPSG number to project to
+        :type epsg: integer, defaults to None
+        :param default_epsg: the default EPSG number that the stations are
+        referenced to
+        :type default_epsg: integer, defaults to 4326
+        
+        """
+        sdf = self.to_geopd(epsg=epsg, default_epsg=default_epsg)
 
         sdf.to_file(shp_fn)
+        
+    def to_csv(self, csv_fn, epsg=None, default_epsg=4326, geometry=False):
+        """
+        Write a shape file of the station locations using geopandas which only takes
+        in epsg numbers
+        
+        :param shp_fn: full path to new shapefile
+        :type shp_fn: string
+        :param epsg: EPSG number to project to
+        :type epsg: integer, defaults to None
+        :param default_epsg: the default EPSG number that the stations are
+        referenced to
+        :type default_epsg: integer, defaults to 4326
+        
+        """
+        sdf = self.to_geopd(epsg=epsg, default_epsg=default_epsg)
+        use_columns = list(sdf.columns)
+        if not geometry:
+            use_columns.remove("geometry")
+        sdf.to_csv(csv_fn, index=False, columns=use_columns)
+        
