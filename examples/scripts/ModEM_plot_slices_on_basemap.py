@@ -4,15 +4,12 @@ Created on Wed Oct 30 11:53:46 2019
 
 @author: u64125
 """
-import os
+
 from mtpy.modeling.modem import PlotSlices
+from tests import MODEM_DIR, TEST_TEMP_DIR
 
-
-wd = r"C:\mtpywin\mtpy\examples\model_files\ModEM"
-savepath = r"C:/tmp"
-
-model_fn = os.path.join(wd, "Modular_MPI_NLCG_004.rho")
-data_fn = os.path.join(wd, "ModEM_Data.dat")
+model_fn = MODEM_DIR.joinpath("Modular_MPI_NLCG_004.rho")
+data_fn = MODEM_DIR.joinpath("ModEM_Data.dat")
 
 
 ps = PlotSlices(
@@ -34,5 +31,5 @@ for depth in [2e3, 10e3, 20e3]:
         buffer=None,  # buffer around stations in degrees, if not provided or None it is calculated from data
         mesh_rotation_angle=0,  # option to specify the mesh rotation angle, if rotated grid was used
         save=True,
-        save_path=savepath,  # savepath to save figure to. If not provided or None/False, figure is not saved
+        save_path=TEST_TEMP_DIR,  # savepath to save figure to. If not provided or None/False, figure is not saved
     )
