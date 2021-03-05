@@ -264,6 +264,46 @@ rdylbu_data = {
 
 mt_rdylbu = colors.LinearSegmentedColormap("mt_rdylbu", rdylbu_data, 256)
 
+mt_jet_r_dict = {
+    "red": (
+        (0.0, 0.1, 0.15),
+        (0.1, 0.45, 0.45), 
+        (0.25, .85, .85),
+        (0.35, 1.0, 1.0),
+        (0.495, 1.0, 1.0),
+        (0.505, 1.0, 0.9),
+        (0.65, 0.3, 0.0),
+        (0.75, 0.0, 0.0),
+        (0.9, 0.0, 0.0),
+        (1.0, 0.0, 0.0),
+    ),
+    "green": (
+        (0.0, 0.0, 0.0),
+        (0.1, 0.0, 0.0),
+        (0.25, 0.45, 0.45),
+        (0.35, .9, .9),
+        (0.495, 1.0, 1.0),
+        (0.505, 1.0, 1.0),
+        (0.65, 1.0, 1.0),
+        (0.75, 0.5, 0.5),
+        (0.9, 0.0, 0.0),
+        (1.0, 0.0, 0.0),
+    ),
+    "blue": (
+        (0.0, 0.0, 0.0),
+        (0.1, 0.0, 0.0),
+        (0.25, 0.0, 0.0),
+        (0.35, 0.5, 0.5),
+        (0.4955, .95, .95),
+        (0.505, 1.0, 1.0),
+        (0.65, 1.0, 1.0),
+        (0.75, .85, .85),
+        (0.9, .45, .45),
+        (1.0, .15, .25),
+    ),
+}
+
+mt_jet_r = colors.LinearSegmentedColormap("mt_jet_r", mt_jet_r_dict, 256)
 
 cmapdict = {
     "mt_yl2rd": mt_yl2rd,
@@ -278,6 +318,7 @@ cmapdict = {
     "mt_rd2wh2bl": mt_rd2wh2bl,
     "mt_rd2wh2bl_r": mt_rd2wh2bl_r,
     "mt_rdylbu": mt_rdylbu,
+    "mt_jet_r": mt_jet_r
 }
 # add matplotlib built-in colormaps
 cmapdict.update(cm.cmap_d)
