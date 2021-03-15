@@ -4,10 +4,10 @@ MTpy Version 2 Proposed Updates
 General Changes
 -----------------
 	* use Path instead of os and glob wherever possible
-	* Remove compatiblity with Python 2
-	* Use f"{variable}" for print statements and writing a string
-	* Use Git Actions for testing, updating version, updating PyPi and Conda
-	* Refactor some of the modules to new repositories
+	* Remove compatiblity with Python-2. MTPy-V2 will only support Python-3. 
+	* Use f"{variable}" for print statements and writing a string (TBC)
+	* Use Git Actions for CI/CD (unit-testing, buiiding new releases, updating PyPi and Conda mtpy-package)
+	* Move some of the modules to new repositories (SEE BELOW)
   	* Suggest putting mt_metadata under MTGeophysics
 
 Core
