@@ -232,6 +232,56 @@ class ModEM_to_Raster(object):
                 projection=self.projection,
                 rotation_angle=self.rotation_angle,
             )
+            
+    def write_conductance_raster_files(
+        self,
+        depth_dict,
+        save_path=None,
+        pad_east=None,
+        pad_north=None,
+        cell_size=None,
+        rotation_angle=None,
+        
+    ):
+        """
+        write a raster file for each layer
+        
+        """
+        if rotation_angle is not None:
+            self.rotation_angle = float(rotation_angle)
+
+        if self.lower_left_corner is None:
+            raise ValueError("Need to input an lower_left_corner as (lon, lat)")
+        if save_path is not None:
+            self.save_path = save_path
+
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+
+        self.interpolate_grid(
+            pad_east=pad_east, pad_north=pad_north, cell_size=cell_size
+        )
+        
+        for key, value in depth_dict.items():
+            index_min = np.where(self.grid_z <= value.min())[0][-1]
+            index_max = np.where(self.grid_z >= value.max())[0][0]
+            
+            conductance = (1./self.res_array[:, :, index_min:index_max]) * abs(self.grid_z[index_min:index_max])
+            conductance = conductance.sum(axis=2)
+
+            raster_fn = os.path.join(
+                self.save_path,
+                f"conductance_{key}_{self.projection}.tif"
+            )
+            array2raster(
+                raster_fn,
+                self.lower_left_corner,
+                self.cell_size_east,
+                self.cell_size_north,
+                conductance,
+                projection=self.projection,
+                rotation_angle=self.rotation_angle,
+            )
 
 
 # ==============================================================================
