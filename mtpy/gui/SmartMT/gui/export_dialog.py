@@ -16,7 +16,7 @@ from PIL import Image
 from qtpy import QtCore, QT_VERSION
 from qtpy.QtWidgets import QDialog, QFileDialog, QMessageBox
 
-if QT_VERSION.startswith('4'):
+if QT_VERSION.startswith("4"):
     from matplotlib.backends.backend_qt4agg import FigureCanvas
 else:
     from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -74,8 +74,12 @@ class ExportDialog(QDialog):
         # dpi
         self.ui.spinBox_dpi.valueChanged.connect(self._dpi_changed)
         # inches
-        self.ui.doubleSpinBox_width_inches.valueChanged.connect(self._width_inches_changed)
-        self.ui.doubleSpinBox_height_inches.valueChanged.connect(self._height_inches_changed)
+        self.ui.doubleSpinBox_width_inches.valueChanged.connect(
+            self._width_inches_changed
+        )
+        self.ui.doubleSpinBox_height_inches.valueChanged.connect(
+            self._height_inches_changed
+        )
         # pixels
         self.ui.spinBox_width_pixels.valueChanged.connect(self._width_pixels_changed)
         self.ui.spinBox_height_pixels.valueChanged.connect(self._height_pixels_changed)
@@ -83,14 +87,18 @@ class ExportDialog(QDialog):
         # message box for when the file already exist
         self._msg_box = QMessageBox(self)
         self._msg_box.setWindowTitle("Export...")
-        self._msg_box_button_overwrite = self._msg_box.addButton(self.tr("Overwrite"), QMessageBox.AcceptRole)
-        self._msg_box_button_save_as = self._msg_box.addButton(self.tr("Save As"), QMessageBox.ActionRole)
+        self._msg_box_button_overwrite = self._msg_box.addButton(
+            self.tr("Overwrite"), QMessageBox.AcceptRole
+        )
+        self._msg_box_button_save_as = self._msg_box.addButton(
+            self.tr("Save As"), QMessageBox.ActionRole
+        )
         self._msg_box_button_cancel = self._msg_box.addButton(QMessageBox.Cancel)
         self._msg_box.setDefaultButton(self._msg_box_button_save_as)
 
-    _orientation = ['portrait', 'landscape']
+    _orientation = ["portrait", "landscape"]
 
-    _no_alpha_channel_formats = ('jpg', 'jpeg')  # ("png", "gif", "psd")
+    _no_alpha_channel_formats = ("jpg", "jpeg")  # ("png", "gif", "psd")
 
     def _dpi_changed(self, dpi):
         self.ui.doubleSpinBox_height_inches.blockSignals(True)
@@ -118,16 +126,12 @@ class ExportDialog(QDialog):
 
     def _width_inches_changed(self, width):
         self.ui.spinBox_width_pixels.blockSignals(True)
-        self.ui.spinBox_width_pixels.setValue(
-            width * self.ui.spinBox_dpi.value()
-        )
+        self.ui.spinBox_width_pixels.setValue(width * self.ui.spinBox_dpi.value())
         self.ui.spinBox_width_pixels.blockSignals(False)
 
     def _height_inches_changed(self, height):
         self.ui.spinBox_height_pixels.blockSignals(True)
-        self.ui.spinBox_height_pixels.setValue(
-            height * self.ui.spinBox_dpi.value()
-        )
+        self.ui.spinBox_height_pixels.setValue(height * self.ui.spinBox_dpi.value())
         self.ui.spinBox_height_pixels.blockSignals(False)
 
     def _cancel_button_clicked(self, b):
@@ -139,10 +143,14 @@ class ExportDialog(QDialog):
     def _preview_button_clicked(self):
         if self._fig:
             # set figures
-            self._fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
+            self._fig.set_size_inches(
+                self.get_size_inches_width(), self.get_size_inches_height()
+            )
             params = self.get_savefig_params()
-            self._fig.set_dpi(params['dpi'])
-            self._fig.set_tight_layout(True if params['bbox_inches'] == 'tight' else False)
+            self._fig.set_dpi(params["dpi"])
+            self._fig.set_tight_layout(
+                True if params["bbox_inches"] == "tight" else False
+            )
 
             canvas = FigureCanvas(self._fig)
             canvas.show()
@@ -157,7 +165,9 @@ class ExportDialog(QDialog):
         filename = str(self.ui.comboBox_fileName.currentText())
         filename, _ = os.path.splitext(filename)
 
-        if ext in self._no_alpha_channel_formats:  # enable transparent if the format supports
+        if (
+            ext in self._no_alpha_channel_formats
+        ):  # enable transparent if the format supports
             self.ui.checkBox_transparent.setEnabled(False)
         else:
             self.ui.checkBox_transparent.setEnabled(True)
@@ -167,8 +177,9 @@ class ExportDialog(QDialog):
         index = self.ui.comboBox_fileName.findText(filename)
         if index == -1:
             self.ui.comboBox_fileName.addItem(filename)
-        self.ui.comboBox_fileName.setCurrentIndex(index if index >= 0
-                                                  else self.ui.comboBox_fileName.findText(filename))
+        self.ui.comboBox_fileName.setCurrentIndex(
+            index if index >= 0 else self.ui.comboBox_fileName.findText(filename)
+        )
 
     def _file_name_changed(self, *args, **kwargs):
         filename = str(self.ui.comboBox_fileName.currentText())
@@ -187,16 +198,19 @@ class ExportDialog(QDialog):
 
     def _browse(self, *args, **kwargs):
         if self._dir_dialog.exec_() == QDialog.Accepted:
-            dirs = self._dir_dialog.selectedFiles()  # behave differently in pyqt4 and pyqt5
+            dirs = (
+                self._dir_dialog.selectedFiles()
+            )  # behave differently in pyqt4 and pyqt5
             directory = str(
-                dirs[0] if dirs else self._dir_dialog.directory().absolutePath())  # this makes the behave the same
+                dirs[0] if dirs else self._dir_dialog.directory().absolutePath()
+            )  # this makes the behave the same
             # update directory
             index = self.ui.comboBox_directory.findText(directory)
             if index == -1:
                 self.ui.comboBox_directory.addItem(directory)
-            self.ui.comboBox_directory.setCurrentIndex(index
-                                                       if index >= 0
-                                                       else self.ui.comboBox_directory.findText(directory))
+            self.ui.comboBox_directory.setCurrentIndex(
+                index if index >= 0 else self.ui.comboBox_directory.findText(directory)
+            )
 
     def export_to_file(self, fig):
         self._fig = fig
@@ -224,23 +238,25 @@ class ExportDialog(QDialog):
 
                 params = self.get_savefig_params()
                 # change size
-                fig.set_size_inches(self.get_size_inches_width(), self.get_size_inches_height())
+                fig.set_size_inches(
+                    self.get_size_inches_width(), self.get_size_inches_height()
+                )
                 try:
                     fig.savefig(fname, **params)
                 except IOError as err:
-                    if 'RGBA' in err.message:
+                    if "RGBA" in err.message:
                         # if the problem is RGBA as the alpha channel is not supported in the selected format
                         # save to png then save as
                         basename = os.path.basename(fname)
                         tmp_dir = tempfile.gettempdir()
                         filename, ext = os.path.splitext(basename)
                         png_file = filename + ".png"
-                        final_format = params['format']
-                        params['format'] = 'png'
+                        final_format = params["format"]
+                        params["format"] = "png"
                         new_fname = os.path.join(tmp_dir, png_file)
                         fig.savefig(new_fname, **params)
                         with Image.open(new_fname) as im:
-                            rgb_im = im.convert('RGB')
+                            rgb_im = im.convert("RGB")
                             # make sure the fname is ended with the right extension
                             fname, _ = os.path.splitext(fname)
                             fname += "." + final_format
@@ -262,35 +278,40 @@ class ExportDialog(QDialog):
 
     def _show_file_exist_message(self, fname, new_name):
         self._msg_box.setText(
-            "<p>File \"{0}\" already exists. Do you want to overwrite the existing, or save to \"{1}\" instead?<\p>".format(
-                fname, new_name))
+            '<p>File "{0}" already exists. Do you want to overwrite the existing, or save to "{1}" instead?<\p>'.format(
+                fname, new_name
+            )
+        )
         self._msg_box.exec_()
 
     def get_save_file_name(self):
         name = os.path.join(
             str(self.ui.comboBox_directory.currentText()),
-            str(self.ui.comboBox_fileName.currentText())
+            str(self.ui.comboBox_fileName.currentText()),
         )
         return os.path.normpath(name)
 
     def get_savefig_params(self):
         params = {
-            'dpi': self.ui.spinBox_dpi.value(),
-            'orientation': self.get_orientation(),
-            'format': self.get_file_format()[0],
-            'transparent': self.get_transparent(),
-            'bbox_inches': self.get_bbox_inches()
+            "dpi": self.ui.spinBox_dpi.value(),
+            "orientation": self.get_orientation(),
+            "format": self.get_file_format()[0],
+            "transparent": self.get_transparent(),
+            "bbox_inches": self.get_bbox_inches(),
         }
         return params
 
     def get_transparent(self):
-        return self.ui.checkBox_transparent.isEnabled() and self.ui.checkBox_transparent.isChecked()
+        return (
+            self.ui.checkBox_transparent.isEnabled()
+            and self.ui.checkBox_transparent.isChecked()
+        )
 
     def get_file_format(self):
         return IMAGE_FORMATS[self.ui.comboBox_fileType.currentIndex()]
 
     def get_bbox_inches(self):
-        return 'tight' if self.ui.checkBox_tightBbox.isChecked() else None
+        return "tight" if self.ui.checkBox_tightBbox.isChecked() else None
 
     def get_orientation(self):
         return self._orientation[self.ui.comboBox_orientation.currentIndex()]

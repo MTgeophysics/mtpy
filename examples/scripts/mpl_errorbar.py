@@ -20,10 +20,10 @@ fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 ax.errorbar(x, y, yerr=yerr)
 
-ax.set_yscale('log', nonposy='clip')
+ax.set_yscale("log", nonposy="clip")
 # ax.set_xscale('log')
 # ax.set_ylim((10, 100))
 
-#fig.savefig("errorbar_mpl{}.png".format(matplotlib.__version__.replace(".", "")))
+# fig.savefig("errorbar_mpl{}.png".format(matplotlib.__version__.replace(".", "")))
 
 plt.show()

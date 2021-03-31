@@ -43,22 +43,22 @@ class Strike(VisualizationBase):
     def plot(self):
         # set up params
         self._params = {
-            'fn_list': [mt_obj.fn for mt_obj in self._mt_objs],
-            'rot_z': self._rotation_ui.get_rotation_in_degree(),
-            'period_tolerance': self._tolerance_ui.get_tolerance_in_float(),
-            'plot_range': self._plot_control_ui.get_plot_range(),
-            'plot_type': self._plot_control_ui.get_plot_type(),
-            'plot_tipper': self._plot_control_ui.get_plot_tipper(),
-            'pt_error_floor': self._plot_control_ui.get_error_floor(),
-            'fold': self._plot_control_ui.get_fold(),
-            'fig_size': (8, 6),
-            'fig_dpi': 100,
-            "plot_yn": 'n',
-            "fig_num": get_next_fig_num()
+            "fn_list": [mt_obj.fn for mt_obj in self._mt_objs],
+            "rot_z": self._rotation_ui.get_rotation_in_degree(),
+            "period_tolerance": self._tolerance_ui.get_tolerance_in_float(),
+            "plot_range": self._plot_control_ui.get_plot_range(),
+            "plot_type": self._plot_control_ui.get_plot_type(),
+            "plot_tipper": self._plot_control_ui.get_plot_tipper(),
+            "pt_error_floor": self._plot_control_ui.get_error_floor(),
+            "fold": self._plot_control_ui.get_fold(),
+            "fig_size": (8, 6),
+            "fig_dpi": 100,
+            "plot_yn": "n",
+            "fig_num": get_next_fig_num(),
         }
         param = self._font_ui.get_size()
         if param is not None:
-            self._params['font_size'] = param
+            self._params["font_size"] = param
         self._plotting_object = PlotStrike(**self._params)
         self._plotting_object.plot(show=False)
         self._fig = self._plotting_object.fig

@@ -17,6 +17,7 @@ import mtpy.utils.gis_tools
 # Add in elevation to the model
 # ==============================================================================
 
+
 def read_surface_ascii(ascii_fn):
     """
     read in surface which is ascii format ()
@@ -37,7 +38,7 @@ def read_surface_ascii(ascii_fn):
     |
     S
     """
-    dfid = file(ascii_fn, 'r')
+    dfid = file(ascii_fn, "r")
     d_dict = {}
     skiprows = 0
     for ii in range(6):
@@ -53,13 +54,15 @@ def read_surface_ascii(ascii_fn):
             skiprows += 1
     dfid.close()
 
-    x0 = d_dict['xllcorner']
-    y0 = d_dict['yllcorner']
-    nx = int(d_dict['ncols'])
-    ny = int(d_dict['nrows'])
-    cs = d_dict['cellsize']
+    x0 = d_dict["xllcorner"]
+    y0 = d_dict["yllcorner"]
+    nx = int(d_dict["ncols"])
+    ny = int(d_dict["nrows"])
+    cs = d_dict["cellsize"]
 
-    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]  # ::-1 reverse an axis to put the southern line first
+    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[
+        ::-1
+    ]  # ::-1 reverse an axis to put the southern line first
 
     # create lat and lon arrays from the dem file
     lon = np.arange(x0, x0 + cs * (nx), cs)
@@ -67,8 +70,7 @@ def read_surface_ascii(ascii_fn):
     lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
     lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
 
-
-    return lon, lat, elevation   # this appears correct
+    return lon, lat, elevation  # this appears correct
 
     # return lat, lon, elevation  # FZ: switch lat-lon??
     # to match with MT's coordinate definition
@@ -92,7 +94,7 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=
     V
     S
     """
-    dfid = file(ascii_fn, 'r')
+    dfid = file(ascii_fn, "r")
     d_dict = {}
     for ii in range(6):
         dline = dfid.readline()
@@ -101,11 +103,11 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=
         value = float(dline[1].strip())
         d_dict[key] = value
 
-    x0 = d_dict['xllcorner']
-    y0 = d_dict['yllcorner']
-    nx = int(d_dict['ncols'])
-    ny = int(d_dict['nrows'])
-    cs = d_dict['cellsize']
+    x0 = d_dict["xllcorner"]
+    y0 = d_dict["yllcorner"]
+    nx = int(d_dict["ncols"])
+    ny = int(d_dict["nrows"])
+    cs = d_dict["cellsize"]
 
     # read in the elevation data
     elevation = np.zeros((nx, ny))
@@ -115,8 +117,7 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=
         if len(str(dline)) > 1:
             # needs to be backwards because first line is the furthest north
             # row.
-            elevation[
-            :, -ii] = np.array(dline.strip().split(' '), dtype='float')
+            elevation[:, -ii] = np.array(dline.strip().split(" "), dtype="float")
         else:
             break
 
@@ -146,12 +147,19 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=
     new_north = north[np.arange(0, north.shape[0], num_cells)]
 
     try:
-        new_x, new_y = np.meshgrid(np.arange(0, east.shape[0], num_cells),
-                                   np.arange(0, north.shape[0], num_cells),
-                                   indexing='ij')
+        new_x, new_y = np.meshgrid(
+            np.arange(0, east.shape[0], num_cells),
+            np.arange(0, north.shape[0], num_cells),
+            indexing="ij",
+        )
     except TypeError:
-        new_x, new_y = [arr.T for arr in np.meshgrid(np.arange(0, east.shape[0], num_cells),
-                                                     np.arange(0, north.shape[0], num_cells))]
+        new_x, new_y = [
+            arr.T
+            for arr in np.meshgrid(
+                np.arange(0, east.shape[0], num_cells),
+                np.arange(0, north.shape[0], num_cells),
+            )
+        ]
     elevation = elevation[new_x, new_y]
 
     # estimate the shift of the DEM to relative model coordinates
@@ -173,8 +181,9 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=
         return new_east, new_north, elevation
 
 
-def interpolate_elevation(elev_east, elev_north, elevation, model_east,
-                          model_north, pad=3):
+def interpolate_elevation(
+    elev_east, elev_north, elevation, model_east, model_north, pad=3
+):
     """
     interpolate the elevation onto the model grid.
 
@@ -214,22 +223,24 @@ def interpolate_elevation(elev_east, elev_north, elevation, model_east,
 
     """
     # need to line up the elevation with the model
-    grid_east, grid_north = np.broadcast_arrays(elev_east[:, None],
-                                                elev_north[None, :])
+    grid_east, grid_north = np.broadcast_arrays(elev_east[:, None], elev_north[None, :])
     # interpolate onto the model grid
-    interp_elev = spi.griddata((grid_east.ravel(), grid_north.ravel()),
-                               elevation.ravel(),
-                               (model_east[:, None],
-                                model_north[None, :]),
-                               method='linear',
-                               fill_value=elevation.mean())
+    interp_elev = spi.griddata(
+        (grid_east.ravel(), grid_north.ravel()),
+        elevation.ravel(),
+        (model_east[:, None], model_north[None, :]),
+        method="linear",
+        fill_value=elevation.mean(),
+    )
 
     interp_elev[0:pad, pad:-pad] = interp_elev[pad, pad:-pad]
     interp_elev[-pad:, pad:-pad] = interp_elev[-pad - 1, pad:-pad]
-    interp_elev[:, 0:pad] = interp_elev[:, pad].repeat(pad).reshape(
-        interp_elev[:, 0:pad].shape)
-    interp_elev[:, -pad:] = interp_elev[:, -pad - 1].repeat(pad).reshape(
-        interp_elev[:, -pad:].shape)
+    interp_elev[:, 0:pad] = (
+        interp_elev[:, pad].repeat(pad).reshape(interp_elev[:, 0:pad].shape)
+    )
+    interp_elev[:, -pad:] = (
+        interp_elev[:, -pad - 1].repeat(pad).reshape(interp_elev[:, -pad:].shape)
+    )
 
     # transpose the modeled elevation to align with x=N, y=E
     interp_elev = interp_elev.T
@@ -237,8 +248,15 @@ def interpolate_elevation(elev_east, elev_north, elevation, model_east,
     return interp_elev
 
 
-def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
-                         pad=3, res_air=1e12, fill_res=100, res_sea=0.3):
+def make_elevation_model(
+    interp_elev,
+    model_nodes_z,
+    elevation_cell=30,
+    pad=3,
+    res_air=1e12,
+    fill_res=100,
+    res_sea=0.3,
+):
     """
     Take the elevation data of the interpolated elevation model and map that
     onto the resistivity model by adding elevation cells to the existing model.
@@ -303,22 +321,25 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
 
     # calculate the number of elevation cells needed
     num_elev_cells = int((elev_max - elev_min) / elevation_cell)
-    print 'Number of elevation cells: {0}'.format(num_elev_cells)
+    print "Number of elevation cells: {0}".format(num_elev_cells)
 
     # find sea level if it is there
     if elev_min < 0:
-        sea_level_index = num_elev_cells - \
-                          abs(int((elev_min) / elevation_cell)) - 1
+        sea_level_index = num_elev_cells - abs(int((elev_min) / elevation_cell)) - 1
     else:
         sea_level_index = num_elev_cells - 1
 
-    print 'Sea level index is {0}'.format(sea_level_index)
+    print "Sea level index is {0}".format(sea_level_index)
 
     # make an array of just the elevation for the model
     # north is first index, east is second, vertical is third
-    elevation_model = np.ones((interp_elev.shape[0],
-                               interp_elev.shape[1],
-                               num_elev_cells + model_nodes_z.shape[0]))
+    elevation_model = np.ones(
+        (
+            interp_elev.shape[0],
+            interp_elev.shape[1],
+            num_elev_cells + model_nodes_z.shape[0],
+        )
+    )
 
     elevation_model[:, :, :] = fill_res
 
@@ -331,18 +352,19 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
             if interp_elev[nn, ee] < 0:
                 # fill in from bottom to sea level, then rest with air
                 elevation_model[nn, ee, 0:sea_level_index] = res_air
-                dz = sea_level_index + \
-                     abs(int((interp_elev[nn, ee]) / elevation_cell)) + 1
+                dz = (
+                    sea_level_index
+                    + abs(int((interp_elev[nn, ee]) / elevation_cell))
+                    + 1
+                )
                 elevation_model[nn, ee, sea_level_index:dz] = res_sea
             else:
                 dz = int((elev_max - interp_elev[nn, ee]) / elevation_cell)
                 elevation_model[nn, ee, 0:dz] = res_air
 
     # make new z nodes array
-    new_nodes_z = np.append(np.repeat(elevation_cell, num_elev_cells),
-                            model_nodes_z)
+    new_nodes_z = np.append(np.repeat(elevation_cell, num_elev_cells), model_nodes_z)
 
     new_nodes_z[np.where(new_nodes_z < elevation_cell)] = elevation_cell
 
     return elevation_model, new_nodes_z
-

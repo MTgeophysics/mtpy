@@ -1,4 +1,3 @@
-
 """
 mtpy/processing/coherence.py
 
@@ -13,7 +12,7 @@ Output can be visualised with the help of mtpy/imaging/plotcoherence.py
 
 """
 
-#=================================================================
+# =================================================================
 
 
 import numpy as np
@@ -27,4 +26,4 @@ import copy
 
 import mtpy.utils.exceptions as MTex
 
-#=================================================================
+# =================================================================

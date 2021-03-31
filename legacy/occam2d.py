@@ -28,7 +28,7 @@ Functions:
 
 
 """
-#==============================================================================
+# ==============================================================================
 import numpy as np
 import scipy as sp
 import os
@@ -47,10 +47,16 @@ import mtpy.core.edi as MTedi
 import mtpy.modeling.winglinktools as MTwl
 import mtpy.utils.conversions as MTcv
 
-#==============================================================================
+# ==============================================================================
 
-occamdict = {'1': 'resxy', '2': 'phasexy', '3': 'realtip', '4': 'imagtip', '5': 'resyx',
-             '6': 'phaseyx'}
+occamdict = {
+    "1": "resxy",
+    "2": "phasexy",
+    "3": "realtip",
+    "4": "imagtip",
+    "5": "resyx",
+    "6": "phaseyx",
+}
 
 
 def getdatetime():
@@ -82,21 +88,21 @@ def makestartfiles(parameter_dict):
 
     read_datafile(parameter_dict)
 
-    parameter_dict['n_sideblockelements'] = 7
-    parameter_dict['n_bottomlayerelements'] = 4
+    parameter_dict["n_sideblockelements"] = 7
+    parameter_dict["n_bottomlayerelements"] = 4
 
-    parameter_dict['itform'] = 'not specified'
-    parameter_dict['description'] = 'N/A'
+    parameter_dict["itform"] = "not specified"
+    parameter_dict["description"] = "N/A"
 
-    parameter_dict['datetime'] = getdatetime()
+    parameter_dict["datetime"] = getdatetime()
 
-    parameter_dict['iruf'] = 1
-    parameter_dict['idebug'] = 1
-    parameter_dict['nit'] = 0
-    parameter_dict['pmu'] = 5.0
-    parameter_dict['rlast'] = 1.0E+07
-    parameter_dict['tobt'] = 100.
-    parameter_dict['ifftol'] = 0
+    parameter_dict["iruf"] = 1
+    parameter_dict["idebug"] = 1
+    parameter_dict["nit"] = 0
+    parameter_dict["pmu"] = 5.0
+    parameter_dict["rlast"] = 1.0e07
+    parameter_dict["tobt"] = 100.0
+    parameter_dict["ifftol"] = 0
 
     blocks_elements_setup(parameter_dict)
 
@@ -106,9 +112,9 @@ def makestartfiles(parameter_dict):
     writemodelfile(parameter_dict)
     writestartupfile(parameter_dict)
 
-    MeshF = parameter_dict['meshfn']
-    ModF = parameter_dict['inmodelfn']
-    SF = parameter_dict['startupfn']
+    MeshF = parameter_dict["meshfn"]
+    ModF = parameter_dict["inmodelfn"]
+    SF = parameter_dict["startupfn"]
 
     return (MeshF, ModF, SF)
 
@@ -123,13 +129,13 @@ def writemeshfile(parameter_dict):
     mesh_positions_vert
     ================ ==========================================================
     """
-    mesh_positions_vert = parameter_dict['mesh_positions_vert']
-    mesh_positions_hor = parameter_dict['mesh_positions_hor']
-    n_nodes_hor = parameter_dict['n_nodes_hor']
-    n_nodes_vert = parameter_dict['n_nodes_vert']
+    mesh_positions_vert = parameter_dict["mesh_positions_vert"]
+    mesh_positions_hor = parameter_dict["mesh_positions_hor"]
+    n_nodes_hor = parameter_dict["n_nodes_hor"]
+    n_nodes_vert = parameter_dict["n_nodes_vert"]
 
-    fh_mesh = file(parameter_dict['meshfn'], 'w')
-    mesh_outstring = ''
+    fh_mesh = file(parameter_dict["meshfn"], "w")
+    mesh_outstring = ""
 
     temptext = "MESH FILE FROM MTpy\n"
     mesh_outstring += temptext
@@ -152,9 +158,9 @@ def writemeshfile(parameter_dict):
     mesh_outstring += "%i\n" % (0)
 
     for j in range(4 * (n_nodes_vert - 1)):
-        tempstring = ''
+        tempstring = ""
         tempstring += (n_nodes_hor - 1) * "?"
-        tempstring += '\n'
+        tempstring += "\n"
         mesh_outstring += tempstring
 
     fh_mesh.write(mesh_outstring)
@@ -164,23 +170,22 @@ def writemeshfile(parameter_dict):
 def writemodelfile(parameter_dict):
     "needed : filename,binding_offset,startcolumn, n_layers,layer_thickness,block_width"
 
-    modelblockstrings = parameter_dict['modelblockstrings']
-    nfev = parameter_dict['nfev']
-    lo_colnumbers = parameter_dict['lo_colnumbers']
-    boffset = float(parameter_dict['binding_offset'])
-    n_layers = int(float(parameter_dict['n_layers']))
+    modelblockstrings = parameter_dict["modelblockstrings"]
+    nfev = parameter_dict["nfev"]
+    lo_colnumbers = parameter_dict["lo_colnumbers"]
+    boffset = float(parameter_dict["binding_offset"])
+    n_layers = int(float(parameter_dict["n_layers"]))
 
-    fh_model = file(parameter_dict['inmodelfn'], 'w')
-    model_outstring = ''
+    fh_model = file(parameter_dict["inmodelfn"], "w")
+    model_outstring = ""
 
     temptext = "Format:           %s\n" % ("OCCAM2MTMOD_1.0")
     model_outstring += temptext
-    temptext = "Model Name:       %s\n" % (parameter_dict['modelname'])
+    temptext = "Model Name:       %s\n" % (parameter_dict["modelname"])
     model_outstring += temptext
     temptext = "Description:      %s\n" % ("Random Text")
     model_outstring += temptext
-    temptext = "Mesh File:        %s\n" % (
-        os.path.basename(parameter_dict['meshfn']))
+    temptext = "Mesh File:        %s\n" % (os.path.basename(parameter_dict["meshfn"]))
     model_outstring += temptext
     temptext = "Mesh Type:        %s\n" % ("PW2D")
     model_outstring += temptext
@@ -201,7 +206,7 @@ def writemodelfile(parameter_dict):
 
         temptext = modelblockstrings[k]
         model_outstring += temptext
-        #model_outstring += "\n"
+        # model_outstring += "\n"
 
     temptext = "Number Exceptions:%i\n" % (0)
     model_outstring += temptext
@@ -212,47 +217,47 @@ def writemodelfile(parameter_dict):
 
 def writestartupfile(parameter_dict):
 
-    fh_startup = file(parameter_dict['startupfn'], 'w')
-    startup_outstring = ''
+    fh_startup = file(parameter_dict["startupfn"], "w")
+    startup_outstring = ""
 
-    temptext = "Format:           %s\n" % (parameter_dict['itform'])
+    temptext = "Format:           %s\n" % (parameter_dict["itform"])
     startup_outstring += temptext
-    temptext = "Description:      %s\n" % (parameter_dict['description'])
+    temptext = "Description:      %s\n" % (parameter_dict["description"])
     startup_outstring += temptext
     temptext = "Model File:       %s\n" % (
-        os.path.basename(parameter_dict['inmodelfn']))
+        os.path.basename(parameter_dict["inmodelfn"])
+    )
     startup_outstring += temptext
-    temptext = "Data File:        %s\n" % (
-        os.path.basename(parameter_dict['datafile']))
+    temptext = "Data File:        %s\n" % (os.path.basename(parameter_dict["datafile"]))
     startup_outstring += temptext
-    temptext = "Date/Time:        %s\n" % (parameter_dict['datetime'])
+    temptext = "Date/Time:        %s\n" % (parameter_dict["datetime"])
     startup_outstring += temptext
     temptext = "Max Iter:         %i\n" % (
-        int(float(parameter_dict['n_max_iterations'])))
+        int(float(parameter_dict["n_max_iterations"]))
+    )
     startup_outstring += temptext
-    temptext = "Req Tol:          %.1g\n" % (
-        float(parameter_dict['targetrms']))
+    temptext = "Req Tol:          %.1g\n" % (float(parameter_dict["targetrms"]))
     startup_outstring += temptext
-    temptext = "IRUF:             %s\n" % (parameter_dict['iruf'])
+    temptext = "IRUF:             %s\n" % (parameter_dict["iruf"])
     startup_outstring += temptext
-    temptext = "Debug Level:      %s\n" % (parameter_dict['idebug'])
+    temptext = "Debug Level:      %s\n" % (parameter_dict["idebug"])
     startup_outstring += temptext
     temptext = "Iteration:        %i\n" % (
-        int(float(parameter_dict['n_max_iterations'])))
+        int(float(parameter_dict["n_max_iterations"]))
+    )
     startup_outstring += temptext
-    temptext = "PMU:              %s\n" % (parameter_dict['pmu'])
+    temptext = "PMU:              %s\n" % (parameter_dict["pmu"])
     startup_outstring += temptext
-    temptext = "Rlast:            %s\n" % (parameter_dict['rlast'])
+    temptext = "Rlast:            %s\n" % (parameter_dict["rlast"])
     startup_outstring += temptext
-    temptext = "Tlast:            %s\n" % (parameter_dict['tobt'])
+    temptext = "Tlast:            %s\n" % (parameter_dict["tobt"])
     startup_outstring += temptext
-    temptext = "IffTol:           %s\n" % (parameter_dict['ifftol'])
+    temptext = "IffTol:           %s\n" % (parameter_dict["ifftol"])
     startup_outstring += temptext
-    temptext = "No. Parms:        %i\n" % (
-        int(float(parameter_dict['n_parameters'])))
+    temptext = "No. Parms:        %i\n" % (int(float(parameter_dict["n_parameters"])))
     startup_outstring += temptext
     temptext = ""
-    for l in range(int(float(parameter_dict['n_parameters']))):
+    for l in range(int(float(parameter_dict["n_parameters"]))):
         temptext += "%.1g  " % (2.0)
     temptext += "\n"
     startup_outstring += temptext
@@ -263,8 +268,8 @@ def writestartupfile(parameter_dict):
 
 def read_datafile(parameter_dict):
 
-    df = parameter_dict['datafile']
-    F = file(df, 'r')
+    df = parameter_dict["datafile"]
+    F = file(df, "r")
     datafile_content = F.readlines()
     F.close()
 
@@ -287,19 +292,14 @@ def read_datafile(parameter_dict):
         idx = 2 * n_sites + 5 + i
         freqs.append(float(datafile_content[idx].strip()))
 
-    n_data = int(
-        datafile_content[
-            2 *
-            n_sites +
-            5 +
-            n_freqs].strip().split()[2])
+    n_data = int(datafile_content[2 * n_sites + 5 + n_freqs].strip().split()[2])
 
-    parameter_dict['lo_site_names'] = sitenames
-    parameter_dict['lo_site_locations'] = sitelocations
-    parameter_dict['n_sites'] = n_sites
-    parameter_dict['n_datapoints'] = n_data
-    parameter_dict['n_freqs'] = n_freqs
-    parameter_dict['lo_freqs'] = freqs
+    parameter_dict["lo_site_names"] = sitenames
+    parameter_dict["lo_site_locations"] = sitelocations
+    parameter_dict["n_sites"] = n_sites
+    parameter_dict["n_datapoints"] = n_data
+    parameter_dict["n_freqs"] = n_freqs
+    parameter_dict["lo_freqs"] = freqs
 
 
 def get_model_setup(parameter_dict):
@@ -315,13 +315,13 @@ def get_model_setup(parameter_dict):
     ================ ==========================================================
     """
 
-    ncol0 = int(float(parameter_dict['ncol0']))
-    n_layer = int(float(parameter_dict['n_layers']))
-    nfe = parameter_dict['nfe']
-    thickness = parameter_dict['thickness']
-    width = parameter_dict['width']
-    trigger = float(parameter_dict['trigger'])
-    dlz = parameter_dict['dlz']
+    ncol0 = int(float(parameter_dict["ncol0"]))
+    n_layer = int(float(parameter_dict["n_layers"]))
+    nfe = parameter_dict["nfe"]
+    thickness = parameter_dict["thickness"]
+    width = parameter_dict["width"]
+    trigger = float(parameter_dict["trigger"])
+    dlz = parameter_dict["dlz"]
 
     modelblockstrings = []
     lo_colnumbers = []
@@ -338,7 +338,8 @@ def get_model_setup(parameter_dict):
 
             # PROBLEM : 'thickness' has only "n_layer'-1 entries!!
             if not dlz[layer_idx] > (
-                    trigger * (width[block_idx] + width[block_idx + 1])):
+                trigger * (width[block_idx] + width[block_idx + 1])
+            ):
                 block_idx += 1
                 continue
 
@@ -366,20 +367,20 @@ def get_model_setup(parameter_dict):
         if layer_idx == 0:
             mcol = ncol
 
-    parameter_dict['modelblockstrings'] = modelblockstrings
-    parameter_dict['lo_colnumbers'] = lo_colnumbers
-    parameter_dict['n_parameters'] = np
-    parameter_dict['n_cols_max'] = mcol
+    parameter_dict["modelblockstrings"] = modelblockstrings
+    parameter_dict["lo_colnumbers"] = lo_colnumbers
+    parameter_dict["n_parameters"] = np
+    parameter_dict["n_cols_max"] = mcol
 
 
 def blocks_elements_setup(parameter_dict):
 
-    lo_sites = parameter_dict['lo_site_locations']
+    lo_sites = parameter_dict["lo_site_locations"]
     n_sites = len(lo_sites)
-    maxwidth = float(parameter_dict['max_blockwidth'])
+    maxwidth = float(parameter_dict["max_blockwidth"])
 
-    nbot = int(float(parameter_dict['n_bottomlayerelements']))
-    nside = int(float(parameter_dict['n_sideblockelements']))
+    nbot = int(float(parameter_dict["n_bottomlayerelements"]))
+    nside = int(float(parameter_dict["n_sideblockelements"]))
 
     # j: index for finite elements
     # k: index for regularisation bricks
@@ -404,29 +405,30 @@ def blocks_elements_setup(parameter_dict):
         n_localextrasites = int(spacing / maxwidth) + 1
 
         for idx2 in range(n_localextrasites):
-            sitlok.append(lo_sites[idx - 1] + (idx2 + 1.) /
-                          float(n_localextrasites) * spacing)
+            sitlok.append(
+                lo_sites[idx - 1] + (idx2 + 1.0) / float(n_localextrasites) * spacing
+            )
             j += 1
 
     # nrk: number of total dummy stations
     nrk = j
     print "%i dummy stations defined" % (nrk)
 
-    spacing1 = (sitlok[1] - sitlok[0]) / 2.
+    spacing1 = (sitlok[1] - sitlok[0]) / 2.0
     sides.append(3 * spacing1)
 
     for idx in range(1, nside):
         curr_side = 3 * sides[idx - 1]
-        if curr_side > 1000000.:
-            curr_side = 1000000.
+        if curr_side > 1000000.0:
+            curr_side = 1000000.0
         sides.append(curr_side)
 
-    #-------------------------------------------
+    # -------------------------------------------
 
     j = 0
     k = 0
 
-    firstblockwidth = 0.
+    firstblockwidth = 0.0
 
     for idx in range(nside - 1, -1, -1):
         firstblockwidth += sides[idx]
@@ -456,10 +458,10 @@ def blocks_elements_setup(parameter_dict):
 
     k += 1
 
-    #------------------------
+    # ------------------------
 
     for idx in range(1, nrk - 1):
-        spacing2 = (sitlok[idx + 1] - sitlok[idx]) / 2.
+        spacing2 = (sitlok[idx + 1] - sitlok[idx]) / 2.0
         dly.append(spacing1)
         dly.append(spacing2)
         j += 2
@@ -484,18 +486,18 @@ def blocks_elements_setup(parameter_dict):
     width.append(2 * spacing2)
     k += 1
 
-    width[-1] = 0.
+    width[-1] = 0.0
     sides[0] = 3 * spacing2
 
-    #------------------------------
+    # ------------------------------
 
     for idx in range(1, nside):
         curr_side = 3 * sides[idx - 1]
-        if curr_side > 1000000.:
-            curr_side = 1000000.
+        if curr_side > 1000000.0:
+            curr_side = 1000000.0
         sides[idx] = curr_side
 
-    lastblockwidth = 0.
+    lastblockwidth = 0.0
     for idx in range(nside):
         j += 1
         lastblockwidth += sides[idx]
@@ -503,7 +505,7 @@ def blocks_elements_setup(parameter_dict):
 
     width[-1] = lastblockwidth
 
-    #---------------------------------
+    # ---------------------------------
 
     k += 1
     nfe.append(nside)
@@ -513,18 +515,18 @@ def blocks_elements_setup(parameter_dict):
 
     block_offset = sitlok[0] - block_offset
 
-    #----------------------------------
+    # ----------------------------------
 
-    layers_per_decade = float(parameter_dict['n_layersperdecade'])
-    first_layer_thickness = float(parameter_dict['firstlayer_thickness'])
+    layers_per_decade = float(parameter_dict["n_layersperdecade"])
+    first_layer_thickness = float(parameter_dict["firstlayer_thickness"])
 
-    t = 10.**(1. / layers_per_decade)
+    t = 10.0 ** (1.0 / layers_per_decade)
     t1 = first_layer_thickness
     thickness.append(t1)
 
     d1 = t1
 
-    n_layers = int(float(parameter_dict['n_layers']))
+    n_layers = int(float(parameter_dict["n_layers"]))
 
     for idx in range(1, n_layers - 1):
         d2 = d1 * t
@@ -539,25 +541,25 @@ def blocks_elements_setup(parameter_dict):
     for idx in range(1, nbot):
         bot.append(bot[idx - 1] * 3)
 
-    #--------------------------------------------------
+    # --------------------------------------------------
 
     k = 0
 
-    dlz.append(thickness[0] / 2.)
-    dlz.append(thickness[0] / 2.)
+    dlz.append(thickness[0] / 2.0)
+    dlz.append(thickness[0] / 2.0)
     nfev.append(2)
 
     k += 2
 
-    dlz.append(thickness[1] / 2.)
-    dlz.append(thickness[1] / 2.)
+    dlz.append(thickness[1] / 2.0)
+    dlz.append(thickness[1] / 2.0)
     nfev.append(2)
 
     k += 2
 
     for idx in range(2, n_layers - 1):
         k += 1
-        nfev.append(1.)
+        nfev.append(1.0)
         dlz.append(thickness[idx])
 
     for idx in range(nbot):
@@ -568,20 +570,20 @@ def blocks_elements_setup(parameter_dict):
 
     nodez = k + 1
 
-    parameter_dict['ncol0'] = ncol0
-    parameter_dict['nfe'] = nfe
-    parameter_dict['nfev'] = nfev
-    parameter_dict['thickness'] = thickness
-    parameter_dict['width'] = width
-    parameter_dict['binding_offset'] = block_offset
-    #parameter_dict['y_nodes']           = nodey
-    #parameter_dict['z_nodes']           = nodez
-    parameter_dict['dlz'] = dlz
-    #parameter_dict['dly']               = dly
-    parameter_dict['mesh_positions_vert'] = dlz
-    parameter_dict['mesh_positions_hor'] = dly
-    parameter_dict['n_nodes_hor'] = nodey
-    parameter_dict['n_nodes_vert'] = nodez
+    parameter_dict["ncol0"] = ncol0
+    parameter_dict["nfe"] = nfe
+    parameter_dict["nfev"] = nfev
+    parameter_dict["thickness"] = thickness
+    parameter_dict["width"] = width
+    parameter_dict["binding_offset"] = block_offset
+    # parameter_dict['y_nodes']           = nodey
+    # parameter_dict['z_nodes']           = nodez
+    parameter_dict["dlz"] = dlz
+    # parameter_dict['dly']               = dly
+    parameter_dict["mesh_positions_vert"] = dlz
+    parameter_dict["mesh_positions_hor"] = dly
+    parameter_dict["n_nodes_hor"] = nodey
+    parameter_dict["n_nodes_vert"] = nodez
 
 
 class OccamPointPicker(object):
@@ -658,8 +660,9 @@ class OccamPointPicker(object):
         >>> ocd.plotMaskPoints()
     """
 
-    def __init__(self, axlist, linelist, errlist, reserrinc=.05, phaseerrinc=.02,
-                 marker='h'):
+    def __init__(
+        self, axlist, linelist, errlist, reserrinc=0.05, phaseerrinc=0.02, marker="h"
+    ):
 
         # give the class some attributes
         self.axlist = axlist
@@ -682,19 +685,28 @@ class OccamPointPicker(object):
             # easy indexing
             for ii, line in enumerate(linelist[nn]):
                 self.data[nn].append(line.get_data()[1])
-                self.fdict[nn].append(dict([('{0:.5g}'.format(kk), ff) for ff, kk in
-                                            enumerate(line.get_data()[0])]))
-                self.fndict['{0}'.format(line.figure.number)] = nn
+                self.fdict[nn].append(
+                    dict(
+                        [
+                            ("{0:.5g}".format(kk), ff)
+                            for ff, kk in enumerate(line.get_data()[0])
+                        ]
+                    )
+                )
+                self.fndict["{0}".format(line.figure.number)] = nn
 
                 # set some events
                 if ii == 0:
-                    cid1 = line.figure.canvas.mpl_connect('pick_event', self)
-                    cid2 = line.figure.canvas.mpl_connect('axes_enter_event',
-                                                          self.inAxes)
-                    cid3 = line.figure.canvas.mpl_connect('key_press_event',
-                                                          self.on_close)
-                    cid4 = line.figure.canvas.mpl_connect('figure_enter_event',
-                                                          self.inFigure)
+                    cid1 = line.figure.canvas.mpl_connect("pick_event", self)
+                    cid2 = line.figure.canvas.mpl_connect(
+                        "axes_enter_event", self.inAxes
+                    )
+                    cid3 = line.figure.canvas.mpl_connect(
+                        "key_press_event", self.on_close
+                    )
+                    cid4 = line.figure.canvas.mpl_connect(
+                        "figure_enter_event", self.inFigure
+                    )
                     self.cidlist.append([cid1, cid2, cid3, cid4])
 
             # read in the error in a useful way so that it can be translated to
@@ -753,14 +765,15 @@ class OccamPointPicker(object):
             yd = npoint.get_ydata()[ii]
 
             # set the x index from the frequency dictionary
-            ll = self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
+            ll = self.fdict[self.fignum][self.jj]["{0:.5g}".format(xd[0])]
 
             # change the data to be a zero
             self.data[self.fignum][self.jj][ll] = 0
 
             # reset the point to be a gray x
-            self.ax.plot(xd, yd, ls='None', color=(.7, .7, .7), marker=self.marker,
-                         ms=4)
+            self.ax.plot(
+                xd, yd, ls="None", color=(0.7, 0.7, 0.7), marker=self.marker, ms=4
+            )
 
         # if the left button is clicked change both resistivity and phase
         # points
@@ -771,14 +784,15 @@ class OccamPointPicker(object):
             yd = npoint.get_ydata()[ii]
 
             # set the x index from the frequency dictionary
-            ll = self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
+            ll = self.fdict[self.fignum][self.jj]["{0:.5g}".format(xd[0])]
 
             # set the data point to zero
             self.data[self.fignum][self.jj][ll] = 0
 
             # reset the point to be a gray x
-            self.ax.plot(xd, yd, ls='None', color=(.7, .7, .7), marker=self.marker,
-                         ms=4)
+            self.ax.plot(
+                xd, yd, ls="None", color=(0.7, 0.7, 0.7), marker=self.marker, ms=4
+            )
 
             # check to make sure there is a corresponding res/phase point
             try:
@@ -789,11 +803,11 @@ class OccamPointPicker(object):
                 self.data[self.fignum][self.kk][ll] = 0
 
                 # make that data point a gray x
-                self.axlist[self.fignum][self.kk].plot(xd, yd2, ls='None',
-                                                       color=(.7, .7, .7), marker=self.marker,
-                                                       ms=4)
+                self.axlist[self.fignum][self.kk].plot(
+                    xd, yd2, ls="None", color=(0.7, 0.7, 0.7), marker=self.marker, ms=4
+                )
             except KeyError:
-                print 'Axis does not contain res/phase point'
+                print "Axis does not contain res/phase point"
 
         # if click the scroll button or middle button change increase the
         # errorbars by the given amount
@@ -803,7 +817,7 @@ class OccamPointPicker(object):
             yd = npoint.get_ydata()[ii]
 
             # get x index
-            ll = self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
+            ll = self.fdict[self.fignum][self.jj]["{0:.5g}".format(xd[0])]
 
             # make error bar array
             eb = self.errlist[self.fignum][self.jj][2].get_paths()[ll].vertices
@@ -827,8 +841,9 @@ class OccamPointPicker(object):
                 ecapu = ecapu + ecapu * self.phaseerrinc
 
             # put the new error into the error array
-            self.error[self.fignum][self.jj][ll] = abs(nebu -
-                                                       self.data[self.fignum][self.jj][ll])
+            self.error[self.fignum][self.jj][ll] = abs(
+                nebu - self.data[self.fignum][self.jj][ll]
+            )
 
             # set the new error bar values
             eb[0, 1] = nebu
@@ -900,7 +915,7 @@ class OccamPointPicker(object):
 
         """
         self.event3 = event
-        self.fignum = self.fndict['{0}'.format(event.canvas.figure.number)]
+        self.fignum = self.fndict["{0}".format(event.canvas.figure.number)]
         self.line = self.linelist[self.fignum][0]
 
     # type the q key to quit the figure and disconnect event handling
@@ -917,11 +932,11 @@ class OccamPointPicker(object):
             print statement saying the figure is closed
         """
         self.event3 = event
-        if self.event3.key == 'q':
+        if self.event3.key == "q":
             for cid in self.cidlist[self.fignum]:
                 event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
-            print 'Closed figure ', self.fignum
+            print "Closed figure ", self.fignum
 
 
 class Occam2DData(object):
@@ -942,7 +957,7 @@ class Occam2DData(object):
         self.edipath = None
         self.station_list = None
         self.proj_angle = None
-        self.line_orientation = 'ew'
+        self.line_orientation = "ew"
 
         self.resxy_err = 10
         self.resyx_err = 10
@@ -954,12 +969,12 @@ class Occam2DData(object):
         self.freq_step = 1
         self.ftol = 0.05
 
-        self.model_mode = 'both'
+        self.model_mode = "both"
         self.save_path = None
         self.title = None
         self.thetar = 0
-        self._ss = ' ' * 3
-        self._string_fmt = ' 2.6f'
+        self._ss = " " * 3
+        self._string_fmt = " 2.6f"
 
     def _get_station_data(self, edipath, station_list=None, thetar=0):
         """
@@ -981,15 +996,16 @@ class Occam2DData(object):
 
         # get edi files for all stations in edipath if station_list is None
         if station_list is None:
-            self.station_list = [edifile[:-4]
-                                 for edifile in os.listdir(edipath) if edifile.find('.edi')]
+            self.station_list = [
+                edifile[:-4] for edifile in os.listdir(edipath) if edifile.find(".edi")
+            ]
 
         for kk, station in enumerate(self.station_list):
             # search for filenames in the given directory and match to station
             # name
             for filename in os.listdir(edipath):
-                if fnmatch.fnmatch(filename, station + '*.edi'):
-                    print 'Found station edifile: ', filename
+                if fnmatch.fnmatch(filename, station + "*.edi"):
+                    print "Found station edifile: ", filename
 
                     # create a dictionary for the station data and info
                     surveydict = {}
@@ -1020,8 +1036,10 @@ class Occam2DData(object):
                             tip = z1.Tipper.tipper[::-1, :, :]
                             tipvar = z1.Tipper.tipper_err[::-1, :]
 
-                        print ('Flipped frequency to descending for station: '
-                               '{0}'.format(station))
+                        print (
+                            "Flipped frequency to descending for station: "
+                            "{0}".format(station)
+                        )
                     else:
                         if z1.Tipper.tipper is not None:
                             tip = z1.Tipper.tipper
@@ -1032,42 +1050,42 @@ class Occam2DData(object):
 
                     # put things into a dictionary to sort out order of
                     # stations
-                    surveydict['station'] = station
-                    surveydict['east'] = east
-                    surveydict['north'] = north
-                    surveydict['zone'] = zone
+                    surveydict["station"] = station
+                    surveydict["east"] = east
+                    surveydict["north"] = north
+                    surveydict["zone"] = zone
 
-                    surveydict['resxy'] = res[:, 0, 1]
-                    surveydict['resxy_err'] = res_err[:, 0, 1]
-                    surveydict['resyx'] = res[:, 1, 0]
-                    surveydict['resyx_err'] = res_err[:, 1, 0]
+                    surveydict["resxy"] = res[:, 0, 1]
+                    surveydict["resxy_err"] = res_err[:, 0, 1]
+                    surveydict["resyx"] = res[:, 1, 0]
+                    surveydict["resyx_err"] = res_err[:, 1, 0]
 
-                    surveydict['phasexy'] = phase[:, 0, 1]
-                    surveydict['phasexy_err'] = phase_err[:, 0, 1]
-                    surveydict['phaseyx'] = phase[:, 1, 0]
-                    surveydict['phaseyx_err'] = phase_err[:, 1, 0]
-                    surveydict['freq'] = freq
+                    surveydict["phasexy"] = phase[:, 0, 1]
+                    surveydict["phasexy_err"] = phase_err[:, 0, 1]
+                    surveydict["phaseyx"] = phase[:, 1, 0]
+                    surveydict["phaseyx_err"] = phase_err[:, 1, 0]
+                    surveydict["freq"] = freq
 
                     if z1.Tipper.tipper is not None:
-                        surveydict['tipper'] = tip
-                        surveydict['tippervar'] = tipvar
+                        surveydict["tipper"] = tip
+                        surveydict["tippervar"] = tipvar
 
-                    surveydict['lat'] = z1.lat
-                    surveydict['lon'] = z1.lon
+                    surveydict["lat"] = z1.lat
+                    surveydict["lon"] = z1.lon
 
                     self.freq_list.append(freq)
                     self.pstation_list.append(station)
                     self.survey_list.append(surveydict)
 
-    def _project_stations(self, proj_angle=None, plot_yn='y'):
+    def _project_stations(self, proj_angle=None, plot_yn="y"):
         """
         project stations onto a line
 
         """
 
         # get information from suvey_list
-        east_list = np.array([sdict['east'] for sdict in self.survey_list])
-        north_list = np.array([sdict['north'] for sdict in self.survey_list])
+        east_list = np.array([sdict["east"] for sdict in self.survey_list])
+        north_list = np.array([sdict["north"] for sdict in self.survey_list])
 
         # get bestfitting line
         p = sp.polyfit(east_list, north_list, 1)
@@ -1077,11 +1095,11 @@ class Occam2DData(object):
         # north and positive clockwise, where the projection assumes angle
         # is positive counter-clockwise
         if proj_angle is not None:
-            print 'projecting stations onto {0} deg line'.format(proj_angle)
+            print "projecting stations onto {0} deg line".format(proj_angle)
             if proj_angle == 0:
                 proj_angle = 0.0001
             self.proj_angle = proj_angle
-            self.proj_slope = -1. / np.arctan(np.deg2rad(proj_angle))
+            self.proj_slope = -1.0 / np.arctan(np.deg2rad(proj_angle))
             p[0] = np.arctan(np.deg2rad(proj_angle))
         else:
             self.proj_angle = np.rad2deg(np.arctan(p[0]))
@@ -1094,49 +1112,49 @@ class Occam2DData(object):
         # the two at a common point
         # y1 = m1 x +b1; y2 = m2 x + b2 --> m2 = -1/m1
         # calculate b2 and match y1 == y2
-        for east, north, ii in zip(east_list, north_list,
-                                   range(new_east_list.shape[0])):
+        for east, north, ii in zip(
+            east_list, north_list, range(new_east_list.shape[0])
+        ):
 
             new_b = north - self.proj_slope * east
             new_east = (new_b - p[1]) / (p[0] - self.proj_slope)
             new_north = p[0] * new_east + p[1]
             new_east_list[ii] = new_east
             new_north_list[ii] = new_north
-            self.survey_list[ii]['east_proj'] = new_east
-            self.survey_list[ii]['north_proj'] = new_north
+            self.survey_list[ii]["east_proj"] = new_east
+            self.survey_list[ii]["north_proj"] = new_north
 
         # plot stations on profile line
-        if plot_yn == 'y':
+        if plot_yn == "y":
             fig = plt.figure(4, dpi=200)
             plt.clf()
-            ax = fig.add_subplot(1, 1, 1, aspect='equal')
+            ax = fig.add_subplot(1, 1, 1, aspect="equal")
 
             # plot the line that stations have been projected onto
             ploty = sp.polyval(p, new_east_list)
-            ax.plot(new_east_list, ploty, '-b', lw=2)
+            ax.plot(new_east_list, ploty, "-b", lw=2)
 
             # plot stations
-            ax.scatter(new_east_list, new_north_list, marker='v', s=50,
-                       color='k')
+            ax.scatter(new_east_list, new_north_list, marker="v", s=50, color="k")
             for sdict in self.survey_list:
-                ax.text(sdict['east_proj'], sdict['north_proj'] + 100,
-                        sdict['station'], verticalalignment='baseline',
-                        horizontalalignment='center',
-                        fontdict={'size': 12, 'weight': 'bold'})
+                ax.text(
+                    sdict["east_proj"],
+                    sdict["north_proj"] + 100,
+                    sdict["station"],
+                    verticalalignment="baseline",
+                    horizontalalignment="center",
+                    fontdict={"size": 12, "weight": "bold"},
+                )
 
-            ax.set_title('Projected Stations')
-            ax.set_ylim(new_north_list.min() - 1000.,
-                        new_north_list.max() + 1000.)
-            ax.set_xlim(new_east_list.min() - 1000.,
-                        new_east_list.max() + 1000.)
-            ax.set_xlabel('Easting (m)',
-                          fontdict={'size': 12, 'weight': 'bold'})
-            ax.set_ylabel('Northing (m)',
-                          fontdict={'size': 12, 'weight': 'bold'})
-            ax.grid(True, which='both', lw=.5)
+            ax.set_title("Projected Stations")
+            ax.set_ylim(new_north_list.min() - 1000.0, new_north_list.max() + 1000.0)
+            ax.set_xlim(new_east_list.min() - 1000.0, new_east_list.max() + 1000.0)
+            ax.set_xlabel("Easting (m)", fontdict={"size": 12, "weight": "bold"})
+            ax.set_ylabel("Northing (m)", fontdict={"size": 12, "weight": "bold"})
+            ax.grid(True, which="both", lw=0.5)
             plt.show()
 
-    def _get_station_offsets(self, line_orientation='ew'):
+    def _get_station_offsets(self, line_orientation="ew"):
         """
         get relative offsets between stations, assuming stations have been
         projected onto a line
@@ -1146,50 +1164,81 @@ class Occam2DData(object):
 
         self.line_orientation = line_orientation
         for ii in range(len(self.survey_list)):
-            if self.survey_list[ii]['zone'] != self.survey_list[0]['zone']:
-                print 'Different zone for {0}'.format(
-                    self.survey_list[ii]['station'])
+            if self.survey_list[ii]["zone"] != self.survey_list[0]["zone"]:
+                print "Different zone for {0}".format(self.survey_list[ii]["station"])
 
             # need to figure out a way to account for zone changes
 
-            if self.line_orientation == 'ew':
-                if self.survey_list[0]['east_proj'] < \
-                   self.survey_list[ii]['east_proj']:
-                    self.survey_list[ii]['offset'] = \
-                        np.sqrt((self.survey_list[0]['east_proj'] -
-                                 self.survey_list[ii]['east_proj'])**2 +
-                                (self.survey_list[0]['north_proj'] -
-                                 self.survey_list[ii]['north_proj'])**2)
-                elif self.survey_list[0]['east_proj'] > \
-                        self.survey_list[ii]['east_proj']:
-                    self.survey_list[ii]['offset'] = \
-                        -1 * np.sqrt((self.survey_list[0]['east_proj'] -
-                                      self.survey_list[ii]['east_proj'])**2 +
-                                     (self.survey_list[0]['north_proj'] -
-                                      self.survey_list[ii]['north_proj'])**2)
+            if self.line_orientation == "ew":
+                if self.survey_list[0]["east_proj"] < self.survey_list[ii]["east_proj"]:
+                    self.survey_list[ii]["offset"] = np.sqrt(
+                        (
+                            self.survey_list[0]["east_proj"]
+                            - self.survey_list[ii]["east_proj"]
+                        )
+                        ** 2
+                        + (
+                            self.survey_list[0]["north_proj"]
+                            - self.survey_list[ii]["north_proj"]
+                        )
+                        ** 2
+                    )
+                elif (
+                    self.survey_list[0]["east_proj"] > self.survey_list[ii]["east_proj"]
+                ):
+                    self.survey_list[ii]["offset"] = -1 * np.sqrt(
+                        (
+                            self.survey_list[0]["east_proj"]
+                            - self.survey_list[ii]["east_proj"]
+                        )
+                        ** 2
+                        + (
+                            self.survey_list[0]["north_proj"]
+                            - self.survey_list[ii]["north_proj"]
+                        )
+                        ** 2
+                    )
                 else:
-                    self.survey_list[ii]['offset'] = 0
+                    self.survey_list[ii]["offset"] = 0
 
-            elif self.line_orientation == 'ns':
-                if self.survey_list[0]['north_proj'] < \
-                   self.survey_list[ii]['north_proj']:
-                    self.survey_list[ii]['offset'] = \
-                        np.sqrt((self.survey_list[0]['east_proj'] -
-                                 self.survey_list[ii]['east_proj'])**2 +
-                                (self.survey_list[0]['north_proj'] -
-                                 self.survey_list[ii]['north_proj'])**2)
-                elif self.survey_list[0]['north_proj'] > \
-                        self.survey_list[ii]['north_proj']:
-                    self.survey_list[ii]['offset'] = \
-                        -1 * np.sqrt((self.survey_list[0]['east_proj'] -
-                                      self.survey_list[ii]['east_proj'])**2 +
-                                     (self.survey_list[0]['north_proj'] -
-                                      self.survey_list[ii]['north_proj'])**2)
+            elif self.line_orientation == "ns":
+                if (
+                    self.survey_list[0]["north_proj"]
+                    < self.survey_list[ii]["north_proj"]
+                ):
+                    self.survey_list[ii]["offset"] = np.sqrt(
+                        (
+                            self.survey_list[0]["east_proj"]
+                            - self.survey_list[ii]["east_proj"]
+                        )
+                        ** 2
+                        + (
+                            self.survey_list[0]["north_proj"]
+                            - self.survey_list[ii]["north_proj"]
+                        )
+                        ** 2
+                    )
+                elif (
+                    self.survey_list[0]["north_proj"]
+                    > self.survey_list[ii]["north_proj"]
+                ):
+                    self.survey_list[ii]["offset"] = -1 * np.sqrt(
+                        (
+                            self.survey_list[0]["east_proj"]
+                            - self.survey_list[ii]["east_proj"]
+                        )
+                        ** 2
+                        + (
+                            self.survey_list[0]["north_proj"]
+                            - self.survey_list[ii]["north_proj"]
+                        )
+                        ** 2
+                    )
                 else:
-                    self.survey_list[ii]['offset'] = 0
+                    self.survey_list[ii]["offset"] = 0
 
         # sort by ascending order of distance from first station
-        self.survey_list = sorted(self.survey_list, key=itemgetter('offset'))
+        self.survey_list = sorted(self.survey_list, key=itemgetter("offset"))
 
     def make2DdataFile(self, edipath, **kwargs):
         """
@@ -1324,45 +1373,45 @@ class Occam2DData(object):
 
         """
         # --> get information from key word arguments
-        self.model_mode = kwargs.pop('model_mode', self.model_mode)
-        self.station_list = kwargs.pop('station_list', self.station_list)
-        self.title = kwargs.pop('title', self.title)
-        self.thetar = kwargs.pop('thetar', self.thetar)
-        self.resxy_err = kwargs.pop('resxy_err', self.resxy_err)
-        self.resyx_err = kwargs.pop('resyx_err', self.resyx_err)
-        self.phasexy_err = kwargs.pop('phasexy_err', self.phasexy_err)
-        self.phasexy_err = kwargs.pop('phasexy_err', self.phaseyx_err)
-        self.tipper_err = kwargs.pop('tipper_err', self.tipper_err)
-        self.freq_step = kwargs.pop('freq_step', self.freq_step)
-        plot_yn = kwargs.pop('plot_yn', 'y')
-        self.proj_angle = kwargs.pop('proj_angle', self.proj_angle)
-        self.line_orientation = kwargs.pop('line_orientation',
-                                           self.line_orientation)
-        self.save_path = kwargs.pop('save_path', self.save_path)
-        self._ss = kwargs.pop('ss', self._ss)
-        self._string_fmt = kwargs.pop('string_fmt', self._string_fmt)
+        self.model_mode = kwargs.pop("model_mode", self.model_mode)
+        self.station_list = kwargs.pop("station_list", self.station_list)
+        self.title = kwargs.pop("title", self.title)
+        self.thetar = kwargs.pop("thetar", self.thetar)
+        self.resxy_err = kwargs.pop("resxy_err", self.resxy_err)
+        self.resyx_err = kwargs.pop("resyx_err", self.resyx_err)
+        self.phasexy_err = kwargs.pop("phasexy_err", self.phasexy_err)
+        self.phasexy_err = kwargs.pop("phasexy_err", self.phaseyx_err)
+        self.tipper_err = kwargs.pop("tipper_err", self.tipper_err)
+        self.freq_step = kwargs.pop("freq_step", self.freq_step)
+        plot_yn = kwargs.pop("plot_yn", "y")
+        self.proj_angle = kwargs.pop("proj_angle", self.proj_angle)
+        self.line_orientation = kwargs.pop("line_orientation", self.line_orientation)
+        self.save_path = kwargs.pop("save_path", self.save_path)
+        self._ss = kwargs.pop("ss", self._ss)
+        self._string_fmt = kwargs.pop("string_fmt", self._string_fmt)
 
         # make local variables with shorter names for writing to a file
         ss = self._ss
         sfmt = self._string_fmt
 
-        #--> get important information from the edi files and rotate data
-        self._get_station_data(edipath, station_list=self.station_list,
-                               thetar=self.thetar)
+        # --> get important information from the edi files and rotate data
+        self._get_station_data(
+            edipath, station_list=self.station_list, thetar=self.thetar
+        )
 
-        #-----------------------------------------------------------------
+        # -----------------------------------------------------------------
         # project stations onto a best fitting line taking into account the
         # strike direction to get relative MT distances correct
-        #-----------------------------------------------------------------
+        # -----------------------------------------------------------------
         self._project_stations(proj_angle=self.proj_angle, plot_yn=plot_yn)
 
-        #--> get relative offsets between stations in meters
+        # --> get relative offsets between stations in meters
         self._get_station_offsets(line_orientation=self.line_orientation)
 
         # number of stations read
         nstat = len(self.survey_list)
 
-        #--------------------------Match Frequencies---------------------------
+        # --------------------------Match Frequencies---------------------------
         # a dictionary is created with the frequency as the key and the value is
         # the frequency number in the list. Each edi file is iterated over
         # extracting only the matched frequencies.  This makes it necessary to
@@ -1371,73 +1420,75 @@ class Occam2DData(object):
         # each frequency.
 
         # make a list to iterate over frequencies
-        if isinstance(self.freq_step, list) or not isinstance(
-                self.freq_step, int):
+        if isinstance(self.freq_step, list) or not isinstance(self.freq_step, int):
             if isinstance(self.freq_step[0], int):
                 # find the median frequency list
                 maxflen = max([len(ff) for ff in self.freq_list])
                 farray = np.zeros((nstat, maxflen))
                 for ii in range(nstat):
-                    farray[ii, 0:len(self.freq_list[ii])] = self.freq_list[ii]
+                    farray[ii, 0 : len(self.freq_list[ii])] = self.freq_list[ii]
 
                 mfreq = np.median(farray, axis=0)
-                self.freq_dict = dict([('%.6g' % mfreq[ff], ii)
-                                       for ii, ff in enumerate(self.freq_step, 1)
-                                       if mfreq[ff] != 0])
+                self.freq_dict = dict(
+                    [
+                        ("%.6g" % mfreq[ff], ii)
+                        for ii, ff in enumerate(self.freq_step, 1)
+                        if mfreq[ff] != 0
+                    ]
+                )
             else:
-                self.freq_dict = dict([('%.6g' % ff, ii)
-                                       for ii, ff in enumerate(self.freq_step, 1)])
+                self.freq_dict = dict(
+                    [("%.6g" % ff, ii) for ii, ff in enumerate(self.freq_step, 1)]
+                )
         else:
             # find the median frequency list
             maxflen = max([len(ff) for ff in self.freq_list])
             farray = np.zeros((nstat, maxflen))
             for ii in range(nstat):
-                farray[ii, 0:len(self.freq_list[ii])] = self.freq_list[ii]
+                farray[ii, 0 : len(self.freq_list[ii])] = self.freq_list[ii]
 
             mfreq = np.median(farray, axis=0)
 
             # make a dictionary of values
-            self.freq_dict = dict([('%.6g' % ff, ii) for ii, ff in
-                                   enumerate(
-                mfreq[
-                    range(
-                        0,
-                        maxflen,
-                        self.freq_step)],
-                1)
-                if ff != 0])
+            self.freq_dict = dict(
+                [
+                    ("%.6g" % ff, ii)
+                    for ii, ff in enumerate(mfreq[range(0, maxflen, self.freq_step)], 1)
+                    if ff != 0
+                ]
+            )
 
         # print the frequencies to look for to make sure its what the user wants
         # make a list of keys that is sorted in descending order
         klist = [float(dd) for dd in self.freq_dict.keys()]
         klist.sort(reverse=True)
-        klist = ['%.6g' % dd for dd in klist]
+        klist = ["%.6g" % dd for dd in klist]
 
-        print 'Frequencies to look for are: (# freq(Hz) Period(s)) '
+        print "Frequencies to look for are: (# freq(Hz) Period(s)) "
         for key in klist:
-            print self.freq_dict[key], key, 1. / float(key)
+            print self.freq_dict[key], key, 1.0 / float(key)
 
         # make lists of parameters to write to file
         reslist = []
         offsetlist = []
         station_listsort = []
         for kk in range(nstat):
-            #--> set local variable with shorter names
-            sresxy = self.survey_list[kk]['resxy']
-            sresxy_err = self.survey_list[kk]['resxy_err']
-            sresyx = self.survey_list[kk]['resyx']
-            sresyx_err = self.survey_list[kk]['resyx_err']
+            # --> set local variable with shorter names
+            sresxy = self.survey_list[kk]["resxy"]
+            sresxy_err = self.survey_list[kk]["resxy_err"]
+            sresyx = self.survey_list[kk]["resyx"]
+            sresyx_err = self.survey_list[kk]["resyx_err"]
 
-            sphasexy = self.survey_list[kk]['phasexy']
-            sphasexy_err = self.survey_list[kk]['phasexy_err']
-            sphaseyx = self.survey_list[kk]['phaseyx'] + 180
-            sphaseyx_err = self.survey_list[kk]['phaseyx_err']
+            sphasexy = self.survey_list[kk]["phasexy"]
+            sphasexy_err = self.survey_list[kk]["phasexy_err"]
+            sphaseyx = self.survey_list[kk]["phaseyx"] + 180
+            sphaseyx_err = self.survey_list[kk]["phaseyx_err"]
 
-            freq = self.survey_list[kk]['freq']
-            offsetlist.append(self.survey_list[kk]['offset'])
-            station_listsort.append(self.survey_list[kk]['station'])
+            freq = self.survey_list[kk]["freq"]
+            offsetlist.append(self.survey_list[kk]["offset"])
+            station_listsort.append(self.survey_list[kk]["station"])
             try:
-                tip = self.survey_list[kk]['tipper']
+                tip = self.survey_list[kk]["tipper"]
             except KeyError:
                 pass
 
@@ -1450,13 +1501,14 @@ class Occam2DData(object):
                 try:
                     # nn is the frequency number out of extracted frequency
                     # list
-                    nn = self.freq_dict['%.6g' % ff]
+                    nn = self.freq_dict["%.6g" % ff]
                 except KeyError:
                     # search around the frequency given by ftol
                     try:
                         for key in self.freq_dict.keys():
-                            if ff > float(key) * (1 - self.ftol) and \
-                               ff < float(key) * (1 + self.ftol):
+                            if ff > float(key) * (1 - self.ftol) and ff < float(key) * (
+                                1 + self.ftol
+                            ):
                                 nn = self.freq_dict[key]
                     except KeyError:
                         pass
@@ -1467,187 +1519,272 @@ class Occam2DData(object):
                     resyx = sresyx[jj]
 
                     # calculate the phase putting the yx in the 1st quadrant
-                    phasexy = '{0:{1}}'.format(sphasexy[jj], sfmt)
-                    phaseyx = '{0:{1}}'.format(sphaseyx[jj], sfmt)
+                    phasexy = "{0:{1}}".format(sphasexy[jj], sfmt)
+                    phaseyx = "{0:{1}}".format(sphaseyx[jj], sfmt)
 
                     # put phases in correct quadrant if should be negative
                     if float(phaseyx) > 180:
-                        phaseyx = '{0:{1}}'.format(float(phaseyx) - 360, sfmt)
+                        phaseyx = "{0:{1}}".format(float(phaseyx) - 360, sfmt)
                     if float(phaseyx) < 0:
-                        print ('Negative Phase at {0}'.format(
-                               self.survey_list[kk]['station']) +
-                               'f={0:.4g}Hz, phi_tm={1: .2f}'.format(ff,
-                                                                     float(phaseyx)))
+                        print (
+                            "Negative Phase at {0}".format(
+                                self.survey_list[kk]["station"]
+                            )
+                            + "f={0:.4g}Hz, phi_tm={1: .2f}".format(ff, float(phaseyx))
+                        )
 
                     # calculate errors
-                    #--> res_xy (TE)
-                    if self.resxy_err == 'data':
+                    # --> res_xy (TE)
+                    if self.resxy_err == "data":
                         dresxy_err = (sresxy_err[jj] / resxy) / np.log(10)
-                        lresxy_err = '{0:{1}}'.format(dresxy_err, sfmt)
+                        lresxy_err = "{0:{1}}".format(dresxy_err, sfmt)
                     else:
-                        lresxy_err = '{0:{1}}'.format((self.resxy_err / 100.) /
-                                                      np.log(10), sfmt)
+                        lresxy_err = "{0:{1}}".format(
+                            (self.resxy_err / 100.0) / np.log(10), sfmt
+                        )
 
-                    #--> Res_yx (TM)
-                    if self.resyx_err == 'data':
+                    # --> Res_yx (TM)
+                    if self.resyx_err == "data":
                         dresyx_err = (sresyx_err[jj] / resyx) / np.log(10)
-                        lresyx_err = '{0:{1}}'.format(dresyx_err, sfmt)
+                        lresyx_err = "{0:{1}}".format(dresyx_err, sfmt)
                     else:
-                        lresyx_err = '{0:{1}}'.format((self.resyx_err / 100.) /
-                                                      np.log(10), sfmt)
+                        lresyx_err = "{0:{1}}".format(
+                            (self.resyx_err / 100.0) / np.log(10), sfmt
+                        )
 
                     # phase_xy(TE)
-                    if self.phasexy_err == 'data':
-                        dphasexy_err = '{0:{1}}'.format(sphasexy_err[jj], sfmt)
+                    if self.phasexy_err == "data":
+                        dphasexy_err = "{0:{1}}".format(sphasexy_err[jj], sfmt)
                     else:
-                        dphasexy_err = '{0:{1}}'.format((self.phasexy_err / 100.) *
-                                                        57 / 2., sfmt)
+                        dphasexy_err = "{0:{1}}".format(
+                            (self.phasexy_err / 100.0) * 57 / 2.0, sfmt
+                        )
 
-                    #phase_yx (TM)
-                    if self.phaseyx_err == 'data':
-                        dphaseyx_err = '{0:{1}}'.format(sphaseyx_err[jj], sfmt)
+                    # phase_yx (TM)
+                    if self.phaseyx_err == "data":
+                        dphaseyx_err = "{0:{1}}".format(sphaseyx_err[jj], sfmt)
                     else:
-                        dphaseyx_err = '{0:{1}}'.format((self.phaseyx_err / 100.) *
-                                                        57 / 2., sfmt)
+                        dphaseyx_err = "{0:{1}}".format(
+                            (self.phaseyx_err / 100.0) * 57 / 2.0, sfmt
+                        )
 
                     # calculate log10 of resistivity as prescribed by occam2d
-                    lresyx = '{0:{1}}'.format(np.log10(resyx), sfmt)
-                    lresxy = '{0:{1}}'.format(np.log10(resxy), sfmt)
+                    lresyx = "{0:{1}}".format(np.log10(resyx), sfmt)
+                    lresxy = "{0:{1}}".format(np.log10(resxy), sfmt)
 
                     # if include the tipper
                     if self.tipper_err is not None:
                         if tip[jj, 0, 0].real == 0.0 or tip[jj, 0, 1] == 0.0:
-                            tipyn = 'n'
+                            tipyn = "n"
                         else:
                             # calculate the projection angle for real and
                             # imaginary
-                            tipphir = np.arctan(tip[jj, 0, 0].real /
-                                                tip[jj, 0, 1].real) -\
-                                np.deg2rad(self.proj_angle)
-                            tipphii = np.arctan(tip[jj, 0, 0].imag /
-                                                tip[jj, 0, 1].imag) -\
-                                np.deg2rad(self.proj_angle)
+                            tipphir = np.arctan(
+                                tip[jj, 0, 0].real / tip[jj, 0, 1].real
+                            ) - np.deg2rad(self.proj_angle)
+                            tipphii = np.arctan(
+                                tip[jj, 0, 0].imag / tip[jj, 0, 1].imag
+                            ) - np.deg2rad(self.proj_angle)
 
                             # project the tipper onto the profile line
-                            projtipr = np.sqrt(tip[jj, 0, 0].real**2 +
-                                               tip[jj, 0, 1].real**2) *\
-                                np.cos(tipphir)
-                            projtipi = np.sqrt(tip[jj, 0, 0].imag**2 +
-                                               tip[jj, 0, 1].imag**2) *\
-                                np.cos(tipphii)
+                            projtipr = np.sqrt(
+                                tip[jj, 0, 0].real ** 2 + tip[jj, 0, 1].real ** 2
+                            ) * np.cos(tipphir)
+                            projtipi = np.sqrt(
+                                tip[jj, 0, 0].imag ** 2 + tip[jj, 0, 1].imag ** 2
+                            ) * np.cos(tipphii)
 
-                            projtipr = '{0:{1}}'.format(projtipr, sfmt)
-                            projtipi = '{0:{1}}'.format(projtipi, sfmt)
+                            projtipr = "{0:{1}}".format(projtipr, sfmt)
+                            projtipi = "{0:{1}}".format(projtipi, sfmt)
 
                             # error of tipper is a decimal percentage
-                            projtiperr = '{0:{1}}'.format(self.tipper_err / 100.,
-                                                          sfmt)
+                            projtiperr = "{0:{1}}".format(self.tipper_err / 100.0, sfmt)
 
-                            tipyn = 'y'
+                            tipyn = "y"
 
                     # make a list of lines to write to the data file
-                    if self.model_mode == 'both':
-                        reslist.append(ss.join([str(kk + 1), str(nn), '1',
-                                                lresxy, lresxy_err, '\n']))
-                        reslist.append(ss.join([str(kk + 1), str(nn), '2',
-                                                phasexy, dphasexy_err, '\n']))
+                    if self.model_mode == "both":
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "1", lresxy, lresxy_err, "\n"]
+                            )
+                        )
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "2", phasexy, dphasexy_err, "\n"]
+                            )
+                        )
 
-                        reslist.append(ss.join([str(kk + 1), str(nn), '5',
-                                                lresyx, lresyx_err, '\n']))
-                        reslist.append(ss.join([str(kk + 1), str(nn), '6',
-                                                phaseyx, dphaseyx_err, '\n']))
-                        if self.tipper_err is not None and tipyn == 'y':
-                            reslist.append(ss.join([str(kk + 1), str(nn), '3',
-                                                    projtipr, projtiperr,
-                                                    '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '4',
-                                                    projtipi, projtiperr,
-                                                    '\n']))
-                    elif self.model_mode == 'TM':
-                        reslist.append(ss.join([str(kk + 1), str(nn), '5',
-                                                lresyx, lresyx_err, '\n']))
-                        reslist.append(ss.join([str(kk + 1), str(nn), '6',
-                                                phaseyx, dphaseyx_err, '\n']))
-                        if self.tipper_err is not None and tipyn == 'y':
-                            reslist.append(ss.join([str(kk + 1), str(nn), '3',
-                                                    projtipr, projtiperr,
-                                                    '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '4',
-                                                    projtipi, projtiperr,
-                                                    '\n']))
-                    elif self.model_mode == 'TE':
-                        reslist.append(ss.join([str(kk + 1), str(nn), '1',
-                                                lresxy, lresxy_err, '\n']))
-                        reslist.append(ss.join([str(kk + 1), str(nn), '2',
-                                                phasexy, dphasexy_err, '\n']))
-                        if self.tipper_err is not None and tipyn == 'y':
-                            reslist.append(ss.join([str(kk + 1), str(nn), '3',
-                                                    projtipr, projtiperr,
-                                                    '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '4',
-                                                    projtipi, projtiperr,
-                                                    '\n']))
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "5", lresyx, lresyx_err, "\n"]
+                            )
+                        )
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "6", phaseyx, dphaseyx_err, "\n"]
+                            )
+                        )
+                        if self.tipper_err is not None and tipyn == "y":
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "3",
+                                        projtipr,
+                                        projtiperr,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "4",
+                                        projtipi,
+                                        projtiperr,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                    elif self.model_mode == "TM":
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "5", lresyx, lresyx_err, "\n"]
+                            )
+                        )
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "6", phaseyx, dphaseyx_err, "\n"]
+                            )
+                        )
+                        if self.tipper_err is not None and tipyn == "y":
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "3",
+                                        projtipr,
+                                        projtiperr,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "4",
+                                        projtipi,
+                                        projtiperr,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                    elif self.model_mode == "TE":
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "1", lresxy, lresxy_err, "\n"]
+                            )
+                        )
+                        reslist.append(
+                            ss.join(
+                                [str(kk + 1), str(nn), "2", phasexy, dphasexy_err, "\n"]
+                            )
+                        )
+                        if self.tipper_err is not None and tipyn == "y":
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "3",
+                                        projtipr,
+                                        projtiperr,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "4",
+                                        projtipi,
+                                        projtiperr,
+                                        "\n",
+                                    ]
+                                )
+                            )
                     else:
-                        raise NameError('model_mode {0} not defined'.format(
-                            self.model_mode))
+                        raise NameError(
+                            "model_mode {0} not defined".format(self.model_mode)
+                        )
 
-        #======================================================================
+        # ======================================================================
         #                             write dat file
-        #======================================================================
+        # ======================================================================
         if self.save_path is not None:
-            if os.path.basename(self.save_path).find('.') > 0:
+            if os.path.basename(self.save_path).find(".") > 0:
                 self.data_fn = self.save_path
             else:
                 if not os.path.exists(self.save_path):
                     os.mkdir(self.save_path)
-                self.data_fn = os.path.join(
-                    self.save_path, 'OccamDataFile.dat')
+                self.data_fn = os.path.join(self.save_path, "OccamDataFile.dat")
         else:
-            self.data_fn = os.path.join(edipath, 'OccamDataFile.dat')
+            self.data_fn = os.path.join(edipath, "OccamDataFile.dat")
 
         if self.title is None:
-            self.title = 'occam2d Inversion'
+            self.title = "occam2d Inversion"
 
-        datfid = open(self.data_fn, 'w')
-        datfid.write('FORMAT:{0}OCCAM2MTDATA_1.0\n'.format(' ' * 11))
-        datfid.write('TITLE:{0}{1} proj_angle={2:.4g}\n'.format(' ' * 12,
-                                                                self.title,
-                                                                self.proj_angle))
+        datfid = open(self.data_fn, "w")
+        datfid.write("FORMAT:{0}OCCAM2MTDATA_1.0\n".format(" " * 11))
+        datfid.write(
+            "TITLE:{0}{1} proj_angle={2:.4g}\n".format(
+                " " * 12, self.title, self.proj_angle
+            )
+        )
 
         # write station sites
-        datfid.write('SITES:{0}{1}\n'.format(' ' * 12, nstat))
+        datfid.write("SITES:{0}{1}\n".format(" " * 12, nstat))
         for station in station_listsort:
-            datfid.write('{0}{1}\n'.format(ss, station))
+            datfid.write("{0}{1}\n".format(ss, station))
 
         # write offsets
-        datfid.write('OFFSETS (M):\n')
+        datfid.write("OFFSETS (M):\n")
         for offset in offsetlist:
-            datfid.write('{0}{1: .2f}\n'.format(ss, offset))
+            datfid.write("{0}{1: .2f}\n".format(ss, offset))
 
         # write frequencies
-        datfid.write('FREQUENCIES:{0}{1}\n'.format(' ' * 8, len(klist)))
+        datfid.write("FREQUENCIES:{0}{1}\n".format(" " * 8, len(klist)))
         for fkey in klist:
-            datfid.write('{0}{1:.5f}\n'.format(ss, float(fkey)))
+            datfid.write("{0}{1:.5f}\n".format(ss, float(fkey)))
 
         # write data block
-        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' ' * 10, len(reslist)))
-        datfid.write(ss.join(['SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR', '\n']))
+        datfid.write("DATA BLOCKS:{0}{1}\n".format(" " * 10, len(reslist)))
+        datfid.write(ss.join(["SITE", "FREQ", "TYPE", "DATUM", "ERROR", "\n"]))
         for ll, datline in enumerate(reslist):
-            if datline.find('#IND') >= 0:
-                print 'Found #IND on line ', ll
-                ndline = datline.replace('#IND', '00')
-                print 'Replaced with 00'
+            if datline.find("#IND") >= 0:
+                print "Found #IND on line ", ll
+                ndline = datline.replace("#IND", "00")
+                print "Replaced with 00"
                 datfid.write(ndline)
-            elif datline.lower().find('inf') >= 0:
-                print 'Found #inf on line ', ll
-                ndline = datline.replace('#inf', '00')
-                print 'Replaced with 00'
+            elif datline.lower().find("inf") >= 0:
+                print "Found #inf on line ", ll
+                ndline = datline.replace("#inf", "00")
+                print "Replaced with 00"
                 datfid.write(ndline)
             else:
                 datfid.write(datline)
         datfid.close()
 
-        print 'Wrote Occam2D data file to: ', self.data_fn
+        print "Wrote Occam2D data file to: ", self.data_fn
 
     def read2DdataFile(self):
         """
@@ -1702,57 +1839,67 @@ class Occam2DData(object):
 
         """
 
-        dfid = open(self.data_fn, 'r')
+        dfid = open(self.data_fn, "r")
 
         dlines = dfid.readlines()
         # get format of input data
-        self.occamfmt = dlines[0].strip().split(':')[1].strip()
+        self.occamfmt = dlines[0].strip().split(":")[1].strip()
 
         # get title
-        self.titlestr = dlines[1].strip().split(':')[1].strip()
+        self.titlestr = dlines[1].strip().split(":")[1].strip()
 
-        if self.titlestr.find('=') > 0:
-            tstr = self.titlestr.split('=')
+        if self.titlestr.find("=") > 0:
+            tstr = self.titlestr.split("=")
             self.proj_angle = float(tstr[1])
             self.title = tstr[0]
         else:
             self.title = self.titlestr
             self.proj_angle = 0
-            print 'Need to figure out angle of profile line'
+            print "Need to figure out angle of profile line"
         # get number of sits
-        nsites = int(dlines[2].strip().split(':')[1].strip())
+        nsites = int(dlines[2].strip().split(":")[1].strip())
 
         # get station names
         self.station_list = [dlines[ii].strip() for ii in range(3, nsites + 3)]
 
         # get offsets in meters
-        offsets = [float(dlines[ii].strip())
-                   for ii in range(4 + nsites, 4 + 2 * nsites)]
+        offsets = [
+            float(dlines[ii].strip()) for ii in range(4 + nsites, 4 + 2 * nsites)
+        ]
 
         # get number of frequencies
-        nfreq = int(dlines[4 + 2 * nsites].strip().split(':')[1].strip())
+        nfreq = int(dlines[4 + 2 * nsites].strip().split(":")[1].strip())
 
         # get frequencies
-        self.freq = np.array([float(dlines[ii].strip())
-                              for ii in range(5 + 2 * nsites, 5 + 2 * nsites + nfreq)])
+        self.freq = np.array(
+            [
+                float(dlines[ii].strip())
+                for ii in range(5 + 2 * nsites, 5 + 2 * nsites + nfreq)
+            ]
+        )
 
         # get periods
-        self.period = 1. / self.freq
+        self.period = 1.0 / self.freq
 
-        #-----------get data-------------------
+        # -----------get data-------------------
         # set zero array size the first row will be the data and second the
         # error
         asize = (4, nfreq)
         # make a list of dictionaries for each station.
-        self.rp_list = [{'station': station, 'offset': offsets[ii],
-                         'resxy':np.zeros(asize),
-                         'resyx':np.zeros(asize),
-                         'phasexy':np.zeros(asize),
-                         'phaseyx':np.zeros(asize),
-                         'realtip':np.zeros(asize),
-                         'imagtip':np.zeros(asize)}
-                        for ii, station in enumerate(self.station_list)]
-        for line in dlines[7 + 2 * nsites + nfreq:]:
+        self.rp_list = [
+            {
+                "station": station,
+                "offset": offsets[ii],
+                "resxy": np.zeros(asize),
+                "resyx": np.zeros(asize),
+                "phasexy": np.zeros(asize),
+                "phaseyx": np.zeros(asize),
+                "realtip": np.zeros(asize),
+                "imagtip": np.zeros(asize),
+            }
+            for ii, station in enumerate(self.station_list)
+        ]
+        for line in dlines[7 + 2 * nsites + nfreq :]:
             ls = line.split()
             # station index
             ss = int(float(ls[0])) - 1
@@ -1846,19 +1993,19 @@ class Occam2DData(object):
 
         """
 
-        #--> get information from key word arguments
-        self.edipath = kwargs.pop('edipath', self.edipath)
-        self.thetar = kwargs.pop('thetar', 0)
-        self.resxy_err = kwargs.pop('resxy_err', 'prev')
-        self.resyx_err = kwargs.pop('resyx_err', 'prev')
-        self.phasexy_err = kwargs.pop('phasexy_err', 'prev')
-        self.phaseyx_err = kwargs.pop('phaseyx_err', 'prev')
-        self.tipper_err = kwargs.pop('tipper_err', None)
-        self.model_mode = kwargs.pop('model_mode', 'both')
-        new_freq_list = kwargs.pop('new_freq_list', None)
-        remove_station = kwargs.pop('remove_station', None)
-        self.save_path = kwargs.pop('save_path', None)
-        new_proj_angle = kwargs.pop('new_proj_angle', 0)
+        # --> get information from key word arguments
+        self.edipath = kwargs.pop("edipath", self.edipath)
+        self.thetar = kwargs.pop("thetar", 0)
+        self.resxy_err = kwargs.pop("resxy_err", "prev")
+        self.resyx_err = kwargs.pop("resyx_err", "prev")
+        self.phasexy_err = kwargs.pop("phasexy_err", "prev")
+        self.phaseyx_err = kwargs.pop("phaseyx_err", "prev")
+        self.tipper_err = kwargs.pop("tipper_err", None)
+        self.model_mode = kwargs.pop("model_mode", "both")
+        new_freq_list = kwargs.pop("new_freq_list", None)
+        remove_station = kwargs.pop("remove_station", None)
+        self.save_path = kwargs.pop("save_path", None)
+        new_proj_angle = kwargs.pop("new_proj_angle", 0)
 
         ss = self._ss
         sfmt = self._string_fmt
@@ -1872,8 +2019,9 @@ class Occam2DData(object):
         station_list = list(self.station_list)
 
         # make a dictionary of rp_list for easier extraction of data
-        rpdict = dict([(station, rp_list[ii]) for ii, station in
-                       enumerate(station_list)])
+        rpdict = dict(
+            [(station, rp_list[ii]) for ii, station in enumerate(station_list)]
+        )
 
         # remove stations from rp_list and station_list if desired
         if remove_station is not None:
@@ -1886,7 +2034,7 @@ class Occam2DData(object):
                 try:
                     station_list.remove(rstation)
                 except ValueError:
-                    print 'Did not find {0}'.format(rstation)
+                    print "Did not find {0}".format(rstation)
         self.station_list = station_list
 
         # if flist is not the same as freq make freq=flist
@@ -1899,12 +2047,18 @@ class Occam2DData(object):
                 self.thetar = np.rad2deg(self.thetar)
 
             if self.edipath is None:
-                raise IOError('Need to input the edipath to original edifiles'
-                              ' to get rotations correct')
+                raise IOError(
+                    "Need to input the edipath to original edifiles"
+                    " to get rotations correct"
+                )
 
             # get list of edifiles already in data file
-            edilist = [os.path.join(self.edipath, edi) for stat in self.station_list
-                       for edi in os.listdir(self.edipath) if edi[0:len(stat)] == stat]
+            edilist = [
+                os.path.join(self.edipath, edi)
+                for stat in self.station_list
+                for edi in os.listdir(self.edipath)
+                if edi[0 : len(stat)] == stat
+            ]
             reslist = []
             for kk, edifn in enumerate(edilist, 1):
                 z1 = MTedi.Edi()
@@ -1920,8 +2074,9 @@ class Occam2DData(object):
                     tip = z1.Tipper.tipper
 
                 station = self.station_list[kk - 1]
-                freq_dict = dict([('{0:.6g}'.format(fr), ii) for ii, fr in
-                                  enumerate(z1.freq)])
+                freq_dict = dict(
+                    [("{0:.6g}".format(fr), ii) for ii, fr in enumerate(z1.freq)]
+                )
 
                 # loop over frequencies to pick out the ones desired
                 for jj, ff in enumerate(self.freq, 1):
@@ -1932,7 +2087,7 @@ class Occam2DData(object):
                     try:
                         # nn is the frequency number out of extracted frequency
                         # list
-                        nn = freq_dict['%.6g' % ff]
+                        nn = freq_dict["%.6g" % ff]
 
                         # calculate resistivity
                         resxy = res[nn, 0, 1]
@@ -1940,149 +2095,289 @@ class Occam2DData(object):
 
                         # calculate the phase putting the yx in the 1st
                         # quadrant
-                        phasexy = '{0:{1}}'.format(phase[nn, 0, 1], sfmt)
-                        phaseyx = '{0:{1}}'.format(phase[nn, 1, 0] + 180, sfmt)
+                        phasexy = "{0:{1}}".format(phase[nn, 0, 1], sfmt)
+                        phaseyx = "{0:{1}}".format(phase[nn, 1, 0] + 180, sfmt)
                         # put phases in correct quadrant if should be negative
                         if float(phaseyx) > 180:
-                            phaseyx = '{0:{1}}'.format(float(phaseyx) - 360,
-                                                       sfmt)
-                            print ('Found Negative Phase for station'
-                                   '{0} frequency {1}'.format(z1.station, ff))
+                            phaseyx = "{0:{1}}".format(float(phaseyx) - 360, sfmt)
+                            print (
+                                "Found Negative Phase for station"
+                                "{0} frequency {1}".format(z1.station, ff)
+                            )
 
                         # calculate errors
-                        #res_xy (TE)
-                        if self.resxy_err == 'data':
-                            lresxy_err = '{0:{1}}'.format(
-                                (res_err[nn, 0, 1] / resxy) / np.log(10), sfmt)
+                        # res_xy (TE)
+                        if self.resxy_err == "data":
+                            lresxy_err = "{0:{1}}".format(
+                                (res_err[nn, 0, 1] / resxy) / np.log(10), sfmt
+                            )
                         # take errors from data file
-                        elif self.resxy_err == 'prev':
-                            lresxy_err = '{0:{1}}'.format(
-                                rpdict[station]['resxy'][1, jj - 1], sfmt)
+                        elif self.resxy_err == "prev":
+                            lresxy_err = "{0:{1}}".format(
+                                rpdict[station]["resxy"][1, jj - 1], sfmt
+                            )
                         else:
-                            lresxy_err = '{0:{1}}'.format(
-                                (self.resxy_err / 100.) / np.log(10), sfmt)
+                            lresxy_err = "{0:{1}}".format(
+                                (self.resxy_err / 100.0) / np.log(10), sfmt
+                            )
 
                         # Res_yx(TM)
-                        if self.resyx_err == 'data':
-                            lresxy_err = '{0:{1}}'.format(
-                                (res_err[nn, 1, 0] / resyx) / np.log(10), sfmt)
+                        if self.resyx_err == "data":
+                            lresxy_err = "{0:{1}}".format(
+                                (res_err[nn, 1, 0] / resyx) / np.log(10), sfmt
+                            )
                         # take errors from data file
-                        elif self.resyx_err == 'prev':
-                            lresyx_err = '{0:{1}}'.format(
-                                rpdict[station]['resyx'][1, jj - 1], sfmt)
+                        elif self.resyx_err == "prev":
+                            lresyx_err = "{0:{1}}".format(
+                                rpdict[station]["resyx"][1, jj - 1], sfmt
+                            )
                         else:
-                            lresyx_err = '{0:{1}}'.format(
-                                (self.resyx_err / 100.) / np.log(10), sfmt)
+                            lresyx_err = "{0:{1}}".format(
+                                (self.resyx_err / 100.0) / np.log(10), sfmt
+                            )
 
                         # phase_xy(TE)
-                        if self.phasexy_err == 'data':
-                            dphasexy_err = '{0:{1}}'.format(
-                                phase_err[nn, 0, 1], sfmt)
+                        if self.phasexy_err == "data":
+                            dphasexy_err = "{0:{1}}".format(phase_err[nn, 0, 1], sfmt)
                             # take errors from data file
-                        elif self.phasexy_err == 'prev':
-                            dphasexy_err = '{0:{1}}'.format(
-                                rpdict[station]['phasexy'][1, jj - 1], sfmt)
+                        elif self.phasexy_err == "prev":
+                            dphasexy_err = "{0:{1}}".format(
+                                rpdict[station]["phasexy"][1, jj - 1], sfmt
+                            )
                         else:
-                            dphasexy_err = '{0:{1}}'.format(
-                                (self.phasexy_err / 100.) * 57 / 2., sfmt)
+                            dphasexy_err = "{0:{1}}".format(
+                                (self.phasexy_err / 100.0) * 57 / 2.0, sfmt
+                            )
 
-                        #phase_yx (TM)
-                        if self.phaseyx_err == 'data':
-                            dphaseyx_err = '{0:{1}}'.format(
-                                phase_err[nn, 1, 0], sfmt)
-                        elif self.phaseyx_err == 'prev':
-                            dphaseyx_err = '{0:{1}}'.format(
-                                rpdict[station]['phaseyx'][1, jj - 1], sfmt)
+                        # phase_yx (TM)
+                        if self.phaseyx_err == "data":
+                            dphaseyx_err = "{0:{1}}".format(phase_err[nn, 1, 0], sfmt)
+                        elif self.phaseyx_err == "prev":
+                            dphaseyx_err = "{0:{1}}".format(
+                                rpdict[station]["phaseyx"][1, jj - 1], sfmt
+                            )
                         else:
-                            dphaseyx_err = '{0:{1}}'.format(
-                                (self.phaseyx_err / 100.) * 57 / 2., sfmt)
+                            dphaseyx_err = "{0:{1}}".format(
+                                (self.phaseyx_err / 100.0) * 57 / 2.0, sfmt
+                            )
 
                         # calculate log10 of resistivity as prescribed by
                         # occam2d
-                        lresyx = '{0:{1}}'.format(np.log10(resyx), sfmt)
-                        lresxy = '{0:{1}}'.format(np.log10(resxy), sfmt)
+                        lresyx = "{0:{1}}".format(np.log10(resyx), sfmt)
+                        lresxy = "{0:{1}}".format(np.log10(resxy), sfmt)
 
                         # if include the tipper
                         if self.tipper_err is not None:
-                            if tip[jj, 0, 0].real == 0.0 or tip[
-                                    jj, 0, 1] == 0.0:
-                                tipyn = 'n'
+                            if tip[jj, 0, 0].real == 0.0 or tip[jj, 0, 1] == 0.0:
+                                tipyn = "n"
                             else:
                                 # calculate the projection angle for real and
                                 # imaginary
-                                tipphir = np.arctan(tip[jj, 0, 0].real /
-                                                    tip[jj, 0, 1].real) -\
-                                    np.deg2rad(self.proj_angle)
-                                tipphii = np.arctan(tip[jj, 0, 0].imag /
-                                                    tip[jj, 0, 1].imag) -\
-                                    np.deg2rad(self.proj_angle)
+                                tipphir = np.arctan(
+                                    tip[jj, 0, 0].real / tip[jj, 0, 1].real
+                                ) - np.deg2rad(self.proj_angle)
+                                tipphii = np.arctan(
+                                    tip[jj, 0, 0].imag / tip[jj, 0, 1].imag
+                                ) - np.deg2rad(self.proj_angle)
 
                                 # project the tipper onto the profile line
-                                projtipr = np.sqrt(tip[jj, 0, 0].real**2 +
-                                                   tip[jj, 0, 1].real**2) *\
-                                    np.cos(tipphir)
-                                projtipi = np.sqrt(tip[jj, 0, 0].imag**2 +
-                                                   tip[jj, 0, 1].imag**2) *\
-                                    np.cos(tipphii)
+                                projtipr = np.sqrt(
+                                    tip[jj, 0, 0].real ** 2 + tip[jj, 0, 1].real ** 2
+                                ) * np.cos(tipphir)
+                                projtipi = np.sqrt(
+                                    tip[jj, 0, 0].imag ** 2 + tip[jj, 0, 1].imag ** 2
+                                ) * np.cos(tipphii)
 
-                                projtipr = '{0:{1}}'.format(projtipr, sfmt)
-                                projtipi = '{0:{1}}'.format(projtipi, sfmt)
+                                projtipr = "{0:{1}}".format(projtipr, sfmt)
+                                projtipi = "{0:{1}}".format(projtipi, sfmt)
 
                                 # error of tipper is a decimal percentage
-                                projtiperr = '{0:{1}}'.format(self.tipper_err /
-                                                              100., sfmt)
+                                projtiperr = "{0:{1}}".format(
+                                    self.tipper_err / 100.0, sfmt
+                                )
 
-                                tipyn = 'y'
+                                tipyn = "y"
 
                         # make a list of lines to write to the data file
-                        if self.model_mode == 'both':
-                            reslist.append(ss.join([str(kk + 1), str(nn), '1',
-                                                    lresxy, lresxy_err, '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '2',
-                                                    phasexy, dphasexy_err,
-                                                    '\n']))
+                        if self.model_mode == "both":
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "1",
+                                        lresxy,
+                                        lresxy_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "2",
+                                        phasexy,
+                                        dphasexy_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
 
-                            reslist.append(ss.join([str(kk + 1), str(nn), '5',
-                                                    lresyx, lresyx_err, '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '6',
-                                                    phaseyx, dphaseyx_err,
-                                                    '\n']))
-                            if self.tipper_err is not None and tipyn == 'y':
-                                reslist.append(ss.join([str(kk + 1), str(nn), '3',
-                                                        projtipr, projtiperr,
-                                                        '\n']))
-                                reslist.append(ss.join([str(kk + 1), str(nn), '4',
-                                                        projtipi, projtiperr,
-                                                        '\n']))
-                        elif self.model_mode == 'TM':
-                            reslist.append(ss.join([str(kk + 1), str(nn), '5',
-                                                    lresyx, lresyx_err, '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '6',
-                                                    phaseyx, dphaseyx_err,
-                                                    '\n']))
-                            if self.tipper_err is not None and tipyn == 'y':
-                                reslist.append(ss.join([str(kk + 1), str(nn), '3',
-                                                        projtipr, projtiperr,
-                                                        '\n']))
-                                reslist.append(ss.join([str(kk + 1), str(nn), '4',
-                                                        projtipi, projtiperr,
-                                                        '\n']))
-                        elif self.model_mode == 'TE':
-                            reslist.append(ss.join([str(kk + 1), str(nn), '1',
-                                                    lresxy, lresxy_err, '\n']))
-                            reslist.append(ss.join([str(kk + 1), str(nn), '2',
-                                                    phasexy, dphasexy_err,
-                                                    '\n']))
-                            if self.tipper_err is not None and tipyn == 'y':
-                                reslist.append(ss.join([str(kk + 1), str(nn), '3',
-                                                        projtipr, projtiperr,
-                                                        '\n']))
-                                reslist.append(ss.join([str(kk + 1), str(nn), '4',
-                                                        projtipi, projtiperr,
-                                                        '\n']))
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "5",
+                                        lresyx,
+                                        lresyx_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "6",
+                                        phaseyx,
+                                        dphaseyx_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            if self.tipper_err is not None and tipyn == "y":
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk + 1),
+                                            str(nn),
+                                            "3",
+                                            projtipr,
+                                            projtiperr,
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk + 1),
+                                            str(nn),
+                                            "4",
+                                            projtipi,
+                                            projtiperr,
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                        elif self.model_mode == "TM":
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "5",
+                                        lresyx,
+                                        lresyx_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "6",
+                                        phaseyx,
+                                        dphaseyx_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            if self.tipper_err is not None and tipyn == "y":
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk + 1),
+                                            str(nn),
+                                            "3",
+                                            projtipr,
+                                            projtiperr,
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk + 1),
+                                            str(nn),
+                                            "4",
+                                            projtipi,
+                                            projtiperr,
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                        elif self.model_mode == "TE":
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "1",
+                                        lresxy,
+                                        lresxy_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk + 1),
+                                        str(nn),
+                                        "2",
+                                        phasexy,
+                                        dphasexy_err,
+                                        "\n",
+                                    ]
+                                )
+                            )
+                            if self.tipper_err is not None and tipyn == "y":
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk + 1),
+                                            str(nn),
+                                            "3",
+                                            projtipr,
+                                            projtiperr,
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk + 1),
+                                            str(nn),
+                                            "4",
+                                            projtipi,
+                                            projtiperr,
+                                            "\n",
+                                        ]
+                                    )
+                                )
                         else:
-                            raise NameError('model_mode {0} not defined'.format(
-                                            self.model_mode))
+                            raise NameError(
+                                "model_mode {0} not defined".format(self.model_mode)
+                            )
                     except KeyError:
                         pass
 
@@ -2091,231 +2386,360 @@ class Occam2DData(object):
             reslist = []
             for kk, station in enumerate(self.station_list, 1):
                 srp = rpdict[station]
-                nr = srp['resxy'].shape[1]
+                nr = srp["resxy"].shape[1]
                 # calculate errors and rewrite
-                #res_xy (TE)
+                # res_xy (TE)
                 if self.resxy_err is not None:
-                    if self.resxy_err == 'prev':
-                        lresxy_err = rpdict[station]['resxy'][1, :]
+                    if self.resxy_err == "prev":
+                        lresxy_err = rpdict[station]["resxy"][1, :]
                     else:
-                        lresxy_err = np.repeat((self.resxy_err / 100.) /
-                                               np.log(10), nr)
-                    srp['resxy'][1, :] = lresxy_err
+                        lresxy_err = np.repeat(
+                            (self.resxy_err / 100.0) / np.log(10), nr
+                        )
+                    srp["resxy"][1, :] = lresxy_err
 
                 # Res_yx(TM)
                 if self.resyx_err is not None:
-                    if self.resyx_err == 'prev':
-                        lresyx_err = rpdict[station]['resyx'][1, :]
+                    if self.resyx_err == "prev":
+                        lresyx_err = rpdict[station]["resyx"][1, :]
                     else:
-                        lresyx_err = np.repeat((self.resyx_err / 100.) /
-                                               np.log(10), nr)
-                    srp['resyx'][1, :] = lresyx_err
+                        lresyx_err = np.repeat(
+                            (self.resyx_err / 100.0) / np.log(10), nr
+                        )
+                    srp["resyx"][1, :] = lresyx_err
 
                 # phase_xy(TE)
                 if self.phasexy_err is not None:
-                    if self.phasexy_err == 'prev':
-                        dphasexy_err = rpdict[station]['phasexy'][1, :]
+                    if self.phasexy_err == "prev":
+                        dphasexy_err = rpdict[station]["phasexy"][1, :]
                     else:
-                        dphasexy_err = np.repeat((self.phasexy_err / 100.) * 57 / 2.,
-                                                 nr)
-                    srp['phasexy'][1, :] = dphasexy_err
+                        dphasexy_err = np.repeat(
+                            (self.phasexy_err / 100.0) * 57 / 2.0, nr
+                        )
+                    srp["phasexy"][1, :] = dphasexy_err
 
-                #phase_yx (TM)
+                # phase_yx (TM)
                 if self.phaseyx_err is not None:
-                    if self.phaseyx_err == 'prev':
-                        dphaseyx_err = rpdict[station]['phaseyx'][1, :]
+                    if self.phaseyx_err == "prev":
+                        dphaseyx_err = rpdict[station]["phaseyx"][1, :]
                     else:
-                        dphaseyx_err = np.repeat((self.phaseyx_err / 100.) * 57 / 2.,
-                                                 nr)
-                    srp['phaseyx'][1, :] = dphaseyx_err
+                        dphaseyx_err = np.repeat(
+                            (self.phaseyx_err / 100.0) * 57 / 2.0, nr
+                        )
+                    srp["phaseyx"][1, :] = dphaseyx_err
 
                 if self.tipper_err is not None:
                     # error of tipper is a decimal percentage
-                    projtiperr = self.tipper_err / 100.
-                    srp['realtip'][1, :] = np.repeat(projtiperr, nr)
-                    srp['imagtip'][1, :] = np.repeat(projtiperr, nr)
+                    projtiperr = self.tipper_err / 100.0
+                    srp["realtip"][1, :] = np.repeat(projtiperr, nr)
+                    srp["imagtip"][1, :] = np.repeat(projtiperr, nr)
 
                 for jj, ff in enumerate(self.freq, 1):
                     # make a list of lines to write to the data file
-                    if self.model_mode == 'both':
-                        if srp['resxy'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '1',
-                                                    '{0:{1}}'.format(
-                                                        srp['resxy'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['resxy'][1, jj - 1], sfmt),
-                                                    '\n']))
-                        if srp['phasexy'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '2',
-                                                    '{0:{1}}'.format(
-                                                        srp['phasexy'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['phasexy'][1, jj - 1], sfmt),
-                                                    '\n']))
-                        if srp['resyx'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '5',
-                                                    '{0:{1}}'.format(
-                                                        srp['resyx'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['resyx'][1, jj - 1], sfmt),
-                                                    '\n']))
-                        if srp['phaseyx'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '6',
-                                                    '{0:{1}}'.format(
-                                                        srp['phaseyx'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['phaseyx'][1, jj - 1], sfmt),
-                                                    '\n']))
+                    if self.model_mode == "both":
+                        if srp["resxy"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "1",
+                                        "{0:{1}}".format(srp["resxy"][0, jj - 1], sfmt),
+                                        "{0:{1}}".format(srp["resxy"][1, jj - 1], sfmt),
+                                        "\n",
+                                    ]
+                                )
+                            )
+                        if srp["phasexy"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "2",
+                                        "{0:{1}}".format(
+                                            srp["phasexy"][0, jj - 1], sfmt
+                                        ),
+                                        "{0:{1}}".format(
+                                            srp["phasexy"][1, jj - 1], sfmt
+                                        ),
+                                        "\n",
+                                    ]
+                                )
+                            )
+                        if srp["resyx"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "5",
+                                        "{0:{1}}".format(srp["resyx"][0, jj - 1], sfmt),
+                                        "{0:{1}}".format(srp["resyx"][1, jj - 1], sfmt),
+                                        "\n",
+                                    ]
+                                )
+                            )
+                        if srp["phaseyx"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "6",
+                                        "{0:{1}}".format(
+                                            srp["phaseyx"][0, jj - 1], sfmt
+                                        ),
+                                        "{0:{1}}".format(
+                                            srp["phaseyx"][1, jj - 1], sfmt
+                                        ),
+                                        "\n",
+                                    ]
+                                )
+                            )
                         if self.tipper_err is not None:
-                            if srp['realtip'][0, jj - 1] != 0.0:
-                                reslist.append(ss.join([str(kk), str(jj), '3',
-                                                        '{0:{1}}'.format(
-                                                            srp['realtip'][0, jj - 1], sfmt),
-                                                        '{0:{1}}'.format(
-                                                            srp['realtip'][1, jj - 1], sfmt),
-                                                        '\n']))
-                            if srp['imagtip'][0, jj - 1] != 0.0:
-                                reslist.append(ss.join([str(kk), str(jj), '4',
-                                                        '{0:{1}}'.format(
-                                                            srp['imagtip'][0, jj - 1], sfmt),
-                                                        '{0:{1}}'.format(
-                                                            srp['imagtip'][1, jj - 1], sfmt),
-                                                        '\n']))
+                            if srp["realtip"][0, jj - 1] != 0.0:
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk),
+                                            str(jj),
+                                            "3",
+                                            "{0:{1}}".format(
+                                                srp["realtip"][0, jj - 1], sfmt
+                                            ),
+                                            "{0:{1}}".format(
+                                                srp["realtip"][1, jj - 1], sfmt
+                                            ),
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                            if srp["imagtip"][0, jj - 1] != 0.0:
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk),
+                                            str(jj),
+                                            "4",
+                                            "{0:{1}}".format(
+                                                srp["imagtip"][0, jj - 1], sfmt
+                                            ),
+                                            "{0:{1}}".format(
+                                                srp["imagtip"][1, jj - 1], sfmt
+                                            ),
+                                            "\n",
+                                        ]
+                                    )
+                                )
 
-                    elif self.model_mode == 'TM':
-                        if srp['resyx'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '5',
-                                                    '{0:{1}}'.format(
-                                                        srp['resyx'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['resyx'][1, jj - 1], sfmt),
-                                                    '\n']))
-                        if srp['phaseyx'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '6',
-                                                    '{0:{1}}'.format(
-                                                        srp['phaseyx'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['phaseyx'][1, jj - 1], sfmt),
-                                                    '\n']))
+                    elif self.model_mode == "TM":
+                        if srp["resyx"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "5",
+                                        "{0:{1}}".format(srp["resyx"][0, jj - 1], sfmt),
+                                        "{0:{1}}".format(srp["resyx"][1, jj - 1], sfmt),
+                                        "\n",
+                                    ]
+                                )
+                            )
+                        if srp["phaseyx"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "6",
+                                        "{0:{1}}".format(
+                                            srp["phaseyx"][0, jj - 1], sfmt
+                                        ),
+                                        "{0:{1}}".format(
+                                            srp["phaseyx"][1, jj - 1], sfmt
+                                        ),
+                                        "\n",
+                                    ]
+                                )
+                            )
                         if self.tipper_err is not None:
-                            if srp['realtip'][0, jj - 1] != 0.0:
-                                reslist.append(ss.join([str(kk), str(jj), '3',
-                                                        '{0:{1}}'.format(
-                                                            srp['realtip'][0, jj - 1], sfmt),
-                                                        '{0:{1}}'.format(
-                                                            srp['realtip'][1, jj - 1], sfmt),
-                                                        '\n']))
-                            if srp['imagtip'][0, jj - 1] != 0.0:
-                                reslist.append(ss.join([str(kk), str(jj), '4',
-                                                        '{0:{1}}'.format(
-                                                            srp['imagtip'][0, jj - 1], sfmt),
-                                                        '{0:{1}}'.format(
-                                                            srp['imagtip'][1, jj - 1], sfmt),
-                                                        '\n']))
+                            if srp["realtip"][0, jj - 1] != 0.0:
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk),
+                                            str(jj),
+                                            "3",
+                                            "{0:{1}}".format(
+                                                srp["realtip"][0, jj - 1], sfmt
+                                            ),
+                                            "{0:{1}}".format(
+                                                srp["realtip"][1, jj - 1], sfmt
+                                            ),
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                            if srp["imagtip"][0, jj - 1] != 0.0:
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk),
+                                            str(jj),
+                                            "4",
+                                            "{0:{1}}".format(
+                                                srp["imagtip"][0, jj - 1], sfmt
+                                            ),
+                                            "{0:{1}}".format(
+                                                srp["imagtip"][1, jj - 1], sfmt
+                                            ),
+                                            "\n",
+                                        ]
+                                    )
+                                )
 
-                    elif self.model_mode == 'TE':
-                        if srp['resxy'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '1',
-                                                    '{0:{1}}'.format(
-                                                        srp['resxy'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['resxy'][1, jj - 1], sfmt),
-                                                    '\n']))
-                        if srp['phasexy'][0, jj - 1] != 0.0:
-                            reslist.append(ss.join([str(kk), str(jj), '2',
-                                                    '{0:{1}}'.format(
-                                                        srp['phasexy'][0, jj - 1], sfmt),
-                                                    '{0:{1}}'.format(
-                                                        srp['phasexy'][1, jj - 1], sfmt),
-                                                    '\n']))
+                    elif self.model_mode == "TE":
+                        if srp["resxy"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "1",
+                                        "{0:{1}}".format(srp["resxy"][0, jj - 1], sfmt),
+                                        "{0:{1}}".format(srp["resxy"][1, jj - 1], sfmt),
+                                        "\n",
+                                    ]
+                                )
+                            )
+                        if srp["phasexy"][0, jj - 1] != 0.0:
+                            reslist.append(
+                                ss.join(
+                                    [
+                                        str(kk),
+                                        str(jj),
+                                        "2",
+                                        "{0:{1}}".format(
+                                            srp["phasexy"][0, jj - 1], sfmt
+                                        ),
+                                        "{0:{1}}".format(
+                                            srp["phasexy"][1, jj - 1], sfmt
+                                        ),
+                                        "\n",
+                                    ]
+                                )
+                            )
                         if self.tipper_err is not None:
-                            if srp['realtip'][0, jj - 1] != 0.0:
-                                reslist.append(ss.join([str(kk), str(jj), '3',
-                                                        '{0:{1}}'.format(
-                                                            srp['realtip'][0, jj - 1], sfmt),
-                                                        '{0:{1}}'.format(
-                                                            srp['realtip'][1, jj - 1], sfmt),
-                                                        '\n']))
-                            if srp['imagtip'][0, jj - 1] != 0.0:
-                                reslist.append(ss.join([str(kk), str(jj), '4',
-                                                        '{0:{1}}'.format(
-                                                            srp['imagtip'][0, jj - 1], sfmt),
-                                                        '{0:{1}}'.format(
-                                                            srp['imagtip'][1, jj - 1], sfmt),
-                                                        '\n']))
+                            if srp["realtip"][0, jj - 1] != 0.0:
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk),
+                                            str(jj),
+                                            "3",
+                                            "{0:{1}}".format(
+                                                srp["realtip"][0, jj - 1], sfmt
+                                            ),
+                                            "{0:{1}}".format(
+                                                srp["realtip"][1, jj - 1], sfmt
+                                            ),
+                                            "\n",
+                                        ]
+                                    )
+                                )
+                            if srp["imagtip"][0, jj - 1] != 0.0:
+                                reslist.append(
+                                    ss.join(
+                                        [
+                                            str(kk),
+                                            str(jj),
+                                            "4",
+                                            "{0:{1}}".format(
+                                                srp["imagtip"][0, jj - 1], sfmt
+                                            ),
+                                            "{0:{1}}".format(
+                                                srp["imagtip"][1, jj - 1], sfmt
+                                            ),
+                                            "\n",
+                                        ]
+                                    )
+                                )
 
-        #======================================================================
+        # ======================================================================
         #                             write dat file
-        #======================================================================
+        # ======================================================================
 
         # make the file name of the data file
-        if self.data_fn.find('RW') > 0:
+        if self.data_fn.find("RW") > 0:
             if self.save_path is None:
                 self.ndata_fn = self.data_fn
             elif os.path.isdir(self.save_path) == True:
-                self.ndata_fn = os.path.join(self.save_path, 'DataRW.dat')
+                self.ndata_fn = os.path.join(self.save_path, "DataRW.dat")
             elif os.path.isfile(self.save_path) == True:
                 self.ndata_fn = self.save_path
-            elif self.save_path.find('.dat') > 0:
+            elif self.save_path.find(".dat") > 0:
                 self.ndata_fn = self.save_path
         else:
             if self.save_path is None:
-                self.ndata_fn = self.data_fn[:-4] + 'RW.dat'
+                self.ndata_fn = self.data_fn[:-4] + "RW.dat"
             elif os.path.isdir(self.save_path) == True:
-                self.ndata_fn = os.path.join(self.save_path, 'DataRW.dat')
+                self.ndata_fn = os.path.join(self.save_path, "DataRW.dat")
             elif os.path.isfile(self.save_path) == True:
                 self.ndata_fn = self.save_path
-            elif self.save_path.find('.dat') > 0:
+            elif self.save_path.find(".dat") > 0:
                 self.ndata_fn = self.save_path
 
         nstat = len(self.station_list)
 
         if self.titlestr is None:
-            self.titlestr = 'occam2d Inversion'
+            self.titlestr = "occam2d Inversion"
 
-        datfid = open(self.ndata_fn, 'w')
-        datfid.write('FORMAT:{0}OCCAM2MTDATA_1.0\n'.format(' ' * 11))
+        datfid = open(self.ndata_fn, "w")
+        datfid.write("FORMAT:{0}OCCAM2MTDATA_1.0\n".format(" " * 11))
         if new_proj_angle != 0:
-            self.titlestr = 'occam2d Inversion proj_angle={0:.1f}'.format(
-                new_proj_angle)
+            self.titlestr = "occam2d Inversion proj_angle={0:.1f}".format(
+                new_proj_angle
+            )
 
-        datfid.write('TITLE:{0}{1}\n'.format(' ' * 12, self.titlestr))
+        datfid.write("TITLE:{0}{1}\n".format(" " * 12, self.titlestr))
 
         # write station sites
-        datfid.write('SITES:{0}{1}\n'.format(' ' * 12, nstat))
+        datfid.write("SITES:{0}{1}\n".format(" " * 12, nstat))
         for station in self.station_list:
-            datfid.write('{0}{1}\n'.format(ss, station))
+            datfid.write("{0}{1}\n".format(ss, station))
 
         # write offsets
-        datfid.write('OFFSETS (M): \n')
+        datfid.write("OFFSETS (M): \n")
         for station in self.station_list:
             if new_proj_angle != 0:
-                new_offset = rpdict[station]['offset'] /\
-                    np.cos(np.deg2rad(self.proj_angle - new_proj_angle))
+                new_offset = rpdict[station]["offset"] / np.cos(
+                    np.deg2rad(self.proj_angle - new_proj_angle)
+                )
                 # need to project the stations on to the strike direction
-                datfid.write('{0}{1: .2f}\n'.format(ss, new_offset))
+                datfid.write("{0}{1: .2f}\n".format(ss, new_offset))
             else:
-                datfid.write('{0}{1: .2f}\n'.format(ss,
-                                                    rpdict[station]['offset']))
+                datfid.write("{0}{1: .2f}\n".format(ss, rpdict[station]["offset"]))
 
         # write frequencies
-        datfid.write('FREQUENCIES:{0}{1}\n'.format(' ' * 8, len(self.freq)))
+        datfid.write("FREQUENCIES:{0}{1}\n".format(" " * 8, len(self.freq)))
         for ff in self.freq:
-            datfid.write('{0}{1:.5f}\n'.format(ss, ff))
+            datfid.write("{0}{1:.5f}\n".format(ss, ff))
 
         # write data block
-        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' ' * 10, len(reslist)))
-        datfid.write(ss.join(['SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR', '\n']))
+        datfid.write("DATA BLOCKS:{0}{1}\n".format(" " * 10, len(reslist)))
+        datfid.write(ss.join(["SITE", "FREQ", "TYPE", "DATUM", "ERROR", "\n"]))
         for ll, datline in enumerate(reslist):
-            if datline.find('#IND') >= 0:
-                print 'Found #IND on line {0}'.format(ll)
-                ndline = datline.replace('#IND', '00')
-                print 'Replaced with 00'
+            if datline.find("#IND") >= 0:
+                print "Found #IND on line {0}".format(ll)
+                ndline = datline.replace("#IND", "00")
+                print "Replaced with 00"
                 datfid.write(ndline)
-            elif datline.lower().find('inf') >= 0:
-                print 'Found #inf on line {0}'.format(ll)
-                ndline = datline.replace('#inf', '00')
-                print 'Replaced with 00'
+            elif datline.lower().find("inf") >= 0:
+                print "Found #inf on line {0}".format(ll)
+                ndline = datline.replace("#inf", "00")
+                print "Replaced with 00"
                 datfid.write(ndline)
             else:
                 datfid.write(datline)
@@ -2325,11 +2749,21 @@ class Occam2DData(object):
         if new_proj_angle != 0:
             self.proj_angle = new_proj_angle
 
-        print 'Rewrote the data file to: ', self.ndata_fn
+        print "Rewrote the data file to: ", self.ndata_fn
 
-    def makeModelFiles(self, niter=20, targetrms=1.0, nlayers=100, nlperdec=30,
-                       z1layer=50, bwidth=200, trigger=.75, save_path=None, rhostart=100,
-                       occampath=r"c:\Peacock\PHD\occam2d\MakeFiles"):
+    def makeModelFiles(
+        self,
+        niter=20,
+        targetrms=1.0,
+        nlayers=100,
+        nlperdec=30,
+        z1layer=50,
+        bwidth=200,
+        trigger=0.75,
+        save_path=None,
+        rhostart=100,
+        occampath=r"c:\Peacock\PHD\occam2d\MakeFiles",
+    ):
         """
         makeModel will make the input files for occam2d using Steve Constable's
         MakeModel2DMT.f code.
@@ -2361,16 +2795,16 @@ class Occam2DData(object):
             shutil.copy(self.data_fn, os.path.join(occampath, dfnb))
 
         # write input file for MakeModel2DMT
-        mmfid = open(os.path.join(occampath, 'inputMakeModel.txt'), 'w')
-        mmfid.write(dfnb + '\n')
-        mmfid.write(str(niter) + '\n')
-        mmfid.write(str(targetrms) + '\n')
-        mmfid.write(str(nlayers) + '\n')
-        mmfid.write(str(nlperdec) + '\n')
-        mmfid.write(str(z1layer) + '\n')
-        mmfid.write(str(bwidth) + '\n')
-        mmfid.write(str(trigger) + '\n')
-        mmfid.write('\n')
+        mmfid = open(os.path.join(occampath, "inputMakeModel.txt"), "w")
+        mmfid.write(dfnb + "\n")
+        mmfid.write(str(niter) + "\n")
+        mmfid.write(str(targetrms) + "\n")
+        mmfid.write(str(nlayers) + "\n")
+        mmfid.write(str(nlperdec) + "\n")
+        mmfid.write(str(z1layer) + "\n")
+        mmfid.write(str(bwidth) + "\n")
+        mmfid.write(str(trigger) + "\n")
+        mmfid.write("\n")
         mmfid.close()
 
         # get current working directory
@@ -2379,7 +2813,7 @@ class Occam2DData(object):
         # change directory path to occam2d path
         os.chdir(occampath)
 
-        #---call MakeModel2DMT---
+        # ---call MakeModel2DMT---
         subprocess.os.system("MakeModel2DMT < inputMakeModel.txt")
 
         # change back to original working directory
@@ -2391,19 +2825,21 @@ class Occam2DData(object):
         if not os.path.exists(save_path):
             os.mkdir(save_path)
 
-        meshfn = os.path.join(save_path, 'MESH')
-        inmodelfn = os.path.join(save_path, 'INMODEL')
-        startupfn = os.path.join(save_path, 'startup')
+        meshfn = os.path.join(save_path, "MESH")
+        inmodelfn = os.path.join(save_path, "INMODEL")
+        startupfn = os.path.join(save_path, "startup")
 
         # copy ouput files to save_path
         try:
-            shutil.copy(os.path.join(occampath, 'MESH'), meshfn)
-            shutil.copy(os.path.join(occampath, 'INMODEL'), inmodelfn)
-            shutil.copy(os.path.join(occampath, 'startup'), startupfn)
-            shutil.copy(os.path.join(occampath, 'inputMakeModel.txt'),
-                        os.path.join(save_path, 'inputMakeModel.txt'))
+            shutil.copy(os.path.join(occampath, "MESH"), meshfn)
+            shutil.copy(os.path.join(occampath, "INMODEL"), inmodelfn)
+            shutil.copy(os.path.join(occampath, "startup"), startupfn)
+            shutil.copy(
+                os.path.join(occampath, "inputMakeModel.txt"),
+                os.path.join(save_path, "inputMakeModel.txt"),
+            )
         except shutil.Error:
-            print 'Startup files are in {0}'.format(occampath)
+            print "Startup files are in {0}".format(occampath)
 
         # copy data file if it isn't there already
         if not os.path.exists(os.path.join(save_path, dfnb)):
@@ -2412,38 +2848,48 @@ class Occam2DData(object):
             except shutil.Error:
                 pass
 
-        if os.path.getctime(os.path.join(save_path, dfnb)) <\
-                os.path.getctime(self.data_fn):
+        if os.path.getctime(os.path.join(save_path, dfnb)) < os.path.getctime(
+            self.data_fn
+        ):
             try:
                 shutil.copy(self.data_fn, os.path.join(save_path, dfnb))
             except shutil.Error:
                 pass
 
         # write startup file to have the starting desired starting rho value
-        ifid = open(startupfn, 'r')
+        ifid = open(startupfn, "r")
         ilines = ifid.readlines()
         ifid.close()
 
         if rhostart != 100:
             # make startup model a homogeneous half space of rhostart
             rhostart = np.log10(rhostart)
-            ifid = open(startupfn, 'w')
+            ifid = open(startupfn, "w")
             for line in ilines:
-                if line.find('2.000000') >= 0:
-                    line = line.replace('2.000000', '%.6f' % rhostart)
+                if line.find("2.000000") >= 0:
+                    line = line.replace("2.000000", "%.6f" % rhostart)
                 ifid.write(line)
         ifid.close()
 
-        print 'Be sure to check the INMODEL file for clumped numbers near the bottom.'
-        print 'Also, check the MESH and startup files to make sure they are correct.'
+        print "Be sure to check the INMODEL file for clumped numbers near the bottom."
+        print "Also, check the MESH and startup files to make sure they are correct."
 
         self.meshfn = meshfn
         self.inmodelfn = inmodelfn
         self.startupfn = startupfn
 
-    def plotMaskPoints(self, plottype=None, reserrinc=.20, phaseerrinc=.05,
-                       marker='h', colormode='color', dpi=300, ms=2,
-                       res_limits=None, phaselimits=(-5, 95)):
+    def plotMaskPoints(
+        self,
+        plottype=None,
+        reserrinc=0.20,
+        phaseerrinc=0.05,
+        marker="h",
+        colormode="color",
+        dpi=300,
+        ms=2,
+        res_limits=None,
+        phaselimits=(-5, 95),
+    ):
         """
         An interactive plotting tool to mask points an add errorbars
 
@@ -2506,19 +2952,19 @@ class Occam2DData(object):
 
         """
 
-        if colormode == 'color':
+        if colormode == "color":
             # color for data
             cted = (0, 0, 1)
             ctmd = (1, 0, 0)
-            mted = 's'
-            mtmd = 'o'
+            mted = "s"
+            mtmd = "o"
 
-        elif colormode == 'bw':
+        elif colormode == "bw":
             # color for data
             cted = (0, 0, 0)
             ctmd = (0, 0, 0)
-            mted = 's'
-            mtmd = 'o'
+            mted = "s"
+            mtmd = "o"
 
         # read in data file
         self.read2DdataFile()
@@ -2547,7 +2993,7 @@ class Occam2DData(object):
                         pstation_list.append(ii)
 
         # set the subplot grid
-        gs = gridspec.GridSpec(6, 2, wspace=.1, left=.1, top=.93, bottom=.07)
+        gs = gridspec.GridSpec(6, 2, wspace=0.1, left=0.1, top=0.93, bottom=0.07)
         for jj, ii in enumerate(pstation_list):
             fig = plt.figure(ii + 1, dpi=dpi)
             plt.clf()
@@ -2560,49 +3006,85 @@ class Occam2DData(object):
 
             # plot resistivity TE Mode
             # cut out missing data points first
-            rxy = np.where(rp_list[ii]['resxy'][0] != 0)[0]
-            rte = axrte.errorbar(period[rxy], 10**rp_list[ii]['resxy'][0][rxy],
-                                 ls=':', marker=mted, ms=ms, mfc=cted, mec=cted,
-                                 color=cted,
-                                 yerr=np.log(10) * rp_list[ii]['resxy'][1][rxy] *
-                                 10**rp_list[ii]['resxy'][0][rxy],
-                                 ecolor=cted, picker=2)
+            rxy = np.where(rp_list[ii]["resxy"][0] != 0)[0]
+            rte = axrte.errorbar(
+                period[rxy],
+                10 ** rp_list[ii]["resxy"][0][rxy],
+                ls=":",
+                marker=mted,
+                ms=ms,
+                mfc=cted,
+                mec=cted,
+                color=cted,
+                yerr=np.log(10)
+                * rp_list[ii]["resxy"][1][rxy]
+                * 10 ** rp_list[ii]["resxy"][0][rxy],
+                ecolor=cted,
+                picker=2,
+            )
 
             # plot Phase TE Mode
             # cut out missing data points first
-            pxy = [np.where(rp_list[ii]['phasexy'][0] != 0)[0]]
-            pte = axpte.errorbar(period[pxy], rp_list[ii]['phasexy'][0][pxy],
-                                 ls=':', marker=mted, ms=ms, mfc=cted, mec=cted,
-                                 color=cted, yerr=rp_list[
-                                     ii]['phasexy'][1][pxy],
-                                 ecolor=cted, picker=1)
+            pxy = [np.where(rp_list[ii]["phasexy"][0] != 0)[0]]
+            pte = axpte.errorbar(
+                period[pxy],
+                rp_list[ii]["phasexy"][0][pxy],
+                ls=":",
+                marker=mted,
+                ms=ms,
+                mfc=cted,
+                mec=cted,
+                color=cted,
+                yerr=rp_list[ii]["phasexy"][1][pxy],
+                ecolor=cted,
+                picker=1,
+            )
 
             # plot resistivity TM Mode
             # cut out missing data points first
-            ryx = np.where(rp_list[ii]['resyx'][0] != 0)[0]
-            rtm = axrtm.errorbar(period[ryx], 10**rp_list[ii]['resyx'][0][ryx],
-                                 ls=':', marker=mtmd, ms=ms, mfc=ctmd, mec=ctmd,
-                                 color=ctmd,
-                                 yerr=np.log(10) * rp_list[ii]['resyx'][1][ryx] *
-                                 10**rp_list[ii]['resyx'][0][ryx],
-                                 ecolor=ctmd, picker=2)
+            ryx = np.where(rp_list[ii]["resyx"][0] != 0)[0]
+            rtm = axrtm.errorbar(
+                period[ryx],
+                10 ** rp_list[ii]["resyx"][0][ryx],
+                ls=":",
+                marker=mtmd,
+                ms=ms,
+                mfc=ctmd,
+                mec=ctmd,
+                color=ctmd,
+                yerr=np.log(10)
+                * rp_list[ii]["resyx"][1][ryx]
+                * 10 ** rp_list[ii]["resyx"][0][ryx],
+                ecolor=ctmd,
+                picker=2,
+            )
             # plot Phase TM Mode
             # cut out missing data points first
-            pyx = [np.where(rp_list[ii]['phaseyx'][0] != 0)[0]]
-            ptm = axptm.errorbar(period[pyx], rp_list[ii]['phaseyx'][0][pyx],
-                                 ls=':', marker=mtmd, ms=ms, mfc=ctmd, mec=ctmd,
-                                 color=ctmd, yerr=rp_list[
-                                     ii]['phaseyx'][1][pyx],
-                                 ecolor=ctmd, picker=1)
+            pyx = [np.where(rp_list[ii]["phaseyx"][0] != 0)[0]]
+            ptm = axptm.errorbar(
+                period[pyx],
+                rp_list[ii]["phaseyx"][0][pyx],
+                ls=":",
+                marker=mtmd,
+                ms=ms,
+                mfc=ctmd,
+                mec=ctmd,
+                color=ctmd,
+                yerr=rp_list[ii]["phaseyx"][1][pyx],
+                ecolor=ctmd,
+                picker=1,
+            )
 
             # make the axis presentable
             # set the apparent resistivity scales to log and x-axis to log
             axplist = [axrte, axrtm, axpte, axptm]
             llist = [rte[0], rtm[0], pte[0], ptm[0]]
-            elist = [[rte[1][0], rte[1][1], rte[2][0]],
-                     [rtm[1][0], rtm[1][1], rtm[2][0]],
-                     [pte[1][0], pte[1][1], pte[2][0]],
-                     [ptm[1][0], ptm[1][1], ptm[2][0]]]
+            elist = [
+                [rte[1][0], rte[1][1], rte[2][0]],
+                [rtm[1][0], rtm[1][1], rtm[2][0]],
+                [pte[1][0], pte[1][1], pte[2][0]],
+                [ptm[1][0], ptm[1][1], ptm[2][0]],
+            ]
 
             axlist.append(axplist)
             linelist.append(llist)
@@ -2611,7 +3093,7 @@ class Occam2DData(object):
             # set the axes properties for each subplot
             for nn, xx in enumerate(axplist):
                 # set xscale to logarithmic in period
-                xx.set_xscale('log')
+                xx.set_xscale("log")
 
                 # if apparent resistivity
                 if nn == 0 or nn == 1:
@@ -2620,7 +3102,7 @@ class Occam2DData(object):
 
                     # set apparent resistivity scale to logarithmic
                     try:
-                        xx.set_yscale('log')
+                        xx.set_yscale("log")
                     except ValueError:
                         pass
 
@@ -2630,15 +3112,21 @@ class Occam2DData(object):
 
                 # Set the title of the TE plot
                 if nn == 0:
-                    xx.set_title(self.station_list[ii] + ' Obs$_{xy}$ (TE-Mode)',
-                                 fontdict={'size': 9, 'weight': 'bold'})
-                    xx.yaxis.set_label_coords(-.075, .5)
-                    xx.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                                  fontdict={'size': 9, 'weight': 'bold'})
+                    xx.set_title(
+                        self.station_list[ii] + " Obs$_{xy}$ (TE-Mode)",
+                        fontdict={"size": 9, "weight": "bold"},
+                    )
+                    xx.yaxis.set_label_coords(-0.075, 0.5)
+                    xx.set_ylabel(
+                        "App. Res. ($\Omega \cdot m$)",
+                        fontdict={"size": 9, "weight": "bold"},
+                    )
                 # set the title of the TM plot
                 if nn == 1:
-                    xx.set_title(self.station_list[ii] + ' Obs$_{yx}$ (TM-Mode)',
-                                 fontdict={'size': 9, 'weight': 'bold'})
+                    xx.set_title(
+                        self.station_list[ii] + " Obs$_{yx}$ (TM-Mode)",
+                        fontdict={"size": 9, "weight": "bold"},
+                    )
 
                 # set the phase axes properties
                 if nn == 2 or nn == 3:
@@ -2646,26 +3134,32 @@ class Occam2DData(object):
                     xx.set_ylim(phaselimits)
 
                     # set label coordinates
-                    xx.yaxis.set_label_coords(-.075, .5)
+                    xx.yaxis.set_label_coords(-0.075, 0.5)
 
                     # give the y-axis label to the bottom left plot
                     if nn == 2:
-                        xx.set_ylabel('Phase (deg)',
-                                      fontdict={'size': 9, 'weight': 'bold'})
+                        xx.set_ylabel(
+                            "Phase (deg)", fontdict={"size": 9, "weight": "bold"}
+                        )
                     # set the x-axis label
-                    xx.set_xlabel('Period (s)',
-                                  fontdict={'size': 9, 'weight': 'bold'})
+                    xx.set_xlabel("Period (s)", fontdict={"size": 9, "weight": "bold"})
 
                     # set tick marks of the y-axis
                     xx.yaxis.set_major_locator(MultipleLocator(10))
                     xx.yaxis.set_minor_locator(MultipleLocator(2))
 
-                xx.grid(True, alpha=.4, which='both')
+                xx.grid(True, alpha=0.4, which="both")
 
         # make points an attribute of self which is a data type
         # OccamPointPicker
-        self.points = OccamPointPicker(axlist, linelist, errlist, reserrinc=reserrinc,
-                                       phaseerrinc=phaseerrinc, marker=marker)
+        self.points = OccamPointPicker(
+            axlist,
+            linelist,
+            errlist,
+            reserrinc=reserrinc,
+            phaseerrinc=phaseerrinc,
+            marker=marker,
+        )
 
         # be sure to show the plot
         plt.show()
@@ -2704,19 +3198,23 @@ class Occam2DData(object):
         # rewrite the data file
         # make a reverse dictionary for locating the masked points in the data
         # file
-        rploc = dict([('{0}'.format(self.points.fndict[key]), int(key) - 1)
-                      for key in self.points.fndict.keys()])
+        rploc = dict(
+            [
+                ("{0}".format(self.points.fndict[key]), int(key) - 1)
+                for key in self.points.fndict.keys()
+            ]
+        )
 
         # make a period dictionary to locate points changed
-        frpdict = dict([('{0:.5g}'.format(fr), ff)
-                        for ff, fr in enumerate(1. / self.freq)])
+        frpdict = dict(
+            [("{0:.5g}".format(fr), ff) for ff, fr in enumerate(1.0 / self.freq)]
+        )
 
         # loop over the data list
         for dd, dat in enumerate(self.points.data):
             derror = self.points.error[dd]
             # loop over the 4 main entrie
-            for ss, skey in enumerate(
-                    ['resxy', 'resyx', 'phasexy', 'phaseyx']):
+            for ss, skey in enumerate(["resxy", "resyx", "phasexy", "phaseyx"]):
                 # rewrite any coinciding points
                 for frpkey in frpdict.keys():
                     try:
@@ -2726,33 +3224,32 @@ class Occam2DData(object):
                         # CHANGE APPARENT RESISTIVITY
                         if ss == 0 or ss == 1:
                             # change the apparent resistivity value
-                            if rp_list[rploc[str(dd)]][skey][0][ff] != \
-                                    np.log10(dat[ss][floc]):
+                            if rp_list[rploc[str(dd)]][skey][0][ff] != np.log10(
+                                dat[ss][floc]
+                            ):
                                 if dat[ss][floc] == 0:
                                     rp_list[rploc[str(dd)]][skey][0][ff] = 0.0
                                 else:
-                                    rp_list[rploc[str(dd)]][skey][0][ff] = \
-                                        np.log10(dat[ss][floc])
+                                    rp_list[rploc[str(dd)]][skey][0][ff] = np.log10(
+                                        dat[ss][floc]
+                                    )
 
                             # change the apparent resistivity error value
                             if dat[ss][floc] == 0.0:
                                 rerr = 0.0
                             else:
-                                rerr = derror[ss][floc] / \
-                                    dat[ss][floc] / np.log(10)
+                                rerr = derror[ss][floc] / dat[ss][floc] / np.log(10)
                             if rp_list[rploc[str(dd)]][skey][1][ff] != rerr:
                                 rp_list[rploc[str(dd)]][skey][1][ff] = rerr
 
                         # DHANGE PHASE
                         elif ss == 2 or ss == 3:
                             # change the phase value
-                            if rp_list[rploc[str(dd)]][skey][0][ff] != \
-                                    dat[ss][floc]:
+                            if rp_list[rploc[str(dd)]][skey][0][ff] != dat[ss][floc]:
                                 if dat[ss][floc] == 0:
                                     rp_list[rploc[str(dd)]][skey][0][ff] = 0.0
                                 else:
-                                    rp_list[rploc[str(dd)]][skey][0][ff] = \
-                                        dat[ss][floc]
+                                    rp_list[rploc[str(dd)]][skey][0][ff] = dat[ss][floc]
 
                             # change the apparent resistivity error value
                             if dat[ss][floc] == 0.0:
@@ -2770,8 +3267,9 @@ class Occam2DData(object):
         reslist = []
 
         # make a dictionary of rp_list for easier extraction of data
-        rpdict = dict([(station, rp_list[ii])
-                       for ii, station in enumerate(self.station_list)])
+        rpdict = dict(
+            [(station, rp_list[ii]) for ii, station in enumerate(self.station_list)]
+        )
 
         # loop over stations in the data file
         for kk, station in enumerate(self.station_list, 1):
@@ -2780,109 +3278,144 @@ class Occam2DData(object):
             # loop over frequencies
             for jj, ff in enumerate(self.freq, 1):
                 # make a list of lines to write to the data file
-                if srp['resxy'][0, jj - 1] != 0.0:
-                    reslist.append(ss.join([str(kk), str(jj), '1',
-                                            '{0:{1}}'.format(
-                                                srp['resxy'][0, jj - 1], sfmt),
-                                            '{0:{1}}'.format(
-                                                srp['resxy'][1, jj - 1], sfmt),
-                                            '\n']))
+                if srp["resxy"][0, jj - 1] != 0.0:
+                    reslist.append(
+                        ss.join(
+                            [
+                                str(kk),
+                                str(jj),
+                                "1",
+                                "{0:{1}}".format(srp["resxy"][0, jj - 1], sfmt),
+                                "{0:{1}}".format(srp["resxy"][1, jj - 1], sfmt),
+                                "\n",
+                            ]
+                        )
+                    )
 
-                if srp['phasexy'][0, jj - 1] != 0.0:
-                    reslist.append(ss.join([str(kk), str(jj), '2',
-                                            '{0:{1}}'.format(
-                                                srp['phasexy'][0, jj - 1], sfmt),
-                                            '{0:{1}}'.format(
-                                                srp['phasexy'][1, jj - 1], sfmt),
-                                            '\n']))
+                if srp["phasexy"][0, jj - 1] != 0.0:
+                    reslist.append(
+                        ss.join(
+                            [
+                                str(kk),
+                                str(jj),
+                                "2",
+                                "{0:{1}}".format(srp["phasexy"][0, jj - 1], sfmt),
+                                "{0:{1}}".format(srp["phasexy"][1, jj - 1], sfmt),
+                                "\n",
+                            ]
+                        )
+                    )
 
-                if srp['resyx'][0, jj - 1] != 0.0:
-                    reslist.append(ss.join([str(kk), str(jj), '5',
-                                            '{0:{1}}'.format(
-                                                srp['resyx'][0, jj - 1], sfmt),
-                                            '{0:{1}}'.format(
-                                                srp['resyx'][1, jj - 1], sfmt),
-                                            '\n']))
+                if srp["resyx"][0, jj - 1] != 0.0:
+                    reslist.append(
+                        ss.join(
+                            [
+                                str(kk),
+                                str(jj),
+                                "5",
+                                "{0:{1}}".format(srp["resyx"][0, jj - 1], sfmt),
+                                "{0:{1}}".format(srp["resyx"][1, jj - 1], sfmt),
+                                "\n",
+                            ]
+                        )
+                    )
 
-                if srp['phaseyx'][0, jj - 1] != 0.0:
-                    reslist.append(ss.join([str(kk), str(jj), '6',
-                                            '{0:{1}}'.format(
-                                                srp['phaseyx'][0, jj - 1], sfmt),
-                                            '{0:{1}}'.format(
-                                                srp['phaseyx'][1, jj - 1], sfmt),
-                                            '\n']))
+                if srp["phaseyx"][0, jj - 1] != 0.0:
+                    reslist.append(
+                        ss.join(
+                            [
+                                str(kk),
+                                str(jj),
+                                "6",
+                                "{0:{1}}".format(srp["phaseyx"][0, jj - 1], sfmt),
+                                "{0:{1}}".format(srp["phaseyx"][1, jj - 1], sfmt),
+                                "\n",
+                            ]
+                        )
+                    )
 
-                if srp['realtip'][0, jj - 1] != 0.0:
-                    reslist.append(ss.join([str(kk), str(jj), '3',
-                                            '{0:{1}}'.format(
-                                                srp['realtip'][0, jj - 1], sfmt),
-                                            '{0:{1}}'.format(
-                                                srp['realtip'][1, jj - 1], sfmt),
-                                            '\n']))
+                if srp["realtip"][0, jj - 1] != 0.0:
+                    reslist.append(
+                        ss.join(
+                            [
+                                str(kk),
+                                str(jj),
+                                "3",
+                                "{0:{1}}".format(srp["realtip"][0, jj - 1], sfmt),
+                                "{0:{1}}".format(srp["realtip"][1, jj - 1], sfmt),
+                                "\n",
+                            ]
+                        )
+                    )
 
-                if srp['imagtip'][0, jj - 1] != 0.0:
-                    reslist.append(ss.join([str(kk), str(jj), '4',
-                                            '{0:{1}}'.format(
-                                                srp['imagtip'][0, jj - 1], sfmt),
-                                            '{0:{1}}'.format(
-                                                srp['imagtip'][1, jj - 1], sfmt),
-                                            '\n']))
+                if srp["imagtip"][0, jj - 1] != 0.0:
+                    reslist.append(
+                        ss.join(
+                            [
+                                str(kk),
+                                str(jj),
+                                "4",
+                                "{0:{1}}".format(srp["imagtip"][0, jj - 1], sfmt),
+                                "{0:{1}}".format(srp["imagtip"][1, jj - 1], sfmt),
+                                "\n",
+                            ]
+                        )
+                    )
 
-        #======================================================================
+        # ======================================================================
         #                             write dat file
-        #======================================================================
+        # ======================================================================
         # make the file name of the data file
-        if self.data_fn.find('RW') > 0:
+        if self.data_fn.find("RW") > 0:
             self.ndata_fn = self.data_fn
         else:
-            self.ndata_fn = self.data_fn[:-4] + 'RW.dat'
+            self.ndata_fn = self.data_fn[:-4] + "RW.dat"
 
         # get number of stations
         nstat = len(self.station_list)
 
         # set title string
         if self.titlestr is None:
-            self.titlestr = 'occam2d Inversion'
+            self.titlestr = "occam2d Inversion"
 
-        datfid = open(self.ndata_fn, 'w')
-        datfid.write('FORMAT:{0}OCCAM2MTDATA_1.0\n'.format(' ' * 11))
-        datfid.write('TITLE:{0}{1}\n'.format(' ' * 12, self.titlestr))
+        datfid = open(self.ndata_fn, "w")
+        datfid.write("FORMAT:{0}OCCAM2MTDATA_1.0\n".format(" " * 11))
+        datfid.write("TITLE:{0}{1}\n".format(" " * 12, self.titlestr))
 
         # write station sites
-        datfid.write('SITES:{0}{1}\n'.format(' ' * 12, nstat))
+        datfid.write("SITES:{0}{1}\n".format(" " * 12, nstat))
         for station in self.station_list:
-            datfid.write('{0}{1}\n'.format(ss, station))
+            datfid.write("{0}{1}\n".format(ss, station))
 
         # write offsets
-        datfid.write('OFFSETS (M): \n')
+        datfid.write("OFFSETS (M): \n")
         for station in self.station_list:
-            datfid.write('{0}{1: .2f}\n'.format(ss,
-                                                rpdict[station]['offset']))
+            datfid.write("{0}{1: .2f}\n".format(ss, rpdict[station]["offset"]))
 
         # write frequencies
-        datfid.write('FREQUENCIES:{0}{1}\n'.format(' ' * 8, len(self.freq)))
+        datfid.write("FREQUENCIES:{0}{1}\n".format(" " * 8, len(self.freq)))
         for ff in self.freq:
-            datfid.write('{0}{1:.5f}\n'.format(ss, ff))
+            datfid.write("{0}{1:.5f}\n".format(ss, ff))
 
         # write data block
-        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' ' * 10, len(reslist)))
-        datfid.write(ss.join(['SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR', '\n']))
+        datfid.write("DATA BLOCKS:{0}{1}\n".format(" " * 10, len(reslist)))
+        datfid.write(ss.join(["SITE", "FREQ", "TYPE", "DATUM", "ERROR", "\n"]))
         for ll, datline in enumerate(reslist):
-            if datline.find('#IND') >= 0:
-                print 'Found #IND on line {0}'.format(ll)
-                ndline = datline.replace('#IND', '00')
-                print 'Replaced with 00'
+            if datline.find("#IND") >= 0:
+                print "Found #IND on line {0}".format(ll)
+                ndline = datline.replace("#IND", "00")
+                print "Replaced with 00"
                 datfid.write(ndline)
-            elif datline.lower().find('inf') >= 0:
-                print 'Found #inf on line {0}'.format(ll)
-                ndline = datline.replace('#inf', '00')
-                print 'Replaced with 00'
+            elif datline.lower().find("inf") >= 0:
+                print "Found #inf on line {0}".format(ll)
+                ndline = datline.replace("#inf", "00")
+                print "Replaced with 00"
                 datfid.write(ndline)
             else:
                 datfid.write(datline)
         datfid.close()
 
-        print 'Wrote Occam2D data file to: ', self.ndata_fn
+        print "Wrote Occam2D data file to: ", self.ndata_fn
 
     def read2DRespFile(self, resp_fn):
         """
@@ -2949,7 +3482,7 @@ class Occam2DData(object):
         if self.resp_fn is None:
             return
 
-        rfid = open(self.resp_fn, 'r')
+        rfid = open(self.resp_fn, "r")
 
         rlines = rfid.readlines()
         for line in rlines:
@@ -3109,12 +3642,13 @@ class Occam2DData(object):
         self.read2DRespFile(resp_fn)
 
         if resp_fn is not None:
-            plot_resp = 'y'
+            plot_resp = "y"
         else:
-            plot_resp = 'n'
+            plot_resp = "n"
 
-        return PlotPseudoSection(self.rp_list, self.period,
-                                 plot_resp=plot_resp, **kwargs)
+        return PlotPseudoSection(
+            self.rp_list, self.period, plot_resp=plot_resp, **kwargs
+        )
 
     def plotAllResponses(self, station_list=None, **kwargs):
         """
@@ -3165,17 +3699,19 @@ class Occam2DData(object):
 
         """
         dir_path = os.path.dirname(self.data_fn)
-        resp_fn_list = [os.path.join(dir_path, rfn)
-                        for rfn in os.listdir(dir_path)
-                        if rfn.find('.resp') > 0]
+        resp_fn_list = [
+            os.path.join(dir_path, rfn)
+            for rfn in os.listdir(dir_path)
+            if rfn.find(".resp") > 0
+        ]
         plot_rp_list = []
         for rfn in resp_fn_list:
             self.read2DRespFile(rfn)
             plot_rp_list.append(self.rp_list)
 
-        return PlotAllResponses(plot_rp_list, self.period,
-                                pstation_list=station_list,
-                                **kwargs)
+        return PlotAllResponses(
+            plot_rp_list, self.period, pstation_list=station_list, **kwargs
+        )
 
 
 class Occam2DModel(Occam2DData):
@@ -3199,26 +3735,24 @@ class Occam2DModel(Occam2DData):
         # get meshfile if none is provides assuming the mesh file is named
         # with mesh
         if self.invpath is not None:
-            self.meshfn = os.path.join(self.invpath, 'MESH')
+            self.meshfn = os.path.join(self.invpath, "MESH")
             if os.path.isfile(self.meshfn) == False:
                 for ff in os.listdir(self.invpath):
-                    if ff.lower().find('mesh') >= 0:
+                    if ff.lower().find("mesh") >= 0:
                         self.meshfn = os.path.join(self.invpath, ff)
                 if os.path.isfile(self.meshfn) == False:
-                    raise NameError('Could not find a mesh file, ' +
-                                    'input manually')
+                    raise NameError("Could not find a mesh file, " + "input manually")
 
         # get inmodelfile if none is provides assuming the mesh file is
         # named with inmodel
         if inmodelfn is None:
-            self.inmodelfn = os.path.join(self.invpath, 'INMODEL')
+            self.inmodelfn = os.path.join(self.invpath, "INMODEL")
             if os.path.isfile(self.inmodelfn) == False:
                 for ff in os.listdir(self.invpath):
-                    if ff.lower().find('inmodel') >= 0:
+                    if ff.lower().find("inmodel") >= 0:
                         self.inmodelfn = os.path.join(self.invpath, ff)
                 if os.path.isfile(self.inmodelfn) == False:
-                    raise NameError('Could not find a model file, ' +
-                                    'input manually')
+                    raise NameError("Could not find a model file, " + "input manually")
 
     def read2DIter(self):
         """
@@ -3249,15 +3783,12 @@ class Occam2DModel(Occam2DData):
 
         # check to see if the file exists
         if os.path.exists(self.iterfn) == False:
-            raise IOError(
-                'File: ' +
-                self.iterfn +
-                ' does not exist, check path')
+            raise IOError("File: " + self.iterfn + " does not exist, check path")
 
         self.invpath = os.path.dirname(self.iterfn)
 
         # open file, read lines, close file
-        ifid = file(self.iterfn, 'r')
+        ifid = file(self.iterfn, "r")
         ilines = ifid.readlines()
         ifid.close()
 
@@ -3265,16 +3796,16 @@ class Occam2DModel(Occam2DData):
         self.idict = {}
         ii = 0
         # put header info into dictionary with similar keys
-        while ilines[ii].lower().find('param') != 0:
-            iline = ilines[ii].strip().split(':')
+        while ilines[ii].lower().find("param") != 0:
+            iline = ilines[ii].strip().split(":")
             self.idict[iline[0].lower()] = iline[1].strip()
             ii += 1
 
         # get number of parameters
-        iline = ilines[ii].strip().split(':')
+        iline = ilines[ii].strip().split(":")
         nparam = int(iline[1].strip())
         self.idict[iline[0]] = nparam
-        self.idict['model'] = np.zeros(nparam)
+        self.idict["model"] = np.zeros(nparam)
         kk = int(ii + 1)
 
         jj = 0
@@ -3282,24 +3813,24 @@ class Occam2DModel(Occam2DData):
             iline = ilines[jj + kk].strip().split()
             for ll in range(4):
                 try:
-                    self.idict['model'][jj * 4 + ll] = float(iline[ll])
+                    self.idict["model"][jj * 4 + ll] = float(iline[ll])
                 except IndexError:
                     pass
             jj += 1
 
         # get the data file name from the iteration header
-        self.data_fn = self.idict['data file']
+        self.data_fn = self.idict["data file"]
         if self.data_fn.find(os.sep) == -1:
             self.data_fn = os.path.join(self.invpath, self.data_fn)
         if os.path.isfile(self.data_fn) == False:
             for ff in os.listdir(self.invpath):
-                if ff.lower().find('.dat') >= 0:
+                if ff.lower().find(".dat") >= 0:
                     self.data_fn = os.path.join(self.invpath, ff)
             if os.path.isfile(self.data_fn) == False:
-                raise NameError('Could not find a data file, input manually')
+                raise NameError("Could not find a data file, input manually")
 
         # get the name of the inmodel file
-        self.inmodelfn = self.idict['model file']
+        self.inmodelfn = self.idict["model file"]
         if not os.path.isfile(self.inmodelfn):
             self.inmodelfn = os.path.join(self.invpath, self.inmodelfn)
 
@@ -3338,7 +3869,7 @@ class Occam2DModel(Occam2DData):
             >>> ocm.read2DInmodel()
         """
 
-        ifid = open(self.inmodelfn, 'r')
+        ifid = open(self.inmodelfn, "r")
 
         headerdict = {}
         rows = []
@@ -3349,11 +3880,11 @@ class Occam2DModel(Occam2DData):
 
         for ii, iline in enumerate(ilines):
             # read header information
-            if iline.find(':') > 0:
-                iline = iline.strip().split(':')
+            if iline.find(":") > 0:
+                iline = iline.strip().split(":")
                 headerdict[iline[0].lower()] = iline[1].strip()
                 # append the last line
-                if iline[0].lower().find('exception') > 0:
+                if iline[0].lower().find("exception") > 0:
                     cols.append(ncols)
 
             # get mesh values
@@ -3373,7 +3904,7 @@ class Occam2DModel(Occam2DData):
         self.inmodel_headerdict = headerdict
 
         # set mesh file name
-        self.meshfn = self.inmodel_headerdict['mesh file']
+        self.meshfn = self.inmodel_headerdict["mesh file"]
         if not os.path.isfile(self.meshfn):
             self.meshfn = os.path.join(self.invpath, self.meshfn)
 
@@ -3408,7 +3939,7 @@ class Occam2DModel(Occam2DData):
             >>> ocm.read2DMesh()
         """
 
-        mfid = file(self.meshfn, 'r')
+        mfid = file(self.meshfn, "r")
 
         mlines = mfid.readlines()
 
@@ -3439,11 +3970,11 @@ class Occam2DModel(Occam2DData):
             jj += 1
 
         # get free parameters
-        for ii, mm in enumerate(mlines[jj + 1:]):
+        for ii, mm in enumerate(mlines[jj + 1 :]):
             kk = 0
             while kk < 4:
                 mline = mm.rstrip()
-                if mline.lower().find('exception') > 0:
+                if mline.lower().find("exception") > 0:
                     break
                 for jj in range(nh):
                     try:
@@ -3464,7 +3995,7 @@ class Occam2DModel(Occam2DData):
         try:
             self.read2DdataFile()
         except AttributeError:
-            print 'No Data file defined'
+            print "No Data file defined"
 
     def get2DModel(self):
         """
@@ -3488,20 +4019,20 @@ class Occam2DModel(Occam2DData):
         self.read2DIter()
 
         # read in data file as an OccamData type
-        print 'Reading data from: ', self.data_fn
+        print "Reading data from: ", self.data_fn
         self.get2DData()
 
-        #read in INMODEL
-        print 'Reading model from: ', self.inmodelfn
+        # read in INMODEL
+        print "Reading model from: ", self.inmodelfn
         self.read2DInmodel()
 
         # read in MESH file
-        print 'Reading mesh from: ', self.meshfn
+        print "Reading mesh from: ", self.meshfn
         self.read2DMesh()
 
         # get the binding offset which is the right side of the furthest left
         # block, this helps locate the model in relative space
-        bndgoff = float(self.inmodel_headerdict['binding offset'])
+        bndgoff = float(self.inmodel_headerdict["binding offset"])
 
         # make sure that the number of rows and number of columns are the same
         assert len(self.rows) == len(self.cols)
@@ -3530,14 +4061,16 @@ class Occam2DModel(Occam2DData):
                 # put the apporpriate resistivity value into all the amalgamated
                 # model blocks of the regularization grid into the forward model
                 # grid
-                resmodel[ny1:ny2, nx1:nx2] = self.idict['model'][mm]
+                resmodel[ny1:ny2, nx1:nx2] = self.idict["model"][mm]
                 mm += 1
 
         # make some arrays for plotting the model
-        plotx = np.array([self.hnodes[:ii + 1].sum()
-                          for ii in range(len(self.hnodes))])
-        ploty = np.array([self.vnodes[:ii + 1].sum()
-                          for ii in range(len(self.vnodes))])
+        plotx = np.array(
+            [self.hnodes[: ii + 1].sum() for ii in range(len(self.hnodes))]
+        )
+        ploty = np.array(
+            [self.vnodes[: ii + 1].sum() for ii in range(len(self.vnodes))]
+        )
 
         # center the grid onto the station coordinates
         x0 = bndgoff - plotx[self.cols[0][0]]
@@ -3561,7 +4094,7 @@ class Occam2DModel(Occam2DData):
         # set the offsets of the stations and station list.
         self.offsetlist = []
         for rpdict in self.rp_list:
-            self.offsetlist.append(rpdict['offset'])
+            self.offsetlist.append(rpdict["offset"])
 
     def plot2DModel(self, data_fn=None, **kwargs):
         """
@@ -3645,10 +4178,20 @@ class Occam2DModel(Occam2DData):
         self.get2DModel()
         self.get2DData()
 
-        return PlotModel(self.meshx, self.meshy, self.resmodel, self.rp_list,
-                         self.plotx, self.ploty, self.offsetlist,
-                         self.iterfn, self.idict, self.rows, self.cols,
-                         **kwargs)
+        return PlotModel(
+            self.meshx,
+            self.meshy,
+            self.resmodel,
+            self.rp_list,
+            self.plotx,
+            self.ploty,
+            self.offsetlist,
+            self.iterfn,
+            self.idict,
+            self.rows,
+            self.cols,
+            **kwargs
+        )
 
     def plotL2Curve(self, fnstem=None, **kwargs):
         """
@@ -3702,31 +4245,37 @@ class Occam2DModel(Occam2DData):
         invpath = os.path.dirname(self.iterfn)
 
         if fnstem is None:
-            iterlist = [os.path.join(invpath, itfile)
-                        for itfile in os.listdir(invpath)
-                        if itfile.find('.iter') > 0]
+            iterlist = [
+                os.path.join(invpath, itfile)
+                for itfile in os.listdir(invpath)
+                if itfile.find(".iter") > 0
+            ]
         else:
-            iterlist = [os.path.join(invpath, itfile)
-                        for itfile in os.listdir(invpath)
-                        if itfile.find('.iter') > 0 and
-                        itfile.find(fnstem) > 0]
+            iterlist = [
+                os.path.join(invpath, itfile)
+                for itfile in os.listdir(invpath)
+                if itfile.find(".iter") > 0 and itfile.find(fnstem) > 0
+            ]
 
         nr = len(iterlist)
 
         # create a structured array to put information inot
-        rmsarr = np.zeros(nr, dtype=np.dtype([('iteration', np.int),
-                                              ('rms', np.float),
-                                              ('roughness', np.float)]))
+        rmsarr = np.zeros(
+            nr,
+            dtype=np.dtype(
+                [("iteration", np.int), ("rms", np.float), ("roughness", np.float)]
+            ),
+        )
 
         for ii, itfile in enumerate(iterlist):
             self.iterfn = itfile
             self.read2DIter()
-            rmsarr[ii]['iteration'] = int(self.idict['iteration'])
-            rmsarr[ii]['rms'] = float(self.idict['misfit value'])
-            rmsarr[ii]['roughness'] = float(self.idict['roughness value'])
+            rmsarr[ii]["iteration"] = int(self.idict["iteration"])
+            rmsarr[ii]["rms"] = float(self.idict["misfit value"])
+            rmsarr[ii]["roughness"] = float(self.idict["roughness value"])
 
         # be sure to sort the array for ascending iteration value
-        rmsarr = np.sort(rmsarr, order='iteration')
+        rmsarr = np.sort(rmsarr, order="iteration")
 
         return PlotL2(rmsarr, **kwargs)
 
@@ -3782,14 +4331,20 @@ class Occam2DModel(Occam2DData):
         except AttributeError:
             self.get2DModel()
 
-        return PlotDepthSlice(self.resmodel, self.offsetlist, self.station_list,
-                              self.plotx, self.ploty, **kwargs)
+        return PlotDepthSlice(
+            self.resmodel,
+            self.offsetlist,
+            self.station_list,
+            self.plotx,
+            self.ploty,
+            **kwargs
+        )
 
 
-#==============================================================================
+# ==============================================================================
 # plot the MT and model responses
-#==============================================================================
-class PlotOccam2DResponse():
+# ==============================================================================
+class PlotOccam2DResponse:
     """
     Helper class to deal with plotting the MT response and occam2d model.
 
@@ -3902,78 +4457,78 @@ class PlotOccam2DResponse():
     def __init__(self, rp_list, period, **kwargs):
         self.rp_list = rp_list
         self.period = period
-        self.wl_fn = kwargs.pop('wl_fn', None)
+        self.wl_fn = kwargs.pop("wl_fn", None)
 
-        self.color_mode = kwargs.pop('color_mode', 'color')
+        self.color_mode = kwargs.pop("color_mode", "color")
 
-        self.ms = kwargs.pop('ms', 1.5)
-        self.lw = kwargs.pop('lw', .5)
-        self.e_capthick = kwargs.pop('e_capthick', .5)
-        self.e_capsize = kwargs.pop('e_capsize', 2)
+        self.ms = kwargs.pop("ms", 1.5)
+        self.lw = kwargs.pop("lw", 0.5)
+        self.e_capthick = kwargs.pop("e_capthick", 0.5)
+        self.e_capsize = kwargs.pop("e_capsize", 2)
 
         # color mode
-        if self.color_mode == 'color':
+        if self.color_mode == "color":
             # color for data
-            self.cted = kwargs.pop('cted', (0, 0, 1))
-            self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
-            self.mted = kwargs.pop('mted', 's')
-            self.mtmd = kwargs.pop('mtmd', 'o')
+            self.cted = kwargs.pop("cted", (0, 0, 1))
+            self.ctmd = kwargs.pop("ctmd", (1, 0, 0))
+            self.mted = kwargs.pop("mted", "s")
+            self.mtmd = kwargs.pop("mtmd", "o")
 
             # color for occam2d model
-            self.ctem = kwargs.pop('ctem', (0, .6, .3))
-            self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
-            self.mtem = kwargs.pop('mtem', '+')
-            self.mtmm = kwargs.pop('mtmm', '+')
+            self.ctem = kwargs.pop("ctem", (0, 0.6, 0.3))
+            self.ctmm = kwargs.pop("ctmm", (0.9, 0, 0.8))
+            self.mtem = kwargs.pop("mtem", "+")
+            self.mtmm = kwargs.pop("mtmm", "+")
 
             # color for Winglink model
-            self.ctewl = kwargs.pop('ctewl', (0, .6, .8))
-            self.ctmwl = kwargs.pop('ctmwl', (.8, .7, 0))
-            self.mtewl = kwargs.pop('mtewl', 'x')
-            self.mtmwl = kwargs.pop('mtmwl', 'x')
+            self.ctewl = kwargs.pop("ctewl", (0, 0.6, 0.8))
+            self.ctmwl = kwargs.pop("ctmwl", (0.8, 0.7, 0))
+            self.mtewl = kwargs.pop("mtewl", "x")
+            self.mtmwl = kwargs.pop("mtmwl", "x")
 
         # black and white mode
-        elif self.color_mode == 'bw':
+        elif self.color_mode == "bw":
             # color for data
-            self.cted = kwargs.pop('cted', (0, 0, 0))
-            self.ctmd = kwargs.pop('ctmd', (0, 0, 0))
-            self.mted = kwargs.pop('mted', '*')
-            self.mtmd = kwargs.pop('mtmd', 'v')
+            self.cted = kwargs.pop("cted", (0, 0, 0))
+            self.ctmd = kwargs.pop("ctmd", (0, 0, 0))
+            self.mted = kwargs.pop("mted", "*")
+            self.mtmd = kwargs.pop("mtmd", "v")
 
             # color for occam2d model
-            self.ctem = kwargs.pop('ctem', (0.6, 0.6, 0.6))
-            self.ctmm = kwargs.pop('ctmm', (0.6, 0.6, 0.6))
-            self.mtem = kwargs.pop('mtem', '+')
-            self.mtmm = kwargs.pop('mtmm', 'x')
+            self.ctem = kwargs.pop("ctem", (0.6, 0.6, 0.6))
+            self.ctmm = kwargs.pop("ctmm", (0.6, 0.6, 0.6))
+            self.mtem = kwargs.pop("mtem", "+")
+            self.mtmm = kwargs.pop("mtmm", "x")
 
             # color for Winglink model
-            self.ctewl = kwargs.pop('ctewl', (0.3, 0.3, 0.3))
-            self.ctmwl = kwargs.pop('ctmwl', (0.3, 0.3, 0.3))
-            self.mtewl = kwargs.pop('mtewl', '|')
-            self.mtmwl = kwargs.pop('mtmwl', '_')
+            self.ctewl = kwargs.pop("ctewl", (0.3, 0.3, 0.3))
+            self.ctmwl = kwargs.pop("ctmwl", (0.3, 0.3, 0.3))
+            self.mtewl = kwargs.pop("mtewl", "|")
+            self.mtmwl = kwargs.pop("mtmwl", "_")
 
-        self.phase_limits = kwargs.pop('phase_limits', (-5, 95))
-        self.res_limits = kwargs.pop('res_limits', None)
+        self.phase_limits = kwargs.pop("phase_limits", (-5, 95))
+        self.res_limits = kwargs.pop("res_limits", None)
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .1
-        self.subplot_hspace = .15
-        self.subplot_right = .98
-        self.subplot_left = .085
-        self.subplot_top = .93
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.1
+        self.subplot_hspace = 0.15
+        self.subplot_right = 0.98
+        self.subplot_left = 0.085
+        self.subplot_top = 0.93
+        self.subplot_bottom = 0.1
 
-        self.font_size = kwargs.pop('font_size', 6)
+        self.font_size = kwargs.pop("font_size", 6)
 
-        self.plot_type = kwargs.pop('plot_type', '1')
-        self.plot_num = kwargs.pop('plot_num', 2)
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_type = kwargs.pop("plot_type", "1")
+        self.plot_num = kwargs.pop("plot_num", 2)
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
         self.fig_list = []
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -3991,25 +4546,29 @@ class PlotOccam2DResponse():
         nr = len(rp_list)
 
         # create station list
-        self.station_list = [rp['station'] for rp in rp_list[0]]
+        self.station_list = [rp["station"] for rp in rp_list[0]]
 
         # boolean for adding winglink output to the plots 0 for no, 1 for yes
         addwl = 0
         # read in winglink data file
         if self.wl_fn is not None:
             addwl = 1
-            self.subplot_hspace + .1
-            wld, wlrp_list, wlplist, wlslist, wltlist = MTwl.readOutputFile(
-                self.wl_fn)
-            sdict = dict([(ostation, wlistation) for wlistation in wlslist
-                          for ostation in self.station_list
-                          if wlistation.find(ostation) >= 0])
+            self.subplot_hspace + 0.1
+            wld, wlrp_list, wlplist, wlslist, wltlist = MTwl.readOutputFile(self.wl_fn)
+            sdict = dict(
+                [
+                    (ostation, wlistation)
+                    for wlistation in wlslist
+                    for ostation in self.station_list
+                    if wlistation.find(ostation) >= 0
+                ]
+            )
 
         # set a local parameter period for less typing
         period = self.period
 
-        #---------------plot each respones in a different figure---------------
-        if self.plot_type == '1':
+        # ---------------plot each respones in a different figure---------------
+        if self.plot_type == "1":
             pstation_list = range(len(self.station_list))
 
         else:
@@ -4023,31 +4582,34 @@ class PlotOccam2DResponse():
                         pstation_list.append(ii)
 
         # set the grid of subplots
-        gs = gridspec.GridSpec(6, 2,
-                               wspace=self.subplot_wspace,
-                               left=self.subplot_left,
-                               top=self.subplot_top,
-                               bottom=self.subplot_bottom,
-                               right=self.subplot_right,
-                               hspace=self.subplot_hspace)
+        gs = gridspec.GridSpec(
+            6,
+            2,
+            wspace=self.subplot_wspace,
+            left=self.subplot_left,
+            top=self.subplot_top,
+            bottom=self.subplot_bottom,
+            right=self.subplot_right,
+            hspace=self.subplot_hspace,
+        )
 
-        #--> set default font size
-        plt.rcParams['font.size'] = self.font_size
+        # --> set default font size
+        plt.rcParams["font.size"] = self.font_size
 
         # loop over each station to plot
         for ii, jj in enumerate(pstation_list):
             fig = plt.figure(ii + 1, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
 
-            #--> set subplot instances
-            #---plot both TE and TM in same subplot---
+            # --> set subplot instances
+            # ---plot both TE and TM in same subplot---
             if self.plot_num == 1:
                 axrte = fig.add_subplot(gs[:4, :])
                 axrtm = axrte
                 axpte = fig.add_subplot(gs[-2:, :], sharex=axrte)
                 axptm = axpte
 
-            #---plot TE and TM in separate subplots---
+            # ---plot TE and TM in separate subplots---
             elif self.plot_num == 2:
                 axrte = fig.add_subplot(gs[:4, 0])
                 axrtm = fig.add_subplot(gs[:4, 1])
@@ -4060,395 +4622,453 @@ class PlotOccam2DResponse():
             llistte = []
             rlisttm = []
             llisttm = []
-            #------------Plot Resistivity----------------------------------
+            # ------------Plot Resistivity----------------------------------
             # cut out missing data points first
-            #--> data
-            rxy = np.where(rp_list[0][jj]['resxy'][0] != 0)[0]
-            ryx = np.where(rp_list[0][jj]['resyx'][0] != 0)[0]
+            # --> data
+            rxy = np.where(rp_list[0][jj]["resxy"][0] != 0)[0]
+            ryx = np.where(rp_list[0][jj]["resyx"][0] != 0)[0]
 
-            #--> TE mode Data
+            # --> TE mode Data
             if len(rxy) > 0:
-                rte = axrte.errorbar(period[rxy],
-                                     10**rp_list[0][jj]['resxy'][0][rxy],
-                                     ls=':',
-                                     marker=self.mted,
-                                     ms=self.ms,
-                                     mfc=self.cted,
-                                     mec=self.cted,
-                                     color=self.cted,
-                                     yerr=np.log(10) *
-                                     rp_list[0][jj]['resxy'][1][rxy] *
-                                     10**rp_list[0][jj]['resxy'][0][rxy],
-                                     ecolor=self.cted,
-                                     picker=2,
-                                     lw=self.lw,
-                                     elinewidth=self.lw,
-                                     capsize=self.e_capsize,
-                                     capthick=self.e_capthick)
+                rte = axrte.errorbar(
+                    period[rxy],
+                    10 ** rp_list[0][jj]["resxy"][0][rxy],
+                    ls=":",
+                    marker=self.mted,
+                    ms=self.ms,
+                    mfc=self.cted,
+                    mec=self.cted,
+                    color=self.cted,
+                    yerr=np.log(10)
+                    * rp_list[0][jj]["resxy"][1][rxy]
+                    * 10 ** rp_list[0][jj]["resxy"][0][rxy],
+                    ecolor=self.cted,
+                    picker=2,
+                    lw=self.lw,
+                    elinewidth=self.lw,
+                    capsize=self.e_capsize,
+                    capthick=self.e_capthick,
+                )
                 rlistte.append(rte[0])
-                llistte.append('$Obs_{TE}$')
+                llistte.append("$Obs_{TE}$")
             else:
                 pass
 
-             #--> TM mode data
+            # --> TM mode data
             if len(ryx) > 0:
-                rtm = axrtm.errorbar(period[ryx],
-                                     10**rp_list[0][jj]['resyx'][0][ryx],
-                                     ls=':',
-                                     marker=self.mtmd,
-                                     ms=self.ms,
-                                     mfc=self.ctmd,
-                                     mec=self.ctmd,
-                                     color=self.ctmd,
-                                     yerr=np.log(10) *
-                                     rp_list[0][jj]['resyx'][1][ryx] *
-                                     10**rp_list[0][jj]['resyx'][0][ryx],
-                                     ecolor=self.ctmd,
-                                     picker=2,
-                                     lw=self.lw,
-                                     elinewidth=self.lw,
-                                     capsize=self.e_capsize,
-                                     capthick=self.e_capthick)
+                rtm = axrtm.errorbar(
+                    period[ryx],
+                    10 ** rp_list[0][jj]["resyx"][0][ryx],
+                    ls=":",
+                    marker=self.mtmd,
+                    ms=self.ms,
+                    mfc=self.ctmd,
+                    mec=self.ctmd,
+                    color=self.ctmd,
+                    yerr=np.log(10)
+                    * rp_list[0][jj]["resyx"][1][ryx]
+                    * 10 ** rp_list[0][jj]["resyx"][0][ryx],
+                    ecolor=self.ctmd,
+                    picker=2,
+                    lw=self.lw,
+                    elinewidth=self.lw,
+                    capsize=self.e_capsize,
+                    capthick=self.e_capthick,
+                )
                 rlisttm.append(rtm[0])
-                llisttm.append('$Obs_{TM}$')
+                llisttm.append("$Obs_{TM}$")
             else:
                 pass
 
-            #--------------------plot phase--------------------------------
+            # --------------------plot phase--------------------------------
             # cut out missing data points first
-            #--> data
-            pxy = np.where(rp_list[0][jj]['phasexy'][0] != 0)[0]
-            pyx = np.where(rp_list[0][jj]['phaseyx'][0] != 0)[0]
+            # --> data
+            pxy = np.where(rp_list[0][jj]["phasexy"][0] != 0)[0]
+            pyx = np.where(rp_list[0][jj]["phaseyx"][0] != 0)[0]
 
-            #--> TE mode data
+            # --> TE mode data
             if len(pxy) > 0:
-                axpte.errorbar(period[pxy],
-                               rp_list[0][jj]['phasexy'][0][pxy],
-                               ls=':',
-                               marker=self.mted,
-                               ms=self.ms,
-                               mfc=self.cted,
-                               mec=self.cted,
-                               color=self.cted,
-                               yerr=rp_list[0][jj]['phasexy'][1][pxy],
-                               ecolor=self.cted,
-                               picker=1,
-                               lw=self.lw,
-                               elinewidth=self.lw,
-                               capsize=self.e_capsize,
-                               capthick=self.e_capthick)
+                axpte.errorbar(
+                    period[pxy],
+                    rp_list[0][jj]["phasexy"][0][pxy],
+                    ls=":",
+                    marker=self.mted,
+                    ms=self.ms,
+                    mfc=self.cted,
+                    mec=self.cted,
+                    color=self.cted,
+                    yerr=rp_list[0][jj]["phasexy"][1][pxy],
+                    ecolor=self.cted,
+                    picker=1,
+                    lw=self.lw,
+                    elinewidth=self.lw,
+                    capsize=self.e_capsize,
+                    capthick=self.e_capthick,
+                )
             else:
                 pass
 
-            #--> TM mode data
+            # --> TM mode data
             if len(pyx) > 0:
-                axptm.errorbar(period[pyx],
-                               rp_list[0][jj]['phaseyx'][0][pyx],
-                               ls=':',
-                               marker=self.mtmd,
-                               ms=self.ms,
-                               mfc=self.ctmd,
-                               mec=self.ctmd,
-                               color=self.ctmd,
-                               yerr=rp_list[0][jj]['phaseyx'][1][pyx],
-                               ecolor=self.ctmd,
-                               picker=1,
-                               lw=self.lw,
-                               elinewidth=self.lw,
-                               capsize=self.e_capsize,
-                               capthick=self.e_capthick)
+                axptm.errorbar(
+                    period[pyx],
+                    rp_list[0][jj]["phaseyx"][0][pyx],
+                    ls=":",
+                    marker=self.mtmd,
+                    ms=self.ms,
+                    mfc=self.ctmd,
+                    mec=self.ctmd,
+                    color=self.ctmd,
+                    yerr=rp_list[0][jj]["phaseyx"][1][pyx],
+                    ecolor=self.ctmd,
+                    picker=1,
+                    lw=self.lw,
+                    elinewidth=self.lw,
+                    capsize=self.e_capsize,
+                    capthick=self.e_capthick,
+                )
             else:
                 pass
 
             for rr, rp in enumerate(rp_list):
                 # create colors for different responses
-                if self.color_mode == 'color':
-                    cxy = (0, .4 + float(rr) / (3 * nr), 0)
-                    cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                           float(rr) / (4 * nr))
-                elif self.color_mode == 'bw':
-                    cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                           (rr + 2.), 1 - 1.25 / (rr + 2.))
-                    cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                           (rr + 2.), 1 - 1.25 / (rr + 2.))
+                if self.color_mode == "color":
+                    cxy = (0, 0.4 + float(rr) / (3 * nr), 0)
+                    cyx = (
+                        0.7 + float(rr) / (4 * nr),
+                        0.13,
+                        0.63 - float(rr) / (4 * nr),
+                    )
+                elif self.color_mode == "bw":
+                    cxy = (
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                    )
+                    cyx = (
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                    )
 
                 # calculate rms's
-                rmslistte = np.hstack((rp[jj]['resxy'][3],
-                                       rp[jj]['phasexy'][3]))
-                rmslisttm = np.hstack((rp[jj]['resyx'][3],
-                                       rp[jj]['phaseyx'][3]))
-                rmste = np.sqrt(np.sum([rms**2 for rms in rmslistte]) /
-                                len(rmslistte))
-                rmstm = np.sqrt(np.sum([rms**2 for rms in rmslisttm]) /
-                                len(rmslisttm))
+                rmslistte = np.hstack((rp[jj]["resxy"][3], rp[jj]["phasexy"][3]))
+                rmslisttm = np.hstack((rp[jj]["resyx"][3], rp[jj]["phaseyx"][3]))
+                rmste = np.sqrt(
+                    np.sum([rms ** 2 for rms in rmslistte]) / len(rmslistte)
+                )
+                rmstm = np.sqrt(
+                    np.sum([rms ** 2 for rms in rmslisttm]) / len(rmslisttm)
+                )
 
-                #------------Plot Resistivity----------------------------------
+                # ------------Plot Resistivity----------------------------------
                 # cut out missing data points first
-                #--> response
-                mrxy = np.where(rp[jj]['resxy'][2] != 0)[0]
-                mryx = np.where(rp[jj]['resyx'][2] != 0)[0]
+                # --> response
+                mrxy = np.where(rp[jj]["resxy"][2] != 0)[0]
+                mryx = np.where(rp[jj]["resyx"][2] != 0)[0]
 
-                #--> TE mode Model Response
+                # --> TE mode Model Response
                 if len(mrxy) > 0:
-                    yerrxy = 10**(rp[jj]['resxy'][3][mrxy] *
-                                  rp[jj]['resxy'][2][mrxy] / np.log(10))
-                    r3 = axrte.errorbar(period[mrxy],
-                                        10**rp[jj]['resxy'][2][mrxy],
-                                        ls='--',
-                                        marker=self.mtem,
-                                        ms=self.ms,
-                                        mfc=cxy,
-                                        mec=cxy,
-                                        color=cxy,
-                                        yerr=yerrxy,
-                                        ecolor=cxy,
-                                        lw=self.lw,
-                                        elinewidth=self.lw,
-                                        capsize=self.e_capsize,
-                                        capthick=self.e_capthick)
+                    yerrxy = 10 ** (
+                        rp[jj]["resxy"][3][mrxy] * rp[jj]["resxy"][2][mrxy] / np.log(10)
+                    )
+                    r3 = axrte.errorbar(
+                        period[mrxy],
+                        10 ** rp[jj]["resxy"][2][mrxy],
+                        ls="--",
+                        marker=self.mtem,
+                        ms=self.ms,
+                        mfc=cxy,
+                        mec=cxy,
+                        color=cxy,
+                        yerr=yerrxy,
+                        ecolor=cxy,
+                        lw=self.lw,
+                        elinewidth=self.lw,
+                        capsize=self.e_capsize,
+                        capthick=self.e_capthick,
+                    )
                     rlistte.append(r3[0])
-                    llistte.append('$Mod_{TE}$ ' + '{0:.2f}'.format(rmste))
+                    llistte.append("$Mod_{TE}$ " + "{0:.2f}".format(rmste))
                 else:
                     pass
 
-                #--> TM mode model response
+                # --> TM mode model response
                 if len(mryx) > 0:
-                    yerryx = 10**(rp[jj]['resyx'][3][mryx] *
-                                  rp[jj]['resyx'][2][mryx] / np.log(10))
-                    r4 = axrtm.errorbar(period[mryx],
-                                        10**rp[jj]['resyx'][2][mryx],
-                                        ls='--',
-                                        marker=self.mtmm,
-                                        ms=self.ms,
-                                        mfc=cyx,
-                                        mec=cyx,
-                                        color=cyx,
-                                        yerr=yerryx,
-                                        ecolor=cyx,
-                                        lw=self.lw,
-                                        elinewidth=self.lw,
-                                        capsize=self.e_capsize,
-                                        capthick=self.e_capthick)
+                    yerryx = 10 ** (
+                        rp[jj]["resyx"][3][mryx] * rp[jj]["resyx"][2][mryx] / np.log(10)
+                    )
+                    r4 = axrtm.errorbar(
+                        period[mryx],
+                        10 ** rp[jj]["resyx"][2][mryx],
+                        ls="--",
+                        marker=self.mtmm,
+                        ms=self.ms,
+                        mfc=cyx,
+                        mec=cyx,
+                        color=cyx,
+                        yerr=yerryx,
+                        ecolor=cyx,
+                        lw=self.lw,
+                        elinewidth=self.lw,
+                        capsize=self.e_capsize,
+                        capthick=self.e_capthick,
+                    )
                     rlisttm.append(r4[0])
-                    llisttm.append('$Mod_{TM}$ ' + '{0:.2f}'.format(rmstm))
+                    llisttm.append("$Mod_{TM}$ " + "{0:.2f}".format(rmstm))
                 else:
                     pass
 
-                #--------------------plot phase--------------------------------
+                # --------------------plot phase--------------------------------
                 # cut out missing data points first
-                #--> reponse
-                mpxy = np.where(rp[jj]['phasexy'][2] != 0)[0]
-                mpyx = np.where(rp[jj]['phaseyx'][2] != 0)[0]
+                # --> reponse
+                mpxy = np.where(rp[jj]["phasexy"][2] != 0)[0]
+                mpyx = np.where(rp[jj]["phaseyx"][2] != 0)[0]
 
-                #--> TE mode response
+                # --> TE mode response
                 if len(mpxy) > 0:
-                    axpte.errorbar(period[mpxy],
-                                   rp[jj]['phasexy'][2][mpxy],
-                                   ls='--',
-                                   ms=self.ms,
-                                   mfc=cxy,
-                                   mec=cxy,
-                                   color=cxy,
-                                   yerr=rp[jj]['phasexy'][3][mpxy],
-                                   ecolor=cxy,
-                                   lw=self.lw,
-                                   elinewidth=self.lw,
-                                   capsize=self.e_capsize,
-                                   capthick=self.e_capthick)
+                    axpte.errorbar(
+                        period[mpxy],
+                        rp[jj]["phasexy"][2][mpxy],
+                        ls="--",
+                        ms=self.ms,
+                        mfc=cxy,
+                        mec=cxy,
+                        color=cxy,
+                        yerr=rp[jj]["phasexy"][3][mpxy],
+                        ecolor=cxy,
+                        lw=self.lw,
+                        elinewidth=self.lw,
+                        capsize=self.e_capsize,
+                        capthick=self.e_capthick,
+                    )
                 else:
                     pass
 
-                #--> TM mode response
+                # --> TM mode response
                 if len(mpyx) > 0:
-                    axptm.errorbar(period[mpyx],
-                                   rp[jj]['phaseyx'][2][mpyx],
-                                   ls='--',
-                                   marker=self.mtmm,
-                                   ms=self.ms,
-                                   mfc=cyx,
-                                   mec=cyx,
-                                   color=cyx,
-                                   yerr=rp[jj]['phaseyx'][3][mpyx],
-                                   ecolor=cyx,
-                                   lw=self.lw,
-                                   elinewidth=self.lw,
-                                   capsize=self.e_capsize,
-                                   capthick=self.e_capthick)
+                    axptm.errorbar(
+                        period[mpyx],
+                        rp[jj]["phaseyx"][2][mpyx],
+                        ls="--",
+                        marker=self.mtmm,
+                        ms=self.ms,
+                        mfc=cyx,
+                        mec=cyx,
+                        color=cyx,
+                        yerr=rp[jj]["phaseyx"][3][mpyx],
+                        ecolor=cyx,
+                        lw=self.lw,
+                        elinewidth=self.lw,
+                        capsize=self.e_capsize,
+                        capthick=self.e_capthick,
+                    )
                 else:
                     pass
 
-            #--------------add in winglink responses------------------------
+            # --------------add in winglink responses------------------------
             if addwl == 1:
                 try:
-                    wlrms = wld[sdict[self.station_list[jj]]]['rms']
-                    axrte.set_title(self.station_list[jj] +
-                                    '\n rms_occ_TE={0:.2f}'.format(rmste) +
-                                    'rms_occ_TM={0:.2f}'.format(rmstm) +
-                                    'rms_wl={0:.2f}'.format(wlrms),
-                                    fontdict={'size': self.font_size,
-                                              'weight': 'bold'})
+                    wlrms = wld[sdict[self.station_list[jj]]]["rms"]
+                    axrte.set_title(
+                        self.station_list[jj]
+                        + "\n rms_occ_TE={0:.2f}".format(rmste)
+                        + "rms_occ_TM={0:.2f}".format(rmstm)
+                        + "rms_wl={0:.2f}".format(wlrms),
+                        fontdict={"size": self.font_size, "weight": "bold"},
+                    )
                     for ww, wlistation in enumerate(wlslist):
                         if wlistation.find(self.station_list[jj]) == 0:
-                            print '{0} was Found {0} in winglink file'.format(
-                                self.station_list[jj], wlistation)
+                            print "{0} was Found {0} in winglink file".format(
+                                self.station_list[jj], wlistation
+                            )
                             wlrpdict = wlrp_list[ww]
 
-                    zrxy = [np.where(wlrpdict['resxy'][0] != 0)[0]]
-                    zryx = [np.where(wlrpdict['resyx'][0] != 0)[0]]
+                    zrxy = [np.where(wlrpdict["resxy"][0] != 0)[0]]
+                    zryx = [np.where(wlrpdict["resyx"][0] != 0)[0]]
 
                     # plot winglink resistivity
-                    r5 = axrte.loglog(wlplist[zrxy],
-                                      wlrpdict['resxy'][1][zrxy],
-                                      ls='-.',
-                                      marker=self.mtewl,
-                                      ms=self.ms,
-                                      color=self.ctewl,
-                                      mfc=self.ctewl,
-                                      lw=self.lw)
-                    r6 = axrtm.loglog(wlplist[zryx],
-                                      wlrpdict['resyx'][1][zryx],
-                                      ls='-.',
-                                      marker=self.mtmwl,
-                                      ms=self.ms,
-                                      color=self.ctmwl,
-                                      mfc=self.ctmwl,
-                                      lw=self.lw)
+                    r5 = axrte.loglog(
+                        wlplist[zrxy],
+                        wlrpdict["resxy"][1][zrxy],
+                        ls="-.",
+                        marker=self.mtewl,
+                        ms=self.ms,
+                        color=self.ctewl,
+                        mfc=self.ctewl,
+                        lw=self.lw,
+                    )
+                    r6 = axrtm.loglog(
+                        wlplist[zryx],
+                        wlrpdict["resyx"][1][zryx],
+                        ls="-.",
+                        marker=self.mtmwl,
+                        ms=self.ms,
+                        color=self.ctmwl,
+                        mfc=self.ctmwl,
+                        lw=self.lw,
+                    )
 
                     # plot winglink phase
-                    axpte.semilogx(wlplist[zrxy],
-                                   wlrpdict['phasexy'][1][zrxy],
-                                   ls='-.',
-                                   marker=self.mtewl,
-                                   ms=self.ms,
-                                   color=self.ctewl,
-                                   mfc=self.ctewl,
-                                   lw=self.lw)
+                    axpte.semilogx(
+                        wlplist[zrxy],
+                        wlrpdict["phasexy"][1][zrxy],
+                        ls="-.",
+                        marker=self.mtewl,
+                        ms=self.ms,
+                        color=self.ctewl,
+                        mfc=self.ctewl,
+                        lw=self.lw,
+                    )
 
-                    axptm.semilogx(wlplist[zryx],
-                                   wlrpdict['phaseyx'][1][zryx],
-                                   ls='-.',
-                                   marker=self.mtmwl,
-                                   ms=self.ms,
-                                   color=self.ctmwl,
-                                   mfc=self.ctmwl,
-                                   lw=self.lw)
+                    axptm.semilogx(
+                        wlplist[zryx],
+                        wlrpdict["phaseyx"][1][zryx],
+                        ls="-.",
+                        marker=self.mtmwl,
+                        ms=self.ms,
+                        color=self.ctmwl,
+                        mfc=self.ctmwl,
+                        lw=self.lw,
+                    )
 
                     rlistte.append(r5[0])
                     rlisttm.append(r6[0])
-                    llistte.append('$WLMod_{TE}$ ' + '{0:.2f}'.format(wlrms))
-                    llisttm.append('$WLMod_{TM}$ ' + '{0:.2f}'.format(wlrms))
+                    llistte.append("$WLMod_{TE}$ " + "{0:.2f}".format(wlrms))
+                    llisttm.append("$WLMod_{TM}$ " + "{0:.2f}".format(wlrms))
                 except (IndexError, KeyError):
-                    print 'Station not present'
+                    print "Station not present"
             else:
                 if self.plot_num == 1:
-                    axrte.set_title(self.station_list[jj],
-                                    fontdict={'size': self.font_size + 2,
-                                              'weight': 'bold'})
-#                    axrte.set_title(self.station_list[jj]+\
-#                    ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
-#                              fontdict={'size':self.font_size+2,
-#                                        'weight':'bold'})
+                    axrte.set_title(
+                        self.station_list[jj],
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
+                #                    axrte.set_title(self.station_list[jj]+\
+                #                    ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
+                #                              fontdict={'size':self.font_size+2,
+                #                                        'weight':'bold'})
                 elif self.plot_num == 2:
-                    fig.suptitle(self.station_list[jj],
-                                 fontdict={'size': self.font_size + 2,
-                                           'weight': 'bold'})
-#                    axrte.set_title(self.station_list[jj]+\
-#                                    ' rms_TE={0:.2f}'.format(rmste),
-#                                    fontdict={'size':self.font_size+2,
-#                                              'weight':'bold'})
-#                    axrtm.set_title(self.station_list[jj]+\
-#                                    ' rms_TM={0:.2f}'.format(rmstm),
-#                                    fontdict={'size':self.font_size+2,
-#                                              'weight':'bold'})
+                    fig.suptitle(
+                        self.station_list[jj],
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
+            #                    axrte.set_title(self.station_list[jj]+\
+            #                                    ' rms_TE={0:.2f}'.format(rmste),
+            #                                    fontdict={'size':self.font_size+2,
+            #                                              'weight':'bold'})
+            #                    axrtm.set_title(self.station_list[jj]+\
+            #                                    ' rms_TM={0:.2f}'.format(rmstm),
+            #                                    fontdict={'size':self.font_size+2,
+            #                                              'weight':'bold'})
 
             # set the axis properties
             for aa, axr in enumerate([axrte, axrtm]):
                 # set both axes to logarithmic scale
-                axr.set_xscale('log')
+                axr.set_xscale("log")
 
                 try:
-                    axr.set_yscale('log')
+                    axr.set_yscale("log")
                 except ValueError:
                     pass
 
                 # put on a grid
-                axr.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
-                axr.yaxis.set_label_coords(-.12, .5)
+                axr.grid(True, alpha=0.3, which="both", lw=0.5 * self.lw)
+                axr.yaxis.set_label_coords(-0.12, 0.5)
 
                 # set resistivity limits if desired
                 if self.res_limits is not None:
-                    axr.set_ylim(10**self.res_limits[0],
-                                 10**self.res_limits[1])
+                    axr.set_ylim(10 ** self.res_limits[0], 10 ** self.res_limits[1])
 
                 # set the tick labels to invisible
                 plt.setp(axr.xaxis.get_ticklabels(), visible=False)
                 if aa == 0:
-                    axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                                   fontdict={'size': self.font_size + 2,
-                                             'weight': 'bold'})
+                    axr.set_ylabel(
+                        "App. Res. ($\Omega \cdot m$)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
                 # set legend based on the plot type
                 if self.plot_num == 1:
                     if aa == 0:
-                        axr.legend(rlistte + rlisttm, llistte + llisttm,
-                                   loc=2, markerscale=1,
-                                   borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,
-                                   borderpad=.05,
-                                   prop={'size': self.font_size + 1})
+                        axr.legend(
+                            rlistte + rlisttm,
+                            llistte + llisttm,
+                            loc=2,
+                            markerscale=1,
+                            borderaxespad=0.05,
+                            labelspacing=0.08,
+                            handletextpad=0.15,
+                            borderpad=0.05,
+                            prop={"size": self.font_size + 1},
+                        )
                 elif self.plot_num == 2:
                     if aa == 0:
-                        axr.legend(rlistte,
-                                   llistte,
-                                   loc=2, markerscale=1,
-                                   borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,
-                                   borderpad=.05,
-                                   prop={'size': self.font_size + 1})
+                        axr.legend(
+                            rlistte,
+                            llistte,
+                            loc=2,
+                            markerscale=1,
+                            borderaxespad=0.05,
+                            labelspacing=0.08,
+                            handletextpad=0.15,
+                            borderpad=0.05,
+                            prop={"size": self.font_size + 1},
+                        )
 
                     if aa == 1:
-                        axr.legend(rlisttm,
-                                   llisttm,
-                                   loc=2, markerscale=1,
-                                   borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,
-                                   borderpad=.05,
-                                   prop={'size': self.font_size + 1})
+                        axr.legend(
+                            rlisttm,
+                            llisttm,
+                            loc=2,
+                            markerscale=1,
+                            borderaxespad=0.05,
+                            labelspacing=0.08,
+                            handletextpad=0.15,
+                            borderpad=0.05,
+                            prop={"size": self.font_size + 1},
+                        )
 
             # set Properties for the phase axes
             for aa, axp in enumerate([axpte, axptm]):
                 # set the x-axis to log scale
-                axp.set_xscale('log')
+                axp.set_xscale("log")
 
                 # set the phase limits
                 axp.set_ylim(self.phase_limits)
 
                 # put a grid on the subplot
-                axp.grid(True, alpha=.3, which='both', lw=.5 * self.lw)
+                axp.grid(True, alpha=0.3, which="both", lw=0.5 * self.lw)
 
                 # set the tick locations
                 axp.yaxis.set_major_locator(MultipleLocator(10))
                 axp.yaxis.set_minor_locator(MultipleLocator(2))
 
                 # set the x axis label
-                axp.set_xlabel('Period (s)',
-                               fontdict={'size': self.font_size + 2,
-                                         'weight': 'bold'})
+                axp.set_xlabel(
+                    "Period (s)",
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
 
                 # put the y label on the far left plot
-                axp.yaxis.set_label_coords(-.12, .5)
+                axp.yaxis.set_label_coords(-0.12, 0.5)
                 if aa == 0:
-                    axp.set_ylabel('Phase (deg)',
-                                   fontdict={'size': self.font_size + 2,
-                                             'weight': 'bold'})
+                    axp.set_ylabel(
+                        "Phase (deg)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             # make sure the axis and figure are accessible to the user
-            self.fig_list.append({'station': self.station_list[jj],
-                                  'fig': fig, 'axrte': axrte, 'axrtm': axrtm,
-                                  'axpte': axpte, 'axptm': axptm})
+            self.fig_list.append(
+                {
+                    "station": self.station_list[jj],
+                    "fig": fig,
+                    "axrte": axrte,
+                    "axrtm": axrtm,
+                    "axpte": axpte,
+                    "axptm": axptm,
+                }
+            )
 
         # set the plot to be full screen well at least try
         plt.show()
@@ -4470,11 +5090,10 @@ class PlotOccam2DResponse():
             >>> p1.redraw_plot()
         """
 
-        plt.close('all')
+        plt.close("all")
         self.plot()
 
-    def save_figures(self, save_path, fig_fmt='pdf', fig_dpi=None,
-                     close_fig='y'):
+    def save_figures(self, save_path, fig_fmt="pdf", fig_dpi=None, close_fig="y"):
         """
         save all the figure that are in self.fig_list
 
@@ -4491,17 +5110,17 @@ class PlotOccam2DResponse():
             os.mkdir(save_path)
 
         for fdict in self.fig_list:
-            svfn = '{0}_resp.{1}'.format(fdict['station'], fig_fmt)
-            fdict['fig'].savefig(os.path.join(save_path, svfn),
-                                 dpi=self.fig_dpi)
-            if close_fig == 'y':
-                plt.close(fdict['fig'])
+            svfn = "{0}_resp.{1}".format(fdict["station"], fig_fmt)
+            fdict["fig"].savefig(os.path.join(save_path, svfn), dpi=self.fig_dpi)
+            if close_fig == "y":
+                plt.close(fdict["fig"])
 
             print "saved figure to {0}".format(os.path.join(save_path, svfn))
 
-#==============================================================================
+
+# ==============================================================================
 # plot pseudo section of data and model response
-#==============================================================================
+# ==============================================================================
 
 
 class PlotPseudoSection(object):
@@ -4613,45 +5232,51 @@ class PlotPseudoSection(object):
 
         self.rp_list = rp_list
         self.period = period
-        self.station_list = [rp['station'] for rp in self.rp_list]
+        self.station_list = [rp["station"] for rp in self.rp_list]
 
-        self.plot_resp = kwargs.pop('plot_resp', 'y')
+        self.plot_resp = kwargs.pop("plot_resp", "y")
 
-        self.label_list = [r'$\rho_{TE-Data}$', r'$\rho_{TE-Model}$',
-                           r'$\rho_{TM-Data}$', r'$\rho_{TM-Model}$',
-                           '$\phi_{TE-Data}$', '$\phi_{TE-Model}$',
-                           '$\phi_{TM-Data}$', '$\phi_{TM-Model}$']
+        self.label_list = [
+            r"$\rho_{TE-Data}$",
+            r"$\rho_{TE-Model}$",
+            r"$\rho_{TM-Data}$",
+            r"$\rho_{TM-Model}$",
+            "$\phi_{TE-Data}$",
+            "$\phi_{TE-Model}$",
+            "$\phi_{TM-Data}$",
+            "$\phi_{TM-Model}$",
+        ]
 
-        self.phase_limits_te = kwargs.pop('phase_limits_te', (-5, 95))
-        self.phase_limits_tm = kwargs.pop('phase_limits_tm', (-5, 95))
-        self.res_limits_te = kwargs.pop('res_limits_te', (0, 3))
-        self.res_limits_tm = kwargs.pop('res_limits_tm', (0, 3))
+        self.phase_limits_te = kwargs.pop("phase_limits_te", (-5, 95))
+        self.phase_limits_tm = kwargs.pop("phase_limits_tm", (-5, 95))
+        self.res_limits_te = kwargs.pop("res_limits_te", (0, 3))
+        self.res_limits_tm = kwargs.pop("res_limits_tm", (0, 3))
 
-        self.phase_cmap = kwargs.pop('phase_cmap', 'jet')
-        self.res_cmap = kwargs.pop('res_cmap', 'jet_r')
+        self.phase_cmap = kwargs.pop("phase_cmap", "jet")
+        self.res_cmap = kwargs.pop("res_cmap", "jet_r")
 
-        self.ml = kwargs.pop('ml', 2)
-        self.station_id = kwargs.pop('station_id', [0, 4])
+        self.ml = kwargs.pop("ml", 2)
+        self.station_id = kwargs.pop("station_id", [0, 4])
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .025
-        self.subplot_hspace = .0
-        self.subplot_right = .95
-        self.subplot_left = .085
-        self.subplot_top = .97
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.025
+        self.subplot_hspace = 0.0
+        self.subplot_right = 0.95
+        self.subplot_left = 0.085
+        self.subplot_top = 0.97
+        self.subplot_bottom = 0.1
 
-        self.font_size = kwargs.pop('font_size', 6)
+        self.font_size = kwargs.pop("font_size", 6)
 
-        self.plot_type = kwargs.pop('plot_type', '1')
-        self.plot_num = kwargs.pop('plot_num', 2)
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_type = kwargs.pop("plot_type", "1")
+        self.plot_num = kwargs.pop("plot_num", 2)
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
-        self.cb_shrink = .7
-        self.cb_pad = .015
+        self.cb_shrink = 0.7
+        self.cb_pad = 0.015
 
         self.axrte = None
         self.axrtm = None
@@ -4664,7 +5289,7 @@ class PlotPseudoSection(object):
 
         self.fig = None
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -4672,7 +5297,7 @@ class PlotPseudoSection(object):
         plot pseudo section of data and response if given
 
         """
-        if self.plot_resp == 'y':
+        if self.plot_resp == "y":
             nr = 2
         else:
             nr = 1
@@ -4690,16 +5315,16 @@ class PlotPseudoSection(object):
         phaseyx_arr = np.zeros((nf, ns, nr))
 
         for ii, rpdict in enumerate(self.rp_list):
-            offset_list[ii] = rpdict['offset']
-            resxy_arr[:, ii, 0] = rpdict['resxy'][0]
-            resyx_arr[:, ii, 0] = rpdict['resyx'][0]
-            phasexy_arr[:, ii, 0] = rpdict['phasexy'][0]
-            phaseyx_arr[:, ii, 0] = rpdict['phaseyx'][0]
-            if self.plot_resp == 'y':
-                resxy_arr[:, ii, 1] = rpdict['resxy'][2]
-                resyx_arr[:, ii, 1] = rpdict['resyx'][2]
-                phasexy_arr[:, ii, 1] = rpdict['phasexy'][2]
-                phaseyx_arr[:, ii, 1] = rpdict['phaseyx'][2]
+            offset_list[ii] = rpdict["offset"]
+            resxy_arr[:, ii, 0] = rpdict["resxy"][0]
+            resyx_arr[:, ii, 0] = rpdict["resyx"][0]
+            phasexy_arr[:, ii, 0] = rpdict["phasexy"][0]
+            phaseyx_arr[:, ii, 0] = rpdict["phaseyx"][0]
+            if self.plot_resp == "y":
+                resxy_arr[:, ii, 1] = rpdict["resxy"][2]
+                resyx_arr[:, ii, 1] = rpdict["resyx"][2]
+                phasexy_arr[:, ii, 1] = rpdict["phasexy"][2]
+                phaseyx_arr[:, ii, 1] = rpdict["phaseyx"][2]
 
         offset_list[-1] = offset_list[-2] * 1.15
         # make a meshgrid for plotting
@@ -4707,118 +5332,149 @@ class PlotPseudoSection(object):
         dgrid, fgrid = np.meshgrid(offset_list, self.period[::-1])
 
         # make list for station labels
-        slabel = [self.station_list[ss][self.station_id[0]:self.station_id[1]]
-                  for ss in range(0, ns, self.ml)]
+        slabel = [
+            self.station_list[ss][self.station_id[0] : self.station_id[1]]
+            for ss in range(0, ns, self.ml)
+        ]
 
         xloc = offset_list[0] + abs(offset_list[0] - offset_list[1]) / 5
         yloc = 1.10 * self.period[1]
 
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
-        if self.plot_resp == 'y':
+        if self.plot_resp == "y":
 
-            gs1 = gridspec.GridSpec(1, 2,
-                                    left=self.subplot_left,
-                                    right=self.subplot_right,
-                                    wspace=.15)
+            gs1 = gridspec.GridSpec(
+                1, 2, left=self.subplot_left, right=self.subplot_right, wspace=0.15
+            )
 
-            gs2 = gridspec.GridSpecFromSubplotSpec(2, 2,
-                                                   hspace=self.subplot_hspace,
-                                                   wspace=self.subplot_wspace,
-                                                   subplot_spec=gs1[0])
-            gs3 = gridspec.GridSpecFromSubplotSpec(2, 2,
-                                                   hspace=self.subplot_hspace,
-                                                   wspace=self.subplot_wspace,
-                                                   subplot_spec=gs1[1])
+            gs2 = gridspec.GridSpecFromSubplotSpec(
+                2,
+                2,
+                hspace=self.subplot_hspace,
+                wspace=self.subplot_wspace,
+                subplot_spec=gs1[0],
+            )
+            gs3 = gridspec.GridSpecFromSubplotSpec(
+                2,
+                2,
+                hspace=self.subplot_hspace,
+                wspace=self.subplot_wspace,
+                subplot_spec=gs1[1],
+            )
 
             # plot TE resistivity data
 
             self.axrte = plt.Subplot(self.fig, gs2[0, 0])
             self.fig.add_subplot(self.axrte)
-            self.axrte.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(resxy_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_te[0],
-                                  vmax=self.res_limits_te[1])
+            self.axrte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(resxy_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_te[0],
+                vmax=self.res_limits_te[1],
+            )
 
             # plot TE resistivity model
             self.axmrte = plt.Subplot(self.fig, gs2[0, 1])
             self.fig.add_subplot(self.axmrte)
-            self.axmrte.pcolormesh(dgrid,
-                                   fgrid,
-                                   np.flipud(resxy_arr[:, :, 1]),
-                                   cmap=self.res_cmap,
-                                   vmin=self.res_limits_te[0],
-                                   vmax=self.res_limits_te[1])
+            self.axmrte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(resxy_arr[:, :, 1]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_te[0],
+                vmax=self.res_limits_te[1],
+            )
 
             # plot TM resistivity data
             self.axrtm = plt.Subplot(self.fig, gs3[0, 0])
             self.fig.add_subplot(self.axrtm)
-            self.axrtm.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(resyx_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_tm[0],
-                                  vmax=self.res_limits_tm[1])
+            self.axrtm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(resyx_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_tm[0],
+                vmax=self.res_limits_tm[1],
+            )
 
             # plot TM resistivity model
             self.axmrtm = plt.Subplot(self.fig, gs3[0, 1])
             self.fig.add_subplot(self.axmrtm)
-            self.axmrtm.pcolormesh(dgrid,
-                                   fgrid,
-                                   np.flipud(resyx_arr[:, :, 1]),
-                                   cmap=self.res_cmap,
-                                   vmin=self.res_limits_tm[0],
-                                   vmax=self.res_limits_tm[1])
+            self.axmrtm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(resyx_arr[:, :, 1]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_tm[0],
+                vmax=self.res_limits_tm[1],
+            )
 
             # plot TE phase data
             self.axpte = plt.Subplot(self.fig, gs2[1, 0])
             self.fig.add_subplot(self.axpte)
-            self.axpte.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(phasexy_arr[:, :, 0]),
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_te[0],
-                                  vmax=self.phase_limits_te[1])
+            self.axpte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(phasexy_arr[:, :, 0]),
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_te[0],
+                vmax=self.phase_limits_te[1],
+            )
 
             # plot TE phase model
             self.axmpte = plt.Subplot(self.fig, gs2[1, 1])
             self.fig.add_subplot(self.axmpte)
-            self.axmpte.pcolormesh(dgrid,
-                                   fgrid,
-                                   np.flipud(phasexy_arr[:, :, 1]),
-                                   cmap=self.phase_cmap,
-                                   vmin=self.phase_limits_te[0],
-                                   vmax=self.phase_limits_te[1])
+            self.axmpte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(phasexy_arr[:, :, 1]),
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_te[0],
+                vmax=self.phase_limits_te[1],
+            )
 
             # plot TM phase data
             self.axptm = plt.Subplot(self.fig, gs3[1, 0])
             self.fig.add_subplot(self.axptm)
-            self.axptm.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(phaseyx_arr[:, :, 0]),
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_tm[0],
-                                  vmax=self.phase_limits_tm[1])
+            self.axptm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(phaseyx_arr[:, :, 0]),
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_tm[0],
+                vmax=self.phase_limits_tm[1],
+            )
 
             # plot TM phase model
             self.axmptm = plt.Subplot(self.fig, gs3[1, 1])
             self.fig.add_subplot(self.axmptm)
-            self.axmptm.pcolormesh(dgrid,
-                                   fgrid,
-                                   np.flipud(phaseyx_arr[:, :, 1]),
-                                   cmap=self.phase_cmap,
-                                   vmin=self.phase_limits_tm[0],
-                                   vmax=self.phase_limits_tm[1])
+            self.axmptm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(phaseyx_arr[:, :, 1]),
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_tm[0],
+                vmax=self.phase_limits_tm[1],
+            )
 
-            axlist = [self.axrte, self.axmrte, self.axrtm, self.axmrtm,
-                      self.axpte, self.axmpte, self.axptm, self.axmptm]
+            axlist = [
+                self.axrte,
+                self.axmrte,
+                self.axrtm,
+                self.axmrtm,
+                self.axpte,
+                self.axmpte,
+                self.axptm,
+                self.axmptm,
+            ]
 
             # make everthing look tidy
             for xx, ax in enumerate(axlist):
@@ -4830,108 +5486,163 @@ class PlotPseudoSection(object):
                 ax.set_xlim(offset_list.min(), offset_list.max())
                 if np.remainder(xx, 2.0) == 1:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                    cbx = mcb.make_axes(ax,
-                                        shrink=self.cb_shrink,
-                                        pad=self.cb_pad)
+                    cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
 
                 if xx < 4:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     if xx == 1:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                              norm=Normalize(vmin=self.res_limits_te[0],
-                                                             vmax=self.res_limits_te[1]))
-                        cb.set_ticks(np.arange(int(self.res_limits_te[0]),
-                                               int(self.res_limits_te[1]) + 1))
-                        cb.set_ticklabels(['10$^{0}$'.format('{' + str(nn) + '}')
-                                           for nn in
-                                           np.arange(int(self.res_limits_te[0]),
-                                                     int(self.res_limits_te[1]) + 1)])
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.res_cmap,
+                            norm=Normalize(
+                                vmin=self.res_limits_te[0], vmax=self.res_limits_te[1]
+                            ),
+                        )
+                        cb.set_ticks(
+                            np.arange(
+                                int(self.res_limits_te[0]),
+                                int(self.res_limits_te[1]) + 1,
+                            )
+                        )
+                        cb.set_ticklabels(
+                            [
+                                "10$^{0}$".format("{" + str(nn) + "}")
+                                for nn in np.arange(
+                                    int(self.res_limits_te[0]),
+                                    int(self.res_limits_te[1]) + 1,
+                                )
+                            ]
+                        )
                     if xx == 3:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                              norm=Normalize(vmin=self.res_limits_tm[0],
-                                                             vmax=self.res_limits_tm[1]))
-                        cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
-                        cb.set_label('Resistivity ($\Omega \cdot$m)',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
-                        cb.set_ticks(np.arange(int(self.res_limits_tm[0]),
-                                               int(self.res_limits_tm[1]) + 1))
-                        cb.set_ticklabels(['10$^{0}$'.format('{' + str(nn) + '}')
-                                           for nn in
-                                           np.arange(int(self.res_limits_tm[0]),
-                                                     int(self.res_limits_tm[1]) + 1)])
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.res_cmap,
+                            norm=Normalize(
+                                vmin=self.res_limits_tm[0], vmax=self.res_limits_tm[1]
+                            ),
+                        )
+                        cb.set_label(
+                            "App. Res. ($\Omega \cdot$m)",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
+                        cb.set_label(
+                            "Resistivity ($\Omega \cdot$m)",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
+                        cb.set_ticks(
+                            np.arange(
+                                int(self.res_limits_tm[0]),
+                                int(self.res_limits_tm[1]) + 1,
+                            )
+                        )
+                        cb.set_ticklabels(
+                            [
+                                "10$^{0}$".format("{" + str(nn) + "}")
+                                for nn in np.arange(
+                                    int(self.res_limits_tm[0]),
+                                    int(self.res_limits_tm[1]) + 1,
+                                )
+                            ]
+                        )
                 else:
                     if xx == 5:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                              norm=Normalize(vmin=self.phase_limits_te[0],
-                                                             vmax=self.phase_limits_te[1]))
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.phase_cmap,
+                            norm=Normalize(
+                                vmin=self.phase_limits_te[0],
+                                vmax=self.phase_limits_te[1],
+                            ),
+                        )
 
                     if xx == 7:
-                        cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                              norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                             vmax=self.phase_limits_tm[1]))
-                        cb.set_label('Phase (deg)',
-                                     fontdict={'size': self.font_size + 1,
-                                               'weight': 'bold'})
-                ax.text(xloc, yloc, self.label_list[xx],
-                        fontdict={'size': self.font_size + 1},
-                        bbox={'facecolor': 'white'},
-                        horizontalalignment='left',
-                        verticalalignment='top')
+                        cb = mcb.ColorbarBase(
+                            cbx[0],
+                            cmap=self.phase_cmap,
+                            norm=Normalize(
+                                vmin=self.phase_limits_tm[0],
+                                vmax=self.phase_limits_tm[1],
+                            ),
+                        )
+                        cb.set_label(
+                            "Phase (deg)",
+                            fontdict={"size": self.font_size + 1, "weight": "bold"},
+                        )
+                ax.text(
+                    xloc,
+                    yloc,
+                    self.label_list[xx],
+                    fontdict={"size": self.font_size + 1},
+                    bbox={"facecolor": "white"},
+                    horizontalalignment="left",
+                    verticalalignment="top",
+                )
                 if xx == 0 or xx == 4:
-                    ax.set_ylabel('Period (s)',
-                                  fontdict={'size': self.font_size + 2,
-                                            'weight': 'bold'})
+                    ax.set_ylabel(
+                        "Period (s)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
                 if xx > 3:
-                    ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
-                                                       'weight': 'bold'})
+                    ax.set_xlabel(
+                        "Station",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             plt.show()
 
         else:
-            gs1 = gridspec.GridSpec(2, 2,
-                                    left=self.subplot_left,
-                                    right=self.subplot_right,
-                                    hspace=self.subplot_hspace,
-                                    wspace=self.subplot_wspace)
+            gs1 = gridspec.GridSpec(
+                2,
+                2,
+                left=self.subplot_left,
+                right=self.subplot_right,
+                hspace=self.subplot_hspace,
+                wspace=self.subplot_wspace,
+            )
 
             # plot TE resistivity data
             self.axrte = self.fig.add_subplot(gs1[0, 0])
-            self.axrte.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(resxy_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_te[0],
-                                  vmax=self.res_limits_te[1])
+            self.axrte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(resxy_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_te[0],
+                vmax=self.res_limits_te[1],
+            )
 
             # plot TM resistivity data
             self.axrtm = self.fig.add_subplot(gs1[0, 1])
-            self.axrtm.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(resyx_arr[:, :, 0]),
-                                  cmap=self.res_cmap,
-                                  vmin=self.res_limits_tm[0],
-                                  vmax=self.res_limits_tm[1])
+            self.axrtm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(resyx_arr[:, :, 0]),
+                cmap=self.res_cmap,
+                vmin=self.res_limits_tm[0],
+                vmax=self.res_limits_tm[1],
+            )
 
             # plot TE phase data
             self.axpte = self.fig.add_subplot(gs1[1, 0])
-            self.axpte.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(phasexy_arr[:, :, 0]),
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_te[0],
-                                  vmax=self.phase_limits_te[1])
+            self.axpte.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(phasexy_arr[:, :, 0]),
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_te[0],
+                vmax=self.phase_limits_te[1],
+            )
 
             # plot TM phase data
             self.axptm = self.fig.add_subplot(gs1[1, 1])
-            self.axptm.pcolormesh(dgrid,
-                                  fgrid,
-                                  np.flipud(phaseyx_arr[:, :, 0]),
-                                  cmap=self.phase_cmap,
-                                  vmin=self.phase_limits_tm[0],
-                                  vmax=self.phase_limits_tm[1])
+            self.axptm.pcolormesh(
+                dgrid,
+                fgrid,
+                np.flipud(phaseyx_arr[:, :, 0]),
+                cmap=self.phase_cmap,
+                vmin=self.phase_limits_tm[0],
+                vmax=self.phase_limits_tm[1],
+            )
 
             axlist = [self.axrte, self.axrtm, self.axpte, self.axptm]
 
@@ -4942,64 +5653,105 @@ class PlotPseudoSection(object):
                 ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
                 ax.xaxis.set_ticks(offset_list, minor=True)
                 ax.xaxis.set_ticklabels(slabel)
-                ax.grid(True, alpha=.25)
+                ax.grid(True, alpha=0.25)
                 ax.set_xlim(offset_list.min(), offset_list.max())
-                cbx = mcb.make_axes(ax,
-                                    shrink=self.cb_shrink,
-                                    pad=self.cb_pad)
+                cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
                 if xx == 0:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                          norm=Normalize(vmin=self.res_limits_te[0],
-                                                         vmax=self.res_limits_te[1]))
-                    cb.set_ticks(np.arange(self.res_limits_te[0],
-                                           self.res_limits_te[1] + 1))
-                    cb.set_ticklabels(['10$^{0}$'.format('{' + str(nn) + '}')
-                                       for nn in
-                                       np.arange(int(self.res_limits_te[0]),
-                                                 int(self.res_limits_te[1]) + 1)])
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.res_cmap,
+                        norm=Normalize(
+                            vmin=self.res_limits_te[0], vmax=self.res_limits_te[1]
+                        ),
+                    )
+                    cb.set_ticks(
+                        np.arange(self.res_limits_te[0], self.res_limits_te[1] + 1)
+                    )
+                    cb.set_ticklabels(
+                        [
+                            "10$^{0}$".format("{" + str(nn) + "}")
+                            for nn in np.arange(
+                                int(self.res_limits_te[0]),
+                                int(self.res_limits_te[1]) + 1,
+                            )
+                        ]
+                    )
                 elif xx == 1:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
 
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                          norm=Normalize(vmin=self.res_limits_tm[0],
-                                                         vmax=self.res_limits_tm[1]))
-                    cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                 fontdict={'size': self.font_size + 1,
-                                           'weight': 'bold'})
-                    cb.set_ticks(np.arange(self.res_limits_tm[0],
-                                           self.res_limits_tm[1] + 1))
-                    cb.set_ticklabels(['10$^{0}$'.format('{' + str(nn) + '}')
-                                       for nn in
-                                       np.arange(int(self.res_limits_tm[0]),
-                                                 int(self.res_limits_tm[1]) + 1)])
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.res_cmap,
+                        norm=Normalize(
+                            vmin=self.res_limits_tm[0], vmax=self.res_limits_tm[1]
+                        ),
+                    )
+                    cb.set_label(
+                        "App. Res. ($\Omega \cdot$m)",
+                        fontdict={"size": self.font_size + 1, "weight": "bold"},
+                    )
+                    cb.set_ticks(
+                        np.arange(self.res_limits_tm[0], self.res_limits_tm[1] + 1)
+                    )
+                    cb.set_ticklabels(
+                        [
+                            "10$^{0}$".format("{" + str(nn) + "}")
+                            for nn in np.arange(
+                                int(self.res_limits_tm[0]),
+                                int(self.res_limits_tm[1]) + 1,
+                            )
+                        ]
+                    )
                 elif xx == 2:
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                          norm=Normalize(vmin=self.phase_limits_te[0],
-                                                         vmax=self.phase_limits_te[1]))
-                    cb.set_ticks(np.arange(self.phase_limits_te[0],
-                                           self.phase_limits_te[1] + 1, 15))
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.phase_cmap,
+                        norm=Normalize(
+                            vmin=self.phase_limits_te[0], vmax=self.phase_limits_te[1]
+                        ),
+                    )
+                    cb.set_ticks(
+                        np.arange(
+                            self.phase_limits_te[0], self.phase_limits_te[1] + 1, 15
+                        )
+                    )
                 elif xx == 3:
-                    cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                          norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                         vmax=self.phase_limits_tm[1]))
-                    cb.set_label('Phase (deg)',
-                                 fontdict={'size': self.font_size + 1,
-                                           'weight': 'bold'})
-                    cb.set_ticks(np.arange(self.phase_limits_te[0],
-                                           self.phase_limits_te[1] + 1, 15))
-                ax.text(xloc, yloc, self.label_list[xx],
-                        fontdict={'size': self.font_size + 1},
-                        bbox={'facecolor': 'white'},
-                        horizontalalignment='left',
-                        verticalalignment='top')
+                    cb = mcb.ColorbarBase(
+                        cbx[0],
+                        cmap=self.phase_cmap,
+                        norm=Normalize(
+                            vmin=self.phase_limits_tm[0], vmax=self.phase_limits_tm[1]
+                        ),
+                    )
+                    cb.set_label(
+                        "Phase (deg)",
+                        fontdict={"size": self.font_size + 1, "weight": "bold"},
+                    )
+                    cb.set_ticks(
+                        np.arange(
+                            self.phase_limits_te[0], self.phase_limits_te[1] + 1, 15
+                        )
+                    )
+                ax.text(
+                    xloc,
+                    yloc,
+                    self.label_list[xx],
+                    fontdict={"size": self.font_size + 1},
+                    bbox={"facecolor": "white"},
+                    horizontalalignment="left",
+                    verticalalignment="top",
+                )
                 if xx == 0 or xx == 2:
-                    ax.set_ylabel('Period (s)',
-                                  fontdict={'size': self.font_size + 2,
-                                            'weight': 'bold'})
+                    ax.set_ylabel(
+                        "Period (s)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
                 if xx > 1:
-                    ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
-                                                       'weight': 'bold'})
+                    ax.set_xlabel(
+                        "Station",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
 
             plt.show()
 
@@ -5023,8 +5775,14 @@ class PlotPseudoSection(object):
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_plot='y'):
+    def save_figure(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_plot="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -5074,16 +5832,25 @@ class PlotPseudoSection(object):
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamPseudoSection.' +
-                                   file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(save_fn, "OccamPseudoSection." + file_format)
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-        if close_plot == 'y':
+        if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -5091,7 +5858,7 @@ class PlotPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print "Saved figure to: " + self.fig_fn
 
     def update_plot(self):
         """
@@ -5119,12 +5886,15 @@ class PlotPseudoSection(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots a pseudo section of TE and TM modes for data and "
-                "response if given.")
+        return (
+            "Plots a pseudo section of TE and TM modes for data and "
+            "response if given."
+        )
 
-#==============================================================================
+
+# ==============================================================================
 # plot misfits as a pseudo-section
-#==============================================================================
+# ==============================================================================
 
 
 class PlotMisfitPseudoSection(object):
@@ -5236,38 +6006,37 @@ class PlotMisfitPseudoSection(object):
 
         self.rp_list = rp_list
         self.period = period
-        self.station_list = [rp['station'] for rp in self.rp_list]
+        self.station_list = [rp["station"] for rp in self.rp_list]
 
-        self.label_list = [r'$\rho_{TE}$', r'$\rho_{TM}$',
-                           '$\phi_{TE}$', '$\phi_{TM}$']
+        self.label_list = [r"$\rho_{TE}$", r"$\rho_{TM}$", "$\phi_{TE}$", "$\phi_{TM}$"]
 
-        self.phase_limits_te = kwargs.pop('phase_limits_te', (-10, 10))
-        self.phase_limits_tm = kwargs.pop('phase_limits_tm', (-10, 10))
-        self.res_limits_te = kwargs.pop('res_limits_te', (-2, 2))
-        self.res_limits_tm = kwargs.pop('res_limits_tm', (-2, 2))
+        self.phase_limits_te = kwargs.pop("phase_limits_te", (-10, 10))
+        self.phase_limits_tm = kwargs.pop("phase_limits_tm", (-10, 10))
+        self.res_limits_te = kwargs.pop("res_limits_te", (-2, 2))
+        self.res_limits_tm = kwargs.pop("res_limits_tm", (-2, 2))
 
-        self.phase_cmap = kwargs.pop('phase_cmap', 'BrBG')
-        self.res_cmap = kwargs.pop('res_cmap', 'BrBG_r')
+        self.phase_cmap = kwargs.pop("phase_cmap", "BrBG")
+        self.res_cmap = kwargs.pop("res_cmap", "BrBG_r")
 
-        self.ml = kwargs.pop('ml', 2)
-        self.station_id = kwargs.pop('station_id', [0, 4])
+        self.ml = kwargs.pop("ml", 2)
+        self.station_id = kwargs.pop("station_id", [0, 4])
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .0025
-        self.subplot_hspace = .0
-        self.subplot_right = .95
-        self.subplot_left = .085
-        self.subplot_top = .97
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.0025
+        self.subplot_hspace = 0.0
+        self.subplot_right = 0.95
+        self.subplot_left = 0.085
+        self.subplot_top = 0.97
+        self.subplot_bottom = 0.1
 
-        self.font_size = kwargs.pop('font_size', 6)
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.font_size = kwargs.pop("font_size", 6)
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
-        self.cb_shrink = .7
-        self.cb_pad = .015
+        self.cb_shrink = 0.7
+        self.cb_pad = 0.015
 
         self.axrte = None
         self.axrtm = None
@@ -5276,7 +6045,7 @@ class PlotMisfitPseudoSection(object):
 
         self.fig = None
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def get_misfit(self):
@@ -5295,10 +6064,10 @@ class PlotMisfitPseudoSection(object):
         self.misfit_tm_phase = np.zeros((n_periods, n_stations))
 
         for rr, rp in enumerate(self.rp_list):
-            self.misfit_te_res[:, rr] = rp['resxy'][3]
-            self.misfit_tm_res[:, rr] = rp['resyx'][3]
-            self.misfit_te_phase[:, rr] = rp['phasexy'][3]
-            self.misfit_tm_phase[:, rr] = rp['phaseyx'][3]
+            self.misfit_te_res[:, rr] = rp["resxy"][3]
+            self.misfit_tm_res[:, rr] = rp["resyx"][3]
+            self.misfit_te_phase[:, rr] = rp["phasexy"][3]
+            self.misfit_tm_phase[:, rr] = rp["phaseyx"][3]
 
         self.misfit_te_res = np.nan_to_num(self.misfit_te_res)
         self.misfit_te_phase = np.nan_to_num(self.misfit_te_phase)
@@ -5315,8 +6084,9 @@ class PlotMisfitPseudoSection(object):
 
         ylimits = (self.period.max(), self.period.min())
 
-        offset_list = np.array([rp['offset'] for rp in self.rp_list] +
-                               [self.rp_list[-1]['offset'] * 1.15])
+        offset_list = np.array(
+            [rp["offset"] for rp in self.rp_list] + [self.rp_list[-1]["offset"] * 1.15]
+        )
 
         # make a meshgrid for plotting
         # flip frequency so bottom corner is long period
@@ -5324,17 +6094,19 @@ class PlotMisfitPseudoSection(object):
 
         # make list for station labels
         ns = len(self.station_list)
-        slabel = [self.station_list[ss][self.station_id[0]:self.station_id[1]]
-                  for ss in range(0, ns, self.ml)]
+        slabel = [
+            self.station_list[ss][self.station_id[0] : self.station_id[1]]
+            for ss in range(0, ns, self.ml)
+        ]
 
         xloc = offset_list[0] + abs(offset_list[0] - offset_list[1]) / 5
         yloc = 1.10 * self.period[1]
 
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
-        plt.rcParams['figure.subplot.hspace'] = self.subplot_hspace
-        plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
+        plt.rcParams["figure.subplot.hspace"] = self.subplot_hspace
+        plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
@@ -5344,34 +6116,42 @@ class PlotMisfitPseudoSection(object):
         self.axpte = self.fig.add_subplot(2, 2, 3, sharex=self.axrte)
         self.axptm = self.fig.add_subplot(2, 2, 4, sharex=self.axrte)
 
-        #--> TE Resistivity
-        self.axrte.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_te_res),
-                              cmap=self.res_cmap,
-                              vmin=self.res_limits_te[0],
-                              vmax=self.res_limits_te[1])
-        #--> TM Resistivity
-        self.axrtm.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_tm_res),
-                              cmap=self.res_cmap,
-                              vmin=self.res_limits_tm[0],
-                              vmax=self.res_limits_tm[1])
-        #--> TE Phase
-        self.axpte.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_te_phase),
-                              cmap=self.phase_cmap,
-                              vmin=self.phase_limits_te[0],
-                              vmax=self.phase_limits_te[1])
-        #--> TM Phase
-        self.axptm.pcolormesh(dgrid,
-                              fgrid,
-                              np.flipud(self.misfit_tm_phase),
-                              cmap=self.phase_cmap,
-                              vmin=self.phase_limits_tm[0],
-                              vmax=self.phase_limits_tm[1])
+        # --> TE Resistivity
+        self.axrte.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_te_res),
+            cmap=self.res_cmap,
+            vmin=self.res_limits_te[0],
+            vmax=self.res_limits_te[1],
+        )
+        # --> TM Resistivity
+        self.axrtm.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_tm_res),
+            cmap=self.res_cmap,
+            vmin=self.res_limits_tm[0],
+            vmax=self.res_limits_tm[1],
+        )
+        # --> TE Phase
+        self.axpte.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_te_phase),
+            cmap=self.phase_cmap,
+            vmin=self.phase_limits_te[0],
+            vmax=self.phase_limits_te[1],
+        )
+        # --> TM Phase
+        self.axptm.pcolormesh(
+            dgrid,
+            fgrid,
+            np.flipud(self.misfit_tm_phase),
+            cmap=self.phase_cmap,
+            vmin=self.phase_limits_tm[0],
+            vmax=self.phase_limits_tm[1],
+        )
 
         axlist = [self.axrte, self.axrtm, self.axpte, self.axptm]
 
@@ -5385,46 +6165,68 @@ class PlotMisfitPseudoSection(object):
             ax.set_xlim(offset_list.min(), offset_list.max())
             if np.remainder(xx, 2.0) == 1:
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-            cbx = mcb.make_axes(ax,
-                                shrink=self.cb_shrink,
-                                pad=self.cb_pad)
+            cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
 
             if xx == 0:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                      norm=Normalize(vmin=self.res_limits_te[0],
-                                                     vmax=self.res_limits_te[1]))
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.res_cmap,
+                    norm=Normalize(
+                        vmin=self.res_limits_te[0], vmax=self.res_limits_te[1]
+                    ),
+                )
             elif xx == 1:
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.res_cmap,
-                                      norm=Normalize(vmin=self.res_limits_tm[0],
-                                                     vmax=self.res_limits_tm[1]))
-                cb.set_label('Log$_{10}$ App. Res. ($\Omega \cdot$m)',
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.res_cmap,
+                    norm=Normalize(
+                        vmin=self.res_limits_tm[0], vmax=self.res_limits_tm[1]
+                    ),
+                )
+                cb.set_label(
+                    "Log$_{10}$ App. Res. ($\Omega \cdot$m)",
+                    fontdict={"size": self.font_size + 1, "weight": "bold"},
+                )
             elif xx == 2:
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                      norm=Normalize(vmin=self.phase_limits_te[0],
-                                                     vmax=self.phase_limits_te[1]))
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.phase_cmap,
+                    norm=Normalize(
+                        vmin=self.phase_limits_te[0], vmax=self.phase_limits_te[1]
+                    ),
+                )
             elif xx == 3:
-                cb = mcb.ColorbarBase(cbx[0], cmap=self.phase_cmap,
-                                      norm=Normalize(vmin=self.phase_limits_tm[0],
-                                                     vmax=self.phase_limits_tm[1]))
-                cb.set_label('Phase (deg)',
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
-            ax.text(xloc, yloc, self.label_list[xx],
-                    fontdict={'size': self.font_size + 2},
-                    bbox={'facecolor': 'white'},
-                    horizontalalignment='left',
-                    verticalalignment='top')
+                cb = mcb.ColorbarBase(
+                    cbx[0],
+                    cmap=self.phase_cmap,
+                    norm=Normalize(
+                        vmin=self.phase_limits_tm[0], vmax=self.phase_limits_tm[1]
+                    ),
+                )
+                cb.set_label(
+                    "Phase (deg)",
+                    fontdict={"size": self.font_size + 1, "weight": "bold"},
+                )
+            ax.text(
+                xloc,
+                yloc,
+                self.label_list[xx],
+                fontdict={"size": self.font_size + 2},
+                bbox={"facecolor": "white"},
+                horizontalalignment="left",
+                verticalalignment="top",
+            )
             if xx == 0 or xx == 2:
-                ax.set_ylabel('Period (s)',
-                              fontdict={'size': self.font_size + 2,
-                                        'weight': 'bold'})
+                ax.set_ylabel(
+                    "Period (s)",
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
             if xx > 1:
-                ax.set_xlabel('Station', fontdict={'size': self.font_size + 2,
-                                                   'weight': 'bold'})
+                ax.set_xlabel(
+                    "Station", fontdict={"size": self.font_size + 2, "weight": "bold"}
+                )
 
         plt.show()
 
@@ -5448,8 +6250,14 @@ class PlotMisfitPseudoSection(object):
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_plot='y'):
+    def save_figure(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_plot="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -5499,16 +6307,25 @@ class PlotMisfitPseudoSection(object):
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamMisfitPseudoSection.' +
-                                   file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(save_fn, "OccamMisfitPseudoSection." + file_format)
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-        if close_plot == 'y':
+        if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -5516,7 +6333,7 @@ class PlotMisfitPseudoSection(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print "Saved figure to: " + self.fig_fn
 
     def update_plot(self):
         """
@@ -5544,11 +6361,15 @@ class PlotMisfitPseudoSection(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots a pseudo section of TE and TM modes for data and "
-                "response if given.")
-#==============================================================================
+        return (
+            "Plots a pseudo section of TE and TM modes for data and "
+            "response if given."
+        )
+
+
+# ==============================================================================
 # plot all response from a given folder
-#==============================================================================
+# ==============================================================================
 
 
 class PlotAllResponses(object):
@@ -5656,44 +6477,44 @@ class PlotAllResponses(object):
         self.period = period
 
         if pstation_list is None:
-            self.pstation_list = [rp['station'] for rp in self.rp_list[0]]
+            self.pstation_list = [rp["station"] for rp in self.rp_list[0]]
         else:
             self.pstation_list = pstation_list
 
-        self.station_list = [rp['station'] for rp in self.rp_list[0]]
-        self.ms = kwargs.pop('ms', 1.5)
-        self.lw = kwargs.pop('lw', .5)
-        self.e_capthick = kwargs.pop('e_capthick', .5)
-        self.e_capsize = kwargs.pop('e_capsize', 2)
+        self.station_list = [rp["station"] for rp in self.rp_list[0]]
+        self.ms = kwargs.pop("ms", 1.5)
+        self.lw = kwargs.pop("lw", 0.5)
+        self.e_capthick = kwargs.pop("e_capthick", 0.5)
+        self.e_capsize = kwargs.pop("e_capsize", 2)
 
-        self.phase_limits = kwargs.pop('phase_limits', (-5, 95))
-        self.res_limits = kwargs.pop('res_limits', None)
+        self.phase_limits = kwargs.pop("phase_limits", (-5, 95))
+        self.res_limits = kwargs.pop("res_limits", None)
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
 
-        self.subplot_wspace = .2
-        self.subplot_hspace = .15
-        self.subplot_right = .98
-        self.subplot_left = .085
-        self.subplot_top = .93
-        self.subplot_bottom = .1
+        self.subplot_wspace = 0.2
+        self.subplot_hspace = 0.15
+        self.subplot_right = 0.98
+        self.subplot_left = 0.085
+        self.subplot_top = 0.93
+        self.subplot_bottom = 0.1
 
         self.axrte = None
         self.axrtm = None
         self.axpte = None
         self.axptm = None
 
-        self.font_size = kwargs.pop('font_size', 6)
+        self.font_size = kwargs.pop("font_size", 6)
 
-        self.plot_type = kwargs.pop('plot_type', '1')
-        self.plot_num = kwargs.pop('plot_num', 2)
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_type = kwargs.pop("plot_type", "1")
+        self.plot_num = kwargs.pop("plot_num", 2)
+        self.plot_yn = kwargs.pop("plot_yn", "y")
 
         self.fig_list = []
 
-        if self.plot_yn == 'y':
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -5702,24 +6523,21 @@ class PlotAllResponses(object):
 
         """
 
-        gs = gridspec.GridSpec(6, 2, wspace=.20)
+        gs = gridspec.GridSpec(6, 2, wspace=0.20)
 
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
 
         nresp = len(self.rp_list)
 
-        #--> make a list of colors to fade for each iteration
-        color_list = [(cc, 0, 1 - cc) for cc in np.arange(0, 1, 1. / nresp)]
+        # --> make a list of colors to fade for each iteration
+        color_list = [(cc, 0, 1 - cc) for cc in np.arange(0, 1, 1.0 / nresp)]
 
         for ss, station in enumerate(self.pstation_list, 1):
-            fig = plt.figure(
-                self.fig_num + ss,
-                self.fig_size,
-                dpi=self.fig_dpi)
+            fig = plt.figure(self.fig_num + ss, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
 
             axrte = fig.add_subplot(gs[:4, 0])
@@ -5736,142 +6554,166 @@ class PlotAllResponses(object):
 
                 ii = np.where(np.array(self.station_list) == station)[0][0]
 
-                rmslistte = np.hstack((rp[ii]['resxy'][3],
-                                       rp[ii]['phasexy'][3]))
-                rmslisttm = np.hstack((rp[ii]['resyx'][3],
-                                       rp[ii]['phaseyx'][3]))
-                rmste = np.sqrt(
-                    np.sum(
-                        ms**2 for ms in rmslistte) /
-                    len(rmslistte))
-                rmstm = np.sqrt(
-                    np.sum(
-                        ms**2 for ms in rmslisttm) /
-                    len(rmslisttm))
-                rmstelist.append('{0} rms={1:.3f}'.format(jj, rmste))
-                rmstmlist.append('{0} rms={1:.3f}'.format(jj, rmstm))
+                rmslistte = np.hstack((rp[ii]["resxy"][3], rp[ii]["phasexy"][3]))
+                rmslisttm = np.hstack((rp[ii]["resyx"][3], rp[ii]["phaseyx"][3]))
+                rmste = np.sqrt(np.sum(ms ** 2 for ms in rmslistte) / len(rmslistte))
+                rmstm = np.sqrt(np.sum(ms ** 2 for ms in rmslisttm) / len(rmslisttm))
+                rmstelist.append("{0} rms={1:.3f}".format(jj, rmste))
+                rmstmlist.append("{0} rms={1:.3f}".format(jj, rmstm))
                 rmstestr.append(rmste)
                 rmstmstr.append(rmstm)
                 # plot resistivity
 
                 if jj == 0:
                     # cut out missing data points first
-                    rxy = np.where(rp[ii]['resxy'][0] != 0)[0]
-                    ryx = np.where(rp[ii]['resyx'][0] != 0)[0]
-                    r1, = axrte.loglog(self.period[rxy],
-                                       10**rp[ii]['resxy'][0][rxy],
-                                       ls=':',
-                                       marker='s',
-                                       ms=self.ms,
-                                       color='k',
-                                       mfc='k')
-                    r2, = axrtm.loglog(self.period[ryx],
-                                       10**rp[ii]['resyx'][0][ryx],
-                                       ls=':',
-                                       marker='o',
-                                       ms=self.ms,
-                                       color='k',
-                                       mfc='k')
+                    rxy = np.where(rp[ii]["resxy"][0] != 0)[0]
+                    ryx = np.where(rp[ii]["resyx"][0] != 0)[0]
+                    (r1,) = axrte.loglog(
+                        self.period[rxy],
+                        10 ** rp[ii]["resxy"][0][rxy],
+                        ls=":",
+                        marker="s",
+                        ms=self.ms,
+                        color="k",
+                        mfc="k",
+                    )
+                    (r2,) = axrtm.loglog(
+                        self.period[ryx],
+                        10 ** rp[ii]["resyx"][0][ryx],
+                        ls=":",
+                        marker="o",
+                        ms=self.ms,
+                        color="k",
+                        mfc="k",
+                    )
                     rlistte = [r1]
                     rlisttm = [r2]
 
-                mrxy = [np.where(rp[ii]['resxy'][2] != 0)[0]]
-                mryx = [np.where(rp[ii]['resyx'][2] != 0)[0]]
-                r3, = axrte.loglog(self.period[mrxy],
-                                   10**rp[ii]['resxy'][2][mrxy],
-                                   ls='-',
-                                   color=color_list[jj])
-                r4, = axrtm.loglog(self.period[mryx],
-                                   10**rp[ii]['resyx'][2][mryx],
-                                   ls='-',
-                                   color=color_list[jj])
+                mrxy = [np.where(rp[ii]["resxy"][2] != 0)[0]]
+                mryx = [np.where(rp[ii]["resyx"][2] != 0)[0]]
+                (r3,) = axrte.loglog(
+                    self.period[mrxy],
+                    10 ** rp[ii]["resxy"][2][mrxy],
+                    ls="-",
+                    color=color_list[jj],
+                )
+                (r4,) = axrtm.loglog(
+                    self.period[mryx],
+                    10 ** rp[ii]["resyx"][2][mryx],
+                    ls="-",
+                    color=color_list[jj],
+                )
 
                 rlistte.append(r3)
                 rlisttm.append(r4)
 
                 # plot phase
                 # cut out missing data points first
-                pxy = [np.where(rp[ii]['phasexy'][0] != 0)[0]]
-                pyx = [np.where(rp[ii]['phaseyx'][0] != 0)[0]]
+                pxy = [np.where(rp[ii]["phasexy"][0] != 0)[0]]
+                pyx = [np.where(rp[ii]["phaseyx"][0] != 0)[0]]
 
                 if jj == 0:
-                    axpte.semilogx(self.period[pxy],
-                                   rp[ii]['phasexy'][0][pxy],
-                                   ls=':',
-                                   marker='s',
-                                   ms=self.ms,
-                                   color='k',
-                                   mfc='k')
+                    axpte.semilogx(
+                        self.period[pxy],
+                        rp[ii]["phasexy"][0][pxy],
+                        ls=":",
+                        marker="s",
+                        ms=self.ms,
+                        color="k",
+                        mfc="k",
+                    )
 
-                    axptm.semilogx(self.period[pyx],
-                                   rp[ii]['phaseyx'][0][pyx],
-                                   ls=':',
-                                   marker='o',
-                                   ms=self.ms,
-                                   color='k',
-                                   mfc='k')
+                    axptm.semilogx(
+                        self.period[pyx],
+                        rp[ii]["phaseyx"][0][pyx],
+                        ls=":",
+                        marker="o",
+                        ms=self.ms,
+                        color="k",
+                        mfc="k",
+                    )
 
-                mpxy = [np.where(rp[ii]['phasexy'][2] != 0)[0]]
-                mpyx = [np.where(rp[ii]['phaseyx'][2] != 0)[0]]
-                axpte.semilogx(self.period[mpxy],
-                               rp[ii]['phasexy'][2][mpxy],
-                               ls='-', color=color_list[jj])
-                axptm.semilogx(self.period[mpyx],
-                               rp[ii]['phaseyx'][2][mpyx],
-                               ls='-',
-                               color=color_list[jj])
+                mpxy = [np.where(rp[ii]["phasexy"][2] != 0)[0]]
+                mpyx = [np.where(rp[ii]["phaseyx"][2] != 0)[0]]
+                axpte.semilogx(
+                    self.period[mpxy],
+                    rp[ii]["phasexy"][2][mpxy],
+                    ls="-",
+                    color=color_list[jj],
+                )
+                axptm.semilogx(
+                    self.period[mpyx],
+                    rp[ii]["phaseyx"][2][mpyx],
+                    ls="-",
+                    color=color_list[jj],
+                )
 
-            axrte.grid(True, alpha=.4)
-            axrtm.grid(True, alpha=.4)
+            axrte.grid(True, alpha=0.4)
+            axrtm.grid(True, alpha=0.4)
 
-            axrtm.set_xticklabels(['' for ii in range(10)])
-            axrte.set_xticklabels(['' for ii in range(10)])
+            axrtm.set_xticklabels(["" for ii in range(10)])
+            axrte.set_xticklabels(["" for ii in range(10)])
 
             rmstestr = np.median(np.array(rmstestr)[1:])
             rmstmstr = np.median(np.array(rmstmstr)[1:])
-            axrte.set_title('TE rms={0:.2f}'.format(rmstestr),
-                            fontdict={'size': self.font_size + 2, 'weight': 'bold'})
-            axrtm.set_title('TM rms={0:.2f}'.format(rmstmstr),
-                            fontdict={'size': self.font_size + 2, 'weight': 'bold'})
+            axrte.set_title(
+                "TE rms={0:.2f}".format(rmstestr),
+                fontdict={"size": self.font_size + 2, "weight": "bold"},
+            )
+            axrtm.set_title(
+                "TM rms={0:.2f}".format(rmstmstr),
+                fontdict={"size": self.font_size + 2, "weight": "bold"},
+            )
 
-            axpte.grid(True, alpha=.25, which='both', lw=.5 * self.lw)
+            axpte.grid(True, alpha=0.25, which="both", lw=0.5 * self.lw)
             axpte.yaxis.set_major_locator(MultipleLocator(10))
             axpte.yaxis.set_minor_locator(MultipleLocator(1))
 
-            axrte.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                             fontdict={'size': self.font_size + 2, 'weight': 'bold'})
-            axpte.set_ylabel('Phase (deg)',
-                             fontdict={'size': self.font_size + 2, 'weight': 'bold'})
-            axpte.set_xlabel('Period (s)',
-                             fontdict={'size': self.font_size + 2,
-                                       'weight': 'bold'})
+            axrte.set_ylabel(
+                "App. Res. ($\Omega \cdot m$)",
+                fontdict={"size": self.font_size + 2, "weight": "bold"},
+            )
+            axpte.set_ylabel(
+                "Phase (deg)", fontdict={"size": self.font_size + 2, "weight": "bold"}
+            )
+            axpte.set_xlabel(
+                "Period (s)", fontdict={"size": self.font_size + 2, "weight": "bold"}
+            )
 
-            axrte.yaxis.set_label_coords(-.08, .5)
-            axpte.yaxis.set_label_coords(-.08, .5)
+            axrte.yaxis.set_label_coords(-0.08, 0.5)
+            axpte.yaxis.set_label_coords(-0.08, 0.5)
 
-            axrtm.set_xticklabels(['' for ii in range(10)])
-            axptm.grid(True, alpha=.4)
+            axrtm.set_xticklabels(["" for ii in range(10)])
+            axptm.grid(True, alpha=0.4)
             axptm.yaxis.set_major_locator(MultipleLocator(10))
             axptm.yaxis.set_minor_locator(MultipleLocator(1))
 
-            axrtm.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                             fontdict={'size': self.font_size + 2, 'weight': 'bold'})
-            axptm.set_ylabel('Phase (deg)',
-                             fontdict={'size': self.font_size + 2, 'weight': 'bold'})
-            axptm.set_xlabel('Period (s)',
-                             fontdict={'size': self.font_size + 2,
-                                       'weight': 'bold'})
+            axrtm.set_ylabel(
+                "App. Res. ($\Omega \cdot m$)",
+                fontdict={"size": self.font_size + 2, "weight": "bold"},
+            )
+            axptm.set_ylabel(
+                "Phase (deg)", fontdict={"size": self.font_size + 2, "weight": "bold"}
+            )
+            axptm.set_xlabel(
+                "Period (s)", fontdict={"size": self.font_size + 2, "weight": "bold"}
+            )
 
-            axrtm.yaxis.set_label_coords(-.08, .5)
-            axptm.yaxis.set_label_coords(-.08, .5)
-            plt.suptitle(
-                station,
-                fontsize=self.font_size + 2,
-                fontweight='bold')
+            axrtm.yaxis.set_label_coords(-0.08, 0.5)
+            axptm.yaxis.set_label_coords(-0.08, 0.5)
+            plt.suptitle(station, fontsize=self.font_size + 2, fontweight="bold")
             plt.show()
 
-        self.fig_list.append({'station': station, 'fig': fig, 'axrte': axrte,
-                              'axrtm': axrtm, 'axpte': axpte, 'axptm': axptm})
+        self.fig_list.append(
+            {
+                "station": station,
+                "fig": fig,
+                "axrte": axrte,
+                "axrtm": axrtm,
+                "axpte": axpte,
+                "axptm": axptm,
+            }
+        )
 
     def redraw_plot(self):
         """
@@ -5893,8 +6735,14 @@ class PlotAllResponses(object):
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_path, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_fig='y'):
+    def save_figure(
+        self,
+        save_path,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_fig="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -5946,11 +6794,12 @@ class PlotAllResponses(object):
             os.mkdir(save_path)
 
         for fdict in self.fig_list:
-            svfn = '{0}_responses.{1}'.format(fdict['station'], file_format)
-            fdict['fig'].savefig(os.path.join(save_path, svfn),
-                                 dpi=self.fig_dpi, orientation=orientation)
-        if close_fig == 'y':
-            plt.close(fdict['fig'])
+            svfn = "{0}_responses.{1}".format(fdict["station"], file_format)
+            fdict["fig"].savefig(
+                os.path.join(save_path, svfn), dpi=self.fig_dpi, orientation=orientation
+            )
+        if close_fig == "y":
+            plt.close(fdict["fig"])
 
     def update_plot(self):
         """
@@ -5978,11 +6827,12 @@ class PlotAllResponses(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots all the responses for all iterations in a given folder")
+        return "Plots all the responses for all iterations in a given folder"
 
-#==============================================================================
+
+# ==============================================================================
 # plot model
-#==============================================================================
+# ==============================================================================
 
 
 class PlotModel(object):
@@ -6113,8 +6963,21 @@ class PlotModel(object):
     =================== ======================================================
     """
 
-    def __init__(self, meshx, meshy, resmodel, rp_list, plotx, ploty,
-                 offset_list, iter_fn, idict, rows, cols, **kwargs):
+    def __init__(
+        self,
+        meshx,
+        meshy,
+        resmodel,
+        rp_list,
+        plotx,
+        ploty,
+        offset_list,
+        iter_fn,
+        idict,
+        rows,
+        cols,
+        **kwargs
+    ):
 
         self.meshx = meshx
         self.meshy = meshy
@@ -6128,63 +6991,62 @@ class PlotModel(object):
         self.row = rows
         self.cols = cols
 
-        self.yscale = kwargs.pop('yscale', 'km')
+        self.yscale = kwargs.pop("yscale", "km")
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
-        self.fig_aspect = kwargs.pop('fig_aspect', 1)
-        self.title = kwargs.pop('title', 'on')
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
+        self.fig_aspect = kwargs.pop("fig_aspect", 1)
+        self.title = kwargs.pop("title", "on")
 
-        self.xpad = kwargs.pop('xpad', 1.0)
-        self.ypad = kwargs.pop('ypad', 1.0)
+        self.xpad = kwargs.pop("xpad", 1.0)
+        self.ypad = kwargs.pop("ypad", 1.0)
 
-        self.ms = kwargs.pop('ms', 10)
+        self.ms = kwargs.pop("ms", 10)
 
-        self.station_id = kwargs.pop('station_id', None)
-        self.station_font_size = kwargs.pop('station_font_size', 8)
-        self.station_font_pad = kwargs.pop('station_font_pad', 1.0)
-        self.station_font_weight = kwargs.pop('station_font_weight', 'bold')
-        self.station_font_rotation = kwargs.pop('station_font_rotation', 60)
-        self.station_font_color = kwargs.pop('station_font_color', 'k')
-        self.station_marker = kwargs.pop('station_marker',
-                                         r"$\blacktriangledown$")
-        self.station_color = kwargs.pop('station_color', 'k')
+        self.station_id = kwargs.pop("station_id", None)
+        self.station_font_size = kwargs.pop("station_font_size", 8)
+        self.station_font_pad = kwargs.pop("station_font_pad", 1.0)
+        self.station_font_weight = kwargs.pop("station_font_weight", "bold")
+        self.station_font_rotation = kwargs.pop("station_font_rotation", 60)
+        self.station_font_color = kwargs.pop("station_font_color", "k")
+        self.station_marker = kwargs.pop("station_marker", r"$\blacktriangledown$")
+        self.station_color = kwargs.pop("station_color", "k")
 
-        self.ylimits = kwargs.pop('ylimits', None)
-        self.xlimits = kwargs.pop('xlimits', None)
+        self.ylimits = kwargs.pop("ylimits", None)
+        self.xlimits = kwargs.pop("xlimits", None)
 
-        self.xminorticks = kwargs.pop('xminorticks', 5)
-        self.yminorticks = kwargs.pop('yminorticks', 1)
+        self.xminorticks = kwargs.pop("xminorticks", 5)
+        self.yminorticks = kwargs.pop("yminorticks", 1)
 
-        self.climits = kwargs.pop('climits', (0, 4))
-        self.cmap = kwargs.pop('cmap', 'jet_r')
-        self.font_size = kwargs.pop('font_size', 8)
+        self.climits = kwargs.pop("climits", (0, 4))
+        self.cmap = kwargs.pop("cmap", "jet_r")
+        self.font_size = kwargs.pop("font_size", 8)
 
-        self.femesh = kwargs.pop('femesh', 'off')
-        self.femesh_triangles = kwargs.pop('femesh_triangles', 'off')
-        self.femesh_lw = kwargs.pop('femesh_lw', .4)
-        self.femesh_color = kwargs.pop('femesh_color', 'k')
-        self.meshnum = kwargs.pop('meshnum', 'off')
-        self.meshnum_font_size = kwargs.pop('meshnum_font_size', 3)
+        self.femesh = kwargs.pop("femesh", "off")
+        self.femesh_triangles = kwargs.pop("femesh_triangles", "off")
+        self.femesh_lw = kwargs.pop("femesh_lw", 0.4)
+        self.femesh_color = kwargs.pop("femesh_color", "k")
+        self.meshnum = kwargs.pop("meshnum", "off")
+        self.meshnum_font_size = kwargs.pop("meshnum_font_size", 3)
 
-        self.regmesh = kwargs.pop('regmesh', 'off')
-        self.regmesh_lw = kwargs.pop('regmesh_lw', .4)
-        self.regmesh_color = kwargs.pop('regmesh_color', 'b')
-        self.blocknum = kwargs.pop('blocknum', 'off')
-        self.block_font_size = kwargs.pop('block_font_size', 3)
-        self.grid = kwargs.pop('grid', None)
+        self.regmesh = kwargs.pop("regmesh", "off")
+        self.regmesh_lw = kwargs.pop("regmesh_lw", 0.4)
+        self.regmesh_color = kwargs.pop("regmesh_color", "b")
+        self.blocknum = kwargs.pop("blocknum", "off")
+        self.block_font_size = kwargs.pop("block_font_size", 3)
+        self.grid = kwargs.pop("grid", None)
 
-        self.cb_shrink = kwargs.pop('cb_shrink', .8)
-        self.cb_pad = kwargs.pop('cb_pad', .01)
+        self.cb_shrink = kwargs.pop("cb_shrink", 0.8)
+        self.cb_pad = kwargs.pop("cb_pad", 0.01)
 
-        self.subplot_right = .99
-        self.subplot_left = .085
-        self.subplot_top = .92
-        self.subplot_bottom = .1
+        self.subplot_right = 0.99
+        self.subplot_left = 0.085
+        self.subplot_top = 0.92
+        self.subplot_bottom = 0.1
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -6203,28 +7065,30 @@ class PlotModel(object):
         """
 
         # set the scale of the plot
-        if self.yscale == 'km':
-            dfactor = 1000.
+        if self.yscale == "km":
+            dfactor = 1000.0
             pfactor = 1.0
-        elif self.yscale == 'm':
-            dfactor = 1.
-            pfactor = 1000.
+        elif self.yscale == "m":
+            dfactor = 1.0
+            pfactor = 1000.0
         else:
-            dfactor = 1000.
+            dfactor = 1000.0
             pfactor = 1.0
 
         # set some figure properties to use the maiximum space
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
 
         # station font dictionary
-        fdict = {'size': self.station_font_size,
-                 'weight': self.station_font_weight,
-                 'rotation': self.station_font_rotation,
-                 'color': self.station_font_color}
+        fdict = {
+            "size": self.station_font_size,
+            "weight": self.station_font_weight,
+            "rotation": self.station_font_rotation,
+            "color": self.station_font_color,
+        }
 
         # plot the model as a mesh
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -6235,26 +7099,34 @@ class PlotModel(object):
 
         # plot the model as a pcolormesh so the extents are constrained to
         # the model coordinates
-        ax.pcolormesh(self.meshx / dfactor,
-                      self.meshy / dfactor,
-                      self.resmodel,
-                      cmap=self.cmap,
-                      vmin=self.climits[0],
-                      vmax=self.climits[1])
+        ax.pcolormesh(
+            self.meshx / dfactor,
+            self.meshy / dfactor,
+            self.resmodel,
+            cmap=self.cmap,
+            vmin=self.climits[0],
+            vmax=self.climits[1],
+        )
 
         # make a colorbar for the resistivity
         cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
-        cb = mcb.ColorbarBase(cbx[0],
-                              cmap=self.cmap,
-                              norm=Normalize(vmin=self.climits[0],
-                                             vmax=self.climits[1]))
+        cb = mcb.ColorbarBase(
+            cbx[0],
+            cmap=self.cmap,
+            norm=Normalize(vmin=self.climits[0], vmax=self.climits[1]),
+        )
 
-        cb.set_label('Resistivity ($\Omega \cdot$m)',
-                     fontdict={'size': self.font_size + 1, 'weight': 'bold'})
+        cb.set_label(
+            "Resistivity ($\Omega \cdot$m)",
+            fontdict={"size": self.font_size + 1, "weight": "bold"},
+        )
         cb.set_ticks(np.arange(int(self.climits[0]), int(self.climits[1]) + 1))
-        cb.set_ticklabels(['10$^{0}$'.format('{' + str(nn) + '}') for nn in
-                           np.arange(int(self.climits[0]),
-                                     int(self.climits[1]) + 1)])
+        cb.set_ticklabels(
+            [
+                "10$^{0}$".format("{" + str(nn) + "}")
+                for nn in np.arange(int(self.climits[0]), int(self.climits[1]) + 1)
+            ]
+        )
 
         # set the offsets of the stations and plot the stations
         # need to figure out a way to set the marker at the surface in all
@@ -6264,43 +7136,53 @@ class PlotModel(object):
             # plots a V for the station cause when you use scatter the spacing
             # is variable if you change the limits of the y axis, this way it
             # always plots at the surface.
-            ax.text(rpdict['offset'] / dfactor,
-                    self.ploty.min(),
-                    self.station_marker,
-                    horizontalalignment='center',
-                    verticalalignment='baseline',
-                    fontdict={'size': self.ms, 'color': self.station_color})
+            ax.text(
+                rpdict["offset"] / dfactor,
+                self.ploty.min(),
+                self.station_marker,
+                horizontalalignment="center",
+                verticalalignment="baseline",
+                fontdict={"size": self.ms, "color": self.station_color},
+            )
 
             # put station id onto station marker
             # if there is a station id index
             if self.station_id is not None:
-                ax.text(rpdict['offset'] / dfactor,
-                        -self.station_font_pad * pfactor,
-                        rpdict['station'][
-                    self.station_id[0]:self.station_id[1]],
-                    horizontalalignment='center',
-                    verticalalignment='baseline',
-                    fontdict=fdict)
+                ax.text(
+                    rpdict["offset"] / dfactor,
+                    -self.station_font_pad * pfactor,
+                    rpdict["station"][self.station_id[0] : self.station_id[1]],
+                    horizontalalignment="center",
+                    verticalalignment="baseline",
+                    fontdict=fdict,
+                )
             # otherwise put on the full station name found form data file
             else:
-                ax.text(rpdict['offset'] / dfactor,
-                        -self.station_font_pad * pfactor,
-                        rpdict['station'],
-                        horizontalalignment='center',
-                        verticalalignment='baseline',
-                        fontdict=fdict)
+                ax.text(
+                    rpdict["offset"] / dfactor,
+                    -self.station_font_pad * pfactor,
+                    rpdict["station"],
+                    horizontalalignment="center",
+                    verticalalignment="baseline",
+                    fontdict=fdict,
+                )
 
         # set the initial limits of the plot to be square about the profile
         # line
         if self.ylimits is None:
-            ax.set_ylim(abs(max(self.offset_list) - min(self.offset_list)) / dfactor,
-                        -self.ypad * pfactor)
+            ax.set_ylim(
+                abs(max(self.offset_list) - min(self.offset_list)) / dfactor,
+                -self.ypad * pfactor,
+            )
         else:
-            ax.set_ylim(self.ylimits[1] * pfactor,
-                        (self.ylimits[0] - self.ypad) * pfactor)
+            ax.set_ylim(
+                self.ylimits[1] * pfactor, (self.ylimits[0] - self.ypad) * pfactor
+            )
         if self.xlimits is None:
-            ax.set_xlim(min(self.offset_list) / dfactor - (self.xpad * pfactor),
-                        (max(self.offset_list) / dfactor + (self.xpad * pfactor)))
+            ax.set_xlim(
+                min(self.offset_list) / dfactor - (self.xpad * pfactor),
+                (max(self.offset_list) / dfactor + (self.xpad * pfactor)),
+            )
         else:
             ax.set_xlim(self.xlimits[0] * pfactor, self.xlimits[1] * pfactor)
 
@@ -6309,42 +7191,52 @@ class PlotModel(object):
         ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks * pfactor))
 
         # set axes labels
-        ax.set_xlabel('Horizontal Distance ({0})'.format(self.yscale),
-                      fontdict={'size': self.font_size + 2, 'weight': 'bold'})
-        ax.set_ylabel('Depth ({0})'.format(self.yscale),
-                      fontdict={'size': self.font_size + 2, 'weight': 'bold'})
+        ax.set_xlabel(
+            "Horizontal Distance ({0})".format(self.yscale),
+            fontdict={"size": self.font_size + 2, "weight": "bold"},
+        )
+        ax.set_ylabel(
+            "Depth ({0})".format(self.yscale),
+            fontdict={"size": self.font_size + 2, "weight": "bold"},
+        )
 
         # put a grid on if one is desired
         if self.grid is not None:
-            ax.grid(alpha=.3, which=self.grid, lw=.35)
+            ax.grid(alpha=0.3, which=self.grid, lw=0.35)
 
         # set title as rms and roughness
         if isinstance(self.title, str):
-            if self.title == 'on':
-                titlestr = os.path.join(os.path.basename(
-                                        os.path.dirname(self.iter_fn)),
-                                        os.path.basename(self.iter_fn))
-                ax.set_title(titlestr +
-                             ': RMS {0:.2f}, Roughness={1:.0f}'.format(
-                                 float(self.idict['misfit value']),
-                                 float(self.idict['roughness value'])),
-                             fontdict={'size': self.font_size + 1,
-                                       'weight': 'bold'})
+            if self.title == "on":
+                titlestr = os.path.join(
+                    os.path.basename(os.path.dirname(self.iter_fn)),
+                    os.path.basename(self.iter_fn),
+                )
+                ax.set_title(
+                    titlestr
+                    + ": RMS {0:.2f}, Roughness={1:.0f}".format(
+                        float(self.idict["misfit value"]),
+                        float(self.idict["roughness value"]),
+                    ),
+                    fontdict={"size": self.font_size + 1, "weight": "bold"},
+                )
             else:
-                ax.set_title(self.title + '; RMS {0:.2f}, Roughness={1:.0f}'.format(
-                    float(self.idict['misfit value']),
-                    float(self.idict['roughness value'])),
-                    fontdict={'size': self.font_size + 1,
-                              'weight': 'bold'})
+                ax.set_title(
+                    self.title
+                    + "; RMS {0:.2f}, Roughness={1:.0f}".format(
+                        float(self.idict["misfit value"]),
+                        float(self.idict["roughness value"]),
+                    ),
+                    fontdict={"size": self.font_size + 1, "weight": "bold"},
+                )
         else:
-            print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
-                float(self.idict['misfit value']),
-                float(self.idict['roughness value']))
+            print "RMS {0:.2f}, Roughness={1:.0f}".format(
+                float(self.idict["misfit value"]), float(self.idict["roughness value"])
+            )
 
         # plot forward model mesh
         # making an extended list seperated by None's speeds up the plotting
         # by as much as 99 percent, handy
-        if self.femesh == 'on':
+        if self.femesh == "on":
             row_line_xlist = []
             row_line_ylist = []
             for xx in self.plotx / dfactor:
@@ -6354,27 +7246,22 @@ class PlotModel(object):
                 row_line_ylist.append(None)
 
             # plot column lines (variables are a little bit of a misnomer)
-            ax.plot(row_line_xlist,
-                    row_line_ylist,
-                    color='k',
-                    lw=.5)
+            ax.plot(row_line_xlist, row_line_ylist, color="k", lw=0.5)
 
             col_line_xlist = []
             col_line_ylist = []
             for yy in self.ploty / dfactor:
-                col_line_xlist.extend([self.plotx[0] / dfactor,
-                                       self.plotx[-1] / dfactor])
+                col_line_xlist.extend(
+                    [self.plotx[0] / dfactor, self.plotx[-1] / dfactor]
+                )
                 col_line_xlist.append(None)
                 col_line_ylist.extend([yy, yy])
                 col_line_ylist.append(None)
 
             # plot row lines (variables are a little bit of a misnomer)
-            ax.plot(col_line_xlist,
-                    col_line_ylist,
-                    color='k',
-                    lw=.5)
+            ax.plot(col_line_xlist, col_line_ylist, color="k", lw=0.5)
 
-        if self.femesh_triangles == 'on':
+        if self.femesh_triangles == "on":
             row_line_xlist = []
             row_line_ylist = []
             for xx in self.plotx / dfactor:
@@ -6384,25 +7271,20 @@ class PlotModel(object):
                 row_line_ylist.append(None)
 
             # plot columns
-            ax.plot(row_line_xlist,
-                    row_line_ylist,
-                    color='k',
-                    lw=.5)
+            ax.plot(row_line_xlist, row_line_ylist, color="k", lw=0.5)
 
             col_line_xlist = []
             col_line_ylist = []
             for yy in self.ploty / dfactor:
-                col_line_xlist.extend([self.plotx[0] / dfactor,
-                                       self.plotx[-1] / dfactor])
+                col_line_xlist.extend(
+                    [self.plotx[0] / dfactor, self.plotx[-1] / dfactor]
+                )
                 col_line_xlist.append(None)
                 col_line_ylist.extend([yy, yy])
                 col_line_ylist.append(None)
 
             # plot rows
-            ax.plot(col_line_xlist,
-                    col_line_ylist,
-                    color='k',
-                    lw=.5)
+            ax.plot(col_line_xlist, col_line_ylist, color="k", lw=0.5)
 
             diag_line_xlist = []
             diag_line_ylist = []
@@ -6419,13 +7301,10 @@ class PlotModel(object):
                     diag_line_ylist.append(None)
 
             # plot diagonal lines.
-            ax.plot(diag_line_xlist,
-                    diag_line_ylist,
-                    color='k',
-                    lw=.5)
+            ax.plot(diag_line_xlist, diag_line_ylist, color="k", lw=0.5)
 
         # plot the regularization mesh
-        if self.regmesh == 'on':
+        if self.regmesh == "on":
             linelist = []
             for ii in range(len(self.rows)):
                 # get the number of layers to combine
@@ -6437,11 +7316,12 @@ class PlotModel(object):
 
                 # make the list of amalgamated columns an array for ease
                 lc = np.array(self.cols[ii])
-                yline = ax.plot([self.plotx[0] / dfactor, self.plotx[-1] / dfactor],
-                                [self.ploty[-ny1] / dfactor,
-                                 self.ploty[-ny1] / dfactor],
-                                color='b',
-                                lw=.5)
+                yline = ax.plot(
+                    [self.plotx[0] / dfactor, self.plotx[-1] / dfactor],
+                    [self.ploty[-ny1] / dfactor, self.ploty[-ny1] / dfactor],
+                    color="b",
+                    lw=0.5,
+                )
 
                 linelist.append(yline)
 
@@ -6455,27 +7335,31 @@ class PlotModel(object):
                     try:
                         if ny1 == 0:
                             ny1 = 1
-                        xline = ax.plot([self.plotx[nx1] / dfactor,
-                                         self.plotx[nx1] / dfactor],
-                                        [self.ploty[-ny1] / dfactor,
-                                         self.ploty[-ny2] / dfactor],
-                                        color='b',
-                                        lw=.5)
+                        xline = ax.plot(
+                            [self.plotx[nx1] / dfactor, self.plotx[nx1] / dfactor],
+                            [self.ploty[-ny1] / dfactor, self.ploty[-ny2] / dfactor],
+                            color="b",
+                            lw=0.5,
+                        )
                         linelist.append(xline)
                     except IndexError:
                         pass
 
         # plot the mesh block numbers
-        if self.meshnum == 'on':
+        if self.meshnum == "on":
             kk = 1
             for yy in self.ploty[::-1] / dfactor:
                 for xx in self.plotx / dfactor:
-                    ax.text(xx, yy, '{0}'.format(kk),
-                            fontdict={'size': self.meshnum_font_size})
+                    ax.text(
+                        xx,
+                        yy,
+                        "{0}".format(kk),
+                        fontdict={"size": self.meshnum_font_size},
+                    )
                     kk += 1
 
         # plot regularization block numbers
-        if self.blocknum == 'on':
+        if self.blocknum == "on":
             kk = 1
             for ii in range(len(self.rows)):
                 # get the number of layers to combine
@@ -6496,15 +7380,19 @@ class PlotModel(object):
                         if ny1 == 0:
                             ny1 = 1
                         # get center points of the blocks
-                        yy = self.ploty[-ny1] - (self.ploty[-ny1] -
-                                                 self.ploty[-ny2]) / 2
-                        xx = self.plotx[nx1] -\
-                            (self.plotx[nx1] - self.plotx[nx2]) / 2
+                        yy = (
+                            self.ploty[-ny1] - (self.ploty[-ny1] - self.ploty[-ny2]) / 2
+                        )
+                        xx = self.plotx[nx1] - (self.plotx[nx1] - self.plotx[nx2]) / 2
                         # put the number
-                        ax.text(xx / dfactor, yy / dfactor, '{0}'.format(kk),
-                                fontdict={'size': self.block_font_size},
-                                horizontalalignment='center',
-                                verticalalignment='center')
+                        ax.text(
+                            xx / dfactor,
+                            yy / dfactor,
+                            "{0}".format(kk),
+                            fontdict={"size": self.block_font_size},
+                            horizontalalignment="center",
+                            verticalalignment="center",
+                        )
                         kk += 1
                     except IndexError:
                         pass
@@ -6535,8 +7423,14 @@ class PlotModel(object):
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_fig='y'):
+    def save_figure(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_fig="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -6586,16 +7480,25 @@ class PlotModel(object):
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
         else:
-            save_fn = os.path.join(save_fn, 'OccamModel.' +
-                                   file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(save_fn, "OccamModel." + file_format)
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-        if close_fig == 'y':
+        if close_fig == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -6603,7 +7506,7 @@ class PlotModel(object):
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print "Saved figure to: " + self.fig_fn
 
     def update_plot(self):
         """
@@ -6631,13 +7534,13 @@ class PlotModel(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots the resistivity found by Occam2D")
+        return "Plots the resistivity found by Occam2D"
 
 
-#==============================================================================
+# ==============================================================================
 # plot L2 curve of iteration vs rms
-#==============================================================================
-class PlotL2():
+# ==============================================================================
+class PlotL2:
     """
     plot L2 curve of iteration vs rms and roughness
 
@@ -6695,31 +7598,31 @@ class PlotL2():
     def __init__(self, rms_arr, **kwargs):
         self.rms_arr = rms_arr
 
-        self.subplot_right = .98
-        self.subplot_left = .085
-        self.subplot_top = .91
-        self.subplot_bottom = .1
+        self.subplot_right = 0.98
+        self.subplot_left = 0.085
+        self.subplot_top = 0.91
+        self.subplot_bottom = 0.1
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
-        self.font_size = kwargs.pop('font_size', 8)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
+        self.font_size = kwargs.pop("font_size", 8)
 
-        self.rms_lw = kwargs.pop('rms_lw', 1)
-        self.rms_marker = kwargs.pop('rms_marker', 'd')
-        self.rms_color = kwargs.pop('rms_color', 'k')
-        self.rms_marker_size = kwargs.pop('rms_marker_size', 5)
-        self.rms_median_color = kwargs.pop('rms_median_color', 'red')
-        self.rms_mean_color = kwargs.pop('rms_mean_color', 'orange')
+        self.rms_lw = kwargs.pop("rms_lw", 1)
+        self.rms_marker = kwargs.pop("rms_marker", "d")
+        self.rms_color = kwargs.pop("rms_color", "k")
+        self.rms_marker_size = kwargs.pop("rms_marker_size", 5)
+        self.rms_median_color = kwargs.pop("rms_median_color", "red")
+        self.rms_mean_color = kwargs.pop("rms_mean_color", "orange")
 
-        self.rough_lw = kwargs.pop('rough_lw', .75)
-        self.rough_marker = kwargs.pop('rough_marker', 'o')
-        self.rough_color = kwargs.pop('rough_color', 'b')
-        self.rough_marker_size = kwargs.pop('rough_marker_size', 7)
-        self.rough_font_size = kwargs.pop('rough_font_size', 6)
+        self.rough_lw = kwargs.pop("rough_lw", 0.75)
+        self.rough_marker = kwargs.pop("rough_marker", "o")
+        self.rough_color = kwargs.pop("rough_color", "b")
+        self.rough_marker_size = kwargs.pop("rough_marker_size", 7)
+        self.rough_font_size = kwargs.pop("rough_font_size", 6)
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -6728,15 +7631,15 @@ class PlotL2():
         """
 
         nr = self.rms_arr.shape[0]
-        med_rms = np.median(self.rms_arr['rms'])
-        mean_rms = np.mean(self.rms_arr['rms'])
+        med_rms = np.median(self.rms_arr["rms"])
+        mean_rms = np.mean(self.rms_arr["rms"])
 
         # set the dimesions of the figure
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
 
         # make figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -6746,48 +7649,51 @@ class PlotL2():
         self.ax1 = self.fig.add_subplot(1, 1, 1)
 
         # plot the rms vs iteration
-        l1, = self.ax1.plot(self.rms_arr['iteration'],
-                            self.rms_arr['rms'],
-                            '-k',
-                            lw=1,
-                            marker='d',
-                            ms=5)
+        (l1,) = self.ax1.plot(
+            self.rms_arr["iteration"], self.rms_arr["rms"], "-k", lw=1, marker="d", ms=5
+        )
 
         # plot the median of the RMS
-        m1, = self.ax1.plot(self.rms_arr['iteration'],
-                            np.repeat(med_rms, nr),
-                            ls='--',
-                            color=self.rms_median_color,
-                            lw=self.rms_lw * .75)
+        (m1,) = self.ax1.plot(
+            self.rms_arr["iteration"],
+            np.repeat(med_rms, nr),
+            ls="--",
+            color=self.rms_median_color,
+            lw=self.rms_lw * 0.75,
+        )
 
         # plot the mean of the RMS
-        m2, = self.ax1.plot(self.rms_arr['iteration'],
-                            np.repeat(mean_rms, nr),
-                            ls='--',
-                            color=self.rms_mean_color,
-                            lw=self.rms_lw * .75)
+        (m2,) = self.ax1.plot(
+            self.rms_arr["iteration"],
+            np.repeat(mean_rms, nr),
+            ls="--",
+            color=self.rms_mean_color,
+            lw=self.rms_lw * 0.75,
+        )
 
         # make subplot for RMS vs Roughness Plot
         self.ax2 = self.ax1.twiny()
 
-        self.ax2.set_xlim(self.rms_arr['roughness'][1],
-                          self.rms_arr['roughness'][-1])
+        self.ax2.set_xlim(self.rms_arr["roughness"][1], self.rms_arr["roughness"][-1])
 
-        self.ax1.set_ylim(0, self.rms_arr['rms'][1])
+        self.ax1.set_ylim(0, self.rms_arr["rms"][1])
 
         # plot the rms vs roughness
-        l2, = self.ax2.plot(self.rms_arr['roughness'],
-                            self.rms_arr['rms'],
-                            ls='--',
-                            color=self.rough_color,
-                            lw=self.rough_lw,
-                            marker=self.rough_marker,
-                            ms=self.rough_marker_size,
-                            mfc='white')
+        (l2,) = self.ax2.plot(
+            self.rms_arr["roughness"],
+            self.rms_arr["rms"],
+            ls="--",
+            color=self.rough_color,
+            lw=self.rough_lw,
+            marker=self.rough_marker,
+            ms=self.rough_marker_size,
+            mfc="white",
+        )
 
         # plot the iteration number inside the roughness marker
-        for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'],
-                                  self.rms_arr['roughness']):
+        for rms, ii, rough in zip(
+            self.rms_arr["rms"], self.rms_arr["iteration"], self.rms_arr["roughness"]
+        ):
             # need this because if the roughness is larger than this number
             # matplotlib puts the text out of bounds and a draw_text_image
             # error is raised and file cannot be saved, also the other
@@ -6795,40 +7701,53 @@ class PlotL2():
             if rough > 1e8:
                 pass
             else:
-                self.ax2.text(rough,
-                              rms,
-                              '{0}'.format(ii),
-                              horizontalalignment='center',
-                              verticalalignment='center',
-                              fontdict={'size': self.rough_font_size,
-                                        'weight': 'bold',
-                                        'color': self.rough_color})
+                self.ax2.text(
+                    rough,
+                    rms,
+                    "{0}".format(ii),
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    fontdict={
+                        "size": self.rough_font_size,
+                        "weight": "bold",
+                        "color": self.rough_color,
+                    },
+                )
 
         # make a legend
-        self.ax1.legend([l1, l2, m1, m2],
-                        ['RMS', 'Roughness',
-                         'Median_RMS={0:.2f}'.format(med_rms),
-                         'Mean_RMS={0:.2f}'.format(mean_rms)],
-                        ncol=1,
-                        loc='upper right',
-                        columnspacing=.25,
-                        markerscale=.75,
-                        handletextpad=.15)
+        self.ax1.legend(
+            [l1, l2, m1, m2],
+            [
+                "RMS",
+                "Roughness",
+                "Median_RMS={0:.2f}".format(med_rms),
+                "Mean_RMS={0:.2f}".format(mean_rms),
+            ],
+            ncol=1,
+            loc="upper right",
+            columnspacing=0.25,
+            markerscale=0.75,
+            handletextpad=0.15,
+        )
 
         # set the axis properties for RMS vs iteration
-        self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
+        self.ax1.yaxis.set_minor_locator(MultipleLocator(0.1))
         self.ax1.xaxis.set_minor_locator(MultipleLocator(1))
-        self.ax1.set_ylabel('RMS',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold'})
-        self.ax1.set_xlabel('Iteration',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold'})
-        self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
-        self.ax2.set_xlabel('Roughness',
-                            fontdict={'size': self.font_size + 2,
-                                      'weight': 'bold',
-                                      'color': self.rough_color})
+        self.ax1.set_ylabel(
+            "RMS", fontdict={"size": self.font_size + 2, "weight": "bold"}
+        )
+        self.ax1.set_xlabel(
+            "Iteration", fontdict={"size": self.font_size + 2, "weight": "bold"}
+        )
+        self.ax1.grid(alpha=0.25, which="both", lw=self.rough_lw)
+        self.ax2.set_xlabel(
+            "Roughness",
+            fontdict={
+                "size": self.font_size + 2,
+                "weight": "bold",
+                "color": self.rough_color,
+            },
+        )
 
         for t2 in self.ax2.get_xticklabels():
             t2.set_color(self.rough_color)
@@ -6855,8 +7774,14 @@ class PlotL2():
         plt.close(self.fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
-                    fig_dpi=None, close_fig='y'):
+    def save_figure(
+        self,
+        save_fn,
+        file_format="pdf",
+        orientation="portrait",
+        fig_dpi=None,
+        close_fig="y",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -6906,16 +7831,25 @@ class PlotL2():
 
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
         else:
-            save_fn = os.path.join(save_fn, '_L2.' +
-                                   file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            save_fn = os.path.join(save_fn, "_L2." + file_format)
+            self.fig.savefig(
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
+                bbox_inches="tight",
+            )
 
-        if close_fig == 'y':
+        if close_fig == "y":
             plt.clf()
             plt.close(self.fig)
 
@@ -6923,7 +7857,7 @@ class PlotL2():
             pass
 
         self.fig_fn = save_fn
-        print 'Saved figure to: ' + self.fig_fn
+        print "Saved figure to: " + self.fig_fn
 
     def update_plot(self):
         """
@@ -6951,14 +7885,15 @@ class PlotL2():
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots RMS vs Iteration computed by Occam2D")
+        return "Plots RMS vs Iteration computed by Occam2D"
 
-#==============================================================================
+
+# ==============================================================================
 # plot depth models for each station
-#==============================================================================
+# ==============================================================================
 
 
-class PlotDepthSlice():
+class PlotDepthSlice:
     """
     plot depth slice under each station
 
@@ -7028,40 +7963,40 @@ class PlotDepthSlice():
     =================== ======================================================
     """
 
-    def __init__(self, resmodel, offset_list, station_list, plotx, ploty,
-                 **kwargs):
+    def __init__(self, resmodel, offset_list, station_list, plotx, ploty, **kwargs):
         self.resmodel = resmodel
         self.offset_list = offset_list
         self.station_list = station_list
         self.plotx = plotx
         self.ploty = ploty
 
-        self.plot_type = kwargs.pop('plot_type', '1')
-        self.plot_num = kwargs.pop('plot_num', 'all')
-        self.yscale = kwargs.pop('yscale', 'linear')
-        self.yunits = kwargs.pop('yunits', 'm')
-        self.x_padding = kwargs.pop('x_padding', 7)
-        self.depth_range = kwargs.pop('depth_range', (self.ploty.min(),
-                                                      self.ploty.max()))
+        self.plot_type = kwargs.pop("plot_type", "1")
+        self.plot_num = kwargs.pop("plot_num", "all")
+        self.yscale = kwargs.pop("yscale", "linear")
+        self.yunits = kwargs.pop("yunits", "m")
+        self.x_padding = kwargs.pop("x_padding", 7)
+        self.depth_range = kwargs.pop(
+            "depth_range", (self.ploty.min(), self.ploty.max())
+        )
 
-        self.subplot_right = .99
-        self.subplot_left = .085
-        self.subplot_top = .92
-        self.subplot_bottom = .1
-        self.subplot_wspace = .1
+        self.subplot_right = 0.99
+        self.subplot_left = 0.085
+        self.subplot_top = 0.92
+        self.subplot_bottom = 0.1
+        self.subplot_wspace = 0.1
 
-        self.font_size = kwargs.pop('font_size', 8)
+        self.font_size = kwargs.pop("font_size", 8)
 
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop("fig_num", 1)
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
         self.fig_list = []
 
-        self.lw = kwargs.pop('lw', 1)
-        self.line_color = kwargs.pop('line_color', 'b')
+        self.lw = kwargs.pop("lw", 1)
+        self.line_color = kwargs.pop("line_color", "b")
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        if self.plot_yn == "y":
             self.plot()
 
     def plot(self):
@@ -7070,14 +8005,14 @@ class PlotDepthSlice():
         """
 
         # set the scale of the plot
-        if self.yunits == 'km':
-            dfactor = 1000.
+        if self.yunits == "km":
+            dfactor = 1000.0
 
-        elif self.yunits == 'm':
-            dfactor = 1.
+        elif self.yunits == "m":
+            dfactor = 1.0
 
         # get stations to plot
-        if self.plot_type == '1':
+        if self.plot_type == "1":
             pstation_list = np.arange(len(self.station_list))
         else:
             pstation_list = []
@@ -7090,30 +8025,34 @@ class PlotDepthSlice():
 
         # get the average x-spacing within the station region, occam2d pads by
         # 7 cells by default
-        self.xavg = np.floor(np.mean([abs(self.plotx[ii] - self.plotx[ii + 1])
-                                      for ii in range(self.x_padding,
-                                                      len(self.plotx) - self.x_padding)]))
+        self.xavg = np.floor(
+            np.mean(
+                [
+                    abs(self.plotx[ii] - self.plotx[ii + 1])
+                    for ii in range(self.x_padding, len(self.plotx) - self.x_padding)
+                ]
+            )
+        )
 
         # get the station indices to extract from the model
         self.slist = []
         for ff in pstation_list:
             offset = self.offset_list[ff]
             for ii, xx in enumerate(self.plotx):
-                if offset >= xx - self.xavg / 2. and offset <= xx + self.xavg / 2.:
+                if offset >= xx - self.xavg / 2.0 and offset <= xx + self.xavg / 2.0:
                     self.slist.append(ii)
 
         # set some figure properties to use the maiximum space
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
-        plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
+        plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
 
-        if self.plot_num == 'all':
+        if self.plot_num == "all":
 
-            fig = plt.figure(self.fig_num, self.fig_size,
-                             dpi=self.fig_dpi)
+            fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
 
             ns = len(self.slist)
@@ -7122,45 +8061,53 @@ class PlotDepthSlice():
                 ax = fig.add_subplot(1, ns, ii + 1)
 
                 # plot resistivity vs depth
-                if self.yscale == 'linear':
-                    p1, = ax.semilogx(10**self.resmodel[:, ss],
-                                      self.ploty / dfactor,
-                                      ls='steps-',
-                                      lw=self.lw,
-                                      color=self.line_color)
+                if self.yscale == "linear":
+                    (p1,) = ax.semilogx(
+                        10 ** self.resmodel[:, ss],
+                        self.ploty / dfactor,
+                        ls="steps-",
+                        lw=self.lw,
+                        color=self.line_color,
+                    )
 
-                elif self.yscale == 'log':
+                elif self.yscale == "log":
                     if self.ploty[-1] == 0.0:
                         self.ploty[-1] = 1
-                    p1, = ax.loglog(10**self.resmodel[:, ss],
-                                    self.ploty / dfactor,
-                                    ls='steps-',
-                                    lw=self.lw,
-                                    color=self.line_color)
+                    (p1,) = ax.loglog(
+                        10 ** self.resmodel[:, ss],
+                        self.ploty / dfactor,
+                        ls="steps-",
+                        lw=self.lw,
+                        color=self.line_color,
+                    )
 
-                ax.set_ylim(self.depth_range[1] / dfactor,
-                            self.depth_range[0] / dfactor)
+                ax.set_ylim(
+                    self.depth_range[1] / dfactor, self.depth_range[0] / dfactor
+                )
 
-                ax.set_title(self.station_list[pstation_list[ii]],
-                             fontdict={'size': self.font_size + 2,
-                                       'weight': 'bold'})
+                ax.set_title(
+                    self.station_list[pstation_list[ii]],
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
                 if ii == 0:
-                    ax.set_ylabel('Depth ({0})'.format(self.yunits),
-                                  fontdict={'size': self.font_size + 2,
-                                            'weight': 'bold'})
+                    ax.set_ylabel(
+                        "Depth ({0})".format(self.yunits),
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
                 else:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
-                if ii == np.round(ns / 2.):
-                    ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
-                                  fontdict={'size': self.font_size + 2,
-                                            'weight': 'bold'})
-                ax.grid(True, alpha=.3, which='both')
-                ax.set_xlim(10**self.resmodel.min(), 10**self.resmodel.max())
+                if ii == np.round(ns / 2.0):
+                    ax.set_xlabel(
+                        "Resistivity ($\Omega \cdot$m)",
+                        fontdict={"size": self.font_size + 2, "weight": "bold"},
+                    )
+                ax.grid(True, alpha=0.3, which="both")
+                ax.set_xlim(10 ** self.resmodel.min(), 10 ** self.resmodel.max())
 
             plt.show()
-            self.fig_list.append({'fig': fig,
-                                  'ax': ax,
-                                  'station': self.station_list[pstation_list[ii]]})
+            self.fig_list.append(
+                {"fig": fig, "ax": ax, "station": self.station_list[pstation_list[ii]]}
+            )
         else:
             # plot the depth section for each station
             for ii, ss in enumerate(self.slist):
@@ -7169,39 +8116,51 @@ class PlotDepthSlice():
                 ax = fig.add_subplot(1, 1, 1)
 
                 # plot resistivity vs depth
-                if self.yscale == 'linear':
-                    p1, = ax.semilogx(10**self.resmodel[:, ss],
-                                      self.ploty / dfactor,
-                                      ls='steps-',
-                                      lw=self.lw,
-                                      color=self.line_color)
-                elif self.yscale == 'log':
+                if self.yscale == "linear":
+                    (p1,) = ax.semilogx(
+                        10 ** self.resmodel[:, ss],
+                        self.ploty / dfactor,
+                        ls="steps-",
+                        lw=self.lw,
+                        color=self.line_color,
+                    )
+                elif self.yscale == "log":
                     if self.ploty[-1] == 0.0:
                         self.ploty[-1] = 1
-                    p1, = ax.loglog(10**self.resmodel[:, ss],
-                                    self.ploty / dfactor,
-                                    ls='steps-',
-                                    lw=self.lw,
-                                    color=self.line_color)
+                    (p1,) = ax.loglog(
+                        10 ** self.resmodel[:, ss],
+                        self.ploty / dfactor,
+                        ls="steps-",
+                        lw=self.lw,
+                        color=self.line_color,
+                    )
 
-                ax.set_ylim(self.depth_range[1] / dfactor,
-                            self.depth_range[0] / dfactor)
+                ax.set_ylim(
+                    self.depth_range[1] / dfactor, self.depth_range[0] / dfactor
+                )
 
-                ax.set_title(self.station_list[pstation_list[ii]],
-                             fontdict={'size': self.font_size + 2,
-                                       'weight': 'bold'})
-                ax.set_ylabel('Depth ({0})'.format(self.yunits),
-                              fontdict={'size': self.font_size + 2,
-                                        'weight': 'bold'})
-                ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
-                              fontdict={'size': self.font_size + 2,
-                                        'weight': 'bold'})
-                ax.grid(True, alpha=.3, which='both')
+                ax.set_title(
+                    self.station_list[pstation_list[ii]],
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
+                ax.set_ylabel(
+                    "Depth ({0})".format(self.yunits),
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
+                ax.set_xlabel(
+                    "Resistivity ($\Omega \cdot$m)",
+                    fontdict={"size": self.font_size + 2, "weight": "bold"},
+                )
+                ax.grid(True, alpha=0.3, which="both")
 
                 plt.show()
-                self.fig_list.append({'fig': fig,
-                                      'ax': ax,
-                                      'station': self.station_list[pstation_list[ii]]})
+                self.fig_list.append(
+                    {
+                        "fig": fig,
+                        "ax": ax,
+                        "station": self.station_list[pstation_list[ii]],
+                    }
+                )
 
     def redraw_plot(self):
         """
@@ -7220,11 +8179,17 @@ class PlotDepthSlice():
             >>> p1.redraw_plot()
         """
 
-        plt.close('all')
+        plt.close("all")
         self.plot()
 
-    def save_figure(self, save_path, fig_fmt='pdf', fig_dpi=None,
-                    close_fig='y', orientation='portrait'):
+    def save_figure(
+        self,
+        save_path,
+        fig_fmt="pdf",
+        fig_dpi=None,
+        close_fig="y",
+        orientation="portrait",
+    ):
         """
         save_plot will save the figure to save_fn.
 
@@ -7273,11 +8238,10 @@ class PlotDepthSlice():
             os.mkdir(save_path)
 
         for fdict in self.fig_list:
-            svfn = '{0}_DepthSlice.{1}'.format(fdict['station'], fig_fmt)
-            fdict['fig'].savefig(os.path.join(save_path, svfn),
-                                 dpi=self.fig_dpi)
-            if close_fig == 'y':
-                plt.close(fdict['fig'])
+            svfn = "{0}_DepthSlice.{1}".format(fdict["station"], fig_fmt)
+            fdict["fig"].savefig(os.path.join(save_path, svfn), dpi=self.fig_dpi)
+            if close_fig == "y":
+                plt.close(fdict["fig"])
 
             print "saved figure to {0}".format(os.path.join(save_path, svfn))
 
@@ -7307,4 +8271,4 @@ class PlotDepthSlice():
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots the resistivity found by Occam2D")
+        return "Plots the resistivity found by Occam2D"

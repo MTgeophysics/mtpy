@@ -59,10 +59,12 @@ import ipdb
 def main():
 
     if len(sys.argv) < 4:
-        print('\nNeed at least 2 arguments: <EDI file> '\
-            '<output directory> <#iterations> \n\n'\
-            'Optional arguments: \n [sigma scaling]\n'\
-            ' [batch process flag "-b"] \n\n')
+        print(
+            "\nNeed at least 2 arguments: <EDI file> "
+            "<output directory> <#iterations> \n\n"
+            "Optional arguments: \n [sigma scaling]\n"
+            ' [batch process flag "-b"] \n\n'
+        )
         return
 
     try:
@@ -70,7 +72,7 @@ def main():
         fn_in = op.join(op.abspath(os.curdir), fn_in)
         edi_object = MTedi.Edi(filename=fn_in)
     except:
-        print('\n\tERROR - File is not a valid EDI file: {0}\n'.format(fn_in))
+        print("\n\tERROR - File is not a valid EDI file: {0}\n".format(fn_in))
         sys.exit()
 
     try:
@@ -79,8 +81,10 @@ def main():
         if not op.isdir(outdir):
             os.makedirs(outdir)
     except:
-        print('\n\tERROR - Output directory does not exist and cannot be'\
-            ' generated: {0}\n'.format(outdir))
+        print(
+            "\n\tERROR - Output directory does not exist and cannot be"
+            " generated: {0}\n".format(outdir)
+        )
         sys.exit()
 
     try:
@@ -88,7 +92,9 @@ def main():
         if n_iterations < 0:
             raise
     except:
-        print('\n\t ERROR - number of iterations must be a positive integer (incl. 0)\n')
+        print(
+            "\n\t ERROR - number of iterations must be a positive integer (incl. 0)\n"
+        )
         sys.exit()
 
     fn_out = None
@@ -100,56 +106,62 @@ def main():
                 raise
         except:
             sigma_scaling = 1
-            print('\nWARNING - Invalid sigma scale ..using 1 instead\n')
+            print("\nWARNING - Invalid sigma scale ..using 1 instead\n")
 
     try:
         print()
-        print('Generating PTcross input data file')
+        print("Generating PTcross input data file")
         if n_iterations != 0:
-            print('(evaluating {0} realisations of Z)'.format(n_iterations))
-        print('\t...')
+            print("(evaluating {0} realisations of Z)".format(n_iterations))
+        print("\t...")
 
         generate_ptcrossdata_file(
-            edi_object,
-            n_iterations,
-            sigma_scaling,
-            outdir,
-            fn_out)
+            edi_object, n_iterations, sigma_scaling, outdir, fn_out
+        )
     except:
         raise
-        print('\n\tERROR - could not generate PT Cross Data file - check EDI file!\n')
+        print("\n\tERROR - could not generate PT Cross Data file - check EDI file!\n")
 
 
 def generate_ptcrossdata_file(
-        edi_object, n_iterations, sigma_scaling, outdir, outfn=None):
+    edi_object, n_iterations, sigma_scaling, outdir, outfn=None
+):
 
     freqs = edi_object.freq
 
     station = edi_object.station
     # no spaces in file names:
     if len(station.split()) > 1:
-        station = '_'.join(station.split())
+        station = "_".join(station.split())
 
     # Define and check validity of output file
     if outfn is None:
-        fn = '{0}_PTcrossdata'.format(station)
+        fn = "{0}_PTcrossdata".format(station)
         outfn = op.join(outdir, fn)
 
     outfn = op.realpath(outfn)
 
     try:
-        Fout = open(outfn, 'w')
+        Fout = open(outfn, "w")
     except:
-        print('\n\tERROR - Cannot generate output file!\n')
+        print("\n\tERROR - Cannot generate output file!\n")
         raise
     if n_iterations == 0:
-        Fout.write('# {0}   {1:+010.6f}   {2:+011.6f}\n'.format(station,
-                                                                edi_object.lat, edi_object.lon))
+        Fout.write(
+            "# {0}   {1:+010.6f}   {2:+011.6f}\n".format(
+                station, edi_object.lat, edi_object.lon
+            )
+        )
     else:
-        Fout.write('# {0}   {1:+010.6f}   {2:+011.6f} \t\t statistical evaluation of {3} realisations\n'.format(
-            station, edi_object.lat, edi_object.lon, abs(int(n_iterations))))
-    headerstring = '# lat \t\t lon \t\t freq \t\t Pmin  sigma \t Pmax  sigma \t alpha  '\
-        'sigma \t beta  sigma \t ellipticity  \n'
+        Fout.write(
+            "# {0}   {1:+010.6f}   {2:+011.6f} \t\t statistical evaluation of {3} realisations\n".format(
+                station, edi_object.lat, edi_object.lon, abs(int(n_iterations))
+            )
+        )
+    headerstring = (
+        "# lat \t\t lon \t\t freq \t\t Pmin  sigma \t Pmax  sigma \t alpha  "
+        "sigma \t beta  sigma \t ellipticity  \n"
+    )
     Fout.write(headerstring)
 
     if n_iterations == 0:
@@ -164,24 +176,36 @@ def generate_ptcrossdata_file(
         phimax = pt.phimax[0]
         phimaxerr = pt.phimax[1]
 
-        #e = pt.ellipticity
-        #e = (pmax-pmin)/(pmax+pmin)
+        # e = pt.ellipticity
+        # e = (pmax-pmin)/(pmax+pmin)
 
         for i, freq in enumerate(edi_object.freq):
             try:
                 e = (phimax[i] - phimin[i]) / (phimax[i] + phimin[i])
-                vals = '{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
-                    '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n'.format(
-                        freq, phimin[i], phiminerr[i], phimax[
-                            i], phimaxerr[i], a[0][i] % 90, a[1][i] % 90,
-                        b[0][i], b[1][i], e, edi_object.lat, edi_object.lon)
+                vals = (
+                    "{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}"
+                    "\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n".format(
+                        freq,
+                        phimin[i],
+                        phiminerr[i],
+                        phimax[i],
+                        phimaxerr[i],
+                        a[0][i] % 90,
+                        a[1][i] % 90,
+                        b[0][i],
+                        b[1][i],
+                        e,
+                        edi_object.lat,
+                        edi_object.lon,
+                    )
+                )
                 Fout.write(vals)
             except:
                 raise
                 continue
 
         Fout.close()
-        print('\n\t Done - Written data to file: {0}\n'.format(outfn))
+        print("\n\t Done - Written data to file: {0}\n".format(outfn))
         return
 
     # for all values n_iterations !=0 loop over abs(n_iterations) #
@@ -209,7 +233,7 @@ def generate_ptcrossdata_file(
                     raise
             except:
                 # correct by nearest neighbour value
-                print(f, '\ncorrecting error value', a, '...', end=' ')
+                print(f, "\ncorrecting error value", a, "...", end=" ")
                 rel_errs = []
                 if idx + 1 != len(freqs):
                     next_z = z[idx + 1][i / 2, i % 2]
@@ -229,9 +253,11 @@ def generate_ptcrossdata_file(
         # calculate random numbers:
         lo_rands = []
         for k in np.arange(4):
-            randnums = sigma_scaling * \
-                cur_z_err[k / 2, k %
-                          2] * np.random.randn(2 * abs(int(n_iterations)))
+            randnums = (
+                sigma_scaling
+                * cur_z_err[k / 2, k % 2]
+                * np.random.randn(2 * abs(int(n_iterations)))
+            )
             lo_rands.append(randnums)
 
         # Loop over |n_iterations| random realisations:
@@ -241,24 +267,35 @@ def generate_ptcrossdata_file(
 
         lo_alphas = []
         lo_betas = []
-        #lo_ellipticities = []
+        # lo_ellipticities = []
 
         # print 'running {0} iterations for {1} Hz'.format(n_iterations,f)
         for run in np.arange(abs(int(n_iterations))):
             tmp_z = np.array(
-                [[complex(np.real(cur_z[0, 0]) + lo_rands[0][run],
-                          np.imag(cur_z[0, 0]) + lo_rands[0][-run - 1]),
-                  complex(np.real(cur_z[0, 1]) + lo_rands[1][run],
-                          np.imag(cur_z[0, 1]) + lo_rands[1][-run - 1])],
-                 [complex(np.real(cur_z[1, 0]) + lo_rands[2][run],
-                          np.imag(cur_z[1, 0]) + lo_rands[2][-run - 1]),
-                  complex(np.real(cur_z[1, 1]) + lo_rands[3][run],
-                          np.imag(cur_z[1, 1]) + lo_rands[3][-run - 1])
-                  ]]
+                [
+                    [
+                        complex(
+                            np.real(cur_z[0, 0]) + lo_rands[0][run],
+                            np.imag(cur_z[0, 0]) + lo_rands[0][-run - 1],
+                        ),
+                        complex(
+                            np.real(cur_z[0, 1]) + lo_rands[1][run],
+                            np.imag(cur_z[0, 1]) + lo_rands[1][-run - 1],
+                        ),
+                    ],
+                    [
+                        complex(
+                            np.real(cur_z[1, 0]) + lo_rands[2][run],
+                            np.imag(cur_z[1, 0]) + lo_rands[2][-run - 1],
+                        ),
+                        complex(
+                            np.real(cur_z[1, 1]) + lo_rands[3][run],
+                            np.imag(cur_z[1, 1]) + lo_rands[3][-run - 1],
+                        ),
+                    ],
+                ]
             )
-            tmp_pt = MTpt.PhaseTensor(
-                z_array=tmp_z.reshape(
-                    1, 2, 2), freq=f.reshape(1))
+            tmp_pt = MTpt.PhaseTensor(z_array=tmp_z.reshape(1, 2, 2), freq=f.reshape(1))
             pi1 = tmp_pt._pi1()[0]
             pi2 = tmp_pt._pi2()[0]
             lo_pmin.append(pi2 - pi1)
@@ -280,7 +317,7 @@ def generate_ptcrossdata_file(
         lo_alphas = np.array(lo_alphas)
         a = np.median(lo_alphas)
         aerr = np.median(np.abs(lo_alphas - a))
-        #aerr = np.std(lo_alphas)
+        # aerr = np.std(lo_alphas)
         # if idx%10==0:
         #     print '\t',a,aerr
         #     print
@@ -297,23 +334,37 @@ def generate_ptcrossdata_file(
         phimax = np.mean([np.degrees(np.arctan(i)) for i in lo_pmax])
         phimaxerr = np.std([np.degrees(np.arctan(i)) for i in lo_pmax])
 
-        #e = np.mean(lo_ellipticities)
-        #eerr = np.std(lo_ellipticities)
+        # e = np.mean(lo_ellipticities)
+        # eerr = np.std(lo_ellipticities)
         e = (phimax - phimin) / (phimax + phimin)
 
         try:
-            vals = '{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
-                '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n'.format(
-                    f, phimin, phiminerr, phimax, phimaxerr, a, aerr, b, berr, e, edi_object.lat, edi_object.lon)
+            vals = (
+                "{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}"
+                "\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n".format(
+                    f,
+                    phimin,
+                    phiminerr,
+                    phimax,
+                    phimaxerr,
+                    a,
+                    aerr,
+                    b,
+                    berr,
+                    e,
+                    edi_object.lat,
+                    edi_object.lon,
+                )
+            )
             Fout.write(vals)
         except:
             raise
             continue
 
     Fout.close()
-    print('\n\t Done - Written data to file: {0}\n'.format(outfn))
+    print("\n\t Done - Written data to file: {0}\n".format(outfn))
     return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

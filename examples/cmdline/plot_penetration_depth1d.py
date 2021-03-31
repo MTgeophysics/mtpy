@@ -42,24 +42,35 @@ def main():
 
     return
 
+
 ###############################################################################
 # Following is code for click making inputs to the plot depth
 ###############################################################################
 
+
 @click.command()
-@click.option('-i','--input',type=str,default='examples/data/edi_files',help='directory or edsi data files')
-@click.option('-o','--output_file',type=str,default='temp',help='save jpg image file')
+@click.option(
+    "-i",
+    "--input",
+    type=str,
+    default="examples/data/edi_files",
+    help="directory or edsi data files",
+)
+@click.option(
+    "-o", "--output_file", type=str, default="temp", help="save jpg image file"
+)
 def plot_penetration_depth(input, output_file):
     if os.path.isfile(input):
-        pd1d.plot_edi_file(input,savefile=output_file)
+        pd1d.plot_edi_file(input, savefile=output_file)
     elif os.path.isdir(input):
-        pd1d.plot_edi_dir(input, rholist=['det'])
+        pd1d.plot_edi_dir(input, rholist=["det"])
     else:
         pass
+
 
 # =============================================
 # Section for quick test of this script
 # ---------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     plot_penetration_depth()

@@ -56,7 +56,8 @@ def main():
 
     if len(arguments) < 3:
         sys.exit(
-            'ERROR - provide at least 2 file names: <modeldata file>  <responses file>')
+            "ERROR - provide at least 2 file names: <modeldata file>  <responses file>"
+        )
 
     try:
         WSMTmodel = os.path.abspath(os.path.realpath(arguments[1]))
@@ -65,17 +66,17 @@ def main():
         try:
             VTKresist = os.path.abspath(os.path.realpath(arguments[3]))
         except:
-            VTKresist = os.path.abspath(os.path.realpath('VTKResistivityGrid'))
+            VTKresist = os.path.abspath(os.path.realpath("VTKResistivityGrid"))
 
         try:
             VTKstations = os.path.abspath(os.path.realpath(arguments[4]))
         except:
-            VTKstations = os.path.abspath(os.path.realpath('VTKStationGrid'))
+            VTKstations = os.path.abspath(os.path.realpath("VTKStationGrid"))
 
     except:
-        sys.exit('ERROR - could not find file(s)')
+        sys.exit("ERROR - could not find file(s)")
 
-    f = open(WSMTmodel, 'r')
+    f = open(WSMTmodel, "r")
 
     # skip first line in file
     f.readline()
@@ -86,8 +87,8 @@ def main():
     for n in range(3):
         dims.append(int(modeldata_firstline[n]))
     size = dims[0] * dims[1] * dims[2]
-    print 'Mesh     ', dims
-    print 'Data     ', size
+    print "Mesh     ", dims
+    print "Data     ", size
 
     # read N,E,D spacing
     #  (depends on line break only after final value)
@@ -143,16 +144,16 @@ def main():
             for idx_S in range(dims[0]):
                 mtNS[(dims[0] - 1) - idx_S, idx_E, idx_D] = mt[n]
                 n += 1
-    gridToVTK(VTKresist, N, E, D, cellData={'resistivity': mtNS})
+    gridToVTK(VTKresist, N, E, D, cellData={"resistivity": mtNS})
 
     f.close()
 
-    f = open(WSMTresp, 'r')
+    f = open(WSMTresp, "r")
 
     # get station count
     respdata_firstline = f.readline().split()
     nstations = int(respdata_firstline[0])
-    print 'Stations ', nstations
+    print "Stations ", nstations
 
     # read North locations
     f.readline()  # skip line
@@ -187,10 +188,10 @@ def main():
 
     pointsToVTK(VTKstations, N, E, D, data={"dummyvalue": dummy})
 
-    print 'Created Resistivity File: {0}.vtr '.format(VTKresist)
-    print 'Created Station File: {0}.vtu '.format(VTKstations)
+    print "Created Resistivity File: {0}.vtr ".format(VTKresist)
+    print "Created Station File: {0}.vtu ".format(VTKstations)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     main()

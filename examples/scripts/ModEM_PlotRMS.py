@@ -14,21 +14,15 @@ Revision History:
         - Allow specifying period in seconds
         - Add plotting on geotiff background
 """
-import os
-
-os.chdir(r'C:\mtpywin\mtpy')
-
-import os.path as op
-
-import numpy as np
+from tests import MODEM_DIR, TEST_TEMP_DIR
 
 from mtpy.modeling.modem import PlotRMSMaps
 
-wd = r'C:\mtpywin\mtpy\examples\model_files\ModEM_2'
-savepath = r'C:\tmp'
 
-filestem = op.join(wd,'Modular_MPI_NLCG_004')
-resid_fn=op.join(wd,filestem + '.res')
+resid_fn = MODEM_DIR.joinpath("Modular_MPI_NLCG_004.res")
+save_path = TEST_TEMP_DIR.joinpath("ModEM")
+if not save_path.exists():
+    save_path.mkdir()
 
 # Parameter explanations (TODO: add to user guide):
 
@@ -46,14 +40,15 @@ resid_fn=op.join(wd,filestem + '.res')
 # priority over 'period_index'. The closest available period will be
 # selected, so the plotted period may be different from what was chosen.
 
-probj = PlotRMSMaps(resid_fn,
-                    # period=100.,  # can specify a period in seconds
-                    period_index='all',
-                    rms_cmap='jet', # choose matplotlib colormap or set to None
-                    rms_max=5,
-                    plot_elements='both',
-                    # bimg=r'C:\path\to\a\background_image.tif'
-                    )
+probj = PlotRMSMaps(
+    resid_fn,
+    # period=100.,  # can specify a period in seconds
+    period_index="all",
+    rms_cmap="jet",  # choose matplotlib colormap or set to None
+    rms_max=5,
+    plot_elements="both",
+    # bimg=r'C:\path\to\a\background_image.tif'
+)
 
 # Can write RMS map as shapefiles by calling 'create_shapefiles'. This
 # will use the period, plot_elements etc. attributes provided to the
@@ -68,8 +63,8 @@ probj = PlotRMSMaps(resid_fn,
 # subdirectories labelled with component and period within this
 # directory.
 
-probj.create_shapefiles(dst_epsg=4326, save_path=savepath)
+probj.create_shapefiles(dst_epsg=4326, save_path=save_path)
 
-probj.save_figure(save_path=savepath,
-                  save_fig_dpi = 400 # change to your preferred figure resolution
-                  )
+probj.save_figure(
+    save_path=save_path, save_fig_dpi=400  # change to your preferred figure resolution
+)

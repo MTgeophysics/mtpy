@@ -13,7 +13,7 @@ reading configuration files, ....
 
 """
 
-#=================================================================
+# =================================================================
 
 
 import numpy as np
@@ -29,18 +29,26 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.configfile as MTcf
 
-#=================================================================
+# =================================================================
 
-#define uncertainty for differences between time steps
+# define uncertainty for differences between time steps
 epsilon = 1e-9
 
-#=================================================================
+# =================================================================
 
-lo_headerelements = ['station', 'channel','samplingrate','t_min',
-                    'nsamples','unit','lat','lon','elev']
+lo_headerelements = [
+    "station",
+    "channel",
+    "samplingrate",
+    "t_min",
+    "nsamples",
+    "unit",
+    "lat",
+    "lon",
+    "elev",
+]
 
-#=================================================================
-
+# =================================================================
 
 
 def read_surface_ascii(ascii_fn):
@@ -63,7 +71,7 @@ def read_surface_ascii(ascii_fn):
     |
     S
     """
-    with open(ascii_fn, 'r') as dfid:
+    with open(ascii_fn, "r") as dfid:
         d_dict = {}
         skiprows = 0
         for ii in range(6):
@@ -79,13 +87,15 @@ def read_surface_ascii(ascii_fn):
                 skiprows += 1
     # not required dfid.close()
 
-    x0 = d_dict['xllcorner']
-    y0 = d_dict['yllcorner']
-    nx = int(d_dict['ncols'])
-    ny = int(d_dict['nrows'])
-    cs = d_dict['cellsize']
+    x0 = d_dict["xllcorner"]
+    y0 = d_dict["yllcorner"]
+    nx = int(d_dict["ncols"])
+    ny = int(d_dict["nrows"])
+    cs = d_dict["cellsize"]
 
-    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]  # ::-1 reverse an axis to put the southern line first
+    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[
+        ::-1
+    ]  # ::-1 reverse an axis to put the southern line first
 
     # create lat and lon arrays from the dem file
     lon = np.arange(x0, x0 + cs * (nx), cs)
@@ -93,7 +103,7 @@ def read_surface_ascii(ascii_fn):
     lon = np.linspace(x0, x0 + cs * (nx - 1), nx)
     lat = np.linspace(y0, y0 + cs * (ny - 1), ny)
 
-    return lon, lat, elevation   # this appears correct
+    return lon, lat, elevation  # this appears correct
 
 
 def read1columntext(textfile):
@@ -102,7 +112,8 @@ def read1columntext(textfile):
     """
     return [ff.strip() for ff in open(textfile).readlines()]
 
-def read_stationdatafile(textfile,read_duplicates = True):
+
+def read_stationdatafile(textfile, read_duplicates=True):
     """
     read a space delimited file containing station info of any sort - 
     3 columns: station x, y, ... - to a dictionary - station:[x,y,...]
@@ -120,7 +131,7 @@ def read_stationdatafile(textfile,read_duplicates = True):
     stationdict = {}
     for line in open(textfile).readlines():
         line = line.split()
-        for l in range(1,len(line)):
+        for l in range(1, len(line)):
             try:
                 line[l] = float(line[l])
             except:
@@ -136,8 +147,8 @@ def read_stationdatafile(textfile,read_duplicates = True):
                     value = line[1:]
                 stationdict[sname].append(value)
 
-            
     return stationdict
+
 
 def make_unique_filename(infn):
 
@@ -146,31 +157,34 @@ def make_unique_filename(infn):
     i = 1
     while op.isfile(outfn):
         filebase = op.splitext(fn)[0]
-        outfn = filebase +'_%i'%i+ op.splitext(fn)[1]
+        outfn = filebase + "_%i" % i + op.splitext(fn)[1]
         i += 1
 
     return outfn
 
-def make_unique_folder(wd,basename = 'run'):
+
+def make_unique_folder(wd, basename="run"):
     """
     make a folder that doesn't exist already.
-    """        
-  
+    """
+
     # define savepath. need to choose a name that doesn't already exist
     i = 1
     svpath_str = basename
-    svpath = svpath_str+'_%02i'%i
-    while os.path.exists(op.join(wd,svpath)):
+    svpath = svpath_str + "_%02i" % i
+    while os.path.exists(op.join(wd, svpath)):
         i += 1
-        svpath = svpath_str+'_%02i'%i
-        
-    savepath = op.join(wd,svpath)
+        svpath = svpath_str + "_%02i" % i
+
+    savepath = op.join(wd, svpath)
     os.mkdir(savepath)
-        
+
     return savepath
 
 
-def validate_save_file(savepath=None,savefile=None,basename=None,prioritise_savefile = False):
+def validate_save_file(
+    savepath=None, savefile=None, basename=None, prioritise_savefile=False
+):
     """
     Return savepath, savefile and basename, ensuring they are internally
     consistent and populating missing fields from the others or using defaults.
@@ -184,7 +198,7 @@ def validate_save_file(savepath=None,savefile=None,basename=None,prioritise_save
     :param basename: base file name to save to
     
     """
-    
+
     if prioritise_savefile:
         if savefile is not None:
             if os.path.exists(savefile):
@@ -192,8 +206,7 @@ def validate_save_file(savepath=None,savefile=None,basename=None,prioritise_save
                     savepath = None
                 else:
                     savepath, basename = None, None
-                    
-    
+
     # first, check if savepath is a valid directory
     if savepath is not None:
         if not os.path.isdir(savepath):
@@ -207,7 +220,7 @@ def validate_save_file(savepath=None,savefile=None,basename=None,prioritise_save
         if savefile is not None:
             basename = os.path.basename(savefile)
         else:
-            basename = 'default.dat'
+            basename = "default.dat"
 
     # third, if savepath is None, get it from savefile or set a default
     if savepath is None:
@@ -217,14 +230,14 @@ def validate_save_file(savepath=None,savefile=None,basename=None,prioritise_save
                 savepath = os.getcwd()
         else:
             savepath = os.getcwd()
-    
+
     # finally, make savefile so it is consistent with savepath and basename
-    savefile = os.path.join(savepath,basename)
-            
+    savefile = os.path.join(savepath, basename)
+
     return savepath, savefile, basename
-    
-            
-def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
+
+
+def sort_folder_list(wkdir, order_file, indices=[0, 9999], delimiter=""):
     """
     sort subfolders in wkdir according to order in order_file
     
@@ -240,17 +253,27 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
     order = read1columntext(order_file)
 
     plst = []
-    flst = [i for i in os.listdir(wkdir) if os.path.exists(os.path.join(wkdir,i))]
-#    print flst
+    flst = [i for i in os.listdir(wkdir) if os.path.exists(os.path.join(wkdir, i))]
+    #    print flst
     for o in order:
         for f in flst:
-            if str.lower(f.strip().split(delimiter)[0][indices[0]:indices[1]]) == str.lower(o)[indices[0]:indices[1]]:
-                plst.append(os.path.join(wkdir,f))
+            if (
+                str.lower(f.strip().split(delimiter)[0][indices[0] : indices[1]])
+                == str.lower(o)[indices[0] : indices[1]]
+            ):
+                plst.append(os.path.join(wkdir, f))
     return plst
 
 
-def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
-                 start_dict = {},split='_',extension='',folder=False):
+def get_pathlist(
+    masterdir,
+    search_stringlist=None,
+    search_stringfile=None,
+    start_dict={},
+    split="_",
+    extension="",
+    folder=False,
+):
     """
     get a list of files or folders by searching on a string contained in 
     search_stringlist or alternatively search_stringfile
@@ -273,21 +296,24 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
     
     
     """
-    
+
     if search_stringfile is not None:
         if (search_stringlist is None) or (len(search_stringlist)) == 0:
             search_stringlist = read1columntext(search_stringfile)
 
-    flist = [i for i in os.listdir(masterdir) if i[len(i)-len(extension):] == \
-             extension]
-    
+    flist = [
+        i for i in os.listdir(masterdir) if i[len(i) - len(extension) :] == extension
+    ]
+
     if folder:
-        flist = [op.join(masterdir,i) for i in flist if op.isdir(op.join(masterdir,i))]
+        flist = [
+            op.join(masterdir, i) for i in flist if op.isdir(op.join(masterdir, i))
+        ]
 
     for s in search_stringlist:
-        s = str.lower(s)#.split(split)[indices[0]:indices[1]]
+        s = str.lower(s)  # .split(split)[indices[0]:indices[1]]
         for d in flist:
-            d = str.lower(d)#.split(split)[indices[0]:indices[1]]
+            d = str.lower(d)  # .split(split)[indices[0]:indices[1]]
             append = False
             if s in os.path.basename(d):
                 append = True
@@ -297,12 +323,12 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
                     if ss in d:
                         append = True
             if append:
-                start_dict[s] = op.join(masterdir,d)
+                start_dict[s] = op.join(masterdir, d)
 
     return start_dict
-                
 
-def get_sampling_interval_fromdatafile(filename, length = 3600):
+
+def get_sampling_interval_fromdatafile(filename, length=3600):
     """ 
     Find sampling interval from data file.
 
@@ -317,12 +343,12 @@ def get_sampling_interval_fromdatafile(filename, length = 3600):
 
     fn = op.abspath(op.realpath(filename))
     dd = np.loadtxt(fn)
-    sampling_interval = length/float(len(dd))
+    sampling_interval = length / float(len(dd))
 
     return sampling_interval
 
 
-def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, outputdir = None):
+def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdir=None):
 
     """
     See 'EDL_make_dayfiles' for description and syntax.
@@ -338,24 +364,24 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
     Not working yet!!
 
     """
-    #print '\n\tnot working yet - code under development !!\n'
-    #return
+    # print '\n\tnot working yet - code under development !!\n'
+    # return
 
     try:
-        if 24%n_hours != 0:
+        if 24 % n_hours != 0:
             raise Exception("problem!!!")
     except:
-        sys.exit('ERROR - File block length must be on of: 1,2,3,4,6,8,12 \n')
-    
+        sys.exit("ERROR - File block length must be on of: 1,2,3,4,6,8,12 \n")
+
     n_hours = int(n_hours)
-    #list of starting hours for the data blocks:
-    lo_hours = [int(i) for i in np.arange(int(24/n_hours))*n_hours ]
+    # list of starting hours for the data blocks:
+    lo_hours = [int(i) for i in np.arange(int(24 / n_hours)) * n_hours]
     no_blocks = len(lo_hours)
-    
-    #build a list that contains the respective groups of starting hours belonging
+
+    # build a list that contains the respective groups of starting hours belonging
     # to the same block
     lo_blockhours = []
-    counter = 0 
+    counter = 0
     dummylist = []
     for i in range(24):
         dummylist.append(i)
@@ -363,53 +389,59 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
         if counter == n_hours:
             lo_blockhours.append(dummylist)
             dummylist = []
-            counter = 0 
+            counter = 0
 
-    # most of the following code is redundant/taken from the 
+    # most of the following code is redundant/taken from the
     # 'EDL_make_dayfiles' function
     # This can be cleaned up later
 
     try:
-        if type(inputdir)==str:
+        if type(inputdir) == str:
             raise Exception("problem!!!")
         lo_foldernames = [i for i in inputdir]
     except TypeError:
         lo_foldernames = [inputdir]
 
-    #typical suffixes for EDL output file names
-    components = ['ex', 'ey', 'bx', 'by', 'bz']
+    # typical suffixes for EDL output file names
+    components = ["ex", "ey", "bx", "by", "bz"]
 
     lo_allfiles = []
-    pattern = '*.[ebEB][xyzXYZ]'
+    pattern = "*.[ebEB][xyzXYZ]"
     if stationname is not None:
-        pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname.lower())
-    print('\nSearching for files with pattern: ',pattern)
+        pattern = "*{0}*.[ebEB][xyzXYZ]".format(stationname.lower())
+    print("\nSearching for files with pattern: ", pattern)
 
     for folder in lo_foldernames:
-        wd = op.abspath(op.realpath(folder)) 
+        wd = op.abspath(op.realpath(folder))
         if not op.isdir(wd):
-            #print 'Directory not existing: %s' % (wd)
+            # print 'Directory not existing: %s' % (wd)
             lo_foldernames.remove(wd)
-            continue    
+            continue
 
-        lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) 
-                        if fnmatch.fnmatch(i.lower(),pattern.lower()) is True]
-        lo_allfiles.extend(lo_dirfiles)   
+        lo_dirfiles = [
+            op.abspath(op.join(wd, i))
+            for i in os.listdir(wd)
+            if fnmatch.fnmatch(i.lower(), pattern.lower()) is True
+        ]
+        lo_allfiles.extend(lo_dirfiles)
 
-    #check, if list of files is empty
+    # check, if list of files is empty
     if len(lo_allfiles) == 0:
         if stationname is not None:
-            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain'\
-            ' files to combine for station {0}:\n {1}'.format(stationname, inputdir))
+            raise MTex.MTpyError_inputarguments(
+                "Directory(ies) do(es) not contain"
+                " files to combine for station {0}:\n {1}".format(stationname, inputdir)
+            )
 
-        raise MTex.MTpyError_inputarguments('Directory does not contain files'\
-                                            ' to combine:\n {0}'.format(inputdir))
+        raise MTex.MTpyError_inputarguments(
+            "Directory does not contain files" " to combine:\n {0}".format(inputdir)
+        )
 
-    #define subfolder for storing dayfiles
-    outpath = op.join(os.curdir,'{0}hourfiles'.format(int(n_hours)))    
+    # define subfolder for storing dayfiles
+    outpath = op.join(os.curdir, "{0}hourfiles".format(int(n_hours)))
     if outputdir is not None:
         try:
-            outpath = op.abspath(op.join(os.curdir,outputdir))
+            outpath = op.abspath(op.join(os.curdir, outputdir))
             if not op.exists(outpath):
                 try:
                     os.makedirs(outpath)
@@ -418,34 +450,37 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
             if not os.access(outpath, os.W_OK):
                 raise Exception("problem!!!")
         except:
-            print('Cannot generate writable output directory {0} - using'\
-                    ' generic location "dayfiles" instead'.format(outpath))
-            outpath = op.join(wd,'{0}hourfiles'.format(int(n_hours)))    
+            print(
+                "Cannot generate writable output directory {0} - using"
+                ' generic location "dayfiles" instead'.format(outpath)
+            )
+            outpath = op.join(wd, "{0}hourfiles".format(int(n_hours)))
             pass
 
-    #generate subfolder, if not existing
+    # generate subfolder, if not existing
     if not op.exists(outpath):
         try:
             os.makedirs(outpath)
         except:
-            MTex.MTpyError_inputarguments('Cannot generate output'\
-                                ' directory {0} '.format(outpath))
+            MTex.MTpyError_inputarguments(
+                "Cannot generate output" " directory {0} ".format(outpath)
+            )
 
-    #outer loop over all components
+    # outer loop over all components
     for comp in components:
 
-        #make list of files for the current component
-        lo_files = np.array([op.join(wd,i) for i in lo_allfiles 
-                            if (i.lower()[-2:] == comp)])
+        # make list of files for the current component
+        lo_files = np.array(
+            [op.join(wd, i) for i in lo_allfiles if (i.lower()[-2:] == comp)]
+        )
 
-        #make list of starting times for the respective files
-        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) 
-                                    for f in lo_files])
-        
-        #sort the files by their starting times
+        # make list of starting times for the respective files
+        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) for f in lo_files])
+
+        # sort the files by their starting times
         idx_chronologic = np.argsort(lo_starttimes)
-        
-        #obtain sorted lists of files and starting times
+
+        # obtain sorted lists of files and starting times
         lo_sorted_files = list(lo_files[idx_chronologic])
         lo_sorted_starttimes = list(lo_starttimes[idx_chronologic])
         idx = 0
@@ -460,170 +495,167 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
             else:
                 idx += 1
 
-
-        #set stationname, either from arguments or from filename
+        # set stationname, either from arguments or from filename
         if stationname is None:
             stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0]).upper()
 
-        #set counting variables - needed for handling of consecutive files
+        # set counting variables - needed for handling of consecutive files
 
-        #flags, checking, if data has to written to file
+        # flags, checking, if data has to written to file
         sameday = True
         sameblock = True
         fileopen = False
         complete = False
-        #numerical index of files for same combination of date and hour
+        # numerical index of files for same combination of date and hour
         fileindex = 0
-        #current file's daily block number 
-        blockindex = 0 
+        # current file's daily block number
+        blockindex = 0
 
-        #allocate a data array to fill
+        # allocate a data array to fill
         # this is more memory efficient than extending lists!!
-        #cater for potential rounding errors:
+        # cater for potential rounding errors:
         if sampling < 1:
-            max_n_data = 3600*int(n_hours) * (int(1./sampling)+1)
+            max_n_data = 3600 * int(n_hours) * (int(1.0 / sampling) + 1)
         else:
-            max_n_data = int(3600.*int(n_hours)/sampling) + 1
+            max_n_data = int(3600.0 * int(n_hours) / sampling) + 1
 
-        block_data = np.zeros(max_n_data,'int')
+        block_data = np.zeros(max_n_data, "int")
 
-
-        #loop over all (sorted) files for the current component
-        for idx_f,f in enumerate(lo_sorted_files):
+        # loop over all (sorted) files for the current component
+        for idx_f, f in enumerate(lo_sorted_files):
 
             try:
 
-                print('Reading file %s' %(f))
-                #starting time of current file
+                print("Reading file %s" % (f))
+                # starting time of current file
                 file_start_time = lo_sorted_starttimes[idx_f]
 
-                #get tuple with the starting time of the current file
+                # get tuple with the starting time of the current file
                 file_start = time.gmtime(file_start_time)
-            
-                #read in raw data
+
+                # read in raw data
                 data_in = []
                 Fin = open(f)
-                for line in Fin:#.readlines():
-                #    try:
+                for line in Fin:  # .readlines():
+                    #    try:
                     data_in.append(int(float(line.strip())))
-                 #   except:
-                  #      pass
+                #   except:
+                #      pass
                 data_in = np.array(data_in)
                 Fin.close()
-                #data_in = np.loadtxt(f)
+                # data_in = np.loadtxt(f)
             except:
-                print('WARNING - could not read file - skipping...')
+                print("WARNING - could not read file - skipping...")
                 continue
             no_samples = len(data_in)
 
-            #time axis of the file read in :
-            tmp_file_time_axis = np.arange(no_samples)*sampling+file_start_time
+            # time axis of the file read in :
+            tmp_file_time_axis = np.arange(no_samples) * sampling + file_start_time
 
-            #end: time of the last sample + 1x sampling-interval
-            file_end_time =  tmp_file_time_axis[-1] + sampling
-         
-            #set the current file's starting time as starting time for output file, 
-            #if no output file is open already
+            # end: time of the last sample + 1x sampling-interval
+            file_end_time = tmp_file_time_axis[-1] + sampling
 
-            
+            # set the current file's starting time as starting time for output file,
+            # if no output file is open already
+
             if fileopen is False:
-                #starttime of output file
-                outfile_starttime =  file_start_time
-                #output data sample index:                
+                # starttime of output file
+                outfile_starttime = file_start_time
+                # output data sample index:
                 arrayindex = 0
 
-                #if it's a single column of data
+                # if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    block_data[:len(data_in)] = data_in                    
-                    
-                #otherwise assuming that the first column is time, so just take the second one
+                    block_data[: len(data_in)] = data_in
+
+                # otherwise assuming that the first column is time, so just take the second one
                 else:
-                    block_data[:len(data_in)] = data_in[:,1]
-                
-                #jump with index to current point on time axis 
+                    block_data[: len(data_in)] = data_in[:, 1]
+
+                # jump with index to current point on time axis
                 arrayindex += len(data_in)
 
-                #current (virtual) end time of open file
+                # current (virtual) end time of open file
                 outfile_endtime = file_end_time
 
-                #find the date code of the outputfile
-                file_date = '{0}{1:02}{2:02}'.format(file_start[0],
-                                                 file_start[1], file_start[2])
-                
-                #...aaaand the hour code as well
+                # find the date code of the outputfile
+                file_date = "{0}{1:02}{2:02}".format(
+                    file_start[0], file_start[1], file_start[2]
+                )
+
+                # ...aaaand the hour code as well
                 data_hour = file_start[3]
 
-                #determine, which of the daily data blocks we are currently 
-                #processing/writing
-                blockindex = no_blocks-1
-                
+                # determine, which of the daily data blocks we are currently
+                # processing/writing
+                blockindex = no_blocks - 1
+
                 file_hour = lo_hours[-1]
-                for t in range(len(lo_hours)-1):
-                    if lo_hours[t+1]>data_hour:
+                for t in range(len(lo_hours) - 1):
+                    if lo_hours[t + 1] > data_hour:
                         blockindex = t
                         file_hour = lo_hours[blockindex]
                         break
 
+                # define output filename
+                new_fn = "{0}_{5}hours_{1}_{2:02d}_{3}.{4}".format(
+                    stationname, file_date, file_hour, fileindex, comp, n_hours
+                )
+                # absolute filename:
+                new_file = op.abspath(op.join(outpath, new_fn))
 
-                #define output filename
-                new_fn = '{0}_{5}hours_{1}_{2:02d}_{3}.{4}'.format(stationname,
-                                                 file_date, file_hour,fileindex, comp,n_hours)
-                #absolute filename:
-                new_file = op.abspath(op.join(outpath,new_fn))
-                
-                #open output file 
-                F = open(new_file,'w')
-                
-                #set flag for further loop steps
+                # open output file
+                F = open(new_file, "w")
+
+                # set flag for further loop steps
                 fileopen = True
 
-            
             else:
-                #check, if the new file ends earlier than data in buffer.
-                #if yes, just skip this file:
+                # check, if the new file ends earlier than data in buffer.
+                # if yes, just skip this file:
                 if file_end_time < outfile_endtime:
-                    continue 
+                    continue
 
-                #if current file starts earlier than the endtime of data in buffer, but extends the time span
-                #then delete ambiguous  parts of the buffer:
+                # if current file starts earlier than the endtime of data in buffer, but extends the time span
+                # then delete ambiguous  parts of the buffer:
                 elif (outfile_endtime - file_start_time) > epsilon:
 
-                    #find point on the outfile time axis for the beginning of current file:
-                    overlap_idx = arrayindex - int((outfile_endtime - file_start_time)/sampling)
+                    # find point on the outfile time axis for the beginning of current file:
+                    overlap_idx = arrayindex - int(
+                        (outfile_endtime - file_start_time) / sampling
+                    )
 
-                    #set the array index back to the appropriate value corresponding to the 
-                    #start of the new file
+                    # set the array index back to the appropriate value corresponding to the
+                    # start of the new file
                     arrayindex = overlap_idx
-                   
-  
-                #append current data                  
-                #if it's a single column of data
-                if np.size(data_in.shape) == 1:
-                    block_data[arrayindex:arrayindex+len(data_in)] = data_in                    
-                    #outfile_data.extend(data_in.tolist())
-                #otherwise assuming that the first column is time, so just take the second one
-                else:
-                    block_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]                    
-                    #outfile_data.extend(data_in[:,1].tolist())
 
-                #update position in time
+                # append current data
+                # if it's a single column of data
+                if np.size(data_in.shape) == 1:
+                    block_data[arrayindex : arrayindex + len(data_in)] = data_in
+                    # outfile_data.extend(data_in.tolist())
+                # otherwise assuming that the first column is time, so just take the second one
+                else:
+                    block_data[arrayindex : arrayindex + len(data_in)] = data_in[:, 1]
+                    # outfile_data.extend(data_in[:,1].tolist())
+
+                # update position in time
                 arrayindex += len(data_in)
 
-                #update (virtual) end of outfile data
-                outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
+                # update (virtual) end of outfile data
+                outfile_endtime = (arrayindex + 1) * sampling + outfile_starttime
 
-
-            #-----------
+            # -----------
             # current file has been read in, data in buffer have been updated
             # now check, if it has to be written to file....
 
-            #check, if there is a next file at all:
+            # check, if there is a next file at all:
             try:
                 next_file_start_time = lo_sorted_starttimes[idx_f + 1]
             except:
                 complete = True
 
-            #if there is a next file, 
+            # if there is a next file,
             # - check, if it's the same day
             # - check, if it' the same block
             # - check, if it continues at the end of the current one:
@@ -631,78 +663,83 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
             if complete is False:
                 next_file_start_time = lo_sorted_starttimes[idx_f + 1]
                 next_file_start = time.gmtime(next_file_start_time)
-                
+
                 nextfile_hour = next_file_start[3]
 
-                nextfile_blockindex  = no_blocks-1
-                for t in range(len(lo_hours)-1):
-                    if lo_hours[t+1]>nextfile_hour:
+                nextfile_blockindex = no_blocks - 1
+                for t in range(len(lo_hours) - 1):
+                    if lo_hours[t + 1] > nextfile_hour:
                         nextfile_blockindex = t
                         break
 
-
-                nextfile_day = '{0}{1:02}{2:02}'.format(next_file_start[0],
-                                                 next_file_start[1], next_file_start[2])
-                if  nextfile_day != file_date: 
+                nextfile_day = "{0}{1:02}{2:02}".format(
+                    next_file_start[0], next_file_start[1], next_file_start[2]
+                )
+                if nextfile_day != file_date:
                     complete = True
-                    sameday = False                    
-                if  nextfile_blockindex != blockindex:
+                    sameday = False
+                if nextfile_blockindex != blockindex:
                     complete = True
                     sameblock = False
 
             if complete is False:
-                if next_file_start_time - file_end_time > epsilon: 
+                if next_file_start_time - file_end_time > epsilon:
                     complete = True
                     sameblock = True
                     sameday = True
 
-         
-            #ipdb.set_trace()
+            # ipdb.set_trace()
 
-            #check, if the file has to be closed and written now
-            if complete is True :
+            # check, if the file has to be closed and written now
+            if complete is True:
 
-                #define header info
-                if outfile_starttime%1==0:
+                # define header info
+                if outfile_starttime % 1 == 0:
                     outfile_starttime = int(outfile_starttime)
 
-                    headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
-                                    stationname, comp.lower(), 1./sampling, 
-                                    outfile_starttime, arrayindex)
+                    headerline = "# {0} {1} {2:.1f} {3} {4} \n".format(
+                        stationname,
+                        comp.lower(),
+                        1.0 / sampling,
+                        outfile_starttime,
+                        arrayindex,
+                    )
                 else:
-                    headerline = '# {0} {1} {2:.1f} {3:f} {4} \n'.format(
-                                    stationname, comp.lower(), 1./sampling, 
-                                    outfile_starttime, arrayindex)
+                    headerline = "# {0} {1} {2:.1f} {3:f} {4} \n".format(
+                        stationname,
+                        comp.lower(),
+                        1.0 / sampling,
+                        outfile_starttime,
+                        arrayindex,
+                    )
 
                 F.write(headerline)
 
-                #outfile_array = np.zeros((len(outfile_timeaxis),2))
-                #outfile_array[:,0] = outfile_timeaxis
-                #outfile_array[:,1] = outfile_data
+                # outfile_array = np.zeros((len(outfile_timeaxis),2))
+                # outfile_array[:,0] = outfile_timeaxis
+                # outfile_array[:,1] = outfile_data
                 for i in range(arrayindex):
-                    F.write('{0}\n'.format(int(block_data[i])))
-                #outstring = '\n'.join(['{0:d}'.format(i) for i in day_data[:arrayindex]])
-                #F.write(outstring)
-                #np.savetxt(F,day_data[:arrayindex],fmt='%d')
-                #np.savetxt(F, np.array(outfile_data))
+                    F.write("{0}\n".format(int(block_data[i])))
+                # outstring = '\n'.join(['{0:d}'.format(i) for i in day_data[:arrayindex]])
+                # F.write(outstring)
+                # np.savetxt(F,day_data[:arrayindex],fmt='%d')
+                # np.savetxt(F, np.array(outfile_data))
                 arrayindex = 0
-                
+
                 F.close()
-                print('\t wrote file %s'%(new_file))
+                print("\t wrote file %s" % (new_file))
 
                 fileopen = False
                 complete = False
-                #blockindex = (blockindex+1)%no_blocks
-    
-                if sameday is True and sameblock is True : 
-                    fileindex +=1        
+                # blockindex = (blockindex+1)%no_blocks
+
+                if sameday is True and sameblock is True:
+                    fileindex += 1
                 else:
                     fileindex = 0
 
- 
 
-
-def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None):
+def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
     """
 
     Concatenate ascii time series to dayfiles (calendar day, UTC reference).
@@ -730,46 +767,52 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
     """
     try:
-        if type(inputdir)==str:
+        if type(inputdir) == str:
             raise Exception("problem!!!")
         lo_foldernames = [i for i in inputdir]
     except TypeError:
         lo_foldernames = [inputdir]
 
-    #typical suffixes for EDL output file names
-    components = ['ex', 'ey', 'bx', 'by', 'bz']
+    # typical suffixes for EDL output file names
+    components = ["ex", "ey", "bx", "by", "bz"]
 
     lo_allfiles = []
-    pattern = '*.[ebEB][xyzXYZ]'
+    pattern = "*.[ebEB][xyzXYZ]"
     if stationname is not None:
-        pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname.lower())
-    print('\nSearching for files with pattern: ',pattern)
+        pattern = "*{0}*.[ebEB][xyzXYZ]".format(stationname.lower())
+    print("\nSearching for files with pattern: ", pattern)
 
     for folder in lo_foldernames:
-        wd = op.abspath(op.realpath(folder)) 
+        wd = op.abspath(op.realpath(folder))
         if not op.isdir(wd):
-            #print 'Directory not existing: %s' % (wd)
+            # print 'Directory not existing: %s' % (wd)
             lo_foldernames.remove(wd)
-            continue    
+            continue
 
-        lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) 
-                        if fnmatch.fnmatch(i.lower(),pattern.lower()) is True]
-        lo_allfiles.extend(lo_dirfiles)   
+        lo_dirfiles = [
+            op.abspath(op.join(wd, i))
+            for i in os.listdir(wd)
+            if fnmatch.fnmatch(i.lower(), pattern.lower()) is True
+        ]
+        lo_allfiles.extend(lo_dirfiles)
 
-    #check, if list of files is empty
+    # check, if list of files is empty
     if len(lo_allfiles) == 0:
         if stationname is not None:
-            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain'\
-            ' files to combine for station {0}:\n {1}'.format(stationname, inputdir))
+            raise MTex.MTpyError_inputarguments(
+                "Directory(ies) do(es) not contain"
+                " files to combine for station {0}:\n {1}".format(stationname, inputdir)
+            )
 
-        raise MTex.MTpyError_inputarguments('Directory does not contain files'\
-                                            ' to combine:\n {0}'.format(inputdir))
+        raise MTex.MTpyError_inputarguments(
+            "Directory does not contain files" " to combine:\n {0}".format(inputdir)
+        )
 
-    #define subfolder for storing dayfiles
-    outpath = op.join(os.curdir,'dayfiles')    
+    # define subfolder for storing dayfiles
+    outpath = op.join(os.curdir, "dayfiles")
     if outputdir is not None:
         try:
-            outpath = op.abspath(op.join(os.curdir,outputdir))
+            outpath = op.abspath(op.join(os.curdir, outputdir))
             if not op.exists(outpath):
                 try:
                     os.makedirs(outpath)
@@ -778,34 +821,37 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if not os.access(outpath, os.W_OK):
                 raise Exception("problem!!!")
         except:
-            print('Cannot generate writable output directory {0} - using'\
-                    ' generic location "dayfiles" instead'.format(outpath))
-            outpath = op.join(wd,'dayfiles')    
+            print(
+                "Cannot generate writable output directory {0} - using"
+                ' generic location "dayfiles" instead'.format(outpath)
+            )
+            outpath = op.join(wd, "dayfiles")
             pass
 
-    #generate subfolder, if not existing
+    # generate subfolder, if not existing
     if not op.exists(outpath):
         try:
             os.makedirs(outpath)
         except:
-            MTex.MTpyError_inputarguments('Cannot generate output'\
-                                ' directory {0} '.format(outpath))
+            MTex.MTpyError_inputarguments(
+                "Cannot generate output" " directory {0} ".format(outpath)
+            )
 
-    #outer loop over all components
+    # outer loop over all components
     for comp in components:
 
-        #make list of files for the current component
-        lo_files = np.array([op.join(wd,i) for i in lo_allfiles 
-                            if (i.lower()[-2:] == comp)])
+        # make list of files for the current component
+        lo_files = np.array(
+            [op.join(wd, i) for i in lo_allfiles if (i.lower()[-2:] == comp)]
+        )
 
-        #make list of starting times for the respective files
-        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) 
-                                    for f in lo_files])
-        
-        #sort the files by their starting times
+        # make list of starting times for the respective files
+        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) for f in lo_files])
+
+        # sort the files by their starting times
         idx_chronologic = np.argsort(lo_starttimes)
-        
-        #obtain sorted lists of files and starting times
+
+        # obtain sorted lists of files and starting times
         lo_sorted_files = list(lo_files[idx_chronologic])
         lo_sorted_starttimes = list(lo_starttimes[idx_chronologic])
         idx = 0
@@ -820,237 +866,224 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             else:
                 idx += 1
 
-
-        #set stationname, either from arguments or from filename
+        # set stationname, either from arguments or from filename
         if stationname is None:
             stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0]).upper()
 
-        #set counting variables - needed for handling of consecutive files
+        # set counting variables - needed for handling of consecutive files
 
         sameday = 0
         fileopen = 0
         incomplete = 0
         fileindex = 0
 
-        #allocate a data array to fill
+        # allocate a data array to fill
         # this is more memory efficient than extending lists!!
-        #cater for potential rounding errors:
+        # cater for potential rounding errors:
         if sampling < 1:
-            max_n_data = 86400 * (int(1./sampling)+1)
+            max_n_data = 86400 * (int(1.0 / sampling) + 1)
         else:
-            max_n_data = int(86400./sampling) + 1
+            max_n_data = int(86400.0 / sampling) + 1
 
-        day_data = np.zeros(max_n_data,'int')
+        day_data = np.zeros(max_n_data, "int")
 
-
-
-        #loop over all (sorted) files for the current component
-        for idx_f,f in enumerate(lo_sorted_files):
+        # loop over all (sorted) files for the current component
+        for idx_f, f in enumerate(lo_sorted_files):
 
             try:
 
-                print('Reading file %s' %(f))
-                #starting time of current file
+                print("Reading file %s" % (f))
+                # starting time of current file
                 file_start_time = lo_sorted_starttimes[idx_f]
 
-
-                #get tuple with the starting time of the current file
+                # get tuple with the starting time of the current file
                 file_start = time.gmtime(file_start_time)
-            
-                #read in raw data
+
+                # read in raw data
                 data_in = []
                 Fin = open(f)
-                for line in Fin:#.readlines():
-                #    try:
+                for line in Fin:  # .readlines():
+                    #    try:
                     data_in.append(int(float(line.strip())))
-                 #   except:
-                  #      pass
+                #   except:
+                #      pass
                 data_in = np.array(data_in)
                 Fin.close()
-                #data_in = np.loadtxt(f)
+                # data_in = np.loadtxt(f)
             except:
-                print('WARNING - could not read file - skipping...')
+                print("WARNING - could not read file - skipping...")
                 continue
             no_samples = len(data_in)
 
-            tmp_file_time_axis = np.arange(no_samples)*sampling+file_start_time
-            #file_time_axis = (np.arange(no_samples)*sampling +
+            tmp_file_time_axis = np.arange(no_samples) * sampling + file_start_time
+            # file_time_axis = (np.arange(no_samples)*sampling +
             #                 file_start_time).tolist()
 
+            # time of the last sample + 1x sampling-interval
+            # file_end_time =  file_time_axis[-1] + sampling
+            file_end_time = tmp_file_time_axis[-1] + sampling
 
-            #time of the last sample + 1x sampling-interval
-            #file_end_time =  file_time_axis[-1] + sampling
-            file_end_time =  tmp_file_time_axis[-1] + sampling
-         
-
-
-
-            #set the time as starting time for output file, if no output file is open already
+            # set the time as starting time for output file, if no output file is open already
             if fileopen == 0:
-                outfile_starttime =  file_start_time
+                outfile_starttime = file_start_time
 
-                #outfile_timeaxis = file_time_axis
+                # outfile_timeaxis = file_time_axis
                 old_time_axis = tmp_file_time_axis[:]
-                
 
                 arrayindex = 0
 
-                #if it's a single column of data
+                # if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    day_data[arrayindex:arrayindex+len(data_in)] = data_in                    
-                    #outfile_data = data_in.tolist()
-                #otherwise assuming that the first column is time, so just take the second one
+                    day_data[arrayindex : arrayindex + len(data_in)] = data_in
+                    # outfile_data = data_in.tolist()
+                # otherwise assuming that the first column is time, so just take the second one
                 else:
-                    day_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]
-                    #outfile_data = data_in[:,1].tolist()
-                
-                #jump with index to current point on time axis 
+                    day_data[arrayindex : arrayindex + len(data_in)] = data_in[:, 1]
+                    # outfile_data = data_in[:,1].tolist()
+
+                # jump with index to current point on time axis
                 arrayindex += len(data_in)
                 outfile_endtime = file_end_time
 
+                file_date = "{0}{1:02}{2:02}".format(
+                    file_start[0], file_start[1], file_start[2]
+                )
 
-                file_date = '{0}{1:02}{2:02}'.format(file_start[0],
-                                                 file_start[1], file_start[2]) 
+                # define output filename
+                new_fn = "{0}_1day_{1}_{2}.{3}".format(
+                    stationname, file_date, fileindex, comp
+                )
 
+                new_file = op.abspath(op.join(outpath, new_fn))
 
-                #define output filename
-                new_fn = '{0}_1day_{1}_{2}.{3}'.format(stationname,
-                                                 file_date, fileindex, comp)
-                
-                new_file = op.abspath(op.join(outpath,new_fn))
-                
-                #open output file 
-                F = open(new_file,'w')
-                
+                # open output file
+                F = open(new_file, "w")
+
                 fileopen = 1
 
-
-            
             else:
-                #check, if the new file ends earlier than data in buffer.
-                #if yes, just skip this file:
+                # check, if the new file ends earlier than data in buffer.
+                # if yes, just skip this file:
                 if file_end_time < outfile_endtime:
-                    continue 
+                    continue
 
-                #if current file starts earlier than the endtime of data in buffer then delete ambiguous  parts of the buffer:
-                #elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
+                # if current file starts earlier than the endtime of data in buffer then delete ambiguous  parts of the buffer:
+                # elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
                 elif (outfile_endtime - file_start_time) > epsilon:
 
-                    #find point on the outfile time axis for the beginning of current file:
-                    overlap_idx = arrayindex - int((outfile_endtime - file_start_time)/sampling)
+                    # find point on the outfile time axis for the beginning of current file:
+                    overlap_idx = arrayindex - int(
+                        (outfile_endtime - file_start_time) / sampling
+                    )
 
-                    #set the array index back
+                    # set the array index back
                     arrayindex = overlap_idx
-                   
-                    #re-define outfile time axis and data
+
+                    # re-define outfile time axis and data
                     # outfile_timeaxis = np.delete(outfile_timeaxis,
-                    #                              np.arange(len(outfile_timeaxis) - 
-                    #                              overlap_idx) + 
+                    #                              np.arange(len(outfile_timeaxis) -
+                    #                              overlap_idx) +
                     #                              overlap_idx).tolist()
 
-
-                    # outfile_data = np.delete(outfile_data, 
-                    #                             np.arange(len(outfile_data) - 
-                    #                             overlap_idx) + 
+                    # outfile_data = np.delete(outfile_data,
+                    #                             np.arange(len(outfile_data) -
+                    #                             overlap_idx) +
                     #                             overlap_idx).tolist()
-                
 
-                #old_time_axis = tmp_file_time_axis[:]
-                #append current file's time axis
-                #outfile_timeaxis.extend(file_time_axis)
-                    
-                #append current data                  
-                #if it's a single column of data
+                # old_time_axis = tmp_file_time_axis[:]
+                # append current file's time axis
+                # outfile_timeaxis.extend(file_time_axis)
+
+                # append current data
+                # if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    day_data[arrayindex:arrayindex+len(data_in)] = data_in                    
-                    #outfile_data.extend(data_in.tolist())
-                #otherwise assuming that the first column is time, so just take the second one
+                    day_data[arrayindex : arrayindex + len(data_in)] = data_in
+                    # outfile_data.extend(data_in.tolist())
+                # otherwise assuming that the first column is time, so just take the second one
                 else:
-                    day_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]                    
-                    #outfile_data.extend(data_in[:,1].tolist())
+                    day_data[arrayindex : arrayindex + len(data_in)] = data_in[:, 1]
+                    # outfile_data.extend(data_in[:,1].tolist())
 
                 arrayindex += len(data_in)
-                print(len(data_in),arrayindex)
+                print(len(data_in), arrayindex)
 
                 arrayindex += len(data_in)
-                outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
+                outfile_endtime = (arrayindex + 1) * sampling + outfile_starttime
 
+            # -----------
 
-
-            #-----------
-
-            #check, if there is a next file:
+            # check, if there is a next file:
             try:
                 next_file_start_time = lo_sorted_starttimes[idx_f + 1]
             except:
                 incomplete = 1
 
-            #if there is a next file, 
+            # if there is a next file,
             # - check, if it's the same day
             # - check, if it continues at the end of the current one:
             if incomplete == 0:
                 next_file_start_time = lo_sorted_starttimes[idx_f + 1]
                 next_file_start = time.gmtime(next_file_start_time)
-                
-                if next_file_start[2] == file_start[2] :
-                    #print 'sameday',file_start[:]
+
+                if next_file_start[2] == file_start[2]:
+                    # print 'sameday',file_start[:]
                     sameday = 1
                 else:
                     incomplete = 1
                     sameday = 0
                     fileindex = 0
-                    #print '\t NOT sameday', fileindex
+                    # print '\t NOT sameday', fileindex
 
-
-                if next_file_start_time - file_end_time > epsilon: 
+                if next_file_start_time - file_end_time > epsilon:
                     incomplete = 1
 
-            if incomplete == 1 and sameday == 1 : 
-                fileindex +=1        
+            if incomplete == 1 and sameday == 1:
+                fileindex += 1
 
-           
+            # check, if the file has to be closed and written now
+            if incomplete == 1:
 
-            #check, if the file has to be closed and written now
-            if incomplete == 1 :
-
-                #define header info
-                if outfile_starttime%1==0:
+                # define header info
+                if outfile_starttime % 1 == 0:
                     outfile_starttime = int(outfile_starttime)
 
-                    headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
-                                    stationname, comp.lower(), 1./sampling, 
-                                    outfile_starttime, arrayindex)
+                    headerline = "# {0} {1} {2:.1f} {3} {4} \n".format(
+                        stationname,
+                        comp.lower(),
+                        1.0 / sampling,
+                        outfile_starttime,
+                        arrayindex,
+                    )
                 else:
-                    headerline = '# {0} {1} {2:.1f} {3:f} {4} \n'.format(
-                                    stationname, comp.lower(), 1./sampling, 
-                                    outfile_starttime, arrayindex)
-
+                    headerline = "# {0} {1} {2:.1f} {3:f} {4} \n".format(
+                        stationname,
+                        comp.lower(),
+                        1.0 / sampling,
+                        outfile_starttime,
+                        arrayindex,
+                    )
 
                 F.write(headerline)
 
-                #outfile_array = np.zeros((len(outfile_timeaxis),2))
-                #outfile_array[:,0] = outfile_timeaxis
-                #outfile_array[:,1] = outfile_data
+                # outfile_array = np.zeros((len(outfile_timeaxis),2))
+                # outfile_array[:,0] = outfile_timeaxis
+                # outfile_array[:,1] = outfile_data
                 for i in range(arrayindex):
-                    F.write('{0}\n'.format(int(day_data[i])))
-                #outstring = '\n'.join(['{0:d}'.format(i) for i in day_data[:arrayindex]])
-                #F.write(outstring)
-                #np.savetxt(F,day_data[:arrayindex],fmt='%d')
-                #np.savetxt(F, np.array(outfile_data))
+                    F.write("{0}\n".format(int(day_data[i])))
+                # outstring = '\n'.join(['{0:d}'.format(i) for i in day_data[:arrayindex]])
+                # F.write(outstring)
+                # np.savetxt(F,day_data[:arrayindex],fmt='%d')
+                # np.savetxt(F, np.array(outfile_data))
                 arrayindex = 0
-                
 
                 F.close()
-                print('\t wrote file %s'%(new_file))
+                print("\t wrote file %s" % (new_file))
 
                 fileopen = 0
                 incomplete = 0
-    
 
 
-
-
-def EDL_get_starttime_fromfilename(filename): 
+def EDL_get_starttime_fromfilename(filename):
     """ 
     Return starttime of data file in epoch seconds.
 
@@ -1058,18 +1091,18 @@ def EDL_get_starttime_fromfilename(filename):
     'somthing/*.stationname.ddmmyyHHMMSS.??'
 
 
-    """     
-    #clip parent paths and structure
+    """
+    # clip parent paths and structure
     bn = op.basename(filename)
-    parts_of_bn = bn.split('.')
+    parts_of_bn = bn.split(".")
     timestamp = parts_of_bn[-2]
-    
+
     try:
         secs = int(float(timestamp[-2:]))
         mins = int(float(timestamp[-4:-2]))
-        hours =int(float(timestamp[-6:-4]))
-        day =  int(float(timestamp[-8:-6]))
-        month =int( float(timestamp[-10:-8]))
+        hours = int(float(timestamp[-6:-4]))
+        day = int(float(timestamp[-8:-6]))
+        month = int(float(timestamp[-10:-8]))
         year = int(float(timestamp[-12:-10]))
         if year < 50:
             year += 2000
@@ -1089,14 +1122,13 @@ def EDL_get_starttime_fromfilename(filename):
 def EDL_get_stationname_fromfilename(filename):
 
     bn = op.basename(filename)
-    parts_of_bn = bn.split('.')
+    parts_of_bn = bn.split(".")
     stationtime = parts_of_bn[-2]
 
     stationname = stationtime[:-12].upper()
 
     if len(stationname) == 0:
-        stationname = 'DUMMYSTATION'
-
+        stationname = "DUMMYSTATION"
 
     return stationname
 
@@ -1124,20 +1156,20 @@ def read_data_header(fn_raw):
 
     """
 
-
     fn = op.abspath(op.realpath(fn_raw))
 
     if not op.isfile(fn):
-        raise MTex.MTpyError_inputarguments('Not a file:%s'%fn)
+        raise MTex.MTpyError_inputarguments("Not a file:%s" % fn)
     try:
-        F = open(fn, 'r')
+        F = open(fn, "r")
     except:
-        raise MTex.MTpyError_inputarguments('File not readable:%s'%fn)
+        raise MTex.MTpyError_inputarguments("File not readable:%s" % fn)
 
     firstline = F.readline().strip().split()
-    if not firstline[0][0] == '#':
-        raise MTex.MTpyError_ts_data('Time series data file does '
-            'not have a proper header:%s'%fn)
+    if not firstline[0][0] == "#":
+        raise MTex.MTpyError_ts_data(
+            "Time series data file does " "not have a proper header:%s" % fn
+        )
 
     F.close()
 
@@ -1151,15 +1183,14 @@ def read_data_header(fn_raw):
         header_list.append(firstline[1].upper())
         idx_header += 1
 
-    header_list.append( firstline[idx_header+1].lower() )
-    header_list.append( float(firstline[idx_header+2]) )
-    header_list.append( float(firstline[idx_header+3]) )
-    header_list.append( int(float(firstline[idx_header+4])) )
-    header_list.append( firstline[idx_header+5].lower() )
-    header_list.append( float(firstline[idx_header+6]) )
-    header_list.append( float(firstline[idx_header+7]) )
-    header_list.append( float(firstline[idx_header+8]) )
-
+    header_list.append(firstline[idx_header + 1].lower())
+    header_list.append(float(firstline[idx_header + 2]))
+    header_list.append(float(firstline[idx_header + 3]))
+    header_list.append(int(float(firstline[idx_header + 4])))
+    header_list.append(firstline[idx_header + 5].lower())
+    header_list.append(float(firstline[idx_header + 6]))
+    header_list.append(float(firstline[idx_header + 7]))
+    header_list.append(float(firstline[idx_header + 8]))
 
     return header_list
 
@@ -1177,29 +1208,29 @@ def read_2c2_file(filename):
     coh1 = []
     zcoh1 = []
 
-    F_in = open(filename,'r')
+    F_in = open(filename, "r")
     data_raw = F_in.readlines()
-    
+
     for ii in range(len(data_raw)):
 
         coh_row = data_raw[ii].strip().split()
-        
+
         try:
             period.append(float(coh_row[0]))
         except:
-            period.append(0.)
+            period.append(0.0)
         try:
-            freq.append(  float(coh_row[1]))
+            freq.append(float(coh_row[1]))
         except:
-            freq.append(0.)
+            freq.append(0.0)
         try:
-            coh1.append(  float(coh_row[2]))
+            coh1.append(float(coh_row[2]))
         except:
-            coh1.append(0.)
+            coh1.append(0.0)
         try:
-            zcoh1.append( float(coh_row[3]))
+            zcoh1.append(float(coh_row[3]))
         except:
-            zcoh1.append(0.)
+            zcoh1.append(0.0)
 
     indexorder = np.array(period).argsort()
 
@@ -1210,44 +1241,43 @@ def read_2c2_file(filename):
 
     return period, freq, coh1, zcoh1
 
+
 def validate_ts_file(tsfile):
     """
         Validate MTpy timeseries (TS) data file
         Return Boolean value True/False .
 
-    """ 
+    """
     tsfile = op.abspath(tsfile)
 
     try:
         header = read_ts_header(tsfile)
 
-        if header['station'] is None:
-            #print 'header'
+        if header["station"] is None:
+            # print 'header'
             raise Exception("header has no station")
-        if header['channel'] is None:
-            #print 'channel'
+        if header["channel"] is None:
+            # print 'channel'
             raise Exception("header has no channel")
-        
-        sr = float(header['samplingrate'])
-        t0 = float(header['t_min'])
-        ns = int(float(header['nsamples']))
-        
+
+        sr = float(header["samplingrate"])
+        t0 = float(header["t_min"])
+        ns = int(float(header["nsamples"]))
+
         data = np.loadtxt(tsfile)
-        
+
         if len(data) != ns:
-            #print 'data length'
+            # print 'data length'
             raise Exception("data length wrong")
         if data.dtype not in [int, float]:
-            #print 'data type'
+            # print 'data type'
             raise Exception("data type wrong")
 
     except:
-        #print 'number'
+        # print 'number'
         return False
 
-
     return True
-
 
 
 def read_ts_header(tsfile):
@@ -1260,48 +1290,55 @@ def read_ts_header(tsfile):
     header_dict = {}
 
     tsfile = op.abspath(tsfile)
-    
+
     if not op.isfile(tsfile):
-        raise MTex.MTpyError_inputarguments('Error - '
-            'input file not existing: {0}'.format(tsfile))
+        raise MTex.MTpyError_inputarguments(
+            "Error - " "input file not existing: {0}".format(tsfile)
+        )
 
     try:
-        with open(tsfile,'r') as F:
-            firstline =''
-            #ignoring empty lines or lines with just the '#' character in it
+        with open(tsfile, "r") as F:
+            firstline = ""
+            # ignoring empty lines or lines with just the '#' character in it
             while len(firstline) == 0:
                 firstline = F.readline().strip()
-                if firstline == '#':
-                    firstline = ''
-        if firstline[0] != '#':
+                if firstline == "#":
+                    firstline = ""
+        if firstline[0] != "#":
             raise Exception("First line does not begin with #")
     except:
-        raise MTex.MTpyError_ts_data('No header line found -'
-            ' check file: {0}'.format(tsfile))
-        
+        raise MTex.MTpyError_ts_data(
+            "No header line found -" " check file: {0}".format(tsfile)
+        )
 
-    firstline = firstline.replace('#','')
+    firstline = firstline.replace("#", "")
     headerlist = firstline.split()
-
 
     for i in range(len(headerlist)):
         header_dict[lo_headerelements[i]] = headerlist[i]
-        #old header had tmax instead of n_samples:
-        if ((i == 4) and float(headerlist[4])%1 != 0 
-            and float(headerlist[i]) > float(headerlist[i-1])):
-            header_dict[lo_headerelements[i]] = int(
-                    (float(headerlist[i]) - float(headerlist[i-1])
-                    )*float(headerlist[i-2]) )+1
+        # old header had tmax instead of n_samples:
+        if (
+            (i == 4)
+            and float(headerlist[4]) % 1 != 0
+            and float(headerlist[i]) > float(headerlist[i - 1])
+        ):
+            header_dict[lo_headerelements[i]] = (
+                int(
+                    (float(headerlist[i]) - float(headerlist[i - 1]))
+                    * float(headerlist[i - 2])
+                )
+                + 1
+            )
 
-    headerlements = ['samplingrate','t_min','nsamples','lat','lon','elev']
+    headerlements = ["samplingrate", "t_min", "nsamples", "lat", "lon", "elev"]
 
-    for h in headerlements:                   
-        try: 
+    for h in headerlements:
+        try:
             header_dict[h] = float(header_dict[h])
         except:
             pass
         try:
-            if header_dict[h]%1==0:
+            if header_dict[h] % 1 == 0:
                 header_dict[h] = int(header_dict[h])
         except:
             pass
@@ -1314,21 +1351,20 @@ def get_ts_header_string(header_dictionary):
         Return a MTpy time series data file header string from a dictionary.
 
     """
-    
-    header_string = '# '
+
+    header_string = "# "
     for headerelement in lo_headerelements:
         if headerelement in header_dictionary:
-            header_string += '{0} '.format(str(header_dictionary[headerelement]))
+            header_string += "{0} ".format(str(header_dictionary[headerelement]))
         else:
-            header_string += '\t '   
+            header_string += "\t "
 
-    header_string += '\n'
+    header_string += "\n"
 
     return header_string
 
 
-
-def write_ts_file_from_tuple(outfile,ts_tuple, fmt='%.8e'):
+def write_ts_file_from_tuple(outfile, ts_tuple, fmt="%.8e"):
     """
         Write an MTpy TS data file, where the content is provided as tuple:
 
@@ -1339,9 +1375,8 @@ def write_ts_file_from_tuple(outfile,ts_tuple, fmt='%.8e'):
 
     """
 
-    
     header_dict = {}
-    for i in range(len(ts_tuple) -1):
+    for i in range(len(ts_tuple) - 1):
         if ts_tuple[i] is not None:
             header_dict[lo_headerelements[i]] = ts_tuple[i]
 
@@ -1350,15 +1385,16 @@ def write_ts_file_from_tuple(outfile,ts_tuple, fmt='%.8e'):
 
     outfilename = make_unique_filename(outfile)
 
-
     try:
-        outF = open(outfilename,'w')
+        outF = open(outfilename, "w")
         outF.write(header_string)
         np.savetxt(outF, data, fmt=fmt)
         outF.close()
     except ValueError:
-        raise MTex.MTpyError_inputarguments('ERROR - could not write content'
-                            ' of TS tuple to file : {0}'.format(outfilename))
+        raise MTex.MTpyError_inputarguments(
+            "ERROR - could not write content"
+            " of TS tuple to file : {0}".format(outfilename)
+        )
 
     return outfilename
 
@@ -1374,21 +1410,25 @@ def read_ts_file(mtdatafile):
 
     infile = op.abspath(mtdatafile)
     if not op.isfile(infile):
-        raise MTex.MTpyError_inputarguments('ERROR - Data file not '
-                                                'existing: {0}'.format(infile))
+        raise MTex.MTpyError_inputarguments(
+            "ERROR - Data file not " "existing: {0}".format(infile)
+        )
 
     header = read_ts_header(infile)
-    if len(header) == 0 :
-        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid - '
-                                        'header is missing : {0}'.format(infile))
+    if len(header) == 0:
+        raise MTex.MTpyError_inputarguments(
+            "ERROR - Data file not valid - " "header is missing : {0}".format(infile)
+        )
 
     data = np.loadtxt(infile)
-    if len(data) != int(float(header['nsamples'])):
-        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid '
-                                    '- wrong number of samples in data ({1} '
-                                    'instead of {2}): {0}'.format(
-                                    infile,len(data) , int(float(
-                                        header['nsamples']))) )
+    if len(data) != int(float(header["nsamples"])):
+        raise MTex.MTpyError_inputarguments(
+            "ERROR - Data file not valid "
+            "- wrong number of samples in data ({1} "
+            "instead of {2}): {0}".format(
+                infile, len(data), int(float(header["nsamples"]))
+            )
+        )
 
     lo_header_contents = []
 
@@ -1397,126 +1437,134 @@ def read_ts_file(mtdatafile):
             lo_header_contents.append(header[i])
         else:
             lo_header_contents.append(None)
- 
+
     lo_header_contents.append(data)
 
     return tuple(lo_header_contents)
 
 
-def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
+def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
 
-    #read config file
+    # read config file
     try:
         config_dict = MTcf.read_survey_configfile(configfile)
     except:
-        raise MTex.MTpyError_config_file( 'Config file cannot be read:'
-                                                    ' {0}'.format(configfile) )
+        raise MTex.MTpyError_config_file(
+            "Config file cannot be read:" " {0}".format(configfile)
+        )
 
     if lo_stations is not None:
         try:
             if type(lo_stations) == str:
                 raise Exception("problem!!!")
-            #check, if it's iterable:
+            # check, if it's iterable:
             dummy = [i for i in lo_stations]
         except:
-            raise MTex.MTpyError_inputarguments('ERROR - "lo_stations"'
-                                                ' argument must be iterable!')
-    print('\t re-orienting data for collection of stations:\n{0}'.format(lo_stations))
-    #Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand - 
-    #collect header lines of files in list
+            raise MTex.MTpyError_inputarguments(
+                'ERROR - "lo_stations"' " argument must be iterable!"
+            )
+    print("\t re-orienting data for collection of stations:\n{0}".format(lo_stations))
+    # Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand -
+    # collect header lines of files in list
     lo_headers = []
     lo_stationnames = []
     for file_idx, filename in enumerate(lo_files):
         header = read_ts_header(filename)
-        station = header['station']
+        station = header["station"]
         if station.upper() not in [i.upper() for i in lo_stations]:
-            #TODO: check, if this causes problems with the indices for the current loop:
+            # TODO: check, if this causes problems with the indices for the current loop:
             lo_files.remove(filename)
             continue
         lo_headers.append(header)
         lo_stationnames.append(station.upper())
 
-
-
-    if len(lo_headers) == 0 :
+    if len(lo_headers) == 0:
         if lo_stations is not None:
-            print('ERROR - No files with header lines found for station(s)'\
-                                                    ' {0}'.format(lo_stations))
+            print(
+                "ERROR - No files with header lines found for station(s)"
+                " {0}".format(lo_stations)
+            )
         else:
-            print('ERROR - No files with header lines found')
+            print("ERROR - No files with header lines found")
         return 1
 
     lo_stationnames = list(set(lo_stationnames))
 
-    # set up output directory 
-    ori_outdir = op.abspath(op.join(os.curdir,'reoriented'))
+    # set up output directory
+    ori_outdir = op.abspath(op.join(os.curdir, "reoriented"))
 
     if outdir is not None:
         try:
-            ori_outdir = op.abspath(op.join(os.curdir,outdir))
+            ori_outdir = op.abspath(op.join(os.curdir, outdir))
             if not op.isdir(ori_outdir):
                 os.makedirs(ori_outdir)
         except:
-            print('Output directory cannot be generated: {0} - using generic'\
-                                                ' location'.format(ori_outdir))
-            ori_outdir = op.abspath(op.join(os.curdir,'reoriented'))
+            print(
+                "Output directory cannot be generated: {0} - using generic"
+                " location".format(ori_outdir)
+            )
+            ori_outdir = op.abspath(op.join(os.curdir, "reoriented"))
     try:
         if not op.isdir(ori_outdir):
             os.makedirs(ori_outdir)
     except:
-        #this only comes up, if the generic location cannot be generated
-        raise MTex.MTpyError_inputarguments('Generic directory cannot be'
-                                        ' generated: {0}'.format(ori_outdir))
+        # this only comes up, if the generic location cannot be generated
+        raise MTex.MTpyError_inputarguments(
+            "Generic directory cannot be" " generated: {0}".format(ori_outdir)
+        )
 
-    #----------------------
-    #start re-orientation
-    #present: list of all files, list of all headers, list of all stations
-    
+    # ----------------------
+    # start re-orientation
+    # present: list of all files, list of all headers, list of all stations
+
     for sta_idx, sta in enumerate(lo_stationnames):
-        #print sta
+        # print sta
         try:
             stationconfig = config_dict[sta]
         except:
-            print('Warning - No config file entry for station {0} -'\
-                                        ' no processing possible'.format(sta))
+            print(
+                "Warning - No config file entry for station {0} -"
+                " no processing possible".format(sta)
+            )
             continue
-        
-        declination = float(stationconfig.get('declination',0.))
 
+        declination = float(stationconfig.get("declination", 0.0))
 
-        for sensor in ['e','b']:
-            #TODO:
-            # reduce this function to the re-orientation of files that have the same length for X and Y. 
-            #Do the puzzlling for varying lengths later!!
+        for sensor in ["e", "b"]:
+            # TODO:
+            # reduce this function to the re-orientation of files that have the same length for X and Y.
+            # Do the puzzlling for varying lengths later!!
 
             for idx_h_x, header_x in enumerate(lo_headers):
-                #looking for one specific station
-                if not header_x['station'].upper() == sta.upper():
+                # looking for one specific station
+                if not header_x["station"].upper() == sta.upper():
                     continue
-                #looking for the specific sensor type
-                if not header_x['channel'].lower()[0] == sensor:
+                # looking for the specific sensor type
+                if not header_x["channel"].lower()[0] == sensor:
                     continue
-                #looking for the X channel (the to-be-North)
-                if not header_x['channel'].lower()[1] == 'x':
+                # looking for the X channel (the to-be-North)
+                if not header_x["channel"].lower()[1] == "x":
                     continue
 
                 x_file = lo_files[idx_h_x]
                 x_header_string = get_ts_header_string(header_x)
 
-                t0 = float(header_x['t_min'])
-                #print t0 
-                #now look for the respective y-file and possible z-file - unfortunately by another loop over all headers:
+                t0 = float(header_x["t_min"])
+                # print t0
+                # now look for the respective y-file and possible z-file - unfortunately by another loop over all headers:
                 y_file = None
                 z_file = None
                 for idx_h_y, header_y in enumerate(lo_headers):
-                    if (header_y['station'].upper() == sta.upper()) and \
-                        (header_y['channel'].lower()[0] == sensor) and \
-                        (float(header_y['t_min']) == float(header_x['t_min'] ) ):
-                        if (header_y['channel'].lower()[1] == 'y') :
+                    if (
+                        (header_y["station"].upper() == sta.upper())
+                        and (header_y["channel"].lower()[0] == sensor)
+                        and (float(header_y["t_min"]) == float(header_x["t_min"]))
+                    ):
+                        if header_y["channel"].lower()[1] == "y":
                             y_file = lo_files[idx_h_y]
                             y_header_string = get_ts_header_string(header_y)
 
-                        elif   (header_y['channel'].lower()[1] == 'z') :
+                        elif header_y["channel"].lower()[1] == "z":
                             z_file = lo_files[idx_h_y]
 
                     else:
@@ -1524,50 +1572,51 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 if y_file == None:
                     continue
 
-                x_outfn = op.abspath(op.join(ori_outdir,op.basename(x_file)))
-                y_outfn = op.abspath(op.join(ori_outdir,op.basename(y_file)))
+                x_outfn = op.abspath(op.join(ori_outdir, op.basename(x_file)))
+                y_outfn = op.abspath(op.join(ori_outdir, op.basename(y_file)))
                 if z_file is not None:
-                    z_outfn = op.abspath(op.join(ori_outdir,op.basename(z_file)))
-                
+                    z_outfn = op.abspath(op.join(ori_outdir, op.basename(z_file)))
 
                 xdata = np.loadtxt(x_file)
                 ydata = np.loadtxt(y_file)
 
-                #declination is positive, if magnetic North is east of true North.
-                # the measured angles are w.r.t. magnetic North, so the given 
-                # azimuths do not include the declination 
-                #-> thus the declination value is added to azimuths
-                if sensor == 'e':
-                    xangle = float(stationconfig.get(
-                                    'e_xaxis_azimuth', 0.)) + declination
-                    yangle = float(stationconfig.get(
-                                    'e_yaxis_azimuth',90.)) + declination
+                # declination is positive, if magnetic North is east of true North.
+                # the measured angles are w.r.t. magnetic North, so the given
+                # azimuths do not include the declination
+                # -> thus the declination value is added to azimuths
+                if sensor == "e":
+                    xangle = (
+                        float(stationconfig.get("e_xaxis_azimuth", 0.0)) + declination
+                    )
+                    yangle = (
+                        float(stationconfig.get("e_yaxis_azimuth", 90.0)) + declination
+                    )
                 else:
-                    xangle = float(stationconfig.get(
-                                    'b_xaxis_azimuth', 0.)) + declination
-                    yangle = float(stationconfig.get(
-                                    'b_yaxis_azimuth',90.)) + declination                
+                    xangle = (
+                        float(stationconfig.get("b_xaxis_azimuth", 0.0)) + declination
+                    )
+                    yangle = (
+                        float(stationconfig.get("b_yaxis_azimuth", 90.0)) + declination
+                    )
 
+                newx, newy = MTcc.reorient_data2D(
+                    xdata, ydata, x_sensor_angle=xangle, y_sensor_angle=yangle
+                )
+                # print xdata.shape, ydata.shape, newx.shape, newy.shape
 
-                newx, newy =  MTcc.reorient_data2D(xdata, ydata, 
-                            x_sensor_angle = xangle , y_sensor_angle = yangle)
-                #print xdata.shape, ydata.shape, newx.shape, newy.shape 
-
-                #continue
-                outFx = open(x_outfn,'w')
+                # continue
+                outFx = open(x_outfn, "w")
                 outFx.write(x_header_string)
-                np.savetxt(outFx,newx)
+                np.savetxt(outFx, newx)
                 outFx.close()
-                outFy = open(y_outfn,'w')
+                outFy = open(y_outfn, "w")
                 outFy.write(y_header_string)
-                np.savetxt(outFy,newy)
+                np.savetxt(outFy, newy)
                 outFy.close()
-                written_files = [x_outfn,y_outfn]
+                written_files = [x_outfn, y_outfn]
                 if z_file is not None:
                     shutil.copyfile(z_file, z_outfn)
                     written_files.append(z_outfn)
-                print('\tSuccessfullly written files {0}'.format(written_files))
+                print("\tSuccessfullly written files {0}".format(written_files))
 
-
-            
     return 0

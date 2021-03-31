@@ -23,9 +23,9 @@ Good luck
 Jared Peacock 2011"""
 
 
-#=========================================================================
+# =========================================================================
 # Import necessary packages
-#=========================================================================
+# =========================================================================
 
 import os
 import os.path as op
@@ -43,11 +43,13 @@ def main():
     arglist = sys.srgv[1:]
 
     if len(arglist) < 5:
-        sys.exit('ERROR -- provide 5 arguments: <station folders directory> <processing parameter file> <station info file> <BIRRP executable> <EDI files directory>')
+        sys.exit(
+            "ERROR -- provide 5 arguments: <station folders directory> <processing parameter file> <station info file> <BIRRP executable> <EDI files directory>"
+        )
 
-    #=========================================================================
+    # =========================================================================
     # Input files
-    #=========================================================================
+    # =========================================================================
     # directory where station folders are
     dirpath = op.abspath(arglist[0])
 
@@ -80,15 +82,15 @@ def main():
     edipath = op.abspath(arglist[4])
 
     pstart = 0
-    #=========================================================================
+    # =========================================================================
     # #get information from the processing file and put into a list of dictionaries
-    #=========================================================================
+    # =========================================================================
 
     plst = brp.readProDict(processinginfofile, dirpath)
 
-    #=========================================================================
+    # =========================================================================
     # Run in parallel
-    #=========================================================================
+    # =========================================================================
     #
     # jobserver=pp.Server()
     #
@@ -143,9 +145,9 @@ def main():
     # pickle.dump(filelst,pfid)
     # pfid.close()
 
-    #=========================================================================
+    # =========================================================================
     # Combine files, make script file, run birrp
-    #=========================================================================
+    # =========================================================================
     # if you find that your responses are not scaled correctly, change the parameter
     # ffactor which multiplies the responses by that number. This might happen if the
     # gains are not quite right or the dipole lengths are not quite right.
@@ -154,11 +156,12 @@ def main():
     flstall = []
     for ii, pdict in enumerate(plst[235:]):
         try:
-            flst = brp.runBIRRPpp(dirpath, pdict, stationinfofile, birrploc,
-                                  ffactor=1, edipath=edipath)
+            flst = brp.runBIRRPpp(
+                dirpath, pdict, stationinfofile, birrploc, ffactor=1, edipath=edipath
+            )
             flstall.append(flst)
         except ValueError:
-            print('Did not run ', pdict['station'], pdict['day'], pdict['start'])
+            print("Did not run ", pdict["station"], pdict["day"], pdict["start"])
     #    brp.plotBFfiles(flst['edifile'],
     #                    cohfile=flst['cohfile'],
     #                    cfilelst=flst['cfilelst'],
@@ -166,9 +169,9 @@ def main():
     #    shutil.copy(flst['edifile'],os.path.join(edipath,
     #                os.path.basename(flst['edifile'][:-4])+
     #                pdict['day']+pdict['start'][0:2])+'.edi')
-    #=========================================================================
+    # =========================================================================
     # Plot files
-    #=========================================================================
+    # =========================================================================
 
     # change save='n' to save='y' if want to save the plots, will save in a folder
     # called dirpath\plots
@@ -183,5 +186,6 @@ def main():
     # mtplot.plotResPhase(flst['edifile'],plotnum=2,fignum=1)
     #
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -19,10 +19,10 @@ import mtpy1.core.z as Z
 import mtpy1.utils.latlongutmconversion as ll2utm
 
 # tolerance to find frequencies
-ptol = .15
+ptol = 0.15
 
 # error of data in percentage
-zerr = .05
+zerr = 0.05
 # errormap values which is multiplied by zerr to get a total error
 zxxerrmap = 10
 zxyerrmap = 1
@@ -30,58 +30,66 @@ zyxerrmap = 1
 zyyerrmap = 10
 zerrmap = [zxxerrmap, zxyerrmap, zyxerrmap, zyyerrmap]
 
-#==============================================================================
+# ==============================================================================
 # Colormaps for plots
-#==============================================================================
+# ==============================================================================
 # phase tensor map
-ptcmapdict = {'red': ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),
-              'green': ((0.0, 0.0, 1.0), (1.0, 0.0, 1.0)),
-              'blue': ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0))}
-ptcmap = LinearSegmentedColormap('ptcmap', ptcmapdict, 256)
+ptcmapdict = {
+    "red": ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),
+    "green": ((0.0, 0.0, 1.0), (1.0, 0.0, 1.0)),
+    "blue": ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+}
+ptcmap = LinearSegmentedColormap("ptcmap", ptcmapdict, 256)
 
 # phase tensor map for difference (reverse)
-ptcmapdictr = {'red': ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),
-               'green': ((0.0, 1.0, 0.0), (1.0, 1.0, 0.0)),
-               'blue': ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0))}
-ptcmapr = LinearSegmentedColormap('ptcmapr', ptcmapdictr, 256)
+ptcmapdictr = {
+    "red": ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0)),
+    "green": ((0.0, 1.0, 0.0), (1.0, 1.0, 0.0)),
+    "blue": ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+}
+ptcmapr = LinearSegmentedColormap("ptcmapr", ptcmapdictr, 256)
 
 # resistivity tensor map for calculating delta
-ptcmapdict2 = {'red': ((0.0, 1.0, 0.0), (1.0, 1.0, 0.0)),
-               'green': ((0.0, 0.5, 0.5), (1.0, 0.5, 0.5)),
-               'blue': ((0.0, 0.5, 0.5), (1.0, 0.5, 0.5))}
-ptcmap2 = LinearSegmentedColormap('ptcmap2', ptcmapdict2, 256)
+ptcmapdict2 = {
+    "red": ((0.0, 1.0, 0.0), (1.0, 1.0, 0.0)),
+    "green": ((0.0, 0.5, 0.5), (1.0, 0.5, 0.5)),
+    "blue": ((0.0, 0.5, 0.5), (1.0, 0.5, 0.5)),
+}
+ptcmap2 = LinearSegmentedColormap("ptcmap2", ptcmapdict2, 256)
 
 # resistivity tensor map for calcluating resistivity difference
-rtcmapdict = {'red': ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 1.0, 0.0)),
-              'green': ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
-              'blue': ((0.0, 0.0, 1.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0))}
-rtcmap = LinearSegmentedColormap('rtcmap', rtcmapdict, 256)
+rtcmapdict = {
+    "red": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 1.0, 0.0)),
+    "green": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
+    "blue": ((0.0, 0.0, 1.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
+}
+rtcmap = LinearSegmentedColormap("rtcmap", rtcmapdict, 256)
 
 # resistivity tensor map for calcluating apparent resistivity
-rtcmapdictr = {'red': ((0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
-               'green': ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
-               'blue': ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0))}
-rtcmapr = LinearSegmentedColormap('rtcmapr', rtcmapdictr, 256)
+rtcmapdictr = {
+    "red": ((0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
+    "green": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)),
+    "blue": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0)),
+}
+rtcmapr = LinearSegmentedColormap("rtcmapr", rtcmapdictr, 256)
 
-#==============================================================================
+# ==============================================================================
 #  define some helping functions
-#==============================================================================
+# ==============================================================================
 # make a class to pick periods
 
 
 class ListPeriods:
-
     def __init__(self, fig):
         self.plst = []
         self.fig = fig
         self.count = 1
 
     def connect(self):
-        self.cid = self.fig.canvas.mpl_connect('button_press_event',
-                                               self.onclick)
+        self.cid = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
 
     def onclick(self, event):
-        print '{0} Period: {1:.5g}'.format(self.count, event.xdata)
+        print "{0} Period: {1:.5g}".format(self.count, event.xdata)
         self.plst.append(event.xdata)
         self.count += 1
 
@@ -101,7 +109,7 @@ def readWLOutFile(outfn, ncol=5):
                     and y is to the north.)
     """
 
-    wingLinkDataFH = file(outfn, 'r')
+    wingLinkDataFH = file(outfn, "r")
     raw_data = wingLinkDataFH.read().strip().split()
 
     nx = int(raw_data[0])
@@ -142,7 +150,7 @@ def readSitesFile(sitesfn):
         sitelst = list of station names
     """
 
-    sfid = file(sitesfn, 'r')
+    sfid = file(sitesfn, "r")
     slines = sfid.readlines()
 
     slst = []
@@ -150,12 +158,12 @@ def readSitesFile(sitesfn):
     for ss in slines:
         sdict = {}
         sline = ss.strip().split()
-        sdict['station'] = sline[0][0:-4]
-        sdict['dx'] = int(sline[1]) - 1
-        sdict['dy'] = int(sline[2]) - 1
-        sdict['dz'] = int(sline[3]) - 1
-        sdict['something'] = int(sline[4])
-        sdict['number'] = int(sline[5])
+        sdict["station"] = sline[0][0:-4]
+        sdict["dx"] = int(sline[1]) - 1
+        sdict["dy"] = int(sline[2]) - 1
+        sdict["dz"] = int(sline[3]) - 1
+        sdict["something"] = int(sline[4])
+        sdict["number"] = int(sline[5])
         slst.append(sdict)
         sitelst.append(sline[0][0:-4])
     return slst, sitelst
@@ -189,8 +197,8 @@ def getXY(sitesfn, outfn, ncol=5):
     yarr = np.zeros(ns)
 
     for ii, sdict in enumerate(slst):
-        xx = sdict['dx']
-        yy = sdict['dy']
+        xx = sdict["dx"]
+        yy = sdict["dy"]
         if xx < nxh:
             xarr[ii] = dx[xx:nxh].sum() - dx[xx] / 2
         else:
@@ -232,13 +240,13 @@ def getPeriods(edilst, errthresh=10):
 
     """
 
-    plt.rcParams['font.size'] = 10
-    plt.rcParams['figure.subplot.left'] = .13
-    plt.rcParams['figure.subplot.right'] = .98
-    plt.rcParams['figure.subplot.bottom'] = .1
-    plt.rcParams['figure.subplot.top'] = .95
-    plt.rcParams['figure.subplot.wspace'] = .25
-    plt.rcParams['figure.subplot.hspace'] = .05
+    plt.rcParams["font.size"] = 10
+    plt.rcParams["figure.subplot.left"] = 0.13
+    plt.rcParams["figure.subplot.right"] = 0.98
+    plt.rcParams["figure.subplot.bottom"] = 0.1
+    plt.rcParams["figure.subplot.top"] = 0.95
+    plt.rcParams["figure.subplot.wspace"] = 0.25
+    plt.rcParams["figure.subplot.hspace"] = 0.05
 
     periodlst = []
     errorlst = []
@@ -247,41 +255,41 @@ def getPeriods(edilst, errthresh=10):
     ax = fig1.add_subplot(1, 1, 1)
     for edi in edilst:
         if not os.path.isfile(edi):
-            print 'Could not find ' + edi
+            print "Could not find " + edi
         else:
             z1 = Z.Z(edi)
             periodlst.append(z1.period)
             zdet = np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.z])
-            error = np.array([np.sqrt(abs(np.linalg.det(zz)))
-                              for zz in z1.zvar])
+            error = np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.zvar])
             perror = (error / zdet) * 100
             errorlst.append(perror)
             # make a plot to pick frequencies from showing period and percent
             # error
-            ax.scatter(z1.period, perror, marker='x', picker=5)
+            ax.scatter(z1.period, perror, marker="x", picker=5)
             pfind = np.where(perror > errthresh)[0]
             if len(pfind) > 0:
-                print 'Error greater than {0:.3f} for '.format(errthresh) + z1.station
+                print "Error greater than {0:.3f} for ".format(errthresh) + z1.station
                 for jj in pfind:
-                    ax.scatter(
+                    ax.scatter(z1.period[jj], perror[jj], marker="x", color="r")
+                    ax.text(
                         z1.period[jj],
-                        perror[jj],
-                        marker='x',
-                        color='r')
-                    ax.text(z1.period[jj], perror[jj] * 1.05, z1.station,
-                            horizontalalignment='center',
-                            verticalalignment='baseline',
-                            fontdict={'size': 8, 'color': 'red'})
+                        perror[jj] * 1.05,
+                        z1.station,
+                        horizontalalignment="center",
+                        verticalalignment="baseline",
+                        fontdict={"size": 8, "color": "red"},
+                    )
                     print jj, z1.period[jj]
 
-    ax.set_xscale('log')
-    ax.set_xlim(10**np.floor(np.log10(z1.period[0])),
-                10**np.ceil(np.log10(z1.period[-1])))
+    ax.set_xscale("log")
+    ax.set_xlim(
+        10 ** np.floor(np.log10(z1.period[0])), 10 ** np.ceil(np.log10(z1.period[-1]))
+    )
     ax.set_ylim(0, 3 * errthresh)
-    ax.set_yscale('log')
-    ax.set_xlabel('Period (s)', fontdict={'size': 12, 'weight': 'bold'})
-    ax.set_ylabel('Percent Error', fontdict={'size': 12, 'weight': 'bold'})
-    ax.grid('on', which='both')
+    ax.set_yscale("log")
+    ax.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
+    ax.set_ylabel("Percent Error", fontdict={"size": 12, "weight": "bold"})
+    ax.grid("on", which="both")
 
     lp = ListPeriods(fig1)
     lp.connect()
@@ -291,9 +299,24 @@ def getPeriods(edilst, errthresh=10):
     return periodlst, errorlst, lp
 
 
-def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
-               zpad=5, xpadroot=5, ypadroot=5, zpadroot=2, zpadpow=(5, 15), nz=30,
-               plotyn='y', plotxlimits=None, plotylimits=None, plotzlimits=None):
+def make3DGrid(
+    edilst,
+    xspacing=500,
+    yspacing=500,
+    z1layer=10,
+    xpad=5,
+    ypad=5,
+    zpad=5,
+    xpadroot=5,
+    ypadroot=5,
+    zpadroot=2,
+    zpadpow=(5, 15),
+    nz=30,
+    plotyn="y",
+    plotxlimits=None,
+    plotylimits=None,
+    plotzlimits=None,
+):
     """
     makes a grid from the edifiles to go into wsinv3d.  The defaults usually
     work relatively well, but it might take some effort to get a desired grid.
@@ -441,7 +464,7 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
         zone, east, north = ll2utm.LLtoUTM(23, zz.lat, zz.lon)
         locations[ii, 0] = east
         locations[ii, 1] = north
-        slst.append({'station': zz.station, 'east': east, 'north': north})
+        slst.append({"station": zz.station, "east": east, "north": north})
 
     # estimate the mean distance to  get into relative coordinates
     xmean = locations[:, 0].mean()
@@ -451,8 +474,8 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
     locations[:, 0] -= xmean
     locations[:, 1] -= ymean
     for sdict in slst:
-        sdict['east'] -= xmean
-        sdict['north'] -= ymean
+        sdict["east"] -= xmean
+        sdict["north"] -= ymean
 
     # translate the stations so they are relative to 0,0
     xcenter = (locations[:, 0].max() - np.abs(locations[:, 0].min())) / 2
@@ -462,8 +485,8 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
     locations[:, 0] -= xcenter
     locations[:, 1] -= ycenter
     for sdict in slst:
-        sdict['east'] -= xcenter
-        sdict['north'] -= ycenter
+        sdict["east"] -= xcenter
+        sdict["north"] -= ycenter
 
     # pickout the furtherst south and west locations
     # and put that station as the bottom left corner of the main grid
@@ -472,129 +495,155 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
     ybottom = locations[:, 1].min() - yspacing / 2
     ytop = locations[:, 1].max() + yspacing / 2
 
-    #---make a grid around the stations from the parameters above---
+    # ---make a grid around the stations from the parameters above---
     # make grid in east-west direction
-    midxgrid = np.arange(start=xleft, stop=xright + xspacing,
-                         step=xspacing)
-    xpadleft = np.round(-xspacing * 5**np.arange(start=.5, stop=3, step=3. / xpad)) +\
-        xleft
-    xpadright = np.round(xspacing * 5**np.arange(start=.5, stop=3, step=3. / xpad)) +\
-        xright
+    midxgrid = np.arange(start=xleft, stop=xright + xspacing, step=xspacing)
+    xpadleft = (
+        np.round(-xspacing * 5 ** np.arange(start=0.5, stop=3, step=3.0 / xpad)) + xleft
+    )
+    xpadright = (
+        np.round(xspacing * 5 ** np.arange(start=0.5, stop=3, step=3.0 / xpad)) + xright
+    )
     xgridr = np.append(np.append(xpadleft[::-1], midxgrid), xpadright)
 
     # make grid in north-south direction
-    midygrid = np.arange(start=ybottom, stop=ytop + yspacing,
-                         step=yspacing)
-    ypadbottom = np.round(-yspacing * 5**np.arange(start=.5, stop=3, step=3. / xpad)) +\
-        ybottom
-    ypadtop = np.round(yspacing * 5**np.arange(start=.5, stop=3, step=3. / xpad)) +\
-        ytop
+    midygrid = np.arange(start=ybottom, stop=ytop + yspacing, step=yspacing)
+    ypadbottom = (
+        np.round(-yspacing * 5 ** np.arange(start=0.5, stop=3, step=3.0 / xpad))
+        + ybottom
+    )
+    ypadtop = (
+        np.round(yspacing * 5 ** np.arange(start=0.5, stop=3, step=3.0 / xpad)) + ytop
+    )
     ygridr = np.append(np.append(ypadbottom[::-1], midygrid), ypadtop)
 
     # make depth grid
-    zgrid1 = z1layer * \
-        2**np.round(np.arange(0, zpadpow[0], zpadpow[0] / (nz - zpad)))
-    zgrid2 = z1layer * 2**np.round(np.arange(zpadpow[0], zpadpow[1],
-                                             (zpadpow[1] - zpadpow[0]) / (zpad)))
+    zgrid1 = z1layer * 2 ** np.round(np.arange(0, zpadpow[0], zpadpow[0] / (nz - zpad)))
+    zgrid2 = z1layer * 2 ** np.round(
+        np.arange(zpadpow[0], zpadpow[1], (zpadpow[1] - zpadpow[0]) / (zpad))
+    )
 
     zgrid = np.append(zgrid1, zgrid2)
 
-    #--Need to make an array of the individual cell dimensions for the wsinv3d
+    # --Need to make an array of the individual cell dimensions for the wsinv3d
     xnodes = xgridr.copy()
     nx = xgridr.shape[0]
-    xnodes[:nx / 2] = np.array([abs(xgridr[ii] - xgridr[ii + 1])
-                                for ii in range(int(nx / 2))])
-    xnodes[nx / 2:] = np.array([abs(xgridr[ii] - xgridr[ii + 1])
-                                for ii in range(int(nx / 2) - 1, nx - 1)])
+    xnodes[: nx / 2] = np.array(
+        [abs(xgridr[ii] - xgridr[ii + 1]) for ii in range(int(nx / 2))]
+    )
+    xnodes[nx / 2 :] = np.array(
+        [abs(xgridr[ii] - xgridr[ii + 1]) for ii in range(int(nx / 2) - 1, nx - 1)]
+    )
 
     ynodes = ygridr.copy()
     ny = ygridr.shape[0]
-    ynodes[:ny / 2] = np.array([abs(ygridr[ii] - ygridr[ii + 1])
-                                for ii in range(int(ny / 2))])
-    ynodes[ny / 2:] = np.array([abs(ygridr[ii] - ygridr[ii + 1])
-                                for ii in range(int(ny / 2) - 1, ny - 1)])
+    ynodes[: ny / 2] = np.array(
+        [abs(ygridr[ii] - ygridr[ii + 1]) for ii in range(int(ny / 2))]
+    )
+    ynodes[ny / 2 :] = np.array(
+        [abs(ygridr[ii] - ygridr[ii + 1]) for ii in range(int(ny / 2) - 1, ny - 1)]
+    )
 
-    #--put the grids into coordinates relative to the center of the grid
+    # --put the grids into coordinates relative to the center of the grid
     xgrid = xnodes.copy()
-    xgrid[:int(nx / 2)] = -np.array([xnodes[ii:int(nx / 2)].sum()
-                                     for ii in range(int(nx / 2))])
-    xgrid[int(nx / 2):] = np.array([xnodes[int(nx / 2):ii + 1].sum()
-                                    for ii in range(int(nx / 2), nx)]) - xnodes[int(nx / 2)]
+    xgrid[: int(nx / 2)] = -np.array(
+        [xnodes[ii : int(nx / 2)].sum() for ii in range(int(nx / 2))]
+    )
+    xgrid[int(nx / 2) :] = (
+        np.array([xnodes[int(nx / 2) : ii + 1].sum() for ii in range(int(nx / 2), nx)])
+        - xnodes[int(nx / 2)]
+    )
 
     ygrid = ynodes.copy()
-    ygrid[:int(ny / 2)] = -np.array([ynodes[ii:int(ny / 2)].sum()
-                                     for ii in range(int(ny / 2))])
-    ygrid[int(ny / 2):] = np.array([ynodes[int(ny / 2):ii + 1].sum()
-                                    for ii in range(int(ny / 2), ny)]) - ynodes[int(ny / 2)]
+    ygrid[: int(ny / 2)] = -np.array(
+        [ynodes[ii : int(ny / 2)].sum() for ii in range(int(ny / 2))]
+    )
+    ygrid[int(ny / 2) :] = (
+        np.array([ynodes[int(ny / 2) : ii + 1].sum() for ii in range(int(ny / 2), ny)])
+        - ynodes[int(ny / 2)]
+    )
 
     # make sure that the stations are in the center of the cell as requested by
     # the code.
     for sdict in slst:
         # look for the closest grid line
-        xx = [nn for nn, xf in enumerate(xgrid) if xf > (sdict['east'] - xspacing)
-              and xf < (sdict['east'] + xspacing)]
+        xx = [
+            nn
+            for nn, xf in enumerate(xgrid)
+            if xf > (sdict["east"] - xspacing) and xf < (sdict["east"] + xspacing)
+        ]
 
         # shift the station to the center in the east-west direction
-        if xgrid[xx[0]] < sdict['east']:
-            sdict['east_c'] = xgrid[xx[0]] + xspacing / 2
-        elif xgrid[xx[0]] > sdict['east']:
-            sdict['east_c'] = xgrid[xx[0]] - xspacing / 2
+        if xgrid[xx[0]] < sdict["east"]:
+            sdict["east_c"] = xgrid[xx[0]] + xspacing / 2
+        elif xgrid[xx[0]] > sdict["east"]:
+            sdict["east_c"] = xgrid[xx[0]] - xspacing / 2
 
         # look for closest grid line
-        yy = [mm for mm, yf in enumerate(ygrid) if yf > (sdict['north'] - yspacing)
-              and yf < (sdict['north'] + yspacing)]
+        yy = [
+            mm
+            for mm, yf in enumerate(ygrid)
+            if yf > (sdict["north"] - yspacing) and yf < (sdict["north"] + yspacing)
+        ]
 
         # shift station to center of cell in north-south direction
-        if ygrid[yy[0]] < sdict['north']:
-            sdict['north_c'] = ygrid[yy[0]] + yspacing / 2
-        elif ygrid[yy[0]] > sdict['north']:
-            sdict['north_c'] = ygrid[yy[0]] - yspacing / 2
+        if ygrid[yy[0]] < sdict["north"]:
+            sdict["north_c"] = ygrid[yy[0]] + yspacing / 2
+        elif ygrid[yy[0]] > sdict["north"]:
+            sdict["north_c"] = ygrid[yy[0]] - yspacing / 2
 
-    #=Plot the data if desired=========================
-    if plotyn == 'y':
+    # =Plot the data if desired=========================
+    if plotyn == "y":
         fig = plt.figure(1, figsize=[10, 10], dpi=300)
 
-        #---plot map view
-        ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
+        # ---plot map view
+        ax1 = fig.add_subplot(1, 2, 1, aspect="equal")
 
         for sdict in slst:
             # make sure the station is in the center of the cell
 
-            ax1.scatter(sdict['east_c'], sdict['north_c'], marker='v')
+            ax1.scatter(sdict["east_c"], sdict["north_c"], marker="v")
 
         for xp in xgrid:
-            ax1.plot([xp, xp], [ygrid.min(), ygrid.max()], color='k')
+            ax1.plot([xp, xp], [ygrid.min(), ygrid.max()], color="k")
 
         for yp in ygrid:
-            ax1.plot([xgrid.min(), xgrid.max()], [yp, yp], color='k')
+            ax1.plot([xgrid.min(), xgrid.max()], [yp, yp], color="k")
 
         if plotxlimits is None:
-            ax1.set_xlim(locations[:, 0].min() - 10 * xspacing,
-                         locations[:, 0].max() + 10 * xspacing)
+            ax1.set_xlim(
+                locations[:, 0].min() - 10 * xspacing,
+                locations[:, 0].max() + 10 * xspacing,
+            )
         else:
             ax1.set_xlim(plotxlimits)
 
         if plotylimits is None:
-            ax1.set_ylim(locations[:, 1].min() - 50 * yspacing,
-                         locations[:, 1].max() + 50 * yspacing)
+            ax1.set_ylim(
+                locations[:, 1].min() - 50 * yspacing,
+                locations[:, 1].max() + 50 * yspacing,
+            )
         else:
             ax1.set_ylim(plotylimits)
 
-        ax1.set_ylabel('Northing (m)', fontdict={'size': 10, 'weight': 'bold'})
-        ax1.set_xlabel('Easting (m)', fontdict={'size': 10, 'weight': 'bold'})
+        ax1.set_ylabel("Northing (m)", fontdict={"size": 10, "weight": "bold"})
+        ax1.set_xlabel("Easting (m)", fontdict={"size": 10, "weight": "bold"})
 
         # ----plot depth view
-        ax2 = fig.add_subplot(1, 2, 2, aspect='auto')
+        ax2 = fig.add_subplot(1, 2, 2, aspect="auto")
 
         for xp in xgrid:
-            ax2.plot([xp, xp], [-zgrid.sum(), 0], color='k')
+            ax2.plot([xp, xp], [-zgrid.sum(), 0], color="k")
 
         for sdict in slst:
-            ax2.scatter(sdict['east_c'], 0, marker='v')
+            ax2.scatter(sdict["east_c"], 0, marker="v")
 
         for zz, zp in enumerate(zgrid):
-            ax2.plot([xgrid.min(), xgrid.max()], [-zgrid[0:zz].sum(),
-                                                  -zgrid[0:zz].sum()], color='k')
+            ax2.plot(
+                [xgrid.min(), xgrid.max()],
+                [-zgrid[0:zz].sum(), -zgrid[0:zz].sum()],
+                color="k",
+            )
 
         if plotzlimits is None:
             ax2.set_ylim(-zgrid1.max(), 200)
@@ -602,34 +651,44 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
             ax2.set_ylim(plotzlimits)
 
         if plotxlimits is None:
-            ax2.set_xlim(locations[:, 0].min() - xspacing,
-                         locations[:, 0].max() + xspacing)
+            ax2.set_xlim(
+                locations[:, 0].min() - xspacing, locations[:, 0].max() + xspacing
+            )
         else:
             ax2.set_xlim(plotxlimits)
 
-        ax2.set_ylabel('Depth (m)', fontdict={'size': 10, 'weight': 'bold'})
-        ax2.set_xlabel('Easting (m)', fontdict={'size': 10, 'weight': 'bold'})
+        ax2.set_ylabel("Depth (m)", fontdict={"size": 10, "weight": "bold"})
+        ax2.set_xlabel("Easting (m)", fontdict={"size": 10, "weight": "bold"})
 
         plt.show()
 
-    print '-' * 15
-    print '   Number of stations = {0}'.format(len(slst))
-    print '   Dimensions: '
-    print '      e-w = {0}'.format(xgrid.shape[0])
-    print '      n-s = {0}'.format(ygrid.shape[0])
-    print '       z  = {0}'.format(zgrid.shape[0])
-    print '   Extensions: '
-    print '      e-w = {0:.1f} (m)'.format(xgrid.__abs__().sum())
-    print '      n-s = {0:.1f} (m)'.format(ygrid.__abs__().sum())
-    print '      0-z = {0:.1f} (m)'.format(zgrid.__abs__().sum())
-    print '-' * 15
+    print "-" * 15
+    print "   Number of stations = {0}".format(len(slst))
+    print "   Dimensions: "
+    print "      e-w = {0}".format(xgrid.shape[0])
+    print "      n-s = {0}".format(ygrid.shape[0])
+    print "       z  = {0}".format(zgrid.shape[0])
+    print "   Extensions: "
+    print "      e-w = {0:.1f} (m)".format(xgrid.__abs__().sum())
+    print "      n-s = {0:.1f} (m)".format(ygrid.__abs__().sum())
+    print "      0-z = {0:.1f} (m)".format(zgrid.__abs__().sum())
+    print "-" * 15
     return ynodes, xnodes, zgrid, locations, slst
 
 
-def writeWSDataFile(periodlst, edilst, sitesfn=None, outfn=None,
-                    sitelocations=None, zerr=.05,
-                    ptol=.15, zerrmap=[10, 1, 1, 10], savepath=None, ncol=5,
-                    units='mv'):
+def writeWSDataFile(
+    periodlst,
+    edilst,
+    sitesfn=None,
+    outfn=None,
+    sitelocations=None,
+    zerr=0.05,
+    ptol=0.15,
+    zerrmap=[10, 1, 1, 10],
+    savepath=None,
+    ncol=5,
+    units="mv",
+):
     """
     writes a data file for WSINV3D from winglink outputs
 
@@ -693,14 +752,14 @@ def writeWSDataFile(periodlst, edilst, sitesfn=None, outfn=None,
     ns = len(edilst)
 
     # get units correctly
-    if units == 'mv':
-        zconv = 1. / 796.
+    if units == "mv":
+        zconv = 1.0 / 796.0
 
     # create the output filename
     if savepath is None:
-        ofile = os.path.join(os.path.dirname(sitesfn), 'WSDataFile.dat')
-    elif savepath.find('.') == -1:
-        ofile = os.path.join(savepath, 'WSDataFile.dat')
+        ofile = os.path.join(os.path.dirname(sitesfn), "WSDataFile.dat")
+    elif savepath.find(".") == -1:
+        ofile = os.path.join(savepath, "WSDataFile.dat")
     else:
         ofile = savepath
 
@@ -719,9 +778,9 @@ def writeWSDataFile(periodlst, edilst, sitesfn=None, outfn=None,
             ylst = np.zeros(ns)
             slst = []
             for dd, sd in enumerate(sitelocations):
-                xlst[dd] = sd['east_c']
-                ylst[dd] = sd['north_c']
-                slst.append(sd['station'])
+                xlst[dd] = sd["east_c"]
+                ylst[dd] = sd["north_c"]
+                slst.append(sd["station"])
         else:
             xlst = sitelocations[:, 0]
             ylst = sitelocations[:, 1]
@@ -730,13 +789,13 @@ def writeWSDataFile(periodlst, edilst, sitesfn=None, outfn=None,
     nperiod = len(periodlst)
 
     # make an array to put data into for easy writing
-    zarr = np.zeros((ns, nperiod, 4), dtype='complex')
+    zarr = np.zeros((ns, nperiod, 4), dtype="complex")
 
-    #--------find frequencies-------------------------------------------------
+    # --------find frequencies-------------------------------------------------
     linelst = []
     for ss, edi in enumerate(edilst):
         if not os.path.isfile(edi):
-            raise IOError('Could not find ' + edi)
+            raise IOError("Could not find " + edi)
 
         z1 = Z.Z(edi)
         sdict = {}
@@ -744,100 +803,128 @@ def writeWSDataFile(periodlst, edilst, sitesfn=None, outfn=None,
         for ff, f1 in enumerate(periodlst):
             for kk, f2 in enumerate(z1.period):
                 if f2 >= (1 - ptol) * f1 and f2 <= (1 + ptol) * f1:
-                    zderr = np.array([abs(z1.zvar[kk, nn, mm]) /
-                                      abs(z1.z[kk, nn, mm]) * 100
-                                      for nn in range(2) for mm in range(2)])
-                    fspot['{0:.6g}'.format(f1)] = (kk, f2, zderr[0], zderr[1],
-                                                   zderr[2], zderr[3])
+                    zderr = np.array(
+                        [
+                            abs(z1.zvar[kk, nn, mm]) / abs(z1.z[kk, nn, mm]) * 100
+                            for nn in range(2)
+                            for mm in range(2)
+                        ]
+                    )
+                    fspot["{0:.6g}".format(f1)] = (
+                        kk,
+                        f2,
+                        zderr[0],
+                        zderr[1],
+                        zderr[2],
+                        zderr[3],
+                    )
                     zarr[ss, ff, :] = z1.z[kk].reshape(4,)
 
         print z1.station, len(fspot)
-        sdict['fspot'] = fspot
-        sdict['station'] = z1.station
+        sdict["fspot"] = fspot
+        sdict["station"] = z1.station
         linelst.append(sdict)
 
-    #-----Write data file-----------------------------------------------------
+    # -----Write data file-----------------------------------------------------
 
-    ofid = file(ofile, 'w')
-    ofid.write('{0:d} {1:d} {2:d}\n'.format(ns, nperiod, 8))
+    ofid = file(ofile, "w")
+    ofid.write("{0:d} {1:d} {2:d}\n".format(ns, nperiod, 8))
 
     # write N-S locations
-    ofid.write('Station_Location: N-S \n')
+    ofid.write("Station_Location: N-S \n")
     for ii in range(ns / 8 + 1):
         for ll in range(8):
             try:
-                ofid.write('{0:+.4e} '.format(ylst[ii * 8 + ll]))
+                ofid.write("{0:+.4e} ".format(ylst[ii * 8 + ll]))
             except IndexError:
                 pass
-        ofid.write('\n')
+        ofid.write("\n")
 
     # write E-W locations
-    ofid.write('Station_Location: E-W \n')
+    ofid.write("Station_Location: E-W \n")
     for ii in range(ns / 8 + 1):
         for ll in range(8):
             try:
-                ofid.write('{0:+.4e} '.format(xlst[ii * 8 + ll]))
+                ofid.write("{0:+.4e} ".format(xlst[ii * 8 + ll]))
             except IndexError:
                 pass
-        ofid.write('\n')
+        ofid.write("\n")
 
     # write impedance tensor components
     for ii, p1 in enumerate(periodlst):
-        ofid.write('DATA_Period: {0:3.6f}\n'.format(p1))
+        ofid.write("DATA_Period: {0:3.6f}\n".format(p1))
         for ss in range(ns):
             zline = zarr[ss, ii, :]
             for jj in range(4):
-                ofid.write('{0:+.4e} '.format(zline[jj].real * zconv))
-                ofid.write('{0:+.4e} '.format(-zline[jj].imag * zconv))
-            ofid.write('\n')
+                ofid.write("{0:+.4e} ".format(zline[jj].real * zconv))
+                ofid.write("{0:+.4e} ".format(-zline[jj].imag * zconv))
+            ofid.write("\n")
 
     # write error as a percentage of Z
     for ii, p1 in enumerate(periodlst):
-        ofid.write('ERROR_Period: {0:3.6f}\n'.format(p1))
+        ofid.write("ERROR_Period: {0:3.6f}\n".format(p1))
         for ss in range(ns):
             zline = zarr[ss, ii, :]
             for jj in range(4):
-                ofid.write('{0:+.4e} '.format(zline[jj].real * zerr * zconv))
-                ofid.write('{0:+.4e} '.format(zline[jj].imag * zerr * zconv))
-            ofid.write('\n')
+                ofid.write("{0:+.4e} ".format(zline[jj].real * zerr * zconv))
+                ofid.write("{0:+.4e} ".format(zline[jj].imag * zerr * zconv))
+            ofid.write("\n")
 
     # write error maps
     for ii, p1 in enumerate(periodlst):
-        ofid.write('ERMAP_Period: {0:3.6f}\n'.format(p1))
+        ofid.write("ERMAP_Period: {0:3.6f}\n".format(p1))
         for ss in range(ns):
             zline = zarr[ss, ii, :]
             for jj in range(4):
-                ofid.write('{0:.5e} '.format(zerrmap[jj]))
-                ofid.write('{0:.5e} '.format(zerrmap[jj]))
-            ofid.write('\n')
+                ofid.write("{0:.5e} ".format(zerrmap[jj]))
+                ofid.write("{0:.5e} ".format(zerrmap[jj]))
+            ofid.write("\n")
     ofid.close()
-    print 'Wrote file to: ' + ofile
+    print "Wrote file to: " + ofile
 
     # write out places where errors are larger than error tolerance
-    errfid = file(os.path.join(os.path.dirname(ofile), 'DataErrorLocations.txt'),
-                  'w')
-    errfid.write('Errors larger than error tolerance of: \n')
-    errfid.write('Zxx={0} Zxy={1} Zyx={2} Zyy={3} \n'.format(zerrmap[0] * zerr,
-                                                             zerrmap[1] * zerr, zerrmap[2] * zerr, zerrmap[3] * zerr))
-    errfid.write('-' * 20 + '\n')
-    errfid.write('station  T=period(s) Zij err=percentage \n')
+    errfid = file(os.path.join(os.path.dirname(ofile), "DataErrorLocations.txt"), "w")
+    errfid.write("Errors larger than error tolerance of: \n")
+    errfid.write(
+        "Zxx={0} Zxy={1} Zyx={2} Zyy={3} \n".format(
+            zerrmap[0] * zerr, zerrmap[1] * zerr, zerrmap[2] * zerr, zerrmap[3] * zerr
+        )
+    )
+    errfid.write("-" * 20 + "\n")
+    errfid.write("station  T=period(s) Zij err=percentage \n")
     for pfdict in linelst:
-        for kk, ff in enumerate(pfdict['fspot']):
-            if pfdict['fspot'][ff][2] > zerr * 100 * zerrmap[0]:
-                errfid.write(pfdict['station'] + '  T=' + ff +
-                             ' Zxx err={0:.3f} \n'.format(pfdict['fspot'][ff][2]))
-            if pfdict['fspot'][ff][3] > zerr * 100 * zerrmap[1]:
-                errfid.write(pfdict['station'] + '  T=' + ff +
-                             ' Zxy err={0:.3f} \n'.format(pfdict['fspot'][ff][3]))
-            if pfdict['fspot'][ff][4] > zerr * 100 * zerrmap[2]:
-                errfid.write(pfdict['station'] + '  T=' + ff +
-                             ' Zyx err={0:.3f} \n'.format(pfdict['fspot'][ff][4]))
-            if pfdict['fspot'][ff][5] > zerr * 100 * zerrmap[3]:
-                errfid.write(pfdict['station'] + '  T=' + ff +
-                             ' Zyy err={0:.3f} \n'.format(pfdict['fspot'][ff][5]))
+        for kk, ff in enumerate(pfdict["fspot"]):
+            if pfdict["fspot"][ff][2] > zerr * 100 * zerrmap[0]:
+                errfid.write(
+                    pfdict["station"]
+                    + "  T="
+                    + ff
+                    + " Zxx err={0:.3f} \n".format(pfdict["fspot"][ff][2])
+                )
+            if pfdict["fspot"][ff][3] > zerr * 100 * zerrmap[1]:
+                errfid.write(
+                    pfdict["station"]
+                    + "  T="
+                    + ff
+                    + " Zxy err={0:.3f} \n".format(pfdict["fspot"][ff][3])
+                )
+            if pfdict["fspot"][ff][4] > zerr * 100 * zerrmap[2]:
+                errfid.write(
+                    pfdict["station"]
+                    + "  T="
+                    + ff
+                    + " Zyx err={0:.3f} \n".format(pfdict["fspot"][ff][4])
+                )
+            if pfdict["fspot"][ff][5] > zerr * 100 * zerrmap[3]:
+                errfid.write(
+                    pfdict["station"]
+                    + "  T="
+                    + ff
+                    + " Zyy err={0:.3f} \n".format(pfdict["fspot"][ff][5])
+                )
     errfid.close()
-    print 'Wrote errors lager than tolerance to: '
-    print os.path.join(os.path.dirname(ofile), 'DataErrorLocations.txt')
+    print "Wrote errors lager than tolerance to: "
+    print os.path.join(os.path.dirname(ofile), "DataErrorLocations.txt")
 
     return ofile, linelst
 
@@ -858,9 +945,9 @@ def writeInit3DFile_wl(outfn, rhostart=100, ncol=5, savepath=None):
 
     # create the output filename
     if savepath is None:
-        ifile = os.path.join(os.path.dirname(outfn), 'init3d')
-    elif savepath.find('.') == -1:
-        ifile = os.path.join(savepath, 'init3d')
+        ifile = os.path.join(os.path.dirname(outfn), "init3d")
+    elif savepath.find(".") == -1:
+        ifile = os.path.join(savepath, "init3d")
     else:
         ifile = savepath
 
@@ -870,60 +957,67 @@ def writeInit3DFile_wl(outfn, rhostart=100, ncol=5, savepath=None):
     ny = len(dy)
     nz = len(dz)
 
-    init_modelFH = open(ifile, 'w')
-    init_modelFH.write('#Initial model \n')
-    init_modelFH.write('%i %i %i 1 \n' % (ny, nx, nz))
+    init_modelFH = open(ifile, "w")
+    init_modelFH.write("#Initial model \n")
+    init_modelFH.write("%i %i %i 1 \n" % (ny, nx, nz))
 
     # write y locations
-    y_string = ''
+    y_string = ""
     y_counter = 0
     for y_idx in range(ny):
-        y_string += '%.3e  ' % (dy[y_idx])
+        y_string += "%.3e  " % (dy[y_idx])
         y_counter += 1
         if y_counter == 8:
-            y_string += '\n'
+            y_string += "\n"
             y_counter = 0
     if ny % 8:
-        y_string += '\n'
+        y_string += "\n"
     init_modelFH.write(y_string)
 
     # write x locations
-    x_string = ''
+    x_string = ""
     x_counter = 0
     for x_idx in range(nx):
-        x_string += '%.3e  ' % (dx[x_idx])
+        x_string += "%.3e  " % (dx[x_idx])
         x_counter += 1
         if x_counter == 8:
-            x_string += '\n'
+            x_string += "\n"
             x_counter = 0
     if nx % 8:
-        x_string += '\n'
+        x_string += "\n"
     init_modelFH.write(x_string)
 
     # write z locations
-    z_string = ''
+    z_string = ""
     z_counter = 0
     for z_idx in range(nz):
-        z_string += '%.3e  ' % (dz[z_idx])
+        z_string += "%.3e  " % (dz[z_idx])
         z_counter += 1
         if z_counter == 8:
-            z_string += '\n'
+            z_string += "\n"
             z_counter = 0
     if nz % 8:
-        z_string += '\n'
+        z_string += "\n"
     init_modelFH.write(z_string)
 
-    init_modelFH.write('%i \n' % int(rhostart))
+    init_modelFH.write("%i \n" % int(rhostart))
 
     init_modelFH.close()
 
-    print 'Wrote init file to: ' + ifile
+    print "Wrote init file to: " + ifile
 
     return ifile
 
 
-def writeInit3DFile(xgrid, ygrid, zgrid, savepath, reslst=100,
-                    title='Initial File for WSINV3D', resmodel=None):
+def writeInit3DFile(
+    xgrid,
+    ygrid,
+    zgrid,
+    savepath,
+    reslst=100,
+    title="Initial File for WSINV3D",
+    resmodel=None,
+):
     """
     will write an initial file for wsinv3d.  At the moment can only make a
     layered model that can then be manipulated later.  Input for a layered
@@ -997,42 +1091,44 @@ def writeInit3DFile(xgrid, ygrid, zgrid, savepath, reslst=100,
     else:
         ifn = os.path.join(savepath)
 
-    ifid = file(ifn, 'w')
-    ifid.write('# ' + title + '\n'.upper())
-    ifid.write('{0} {1} {2} {3}\n'.format(xgrid.shape[0], ygrid.shape[0],
-                                          zgrid.shape[0], len(reslst)))
+    ifid = file(ifn, "w")
+    ifid.write("# " + title + "\n".upper())
+    ifid.write(
+        "{0} {1} {2} {3}\n".format(
+            xgrid.shape[0], ygrid.shape[0], zgrid.shape[0], len(reslst)
+        )
+    )
 
     # write S --> N node block
     for ii, xx in enumerate(xgrid):
-        ifid.write('{0:>12}'.format('{:.1f}'.format(abs(xx))))
+        ifid.write("{0:>12}".format("{:.1f}".format(abs(xx))))
         if ii != 0 and np.remainder(ii + 1, 5) == 0:
-            ifid.write('\n')
+            ifid.write("\n")
         elif ii == xgrid.shape[0] - 1:
-            ifid.write('\n')
+            ifid.write("\n")
 
     # write W --> E node block
     for jj, yy in enumerate(ygrid):
-        ifid.write('{0:>12}'.format('{:.1f}'.format(abs(yy))))
+        ifid.write("{0:>12}".format("{:.1f}".format(abs(yy))))
         if jj != 0 and np.remainder(jj + 1, 5) == 0:
-            ifid.write('\n')
+            ifid.write("\n")
         elif jj == ygrid.shape[0] - 1:
-            ifid.write('\n')
+            ifid.write("\n")
 
     # write top --> bottom node block
     for kk, zz in enumerate(zgrid):
-        ifid.write('{0:>12}'.format('{:.1f}'.format(abs(zz))))
+        ifid.write("{0:>12}".format("{:.1f}".format(abs(zz))))
         if kk != 0 and np.remainder(kk + 1, 5) == 0:
-            ifid.write('\n')
+            ifid.write("\n")
         elif kk == zgrid.shape[0] - 1:
-            ifid.write('\n')
+            ifid.write("\n")
 
     # write the resistivity list
     for ff in reslst:
-        ifid.write('{0:.1f} '.format(ff))
-    ifid.write('\n')
+        ifid.write("{0:.1f} ".format(ff))
+    ifid.write("\n")
 
-
-#    else:
+    #    else:
     if resmodel is None:
         ifid.close()
     else:
@@ -1048,13 +1144,13 @@ def writeInit3DFile(xgrid, ygrid, zgrid, savepath, reslst=100,
 
         # write out the layers from resmodel
         for ll in layers:
-            ifid.write('{0} {1}\n'.format(ll[0] + 1, ll[1] + 1))
+            ifid.write("{0} {1}\n".format(ll[0] + 1, ll[1] + 1))
             for xx in range(xgrid.shape[0]):
                 for yy in range(ygrid.shape[0]):
-                    ifid.write('{0:.0f} '.format(resmodel[xx, yy, ll[0]]))
-                ifid.write('\n')
+                    ifid.write("{0:.0f} ".format(resmodel[xx, yy, ll[0]]))
+                ifid.write("\n")
 
-    print 'Wrote file to: ' + ifn
+    print "Wrote file to: " + ifn
     return ifn
 
 
@@ -1092,7 +1188,7 @@ def readInit3D(initfn):
 
     """
 
-    ifid = file(initfn, 'r')
+    ifid = file(initfn, "r")
     ilines = ifid.readlines()
     ifid.close()
 
@@ -1138,18 +1234,24 @@ def readInit3D(initfn):
 
     # put the grids into coordinates relative to the center of the grid
     xgrid = xnodes.copy()
-    xgrid[:int(nx / 2)] = -np.array([xnodes[ii:int(nx / 2)].sum()
-                                     for ii in range(int(nx / 2))])
-    xgrid[int(nx / 2):] = np.array([xnodes[int(nx / 2):ii + 1].sum()
-                                    for ii in range(int(nx / 2), nx)]) - xnodes[int(nx / 2)]
+    xgrid[: int(nx / 2)] = -np.array(
+        [xnodes[ii : int(nx / 2)].sum() for ii in range(int(nx / 2))]
+    )
+    xgrid[int(nx / 2) :] = (
+        np.array([xnodes[int(nx / 2) : ii + 1].sum() for ii in range(int(nx / 2), nx)])
+        - xnodes[int(nx / 2)]
+    )
 
     ygrid = ynodes.copy()
-    ygrid[:int(ny / 2)] = -np.array([ynodes[ii:int(ny / 2)].sum()
-                                     for ii in range(int(ny / 2))])
-    ygrid[int(ny / 2):] = np.array([ynodes[int(ny / 2):ii + 1].sum()
-                                    for ii in range(int(ny / 2), ny)]) - ynodes[int(ny / 2)]
+    ygrid[: int(ny / 2)] = -np.array(
+        [ynodes[ii : int(ny / 2)].sum() for ii in range(int(ny / 2))]
+    )
+    ygrid[int(ny / 2) :] = (
+        np.array([ynodes[int(ny / 2) : ii + 1].sum() for ii in range(int(ny / 2), ny)])
+        - ynodes[int(ny / 2)]
+    )
 
-    zgrid = np.array([znodes[:ii + 1].sum() for ii in range(nz)])
+    zgrid = np.array([znodes[: ii + 1].sum() for ii in range(nz)])
 
     # get the resistivity values
     reslst = [float(rr) for rr in ilines[nn].strip().split()]
@@ -1174,8 +1276,8 @@ def readInit3D(initfn):
                 yy = 0
                 while yy < ny:
                     resmodel[xx, yy, l1:l2] = int(iline[yy])
-#                        if l1==20:
-#                            print nn,xx,yy,l1,l2,iline[yy]
+                    #                        if l1==20:
+                    #                            print nn,xx,yy,l1,l2,iline[yy]
                     yy += 1
                 xx += 1
                 nn += 1
@@ -1183,10 +1285,20 @@ def readInit3D(initfn):
         return xgrid, ygrid, zgrid, reslst, titlestr, resmodel, xnodes, ynodes, znodes
 
 
-def writeStartupFile(datafn, initialfn=None, outputfn=None, savepath=None,
-                     apriorfn=None, modells=[5, 0.3, 0.3, 0.3], targetrms=1.0,
-                     control=None, maxiter=10, errortol=None, staticfn=None,
-                     lagrange=None):
+def writeStartupFile(
+    datafn,
+    initialfn=None,
+    outputfn=None,
+    savepath=None,
+    apriorfn=None,
+    modells=[5, 0.3, 0.3, 0.3],
+    targetrms=1.0,
+    control=None,
+    maxiter=10,
+    errortol=None,
+    staticfn=None,
+    lagrange=None,
+):
     """
     makes a startup file for WSINV3D t.  Most of these parameters are not input
 
@@ -1211,73 +1323,71 @@ def writeStartupFile(datafn, initialfn=None, outputfn=None, savepath=None,
 
     # create the output filename
     if savepath is None:
-        sfile = os.path.join(os.path.dirname(datafn), 'startup')
-    elif savepath.find('.') == -1:
-        sfile = os.path.join(savepath, 'startup')
+        sfile = os.path.join(os.path.dirname(datafn), "startup")
+    elif savepath.find(".") == -1:
+        sfile = os.path.join(savepath, "startup")
     else:
         sfile = savepath
 
-    sfid = file(sfile, 'w')
+    sfid = file(sfile, "w")
 
-    sfid.write(
-        'DATA_FILE' +
-        ' ' *
-        11 +
-        '../' +
-        os.path.basename(datafn) +
-        '\n')
+    sfid.write("DATA_FILE" + " " * 11 + "../" + os.path.basename(datafn) + "\n")
 
     if outputfn is None:
-        sfid.write('OUTPUT_FILE' + ' ' * 9 + 'Iter_ \n')
+        sfid.write("OUTPUT_FILE" + " " * 9 + "Iter_ \n")
     else:
-        sfid.write('OUTPUT_FILE' + ' ' * 9 + outputfn + ' \n')
+        sfid.write("OUTPUT_FILE" + " " * 9 + outputfn + " \n")
 
     if initialfn is None:
-        sfid.write('INITIAL_MODEL_FILE' + ' ' * 2 + '../init3d \n')
+        sfid.write("INITIAL_MODEL_FILE" + " " * 2 + "../init3d \n")
     else:
-        sfid.write('INITIAL_MODEL_FILE' + ' ' * 2 + initialfn + ' \n')
+        sfid.write("INITIAL_MODEL_FILE" + " " * 2 + initialfn + " \n")
 
     if apriorfn is None:
-        sfid.write('PRIOR_MODEL_FILE' + ' ' * 4 + 'default \n')
+        sfid.write("PRIOR_MODEL_FILE" + " " * 4 + "default \n")
     else:
-        sfid.write('PRIOR_MODEL_FILE' + ' ' * 4 + apriorfn + ' \n')
+        sfid.write("PRIOR_MODEL_FILE" + " " * 4 + apriorfn + " \n")
 
     if control is None:
-        sfid.write('CONTROL_MODEL_INDEX' + ' ' + 'default \n')
+        sfid.write("CONTROL_MODEL_INDEX" + " " + "default \n")
     else:
-        sfid.write('CONTROL_MODEL_INDEX' + ' ' + control + ' \n')
+        sfid.write("CONTROL_MODEL_INDEX" + " " + control + " \n")
 
-    sfid.write('TARGET_RMS' + ' ' * 10 + '{0} \n'.format(targetrms))
+    sfid.write("TARGET_RMS" + " " * 10 + "{0} \n".format(targetrms))
 
-    sfid.write('MAX_NO_ITERATION' + ' ' * 4 + '{0} \n'.format(maxiter))
+    sfid.write("MAX_NO_ITERATION" + " " * 4 + "{0} \n".format(maxiter))
 
-    sfid.write('MODEL_LENGTH_SCALE' + ' ' * 2 +
-               '{0} {1:.1f} {1:.1f} {1:.1f} \n'.format(modells[0], modells[1],
-                                                       modells[2], modells[3]))
+    sfid.write(
+        "MODEL_LENGTH_SCALE"
+        + " " * 2
+        + "{0} {1:.1f} {1:.1f} {1:.1f} \n".format(
+            modells[0], modells[1], modells[2], modells[3]
+        )
+    )
 
     if lagrange is None:
-        sfid.write('LAGRANGE_INFO' + ' ' * 7 + 'default \n')
+        sfid.write("LAGRANGE_INFO" + " " * 7 + "default \n")
     else:
-        sfid.write('LAGRANGE_INFO' + ' ' * 7 + lagrange + ' \n')
+        sfid.write("LAGRANGE_INFO" + " " * 7 + lagrange + " \n")
 
     if errortol is None:
-        sfid.write('ERROR_TOL_LEVEL' + ' ' * 5 + 'default \n')
+        sfid.write("ERROR_TOL_LEVEL" + " " * 5 + "default \n")
     else:
-        sfid.write('ERROR_TOL_LEVEL' + ' ' * 5 + errortol + ' \n')
+        sfid.write("ERROR_TOL_LEVEL" + " " * 5 + errortol + " \n")
 
     if staticfn is None:
-        sfid.write('STATIC_FILE' + ' ' * 9 + 'default \n')
+        sfid.write("STATIC_FILE" + " " * 9 + "default \n")
     else:
-        sfid.write('STATIC_FILE' + ' ' * 9 + staticfn + ' \n')
+        sfid.write("STATIC_FILE" + " " * 9 + staticfn + " \n")
 
     sfid.close()
 
-    print 'Wrote startup file to: ' + sfile
+    print "Wrote startup file to: " + sfile
 
     return sfile
 
 
-def readDataFile(datafn, sitesfn=None, units='mv'):
+def readDataFile(datafn, sitesfn=None, units="mv"):
     """
     read in data file
 
@@ -1296,35 +1406,35 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
        sitelst = list of sites used in data
     """
 
-    if units == 'mv':
-        zconv = 796.
+    if units == "mv":
+        zconv = 796.0
     else:
         zconv = 1
 
-    dfid = file(datafn, 'r')
+    dfid = file(datafn, "r")
     dlines = dfid.readlines()
 
     # get size number of stations, number of frequencies, number of Z
     # components
-    ns, nf, nz = np.array(dlines[0].strip().split(), dtype='int')
+    ns, nf, nz = np.array(dlines[0].strip().split(), dtype="int")
     nsstart = 2
 
     findlst = []
     for ii, dline in enumerate(dlines[1:50], 1):
-        if dline.find('Station_Location: N-S') == 0:
+        if dline.find("Station_Location: N-S") == 0:
             findlst.append(ii)
-        elif dline.find('Station_Location: E-W') == 0:
+        elif dline.find("Station_Location: E-W") == 0:
             findlst.append(ii)
-        elif dline.find('DATA_Period:') == 0:
+        elif dline.find("DATA_Period:") == 0:
             findlst.append(ii)
 
     ncol = len(dlines[nsstart].strip().split())
-#    print ncol
-#    nsstop=nsstart+ns/ncol+1
-#    ewstart=nsstop+1
-#    ewstop=ewstart+ns/ncol+1
-#    zstart=ewstop
-#    print nsstop,ewstart,ewstop,zstart
+    #    print ncol
+    #    nsstop=nsstart+ns/ncol+1
+    #    ewstart=nsstop+1
+    #    ewstop=ewstart+ns/ncol+1
+    #    zstart=ewstop
+    #    print nsstop,ewstart,ewstop,zstart
 
     # get site names if entered a sites file
     if sitesfn is not None:
@@ -1334,7 +1444,7 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
 
     # get N-S locations
     nsarr = np.zeros(ns)
-    for ii, dline in enumerate(dlines[findlst[0] + 1:findlst[1]], 0):
+    for ii, dline in enumerate(dlines[findlst[0] + 1 : findlst[1]], 0):
         dline = dline.strip().split()
         for jj in range(ncol):
             try:
@@ -1346,7 +1456,7 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
 
     # get E-W locations
     ewarr = np.zeros(ns)
-    for ii, dline in enumerate(dlines[findlst[1] + 1:findlst[2]], 0):
+    for ii, dline in enumerate(dlines[findlst[1] + 1 : findlst[2]], 0):
         dline = dline.strip().split()
         for jj in range(8):
             try:
@@ -1364,8 +1474,8 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
     # get data
     pcount = 0
     zcount = 0
-    for ii, dl in enumerate(dlines[findlst[2]:findlst[2] + nf * (ns + 1)]):
-        if dl.find('DATA_Period') == 0:
+    for ii, dl in enumerate(dlines[findlst[2] : findlst[2] + nf * (ns + 1)]):
+        if dl.find("DATA_Period") == 0:
             period[pcount] = float(dl.strip().split()[1])
             kk = 0
             pcount += 1
@@ -1375,21 +1485,24 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
                 zcount += 1
         else:
             zline = np.array(dl.strip().split(), dtype=np.float) * zconv
-            zarr[kk, zcount, :, :] = np.array([[zline[0] - 1j * zline[1],
-                                                zline[2] - 1j * zline[3]],
-                                               [zline[4] - 1j * zline[5],
-                                                zline[6] - 1j * zline[7]]])
+            zarr[kk, zcount, :, :] = np.array(
+                [
+                    [zline[0] - 1j * zline[1], zline[2] - 1j * zline[3]],
+                    [zline[4] - 1j * zline[5], zline[6] - 1j * zline[7]],
+                ]
+            )
             kk += 1
 
     # if the data file is made from this program or is the input data file than
     # get the errors from that file
     if len(dlines) > 2 * nf * ns:
-        print 'Getting Error'
+        print "Getting Error"
         pecount = 0
         zecount = 0
         for ii, dl in enumerate(
-                dlines[findlst[2] + nf * (ns + 1):findlst[2] + 2 * nf * (ns + 1)]):
-            if dl.find('ERROR_Period') == 0:
+            dlines[findlst[2] + nf * (ns + 1) : findlst[2] + 2 * nf * (ns + 1)]
+        ):
+            if dl.find("ERROR_Period") == 0:
                 kk = 0
                 pecount += 1
                 if ii == 0:
@@ -1398,20 +1511,23 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
                     zecount += 1
             else:
                 zline = np.array(dl.strip().split(), dtype=np.float) * zconv
-                zerr[kk, zecount, :, :] = np.array([[zline[0] - 1j * zline[1],
-                                                     zline[2] - 1j * zline[3]],
-                                                    [zline[4] - 1j * zline[5],
-                                                     zline[6] - 1j * zline[7]]])
+                zerr[kk, zecount, :, :] = np.array(
+                    [
+                        [zline[0] - 1j * zline[1], zline[2] - 1j * zline[3]],
+                        [zline[4] - 1j * zline[5], zline[6] - 1j * zline[7]],
+                    ]
+                )
                 kk += 1
 
     # get errormap values
     if len(dlines) > 3 * nf * ns:
-        print 'Getting Error Map'
+        print "Getting Error Map"
         pmcount = 0
         zmcount = 0
         for ii, dl in enumerate(
-                dlines[findlst[2] + 2 * nf * (ns + 1):findlst[2] + 3 * nf * (ns + 1)]):
-            if dl.find('ERMAP_Period') == 0:
+            dlines[findlst[2] + 2 * nf * (ns + 1) : findlst[2] + 3 * nf * (ns + 1)]
+        ):
+            if dl.find("ERMAP_Period") == 0:
                 kk = 0
                 pmcount += 1
                 if ii == 0:
@@ -1422,10 +1538,12 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
                 # account for end of file empty lines
                 if len(dl.split()) > 2:
                     zline = np.array(dl.strip().split(), dtype=np.float)
-                    zerrmap[kk, zmcount, :, :] = np.array([[zline[0] - 1j * zline[1],
-                                                            zline[2] - 1j * zline[3]],
-                                                           [zline[4] - 1j * zline[5],
-                                                            zline[6] - 1j * zline[7]]])
+                    zerrmap[kk, zmcount, :, :] = np.array(
+                        [
+                            [zline[0] - 1j * zline[1], zline[2] - 1j * zline[3]],
+                            [zline[4] - 1j * zline[5], zline[6] - 1j * zline[7]],
+                        ]
+                    )
                     kk += 1
 
     # multiply errmap and error and convert from Ohm to mv/km nT
@@ -1434,8 +1552,16 @@ def readDataFile(datafn, sitesfn=None, units='mv'):
     return period, zarr, zerr, nsarr, ewarr, sitelst
 
 
-def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
-                     dpi=150, units='mv', colormode='color'):
+def plotDataResPhase(
+    datafn,
+    respfn=None,
+    sitesfn=None,
+    plottype="1",
+    plotnum=1,
+    dpi=150,
+    units="mv",
+    colormode="color",
+):
     """
     plot responses from the data file and if there is a response file
 
@@ -1451,35 +1577,36 @@ def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
     """
 
     # plot in color mode or black and white
-    if colormode == 'color':
+    if colormode == "color":
         # color for data
         cted = (0, 0, 1)
         ctmd = (1, 0, 0)
-        mted = '*'
-        mtmd = '*'
+        mted = "*"
+        mtmd = "*"
 
         # color for occam model
-        ctem = (0, .3, 1.0)
-        ctmm = (1, .3, 0)
-        mtem = '+'
-        mtmm = '+'
+        ctem = (0, 0.3, 1.0)
+        ctmm = (1, 0.3, 0)
+        mtem = "+"
+        mtmm = "+"
 
-    elif colormode == 'bw':
+    elif colormode == "bw":
         # color for data
         cted = (0, 0, 0)
         ctmd = (0, 0, 0)
-        mted = '*'
-        mtmd = 'v'
+        mted = "*"
+        mtmd = "v"
 
         # color for occam model
-        ctem = (0.6, .6, .6)
-        ctmm = (.6, .6, .6)
-        mtem = '+'
-        mtmm = 'x'
+        ctem = (0.6, 0.6, 0.6)
+        ctmm = (0.6, 0.6, 0.6)
+        mtem = "+"
+        mtmm = "x"
 
     # load the data file
-    period, dz, dzerr, north, east, slst = readDataFile(datafn, sitesfn=sitesfn,
-                                                        units=units)
+    period, dz, dzerr, north, east, slst = readDataFile(
+        datafn, sitesfn=sitesfn, units=units
+    )
     # get shape of impedance tensors
     ns, nf = dz.shape[0], dz.shape[1]
 
@@ -1490,8 +1617,9 @@ def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
         if not isinstance(respfn, list):
             respfn = [respfn]
         for rfile in respfn:
-            period, rz, rzerr, north, east, slst = readDataFile(rfile, sitesfn=sitesfn,
-                                                                units=units)
+            period, rz, rzerr, north, east, slst = readDataFile(
+                rfile, sitesfn=sitesfn, units=units
+            )
             rzlst.append(rz)
             rzerrlst.append(rzerr)
     else:
@@ -1502,18 +1630,18 @@ def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
     if isinstance(plottype, list):
         ns = len(plottype)
 
-    plt.rcParams['font.size'] = 10
-    plt.rcParams['figure.subplot.left'] = .13
-    plt.rcParams['figure.subplot.right'] = .98
-    plt.rcParams['figure.subplot.bottom'] = .1
-    plt.rcParams['figure.subplot.top'] = .92
-    plt.rcParams['figure.subplot.wspace'] = .25
-    plt.rcParams['figure.subplot.hspace'] = .05
+    plt.rcParams["font.size"] = 10
+    plt.rcParams["figure.subplot.left"] = 0.13
+    plt.rcParams["figure.subplot.right"] = 0.98
+    plt.rcParams["figure.subplot.bottom"] = 0.1
+    plt.rcParams["figure.subplot.top"] = 0.92
+    plt.rcParams["figure.subplot.wspace"] = 0.25
+    plt.rcParams["figure.subplot.hspace"] = 0.05
 
-    fontdict = {'size': 12, 'weight': 'bold'}
-    gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], hspace=.1)
+    fontdict = {"size": 12, "weight": "bold"}
+    gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], hspace=0.1)
 
-    if plottype != '1':
+    if plottype != "1":
         pstationlst = []
         if not isinstance(plottype, list):
             plottype = [plottype]
@@ -1530,11 +1658,11 @@ def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
         pstationlst = np.arange(ns)
 
     for jj in pstationlst:
-        print 'Plotting: ' + str(slst[jj])
+        print "Plotting: " + str(slst[jj])
 
         # check for masked points
-        dz[jj][np.where(dz[jj] == 7.95204E5 - 7.95204E5j)] = 0.0 + 0.0j
-        dzerr[jj][np.where(dz[jj] == 7.95204E5 - 7.95204E5j)] = 1.0 + 1.0j
+        dz[jj][np.where(dz[jj] == 7.95204e5 - 7.95204e5j)] = 0.0 + 0.0j
+        dzerr[jj][np.where(dz[jj] == 7.95204e5 - 7.95204e5j)] = 1.0 + 1.0j
 
         # convert to apparent resistivity and phase
         rp = Z.ResPhase(dz[jj], period, zvar=dzerr[jj])
@@ -1553,110 +1681,226 @@ def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
         # make figure for xy,yx components
         if plotnum == 1:
             fig = plt.figure(jj, [10, 12], dpi=dpi)
-            gs.update(hspace=.1, wspace=.15, left=.1)
+            gs.update(hspace=0.1, wspace=0.15, left=0.1)
         elif plotnum == 2:
             fig = plt.figure(jj, [12, 12], dpi=dpi)
-            gs.update(hspace=.1, wspace=.15, left=.07)
+            gs.update(hspace=0.1, wspace=0.15, left=0.07)
 
-        #---------plot the apparent resistivity--------------------------------
+        # ---------plot the apparent resistivity--------------------------------
         if plotnum == 1:
             ax = fig.add_subplot(gs[0, :])
             ax2 = fig.add_subplot(gs[1, :], sharex=ax)
-            ax.yaxis.set_label_coords(-.055, 0.5)
-            ax2.yaxis.set_label_coords(-.055, 0.5)
+            ax.yaxis.set_label_coords(-0.055, 0.5)
+            ax2.yaxis.set_label_coords(-0.055, 0.5)
         elif plotnum == 2:
             ax = fig.add_subplot(gs[0, 0])
             ax2 = fig.add_subplot(gs[1, 0], sharex=ax)
-            ax.yaxis.set_label_coords(-.075, 0.5)
-            ax2.yaxis.set_label_coords(-.075, 0.5)
+            ax.yaxis.set_label_coords(-0.075, 0.5)
+            ax2.yaxis.set_label_coords(-0.075, 0.5)
 
-        fig.suptitle(str(slst[jj]), fontdict={'size': 15, 'weight': 'bold'})
-        erxy = ax.errorbar(period[nzxy], rp.resxy[nzxy], marker=mted, ms=4,
-                           mfc='None', mec=cted, mew=1, ls=':',
-                           yerr=rp.resxyerr[nzxy], ecolor=cted, color=cted)
-        eryx = ax.errorbar(period[nzyx], rp.resyx[nzyx], marker=mtmd, ms=4,
-                           mfc='None', mec=ctmd, mew=1, ls=':',
-                           yerr=rp.resyxerr[nzyx], ecolor=ctmd, color=ctmd)
+        fig.suptitle(str(slst[jj]), fontdict={"size": 15, "weight": "bold"})
+        erxy = ax.errorbar(
+            period[nzxy],
+            rp.resxy[nzxy],
+            marker=mted,
+            ms=4,
+            mfc="None",
+            mec=cted,
+            mew=1,
+            ls=":",
+            yerr=rp.resxyerr[nzxy],
+            ecolor=cted,
+            color=cted,
+        )
+        eryx = ax.errorbar(
+            period[nzyx],
+            rp.resyx[nzyx],
+            marker=mtmd,
+            ms=4,
+            mfc="None",
+            mec=ctmd,
+            mew=1,
+            ls=":",
+            yerr=rp.resyxerr[nzyx],
+            ecolor=ctmd,
+            color=ctmd,
+        )
         if plotr == True:
             for rr in range(nr):
-                if colormode == 'color':
-                    cxy = (0, .4 + float(rr) / (3 * nr), 0)
-                    cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                           float(rr) / (4 * nr))
-                elif colormode == 'bw':
-                    cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                           (rr + 2.), 1 - 1.25 / (rr + 2.))
-                    cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                           (rr + 2.), 1 - 1.25 / (rr + 2.))
+                if colormode == "color":
+                    cxy = (0, 0.4 + float(rr) / (3 * nr), 0)
+                    cyx = (
+                        0.7 + float(rr) / (4 * nr),
+                        0.13,
+                        0.63 - float(rr) / (4 * nr),
+                    )
+                elif colormode == "bw":
+                    cxy = (
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                    )
+                    cyx = (
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                    )
 
                 rpr = Z.ResPhase(rzlst[rr][jj], period, zvar=rzerrlst[rr][jj])
 
-#                rms=np.sqrt(np.sum([abs(np.linalg.det(rp.z[ll])-
-#                                        np.linalg.det(rpr.z[ll]))**2
-#                            for ll in range(len(rp.period))])/len(rp.period))
-                rms = np.sqrt(np.mean([(np.sqrt(abs(np.linalg.det(rp.z[ll]))) -
-                                        np.sqrt(abs(np.linalg.det(rpr.z[ll]))))**2
-                                       for ll in range(len(rp.period))]))
-                print 'RMS = {:.2f}'.format(rms)
-                erxyr = ax.errorbar(period[nzxy], rpr.resxy[nzxy], marker=mtem,
-                                    ms=8, mfc='None', mec=cxy, mew=1, ls='--',
-                                    yerr=rpr.resxyerr[nzxy],
-                                    ecolor=cxy, color=cxy)
-                eryxr = ax.errorbar(period[nzyx], rpr.resyx[nzyx], marker=mtmm,
-                                    ms=8, mfc='None', mec=cyx, mew=1, ls='--',
-                                    yerr=rpr.resyxerr[nzyx],
-                                    ecolor=cyx, color=cyx)
-        #ax.set_xlabel('Period (s)',fontdict=fontdict)
+                #                rms=np.sqrt(np.sum([abs(np.linalg.det(rp.z[ll])-
+                #                                        np.linalg.det(rpr.z[ll]))**2
+                #                            for ll in range(len(rp.period))])/len(rp.period))
+                rms = np.sqrt(
+                    np.mean(
+                        [
+                            (
+                                np.sqrt(abs(np.linalg.det(rp.z[ll])))
+                                - np.sqrt(abs(np.linalg.det(rpr.z[ll])))
+                            )
+                            ** 2
+                            for ll in range(len(rp.period))
+                        ]
+                    )
+                )
+                print "RMS = {:.2f}".format(rms)
+                erxyr = ax.errorbar(
+                    period[nzxy],
+                    rpr.resxy[nzxy],
+                    marker=mtem,
+                    ms=8,
+                    mfc="None",
+                    mec=cxy,
+                    mew=1,
+                    ls="--",
+                    yerr=rpr.resxyerr[nzxy],
+                    ecolor=cxy,
+                    color=cxy,
+                )
+                eryxr = ax.errorbar(
+                    period[nzyx],
+                    rpr.resyx[nzyx],
+                    marker=mtmm,
+                    ms=8,
+                    mfc="None",
+                    mec=cyx,
+                    mew=1,
+                    ls="--",
+                    yerr=rpr.resyxerr[nzyx],
+                    ecolor=cyx,
+                    color=cyx,
+                )
+        # ax.set_xlabel('Period (s)',fontdict=fontdict)
         pylab.setp(ax.get_xticklabels(), visible=False)
-        ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                      fontdict=fontdict)
-        ax.set_yscale('log')
-        ax.set_xscale('log')
-        ax.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
-                    xmax=10**(np.ceil(np.log10(period[-1]))))
-        ax.grid(True, alpha=.25)
+        ax.set_ylabel("App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=fontdict)
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+        ax.set_xlim(
+            xmin=10 ** (np.floor(np.log10(period[0]))),
+            xmax=10 ** (np.ceil(np.log10(period[-1]))),
+        )
+        ax.grid(True, alpha=0.25)
         if plotr == True:
-            ax.legend((erxy[0], eryx[0], erxyr[0], eryxr[0]),
-                      ('Data $E_x/B_y$', 'Data $E_y/B_x$',
-                       'Mod $E_x/B_y$', 'Mod $E_y/B_x$'),
-                      loc=0, markerscale=1, borderaxespad=.01, labelspacing=.07,
-                      handletextpad=.2, borderpad=.02)
+            ax.legend(
+                (erxy[0], eryx[0], erxyr[0], eryxr[0]),
+                ("Data $E_x/B_y$", "Data $E_y/B_x$", "Mod $E_x/B_y$", "Mod $E_y/B_x$"),
+                loc=0,
+                markerscale=1,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.02,
+            )
         else:
-            ax.legend((erxy[0], eryx[0]), ('$E_x/B_y$', '$E_y/B_x$'), loc=0,
-                      markerscale=1, borderaxespad=.01, labelspacing=.07,
-                      handletextpad=.2, borderpad=.02)
+            ax.legend(
+                (erxy[0], eryx[0]),
+                ("$E_x/B_y$", "$E_y/B_x$"),
+                loc=0,
+                markerscale=1,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.02,
+            )
 
-        #-----Plot the phase---------------------------------------------------
+        # -----Plot the phase---------------------------------------------------
 
-        ax2.errorbar(period[nzxy], rp.phasexy[nzxy], marker=mted, ms=4, mfc='None',
-                     mec=cted, mew=1, ls=':', yerr=rp.phasexyerr[nzxy], ecolor=cted,
-                     color=cted)
-        ax2.errorbar(period[nzyx], np.array(rp.phaseyx[nzyx]) + 180, marker=mtmd,
-                     ms=4, mfc='None', mec=ctmd, mew=1, ls=':',
-                     yerr=rp.phaseyxerr[nzyx],
-                     ecolor=ctmd, color=ctmd)
+        ax2.errorbar(
+            period[nzxy],
+            rp.phasexy[nzxy],
+            marker=mted,
+            ms=4,
+            mfc="None",
+            mec=cted,
+            mew=1,
+            ls=":",
+            yerr=rp.phasexyerr[nzxy],
+            ecolor=cted,
+            color=cted,
+        )
+        ax2.errorbar(
+            period[nzyx],
+            np.array(rp.phaseyx[nzyx]) + 180,
+            marker=mtmd,
+            ms=4,
+            mfc="None",
+            mec=ctmd,
+            mew=1,
+            ls=":",
+            yerr=rp.phaseyxerr[nzyx],
+            ecolor=ctmd,
+            color=ctmd,
+        )
         if plotr == True:
             for rr in range(nr):
-                if colormode == 'color':
-                    cxy = (0, .4 + float(rr) / (3 * nr), 0)
-                    cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                           float(rr) / (4 * nr))
-                elif colormode == 'bw':
-                    cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                           (rr + 2.), 1 - 1.25 / (rr + 2.))
-                    cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                           (rr + 2.), 1 - 1.25 / (rr + 2.))
+                if colormode == "color":
+                    cxy = (0, 0.4 + float(rr) / (3 * nr), 0)
+                    cyx = (
+                        0.7 + float(rr) / (4 * nr),
+                        0.13,
+                        0.63 - float(rr) / (4 * nr),
+                    )
+                elif colormode == "bw":
+                    cxy = (
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                    )
+                    cyx = (
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                        1 - 1.25 / (rr + 2.0),
+                    )
                 rpr = Z.ResPhase(rzlst[rr][jj], period, zvar=rzerrlst[rr][jj])
-                ax2.errorbar(period[nzxy], rpr.phasexy[nzxy], marker=mtem, ms=8,
-                             mfc='None', mec=cxy, mew=1, ls='--',
-                             yerr=rp.phasexyerr[nzxy],
-                             ecolor=cxy, color=cxy)
-                ax2.errorbar(period[nzyx], np.array(rpr.phaseyx[nzyx]) + 180,
-                             marker=mtmm, ms=8, mfc='None', mec=cyx, mew=1, ls='--',
-                             yerr=rp.phaseyxerr[nzyx], ecolor=cyx, color=cyx)
-        ax2.set_xlabel('Period (s)', fontdict)
-        ax2.set_ylabel('Phase (deg)', fontdict)
-        ax2.set_xscale('log')
+                ax2.errorbar(
+                    period[nzxy],
+                    rpr.phasexy[nzxy],
+                    marker=mtem,
+                    ms=8,
+                    mfc="None",
+                    mec=cxy,
+                    mew=1,
+                    ls="--",
+                    yerr=rp.phasexyerr[nzxy],
+                    ecolor=cxy,
+                    color=cxy,
+                )
+                ax2.errorbar(
+                    period[nzyx],
+                    np.array(rpr.phaseyx[nzyx]) + 180,
+                    marker=mtmm,
+                    ms=8,
+                    mfc="None",
+                    mec=cyx,
+                    mew=1,
+                    ls="--",
+                    yerr=rp.phaseyxerr[nzyx],
+                    ecolor=cyx,
+                    color=cyx,
+                )
+        ax2.set_xlabel("Period (s)", fontdict)
+        ax2.set_ylabel("Phase (deg)", fontdict)
+        ax2.set_xscale("log")
         # ax2.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
         #         xmax=10**(np.ceil(np.log10(period[-1]))))
         # check the phase to see if any point are outside of [0:90]
@@ -1677,106 +1921,222 @@ def plotDataResPhase(datafn, respfn=None, sitesfn=None, plottype='1', plotnum=1,
         ax2.set_ylim(ymin=pymin, ymax=pymax)
         ax2.yaxis.set_major_locator(MultipleLocator(30))
         ax2.yaxis.set_minor_locator(MultipleLocator(1))
-        ax2.grid(True, alpha=.25)
+        ax2.grid(True, alpha=0.25)
 
         if plotnum == 2:
-            #---------plot the apparent resistivity----------------------------
+            # ---------plot the apparent resistivity----------------------------
             ax3 = plt.subplot(gs[0, 1])
-            ax3.yaxis.set_label_coords(-.1, 0.5)
-            erxx = ax3.errorbar(period[nzxx], rp.resxx[nzxx], marker=mted, ms=4,
-                                mfc='None', mec=cted, mew=1, ls=':',
-                                yerr=rp.resxxerr[nzxx],
-                                ecolor=cted, color=cted)
-            eryy = ax3.errorbar(period[nzyy], rp.resyy[nzyy], marker=mtmd, ms=4,
-                                mfc='None', mec=ctmd, mew=1, ls=':',
-                                yerr=rp.resyyerr[nzyy],
-                                ecolor=ctmd, color=ctmd)
+            ax3.yaxis.set_label_coords(-0.1, 0.5)
+            erxx = ax3.errorbar(
+                period[nzxx],
+                rp.resxx[nzxx],
+                marker=mted,
+                ms=4,
+                mfc="None",
+                mec=cted,
+                mew=1,
+                ls=":",
+                yerr=rp.resxxerr[nzxx],
+                ecolor=cted,
+                color=cted,
+            )
+            eryy = ax3.errorbar(
+                period[nzyy],
+                rp.resyy[nzyy],
+                marker=mtmd,
+                ms=4,
+                mfc="None",
+                mec=ctmd,
+                mew=1,
+                ls=":",
+                yerr=rp.resyyerr[nzyy],
+                ecolor=ctmd,
+                color=ctmd,
+            )
             if plotr == True:
                 for rr in range(nr):
-                    if colormode == 'color':
-                        cxy = (0, .4 + float(rr) / (3 * nr), 0)
-                        cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                               float(rr) / (4 * nr))
-                    elif colormode == 'bw':
-                        cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                               (rr + 2.), 1 - 1.25 / (rr + 2.))
-                        cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                               (rr + 2.), 1 - 1.25 / (rr + 2.))
-                    rpr = Z.ResPhase(
-                        rzlst[rr][jj], period, zvar=rzerrlst[rr][jj])
-                    erxxr = ax3.errorbar(period[nzxx], rpr.resxx[nzxx],
-                                         marker=mtem, ms=8, mfc='None', mec=cxy,
-                                         mew=1, ls='--', yerr=rpr.resxxerr[nzxx],
-                                         ecolor=cxy, color=cxy)
-                    eryyr = ax3.errorbar(period[nzyy], rpr.resyy[nzyy],
-                                         marker=mtmm, ms=8, mfc='None', mec=cyx,
-                                         mew=1, ls='--', yerr=rpr.resyyerr[nzyy],
-                                         ecolor=cyx, color=cyx)
+                    if colormode == "color":
+                        cxy = (0, 0.4 + float(rr) / (3 * nr), 0)
+                        cyx = (
+                            0.7 + float(rr) / (4 * nr),
+                            0.13,
+                            0.63 - float(rr) / (4 * nr),
+                        )
+                    elif colormode == "bw":
+                        cxy = (
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                        )
+                        cyx = (
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                        )
+                    rpr = Z.ResPhase(rzlst[rr][jj], period, zvar=rzerrlst[rr][jj])
+                    erxxr = ax3.errorbar(
+                        period[nzxx],
+                        rpr.resxx[nzxx],
+                        marker=mtem,
+                        ms=8,
+                        mfc="None",
+                        mec=cxy,
+                        mew=1,
+                        ls="--",
+                        yerr=rpr.resxxerr[nzxx],
+                        ecolor=cxy,
+                        color=cxy,
+                    )
+                    eryyr = ax3.errorbar(
+                        period[nzyy],
+                        rpr.resyy[nzyy],
+                        marker=mtmm,
+                        ms=8,
+                        mfc="None",
+                        mec=cyx,
+                        mew=1,
+                        ls="--",
+                        yerr=rpr.resyyerr[nzyy],
+                        ecolor=cyx,
+                        color=cyx,
+                    )
 
-            ax3.set_yscale('log')
-            ax3.set_xscale('log')
+            ax3.set_yscale("log")
+            ax3.set_xscale("log")
             pylab.setp(ax3.get_xticklabels(), visible=False)
-            ax3.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
-                         xmax=10**(np.ceil(np.log10(period[-1]))))
-            ax3.grid(True, alpha=.25)
+            ax3.set_xlim(
+                xmin=10 ** (np.floor(np.log10(period[0]))),
+                xmax=10 ** (np.ceil(np.log10(period[-1]))),
+            )
+            ax3.grid(True, alpha=0.25)
             if plotr == True:
-                ax3.legend((erxx[0], eryy[0], erxxr[0], eryyr[0]),
-                           ('Data $E_x/B_x$', 'Data $E_y/B_y$',
-                            'Mod $E_x/B_x$', 'Mod $E_y/B_y$'),
-                           loc=0, markerscale=1, borderaxespad=.01,
-                           labelspacing=.07, handletextpad=.2, borderpad=.02)
+                ax3.legend(
+                    (erxx[0], eryy[0], erxxr[0], eryyr[0]),
+                    (
+                        "Data $E_x/B_x$",
+                        "Data $E_y/B_y$",
+                        "Mod $E_x/B_x$",
+                        "Mod $E_y/B_y$",
+                    ),
+                    loc=0,
+                    markerscale=1,
+                    borderaxespad=0.01,
+                    labelspacing=0.07,
+                    handletextpad=0.2,
+                    borderpad=0.02,
+                )
             else:
-                ax3.legend((erxx[0], eryy[0]), ('$E_x/B_x$', '$E_y/B_y$'), loc=0,
-                           markerscale=1, borderaxespad=.01, labelspacing=.07,
-                           handletextpad=.2, borderpad=.02)
+                ax3.legend(
+                    (erxx[0], eryy[0]),
+                    ("$E_x/B_x$", "$E_y/B_y$"),
+                    loc=0,
+                    markerscale=1,
+                    borderaxespad=0.01,
+                    labelspacing=0.07,
+                    handletextpad=0.2,
+                    borderpad=0.02,
+                )
 
-            #-----Plot the phase-----------------------------------------------
+            # -----Plot the phase-----------------------------------------------
             ax4 = plt.subplot(gs[1, 1], sharex=ax3)
 
-            ax4.yaxis.set_label_coords(-.1, 0.5)
-            ax4.errorbar(period[nzxx], rp.phasexx[nzxx], marker=mted, ms=4,
-                         mfc='None', mec=cted, mew=1, ls=':',
-                         yerr=rp.phasexxerr[nzxx], ecolor=cted, color=cted)
-            ax4.errorbar(period[nzyy], np.array(rp.phaseyy[nzyy]), marker=mtmd,
-                         ms=4, mfc='None', mec=ctmd, mew=1, ls=':',
-                         yerr=rp.phaseyyerr[nzyy],
-                         ecolor=ctmd, color=ctmd)
+            ax4.yaxis.set_label_coords(-0.1, 0.5)
+            ax4.errorbar(
+                period[nzxx],
+                rp.phasexx[nzxx],
+                marker=mted,
+                ms=4,
+                mfc="None",
+                mec=cted,
+                mew=1,
+                ls=":",
+                yerr=rp.phasexxerr[nzxx],
+                ecolor=cted,
+                color=cted,
+            )
+            ax4.errorbar(
+                period[nzyy],
+                np.array(rp.phaseyy[nzyy]),
+                marker=mtmd,
+                ms=4,
+                mfc="None",
+                mec=ctmd,
+                mew=1,
+                ls=":",
+                yerr=rp.phaseyyerr[nzyy],
+                ecolor=ctmd,
+                color=ctmd,
+            )
             if plotr == True:
                 for rr in range(nr):
-                    if colormode == 'color':
-                        cxy = (0, .4 + float(rr) / (3 * nr), 0)
-                        cyx = (.7 + float(rr) / (4 * nr), .13, .63 -
-                               float(rr) / (4 * nr))
-                    elif colormode == 'bw':
-                        cxy = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                               (rr + 2.), 1 - 1.25 / (rr + 2.))
-                        cyx = (1 - 1.25 / (rr + 2.), 1 - 1.25 /
-                               (rr + 2.), 1 - 1.25 / (rr + 2.))
-                    rpr = Z.ResPhase(
-                        rzlst[rr][jj], period, zvar=rzerrlst[rr][jj])
-                    ax4.errorbar(period[nzxx], rpr.phasexx[nzxx], marker=mtem,
-                                 ms=8, mfc='None', mec=cxy, mew=1, ls='--',
-                                 yerr=rp.phasexxerr[nzxx],
-                                 ecolor=cxy, color=cxy)
-                    ax4.errorbar(period[nzyy], np.array(rpr.phaseyy[nzyy]),
-                                 marker=mtmm, ms=8, mfc='None', mec=cyx, mew=1,
-                                 ls='--', yerr=rp.phaseyyerr[nzyy],
-                                 ecolor=cyx, color=cyx)
-            ax4.set_xlabel('Period (s)', fontdict)
-            #ax4.set_ylabel('Imepdance Phase (deg)',fontdict)
-            ax4.set_xscale('log')
+                    if colormode == "color":
+                        cxy = (0, 0.4 + float(rr) / (3 * nr), 0)
+                        cyx = (
+                            0.7 + float(rr) / (4 * nr),
+                            0.13,
+                            0.63 - float(rr) / (4 * nr),
+                        )
+                    elif colormode == "bw":
+                        cxy = (
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                        )
+                        cyx = (
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                            1 - 1.25 / (rr + 2.0),
+                        )
+                    rpr = Z.ResPhase(rzlst[rr][jj], period, zvar=rzerrlst[rr][jj])
+                    ax4.errorbar(
+                        period[nzxx],
+                        rpr.phasexx[nzxx],
+                        marker=mtem,
+                        ms=8,
+                        mfc="None",
+                        mec=cxy,
+                        mew=1,
+                        ls="--",
+                        yerr=rp.phasexxerr[nzxx],
+                        ecolor=cxy,
+                        color=cxy,
+                    )
+                    ax4.errorbar(
+                        period[nzyy],
+                        np.array(rpr.phaseyy[nzyy]),
+                        marker=mtmm,
+                        ms=8,
+                        mfc="None",
+                        mec=cyx,
+                        mew=1,
+                        ls="--",
+                        yerr=rp.phaseyyerr[nzyy],
+                        ecolor=cyx,
+                        color=cyx,
+                    )
+            ax4.set_xlabel("Period (s)", fontdict)
+            # ax4.set_ylabel('Imepdance Phase (deg)',fontdict)
+            ax4.set_xscale("log")
             # ax2.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
             #         xmax=10**(np.ceil(np.log10(period[-1]))))
             ax4.set_ylim(ymin=-180, ymax=180)
             ax4.yaxis.set_major_locator(MultipleLocator(30))
             ax4.yaxis.set_minor_locator(MultipleLocator(5))
-            ax4.grid(True, alpha=.25)
+            ax4.grid(True, alpha=0.25)
 
 
-def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
-                   esize=(1, 1, 5, 5), ecolor='phimin',
-                   colormm=[(0, 90), (0, 1), (0, 4), (-2, 2)],
-                   xpad=.500, units='mv', dpi=150):
+def plotTensorMaps(
+    datafn,
+    respfn=None,
+    sitesfn=None,
+    periodlst=None,
+    esize=(1, 1, 5, 5),
+    ecolor="phimin",
+    colormm=[(0, 90), (0, 1), (0, 4), (-2, 2)],
+    xpad=0.500,
+    units="mv",
+    dpi=150,
+):
     """
     plot phase tensor maps for data and or response, each figure is of a
     different period.  If response is input a third column is added which is
@@ -1805,12 +2165,14 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
         dpi = dots per inch of figure
     """
 
-    period, zd, zderr, nsarr, ewarr, sitelst = readDataFile(datafn, sitesfn=sitesfn,
-                                                            units=units)
+    period, zd, zderr, nsarr, ewarr, sitelst = readDataFile(
+        datafn, sitesfn=sitesfn, units=units
+    )
 
     if respfn is not None:
-        period, zr, zrerr, nsarr, ewarr, sitelst = readDataFile(respfn, sitesfn=sitesfn,
-                                                                units=units)
+        period, zr, zrerr, nsarr, ewarr, sitelst = readDataFile(
+            respfn, sitesfn=sitesfn, units=units
+        )
 
     if periodlst is None:
         periodlst = range(len(period))
@@ -1821,8 +2183,7 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
 
     # get coloring min's and max's
     if colormm is not None:
-        ptmin, ptmax = (colormm[0][0] * np.pi / 180,
-                        colormm[0][1] * np.pi / 180)
+        ptmin, ptmax = (colormm[0][0] * np.pi / 180, colormm[0][1] * np.pi / 180)
         ptrmin, ptrmax = colormm[1]
         rtmin, rtmax = colormm[2]
         rtrmin, rtrmax = colormm[3]
@@ -1835,25 +2196,25 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
     rtsize = esize[2]
     rtrsize = esize[3]
 
-    plt.rcParams['font.size'] = 10
-    plt.rcParams['figure.subplot.left'] = .03
-    plt.rcParams['figure.subplot.right'] = .98
-    plt.rcParams['figure.subplot.bottom'] = .1
-    plt.rcParams['figure.subplot.top'] = .90
-    plt.rcParams['figure.subplot.wspace'] = .005
-    plt.rcParams['figure.subplot.hspace'] = .005
+    plt.rcParams["font.size"] = 10
+    plt.rcParams["figure.subplot.left"] = 0.03
+    plt.rcParams["figure.subplot.right"] = 0.98
+    plt.rcParams["figure.subplot.bottom"] = 0.1
+    plt.rcParams["figure.subplot.top"] = 0.90
+    plt.rcParams["figure.subplot.wspace"] = 0.005
+    plt.rcParams["figure.subplot.hspace"] = 0.005
 
     ns = zd.shape[0]
 
     for ff, per in enumerate(periodlst):
-        print 'Plotting Period: {0:.5g}'.format(period[per])
+        print "Plotting Period: {0:.5g}".format(period[per])
         fig = plt.figure(per + 1, dpi=dpi)
 
         # get phase tensor
         pt = Z.PhaseTensor(zd[:, per])
 
         # get resistivity tensor
-        rt = Z.ResistivityTensor(zd[:, per], np.repeat(1. / period[per], ns))
+        rt = Z.ResistivityTensor(zd[:, per], np.repeat(1.0 / period[per], ns))
 
         if respfn is not None:
             # get phase tensor and residual phase tensor
@@ -1861,144 +2222,163 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
             ptd = Z.PhaseTensorResidual(zd[:, per], zr[:, per])
 
             # get resistivity tensor and residual
-            rtr = Z.ResistivityTensor(
-                zr[:, per], np.repeat(1. / period[per], ns))
-            rtd = Z.ResistivityTensorResidual(zd[:, per], zr[:, per],
-                                              np.repeat(1. / period[per], ns))
+            rtr = Z.ResistivityTensor(zr[:, per], np.repeat(1.0 / period[per], ns))
+            rtd = Z.ResistivityTensorResidual(
+                zd[:, per], zr[:, per], np.repeat(1.0 / period[per], ns)
+            )
 
             if colormm is None:
-                if ecolor == 'phimin':
-                    ptmin, ptmax = (ptr.phimin.min() / (np.pi / 2),
-                                    ptr.phimin.max() / (np.pi / 2))
-                elif ecolor == 'beta':
+                if ecolor == "phimin":
+                    ptmin, ptmax = (
+                        ptr.phimin.min() / (np.pi / 2),
+                        ptr.phimin.max() / (np.pi / 2),
+                    )
+                elif ecolor == "beta":
                     ptmin, ptmax = (ptr.beta.min(), ptr.beta.max())
 
                 ptrmin, ptrmax = (ptd.ecolor.min(), ptd.ecolor.max())
-                rtmin, rtmax = (np.log10(rtr.rhodet.min()),
-                                np.log10(rtr.rhodet.max()))
+                rtmin, rtmax = (np.log10(rtr.rhodet.min()), np.log10(rtr.rhodet.max()))
                 rtrmin, rtrmax = rtd.rhodet.min(), rtd.rhodet.max()
             # make subplots
-            ax1 = fig.add_subplot(2, 3, 1, aspect='equal')
-            ax2 = fig.add_subplot(2, 3, 2, aspect='equal')
-            ax3 = fig.add_subplot(2, 3, 3, aspect='equal')
-            ax4 = fig.add_subplot(2, 3, 4, aspect='equal')
-            ax5 = fig.add_subplot(2, 3, 5, aspect='equal')
-            ax6 = fig.add_subplot(2, 3, 6, aspect='equal')
+            ax1 = fig.add_subplot(2, 3, 1, aspect="equal")
+            ax2 = fig.add_subplot(2, 3, 2, aspect="equal")
+            ax3 = fig.add_subplot(2, 3, 3, aspect="equal")
+            ax4 = fig.add_subplot(2, 3, 4, aspect="equal")
+            ax5 = fig.add_subplot(2, 3, 5, aspect="equal")
+            ax6 = fig.add_subplot(2, 3, 6, aspect="equal")
 
             for jj in range(ns):
-                #-----------plot data phase tensors---------------
+                # -----------plot data phase tensors---------------
                 eheightd = pt.phimin[jj] / ptr.phimax.max() * ptsize
                 ewidthd = pt.phimax[jj] / ptr.phimax.max() * ptsize
 
-                ellipd = Ellipse((ewarr[jj], nsarr[jj]), width=ewidthd,
-                                 height=eheightd, angle=pt.azimuth[jj])
+                ellipd = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=ewidthd,
+                    height=eheightd,
+                    angle=pt.azimuth[jj],
+                )
                 # color ellipse:
-                if ecolor == 'phimin':
-                    cvar = (pt.phimin[jj] / (np.pi / 2) -
-                            ptmin) / (ptmax - ptmin)
+                if ecolor == "phimin":
+                    cvar = (pt.phimin[jj] / (np.pi / 2) - ptmin) / (ptmax - ptmin)
                     if abs(cvar) > 1:
-                        ellipd.set_facecolor((1, 0, .1))
+                        ellipd.set_facecolor((1, 0, 0.1))
                     else:
-                        ellipd.set_facecolor((1, 1 - abs(cvar), .1))
-                if ecolor == 'beta':
+                        ellipd.set_facecolor((1, 1 - abs(cvar), 0.1))
+                if ecolor == "beta":
                     cvar = (abs(pt.beta[jj]) - ptmin) / (ptmax - ptmin)
                     if abs(cvar) > 1:
-                        ellipd.set_facecolor((1, 1, .1))
+                        ellipd.set_facecolor((1, 1, 0.1))
                     else:
                         ellipd.set_facecolor((1 - cvars, 1 - cvars, 1))
 
                 ax1.add_artist(ellipd)
 
-                #----------plot response phase tensors---------------------
+                # ----------plot response phase tensors---------------------
                 eheightr = ptr.phimin[jj] / ptr.phimax.max() * ptsize
                 ewidthr = ptr.phimax[jj] / ptr.phimax.max() * ptsize
 
-                ellipr = Ellipse((ewarr[jj], nsarr[jj]), width=ewidthr,
-                                 height=eheightr, angle=ptr.azimuth[jj])
+                ellipr = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=ewidthr,
+                    height=eheightr,
+                    angle=ptr.azimuth[jj],
+                )
                 # color ellipse:
-                if ecolor == 'phimin':
-                    cvar = (ptr.phimin[jj] / (np.pi / 2) -
-                            ptmin) / (ptmax - ptmin)
+                if ecolor == "phimin":
+                    cvar = (ptr.phimin[jj] / (np.pi / 2) - ptmin) / (ptmax - ptmin)
                     if abs(cvar) > 1:
-                        ellipr.set_facecolor((1, 0, .1))
+                        ellipr.set_facecolor((1, 0, 0.1))
                     else:
-                        ellipr.set_facecolor((1, 1 - abs(cvar), .1))
-                if ecolor == 'beta':
+                        ellipr.set_facecolor((1, 1 - abs(cvar), 0.1))
+                if ecolor == "beta":
                     cvar = (abs(ptr.beta[jj]) - ptmin) / (ptmax - ptmin)
                     if abs(cvar) > 1:
-                        ellipr.set_facecolor((1, 1, .1))
+                        ellipr.set_facecolor((1, 1, 0.1))
                     else:
                         ellipr.set_facecolor((1 - cvars, 1 - cvars, 1))
                 ax2.add_artist(ellipr)
 
-                #--------plot residual phase tensors-------------
+                # --------plot residual phase tensors-------------
                 eheight = ptd.phimin[jj] / ptd.phimax.max() * ptrsize
                 ewidth = ptd.phimax[jj] / ptd.phimax.max() * ptrsize
 
-                ellip = Ellipse((ewarr[jj], nsarr[jj]), width=ewidth,
-                                height=eheight, angle=ptd.azimuth[jj] - 90)
+                ellip = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=ewidth,
+                    height=eheight,
+                    angle=ptd.azimuth[jj] - 90,
+                )
                 # color ellipse:
                 cvar = (ptd.ecolor[jj] - ptrmin) / (ptrmax - ptrmin)
                 if abs(cvar) > 1:
                     ellip.set_facecolor((0, 0, 0))
                 else:
-                    ellip.set_facecolor((abs(cvar), .5, .5))
+                    ellip.set_facecolor((abs(cvar), 0.5, 0.5))
 
                 ax3.add_artist(ellip)
 
-                #-----------plot data resistivity tensors---------------
+                # -----------plot data resistivity tensors---------------
                 rheightd = rt.rhomin[jj] / rtr.rhomax.max() * rtsize
                 rwidthd = rt.rhomax[jj] / rtr.rhomax.max() * rtsize
 
-                rellipd = Ellipse((ewarr[jj], nsarr[jj]), width=rwidthd,
-                                  height=rheightd, angle=rt.rhoazimuth[jj])
+                rellipd = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=rwidthd,
+                    height=rheightd,
+                    angle=rt.rhoazimuth[jj],
+                )
                 # color ellipse:
                 cvar = (np.log10(rt.rhodet[jj]) - rtmin) / (rtmax - rtmin)
-                if cvar > .5:
+                if cvar > 0.5:
                     if cvar > 1:
                         rellipd.set_facecolor((0, 0, 1))
                     else:
-                        rellipd.set_facecolor(
-                            (1 - abs(cvar), 1 - abs(cvar), 1))
+                        rellipd.set_facecolor((1 - abs(cvar), 1 - abs(cvar), 1))
                 else:
                     if cvar < -1:
                         rellipd.set_facecolor((1, 0, 0))
                     else:
-                        rellipd.set_facecolor(
-                            (1, 1 - abs(cvar), 1 - abs(cvar)))
+                        rellipd.set_facecolor((1, 1 - abs(cvar), 1 - abs(cvar)))
 
                 ax4.add_artist(rellipd)
 
-                #----------plot response resistivity tensors-------------------
+                # ----------plot response resistivity tensors-------------------
                 rheightr = rtr.rhomin[jj] / rtr.rhomax.max() * rtsize
                 rwidthr = rtr.rhomax[jj] / rtr.rhomax.max() * rtsize
 
-                rellipr = Ellipse((ewarr[jj], nsarr[jj]), width=rwidthr,
-                                  height=rheightr, angle=rtr.rhoazimuth[jj])
+                rellipr = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=rwidthr,
+                    height=rheightr,
+                    angle=rtr.rhoazimuth[jj],
+                )
 
                 # color ellipse:
                 cvar = (np.log10(rtr.rhodet[jj]) - rtmin) / (rtmax - rtmin)
-                if cvar > .5:
+                if cvar > 0.5:
                     if cvar > 1:
                         rellipr.set_facecolor((0, 0, 1))
                     else:
-                        rellipr.set_facecolor(
-                            (1 - abs(cvar), 1 - abs(cvar), 1))
+                        rellipr.set_facecolor((1 - abs(cvar), 1 - abs(cvar), 1))
                 else:
                     if cvar < -1:
                         rellipr.set_facecolor((1, 0, 0))
                     else:
-                        rellipr.set_facecolor(
-                            (1, 1 - abs(cvar), 1 - abs(cvar)))
+                        rellipr.set_facecolor((1, 1 - abs(cvar), 1 - abs(cvar)))
 
                 ax5.add_artist(rellipr)
 
-                #--------plot residual resistivity tensors-------------
+                # --------plot residual resistivity tensors-------------
                 rheight = rtd.rhomin[jj] / rtd.rhomax.max() * rtrsize
                 rwidth = rtd.rhomax[jj] / rtd.rhomax.max() * rtrsize
 
-                rellip = Ellipse((ewarr[jj], nsarr[jj]), width=rwidth,
-                                 height=rheight, angle=rtd.azimuth[jj] - 90)
+                rellip = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=rwidth,
+                    height=rheight,
+                    angle=rtd.azimuth[jj] - 90,
+                )
                 # color ellipse:
                 cvar = (rtd.rhodet[jj] - rtrmin) / (rtrmax - rtrmin)
                 if cvar < 0:
@@ -2017,7 +2397,7 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
             for aa, ax in enumerate([ax1, ax2, ax3, ax4, ax5, ax6]):
                 ax.set_xlim(ewarr.min() - xpad, ewarr.max() + xpad)
                 ax.set_ylim(nsarr.min() - xpad, nsarr.max() + xpad)
-                ax.grid('on')
+                ax.grid("on")
                 if aa < 3:
                     pylab.setp(ax.get_xticklabels(), visible=False)
                 if aa == 0 or aa == 3:
@@ -2025,58 +2405,75 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
                 else:
                     pylab.setp(ax.get_yticklabels(), visible=False)
 
-                cbax = mcb.make_axes(
-                    ax, shrink=.9, pad=.05, orientation='vertical')
+                cbax = mcb.make_axes(ax, shrink=0.9, pad=0.05, orientation="vertical")
                 if aa == 0 or aa == 1:
-                    cbx = mcb.ColorbarBase(cbax[0], cmap=ptcmap,
-                                           norm=Normalize(vmin=ptmin * 180 / np.pi,
-                                                          vmax=ptmax * 180 / np.pi),
-                                           orientation='vertical', format='%.2g')
+                    cbx = mcb.ColorbarBase(
+                        cbax[0],
+                        cmap=ptcmap,
+                        norm=Normalize(
+                            vmin=ptmin * 180 / np.pi, vmax=ptmax * 180 / np.pi
+                        ),
+                        orientation="vertical",
+                        format="%.2g",
+                    )
 
-                    cbx.set_label('Phase (deg)',
-                                  fontdict={'size': 7, 'weight': 'bold'})
+                    cbx.set_label("Phase (deg)", fontdict={"size": 7, "weight": "bold"})
                 if aa == 2:
-                    cbx = mcb.ColorbarBase(cbax[0], cmap=ptcmap2,
-                                           norm=Normalize(vmin=ptrmin,
-                                                          vmax=ptrmax),
-                                           orientation='vertical', format='%.2g')
+                    cbx = mcb.ColorbarBase(
+                        cbax[0],
+                        cmap=ptcmap2,
+                        norm=Normalize(vmin=ptrmin, vmax=ptrmax),
+                        orientation="vertical",
+                        format="%.2g",
+                    )
 
-                    cbx.set_label('$\Delta_{\Phi}$',
-                                  fontdict={'size': 7, 'weight': 'bold'})
+                    cbx.set_label(
+                        "$\Delta_{\Phi}$", fontdict={"size": 7, "weight": "bold"}
+                    )
                 if aa == 3 or aa == 4:
-                    cbx = mcb.ColorbarBase(cbax[0], cmap=rtcmapr,
-                                           norm=Normalize(vmin=10**rtmin,
-                                                          vmax=10**rtmax),
-                                           orientation='vertical', format='%.2g')
+                    cbx = mcb.ColorbarBase(
+                        cbax[0],
+                        cmap=rtcmapr,
+                        norm=Normalize(vmin=10 ** rtmin, vmax=10 ** rtmax),
+                        orientation="vertical",
+                        format="%.2g",
+                    )
 
-                    cbx.set_label('App. Res. ($\Omega \cdot$m)',
-                                  fontdict={'size': 7, 'weight': 'bold'})
+                    cbx.set_label(
+                        "App. Res. ($\Omega \cdot$m)",
+                        fontdict={"size": 7, "weight": "bold"},
+                    )
                 if aa == 5:
-                    cbx = mcb.ColorbarBase(cbax[0], cmap=rtcmap,
-                                           norm=Normalize(vmin=rtrmin,
-                                                          vmax=rtrmax),
-                                           orientation='vertical', format='%.2g')
+                    cbx = mcb.ColorbarBase(
+                        cbax[0],
+                        cmap=rtcmap,
+                        norm=Normalize(vmin=rtrmin, vmax=rtrmax),
+                        orientation="vertical",
+                        format="%.2g",
+                    )
 
-                    cbx.set_label('$\Delta_{rho}$',
-                                  fontdict={'size': 7, 'weight': 'bold'})
+                    cbx.set_label(
+                        "$\Delta_{rho}$", fontdict={"size": 7, "weight": "bold"}
+                    )
 
             plt.show()
 
-        #----Plot Just the data------------------
+        # ----Plot Just the data------------------
         else:
             if colormm is None:
-                if ecolor == 'phimin':
-                    ptmin, ptmax = (pt.phimin.min() / (np.pi / 2),
-                                    pt.phimin.max() / (np.pi / 2))
-                elif ecolor == 'beta':
+                if ecolor == "phimin":
+                    ptmin, ptmax = (
+                        pt.phimin.min() / (np.pi / 2),
+                        pt.phimin.max() / (np.pi / 2),
+                    )
+                elif ecolor == "beta":
                     ptmin, ptmax = (pt.beta.min(), pt.beta.max())
 
-                rtmin, rtmax = (np.log10(rt.rhodet.min()),
-                                np.log10(rt.rhodet.max()))
-            ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
-            ax2 = fig.add_subplot(1, 2, 2, aspect='equal')
+                rtmin, rtmax = (np.log10(rt.rhodet.min()), np.log10(rt.rhodet.max()))
+            ax1 = fig.add_subplot(1, 2, 1, aspect="equal")
+            ax2 = fig.add_subplot(1, 2, 2, aspect="equal")
             for jj in range(ns):
-                #-----------plot data phase tensors---------------
+                # -----------plot data phase tensors---------------
                 # check for nan in the array cause it messes with the max
                 pt.phimax = np.nan_to_num(pt.phimax)
 
@@ -2085,84 +2482,98 @@ def plotTensorMaps(datafn, respfn=None, sitesfn=None, periodlst=None,
                 ewidthd = pt.phimax[jj] / pt.phimax.max() * ptsize
 
                 # make the ellipse
-                ellipd = Ellipse((ewarr[jj], nsarr[jj]), width=ewidthd,
-                                 height=eheightd, angle=pt.azimuth[jj])
+                ellipd = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=ewidthd,
+                    height=eheightd,
+                    angle=pt.azimuth[jj],
+                )
                 # color ellipse:
-                if ecolor == 'phimin':
-                    cvar = (pt.phimin[jj] / (np.pi / 2) -
-                            ptmin) / (ptmax - ptmin)
+                if ecolor == "phimin":
+                    cvar = (pt.phimin[jj] / (np.pi / 2) - ptmin) / (ptmax - ptmin)
                     if abs(cvar) > 1:
-                        ellipd.set_facecolor((1, 0, .1))
+                        ellipd.set_facecolor((1, 0, 0.1))
                     else:
-                        ellipd.set_facecolor((1, 1 - abs(cvar), .1))
-                if ecolor == 'beta':
+                        ellipd.set_facecolor((1, 1 - abs(cvar), 0.1))
+                if ecolor == "beta":
                     cvar = (abs(pt.beta[jj]) - ptmin) / (ptmax - ptmin)
                     if abs(cvar) > 1:
-                        ellipd.set_facecolor((1, 1, .1))
+                        ellipd.set_facecolor((1, 1, 0.1))
                     else:
                         ellipd.set_facecolor((1 - cvars, 1 - cvars, 1))
 
                 ax1.add_artist(ellipd)
 
-                #-----------plot data resistivity tensors---------------
+                # -----------plot data resistivity tensors---------------
                 rt.rhomax = np.nan_to_num(rt.rhomax)
                 rheightd = rt.rhomin[jj] / rt.rhomax.max() * rtsize
                 rwidthd = rt.rhomax[jj] / rt.rhomax.max() * rtsize
 
-                rellipd = Ellipse((ewarr[jj], nsarr[jj]), width=rwidthd,
-                                  height=rheightd, angle=rt.rhoazimuth[jj])
+                rellipd = Ellipse(
+                    (ewarr[jj], nsarr[jj]),
+                    width=rwidthd,
+                    height=rheightd,
+                    angle=rt.rhoazimuth[jj],
+                )
                 # color ellipse:
                 cvar = (np.log10(rt.rhodet[jj]) - rtmin) / (rtmax - rtmin)
-                if cvar > .5:
+                if cvar > 0.5:
                     if cvar > 1:
                         rellipd.set_facecolor((0, 0, 1))
                     else:
-                        rellipd.set_facecolor(
-                            (1 - abs(cvar), 1 - abs(cvar), 1))
+                        rellipd.set_facecolor((1 - abs(cvar), 1 - abs(cvar), 1))
                 else:
                     if cvar < -1:
                         rellipd.set_facecolor((1, 0, 0))
                     else:
-                        rellipd.set_facecolor(
-                            (1, 1 - abs(cvar), 1 - abs(cvar)))
+                        rellipd.set_facecolor((1, 1 - abs(cvar), 1 - abs(cvar)))
 
                 ax2.add_artist(rellipd)
 
             for aa, ax in enumerate([ax1, ax2]):
                 ax.set_xlim(ewarr.min() - xpad, ewarr.max() + xpad)
                 ax.set_ylim(nsarr.min() - xpad, nsarr.max() + xpad)
-                ax.grid('on')
-                ax.set_xlabel('easting (km)', fontdict={'size': 10,
-                                                        'weight': 'bold'})
+                ax.grid("on")
+                ax.set_xlabel("easting (km)", fontdict={"size": 10, "weight": "bold"})
 
                 if aa == 1:
                     pylab.setp(ax.get_yticklabels(), visible=False)
                 else:
-                    ax.set_ylabel('northing (km)', fontdict={'size': 10,
-                                                             'weight': 'bold'})
-#                cbax=mcb.make_axes(ax,shrink=.8,pad=.15,orientation='horizontal',
-#                               anchor=(.5,1))
+                    ax.set_ylabel(
+                        "northing (km)", fontdict={"size": 10, "weight": "bold"}
+                    )
+                #                cbax=mcb.make_axes(ax,shrink=.8,pad=.15,orientation='horizontal',
+                #                               anchor=(.5,1))
                 # l,b,w,h
-#                cbax=fig.add_axes([.1,.95,.35,.05])
+                #                cbax=fig.add_axes([.1,.95,.35,.05])
                 if aa == 0:
-                    cbax = fig.add_axes([.12, .97, .31, .02])
-                    cbx = mcb.ColorbarBase(cbax, cmap=ptcmap,
-                                           norm=Normalize(vmin=ptmin * 180 / np.pi,
-                                                          vmax=ptmax * 180 / np.pi),
-                                           orientation='horizontal', format='%.2g')
+                    cbax = fig.add_axes([0.12, 0.97, 0.31, 0.02])
+                    cbx = mcb.ColorbarBase(
+                        cbax,
+                        cmap=ptcmap,
+                        norm=Normalize(
+                            vmin=ptmin * 180 / np.pi, vmax=ptmax * 180 / np.pi
+                        ),
+                        orientation="horizontal",
+                        format="%.2g",
+                    )
 
-                    cbx.set_label('Phase (deg)',
-                                  fontdict={'size': 7, 'weight': 'bold'})
+                    cbx.set_label("Phase (deg)", fontdict={"size": 7, "weight": "bold"})
                 if aa == 1:
-                    cbax = fig.add_axes([.59, .97, .31, .02])
-                    cbx = mcb.ColorbarBase(cbax, cmap=rtcmapr,
-                                           norm=Normalize(vmin=10**rtmin,
-                                                          vmax=10**rtmax),
-                                           orientation='horizontal', format='%.2g')
+                    cbax = fig.add_axes([0.59, 0.97, 0.31, 0.02])
+                    cbx = mcb.ColorbarBase(
+                        cbax,
+                        cmap=rtcmapr,
+                        norm=Normalize(vmin=10 ** rtmin, vmax=10 ** rtmax),
+                        orientation="horizontal",
+                        format="%.2g",
+                    )
 
-                    cbx.set_label('App. Res. ($\Omega \cdot$m)',
-                                  fontdict={'size': 7, 'weight': 'bold'})
-                    cbx.set_ticks((10**rtmin, 10**rtmax))
+                    cbx.set_label(
+                        "App. Res. ($\Omega \cdot$m)",
+                        fontdict={"size": 7, "weight": "bold"},
+                    )
+                    cbx.set_ticks((10 ** rtmin, 10 ** rtmax))
             plt.show()
 
 
@@ -2171,13 +2582,12 @@ def readModelFile(mfile, ncol=7):
     read in a model file as x-north, y-east, z-positive down
     """
 
-    mfid = file(mfile, 'r')
+    mfid = file(mfile, "r")
     mlines = mfid.readlines()
 
     # get info at the beggining of file
     info = mlines[0].strip().split()
-    infodict = dict(
-        [(info[0][1:], info[1]), (info[2], info[3]), (info[4], info[5])])
+    infodict = dict([(info[0][1:], info[1]), (info[2], info[3]), (info[4], info[5])])
 
     # get lengths of things
     nx, ny, nz, nn = np.array(mlines[1].strip().split(), dtype=np.int)
@@ -2215,18 +2625,24 @@ def readModelFile(mfile, ncol=7):
 
     # put the grids into coordinates relative to the center of the grid
     nsarr = xarr.copy()
-    nsarr[:int(nx / 2)] = -np.array([xarr[ii:int(nx / 2)].sum()
-                                     for ii in range(int(nx / 2))])
-    nsarr[int(nx / 2):] = np.array([xarr[int(nx / 2):ii + 1].sum()
-                                    for ii in range(int(nx / 2), nx)]) - xarr[int(nx / 2)]
+    nsarr[: int(nx / 2)] = -np.array(
+        [xarr[ii : int(nx / 2)].sum() for ii in range(int(nx / 2))]
+    )
+    nsarr[int(nx / 2) :] = (
+        np.array([xarr[int(nx / 2) : ii + 1].sum() for ii in range(int(nx / 2), nx)])
+        - xarr[int(nx / 2)]
+    )
 
     ewarr = yarr.copy()
-    ewarr[:int(ny / 2)] = -np.array([yarr[ii:int(ny / 2)].sum()
-                                     for ii in range(int(ny / 2))])
-    ewarr[int(ny / 2):] = np.array([yarr[int(ny / 2):ii + 1].sum()
-                                    for ii in range(int(ny / 2), ny)]) - yarr[int(ny / 2)]
+    ewarr[: int(ny / 2)] = -np.array(
+        [yarr[ii : int(ny / 2)].sum() for ii in range(int(ny / 2))]
+    )
+    ewarr[int(ny / 2) :] = (
+        np.array([yarr[int(ny / 2) : ii + 1].sum() for ii in range(int(ny / 2), ny)])
+        - yarr[int(ny / 2)]
+    )
 
-    zdepth = np.array([zarr[0:ii + 1].sum() - zarr[0] for ii in range(nz)])
+    zdepth = np.array([zarr[0 : ii + 1].sum() - zarr[0] for ii in range(nz)])
 
     mm = 0
     for kk in range(nz):
@@ -2238,10 +2654,22 @@ def readModelFile(mfile, ncol=7):
     return nsarr, ewarr, zdepth, resarr, infodict
 
 
-def plotDepthSlice(datafn, modelfn, savepath=None, map_scale='km', ew_limits=None,
-                   ns_limits=None, depth_index=None, fig_dimensions=[4, 4],
-                   dpi=300, font_size=7, climits=(0, 4), cmap='jet_r',
-                   plot_grid='n', cb_dict={}):
+def plotDepthSlice(
+    datafn,
+    modelfn,
+    savepath=None,
+    map_scale="km",
+    ew_limits=None,
+    ns_limits=None,
+    depth_index=None,
+    fig_dimensions=[4, 4],
+    dpi=300,
+    font_size=7,
+    climits=(0, 4),
+    cmap="jet_r",
+    plot_grid="n",
+    cb_dict={},
+):
     """
     plot depth slices
     """
@@ -2252,10 +2680,10 @@ def plotDepthSlice(datafn, modelfn, savepath=None, map_scale='km', ew_limits=Non
             os.mkdir(savepath)
 
     # make map scale
-    if map_scale == 'km':
-        dscale = 1000.
-    elif map_scale == 'm':
-        dscale = 1.
+    if map_scale == "km":
+        dscale = 1000.0
+    elif map_scale == "m":
+        dscale = 1.0
 
     # read in data file to station locations
     period, zz, zzerr, ns, ew, slst = readDataFile(datafn)
@@ -2294,89 +2722,125 @@ def plotDepthSlice(datafn, modelfn, savepath=None, map_scale='km', ew_limits=Non
     # make a mesh grid of north and east
     north1, east1 = np.meshgrid(x, y)
 
-    fdict = {'size': font_size + 2, 'weight': 'bold'}
+    fdict = {"size": font_size + 2, "weight": "bold"}
 
-    cblabeldict = {-2: '$10^{-3}$', -1: '$10^{-1}$', 0: '$10^{0}$', 1: '$10^{1}$',
-                   2: '$10^{2}$', 3: '$10^{3}$', 4: '$10^{4}$', 5: '$10^{5}$',
-                   6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
+    cblabeldict = {
+        -2: "$10^{-3}$",
+        -1: "$10^{-1}$",
+        0: "$10^{0}$",
+        1: "$10^{1}$",
+        2: "$10^{2}$",
+        3: "$10^{3}$",
+        4: "$10^{4}$",
+        5: "$10^{5}$",
+        6: "$10^{6}$",
+        7: "$10^{7}$",
+        8: "$10^{8}$",
+    }
 
-    plt.rcParams['font.size'] = font_size
+    plt.rcParams["font.size"] = font_size
     for ii in zrange:
         fig = plt.figure(ii, figsize=fig_dimensions, dpi=dpi)
         plt.clf()
-        ax1 = fig.add_subplot(1, 1, 1, aspect='equal')
-        ax1.pcolormesh(east1, north1,
-                       np.log10(np.rot90(resarr[:, :, ii], 3)),
-                       cmap=cmap, vmin=climits[0], vmax=climits[1])
+        ax1 = fig.add_subplot(1, 1, 1, aspect="equal")
+        ax1.pcolormesh(
+            east1,
+            north1,
+            np.log10(np.rot90(resarr[:, :, ii], 3)),
+            cmap=cmap,
+            vmin=climits[0],
+            vmax=climits[1],
+        )
 
         # plot the stations
         for ee, nn in zip(ew, ns):
-            ax1.text(ee, nn, '*', verticalalignment='center',
-                     horizontalalignment='center',
-                     fontdict={'size': 5, 'weight': 'bold'})
+            ax1.text(
+                ee,
+                nn,
+                "*",
+                verticalalignment="center",
+                horizontalalignment="center",
+                fontdict={"size": 5, "weight": "bold"},
+            )
 
         # set axis properties
         ax1.set_xlim(xlimits)
         ax1.set_ylim(ylimits)
-        ax1.xaxis.set_minor_locator(MultipleLocator(100 * 1. / dscale))
-        ax1.yaxis.set_minor_locator(MultipleLocator(100 * 1. / dscale))
-        ax1.set_ylabel('Northing (' + map_scale + ')', fontdict=fdict)
-        ax1.set_xlabel('Easting (' + map_scale + ')', fontdict=fdict)
-        ax1.set_title('Depth = {:.3f} '.format(z[ii]) + '(' + map_scale + ')',
-                      fontdict=fdict)
+        ax1.xaxis.set_minor_locator(MultipleLocator(100 * 1.0 / dscale))
+        ax1.yaxis.set_minor_locator(MultipleLocator(100 * 1.0 / dscale))
+        ax1.set_ylabel("Northing (" + map_scale + ")", fontdict=fdict)
+        ax1.set_xlabel("Easting (" + map_scale + ")", fontdict=fdict)
+        ax1.set_title(
+            "Depth = {:.3f} ".format(z[ii]) + "(" + map_scale + ")", fontdict=fdict
+        )
 
         # plot the grid if desired
-        if plot_grid == 'y':
+        if plot_grid == "y":
             for xx in x:
-                ax1.plot([y.min(), y.max()], [xx, xx], lw=.1, color='k')
+                ax1.plot([y.min(), y.max()], [xx, xx], lw=0.1, color="k")
             for yy in y:
-                ax1.plot([yy, yy], [x.min(), x.max()], lw=.1, color='k')
+                ax1.plot([yy, yy], [x.min(), x.max()], lw=0.1, color="k")
 
         # plot the colorbar
         try:
-            cb_dict['orientation']
+            cb_dict["orientation"]
         except KeyError:
-            cb_dict['orientation'] = 'horizontal'
+            cb_dict["orientation"] = "horizontal"
 
-        if cb_dict['orientation'] == 'horizontal':
+        if cb_dict["orientation"] == "horizontal":
             try:
-                ax2 = fig.add_axes(cb_dict['position'])
+                ax2 = fig.add_axes(cb_dict["position"])
             except KeyError:
-                ax2 = fig.add_axes((ax1.axes.figbox.bounds[3] - .225,
-                                    ax1.axes.figbox.bounds[1] + .05, .3, .025))
+                ax2 = fig.add_axes(
+                    (
+                        ax1.axes.figbox.bounds[3] - 0.225,
+                        ax1.axes.figbox.bounds[1] + 0.05,
+                        0.3,
+                        0.025,
+                    )
+                )
 
-        elif cb_dict['orientation'] == 'vertical':
+        elif cb_dict["orientation"] == "vertical":
             try:
-                ax2 = fig.add_axes(cb_dict['position'])
+                ax2 = fig.add_axes(cb_dict["position"])
             except KeyError:
-                ax2 = fig.add_axes((ax1.axes.figbox.bounds[2] - .15,
-                                    ax1.axes.figbox.bounds[3] - .21, .025, .3))
+                ax2 = fig.add_axes(
+                    (
+                        ax1.axes.figbox.bounds[2] - 0.15,
+                        ax1.axes.figbox.bounds[3] - 0.21,
+                        0.025,
+                        0.3,
+                    )
+                )
 
-        cb = mcb.ColorbarBase(ax2, cmap=cmap,
-                              norm=Normalize(vmin=climits[0], vmax=climits[1]),
-                              orientation=cb_dict['orientation'])
+        cb = mcb.ColorbarBase(
+            ax2,
+            cmap=cmap,
+            norm=Normalize(vmin=climits[0], vmax=climits[1]),
+            orientation=cb_dict["orientation"],
+        )
 
-        if cb_dict['orientation'] == 'horizontal':
-            cb.ax.xaxis.set_label_position('top')
-            cb.ax.xaxis.set_label_coords(.5, 1.3)
+        if cb_dict["orientation"] == "horizontal":
+            cb.ax.xaxis.set_label_position("top")
+            cb.ax.xaxis.set_label_coords(0.5, 1.3)
 
-        elif cb_dict['orientation'] == 'vertical':
-            cb.ax.yaxis.set_label_position('right')
-            cb.ax.yaxis.set_label_coords(1.25, .5)
+        elif cb_dict["orientation"] == "vertical":
+            cb.ax.yaxis.set_label_position("right")
+            cb.ax.yaxis.set_label_coords(1.25, 0.5)
             cb.ax.yaxis.tick_left()
-            cb.ax.tick_params(axis='y', direction='in')
+            cb.ax.tick_params(axis="y", direction="in")
 
-        cb.set_label('Resistivity ($\Omega \cdot$m)',
-                     fontdict={'size': font_size})
+        cb.set_label("Resistivity ($\Omega \cdot$m)", fontdict={"size": font_size})
         cb.set_ticks(np.arange(climits[0], climits[1] + 1))
-        cb.set_ticklabels([cblabeldict[cc]
-                           for cc in np.arange(climits[0], climits[1] + 1)])
+        cb.set_ticklabels(
+            [cblabeldict[cc] for cc in np.arange(climits[0], climits[1] + 1)]
+        )
 
         if savepath is not None:
 
-            fig.savefig(os.path.join(savepath,
-                                     "Depth_{}_{:.4f}.png".format(ii, z[ii])),
-                        dpi=dpi)
+            fig.savefig(
+                os.path.join(savepath, "Depth_{}_{:.4f}.png".format(ii, z[ii])), dpi=dpi
+            )
             fig.clear()
             plt.close()
 
@@ -2414,6 +2878,8 @@ def computeMemoryUsage(nx, ny, nz, n_stations, n_zelements, n_period):
                       approximate memory useage in GB
     """
 
-    mem_req = 1.2 * (8 * (n_stations * n_period * n_zelements)**2 +
-                     8 * (nx * ny * nz * n_stations * n_period * n_zelements))
-    return mem_req * 1E-9
+    mem_req = 1.2 * (
+        8 * (n_stations * n_period * n_zelements) ** 2
+        + 8 * (nx * ny * nz * n_stations * n_period * n_zelements)
+    )
+    return mem_req * 1e-9

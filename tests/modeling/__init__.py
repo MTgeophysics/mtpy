@@ -10,13 +10,17 @@ import sys
 
 from matplotlib import pyplot as plt
 
-if os.name == "posix" and 'DISPLAY' not in os.environ:
-    print("MATPLOTLIB: No Display found, using non-interactive svg backend", file=sys.stderr)
-    matplotlib.use('svg')
+if os.name == "posix" and "DISPLAY" not in os.environ:
+    print(
+        "MATPLOTLIB: No Display found, using non-interactive svg backend",
+        file=sys.stderr,
+    )
+    matplotlib.use("svg")
     import matplotlib.pyplot as plt
 else:
     # matplotlib.use('svg')
     import matplotlib.pyplot as plt
+
     plt.ion()
 
 
@@ -44,13 +48,16 @@ def diff_files(after, before, ignores=None):
 
     msg = "Comparing {} and {}:\n".format(before, after)
 
-    lines = [line for line in unified_diff(
-        before_lines,
-        after_lines,
-        fromfile="baseline ({})".format(before),
-        tofile="test ({})".format(after),
-        n=0)]
-
+    lines = [
+        line
+        for line in unified_diff(
+            before_lines,
+            after_lines,
+            fromfile="baseline ({})".format(before),
+            tofile="test ({})".format(after),
+            n=0,
+        )
+    ]
 
     if lines:
         msg += "  Found differences:\n\t" + "\n\t".join(lines)

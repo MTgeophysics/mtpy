@@ -21,7 +21,7 @@ import os
 import sys
 
 
-def recursive_glob(dirname, ext='*.edi'):
+def recursive_glob(dirname, ext="*.edi"):
     """
     Under the dirname recursively find all files with extension ext.
     Return a list of the full-path to the types of files of interest.
@@ -48,10 +48,11 @@ def recursive_glob(dirname, ext='*.edi'):
 
 
 class EdiFolders(object):
-
-    def __init__(self, startDir, edifiles_threshold=1, filetype='.edi'):
+    def __init__(self, startDir, edifiles_threshold=1, filetype=".edi"):
         self.startDir = startDir  # the top level dir to be searched
-        self.edifiles_threshold = edifiles_threshold  # at least 1 file is of the specified type.
+        self.edifiles_threshold = (
+            edifiles_threshold  # at least 1 file is of the specified type.
+        )
         self.filetype = filetype
         self.folders_of_interest = []  # initial empty list
 
@@ -73,10 +74,15 @@ class EdiFolders(object):
                     pass
 
             if edi_files_count >= self.edifiles_threshold:
-                print(('Found directory: %s ==> %s *.%s files' % (dirName, edi_files_count, self.filetype)))
+                print(
+                    (
+                        "Found directory: %s ==> %s *.%s files"
+                        % (dirName, edi_files_count, self.filetype)
+                    )
+                )
                 self.folders_of_interest.append(dirName)
 
-            #If it's a folder then recursive call
+            # If it's a folder then recursive call
             for asubdir in subdirList:
                 self.find_edi_folders(os.path.join(dirName, asubdir))
 
@@ -91,7 +97,12 @@ class EdiFolders(object):
 if __name__ == "__main__":
 
     if len(sys.argv) <= 1:
-        print(("USAGE: %s  %s [%s] [%s]" % (sys.argv[0], "start_path_dir", "ftype", "edi_threshold")))
+        print(
+            (
+                "USAGE: %s  %s [%s] [%s]"
+                % (sys.argv[0], "start_path_dir", "ftype", "edi_threshold")
+            )
+        )
         sys.exit(1)
     else:
         root_dir = sys.argv[1]
@@ -99,7 +110,7 @@ if __name__ == "__main__":
         if len(sys.argv) > 2:
             ftype = sys.argv[2].lower()
         else:
-            ftype = 'edi'
+            ftype = "edi"
 
         if len(sys.argv) > 3:
             edifiles_th = int(sys.argv[3])
@@ -112,4 +123,4 @@ if __name__ == "__main__":
 
         print(("Number of interesting folders found =", len(edi_dirs_list)))
 
-        print (edi_dirs_list)
+        print(edi_dirs_list)

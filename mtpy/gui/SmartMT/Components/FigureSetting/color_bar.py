@@ -22,9 +22,15 @@ class ColorBar(QGroupBox):
         # connect event
         self.ui.horizontalSlider_x.valueChanged.connect(self._x_slider_value_changed)
         self.ui.horizontalSlider_y.valueChanged.connect(self._y_slider_value_changed)
-        self.ui.horizontalSlider_width.valueChanged.connect(self._width_slider_value_changed)
-        self.ui.horizontalSlider_height.valueChanged.connect(self._height_slider_value_changed)
-        self.ui.comboBox_orientation.currentIndexChanged.connect(self._orientation_changed)
+        self.ui.horizontalSlider_width.valueChanged.connect(
+            self._width_slider_value_changed
+        )
+        self.ui.horizontalSlider_height.valueChanged.connect(
+            self._height_slider_value_changed
+        )
+        self.ui.comboBox_orientation.currentIndexChanged.connect(
+            self._orientation_changed
+        )
         self.ui.doubleSpinBox_x.editingFinished.connect(self._update_slider_x)
         self.ui.doubleSpinBox_y.editingFinished.connect(self._update_slider_y)
         self.ui.doubleSpinBox_width.editingFinished.connect(self._update_slider_width)
@@ -68,18 +74,20 @@ class ColorBar(QGroupBox):
         value = int(self.ui.doubleSpinBox_height.value() * 100)
         self.ui.horizontalSlider_height.setValue(value)
 
-    _cb_orientation = ['vertical', 'horizontal']
+    _cb_orientation = ["vertical", "horizontal"]
 
     def get_colorbar_dict(self):
         if self.isChecked():
             cb_dict = {
-                'orientataion': self._cb_orientation[self.ui.comboBox_orientation.currentIndex()],
-                'position': (
+                "orientataion": self._cb_orientation[
+                    self.ui.comboBox_orientation.currentIndex()
+                ],
+                "position": (
                     self.ui.doubleSpinBox_x.value(),
                     self.ui.doubleSpinBox_y.value(),
                     self.ui.doubleSpinBox_width.value(),
-                    self.ui.doubleSpinBox_height.value()
-                )
+                    self.ui.doubleSpinBox_height.value(),
+                ),
             }
             return cb_dict
         else:

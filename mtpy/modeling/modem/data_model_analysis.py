@@ -29,11 +29,10 @@ from mtpy.modeling.modem import Data, Model
 from mtpy.utils.mtpylog import MtPyLog
 
 logger = MtPyLog.get_mtpy_logger(__name__)
-# logger.setLevel(logging.DEBUG)
 
 
 class DataModelAnalysis(object):
-    def __init__(self, filedat, filerho, plot_orient='ew', **kwargs):
+    def __init__(self, filedat, filerho, plot_orient="ew", **kwargs):
         """Constructor
         :param filedat: path2file.dat
         :param filerho: path2file.rho
@@ -50,26 +49,26 @@ class DataModelAnalysis(object):
         # is slice depth)
         # self.slice_location = kwargs.pop('slice_location', 1000)
         # maximum distance in metres from vertical slice location and station
-        self.station_dist = kwargs.pop('station_dist', 50000)
+        self.station_dist = kwargs.pop("station_dist", 50000)
         # z limits (positive down so order is reversed)
-        self.zlim = kwargs.pop('zlim', (200000, -2000))
+        self.zlim = kwargs.pop("zlim", (200000, -2000))
         # colour limits
-        self.clim = kwargs.pop('clim', [0.3, 3.7])
-        self.fig_size = kwargs.pop('fig_size', [12, 10])
-        self.font_size = kwargs.pop('font_size', 16)
+        self.clim = kwargs.pop("clim", [0.3, 3.7])
+        self.fig_size = kwargs.pop("fig_size", [12, 10])
+        self.font_size = kwargs.pop("font_size", 16)
         self.border_linewidth = 2
 
-        self.map_scale = kwargs.pop('map_scale', 'm')
+        self.map_scale = kwargs.pop("map_scale", "m")
         # make map scale
-        if self.map_scale == 'km':
-            self.dscale = 1000.
-        elif self.map_scale == 'm':
-            self.dscale = 1.
+        if self.map_scale == "km":
+            self.dscale = 1000.0
+        elif self.map_scale == "m":
+            self.dscale = 1.0
         else:
             print(("Unknown map scale:", self.map_scale))
 
-        self.xminorticks = kwargs.pop('xminorticks', 10000)
-        self.yminorticks = kwargs.pop('yminorticks', 10000)
+        self.xminorticks = kwargs.pop("xminorticks", 10000)
+        self.yminorticks = kwargs.pop("yminorticks", 10000)
 
         # read in the model data-file and rho-file
         self._read_model_data()
@@ -85,15 +84,18 @@ class DataModelAnalysis(object):
         self.modObj.read_model_file()
 
         self.ew_lim = (
-        self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+            self.modObj.grid_east[self.modObj.pad_east],
+            self.modObj.grid_east[-self.modObj.pad_east - 1],
+        )
         self.ns_lim = (
-        self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
+            self.modObj.grid_north[self.modObj.pad_north],
+            self.modObj.grid_north[-self.modObj.pad_north - 1],
+        )
 
         # logger.debug("ns-limit %s", self.ns_lim)
         # logger.debug("ew-limit %s", self.ew_lim)
         # logger.info("station name list %s", self.datObj.station_locations['station'])
         # logger.info("station Lat list %s", self.datObj.station_locations['lat'])
-
 
         return
 
@@ -107,14 +109,19 @@ class DataModelAnalysis(object):
 
         station_dict = {}
 
-        sX, sY = self.datObj.station_locations.rel_east, self.datObj.station_locations.rel_north
+        sX, sY = (
+            self.datObj.station_locations.rel_east,
+            self.datObj.station_locations.rel_north,
+        )
         station_names = self.datObj.station_locations.station
         station_lats = self.datObj.station_locations.lat
         station_lons = self.datObj.station_locations.lon
 
         # get grid centres (finite element cells centres)
-        gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
-                           [self.modObj.grid_east, self.modObj.grid_north]]
+        gceast, gcnorth = [
+            np.mean([arr[:-1], arr[1:]], axis=0)
+            for arr in [self.modObj.grid_east, self.modObj.grid_north]
+        ]
         n_stations = len(sX)
         for n in range(n_stations):
             xdist = np.abs(gceast - sX[n])
@@ -126,8 +133,13 @@ class DataModelAnalysis(object):
 
             logger.debug("Station Index: (%s, %s)", ix, iy)
 
-            station_dict[(ix, iy)] = [station_names[n], sX[n], sY[n], station_lats[n],
-                                      station_lons[n]]  # Todo: get (station_name, lat, long)[n]
+            station_dict[(ix, iy)] = [
+                station_names[n],
+                sX[n],
+                sY[n],
+                station_lats[n],
+                station_lons[n],
+            ]  # Todo: get (station_name, lat, long)[n]
 
         logger.debug(station_dict)
 
@@ -138,7 +150,7 @@ class DataModelAnalysis(object):
         :param orient: z, ew, ns
         :return:
         """
-        if orient in ['z', 'ew', 'ns']:
+        if orient in ["z", "ew", "ns"]:
             self.plot_orientation = orient
         else:
             raise Exception("Error: unknown orientation value= %s" % orient)
@@ -151,23 +163,24 @@ class DataModelAnalysis(object):
         """
 
         # get grid centres (finite element cells centres)
-        gcz = np.mean([self.modObj.grid_z[:-1],
-                       self.modObj.grid_z[1:]], axis=0)
-        gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in
-                           [self.modObj.grid_east, self.modObj.grid_north]]
+        gcz = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
+        gceast, gcnorth = [
+            np.mean([arr[:-1], arr[1:]], axis=0)
+            for arr in [self.modObj.grid_east, self.modObj.grid_north]
+        ]
 
         # distance from slice to grid centre locations
-        if self.plot_orientation == 'ew':
+        if self.plot_orientation == "ew":
             sdist = np.abs(gcnorth - slice_location)
             snos = np.where(sdist == np.amin(sdist))
             sno = snos[0][0]
             actual_location = gcnorth[sno]
-        elif self.plot_orientation == 'ns':
+        elif self.plot_orientation == "ns":
             sdist = np.abs(gceast - slice_location)
             snos = np.where(sdist == np.amin(sdist))
             sno = snos[0][0]
             actual_location = gceast[sno]
-        elif self.plot_orientation == 'z':
+        elif self.plot_orientation == "z":
             sdist = np.abs(gcz - slice_location)
             # find the closest slice index to specified location
             snos = np.where(sdist == np.amin(sdist))
@@ -179,47 +192,79 @@ class DataModelAnalysis(object):
         # unpack the index tupple, and get the integer value as index number
         # sno=snos[0][0]
 
-        logger.debug("the slice index number= %s and the actual location is %s", sno, actual_location)
+        logger.debug(
+            "the slice index number= %s and the actual location is %s",
+            sno,
+            actual_location,
+        )
         # get data for plotting
-        if self.plot_orientation == 'ew':
-            X, Y, res = self.modObj.grid_east, self.modObj.grid_z, np.log10(
-                self.modObj.res_model[sno, :, :].T)
-            ss = np.where(np.abs(self.datObj.station_locations['rel_north'] - np.median(gcnorth)) < self.station_dist)[
-                0]
+        if self.plot_orientation == "ew":
+            X, Y, res = (
+                self.modObj.grid_east,
+                self.modObj.grid_z,
+                np.log10(self.modObj.res_model[sno, :, :].T),
+            )
+            ss = np.where(
+                np.abs(self.datObj.station_locations["rel_north"] - np.median(gcnorth))
+                < self.station_dist
+            )[0]
 
-            sX, sY = self.datObj.station_locations['rel_east'][
-                         ss], self.datObj.station_locations['elev'][ss]
-            xlim = (self.modObj.grid_east[
-                        self.modObj.pad_east[1]], self.modObj.grid_east[-self.modObj.pad_east[1] - 1])
+            sX, sY = (
+                self.datObj.station_locations["rel_east"][ss],
+                self.datObj.station_locations["elev"][ss],
+            )
+            xlim = (
+                self.modObj.grid_east[self.modObj.pad_east[1]],
+                self.modObj.grid_east[-self.modObj.pad_east[1] - 1],
+            )
             ylim = self.zlim
-            title = 'East-west slice at {} meters north'.format(gcnorth[sno])
-        elif self.plot_orientation == 'ns':
-            X, Y, res = self.modObj.grid_north, self.modObj.grid_z, np.log10(
-                self.modObj.res_model[:, sno, :].T)
+            title = "East-west slice at {} meters north".format(gcnorth[sno])
+        elif self.plot_orientation == "ns":
+            X, Y, res = (
+                self.modObj.grid_north,
+                self.modObj.grid_z,
+                np.log10(self.modObj.res_model[:, sno, :].T),
+            )
             # indices for selecting stations close to profile
             ss = np.where(
-                np.abs(
-                    self.datObj.station_locations['rel_east'] -
-                    np.median(gceast)) < self.station_dist)[0]
+                np.abs(self.datObj.station_locations["rel_east"] - np.median(gceast))
+                < self.station_dist
+            )[0]
 
-            sX, sY = self.datObj.station_locations['rel_north'][
-                         ss], self.datObj.station_locations['elev'][ss]
-            xlim = (self.modObj.grid_north[
-                        self.modObj.pad_north[1]], self.modObj.grid_north[-self.modObj.pad_north[1] - 1])
+            sX, sY = (
+                self.datObj.station_locations["rel_north"][ss],
+                self.datObj.station_locations["elev"][ss],
+            )
+            xlim = (
+                self.modObj.grid_north[self.modObj.pad_north[1]],
+                self.modObj.grid_north[-self.modObj.pad_north[1] - 1],
+            )
             ylim = self.zlim
-            title = 'North-south slice at {} meters east'.format(gceast[sno])
-        elif self.plot_orientation == 'z':  # for plotting X == EW  Y == NS
-            Y, X, res = self.modObj.grid_north, self.modObj.grid_east, np.log10(self.modObj.res_model[:, :, sno])
-            sY, sX = self.datObj.station_locations.rel_north, self.datObj.station_locations.rel_east
+            title = "North-south slice at {} meters east".format(gceast[sno])
+        elif self.plot_orientation == "z":  # for plotting X == EW  Y == NS
+            Y, X, res = (
+                self.modObj.grid_north,
+                self.modObj.grid_east,
+                np.log10(self.modObj.res_model[:, :, sno]),
+            )
+            sY, sX = (
+                self.datObj.station_locations.rel_north,
+                self.datObj.station_locations.rel_east,
+            )
             ylim = (
-            self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
-            xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
+                self.modObj.grid_north[self.modObj.pad_north],
+                self.modObj.grid_north[-self.modObj.pad_north - 1],
+            )
+            xlim = (
+                self.modObj.grid_east[self.modObj.pad_east],
+                self.modObj.grid_east[-self.modObj.pad_east - 1],
+            )
 
-            title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
+            title = "Horizontal Slice at Depth {} meters".format(gcz[sno])
 
         return (X, Y, res, sX, sY, xlim, ylim, title, actual_location)
 
-    def create_csv(self, csvfile='tests/temp/Resistivity.csv'):
+    def create_csv(self, csvfile="tests/temp/Resistivity.csv"):
         """
         write ressitivity into the csvfile with the output columns:
             StationName, Lat, Long, X, Y, Z, Log(Resistivity)
@@ -227,17 +272,31 @@ class DataModelAnalysis(object):
         Projection/Coordinate system must be known in order to associate (Lat, Long) to (X, Y)
         :return:
         """
-        self.set_plot_orientation('z')
-        z_cell_centres = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
+        self.set_plot_orientation("z")
+        z_cell_centres = np.mean(
+            [self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0
+        )
 
         # csv_header = ['Station', 'Lat', 'Long', 'X', 'Y', 'Z',  'Log_Resisitivity']
-        csv_header = ['X', 'Y', 'Z', 'Log_Resisitivity', 'StationName', 'StationX', 'StationY', 'Lat', 'Long']
+        csv_header = [
+            "X",
+            "Y",
+            "Z",
+            "Log_Resisitivity",
+            "StationName",
+            "StationX",
+            "StationY",
+            "Lat",
+            "Long",
+        ]
 
         stationd = self.find_stations_in_meshgrid()
 
         csvrows = []
         for zslice in z_cell_centres:
-            (X, Y, res, sX, sY, xlim, ylim, title, Z_location) = self.get_slice_data(zslice)
+            (X, Y, res, sX, sY, xlim, ylim, title, Z_location) = self.get_slice_data(
+                zslice
+            )
 
             # print (X,Y,res)
             # print(sX,sY)
@@ -246,9 +305,23 @@ class DataModelAnalysis(object):
 
             for i in range(len(X) - 1):
                 for j in range(len(Y) - 1):
-                    st = stationd.get((i, j), None)  # filter and subset for station location meshgrids
+                    st = stationd.get(
+                        (i, j), None
+                    )  # filter and subset for station location meshgrids
                     if st is not None:
-                        arow = [X[i], Y[j], Z_location, res[j, i], st[0], st[1], st[2], st[3], st[4], i, j]
+                        arow = [
+                            X[i],
+                            Y[j],
+                            Z_location,
+                            res[j, i],
+                            st[0],
+                            st[1],
+                            st[2],
+                            st[3],
+                            st[4],
+                            i,
+                            j,
+                        ]
                         csvrows.append(arow)
 
         with open(csvfile, "wb") as csvf:
@@ -265,21 +338,23 @@ class DataModelAnalysis(object):
         :return:
         """
 
-        (X, Y, res, sX, sY, xlim, ylim, title, actual_location) = self.get_slice_data(slice_location)
+        (X, Y, res, sX, sY, xlim, ylim, title, actual_location) = self.get_slice_data(
+            slice_location
+        )
 
         # make the plot
 
-        fdict = {'size': self.font_size, 'weight': 'bold'}
+        fdict = {"size": self.font_size, "weight": "bold"}
         plt.figure(figsize=self.fig_size)
-        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams["font.size"] = self.font_size
 
         # plot station locations
         # print("station locations sX:", sX)
         # print("station locations sY:", sY)
 
-        plt.plot(sX, sY, 'kv')  # station marker:'kv'
+        plt.plot(sX, sY, "kv")  # station marker:'kv'
 
-        mesh_plot = plt.pcolormesh(X, Y, res, cmap='bwr_r')
+        mesh_plot = plt.pcolormesh(X, Y, res, cmap="bwr_r")
 
         xlim2 = (xlim[0] / self.dscale, xlim[1] / self.dscale)
         ylim2 = (ylim[0] / self.dscale, ylim[1] / self.dscale)
@@ -292,27 +367,18 @@ class DataModelAnalysis(object):
 
         # if self.plot_orientation == 'z':
         # plt.gca().set_aspect('equal') # an axis may be too small to view
-        plt.gca().set_aspect('auto')
+        plt.gca().set_aspect("auto")
 
         plt.clim(*self.clim)
         # plt.colorbar()
 
         # FZ: fix miss-placed colorbar
         ax = plt.gca()
-        ax.xaxis.set_minor_locator(
-            MultipleLocator(
-                self.xminorticks))  # /self.dscale
-        ax.yaxis.set_minor_locator(
-            MultipleLocator(
-                self.yminorticks))  # /self.dscale
-        ax.tick_params(axis='both', which='minor', width=2, length=5)
-        ax.tick_params(
-            axis='both',
-            which='major',
-            width=3,
-            length=15,
-            labelsize=20)
-        for axis in ['top', 'bottom', 'left', 'right']:
+        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks))  # /self.dscale
+        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks))  # /self.dscale
+        ax.tick_params(axis="both", which="minor", width=2, length=5)
+        ax.tick_params(axis="both", which="major", width=3, length=15, labelsize=20)
+        for axis in ["top", "bottom", "left", "right"]:
             ax.spines[axis].set_linewidth(self.border_linewidth)
         # ax.tick_params(axis='both', which='major', labelsize=20)
         # ax.tick_params(axis='both', which='minor', labelsize=20)
@@ -331,19 +397,18 @@ class DataModelAnalysis(object):
 
         mycb = plt.colorbar(mesh_plot, cax=cax, use_gridspec=True)
         mycb.outline.set_linewidth(self.border_linewidth)
-        mycb.set_label('Resistivity ($\Omega \cdot$m)', fontdict=fdict)
+        mycb.set_label("Resistivity ($\Omega \cdot$m)", fontdict=fdict)
 
-        if self.plot_orientation == 'z':
-            ax.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
-            ax.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
+        if self.plot_orientation == "z":
+            ax.set_ylabel("Northing (" + self.map_scale + ")", fontdict=fdict)
+            ax.set_xlabel("Easting (" + self.map_scale + ")", fontdict=fdict)
             ax.set_aspect(1)
-        if self.plot_orientation == 'ew':
-            ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
-            ax.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
-        if self.plot_orientation == 'ns':
-            ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
-            ax.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
-
+        if self.plot_orientation == "ew":
+            ax.set_ylabel("Depth (" + self.map_scale + ")", fontdict=fdict)
+            ax.set_xlabel("Easting (" + self.map_scale + ")", fontdict=fdict)
+        if self.plot_orientation == "ns":
+            ax.set_ylabel("Depth (" + self.map_scale + ")", fontdict=fdict)
+            ax.set_xlabel("Northing (" + self.map_scale + ")", fontdict=fdict)
 
         plt.show()
 
@@ -359,14 +424,20 @@ class DataModelAnalysis(object):
 
         if slice_list is None:
             # slice_number = 100  # number of evenly spaced slices
-            if self.plot_orientation == 'ns':
+            if self.plot_orientation == "ns":
                 # slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number
                 # It's better to use cell centres
-                slice_locs = np.mean([self.modObj.grid_north[:-1], self.modObj.grid_north[1:]], axis=0)
-            if self.plot_orientation == 'ew':
-                slice_locs = np.mean([self.modObj.grid_east[:-1], self.modObj.grid_east[1:]], axis=0)
-            if self.plot_orientation == 'z':
-                slice_locs = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
+                slice_locs = np.mean(
+                    [self.modObj.grid_north[:-1], self.modObj.grid_north[1:]], axis=0
+                )
+            if self.plot_orientation == "ew":
+                slice_locs = np.mean(
+                    [self.modObj.grid_east[:-1], self.modObj.grid_east[1:]], axis=0
+                )
+            if self.plot_orientation == "z":
+                slice_locs = np.mean(
+                    [self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0
+                )
         else:
             slice_locs = slice_list
 
@@ -381,7 +452,9 @@ class DataModelAnalysis(object):
 
             # plot resistivity image at slices in three orientations at a given slice_location=sdist
 
-            self.plot_a_slice(slice_location=sdist)  # actual location will be nearest cell centre
+            self.plot_a_slice(
+                slice_location=sdist
+            )  # actual location will be nearest cell centre
 
             plt.show()
 
@@ -397,8 +470,8 @@ if __name__ == "__main__":
     # Take commandline input
     if len(sys.argv) == 2:  # A model dir provided
         modeldir = sys.argv[1]
-        datf = os.path.join(modeldir, 'ModEM_Data.dat')
-        rhofiles = glob.glob(os.path.join(modeldir, '*.rho'))
+        datf = os.path.join(modeldir, "ModEM_Data.dat")
+        rhofiles = glob.glob(os.path.join(modeldir, "*.rho"))
 
         print(rhofiles)
 
@@ -418,7 +491,7 @@ if __name__ == "__main__":
 
     # construct plot object
     # self = DataModelAnalysis(datf, rhof)  # default  map_scale='m')
-    myObj = DataModelAnalysis(datf, rhof, map_scale='km')
+    myObj = DataModelAnalysis(datf, rhof, map_scale="km")
 
     myObj.create_csv()
 

@@ -32,7 +32,7 @@ import numpy as np
 ######################################################################
 
 
-def model2vtkgrid(ModEMmodelfn, VTKfn='VTKresistivitymodel'):
+def model2vtkgrid(ModEMmodelfn, VTKfn="VTKresistivitymodel"):
     """
     Convert ModEM output files (model and responses) into 3D VTK resistivity grid
 
@@ -42,13 +42,15 @@ def model2vtkgrid(ModEMmodelfn, VTKfn='VTKresistivitymodel'):
     """
 
     if not os.path.isfile(os.path.abspath(os.path.realpath(ModEMmodelfn))):
-        sys.exit('ERROR - could not find file:\n%s' %
-                 (os.path.abspath(os.path.realpath(ModEMmodelfn))))
+        sys.exit(
+            "ERROR - could not find file:\n%s"
+            % (os.path.abspath(os.path.realpath(ModEMmodelfn)))
+        )
 
     if not os.path.isfile(os.path.abspath(os.path.realpath(VTKfn))):
-        VTKfn = os.path.abspath(os.path.realpath('VTKresistivitymodel'))
+        VTKfn = os.path.abspath(os.path.realpath("VTKresistivitymodel"))
 
-    F = open(ModEMmodelfn, 'r')
+    F = open(ModEMmodelfn, "r")
     raw_data = F.readlines()
     F.close()
 
@@ -69,24 +71,25 @@ def model2vtkgrid(ModEMmodelfn, VTKfn='VTKresistivitymodel'):
             lo_data_tmp = current_line.strip().split()
             for idx_north in range(n_north_blocks):
                 res_model[idx_north, idx_east, idx_depth] = np.exp(
-                    float(lo_data_tmp[idx_east]))
+                    float(lo_data_tmp[idx_east])
+                )
             current_line_idx += 1
 
     # transfer grid to km  instead of m
     # use North-to-South convention in the grid!!
     coords_list[0].reverse()
-    N = np.array(coords_list[0]) / 1000.
-    E = np.array(coords_list[1]) / 1000.
-    D = np.array(coords_list[2]) / 1000.
+    N = np.array(coords_list[0]) / 1000.0
+    E = np.array(coords_list[1]) / 1000.0
+    D = np.array(coords_list[2]) / 1000.0
 
-    gridToVTK(VTKfn, N, E, D, cellData={'resistivity (in Ohm)': res_model})
+    gridToVTK(VTKfn, N, E, D, cellData={"resistivity (in Ohm)": res_model})
 
-    print 'Created Resistivity File: ', VTKfn
+    print "Created Resistivity File: ", VTKfn
 
     return VTKfn
 
 
-def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations'):
+def data2vtkstationsgrid(ModEMdatafn, VTKfn="VTKstations"):
     """
     Convert ModEM data file into 2D VTK station set (unstructured grid)
 
@@ -96,13 +99,15 @@ def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations'):
     """
 
     if not os.path.isfile(os.path.abspath(os.path.realpath(ModEMdatafn))):
-        sys.exit('ERROR - could not find file:\n%s' %
-                 (os.path.abspath(os.path.realpath(ModEMdatafn))))
+        sys.exit(
+            "ERROR - could not find file:\n%s"
+            % (os.path.abspath(os.path.realpath(ModEMdatafn)))
+        )
 
     if not os.path.isfile(os.path.abspath(os.path.realpath(VTKfn))):
-        VTKfn = os.path.abspath(os.path.realpath('VTKstations'))
+        VTKfn = os.path.abspath(os.path.realpath("VTKstations"))
 
-    F = open(ModEMdatafn, 'r')
+    F = open(ModEMdatafn, "r")
     raw_data = F.readlines()
     F.close()
 
@@ -124,8 +129,8 @@ def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations'):
                 lo_easts.append(tmp_east)
 
     # convert m to km
-    N = np.array(lo_norths) / 1000.
-    E = np.array(lo_easts) / 1000.
+    N = np.array(lo_norths) / 1000.0
+    E = np.array(lo_easts) / 1000.0
     D = np.zeros((len(lo_norths)))
 
     # dummy scalar values
@@ -133,4 +138,4 @@ def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations'):
 
     pointsToVTK(VTKfn, N, E, D, data={"value": dummy})
 
-    print 'Created Station File: ', VTKfn
+    print "Created Station File: ", VTKfn

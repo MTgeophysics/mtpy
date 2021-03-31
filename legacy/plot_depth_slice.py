@@ -20,7 +20,7 @@ from mtpy.utils import exceptions as mtex
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Model
 
-__all__ = ['PlotDepthSlice']
+__all__ = ["PlotDepthSlice"]
 
 
 class PlotDepthSlice(object):
@@ -124,7 +124,7 @@ class PlotDepthSlice(object):
         self.model_fn = model_fn
         self.data_fn = data_fn
 
-        self.save_path = kwargs.pop('save_path', None)
+        self.save_path = kwargs.pop("save_path", None)
         if self.model_fn is not None and self.save_path is None:
             self.save_path = os.path.dirname(self.model_fn)
         elif self.initial_fn is not None and self.save_path is None:
@@ -134,43 +134,43 @@ class PlotDepthSlice(object):
             if not os.path.exists(self.save_path):
                 os.mkdir(self.save_path)
 
-        self.save_plots = kwargs.pop('save_plots', 'y')
+        self.save_plots = kwargs.pop("save_plots", "y")
 
-        self.depth_index = kwargs.pop('depth_index', None)
-        self.map_scale = kwargs.pop('map_scale', 'km')
+        self.depth_index = kwargs.pop("depth_index", None)
+        self.map_scale = kwargs.pop("map_scale", "km")
         # make map scale
-        if self.map_scale == 'km':
-            self.dscale = 1000.
-        elif self.map_scale == 'm':
-            self.dscale = 1.
-        self.ew_limits = kwargs.pop('ew_limits', None)
-        self.ns_limits = kwargs.pop('ns_limits', None)
+        if self.map_scale == "km":
+            self.dscale = 1000.0
+        elif self.map_scale == "m":
+            self.dscale = 1.0
+        self.ew_limits = kwargs.pop("ew_limits", None)
+        self.ns_limits = kwargs.pop("ns_limits", None)
 
-        self.plot_grid = kwargs.pop('plot_grid', 'n')
+        self.plot_grid = kwargs.pop("plot_grid", "n")
 
-        self.fig_size = kwargs.pop('fig_size', [6, 6])
-        self.fig_dpi = kwargs.pop('dpi', 300)
-        self.fig_aspect = kwargs.pop('fig_aspect', 1)
-        self.title = kwargs.pop('title', 'on')
+        self.fig_size = kwargs.pop("fig_size", [6, 6])
+        self.fig_dpi = kwargs.pop("dpi", 300)
+        self.fig_aspect = kwargs.pop("fig_aspect", 1)
+        self.title = kwargs.pop("title", "on")
         self.fig_list = []
 
-        self.xminorticks = kwargs.pop('xminorticks', 1000)
-        self.yminorticks = kwargs.pop('yminorticks', 1000)
+        self.xminorticks = kwargs.pop("xminorticks", 1000)
+        self.yminorticks = kwargs.pop("yminorticks", 1000)
 
-        self.climits = kwargs.pop('climits', (0, 4))
-        self.cmap = kwargs.pop('cmap', 'jet_r')
-        self.font_size = kwargs.pop('font_size', 8)
+        self.climits = kwargs.pop("climits", (0, 4))
+        self.cmap = kwargs.pop("cmap", "jet_r")
+        self.font_size = kwargs.pop("font_size", 8)
 
-        self.draw_colorbar = kwargs.pop('draw_colorbar',True)
-        self.cb_shrink = kwargs.pop('cb_shrink', .8)
-        self.cb_pad = kwargs.pop('cb_pad', .01)
-        self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal')
-        self.cb_location = kwargs.pop('cb_location', None)
+        self.draw_colorbar = kwargs.pop("draw_colorbar", True)
+        self.cb_shrink = kwargs.pop("cb_shrink", 0.8)
+        self.cb_pad = kwargs.pop("cb_pad", 0.01)
+        self.cb_orientation = kwargs.pop("cb_orientation", "horizontal")
+        self.cb_location = kwargs.pop("cb_location", None)
 
-        self.subplot_right = .99
-        self.subplot_left = .085
-        self.subplot_top = .92
-        self.subplot_bottom = .1
+        self.subplot_right = 0.99
+        self.subplot_left = 0.085
+        self.subplot_top = 0.92
+        self.subplot_bottom = 0.1
 
         self.res_model = None
         self.grid_east = None
@@ -188,8 +188,8 @@ class PlotDepthSlice(object):
         self.station_north = None
         self.station_names = None
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        if self.plot_yn == 'y':
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        if self.plot_yn == "y":
             self.plot()
 
     def read_files(self):
@@ -210,7 +210,8 @@ class PlotDepthSlice(object):
                 self.nodes_z = md_model.nodes_z / self.dscale
             else:
                 raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.model_fn))
+                    "{0} does not exist, check path".format(self.model_fn)
+                )
 
         # --> read in data file to get station locations
         if self.data_fn is not None:
@@ -222,7 +223,7 @@ class PlotDepthSlice(object):
                 self.station_elev = md_data.station_locations.elev / self.dscale
                 self.station_names = md_data.station_locations.station
             else:
-                print 'Could not find data file {0}'.format(self.data_fn)
+                print "Could not find data file {0}".format(self.data_fn)
 
     def plot(self):
         """
@@ -231,26 +232,37 @@ class PlotDepthSlice(object):
         # --> get information from files
         self.read_files()
 
-        fdict = {'size': self.font_size + 2, 'weight': 'bold'}
+        fdict = {"size": self.font_size + 2, "weight": "bold"}
 
-        cblabeldict = {-2: '$10^{-3}$', -1: '$10^{-1}$', 0: '$10^{0}$', 1: '$10^{1}$',
-                       2: '$10^{2}$', 3: '$10^{3}$', 4: '$10^{4}$', 5: '$10^{5}$',
-                       6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
+        cblabeldict = {
+            -2: "$10^{-3}$",
+            -1: "$10^{-1}$",
+            0: "$10^{0}$",
+            1: "$10^{1}$",
+            2: "$10^{2}$",
+            3: "$10^{3}$",
+            4: "$10^{4}$",
+            5: "$10^{5}$",
+            6: "$10^{6}$",
+            7: "$10^{7}$",
+            8: "$10^{8}$",
+        }
 
         # create an list of depth slices to plot
         if self.depth_index == None:
             zrange = range(self.grid_z.shape[0])
         elif type(self.depth_index) is int:
             zrange = [self.depth_index]
-        elif type(self.depth_index) is list or \
-                        type(self.depth_index) is np.ndarray:
+        elif type(self.depth_index) is list or type(self.depth_index) is np.ndarray:
             zrange = self.depth_index
 
         # set the limits of the plot
         if self.ew_limits == None:
             if self.station_east is not None:
-                xlimits = (np.floor(self.station_east.min()),
-                           np.ceil(self.station_east.max()))
+                xlimits = (
+                    np.floor(self.station_east.min()),
+                    np.ceil(self.station_east.max()),
+                )
             else:
                 xlimits = (self.grid_east[5], self.grid_east[-5])
         else:
@@ -258,124 +270,146 @@ class PlotDepthSlice(object):
 
         if self.ns_limits == None:
             if self.station_north is not None:
-                ylimits = (np.floor(self.station_north.min()),
-                           np.ceil(self.station_north.max()))
+                ylimits = (
+                    np.floor(self.station_north.min()),
+                    np.ceil(self.station_north.max()),
+                )
             else:
                 ylimits = (self.grid_north[5], self.grid_north[-5])
         else:
             ylimits = self.ns_limits
 
         # make a mesh grid of north and east
-        self.mesh_east, self.mesh_north = np.meshgrid(self.grid_east,
-                                                      self.grid_north,
-                                                      indexing='ij')
+        self.mesh_east, self.mesh_north = np.meshgrid(
+            self.grid_east, self.grid_north, indexing="ij"
+        )
 
-        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams["font.size"] = self.font_size
 
         # --> plot depths into individual figures
         for ii in zrange:
-            depth = '{0:.3f} ({1})'.format(self.grid_z[ii],
-                                           self.map_scale)
+            depth = "{0:.3f} ({1})".format(self.grid_z[ii], self.map_scale)
             fig = plt.figure(depth, figsize=self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             ax1 = fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
             plot_res = np.log10(self.res_model[:, :, ii].T)
-            mesh_plot = ax1.pcolormesh(self.mesh_east,
-                                       self.mesh_north,
-                                       plot_res,
-                                       cmap=self.cmap,
-                                       vmin=self.climits[0],
-                                       vmax=self.climits[1])
+            mesh_plot = ax1.pcolormesh(
+                self.mesh_east,
+                self.mesh_north,
+                plot_res,
+                cmap=self.cmap,
+                vmin=self.climits[0],
+                vmax=self.climits[1],
+            )
 
             # plot the stations
             if self.station_east is not None:
                 for ee, nn in zip(self.station_east, self.station_north):
-                    ax1.text(ee, nn, '*',
-                             verticalalignment='center',
-                             horizontalalignment='center',
-                             fontdict={'size': 5, 'weight': 'bold'})
+                    ax1.text(
+                        ee,
+                        nn,
+                        "*",
+                        verticalalignment="center",
+                        horizontalalignment="center",
+                        fontdict={"size": 5, "weight": "bold"},
+                    )
 
             # set axis properties
             ax1.set_xlim(xlimits)
             ax1.set_ylim(ylimits)
             ax1.xaxis.set_minor_locator(MultipleLocator(self.xminorticks / self.dscale))
             ax1.yaxis.set_minor_locator(MultipleLocator(self.yminorticks / self.dscale))
-            ax1.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
-            ax1.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
-            ax1.set_title('{0}'.format(depth), fontdict=fdict)#Depth = 
+            ax1.set_ylabel("Northing (" + self.map_scale + ")", fontdict=fdict)
+            ax1.set_xlabel("Easting (" + self.map_scale + ")", fontdict=fdict)
+            ax1.set_title("{0}".format(depth), fontdict=fdict)  # Depth =
 
             # plot the grid if desired
-            if self.plot_grid == 'y':
+            if self.plot_grid == "y":
                 east_line_xlist = []
                 east_line_ylist = []
                 for xx in self.grid_east:
                     east_line_xlist.extend([xx, xx])
                     east_line_xlist.append(None)
-                    east_line_ylist.extend([self.grid_north.min(),
-                                            self.grid_north.max()])
+                    east_line_ylist.extend(
+                        [self.grid_north.min(), self.grid_north.max()]
+                    )
                     east_line_ylist.append(None)
-                ax1.plot(east_line_xlist,
-                         east_line_ylist,
-                         lw=.25,
-                         color='k')
+                ax1.plot(east_line_xlist, east_line_ylist, lw=0.25, color="k")
 
                 north_line_xlist = []
                 north_line_ylist = []
                 for yy in self.grid_north:
-                    north_line_xlist.extend([self.grid_east.min(),
-                                             self.grid_east.max()])
+                    north_line_xlist.extend(
+                        [self.grid_east.min(), self.grid_east.max()]
+                    )
                     north_line_xlist.append(None)
                     north_line_ylist.extend([yy, yy])
                     north_line_ylist.append(None)
-                ax1.plot(north_line_xlist,
-                         north_line_ylist,
-                         lw=.25,
-                         color='k')
+                ax1.plot(north_line_xlist, north_line_ylist, lw=0.25, color="k")
 
             # plot the colorbar
             if self.draw_colorbar:
                 if self.cb_location is None:
-                    if self.cb_orientation == 'horizontal':
-                        self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
-                                            ax1.axes.figbox.bounds[1] + .05, .3, .025)
-    
-                    elif self.cb_orientation == 'vertical':
-                        self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
-                                             ax1.axes.figbox.bounds[3] - .21, .025, .3))
-    
+                    if self.cb_orientation == "horizontal":
+                        self.cb_location = (
+                            ax1.axes.figbox.bounds[3] - 0.225,
+                            ax1.axes.figbox.bounds[1] + 0.05,
+                            0.3,
+                            0.025,
+                        )
+
+                    elif self.cb_orientation == "vertical":
+                        self.cb_location = (
+                            ax1.axes.figbox.bounds[2] - 0.15,
+                            ax1.axes.figbox.bounds[3] - 0.21,
+                            0.025,
+                            0.3,
+                        )
+
                 ax2 = fig.add_axes(self.cb_location)
-    
-                cb = mcb.ColorbarBase(ax2,
-                                      cmap=self.cmap,
-                                      norm=Normalize(vmin=self.climits[0],
-                                                     vmax=self.climits[1]),
-                                      orientation=self.cb_orientation)
-    
-                if self.cb_orientation == 'horizontal':
-                    cb.ax.xaxis.set_label_position('top')
-                    cb.ax.xaxis.set_label_coords(.5, 1.3)
-    
-                elif self.cb_orientation == 'vertical':
-                    cb.ax.yaxis.set_label_position('right')
-                    cb.ax.yaxis.set_label_coords(1.25, .5)
+
+                cb = mcb.ColorbarBase(
+                    ax2,
+                    cmap=self.cmap,
+                    norm=Normalize(vmin=self.climits[0], vmax=self.climits[1]),
+                    orientation=self.cb_orientation,
+                )
+
+                if self.cb_orientation == "horizontal":
+                    cb.ax.xaxis.set_label_position("top")
+                    cb.ax.xaxis.set_label_coords(0.5, 1.3)
+
+                elif self.cb_orientation == "vertical":
+                    cb.ax.yaxis.set_label_position("right")
+                    cb.ax.yaxis.set_label_coords(1.25, 0.5)
                     cb.ax.yaxis.tick_left()
-                    cb.ax.tick_params(axis='y', direction='in')
-    
-                cb.set_label('Resistivity ($\Omega \cdot$m)',
-                             fontdict={'size': self.font_size + 1})
+                    cb.ax.tick_params(axis="y", direction="in")
+
+                cb.set_label(
+                    "Resistivity ($\Omega \cdot$m)",
+                    fontdict={"size": self.font_size + 1},
+                )
                 cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
-                cb.set_ticklabels([cblabeldict[cc]
-                                   for cc in np.arange(self.climits[0],
-                                                       self.climits[1] + 1)])
+                cb.set_ticklabels(
+                    [
+                        cblabeldict[cc]
+                        for cc in np.arange(self.climits[0], self.climits[1] + 1)
+                    ]
+                )
 
             self.fig_list.append(fig)
 
             # --> save plots to a common folder
-            if self.save_plots == 'y':
+            if self.save_plots == "y":
 
-                fig.savefig(os.path.join(self.save_path,
-                                         "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])),
-                            dpi=self.fig_dpi, bbox_inches='tight')
+                fig.savefig(
+                    os.path.join(
+                        self.save_path,
+                        "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii]),
+                    ),
+                    dpi=self.fig_dpi,
+                    bbox_inches="tight",
+                )
                 fig.clear()
                 plt.close()
 
@@ -428,7 +462,8 @@ class PlotDepthSlice(object):
         rewrite the string builtin to give a useful message
         """
 
-        return ("Plots depth slices of model from WS3DINV")
+        return "Plots depth slices of model from WS3DINV"
+
 
 # ==================================================================================
 # FZ: add example usage code
@@ -438,33 +473,29 @@ if __name__ == "__main__":
 
     from mtpy.mtpy_globals import *
 
-    save_path = '/tmp'
+    save_path = "/tmp"
     modem = os.path.dirname(__file__)
     modeling = os.path.dirname(modem)
     mtpy = os.path.dirname(modeling)
     base = os.path.dirname(mtpy)
-    examples = os.path.join(base, 'examples')
-    data = os.path.join(examples, 'data')
-    ModEM_files = os.path.join(data, 'ModEM_files')
+    examples = os.path.join(base, "examples")
+    data = os.path.join(examples, "data")
+    ModEM_files = os.path.join(data, "ModEM_files")
 
-    mfn = os.path.join(ModEM_files, 'Modular_MPI_NLCG_056_im2.rho')
-    dfn = os.path.join(ModEM_files, 'ModEM_Data_im2.dat')
+    mfn = os.path.join(ModEM_files, "Modular_MPI_NLCG_056_im2.rho")
+    dfn = os.path.join(ModEM_files, "ModEM_Data_im2.dat")
 
     # period index to plot (0 plots the first (shortest) period, 1 for the second, etc)
     period_index = 0
 
     # plot map
-    dsmap = PlotDepthSlice(model_fn=mfn,
-                           data_fn=dfn,
-                           depth_index=30,
-                           save_plots='n'
-                           )
+    dsmap = PlotDepthSlice(model_fn=mfn, data_fn=dfn, depth_index=30, save_plots="n")
 
-    path2file = os.path.join(save_path, 'DepthSlice.png')
+    path2file = os.path.join(save_path, "DepthSlice.png")
 
     if os.path.exists(path2file):
         os.remove(path2file)
 
     plt.savefig(path2file)
 
-    print(path2file)
+    print (path2file)

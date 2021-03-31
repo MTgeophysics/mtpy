@@ -19,8 +19,8 @@ class Scale(QGroupBox):
         self.ui = Ui_GroupBox_Scale()
         self.ui.setupUi(self)
 
-    _tscale = ['period', 'freq']
-    _mapscale = ['deg', 'm', 'km']
+    _tscale = ["period", "freq"]
+    _mapscale = ["deg", "m", "km"]
 
     def get_tscale(self):
         return self._tscale[self.ui.comboBox_time.currentIndex()]

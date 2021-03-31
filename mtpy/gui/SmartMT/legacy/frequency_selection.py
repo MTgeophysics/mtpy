@@ -2,7 +2,9 @@ import numpy as np
 from PyQt4 import QtGui
 
 from mtpy.gui.SmartMT.gui.matplotlib_imabedding import MPLCanvas, Cursor
-from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import Ui_groupBoxFrequency_pereiod_single
+from mtpy.gui.SmartMT.ui_asset.groupbox_frequency_period_single import (
+    Ui_groupBoxFrequency_pereiod_single,
+)
 
 
 class FrequencySingle(QtGui.QGroupBox):
@@ -10,10 +12,10 @@ class FrequencySingle(QtGui.QGroupBox):
     Frequency selection (single frequency)
     """
 
-    _unit_period = 'second'
-    _unit_frequency = 'Hz'
-    _title_period = 'Period'
-    _title_frequency = 'Frequency'
+    _unit_period = "second"
+    _unit_frequency = "Hz"
+    _title_period = "Period"
+    _title_frequency = "Frequency"
 
     def __init__(self, parent, use_period=False):
         QtGui.QGroupBox.__init__(self, parent)
@@ -28,7 +30,7 @@ class FrequencySingle(QtGui.QGroupBox):
         # connect components
         self.ui.comboBoxPeriod.currentIndexChanged.connect(self.update_histogram)
         self.ui.comboBoxPeriod.editTextChanged.connect(self.update_histogram)
-        self._histogram.mpl_connect('button_release_event', self._mouse_pick)
+        self._histogram.mpl_connect("button_release_event", self._mouse_pick)
 
     def toggle_time_scale(self, *args):
         self.use_period = not self.use_period
@@ -38,11 +40,11 @@ class FrequencySingle(QtGui.QGroupBox):
         if use_period:
             self._histogram.set_unit(self._unit_period)
             self._histogram.set_title(self._title_period)
-            title = '%s (%s)' % (self._title_period, self._unit_period)
+            title = "%s (%s)" % (self._title_period, self._unit_period)
         else:
             self._histogram.set_unit(self._unit_frequency)
             self._histogram.set_title(self._title_frequency)
-            title = '%s (%s)' % (self._title_frequency, self._unit_frequency)
+            title = "%s (%s)" % (self._title_frequency, self._unit_frequency)
         self.setTitle(title)
         self._update_frequency()
 
@@ -97,7 +99,7 @@ class FrequencySingle(QtGui.QGroupBox):
             self.cursor = None
 
             # self.mpl_connect('motion_notify_event', self.cursor)
-            self.mpl_connect('button_release_event', self.mouse_pick)
+            self.mpl_connect("button_release_event", self.mouse_pick)
             self.setMinimumSize(200, 150)
             self.resize(self.sizeHint())
 
@@ -121,7 +123,12 @@ class FrequencySingle(QtGui.QGroupBox):
         def set_unit(self, unit):
             if unit != self._unit:
                 self._unit = unit
-                self.cursor = Cursor(self._axes, track_y=False, text_format="%f " + self._unit, useblit=True)
+                self.cursor = Cursor(
+                    self._axes,
+                    track_y=False,
+                    text_format="%f " + self._unit,
+                    useblit=True,
+                )
 
         def mouse_pick(self, event):
             if not event.inaxes:
@@ -131,12 +138,16 @@ class FrequencySingle(QtGui.QGroupBox):
 
         def compute_initial_figure(self):
             if self._frequency is not None:
-                self._axes.tick_params(axis='both', which='major', labelsize=6)
-                self._axes.tick_params(axis='both', which='minor', labelsize=4)
+                self._axes.tick_params(axis="both", which="major", labelsize=6)
+                self._axes.tick_params(axis="both", which="minor", labelsize=4)
                 self._axes.hist(self._frequency)  # , 50, normed=1)
                 if self._title and self._unit:
-                    self._axes.set_xlabel("%s (%s)" % (self._title, self._unit), fontsize=8)
-                    self.figure.suptitle('%s Distribution in Selected Stations' % self._title, fontsize=8)
+                    self._axes.set_xlabel(
+                        "%s (%s)" % (self._title, self._unit), fontsize=8
+                    )
+                    self.figure.suptitle(
+                        "%s Distribution in Selected Stations" % self._title, fontsize=8
+                    )
 
                 self._fig.set_tight_layout(True)
 

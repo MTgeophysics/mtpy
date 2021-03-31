@@ -82,9 +82,11 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
         self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
-        fn_list = kwargs.pop('fn_list', [])
+        fn_list = kwargs.pop("fn_list", [])
 
-        
+
+        if len(fn_list) == 0:
+            raise NameError("File list is empty.")
 
         # ----set attributes for the class-------------------------
         self.mt_list = kwargs.pop('mt_list',
@@ -93,22 +95,22 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         if(len(fn_list)==0 and (len(self.mt_list)==0)): raise NameError('File and MT object lists are both empty.')
 
         # read in map scale
-        self.mapscale = kwargs.pop('mapscale', 'deg')
-        if self.mapscale == 'km':
-            self.dscale = 1000.
-        elif self.mapscale == 'm':
-            self.dscale = 1.
+        self.mapscale = kwargs.pop("mapscale", "deg")
+        if self.mapscale == "km":
+            self.dscale = 1000.0
+        elif self.mapscale == "m":
+            self.dscale = 1.0
         # end if
 
-        self.plot_title = kwargs.pop('plot_title', None)
-        self.fig_dpi = kwargs.pop('fig_dpi', 100)
+        self.plot_title = kwargs.pop("plot_title", None)
+        self.fig_dpi = kwargs.pop("fig_dpi", 100)
 
-        self.fig_size = kwargs.pop('fig_size', [8, 6])
+        self.fig_size = kwargs.pop("fig_size", [8, 6])
 
-        self.font_size = kwargs.pop('font_size', 7)
+        self.font_size = kwargs.pop("font_size", 7)
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        self.save_fn = kwargs.pop('save_fn', "/c/tmp")
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        self.save_fn = kwargs.pop("save_fn", "/c/tmp")
 
         # By this stage all keyword arguments meant to be set as class properties will have
         # been processed. Popping all class properties that still exist in kwargs
@@ -117,22 +119,30 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
             self.kwargs.pop(key, None)
 
         self.axesList = []
+
     # end func
 
     # -----------------------------------------------
     # The main plot method for this module
     # -------------------------------------------------
-    def plot(self, freq, type, vmin, vmax,
-             extrapolation_buffer_degrees=1,
-             regular_grid_nx=100, regular_grid_ny=100,
-             nn=7,
-             p = 4,
-             show_stations = True,
-             show_station_names = False,
-             save_path = os.getcwd(),
-             file_ext = 'png',
-             cmap='rainbow',
-             show = True):
+    def plot(
+        self,
+        freq,
+        type,
+        vmin,
+        vmax,
+        extrapolation_buffer_degrees=1,
+        regular_grid_nx=100,
+        regular_grid_ny=100,
+        nn=7,
+        p=4,
+        show_stations=True,
+        show_station_names=False,
+        save_path=os.getcwd(),
+        file_ext="png",
+        cmap="rainbow",
+        show=True,
+    ):
         """
         :param freq: plot frequency
         :param type: plot type; can be either 'res' or 'phase'
@@ -149,8 +159,10 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         :return: fig object
         """
 
-        if(type not in ['res', 'phase']): raise NameError("type must be 'res' or 'phase'")
-        if(not os.path.isdir(save_path)): raise NameError("Invalid save_path")
+        if type not in ["res", "phase"]:
+            raise NameError("type must be 'res' or 'phase'")
+        if not os.path.isdir(save_path):
+            raise NameError("Invalid save_path")
 
         def in_hull(p, hull):
             """
@@ -161,7 +173,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 if not isinstance(hull, Delaunay):
                     hull = Delaunay(hull)
 
-                return hull.find_simplex(p)>=0
+                return hull.find_simplex(p) >= 0
             except:
                 from scipy.optimize import linprog
 
@@ -180,6 +192,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                     b = np.r_[x, np.ones(1)]
                     lp = linprog(c, A_eq=A, b_eq=b)
                     return not lp.success
+
                 # end func
 
                 result = []
@@ -189,23 +202,23 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
                 return np.array(result)
             # end try
+
         # end func
-        
+
         # change vmin, vmax to 2x2 array
         if not np.iterable(vmin):
-            vmin = np.ones((2,2))*vmin
+            vmin = np.ones((2, 2)) * vmin
         if not np.iterable(vmax):
-            vmax = np.ones((2,2))*vmax       
-        
+            vmax = np.ones((2, 2)) * vmax
 
         # set position properties for the plot
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .1
-        plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .1
-        plt.rcParams['figure.subplot.top'] = .93
-        plt.rcParams['figure.subplot.wspace'] = .55
-        plt.rcParams['figure.subplot.hspace'] = .70
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = 0.1
+        plt.rcParams["figure.subplot.right"] = 0.98
+        plt.rcParams["figure.subplot.bottom"] = 0.1
+        plt.rcParams["figure.subplot.top"] = 0.93
+        plt.rcParams["figure.subplot.wspace"] = 0.55
+        plt.rcParams["figure.subplot.hspace"] = 0.70
 
         # make figure instance
         self.fig = plt.figure(1, figsize=self.fig_size, dpi=self.fig_dpi)
@@ -228,7 +241,7 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         lat = np.array(lat)
         res = np.array(res)
         phase = np.array(phase)
-        phase[:,1,0] += 180
+        phase[:, 1, 0] += 180
 
         elon = np.array(lon)
         elat = np.array(lat)
@@ -256,28 +269,32 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
                 nx = regular_grid_nx
                 ny = regular_grid_ny
-                if (not foundCoordinates):
+                if not foundCoordinates:
                     # transform coordinates if necessary
-                    if (self.mapscale == 'm' or self.mapscale=='km'):
+                    if self.mapscale == "m" or self.mapscale == "km":
                         zl = []
                         zle = []
                         for k in range(len(lon)):
-                            east, north, zone = gis_tools.project_point_ll2utm(lat[k],
-                                                                               lon[k])
+                            east, north, zone = gis_tools.project_point_ll2utm(
+                                lat[k], lon[k]
+                            )
                             x[k] = east / self.dscale
                             y[k] = north / self.dscale
                             zl.append(zone)
 
-                            east, north, zone = gis_tools.project_point_ll2utm(elat[k],
-                                                                               elon[k])
+                            east, north, zone = gis_tools.project_point_ll2utm(
+                                elat[k], elon[k]
+                            )
                             ex[k] = east / self.dscale
                             ey[k] = north / self.dscale
                             zle.append(zone)
                         # end for
 
-                        if (len(set(zl)) > 1 or len(set(zle)) > 1):
-                            print('Warning: multiple UTM zones detected. ' \
-                                  'Using geographical coordinates instead')
+                        if len(set(zl)) > 1 or len(set(zle)) > 1:
+                            print(
+                                "Warning: multiple UTM zones detected. "
+                                "Using geographical coordinates instead"
+                            )
                             x = lon
                             y = lat
                             ex = elon
@@ -317,9 +334,9 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                 d, l = tree.query(xy, k=nn)
 
                 img = None
-                vs = res if type == 'res' else phase
+                vs = res if type == "res" else phase
 
-                if (nn == 1):
+                if nn == 1:
                     # extract nearest neighbour values
                     img = vs[:, i, j][l]
                 else:
@@ -333,104 +350,144 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                     # perform idw interpolation for non-coincident locations
                     idwIndices = d[:, 0] != 0
                     w = np.zeros(d.shape)
-                    w[idwIndices, :] = 1. / np.power(d[idwIndices, :], p)
+                    w[idwIndices, :] = 1.0 / np.power(d[idwIndices, :], p)
 
-                    img[idwIndices] = np.sum(w[idwIndices, :] * vals[l[idwIndices, :]], axis=1) / \
-                                      np.sum(w[idwIndices, :], axis=1)
+                    img[idwIndices] = np.sum(
+                        w[idwIndices, :] * vals[l[idwIndices, :]], axis=1
+                    ) / np.sum(w[idwIndices, :], axis=1)
                 # end if
 
-                if(isinstance(cmap, str)):
+                if isinstance(cmap, str):
                     cmap = plt.get_cmap(cmap)
                 # set cmap values for over and under
-                norm = colors.Normalize(vmin=vmin[i,j], vmax=vmax[i,j])
-                cmap.set_over(cmap(norm(vmax[i,j])))
-                cmap.set_under(cmap(norm(vmin[i,j])))
+                norm = colors.Normalize(vmin=vmin[i, j], vmax=vmax[i, j])
+                cmap.set_over(cmap(norm(vmax[i, j])))
+                cmap.set_under(cmap(norm(vmin[i, j])))
 
-                if (type == 'res'):
+                if type == "res":
                     # Log-normalized contour plots do not support the 'extend' keyword which
                     # can be used to clip data values above/below the given range to their
                     # corresponding colors. We do the following to get around this issue.
-                    cbinfo = ax.tricontourf(triangulation, np.log10(img), mask=insideIndices,
-                                            levels=np.linspace(np.log10(vmin[i,j]), np.log10(vmax[i,j]), 50),
-                                            extend='both',
-                                            cmap=cmap)
+                    cbinfo = ax.tricontourf(
+                        triangulation,
+                        np.log10(img),
+                        mask=insideIndices,
+                        levels=np.linspace(
+                            np.log10(vmin[i, j]), np.log10(vmax[i, j]), 50
+                        ),
+                        extend="both",
+                        cmap=cmap,
+                    )
 
-                    cb = self.fig.colorbar(cbinfo,
-                                           ticks=ticker.FixedLocator(
-                                               np.arange(int(np.round(np.log10(vmin[i,j]))),
-                                                         int(np.round(np.log10(vmax[i,j])))+1)))
+                    cb = self.fig.colorbar(
+                        cbinfo,
+                        ticks=ticker.FixedLocator(
+                            np.arange(
+                                int(np.round(np.log10(vmin[i, j]))),
+                                int(np.round(np.log10(vmax[i, j]))) + 1,
+                            )
+                        ),
+                    )
 
-                    labels = ['$10^{%d}$'%l for l in
-                              np.arange(int(np.round(np.log10(vmin[i,j]))), int(np.round(np.log10(vmax[i,j])))+1)]
+                    labels = [
+                        "$10^{%d}$" % l
+                        for l in np.arange(
+                            int(np.round(np.log10(vmin[i, j]))),
+                            int(np.round(np.log10(vmax[i, j]))) + 1,
+                        )
+                    ]
                     cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
-                elif (type == 'phase'):
-                    cbinfo = ax.tricontourf(triangulation, img, mask=insideIndices,
-                                             levels=np.linspace(vmin[i,j], vmax[i,j], 50),
-                                             norm=colors.Normalize(vmin=vmin[i,j], vmax=vmax[i,j]),
-                                             extend='both',
-                                             cmap=cmap)
+                elif type == "phase":
+                    cbinfo = ax.tricontourf(
+                        triangulation,
+                        img,
+                        mask=insideIndices,
+                        levels=np.linspace(vmin[i, j], vmax[i, j], 50),
+                        norm=colors.Normalize(vmin=vmin[i, j], vmax=vmax[i, j]),
+                        extend="both",
+                        cmap=cmap,
+                    )
 
-                    cb = self.fig.colorbar(cbinfo, ticks=np.linspace(vmin[i,j], vmax[i,j], 12))
+                    cb = self.fig.colorbar(
+                        cbinfo, ticks=np.linspace(vmin[i, j], vmax[i, j], 12)
+                    )
                 # end if
 
-                ax.tick_params(axis='both', which='major', labelsize=self.font_size-2)
-                ax.tick_params(axis='both', which='minor', labelsize=self.font_size-2)
+                ax.tick_params(axis="both", which="major", labelsize=self.font_size - 2)
+                ax.tick_params(axis="both", which="minor", labelsize=self.font_size - 2)
 
-                cb.ax.tick_params(axis='both', which='major', labelsize=self.font_size-1)
-                cb.ax.tick_params(axis='both', which='minor', labelsize=self.font_size-1)
+                cb.ax.tick_params(
+                    axis="both", which="major", labelsize=self.font_size - 1
+                )
+                cb.ax.tick_params(
+                    axis="both", which="minor", labelsize=self.font_size - 1
+                )
 
                 # show stations
-                if (show_stations): 
-                    ax.scatter(x, y, 2, marker='v', c='k', edgecolor='none')
+                if show_stations:
+                    ax.scatter(x, y, 2, marker="v", c="k", edgecolor="none")
                     if show_station_names:
                         for isn, mt_obj in enumerate(self.mt_list):
-                            plt.text(lon[isn],lat[isn],mt_obj.station,fontsize=self.font_size-2)
+                            plt.text(
+                                lon[isn],
+                                lat[isn],
+                                mt_obj.station,
+                                fontsize=self.font_size - 2,
+                            )
 
                 # Label plots
-                label = ''
-                if(i==0 and j==0):
-                    if(type=='res'):
-                        label = '$\\rho_{xx}  \\mathrm{[\Omega m]}$'
+                label = ""
+                if i == 0 and j == 0:
+                    if type == "res":
+                        label = "$\\rho_{xx}  \\mathrm{[\Omega m]}$"
                     else:
-                        label = '$\\phi_{xx} \\mathrm{[^\circ]}$'
-                elif(i==0 and j==1):
-                    if(type=='res'):
-                        label = '$\\rho_{xy}$'
+                        label = "$\\phi_{xx} \\mathrm{[^\circ]}$"
+                elif i == 0 and j == 1:
+                    if type == "res":
+                        label = "$\\rho_{xy}$"
                     else:
-                        label = '$\\phi_{xy}$'
-                elif(i==1 and j==0):
-                    if(type=='res'):
-                        label = '$\\rho_{yx}$'
+                        label = "$\\phi_{xy}$"
+                elif i == 1 and j == 0:
+                    if type == "res":
+                        label = "$\\rho_{yx}$"
                     else:
-                        label = '$\\phi_{yx}$'
-                elif(i==1 and j==1):
-                    if(type=='res'):
-                        label = '$\\rho_{yy}$'
+                        label = "$\\phi_{yx}$"
+                elif i == 1 and j == 1:
+                    if type == "res":
+                        label = "$\\rho_{yy}$"
                     else:
-                        label = '$\\phi_{yy}$'
+                        label = "$\\phi_{yy}$"
 
-
-                ax.text(0.8, 0.9, label, fontdict={'size': self.font_size + 3},
-                        transform=ax.transAxes)
+                ax.text(
+                    0.8,
+                    0.9,
+                    label,
+                    fontdict={"size": self.font_size + 3},
+                    transform=ax.transAxes,
+                )
                 plotIdx += 1
             # end for
         # end for
 
         # Plot title
-        suffix = ' %0.2f Hz'%(freq) if (freq>=1) else ' %0.2f s'%(1./freq)
-        if(type=='res'):
-            self.fig.suptitle('Apparent Resistivity Maps for'+suffix, y=0.985)
+        suffix = " %0.2f Hz" % (freq) if (freq >= 1) else " %0.2f s" % (1.0 / freq)
+        if type == "res":
+            self.fig.suptitle("Apparent Resistivity Maps for" + suffix, y=0.985)
         else:
-            self.fig.suptitle('Phase Maps for'+suffix, y=0.985)
+            self.fig.suptitle("Phase Maps for" + suffix, y=0.985)
 
         plt.tight_layout(rect=[0, 0.025, 1, 0.975])
-        if (show): plt.show()
+        if show:
+            plt.show()
 
-        fn = os.path.join(save_path, '%s.%0.2f.%s'%(type, freq, file_ext))
+        fn = os.path.join(save_path, "%s.%0.2f.%s" % (type, freq, file_ext))
         self.fig.savefig(fn, dpi=self.fig_dpi)
 
         return self.fig
+
     # end func
+
+
 # end class
 
 
@@ -441,26 +498,37 @@ if __name__ == "__main__":
     imaging = os.path.dirname(__file__)
     mtpy = os.path.dirname(imaging)
     base = os.path.dirname(mtpy)
-    examples = os.path.join(base, 'examples')
-    data = os.path.join(examples, 'data')
-    edidir = os.path.join(data, 'edi2')
+    examples = os.path.join(base, "examples")
+    data = os.path.join(examples, "data")
+    edidir = os.path.join(data, "edi2")
 
-    edi_file_list = glob.glob(edidir + '/*.edi')
+    edi_file_list = glob.glob(edidir + "/*.edi")
 
-    prp = PlotResPhaseMaps(fn_list=edi_file_list,
-                           fig_dpi=200, mapscale='m')
+    prp = PlotResPhaseMaps(fn_list=edi_file_list, fig_dpi=200, mapscale="m")
 
-    plot_type = 'res'
+    plot_type = "res"
 
-    if(plot_type=='res'):
-        f = prp.plot(0.02, plot_type, 0.005, 1e2,
-                     extrapolation_buffer_degrees=0.1,
-                     regular_grid_nx=100,
-                     regular_grid_ny=100,
-                     show=True, save_path='/tmp')
+    if plot_type == "res":
+        f = prp.plot(
+            0.02,
+            plot_type,
+            0.005,
+            1e2,
+            extrapolation_buffer_degrees=0.1,
+            regular_grid_nx=100,
+            regular_grid_ny=100,
+            show=True,
+            save_path="/tmp",
+        )
     else:
-        f = prp.plot(0.02, plot_type, -180, 180,
-                     extrapolation_buffer_degrees=0.1,
-                     regular_grid_nx=100,
-                     regular_grid_ny=100,
-                     show=True, save_path='/tmp')
+        f = prp.plot(
+            0.02,
+            plot_type,
+            -180,
+            180,
+            extrapolation_buffer_degrees=0.1,
+            regular_grid_nx=100,
+            regular_grid_ny=100,
+            show=True,
+            save_path="/tmp",
+        )

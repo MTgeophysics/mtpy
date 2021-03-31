@@ -15,32 +15,37 @@ import matplotlib.pyplot as plt
 
 
 # Define the ellipse and arrow properties
-ellipse_dict = {'range': (20, 70), 'cmap': 'mt_bl2gr2rd',
-                'colorby': 'phimin', 'size': 10}
+ellipse_dict = {
+    "range": (20, 70),
+    "cmap": "mt_bl2gr2rd",
+    "colorby": "phimin",
+    "size": 10,
+}
 ellipse = MTEllipse(ellipse_dict=ellipse_dict)
-arrow = MTArrows({'size': 60, 'head_length': 4})
+arrow = MTArrows({"size": 60, "head_length": 4})
 
 
 def test_plot1(edi_file_list):
     """ from  mtpy1/mtpy/imaging/phase_tensor_pseudo_section_plot.py
     """
 
-    pt1 = PlotPhaseTensorPseudoSection(fn_list=edi_file_list,
-                                       data_type='z',
-                                       ellipse=ellipse,
-                                       arrow=arrow,
-                                       # arrow is not taken into constructor.
-                                       tscale='frequency',
-                                       ellipse_freq=1,  # plot an ellipse at every frequency value
-                                       plot_tipper='yri',
-                                       stretch=(1500, 35),
-                                       scale_arrow=False
-                                       )
+    pt1 = PlotPhaseTensorPseudoSection(
+        fn_list=edi_file_list,
+        data_type="z",
+        ellipse=ellipse,
+        arrow=arrow,
+        # arrow is not taken into constructor.
+        tscale="frequency",
+        ellipse_freq=1,  # plot an ellipse at every frequency value
+        plot_tipper="yri",
+        stretch=(1500, 35),
+        scale_arrow=False,
+    )
 
     plt.rcdefaults()
 
-# Why the plot below becomes smaller?
-    #pt1.plot_tipper = 'yri'
+    # Why the plot below becomes smaller?
+    # pt1.plot_tipper = 'yri'
     # pt1.arrow.arrow_size = 100 AttributeError:
     # 'PlotPhaseTensorPseudoSection' object has no attribute 'arrow'
 
@@ -50,13 +55,13 @@ def test_plot1(edi_file_list):
 
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
-        data_type='z',
+        data_type="z",
         ellipse=ellipse,
-        tscale='frequency',
+        tscale="frequency",
         ellipse_freq=3,  # plot every 3rd ellipse
-        plot_tipper='yri',
+        plot_tipper="yri",
         stretch=(1500, 35),
-        scale_arrow=False
+        scale_arrow=False,
     )
 
     return pt1
@@ -75,15 +80,15 @@ def test_plot2(edi_file_list):
     # Plot the phase tensor pseudo section
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
-        data_type='z',
+        data_type="z",
         ellipse=ellipse,
         arrow=arrow,
-        tscale='frequency',
+        tscale="frequency",
         ellipse_freq=1,  # plot an ellipse at every frequency value
-        plot_tipper='yri',
+        plot_tipper="yri",
         stretch=(1500, 35),
         scale_arrow=False,
-        fig_size=[10, 12]
+        fig_size=[10, 12],
     )
 
     # Change some properties and replot.  But why the figure window become
@@ -107,12 +112,12 @@ def test_plot3(edi_file_list):
     # plot every 3rd ellipse
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
-        data_type='z',
+        data_type="z",
         ellipse=ellipse,
         arrow=arrow,
-        tscale='frequency',
+        tscale="frequency",
         ellipse_freq=5,  # =3 plot every 3rd ellipse
-        plot_tipper='yri',  # plot real and imaginary tipper arrows
+        plot_tipper="yri",  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
@@ -127,17 +132,17 @@ def test_plot4(edi_file_list):
     """
 
     # Colorby 'skew'
-    ellipse.ellipse_colorby = 'skew'
+    ellipse.ellipse_colorby = "skew"
     arrow.arrow_size = 50
     # plot every 3rd ellipse
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
-        data_type='z',
+        data_type="z",
         ellipse=ellipse,
         arrow=arrow,
-        tscale='frequency',
+        tscale="frequency",
         ellipse_freq=3,  # plot every 3rd ellipse
-        plot_tipper='yri',  # plot real and imaginary tipper arrows
+        plot_tipper="yri",  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
@@ -145,18 +150,18 @@ def test_plot4(edi_file_list):
     )
 
     # Colorby 'normalized_skew'
-    ellipse.ellipse_colorby = 'normalized_skew'
+    ellipse.ellipse_colorby = "normalized_skew"
     # change arrow size
     arrow.arrow_size = 40
     # plot every 4th ellipse
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
-        data_type='z',
+        data_type="z",
         ellipse=ellipse,
         arrow=arrow,
-        tscale='frequency',
+        tscale="frequency",
         ellipse_freq=4,  # plot every 4th ellipse
-        plot_tipper='yri',  # plot real and imaginary tipper arrows
+        plot_tipper="yri",  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
@@ -164,17 +169,17 @@ def test_plot4(edi_file_list):
     )
 
     # Colorby 'ellipticity'
-    ellipse.ellipse_colorby = 'ellipticity'
+    ellipse.ellipse_colorby = "ellipticity"
 
     # plot every 4th ellipse
     pt1 = PlotPhaseTensorPseudoSection(
         fn_list=edi_file_list,
-        data_type='z',
+        data_type="z",
         ellipse=ellipse,
         arrow=arrow,
-        tscale='frequency',
+        tscale="frequency",
         ellipse_freq=4,  # plot every 4th ellipse
-        plot_tipper='yri',  # plot real and imaginary tipper arrows
+        plot_tipper="yri",  # plot real and imaginary tipper arrows
         stretch=(1500, 35),
         scale_arrow=False,
         fig_size=[10, 12],
@@ -196,14 +201,14 @@ def test_plot4(edi_file_list):
 #
 # compare to Alison script examples/plot_phase_tensor_section.py examples/data/edi_files/georgina
 # They all have changing figure size.
-#----------------------------------------------------
-if __name__ == '__main__':
+# ----------------------------------------------------
+if __name__ == "__main__":
     """the script commandline run entry point.
     """
 
     edi_path = sys.argv[1]
 
-    edi_file_list = glob.glob(os.path.join(edi_path, '*.edi'))
+    edi_file_list = glob.glob(os.path.join(edi_path, "*.edi"))
 
     print(edi_file_list)
 

@@ -5,14 +5,16 @@
     Date: 20/06/2017
 """
 
-import abc,six
+import abc, six
 import mtpy.core.mt as mt
+
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
 from mtpy.utils.mtpylog import MtPyLog
 
+
 @six.add_metaclass(abc.ABCMeta)
-class ImagingBase():
+class ImagingBase:
     """
     Description:
         This is the base class for all the imaging classes, with standardized API (as abstract methods)
@@ -37,6 +39,7 @@ class ImagingBase():
             self.plot()
         if block:
             import matplotlib.pyplot as plt
+
             plt.show()
         else:
             self._fig.show()
@@ -111,7 +114,9 @@ class ImagingBase():
     # ========================================
     # set properties
     # ========================================
-    data = property(set_data, get_data, doc="the data (mt objects) that are to be plotted")
+    data = property(
+        set_data, get_data, doc="the data (mt objects) that are to be plotted"
+    )
     fig = property(None, get_figure, doc="matplotlib fig object")
 
 

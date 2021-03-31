@@ -13,7 +13,15 @@ from itertools import cycle
 
 import pandas as pd
 from qtpy import QtCore
-from qtpy.QtWidgets import QWidget, QMessageBox, QInputDialog, QMenu, QAction, QTreeWidgetItem, QSizePolicy
+from qtpy.QtWidgets import (
+    QWidget,
+    QMessageBox,
+    QInputDialog,
+    QMenu,
+    QAction,
+    QTreeWidgetItem,
+    QSizePolicy,
+)
 from qtpy.QtCore import Signal
 from matplotlib import artist
 
@@ -22,14 +30,15 @@ from mtpy.gui.SmartMT.ui_asset.station_viewer import Ui_StationViewer
 
 _translate = QtCore.QCoreApplication.translate
 
-MARKERS = ['*', 'D', 'H', '^']
-COLORS = ['g', 'r', 'c', 'm', 'y', 'k', 'b']
+MARKERS = ["*", "D", "H", "^"]
+COLORS = ["g", "r", "c", "m", "y", "k", "b"]
 
 
 class StationViewer(QWidget):
     """
     signal when the selected station changed
     """
+
     selection_changed = Signal()
 
     def __init__(self, parent, file_handler):
@@ -54,7 +63,9 @@ class StationViewer(QWidget):
         # make station_viewer never been deleted
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, False)
         # handle selection changed event
-        self.ui.treeWidget_stations.selectionModel().selectionChanged.connect(self.item_selection_changed)
+        self.ui.treeWidget_stations.selectionModel().selectionChanged.connect(
+            self.item_selection_changed
+        )
         # add context menu for tree view
         self.tree_menu = StationViewer.TreeViewMenu()
         self.tree_menu.actionCreate_New_Group.triggered.connect(self.create_new_group)
@@ -62,13 +73,17 @@ class StationViewer(QWidget):
         self.tree_menu.actionAdd_To_Group.triggered.connect(self.add_selected_to_group)
         self.tree_menu.actionRemove_Station.triggered.connect(self.remove_stations)
         self.tree_menu.actionPlot.triggered.connect(parent.plot_selected_station)
-        self.ui.treeWidget_stations.customContextMenuRequested.connect(self.open_menu_in_tree_view)
+        self.ui.treeWidget_stations.customContextMenuRequested.connect(
+            self.open_menu_in_tree_view
+        )
         # setup and connect map button
         self.ui.pushButton_hideMap.hide()
         self.ui.pushButton_hideMap.clicked.connect(self.toggle_map)
         self.ui.pushButton_showMap.clicked.connect(self.toggle_map)
         # add map area and hide by default
-        self.station_map = StationViewer.StationMap(self, self.file_handler, 4, 3, dpi=self.width()/3)
+        self.station_map = StationViewer.StationMap(
+            self, self.file_handler, 4, 3, dpi=self.width() / 3
+        )
         self.station_map.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         self.station_map.setHidden(True)
         self.station_map.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -100,9 +115,13 @@ class StationViewer(QWidget):
         # just use the container from the figure
         selected_stations = self.selected_stations.copy()
         if selected_stations:
-            reply = QMessageBox.question(self, "Unload Selected Stations",
-                                               "Are you sure you want to unload/remove the selected stations?\n(You can always load them back again.)",
-                                               QMessageBox.Yes, QMessageBox.No)
+            reply = QMessageBox.question(
+                self,
+                "Unload Selected Stations",
+                "Are you sure you want to unload/remove the selected stations?\n(You can always load them back again.)",
+                QMessageBox.Yes,
+                QMessageBox.No,
+            )
             if reply == QMessageBox.Yes:
                 # for station, ref in selected_stations:
                 #     self.file_handler.unload(ref)
@@ -120,8 +139,14 @@ class StationViewer(QWidget):
         # if selected:
         if self.selected_stations:
             groups = self.file_handler.get_groups()
-            group_id, ok = QInputDialog.getItem(self, "Add Selected Items to Group", "Please select one group:",
-                                                      groups, 0, False)
+            group_id, ok = QInputDialog.getItem(
+                self,
+                "Add Selected Items to Group",
+                "Please select one group:",
+                groups,
+                0,
+                False,
+            )
             if ok and group_id:
                 group_id = str(group_id)
                 # for item in selected:
@@ -137,7 +162,9 @@ class StationViewer(QWidget):
                     # selected an item
                     # ref = str(item.text(1))
                     # self.file_handler.add_to_group(group_id, ref)
-                    self.file_handler.add_to_group(group_id, self.file_handler.station2ref(station))
+                    self.file_handler.add_to_group(
+                        group_id, self.file_handler.station2ref(station)
+                    )
                 self.update_view()
 
     def update_selection(self):
@@ -176,7 +203,9 @@ class StationViewer(QWidget):
                     members = self.file_handler.get_group_members(selected_group_id)
                     if members:
                         for member in members:
-                            self.selected_stations.add(self.file_handler.get_MT_obj(member).station)
+                            self.selected_stations.add(
+                                self.file_handler.get_MT_obj(member).station
+                            )
                 else:
                     self.selected_stations.add(str(item.text(0)))
                     # root = self.ui.treeWidget_stations.invisibleRootItem()
@@ -268,7 +297,9 @@ class StationViewer(QWidget):
 
     def open_menu_in_tree_view(self, position):
         self._update_menu_context()
-        self.tree_menu.exec_(self.ui.treeWidget_stations.viewport().mapToGlobal(position))
+        self.tree_menu.exec_(
+            self.ui.treeWidget_stations.viewport().mapToGlobal(position)
+        )
 
     def _update_menu_context(self):
         items = self.ui.treeWidget_stations.selectedItems()
@@ -277,7 +308,11 @@ class StationViewer(QWidget):
             self.tree_menu.actionRemove_Station.setEnabled(True)
             self.tree_menu.actionPlot.setEnabled(True)
             # if selected only a group
-            if len(items) == 1 and not items[0].parent() and items[0].text(0) != "Default Group":
+            if (
+                len(items) == 1
+                and not items[0].parent()
+                and items[0].text(0) != "Default Group"
+            ):
                 # selected only one group
                 self.tree_menu.actionDismiss_Group.setEnabled(True)
             else:
@@ -294,15 +329,18 @@ class StationViewer(QWidget):
     def create_new_group(self, *args, **kwargs):
         ok = False
         while not ok:
-            text, ok = QInputDialog.getText(self, 'New Group', 'Enter a New Group Name:')
+            text, ok = QInputDialog.getText(
+                self, "New Group", "Enter a New Group Name:"
+            )
             if ok:
                 text = str(text)
                 ok = self.file_handler.create_group(text)
                 if ok:
                     self.update_view()
                 else:
-                    QMessageBox.information(self, "NOTE",
-                                                  "Group %s already exits" % text)
+                    QMessageBox.information(
+                        self, "NOTE", "Group %s already exits" % text
+                    )
             else:
                 # cancelled
                 break
@@ -321,6 +359,7 @@ class StationViewer(QWidget):
         """
         signal when the selected station changed
         """
+
         selection_changed = Signal()
 
         def __init__(self, parent=None, file_handler=None, width=4, height=3, dpi=100):
@@ -339,7 +378,7 @@ class StationViewer(QWidget):
             self.selected_stations = set()
             MPLCanvas.__init__(self, parent, width, height, dpi)
             self.useblit = self.supports_blit
-            self.mpl_connect('pick_event', self.map_pick)
+            self.mpl_connect("pick_event", self.map_pick)
 
         def compute_initial_figure(self):
             # clear figure
@@ -361,20 +400,37 @@ class StationViewer(QWidget):
             groups = df.groupby("group")
             # plot
             # self.axes = plt.subplots()
-            self._axes.tick_params(axis='both', which='major', labelsize=8)
-            self._axes.tick_params(axis='both', which='minor', labelsize=6)
+            self._axes.tick_params(axis="both", which="major", labelsize=8)
+            self._axes.tick_params(axis="both", which="minor", labelsize=6)
             self._axes.margins(0.05)  # 5% padding
             annotated_stations = set()
             self.artists.clear()
-            for (name, group), marker, color in zip(list(groups), cycle(MARKERS), cycle(COLORS)):
-                artist, = self._axes.plot(group.x, group.y, marker=marker, linestyle='', ms=10, alpha=.5, label=name,
-                                          picker=5)  # picker = 5  point tolerance
+            for (name, group), marker, color in zip(
+                list(groups), cycle(MARKERS), cycle(COLORS)
+            ):
+                (artist,) = self._axes.plot(
+                    group.x,
+                    group.y,
+                    marker=marker,
+                    linestyle="",
+                    ms=10,
+                    alpha=0.5,
+                    label=name,
+                    picker=5,
+                )  # picker = 5  point tolerance
                 self.artists[artist] = group.station.tolist()
                 for index, row in df.iterrows():
-                    station = row['station']
+                    station = row["station"]
                     if station not in annotated_stations:
-                        annotation_artist = self._axes.annotate(station, xy=(row['x'], row['y']), size=6, picker=3,
-                                                                color='red' if station in self.selected_stations else 'black')
+                        annotation_artist = self._axes.annotate(
+                            station,
+                            xy=(row["x"], row["y"]),
+                            size=6,
+                            picker=3,
+                            color="red"
+                            if station in self.selected_stations
+                            else "black",
+                        )
                         self._annotation_artists[station] = annotation_artist
                         annotated_stations.add(station)
             self._axes.legend(numpoints=1, loc="best", fontsize=8)
@@ -393,7 +449,7 @@ class StationViewer(QWidget):
             """
             # print event.mouseevent.key, event.mouseevent.button
             if event.artist in self.artists:
-                if not event.mouseevent.key or event.mouseevent.key != 'control':
+                if not event.mouseevent.key or event.mouseevent.key != "control":
                     self.selected_stations.clear()
 
                 stations = self.artists[event.artist]
@@ -407,7 +463,12 @@ class StationViewer(QWidget):
                         # self.ui.treeWidget_stations.emit(QtCore.SIGNAL("selectionChanged()"))
                 if self.useblit:
                     for station, annotation_artist in self._annotation_artists.items():
-                        artist.setp(annotation_artist, color='red' if station in self.selected_stations else 'black')
+                        artist.setp(
+                            annotation_artist,
+                            color="red"
+                            if station in self.selected_stations
+                            else "black",
+                        )
                         self._axes.draw_artist(annotation_artist)
                     self.blit(self._axes.bbox)
                 else:
@@ -454,8 +515,16 @@ class StationViewer(QWidget):
             self.retranslateUi()
 
         def retranslateUi(self):
-            self.actionCreate_New_Group.setText(_translate("StationViewer", "Create New Group...", None))
-            self.actionDismiss_Group.setText(_translate("StationViewer", "Dismiss Selected Group", None))
-            self.actionAdd_To_Group.setText(_translate("StationViewer", "Add Selected to Group...", None))
-            self.actionRemove_Station.setText(_translate("StationViewer", "Unload Selected Stations...", None))
+            self.actionCreate_New_Group.setText(
+                _translate("StationViewer", "Create New Group...", None)
+            )
+            self.actionDismiss_Group.setText(
+                _translate("StationViewer", "Dismiss Selected Group", None)
+            )
+            self.actionAdd_To_Group.setText(
+                _translate("StationViewer", "Add Selected to Group...", None)
+            )
+            self.actionRemove_Station.setText(
+                _translate("StationViewer", "Unload Selected Stations...", None)
+            )
             self.actionPlot.setText(_translate("StationViewer", "Plot...", None))

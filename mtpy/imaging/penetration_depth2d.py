@@ -26,7 +26,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import click
 
-from mtpy.imaging.penetration import get_penetration_depth_by_index, load_edi_files, Depth2D
+from mtpy.imaging.penetration import (
+    get_penetration_depth_by_index,
+    load_edi_files,
+    Depth2D,
+)
 
 # mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
@@ -46,9 +50,18 @@ _logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 # use the Zcompotent=[det, zxy, zyx]
-def plot2Dprofile(edi_dir, selected_periods, ptol=0.05, zcomponent='det',
-                  edi_list=None, tick_params={}, save=False, savepath=None, **kwargs):
-    edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
+def plot2Dprofile(
+    edi_dir,
+    selected_periods,
+    ptol=0.05,
+    zcomponent="det",
+    edi_list=None,
+    tick_params={},
+    save=False,
+    savepath=None,
+    **kwargs
+):
+    edifiles = glob.glob(os.path.join(edi_dir, "*.edi"))
 
     _logger.debug("edi files: %s", edifiles)
 
@@ -57,16 +70,17 @@ def plot2Dprofile(edi_dir, selected_periods, ptol=0.05, zcomponent='det',
     plot.plot(tick_params, **kwargs)
     if save:
         if os.path.isdir(savepath):
-            savepath == os.path.join(savepath, 'Depth2D.png')
+            savepath == os.path.join(savepath, "Depth2D.png")
         if savepath is not None:
             plot._fig.savefig(savepath)
         else:
-            savepath = os.path.join(edi_dir, 'Depth2D.png')
+            savepath = os.path.join(edi_dir, "Depth2D.png")
     plot.show()
 
 
 def barplot_multi_station_penentration_depth(
-        edifiles_dir, per_index=0, zcomponent='det'):
+    edifiles_dir, per_index=0, zcomponent="det"
+):
     """
     A simple bar chart plot of the penetration depth across multiple edi files (stations),
     at the given (frequency) per_index. No profile-projection is done in this funciton.
@@ -77,7 +91,7 @@ def barplot_multi_station_penentration_depth(
 
     if os.path.isdir(edifiles_dir):
         edi_dir = edifiles_dir  # "E:/Githubz/mtpy2/tests/data/edifiles/"
-        edifiles_dir = glob.glob(os.path.join(edi_dir, '*.edi'))
+        edifiles_dir = glob.glob(os.path.join(edi_dir, "*.edi"))
         _logger.debug(edifiles_dir)
     else:
         # Assume edifiles_dir is [a list of edi files]
@@ -95,7 +109,8 @@ def barplot_multi_station_penentration_depth(
     mt_obj_list = [mt.MT(afile) for afile in edifiles_dir]
 
     (stations, periods, depths, _) = get_penetration_depth_by_index(
-        mt_obj_list, int(per_index), whichrho=zcomponent)
+        mt_obj_list, int(per_index), whichrho=zcomponent
+    )
 
     # the attribute Z
     # zeta = mt_obj.Z
@@ -110,27 +125,24 @@ def barplot_multi_station_penentration_depth(
     # depths.append(penetration_depth)
     # stations.append(mt_obj.station)
 
-    #plt.plot(app_resis, color='b', marker='o')
+    # plt.plot(app_resis, color='b', marker='o')
 
     index = np.arange(len(depths))
 
-    plt.bar(index, depths, color='#000000')
+    plt.bar(index, depths, color="#000000")
 
     # plt.xaxis.tick_top()
     # plt.set_xlabel('X LABEL')
     # plt.xaxis.set_label_position('top')
 
     plt.xlabel(
-        'Penetration Depth Across Stations, for MT period= %6.5f Seconds' %
-        periods[0], fontsize=16)
-    plt.ylabel('Penetration Depth (m)', fontsize=16)
+        "Penetration Depth Across Stations, for MT period= %6.5f Seconds" % periods[0],
+        fontsize=16,
+    )
+    plt.ylabel("Penetration Depth (m)", fontsize=16)
     # plt.title('Penetration Depth profile for T=??')
     bar_width = 0.4
-    plt.xticks(
-        index + bar_width / 2,
-        stations,
-        rotation='horizontal',
-        fontsize=14)
+    plt.xticks(index + bar_width / 2, stations, rotation="horizontal", fontsize=14)
     plt.legend()
 
     # plt.tight_layout()
@@ -151,7 +163,9 @@ if __name__ == "__main__old":
 
     if len(sys.argv) < 2:
         print(("Usage: %s edi_dir" % sys.argv[0]))
-        print("python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
+        print(
+            "python examples/penetration_depth2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59"
+        )
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]  # the first argument is path2_edi_dir
@@ -160,7 +174,7 @@ if __name__ == "__main__old":
         print(("period_index_list = {}".format(period_index_list)))
 
         # the rho zcomponent can be det, zxy zyx
-        plot2Dprofile(edi_dir, period_index_list, zcomponent='det')
+        plot2Dprofile(edi_dir, period_index_list, zcomponent="det")
         perindex = int(sys.argv[2])
         # barplot_multi_station_penentration_depth(edi_dir, per_index=perindex)
         # #, zcomponent='zxy')
@@ -172,16 +186,29 @@ if __name__ == "__main__old":
 # Command line wrapper
 # =============================================================================================
 
+
 @click.command()
-@click.option('-i', '--input', type=str, default='examples/data/edi_files', help='directory or edsi data files')
-@click.option('-p', '--period_list', type=str, default="0 1 10 20 30 40", help='Periods seperated by space')
+@click.option(
+    "-i",
+    "--input",
+    type=str,
+    default="examples/data/edi_files",
+    help="directory or edsi data files",
+)
+@click.option(
+    "-p",
+    "--period_list",
+    type=str,
+    default="0 1 10 20 30 40",
+    help="Periods seperated by space",
+)
 def plot_penetration_image(input, period_list):
     if os.path.isdir(input):
-        period_index_list = period_list.split(' ')
-        plot2Dprofile(input, period_index_list, zcomponent='det')
+        period_index_list = period_list.split(" ")
+        plot2Dprofile(input, period_index_list, zcomponent="det")
     else:
         print("Please provide an edi directory !")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     plot_penetration_image()

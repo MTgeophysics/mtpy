@@ -11,7 +11,7 @@ Helper functions for the handling of configuration files
 
 """
 
-#=================================================================
+# =================================================================
 
 import sys
 import os
@@ -21,89 +21,71 @@ import copy
 import io
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.gis_tools as gis_tools
-#=================================================================
 
-list_of_required_keywords = ['latitude',
-                            'longitude',
-                            'elevation',
-                            'sampling_interval',
-                            'station_type'
-                            ]
-list_of_required_keywords_short = ['lat',
-                                   'lon',
-                                   'elev',
-                                   'sampling',
-                                   'type'
-                                  ]
+# =================================================================
 
-list_of_keyword_defaults_general = [0.,
-                                    0.,
-                                    0.,
-                                    1.,
-                                    'mt'
-                                    ]
+list_of_required_keywords = [
+    "latitude",
+    "longitude",
+    "elevation",
+    "sampling_interval",
+    "station_type",
+]
+list_of_required_keywords_short = ["lat", "lon", "elev", "sampling", "type"]
+
+list_of_keyword_defaults_general = [0.0, 0.0, 0.0, 1.0, "mt"]
 
 
-list_of_efield_keywords = [ 'E_logger_type',
-                            'E_logger_gain',
-                            'E_instrument_type',
-                            'E_instrument_amplification',
-                            'E_Xaxis_azimuth',
-                            'E_Xaxis_length',
-                            'E_Yaxis_azimuth',
-                            'E_Yaxis_length'
-                            ]
+list_of_efield_keywords = [
+    "E_logger_type",
+    "E_logger_gain",
+    "E_instrument_type",
+    "E_instrument_amplification",
+    "E_Xaxis_azimuth",
+    "E_Xaxis_length",
+    "E_Yaxis_azimuth",
+    "E_Yaxis_length",
+]
 
-list_of_keyword_defaults_efield = ['edl',
-                                    1,
-                                    'electrodes',
-                                    1.,
-                                    0.,
-                                    50.,
-                                    90.,
-                                    50.
-                                    ]
+list_of_keyword_defaults_efield = ["edl", 1, "electrodes", 1.0, 0.0, 50.0, 90.0, 50.0]
 
-list_of_bfield_keywords = [ 'B_logger_type',
-                            'B_logger_gain',
-                            'B_instrument_type',
-                            'B_instrument_amplification',
-                            'B_Xaxis_azimuth',
-                            'B_Yaxis_azimuth'
-                          ]
+list_of_bfield_keywords = [
+    "B_logger_type",
+    "B_logger_gain",
+    "B_instrument_type",
+    "B_instrument_amplification",
+    "B_Xaxis_azimuth",
+    "B_Yaxis_azimuth",
+]
 
 
-list_of_keyword_defaults_bfield = ['edl',
-                                    1,
-                                    'coil',
-                                    1.,
-                                    0.,
-                                    90.
-                                    ]
+list_of_keyword_defaults_bfield = ["edl", 1, "coil", 1.0, 0.0, 90.0]
 
 
-dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen','qel'] ,
-                                'E_logger_gain': ['low', 'verylow','high', 
-                                                  0.4, 1, 10, 11, 2, 4, 
-                                                  8, 16, 32, 64],
-                                'E_instrument_type':['electrodes','dipole', 
-                                                     'cu-cuso4 electrodes',
-                                                     'cuso4_electrodes',
-                                                     'pbcl2_electrodes'],
-                                'E_instrument_amplification':[1,10,11]
-                                }
+dict_of_allowed_values_efield = {
+    "E_logger_type": ["edl", "elogger", "zen", "qel"],
+    "E_logger_gain": ["low", "verylow", "high", 0.4, 1, 10, 11, 2, 4, 8, 16, 32, 64],
+    "E_instrument_type": [
+        "electrodes",
+        "dipole",
+        "cu-cuso4 electrodes",
+        "cuso4_electrodes",
+        "pbcl2_electrodes",
+    ],
+    "E_instrument_amplification": [1, 10, 11],
+}
 
-dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
-                                'B_logger_gain': ['low', 'verylow','high',
-                                                  0.4, 1, 10, 2, 4, 
-                                                  8, 16, 32, 64],
-                                'B_instrument_type':['fluxgate', 'coil','coils']
-                                }
+dict_of_allowed_values_bfield = {
+    "B_logger_type": ["edl", "zen", "qel_blogger"],
+    "B_logger_gain": ["low", "verylow", "high", 0.4, 1, 10, 2, 4, 8, 16, 32, 64],
+    "B_instrument_type": ["fluxgate", "coil", "coils"],
+}
 
-list_of_station_types = ['mt','e','b','qe','qb']
+list_of_station_types = ["mt", "e", "b", "qe", "qb"]
 
 
-#=================================================================
+# =================================================================
+
 
 def read_configfile(filename):
     """
@@ -119,37 +101,37 @@ def read_configfile(filename):
         -> return nested dictionary, which includes a top level 'DEFAULT' key
     """
 
-    
-    #check, if file is present
+    # check, if file is present
     if not op.isfile(filename):
-        raise MTex.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename))
+        raise MTex.MTpyError_inputarguments("File does not exist: {0}".format(filename))
 
     # try to parse file - exit, if not a config file
     try:
-        #generate config parser instance
+        # generate config parser instance
         configobject = configparser.SafeConfigParser()
-        #do NOT ask, why it does not work with reading from filename directly...:
+        # do NOT ask, why it does not work with reading from filename directly...:
         with open(filename) as F:
             d = F.read()
         FH = io.StringIO(d)
-        configobject.readfp(d)#filename)
+        configobject.readfp(d)  # filename)
     except:
         try:
-            dummy_String = '[DEFAULT]\n' + open(filename, 'r').read()
+            dummy_String = "[DEFAULT]\n" + open(filename, "r").read()
             FH = io.StringIO(dummy_String)
-            #generate config parser instance
+            # generate config parser instance
             configobject = configparser.SafeConfigParser()
             configobject.readfp(FH)
         except:
-            raise MTex.MTpyError_inputarguments( 'File is not a proper '
-                                    'configuration file: {0}'.format(filename) )
+            raise MTex.MTpyError_inputarguments(
+                "File is not a proper " "configuration file: {0}".format(filename)
+            )
 
-    config_dict = configobject._sections      
+    config_dict = configobject._sections
 
-    if len (list(config_dict.keys())) != 0:
+    if len(list(config_dict.keys())) != 0:
         defaults = configobject.defaults()
         if len(list(defaults.keys())) != 0:
-            config_dict['DEFAULT'] = configobject.defaults()
+            config_dict["DEFAULT"] = configobject.defaults()
     else:
         config_dict = configobject.defaults()
 
@@ -205,81 +187,77 @@ def read_survey_configfile(filename):
 
     """
 
-
-
-
-
     error_counter = 0
 
-    #generate config parser instance
+    # generate config parser instance
     configobject = configparser.ConfigParser()
 
-    #check, if file is present
+    # check, if file is present
     if not op.isfile(filename):
-        raise MTex.MTpyError_inputarguments( 'File does not'
-                            ' exist: {0}'.format(filename) )
-
+        raise MTex.MTpyError_inputarguments(
+            "File does not" " exist: {0}".format(filename)
+        )
 
     # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
-        raise MTex.MTpyError_inputarguments( 'File is not a '
-                    'proper configuration file: {0}'.format(filename) )
+        raise MTex.MTpyError_inputarguments(
+            "File is not a " "proper configuration file: {0}".format(filename)
+        )
 
-    #obtain dict of dicts containing the input file's sections (station names)
-    #excludes DEFAULT section and key-value pairs without section header
+    # obtain dict of dicts containing the input file's sections (station names)
+    # excludes DEFAULT section and key-value pairs without section header
     configobject_dict = configobject._sections
 
-    #initialise the output dictionary
+    # initialise the output dictionary
     config_dict = {}
 
-    #loop over the sections (stations) of the config file
+    # loop over the sections (stations) of the config file
     for station in configobject_dict:
-        #read in the sub-dictionary for the current station - bringing all keys
-        #to lowercase!
-        temp_dict_in = dict((k.lower(), v) 
-                            for k, v in list(configobject_dict[station].items()))
+        # read in the sub-dictionary for the current station - bringing all keys
+        # to lowercase!
+        temp_dict_in = dict(
+            (k.lower(), v) for k, v in list(configobject_dict[station].items())
+        )
 
-        #initialise output sub-directory for current station 
+        # initialise output sub-directory for current station
         stationdict = temp_dict_in
 
-        #stationnames are uppercase in MTpy
+        # stationnames are uppercase in MTpy
         stationname = station
-        if stationname in ['GLOBAL','MAIN','DEFAULT','GENERAL']:
-            stationname = 'GLOBAL'
+        if stationname in ["GLOBAL", "MAIN", "DEFAULT", "GENERAL"]:
+            stationname = "GLOBAL"
 
-        stationdict['station'] = stationname
+        stationdict["station"] = stationname
 
-        #add the station's sub-dictionary to the config dictionary
+        # add the station's sub-dictionary to the config dictionary
         config_dict[stationname] = stationdict
 
-
     # Check if a global section is present
-    if 'GLOBAL' in config_dict: 
-        globaldict = config_dict['GLOBAL']
+    if "GLOBAL" in config_dict:
+        globaldict = config_dict["GLOBAL"]
     else:
-        #set defaults for location
-        globaldict={}
+        # set defaults for location
+        globaldict = {}
     # for i in ['latitude', 'longitude', 'elevation']:
     #     #skip if values are present
     #     if i in globaldict.keys() or i[:3] in globaldict.keys():
     #         continue
     #     #otherwise set defaults
     #     globaldict[i] = 0
-        
 
-    #remove other general sections to avoid redundancy
-    for i in ['MAIN','DEFAULT','GENERAL']:
+    # remove other general sections to avoid redundancy
+    for i in ["MAIN", "DEFAULT", "GENERAL"]:
         if i in config_dict:
             dummy = config_dict.pop(i)
 
     # RE-loop to check for each station if required keywords are present,
-    # if not if they can be pulled from the global section  
-    
-    #============================================================
+    # if not if they can be pulled from the global section
+
+    # ============================================================
     # local function definition
-    def fromglobals(key,stationdict,globaldict):
+    def fromglobals(key, stationdict, globaldict):
         """
             Check if stationdict contains key. 
             If not search for key in global dict and add it to station dict.
@@ -295,199 +273,206 @@ def read_survey_configfile(filename):
         if globaldict is None or len(globaldict) == 0:
             return False, None
 
-
         if key in globaldict:
             stationdict[key] = globaldict[key]
-            return True,globaldict.get(key)
+            return True, globaldict.get(key)
 
         return False, None
 
-    #============================================================
-
+    # ============================================================
 
     for station in sorted(config_dict):
-        #do not alter the global section
-        if station == 'GLOBAL':
+        # do not alter the global section
+        if station == "GLOBAL":
             continue
-        
-        stationdict =  config_dict[station]
-        
 
+        stationdict = config_dict[station]
 
-        #check for presence of all mandatory keywords for the current station
-        #case insensitive - allow for short forms 'sampling', 'lat', 'lon', and 'elev'
-        for idx,req_keyword in enumerate(list_of_required_keywords):
+        # check for presence of all mandatory keywords for the current station
+        # case insensitive - allow for short forms 'sampling', 'lat', 'lon', and 'elev'
+        for idx, req_keyword in enumerate(list_of_required_keywords):
             shortform = list_of_required_keywords_short[idx]
 
             try:
                 found = False
-                #import ipdb
-                #ipdb.set_trace()
-                if fromglobals(req_keyword,stationdict,globaldict)[0] is False:
-                    #try short form instead
-                    found,value = fromglobals(shortform,stationdict,globaldict)
-                    #print shortform,value
+                # import ipdb
+                # ipdb.set_trace()
+                if fromglobals(req_keyword, stationdict, globaldict)[0] is False:
+                    # try short form instead
+                    found, value = fromglobals(shortform, stationdict, globaldict)
+                    # print shortform,value
 
                     if found is True:
                         stationdict[req_keyword] = value
-  
-                else:  
+
+                else:
                     found = True
 
                 if found is False:
-                    print('Station {0} - keyword {1} missing'.format(stationname,
-                                                                     req_keyword))
+                    print(
+                        "Station {0} - keyword {1} missing".format(
+                            stationname, req_keyword
+                        )
+                    )
                     error_counter += 1
                     raise Exception
 
-                if req_keyword in ['elevation','latitude', 'longitude']:
-                    #check format of lat/lon - convert to degrees, if given in 
-                    #(deg,min,sec)-triple#assert correct format
+                if req_keyword in ["elevation", "latitude", "longitude"]:
+                    # check format of lat/lon - convert to degrees, if given in
+                    # (deg,min,sec)-triple#assert correct format
                     value = stationdict[req_keyword]
                     try:
-                        if req_keyword in 'latitude':
+                        if req_keyword in "latitude":
                             new_value = gis_tools.assert_lat_value(value)
-                        elif req_keyword in 'longitude':
+                        elif req_keyword in "longitude":
                             new_value = gis_tools.assert_lon_value(value)
-                        elif req_keyword in 'elevation':
+                        elif req_keyword in "elevation":
                             new_value = gis_tools.assert_elevation_value(value)
                     except:
-                        raise MTex.MTpyError_config_file('Error - wrong '
-                                'coordinate format for station {0}'.format(stationname))
-                    
+                        raise MTex.MTpyError_config_file(
+                            "Error - wrong "
+                            "coordinate format for station {0}".format(stationname)
+                        )
+
                     stationdict[req_keyword] = new_value
-
-
 
             except:
                 raise
-                print('Missing information on station {0} in config file'\
-                        ' - setting default (dummy) value'.format(station))
+                print(
+                    "Missing information on station {0} in config file"
+                    " - setting default (dummy) value".format(station)
+                )
                 stationdict[req_keyword] = list_of_keyword_defaults_general[idx]
-            
-            #to avoid duplicates remove the now obsolete short form from 
-            #the station dictionary
-            dummy = stationdict.pop(shortform,None)
 
+            # to avoid duplicates remove the now obsolete short form from
+            # the station dictionary
+            dummy = stationdict.pop(shortform, None)
 
-        if not stationdict['station_type'] in list_of_station_types:
-            raise MTex.MTpyError_config_file( 'Station type not valid' )
+        if not stationdict["station_type"] in list_of_station_types:
+            raise MTex.MTpyError_config_file("Station type not valid")
 
-
-        if stationdict['station_type'] in ['mt','e']:
-            #check for required electric field parameters - not done for QEL loggers yet
+        if stationdict["station_type"] in ["mt", "e"]:
+            # check for required electric field parameters - not done for QEL loggers yet
             for req_keyword in list_of_efield_keywords:
                 if req_keyword.lower() in list(temp_dict_in.keys()):
-                    stationdict[req_keyword.lower()] = \
-                                      temp_dict_in[req_keyword.lower()].lower()
-                else:  
-                    print('Station {0} - keyword {1} missing'.format(stationname,
-                                                                  req_keyword))
+                    stationdict[req_keyword.lower()] = temp_dict_in[
+                        req_keyword.lower()
+                    ].lower()
+                else:
+                    print(
+                        "Station {0} - keyword {1} missing".format(
+                            stationname, req_keyword
+                        )
+                    )
                     error_counter += 1
                     continue
 
-            _validate_dictionary(stationdict,dict_of_allowed_values_efield)
-            
+            _validate_dictionary(stationdict, dict_of_allowed_values_efield)
 
-        if stationdict['station_type'] in ['mt','b']:
-            #check for required magnetic field parameters
+        if stationdict["station_type"] in ["mt", "b"]:
+            # check for required magnetic field parameters
             for req_keyword in list_of_bfield_keywords:
                 if req_keyword.lower() in list(temp_dict_in.keys()):
-                    stationdict[req_keyword.lower()] = \
-                                     temp_dict_in[req_keyword.lower()].lower()
-                else:  
-                    print('Station {0} - keyword {1} missing'.format(stationname,
-                                                                     req_keyword))
+                    stationdict[req_keyword.lower()] = temp_dict_in[
+                        req_keyword.lower()
+                    ].lower()
+                else:
+                    print(
+                        "Station {0} - keyword {1} missing".format(
+                            stationname, req_keyword
+                        )
+                    )
                     error_counter += 1
                     continue
 
-            _validate_dictionary(stationdict,dict_of_allowed_values_bfield)
-            
+            _validate_dictionary(stationdict, dict_of_allowed_values_bfield)
 
-
-    #re-loop for setting up correct remote reference station information :
-    #if rem.ref. station key is present, its information must be contained 
-    #in the same config file!
+    # re-loop for setting up correct remote reference station information :
+    # if rem.ref. station key is present, its information must be contained
+    # in the same config file!
     for station in config_dict.keys():
         stationdict = config_dict[station]
-        if 'rr_station' not in stationdict:
+        if "rr_station" not in stationdict:
             continue
 
-        #stationdict['rr_station'] = None
-        stationdict['rr_latitude'] = None
-        stationdict['rr_longitude'] = None
-        stationdict['rr_elevation'] = None
+        # stationdict['rr_station'] = None
+        stationdict["rr_latitude"] = None
+        stationdict["rr_longitude"] = None
+        stationdict["rr_elevation"] = None
 
-
-        rem_station = stationdict['rr_station'] 
+        rem_station = stationdict["rr_station"]
         try:
-            #check, if values are contained in dict 
-            float(stationdict['rr_latitude'] )
-            float(stationdict['rr_longitude'])
-            float(stationdict['rr_elevation'])
+            # check, if values are contained in dict
+            float(stationdict["rr_latitude"])
+            float(stationdict["rr_longitude"])
+            float(stationdict["rr_elevation"])
         except:
             try:
-                #check for shortened form
-                stationdict['rr_latitude']  = float(stationdict['rr_lat'] )
-                stationdict['rr_longitude'] = float(stationdict['rr_lon'] )
-                stationdict['rr_elevation'] = float(stationdict['rr_elev'] )                 
+                # check for shortened form
+                stationdict["rr_latitude"] = float(stationdict["rr_lat"])
+                stationdict["rr_longitude"] = float(stationdict["rr_lon"])
+                stationdict["rr_elevation"] = float(stationdict["rr_elev"])
 
             except:
                 try:
-                    #read from other config dict entry
-                    stationdict['rr_latitude'] = \
-                                      config_dict[rem_station]['latitude']
-                    stationdict['rr_longitude'] = \
-                                     config_dict[rem_station]['longitude']
-                    stationdict['rr_elevation'] = \
-                                     config_dict[rem_station]['elevation']
+                    # read from other config dict entry
+                    stationdict["rr_latitude"] = config_dict[rem_station]["latitude"]
+                    stationdict["rr_longitude"] = config_dict[rem_station]["longitude"]
+                    stationdict["rr_elevation"] = config_dict[rem_station]["elevation"]
 
                 except:
-                    #if finally failed to read rr_station info,\
-                    #set rr_station back to None
-                    stationdict['rr_station'] = None
-                    stationdict['rr_latitude'] = None
-                    stationdict['rr_longitude'] = None
-                    stationdict['rr_elevation'] = None
+                    # if finally failed to read rr_station info,\
+                    # set rr_station back to None
+                    stationdict["rr_station"] = None
+                    stationdict["rr_latitude"] = None
+                    stationdict["rr_longitude"] = None
+                    stationdict["rr_elevation"] = None
 
-        #check consistency of coordinates, if rr_station is present
-        if stationdict['rr_station'] != None:
+        # check consistency of coordinates, if rr_station is present
+        if stationdict["rr_station"] != None:
             try:
-                stationdict['rr_latitude'] = \
-                            gis_tools.assert_lat_value(stationdict['rr_latitude'])
-                stationdict['rr_longitude'] = \
-                            gis_tools.assert_lon_value(stationdict['rr_longitude'])
-                stationdict['rr_elevation'] = \
-                            gis_tools.assert_elevation_value(stationdict['rr_elevation'])
+                stationdict["rr_latitude"] = gis_tools.assert_lat_value(
+                    stationdict["rr_latitude"]
+                )
+                stationdict["rr_longitude"] = gis_tools.assert_lon_value(
+                    stationdict["rr_longitude"]
+                )
+                stationdict["rr_elevation"] = gis_tools.assert_elevation_value(
+                    stationdict["rr_elevation"]
+                )
 
             except:
-                print('Problem with remote reference station ({0}) -')
-                ' remote reference ({1}) coordinates invalid -'
-                ' remote reference set to None'.format(station, 
-                                                       stationdict['rr_station'])
+                print("Problem with remote reference station ({0}) -")
+                " remote reference ({1}) coordinates invalid -"
+                " remote reference set to None".format(
+                    station, stationdict["rr_station"]
+                )
 
-                stationdict['rr_station'] = None
-                stationdict['rr_latitude'] = None
-                stationdict['rr_longitude'] = None
-                stationdict['rr_elevation'] = None
-
+                stationdict["rr_station"] = None
+                stationdict["rr_latitude"] = None
+                stationdict["rr_longitude"] = None
+                stationdict["rr_elevation"] = None
 
     if error_counter != 0:
-        print('Could not read all mandatory sections and options'\
-                ' in config file - found {0} errors - check configuration'\
-                ' file before continue!'.format(error_counter))
+        print(
+            "Could not read all mandatory sections and options"
+            " in config file - found {0} errors - check configuration"
+            " file before continue!".format(error_counter)
+        )
         answer = 5
-        while not answer in ['y','n']:
-            answer = input('\n\tDo you want to continue anyway? (y/n)')
+        while not answer in ["y", "n"]:
+            answer = input("\n\tDo you want to continue anyway? (y/n)")
             try:
                 answer = answer.strip().lower()[0]
             except:
                 continue
-            if answer == 'n':
-                sys.exit() 
+            if answer == "n":
+                sys.exit()
     return config_dict
 
-#=================================================================
+
+# =================================================================
+
 
 def write_dict_to_configfile(dictionary, output_filename):
     """
@@ -503,9 +488,9 @@ def write_dict_to_configfile(dictionary, output_filename):
 
     configobject = configparser.ConfigParser()
 
-    #check for nested dictionary - 
-    #if the dict entry is a key-value pair, it's stored in a section with head 'DEFAULT' 
-    #otherwise, the dict key is taken as section header
+    # check for nested dictionary -
+    # if the dict entry is a key-value pair, it's stored in a section with head 'DEFAULT'
+    # otherwise, the dict key is taken as section header
     for key, val in sorted(dictionary.items()):
         try:
             for subkey, subval in sorted(val.items()):
@@ -515,18 +500,18 @@ def write_dict_to_configfile(dictionary, output_filename):
                 configobject.set(sectionhead, subkey, str(subval))
 
         except KeyError:
-            #if not configobject.has_section('DEFAULT'):
+            # if not configobject.has_section('DEFAULT'):
             #    configobject.add_section('')
-            configobject.set('',key, str(val))
+            configobject.set("", key, str(val))
 
-
-    with open(output_filename, 'w') as F:
+    with open(output_filename, "w") as F:
         configobject.write(F)
-    
 
-#=================================================================
- 
-def _validate_dictionary(dict2validate,referencedict):
+
+# =================================================================
+
+
+def _validate_dictionary(dict2validate, referencedict):
 
     """Check, if there are lists of allowed entries for all 
     keys of the current dictionary. If yes, test, if the current 
@@ -534,8 +519,8 @@ def _validate_dictionary(dict2validate,referencedict):
     """
 
     for key, value in list(dict2validate.items()):
-        #make everything to strings - easier to compare
-        #in case of numbers, make to float first
+        # make everything to strings - easier to compare
+        # in case of numbers, make to float first
 
         try:
             allowed_vals = referencedict[key]
@@ -544,27 +529,30 @@ def _validate_dictionary(dict2validate,referencedict):
                 key = key.lower()
                 allowed_vals = referencedict[key]
             except:
-                #no reference entry found - skip key
+                # no reference entry found - skip key
                 continue
 
         tmp = []
-        #allowed values must be given as a list (iterable)!!
+        # allowed values must be given as a list (iterable)!!
         for i in allowed_vals:
-            try: 
+            try:
                 tmp.append(str(float(i)))
             except:
-                tmp.append(str(i))  
-        tmp = [i.lower() for  i in tmp]
+                tmp.append(str(i))
+        tmp = [i.lower() for i in tmp]
         allowed_vals = tmp
 
-        #compare case-insensitive
+        # compare case-insensitive
         value = value.lower()
 
         if not value in allowed_vals:
-            raise MTex.MTpyError_config_file('Config file error --'
-                ' key {0}, value {1} not valid'.format(key, value) )
+            raise MTex.MTpyError_config_file(
+                "Config file error --"
+                " key {0}, value {1} not valid".format(key, value)
+            )
 
-#==============================================================================
+
+# ==============================================================================
 def read_survey_txt_file(survey_file, delimiter=None):
     """
     read survey file and return a dictionary of dictionaries where the first
@@ -631,186 +619,184 @@ def read_survey_txt_file(survey_file, delimiter=None):
         **survey_lst** : list
                          list of dictionaries with key words the same as the
                          headers in survey file, all lower case
-    """                  
-        
-    with open(survey_file, 'r') as sfid:
-        slines = sfid.readlines()
-    
-    slines = [i.replace('"','') for i in slines]
+    """
 
-    
+    with open(survey_file, "r") as sfid:
+        slines = sfid.readlines()
+
+    slines = [i.replace('"', "") for i in slines]
+
     skeys = slines[0].rstrip()
     if delimiter is not None:
         skeys = skeys.split(delimiter)
     else:
         skeys = skeys.split()
 
-    skeys = [i.strip().replace(' ','_') for i in skeys]
-       
+    skeys = [i.strip().replace(" ", "_") for i in skeys]
+
     survey_dict = {}
-    #print skeys, len(skeys)
+    # print skeys, len(skeys)
 
     for ss, sline in enumerate(slines[1:]):
 
         sstr = sline.strip()
-        if sstr[0]=='#':
+        if sstr[0] == "#":
             continue
 
         if delimiter is not None:
             sstr = sstr.split(delimiter)
         else:
             sstr = sstr.split()
-        #print sstr
-        #get rid of quotations
-        sstr = [i.replace('"','') for i in sstr]  
-        #get rid of spaces
-        sstr = [i.replace(' ','_') for i in sstr]  
-        #print sstr,len(sstr)
-       
+        # print sstr
+        # get rid of quotations
+        sstr = [i.replace('"', "") for i in sstr]
+        # get rid of spaces
+        sstr = [i.replace(" ", "_") for i in sstr]
+        # print sstr,len(sstr)
+
         if len(sstr) != len(skeys):
-            print('cannot read line {0} - wrong number of entries - need {2}\
-                                                    '.format(ss+2,len(skeys)))
+            print(
+                "cannot read line {0} - wrong number of entries - need {2}\
+                                                    ".format(
+                    ss + 2, len(skeys)
+                )
+            )
             continue
 
-        
-        sdict={}
-        #set default values for mandatory entries:
-        sdict['E_Xaxis_azimuth'] = 0
-        sdict['E_Yaxis_azimuth'] = 90
-        sdict['B_Xaxis_azimuth'] = 0
-        sdict['B_Yaxis_azimuth'] = 90
-        sdict['station_type'] = 'MT'
-        sdict['declination'] = 0.
-        sdict['sampling_interval'] = 0
-        sdict['E_instrument_amplification'] = 1.
-        sdict['B_instrument_amplification'] = 1.
-        sdict['E_logger_gain'] = 1.
-        sdict['B_logger_gain'] = 1.
-        sdict['B_instrument_type'] = 'coil'
-        sdict['E_instrument_type'] = 'electrodes'
-        sdict['E_logger_type'] = 'edl'
-        sdict['B_logger_type'] = 'edl'
+        sdict = {}
+        # set default values for mandatory entries:
+        sdict["E_Xaxis_azimuth"] = 0
+        sdict["E_Yaxis_azimuth"] = 90
+        sdict["B_Xaxis_azimuth"] = 0
+        sdict["B_Yaxis_azimuth"] = 90
+        sdict["station_type"] = "MT"
+        sdict["declination"] = 0.0
+        sdict["sampling_interval"] = 0
+        sdict["E_instrument_amplification"] = 1.0
+        sdict["B_instrument_amplification"] = 1.0
+        sdict["E_logger_gain"] = 1.0
+        sdict["B_logger_gain"] = 1.0
+        sdict["B_instrument_type"] = "coil"
+        sdict["E_instrument_type"] = "electrodes"
+        sdict["E_logger_type"] = "edl"
+        sdict["B_logger_type"] = "edl"
 
-
-        #fill dictionary with given values
+        # fill dictionary with given values
         for kk, skey in enumerate(skeys):
-            #get rid of quotations
-            skey.replace('"','')
-            #get rid of blank spaces in keys
-            skey.replace(' ','_')
+            # get rid of quotations
+            skey.replace('"', "")
+            # get rid of blank spaces in keys
+            skey.replace(" ", "_")
 
-            #do not include empty entries
-            if len(sstr[kk])>0:
-                #sstr[kk] = sstr[kk].replace('"','')
+            # do not include empty entries
+            if len(sstr[kk]) > 0:
+                # sstr[kk] = sstr[kk].replace('"','')
                 sdict[skey.lower()] = sstr[kk]
-        
-        #print sorted(sdict)
+
+        # print sorted(sdict)
         # print sdict['sampling_interval']
-        #sys.exit()
-        #assigne values to the standard keys
+        # sys.exit()
+        # assigne values to the standard keys
         for key in list(sdict.keys()):
 
-            if key.lower() in ['ex','e_xaxis_length'] :
+            if key.lower() in ["ex", "e_xaxis_length"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['E_Xaxis_length'] = val
-            if key.lower() in ['ey','e_yaxis_length'] :
+                sdict["E_Xaxis_length"] = val
+            if key.lower() in ["ey", "e_yaxis_length"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['E_Yaxis_length'] = val
+                sdict["E_Yaxis_length"] = val
 
-            if key.lower() == 'station':
+            if key.lower() == "station":
                 sdict[key] = sdict[key].upper()
 
-            if key.lower() in ['df', 'sampling_rate','sampling']:
+            if key.lower() in ["df", "sampling_rate", "sampling"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['sampling_interval'] = 1./float(val)
+                sdict["sampling_interval"] = 1.0 / float(val)
 
-            if key.lower() in ['dt', 'sampling_interval']:
+            if key.lower() in ["dt", "sampling_interval"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['sampling_interval'] = float(val)
+                sdict["sampling_interval"] = float(val)
 
-            if key.lower() == 'dlgain':
+            if key.lower() == "dlgain":
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['B_logger_gain'] = val
-                sdict['E_logger_gain'] = val
-                
+                sdict["B_logger_gain"] = val
+                sdict["E_logger_gain"] = val
 
-            if key.lower() in ['b_logger_gain']:
-                sdict['B_logger_gain'] = sdict[key]
+            if key.lower() in ["b_logger_gain"]:
+                sdict["B_logger_gain"] = sdict[key]
 
-            if key.lower() in ['e_logger_gain']:
-                sdict['E_logger_gain'] = sdict[key]
+            if key.lower() in ["e_logger_gain"]:
+                sdict["E_logger_gain"] = sdict[key]
 
-            if key.lower() in ['e_logger_type']:
-                sdict['E_logger_type'] = sdict[key]
-            if key.lower() in ['b_logger_type']:
-                sdict['B_logger_type'] = sdict[key]
+            if key.lower() in ["e_logger_type"]:
+                sdict["E_logger_type"] = sdict[key]
+            if key.lower() in ["b_logger_type"]:
+                sdict["B_logger_type"] = sdict[key]
 
-
-            if key.lower() in ['egain', 'e_instrument_amplification']:
+            if key.lower() in ["egain", "e_instrument_amplification"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['E_instrument_amplification'] = val
-            
-            if key.lower() in ['bgain', 'b_instrument_amplification']:
+                sdict["E_instrument_amplification"] = val
+
+            if key.lower() in ["bgain", "b_instrument_amplification"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['B_instrument_amplification'] = val
+                sdict["B_instrument_amplification"] = val
 
-
-            if key.lower() in ['magtype','b_instrument_type']:
-                if sdict[key].lower() in ['bb','coil','coils']: 
-                    sdict['B_instrument_type'] = 'coil'
-                if sdict[key].lower() in ['lp','fluxgate','fg']: 
-                    sdict['B_instrument_type'] = 'fluxgate'
+            if key.lower() in ["magtype", "b_instrument_type"]:
+                if sdict[key].lower() in ["bb", "coil", "coils"]:
+                    sdict["B_instrument_type"] = "coil"
+                if sdict[key].lower() in ["lp", "fluxgate", "fg"]:
+                    sdict["B_instrument_type"] = "fluxgate"
                 sdict.pop(key)
 
-            if key.lower() in ['e_instrument_type']:
-                if sdict[key].lower() in ['electrode','electrodes']: 
-                    sdict['E_instrument_type'] = 'electrodes'
-                if (sdict[key].lower().find('lead') >= 0) or (sdict[key].lower().find('pb') >= 0): 
-                    sdict['E_instrument_type'] = 'pbcl_electrodes'
+            if key.lower() in ["e_instrument_type"]:
+                if sdict[key].lower() in ["electrode", "electrodes"]:
+                    sdict["E_instrument_type"] = "electrodes"
+                if (sdict[key].lower().find("lead") >= 0) or (
+                    sdict[key].lower().find("pb") >= 0
+                ):
+                    sdict["E_instrument_type"] = "pbcl_electrodes"
                 sdict.pop(key)
 
-            if key.lower() in ['declination','decl']:
+            if key.lower() in ["declination", "decl"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['declination'] = val
+                sdict["declination"] = val
 
-
-            if key.lower() in ['lat','latitude']:
+            if key.lower() in ["lat", "latitude"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['latitude'] = val
+                sdict["latitude"] = val
 
-            if key.lower() in ['lon','long','longitude']:
+            if key.lower() in ["lon", "long", "longitude"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['longitude'] = val
+                sdict["longitude"] = val
 
-            if key.lower() in ['ele','elev','elevation','height']:
+            if key.lower() in ["ele", "elev", "elevation", "height"]:
                 val = copy.copy(sdict[key])
                 sdict.pop(key)
-                sdict['elevation'] = val
-
+                sdict["elevation"] = val
 
         try:
-            survey_dict[sdict['station']] = sdict
+            survey_dict[sdict["station"]] = sdict
         except KeyError:
-            try: 
-                survey_dict[sdict['station_name']] = sdict
+            try:
+                survey_dict[sdict["station_name"]] = sdict
             except KeyError:
-                survey_dict['MT{0:03}'.format(ss)] = sdict
+                survey_dict["MT{0:03}".format(ss)] = sdict
 
     return survey_dict
-    
-#==============================================================================
-def write_config_from_survey_txt_file(survey_file, save_name=None, 
-                                      delimiter='\t'):
+
+
+# ==============================================================================
+def write_config_from_survey_txt_file(survey_file, save_name=None, delimiter="\t"):
     """
     write a survey configuration file from a survey txt file 
     
@@ -832,31 +818,24 @@ def write_config_from_survey_txt_file(survey_file, save_name=None,
         **cfg_fn** : string
                     full path to saved config file
     """
-    
+
     survey_dict = read_survey_txt_file(survey_file, delimiter=delimiter)
-    
-    #get the filename to save to
+
+    # get the filename to save to
     if save_name is None:
         save_dir = os.path.dirname(survey_file)
-        save_fn = os.path.splitext(os.path.basename(survey_file))[0]+'.cfg'
+        save_fn = os.path.splitext(os.path.basename(survey_file))[0] + ".cfg"
         save_name = os.path.join(save_dir, save_fn)
     elif os.path.isfile(save_name):
         pass
     elif os.path.isdir(save_name):
-        save_fn = os.path.splitext(os.path.basename(survey_file))[0]+'.cfg'
+        save_fn = os.path.splitext(os.path.basename(survey_file))[0] + ".cfg"
         save_name = os.path.join(save_name, save_fn)
 
-    if not save_name.lower().endswith('.cfg'):
-        save_name += '.cfg'
+    if not save_name.lower().endswith(".cfg"):
+        save_name += ".cfg"
 
-    
-    #write the config file
+    # write the config file
     write_dict_to_configfile(survey_dict, save_name)
-    
+
     return save_name
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 
 """
 
@@ -30,7 +30,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
 import matplotlib
-#matplotlib.use('Qt4agg', force=True)
+
+# matplotlib.use('Qt4agg', force=True)
 from pylab import *
 
 import mtpy.core.edi as MTedi
@@ -73,31 +74,31 @@ for p in edi.Z.phase_err:
     phierr_te.append(p[0, 1])
     phierr_tm.append(p[1, 0])
 
-periods = 1. / edi.Z.freq
-print(periods)
+periods = 1.0 / edi.Z.freq
+print (periods)
 
 ax1 = subplot(211)
-errorbar(periods, res_te, reserr_te, marker='s', c='b', fmt='x')
-errorbar(periods, res_tm, reserr_tm, marker='s', c='r', fmt='x')
-xscale('log')
-yscale('log')
+errorbar(periods, res_te, reserr_te, marker="s", c="b", fmt="x")
+errorbar(periods, res_tm, reserr_tm, marker="s", c="r", fmt="x")
+xscale("log")
+yscale("log")
 minval = min(min(res_te, res_tm))
 maxval = max(max(res_te, res_tm))
 ylim([minval / 10, maxval * 10])
 xlim(0.5 * min(periods), 2 * max(periods))
 autoscale(False)
 
-ylabel('resistivity')
+ylabel("resistivity")
 setp(ax1.get_xticklabels(), visible=False)
 ## share x only
 ax2 = subplot(212, sharex=ax1)
 autoscale(False)
 
 ylim(-90, 270)
-errorbar(periods, phi_te, phierr_te, marker='s', c='b', fmt='x')
-errorbar(periods, phi_tm, phierr_tm, marker='s', c='r', fmt='x')
-ylabel('phase')
-xlabel('period (in s)')
+errorbar(periods, phi_te, phierr_te, marker="s", c="b", fmt="x")
+errorbar(periods, phi_tm, phierr_tm, marker="s", c="r", fmt="x")
+ylabel("phase")
+xlabel("period (in s)")
 
 tight_layout()
 show(block=True)

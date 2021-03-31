@@ -28,7 +28,9 @@ class Font(QGroupBox):
         self._point_size = point_size
         self._key_size = key_size
 
-        self.ui.comboBox_size.model().item(len(self._size_keys)).setEnabled(self._point_size)
+        self.ui.comboBox_size.model().item(len(self._size_keys)).setEnabled(
+            self._point_size
+        )
 
         if not self._simple_color:
             self.ui.comboBox_color.clear()
@@ -36,13 +38,13 @@ class Font(QGroupBox):
             self.ui.comboBox_color.addItems(cnames)
 
     _size_keys = [
-        'xx-small',
-        'x-small',
-        'small',
-        'medium',
-        'large',
-        'x-large',
-        'xx-large'
+        "xx-small",
+        "x-small",
+        "small",
+        "medium",
+        "large",
+        "x-large",
+        "xx-large",
     ]
 
     def size_index_changed(self, p_int):
@@ -75,9 +77,11 @@ class Font(QGroupBox):
 
     def get_size(self):
         if self.ui.checkBox_size.isChecked():
-            return self._size_keys[self.ui.comboBox_size.currentIndex()] \
-                if self.ui.comboBox_size.currentIndex() < len(self._size_keys) \
+            return (
+                self._size_keys[self.ui.comboBox_size.currentIndex()]
+                if self.ui.comboBox_size.currentIndex() < len(self._size_keys)
                 else self.ui.spinBox_size.value()
+            )
         else:
             return None
 

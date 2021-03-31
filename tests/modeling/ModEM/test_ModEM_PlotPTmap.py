@@ -18,10 +18,11 @@ from tests.imaging import ImageTestCase
 
 class Test_ModEM_PlotPTMaps(ImageTestCase):
     def test_modular_MPI_NLCG_004(self):
-        wd = op.normpath(op.join(SAMPLE_DIR, 'ModEM'))
-        filestem = 'Modular_MPI_NLCG_004'
-        datafn = 'ModEM_Data.dat'
-        PlotPTMaps(data_fn=op.join(wd, datafn),
-                   resp_fn=op.join(wd, filestem + '.dat'),
-                   ellipse_size=20
-                   )
+        wd = op.normpath(op.join(SAMPLE_DIR, "ModEM"))
+        filestem = "Modular_MPI_NLCG_004"
+        datafn = "ModEM_Data.dat"
+        PlotPTMaps(
+            data_fn=op.join(wd, datafn),
+            resp_fn=op.join(wd, filestem + ".dat"),
+            ellipse_size=20,
+        )

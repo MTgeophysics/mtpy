@@ -14,6 +14,7 @@ try:
 except AttributeError:
     _fromUtf8 = lambda s: s
 
+
 class Ui_occamgui2D(object):
     def setupUi(self, occamgui2D):
         occamgui2D.setObjectName(_fromUtf8("occamgui2D"))
@@ -42,7 +43,9 @@ class Ui_occamgui2D(object):
         self.pushButton_generateinputfile.setMinimumSize(QtCore.QSize(0, 30))
         self.pushButton_generateinputfile.setMaximumSize(QtCore.QSize(16777215, 30))
         self.pushButton_generateinputfile.setAutoDefault(True)
-        self.pushButton_generateinputfile.setObjectName(_fromUtf8("pushButton_generateinputfile"))
+        self.pushButton_generateinputfile.setObjectName(
+            _fromUtf8("pushButton_generateinputfile")
+        )
         self.pushButton_quit = QtGui.QPushButton(occamgui2D)
         self.pushButton_quit.setGeometry(QtCore.QRect(560, 630, 158, 30))
         self.pushButton_quit.setMinimumSize(QtCore.QSize(0, 30))
@@ -54,7 +57,9 @@ class Ui_occamgui2D(object):
         self.pushButton_checkparameter.setMinimumSize(QtCore.QSize(0, 30))
         self.pushButton_checkparameter.setMaximumSize(QtCore.QSize(16777215, 30))
         self.pushButton_checkparameter.setAutoDefault(True)
-        self.pushButton_checkparameter.setObjectName(_fromUtf8("pushButton_checkparameter"))
+        self.pushButton_checkparameter.setObjectName(
+            _fromUtf8("pushButton_checkparameter")
+        )
         self.pushButton_runoccam = QtGui.QPushButton(occamgui2D)
         self.pushButton_runoccam.setGeometry(QtCore.QRect(771, 630, 110, 30))
         self.pushButton_runoccam.setMinimumSize(QtCore.QSize(0, 30))
@@ -70,25 +75,35 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_8 = QtGui.QHBoxLayout()
         self.horizontalLayout_8.setObjectName(_fromUtf8("horizontalLayout_8"))
         self.label_2 = QtGui.QLabel(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
         self.label_2.setSizePolicy(sizePolicy)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.horizontalLayout_8.addWidget(self.label_2)
-        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_8.addItem(spacerItem)
-        self.formLayout_9.setLayout(0, QtGui.QFormLayout.LabelRole, self.horizontalLayout_8)
+        self.formLayout_9.setLayout(
+            0, QtGui.QFormLayout.LabelRole, self.horizontalLayout_8
+        )
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem1 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem1)
         self.button_browse_wd = QtGui.QToolButton(self.layoutWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.button_browse_wd.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.button_browse_wd.sizePolicy().hasHeightForWidth()
+        )
         self.button_browse_wd.setSizePolicy(sizePolicy)
         self.button_browse_wd.setMinimumSize(QtCore.QSize(30, 25))
         self.button_browse_wd.setMaximumSize(QtCore.QSize(30, 25))
@@ -99,24 +114,34 @@ class Ui_occamgui2D(object):
         self.lineEdit_browse_wd.setMaximumSize(QtCore.QSize(500, 30))
         self.lineEdit_browse_wd.setObjectName(_fromUtf8("lineEdit_browse_wd"))
         self.horizontalLayout.addWidget(self.lineEdit_browse_wd)
-        self.formLayout_9.setLayout(0, QtGui.QFormLayout.FieldRole, self.horizontalLayout)
+        self.formLayout_9.setLayout(
+            0, QtGui.QFormLayout.FieldRole, self.horizontalLayout
+        )
         self.horizontalLayout_9 = QtGui.QHBoxLayout()
         self.horizontalLayout_9.setObjectName(_fromUtf8("horizontalLayout_9"))
         self.label_5 = QtGui.QLabel(self.layoutWidget)
         self.label_5.setObjectName(_fromUtf8("label_5"))
         self.horizontalLayout_9.addWidget(self.label_5)
-        spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem2 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_9.addItem(spacerItem2)
-        self.formLayout_9.setLayout(1, QtGui.QFormLayout.LabelRole, self.horizontalLayout_9)
+        self.formLayout_9.setLayout(
+            1, QtGui.QFormLayout.LabelRole, self.horizontalLayout_9
+        )
         self.horizontalLayout_2 = QtGui.QHBoxLayout()
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
-        spacerItem3 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem3 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem3)
         self.button_browse_occam = QtGui.QToolButton(self.layoutWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.button_browse_occam.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.button_browse_occam.sizePolicy().hasHeightForWidth()
+        )
         self.button_browse_occam.setSizePolicy(sizePolicy)
         self.button_browse_occam.setMinimumSize(QtCore.QSize(30, 25))
         self.button_browse_occam.setMaximumSize(QtCore.QSize(30, 25))
@@ -127,29 +152,41 @@ class Ui_occamgui2D(object):
         self.lineEdit_browse_occam.setMaximumSize(QtCore.QSize(500, 30))
         self.lineEdit_browse_occam.setObjectName(_fromUtf8("lineEdit_browse_occam"))
         self.horizontalLayout_2.addWidget(self.lineEdit_browse_occam)
-        self.formLayout_9.setLayout(1, QtGui.QFormLayout.FieldRole, self.horizontalLayout_2)
+        self.formLayout_9.setLayout(
+            1, QtGui.QFormLayout.FieldRole, self.horizontalLayout_2
+        )
         self.horizontalLayout_10 = QtGui.QHBoxLayout()
         self.horizontalLayout_10.setObjectName(_fromUtf8("horizontalLayout_10"))
         self.label_28 = QtGui.QLabel(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_28.sizePolicy().hasHeightForWidth())
         self.label_28.setSizePolicy(sizePolicy)
         self.label_28.setObjectName(_fromUtf8("label_28"))
         self.horizontalLayout_10.addWidget(self.label_28)
-        spacerItem4 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem4 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_10.addItem(spacerItem4)
-        self.formLayout_9.setLayout(2, QtGui.QFormLayout.LabelRole, self.horizontalLayout_10)
+        self.formLayout_9.setLayout(
+            2, QtGui.QFormLayout.LabelRole, self.horizontalLayout_10
+        )
         self.horizontalLayout_3 = QtGui.QHBoxLayout()
         self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
-        spacerItem5 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem5 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_3.addItem(spacerItem5)
         self.button_browse_edis = QtGui.QToolButton(self.layoutWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.button_browse_edis.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.button_browse_edis.sizePolicy().hasHeightForWidth()
+        )
         self.button_browse_edis.setSizePolicy(sizePolicy)
         self.button_browse_edis.setMinimumSize(QtCore.QSize(30, 25))
         self.button_browse_edis.setMaximumSize(QtCore.QSize(30, 25))
@@ -160,24 +197,36 @@ class Ui_occamgui2D(object):
         self.lineEdit_browse_edi.setMaximumSize(QtCore.QSize(500, 30))
         self.lineEdit_browse_edi.setObjectName(_fromUtf8("lineEdit_browse_edi"))
         self.horizontalLayout_3.addWidget(self.lineEdit_browse_edi)
-        self.formLayout_9.setLayout(2, QtGui.QFormLayout.FieldRole, self.horizontalLayout_3)
+        self.formLayout_9.setLayout(
+            2, QtGui.QFormLayout.FieldRole, self.horizontalLayout_3
+        )
         self.horizontalLayout_11 = QtGui.QHBoxLayout()
         self.horizontalLayout_11.setObjectName(_fromUtf8("horizontalLayout_11"))
         self.checkBox_usestationlist = QtGui.QCheckBox(self.layoutWidget)
         self.checkBox_usestationlist.setObjectName(_fromUtf8("checkBox_usestationlist"))
         self.horizontalLayout_11.addWidget(self.checkBox_usestationlist)
-        spacerItem6 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem6 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_11.addItem(spacerItem6)
-        self.formLayout_9.setLayout(3, QtGui.QFormLayout.LabelRole, self.horizontalLayout_11)
+        self.formLayout_9.setLayout(
+            3, QtGui.QFormLayout.LabelRole, self.horizontalLayout_11
+        )
         self.horizontalLayout_4 = QtGui.QHBoxLayout()
         self.horizontalLayout_4.setObjectName(_fromUtf8("horizontalLayout_4"))
-        spacerItem7 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem7 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_4.addItem(spacerItem7)
         self.pushButton_loadstations = QtGui.QPushButton(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pushButton_loadstations.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.pushButton_loadstations.sizePolicy().hasHeightForWidth()
+        )
         self.pushButton_loadstations.setSizePolicy(sizePolicy)
         self.pushButton_loadstations.setMinimumSize(QtCore.QSize(0, 25))
         self.pushButton_loadstations.setMaximumSize(QtCore.QSize(3000, 30))
@@ -185,33 +234,51 @@ class Ui_occamgui2D(object):
         self.pushButton_loadstations.setObjectName(_fromUtf8("pushButton_loadstations"))
         self.horizontalLayout_4.addWidget(self.pushButton_loadstations)
         self.lineEdit_browse_stationfile = QtGui.QLineEdit(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_browse_stationfile.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.lineEdit_browse_stationfile.sizePolicy().hasHeightForWidth()
+        )
         self.lineEdit_browse_stationfile.setSizePolicy(sizePolicy)
         self.lineEdit_browse_stationfile.setMinimumSize(QtCore.QSize(300, 30))
         self.lineEdit_browse_stationfile.setMaximumSize(QtCore.QSize(500, 30))
-        self.lineEdit_browse_stationfile.setObjectName(_fromUtf8("lineEdit_browse_stationfile"))
+        self.lineEdit_browse_stationfile.setObjectName(
+            _fromUtf8("lineEdit_browse_stationfile")
+        )
         self.horizontalLayout_4.addWidget(self.lineEdit_browse_stationfile)
-        self.formLayout_9.setLayout(3, QtGui.QFormLayout.FieldRole, self.horizontalLayout_4)
+        self.formLayout_9.setLayout(
+            3, QtGui.QFormLayout.FieldRole, self.horizontalLayout_4
+        )
         self.horizontalLayout_12 = QtGui.QHBoxLayout()
         self.horizontalLayout_12.setObjectName(_fromUtf8("horizontalLayout_12"))
         self.checkBox_usedatafile = QtGui.QCheckBox(self.layoutWidget)
         self.checkBox_usedatafile.setObjectName(_fromUtf8("checkBox_usedatafile"))
         self.horizontalLayout_12.addWidget(self.checkBox_usedatafile)
-        spacerItem8 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem8 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_12.addItem(spacerItem8)
-        self.formLayout_9.setLayout(4, QtGui.QFormLayout.LabelRole, self.horizontalLayout_12)
+        self.formLayout_9.setLayout(
+            4, QtGui.QFormLayout.LabelRole, self.horizontalLayout_12
+        )
         self.horizontalLayout_5 = QtGui.QHBoxLayout()
         self.horizontalLayout_5.setObjectName(_fromUtf8("horizontalLayout_5"))
-        spacerItem9 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem9 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_5.addItem(spacerItem9)
         self.pushButton_loaddatafile = QtGui.QPushButton(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pushButton_loaddatafile.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.pushButton_loaddatafile.sizePolicy().hasHeightForWidth()
+        )
         self.pushButton_loaddatafile.setSizePolicy(sizePolicy)
         self.pushButton_loaddatafile.setMinimumSize(QtCore.QSize(0, 25))
         self.pushButton_loaddatafile.setMaximumSize(QtCore.QSize(16777215, 30))
@@ -219,73 +286,113 @@ class Ui_occamgui2D(object):
         self.pushButton_loaddatafile.setObjectName(_fromUtf8("pushButton_loaddatafile"))
         self.horizontalLayout_5.addWidget(self.pushButton_loaddatafile)
         self.lineEdit_browse_datafile = QtGui.QLineEdit(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_browse_datafile.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.lineEdit_browse_datafile.sizePolicy().hasHeightForWidth()
+        )
         self.lineEdit_browse_datafile.setSizePolicy(sizePolicy)
         self.lineEdit_browse_datafile.setMinimumSize(QtCore.QSize(300, 30))
         self.lineEdit_browse_datafile.setMaximumSize(QtCore.QSize(500, 30))
-        self.lineEdit_browse_datafile.setObjectName(_fromUtf8("lineEdit_browse_datafile"))
+        self.lineEdit_browse_datafile.setObjectName(
+            _fromUtf8("lineEdit_browse_datafile")
+        )
         self.horizontalLayout_5.addWidget(self.lineEdit_browse_datafile)
-        self.formLayout_9.setLayout(4, QtGui.QFormLayout.FieldRole, self.horizontalLayout_5)
+        self.formLayout_9.setLayout(
+            4, QtGui.QFormLayout.FieldRole, self.horizontalLayout_5
+        )
         self.horizontalLayout_13 = QtGui.QHBoxLayout()
         self.horizontalLayout_13.setObjectName(_fromUtf8("horizontalLayout_13"))
         self.label_3 = QtGui.QLabel(self.layoutWidget)
         self.label_3.setObjectName(_fromUtf8("label_3"))
         self.horizontalLayout_13.addWidget(self.label_3)
-        spacerItem10 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem10 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_13.addItem(spacerItem10)
-        self.formLayout_9.setLayout(5, QtGui.QFormLayout.LabelRole, self.horizontalLayout_13)
+        self.formLayout_9.setLayout(
+            5, QtGui.QFormLayout.LabelRole, self.horizontalLayout_13
+        )
         self.horizontalLayout_6 = QtGui.QHBoxLayout()
         self.horizontalLayout_6.setObjectName(_fromUtf8("horizontalLayout_6"))
-        spacerItem11 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem11 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_6.addItem(spacerItem11)
         self.lineEdit_datafilename = QtGui.QLineEdit(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_datafilename.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.lineEdit_datafilename.sizePolicy().hasHeightForWidth()
+        )
         self.lineEdit_datafilename.setSizePolicy(sizePolicy)
         self.lineEdit_datafilename.setMinimumSize(QtCore.QSize(300, 30))
         self.lineEdit_datafilename.setMaximumSize(QtCore.QSize(500, 30))
         self.lineEdit_datafilename.setObjectName(_fromUtf8("lineEdit_datafilename"))
         self.horizontalLayout_6.addWidget(self.lineEdit_datafilename)
-        self.formLayout_9.setLayout(5, QtGui.QFormLayout.FieldRole, self.horizontalLayout_6)
+        self.formLayout_9.setLayout(
+            5, QtGui.QFormLayout.FieldRole, self.horizontalLayout_6
+        )
         self.horizontalLayout_14 = QtGui.QHBoxLayout()
         self.horizontalLayout_14.setObjectName(_fromUtf8("horizontalLayout_14"))
         self.checkBox_usestartupfile = QtGui.QCheckBox(self.layoutWidget)
         self.checkBox_usestartupfile.setObjectName(_fromUtf8("checkBox_usestartupfile"))
         self.horizontalLayout_14.addWidget(self.checkBox_usestartupfile)
-        spacerItem12 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem12 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_14.addItem(spacerItem12)
-        self.formLayout_9.setLayout(6, QtGui.QFormLayout.LabelRole, self.horizontalLayout_14)
+        self.formLayout_9.setLayout(
+            6, QtGui.QFormLayout.LabelRole, self.horizontalLayout_14
+        )
         self.horizontalLayout_7 = QtGui.QHBoxLayout()
         self.horizontalLayout_7.setObjectName(_fromUtf8("horizontalLayout_7"))
-        spacerItem13 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem13 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_7.addItem(spacerItem13)
         self.pushButton_loadstartupfile = QtGui.QPushButton(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pushButton_loadstartupfile.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.pushButton_loadstartupfile.sizePolicy().hasHeightForWidth()
+        )
         self.pushButton_loadstartupfile.setSizePolicy(sizePolicy)
         self.pushButton_loadstartupfile.setMinimumSize(QtCore.QSize(0, 25))
         self.pushButton_loadstartupfile.setMaximumSize(QtCore.QSize(16777215, 30))
         self.pushButton_loadstartupfile.setAutoDefault(True)
-        self.pushButton_loadstartupfile.setObjectName(_fromUtf8("pushButton_loadstartupfile"))
+        self.pushButton_loadstartupfile.setObjectName(
+            _fromUtf8("pushButton_loadstartupfile")
+        )
         self.horizontalLayout_7.addWidget(self.pushButton_loadstartupfile)
         self.lineEdit_browse_startupfile = QtGui.QLineEdit(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_browse_startupfile.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.lineEdit_browse_startupfile.sizePolicy().hasHeightForWidth()
+        )
         self.lineEdit_browse_startupfile.setSizePolicy(sizePolicy)
         self.lineEdit_browse_startupfile.setMinimumSize(QtCore.QSize(300, 30))
         self.lineEdit_browse_startupfile.setMaximumSize(QtCore.QSize(500, 30))
-        self.lineEdit_browse_startupfile.setObjectName(_fromUtf8("lineEdit_browse_startupfile"))
+        self.lineEdit_browse_startupfile.setObjectName(
+            _fromUtf8("lineEdit_browse_startupfile")
+        )
         self.horizontalLayout_7.addWidget(self.lineEdit_browse_startupfile)
-        self.formLayout_9.setLayout(6, QtGui.QFormLayout.FieldRole, self.horizontalLayout_7)
+        self.formLayout_9.setLayout(
+            6, QtGui.QFormLayout.FieldRole, self.horizontalLayout_7
+        )
         self.layoutWidget1 = QtGui.QWidget(occamgui2D)
         self.layoutWidget1.setGeometry(QtCore.QRect(143, 479, 656, 34))
         self.layoutWidget1.setObjectName(_fromUtf8("layoutWidget1"))
@@ -298,10 +405,14 @@ class Ui_occamgui2D(object):
         self.label_18.setObjectName(_fromUtf8("label_18"))
         self.horizontalLayout_27.addWidget(self.label_18)
         self.spinBox_no_layers = QtGui.QSpinBox(self.layoutWidget1)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.spinBox_no_layers.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.spinBox_no_layers.sizePolicy().hasHeightForWidth()
+        )
         self.spinBox_no_layers.setSizePolicy(sizePolicy)
         self.spinBox_no_layers.setMinimumSize(QtCore.QSize(0, 30))
         self.spinBox_no_layers.setMaximumSize(QtCore.QSize(600, 30))
@@ -310,7 +421,9 @@ class Ui_occamgui2D(object):
         self.spinBox_no_layers.setProperty("value", 30)
         self.spinBox_no_layers.setObjectName(_fromUtf8("spinBox_no_layers"))
         self.horizontalLayout_27.addWidget(self.spinBox_no_layers)
-        spacerItem14 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem14 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_27.addItem(spacerItem14)
         self.horizontalLayout_30.addLayout(self.horizontalLayout_27)
         self.line_3 = QtGui.QFrame(self.layoutWidget1)
@@ -320,16 +433,22 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_30.addWidget(self.line_3)
         self.horizontalLayout_26 = QtGui.QHBoxLayout()
         self.horizontalLayout_26.setObjectName(_fromUtf8("horizontalLayout_26"))
-        spacerItem15 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem15 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_26.addItem(spacerItem15)
         self.label_19 = QtGui.QLabel(self.layoutWidget1)
         self.label_19.setObjectName(_fromUtf8("label_19"))
         self.horizontalLayout_26.addWidget(self.label_19)
         self.spinBox_layersperdecade = QtGui.QSpinBox(self.layoutWidget1)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.spinBox_layersperdecade.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.spinBox_layersperdecade.sizePolicy().hasHeightForWidth()
+        )
         self.spinBox_layersperdecade.setSizePolicy(sizePolicy)
         self.spinBox_layersperdecade.setMinimumSize(QtCore.QSize(0, 30))
         self.spinBox_layersperdecade.setMaximumSize(QtCore.QSize(50, 30))
@@ -338,7 +457,9 @@ class Ui_occamgui2D(object):
         self.spinBox_layersperdecade.setProperty("value", 10)
         self.spinBox_layersperdecade.setObjectName(_fromUtf8("spinBox_layersperdecade"))
         self.horizontalLayout_26.addWidget(self.spinBox_layersperdecade)
-        spacerItem16 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem16 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_26.addItem(spacerItem16)
         self.horizontalLayout_30.addLayout(self.horizontalLayout_26)
         self.line_4 = QtGui.QFrame(self.layoutWidget1)
@@ -348,16 +469,22 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_30.addWidget(self.line_4)
         self.horizontalLayout_23 = QtGui.QHBoxLayout()
         self.horizontalLayout_23.setObjectName(_fromUtf8("horizontalLayout_23"))
-        spacerItem17 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem17 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_23.addItem(spacerItem17)
         self.label_25 = QtGui.QLabel(self.layoutWidget1)
         self.label_25.setObjectName(_fromUtf8("label_25"))
         self.horizontalLayout_23.addWidget(self.label_25)
         self.spinBox_firstlayer = QtGui.QSpinBox(self.layoutWidget1)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.spinBox_firstlayer.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.spinBox_firstlayer.sizePolicy().hasHeightForWidth()
+        )
         self.spinBox_firstlayer.setSizePolicy(sizePolicy)
         self.spinBox_firstlayer.setMinimumSize(QtCore.QSize(0, 30))
         self.spinBox_firstlayer.setMaximumSize(QtCore.QSize(500, 30))
@@ -379,25 +506,37 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_15 = QtGui.QHBoxLayout()
         self.horizontalLayout_15.setObjectName(_fromUtf8("horizontalLayout_15"))
         self.checkBox_max_no_frequencies = QtGui.QCheckBox(self.layoutWidget2)
-        self.checkBox_max_no_frequencies.setObjectName(_fromUtf8("checkBox_max_no_frequencies"))
+        self.checkBox_max_no_frequencies.setObjectName(
+            _fromUtf8("checkBox_max_no_frequencies")
+        )
         self.horizontalLayout_15.addWidget(self.checkBox_max_no_frequencies)
         self.doubleSpinBox_max_no_frequencies = QtGui.QDoubleSpinBox(self.layoutWidget2)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_max_no_frequencies.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_max_no_frequencies.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_max_no_frequencies.setSizePolicy(sizePolicy)
         self.doubleSpinBox_max_no_frequencies.setMinimumSize(QtCore.QSize(63, 30))
         self.doubleSpinBox_max_no_frequencies.setMaximumSize(QtCore.QSize(16777215, 30))
-        self.doubleSpinBox_max_no_frequencies.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.doubleSpinBox_max_no_frequencies.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.doubleSpinBox_max_no_frequencies.setReadOnly(False)
         self.doubleSpinBox_max_no_frequencies.setDecimals(0)
         self.doubleSpinBox_max_no_frequencies.setMinimum(0.0)
         self.doubleSpinBox_max_no_frequencies.setMaximum(1000.0)
         self.doubleSpinBox_max_no_frequencies.setSingleStep(1.0)
-        self.doubleSpinBox_max_no_frequencies.setObjectName(_fromUtf8("doubleSpinBox_max_no_frequencies"))
+        self.doubleSpinBox_max_no_frequencies.setObjectName(
+            _fromUtf8("doubleSpinBox_max_no_frequencies")
+        )
         self.horizontalLayout_15.addWidget(self.doubleSpinBox_max_no_frequencies)
-        spacerItem18 = QtGui.QSpacerItem(17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem18 = QtGui.QSpacerItem(
+            17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_15.addItem(spacerItem18)
         self.horizontalLayout_19.addLayout(self.horizontalLayout_15)
         self.line_5 = QtGui.QFrame(self.layoutWidget2)
@@ -405,7 +544,9 @@ class Ui_occamgui2D(object):
         self.line_5.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_5.setObjectName(_fromUtf8("line_5"))
         self.horizontalLayout_19.addWidget(self.line_5)
-        spacerItem19 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem19 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_19.addItem(spacerItem19)
         self.horizontalLayout_16 = QtGui.QHBoxLayout()
         self.horizontalLayout_16.setObjectName(_fromUtf8("horizontalLayout_16"))
@@ -413,26 +554,36 @@ class Ui_occamgui2D(object):
         self.checkBox_min_frequency.setObjectName(_fromUtf8("checkBox_min_frequency"))
         self.horizontalLayout_16.addWidget(self.checkBox_min_frequency)
         self.doubleSpinBox_min_frequency = QtGui.QDoubleSpinBox(self.layoutWidget2)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_min_frequency.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_min_frequency.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_min_frequency.setSizePolicy(sizePolicy)
         self.doubleSpinBox_min_frequency.setMinimumSize(QtCore.QSize(63, 30))
         self.doubleSpinBox_min_frequency.setMaximumSize(QtCore.QSize(16777215, 30))
-        self.doubleSpinBox_min_frequency.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.doubleSpinBox_min_frequency.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.doubleSpinBox_min_frequency.setReadOnly(False)
         self.doubleSpinBox_min_frequency.setDecimals(0)
         self.doubleSpinBox_min_frequency.setMinimum(0.0)
         self.doubleSpinBox_min_frequency.setMaximum(1000.0)
         self.doubleSpinBox_min_frequency.setSingleStep(1.0)
-        self.doubleSpinBox_min_frequency.setObjectName(_fromUtf8("doubleSpinBox_min_frequency"))
+        self.doubleSpinBox_min_frequency.setObjectName(
+            _fromUtf8("doubleSpinBox_min_frequency")
+        )
         self.horizontalLayout_16.addWidget(self.doubleSpinBox_min_frequency)
         self.label_31 = QtGui.QLabel(self.layoutWidget2)
         self.label_31.setObjectName(_fromUtf8("label_31"))
         self.horizontalLayout_16.addWidget(self.label_31)
         self.horizontalLayout_19.addLayout(self.horizontalLayout_16)
-        spacerItem20 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem20 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_19.addItem(spacerItem20)
         self.line_6 = QtGui.QFrame(self.layoutWidget2)
         self.line_6.setFrameShape(QtGui.QFrame.VLine)
@@ -441,26 +592,36 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_19.addWidget(self.line_6)
         self.horizontalLayout_18 = QtGui.QHBoxLayout()
         self.horizontalLayout_18.setObjectName(_fromUtf8("horizontalLayout_18"))
-        spacerItem21 = QtGui.QSpacerItem(17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem21 = QtGui.QSpacerItem(
+            17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_18.addItem(spacerItem21)
         self.checkBox_max_frequency = QtGui.QCheckBox(self.layoutWidget2)
         self.checkBox_max_frequency.setObjectName(_fromUtf8("checkBox_max_frequency"))
         self.horizontalLayout_18.addWidget(self.checkBox_max_frequency)
         self.doubleSpinBox_max_frequency = QtGui.QDoubleSpinBox(self.layoutWidget2)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_max_frequency.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_max_frequency.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_max_frequency.setSizePolicy(sizePolicy)
         self.doubleSpinBox_max_frequency.setMinimumSize(QtCore.QSize(63, 30))
         self.doubleSpinBox_max_frequency.setMaximumSize(QtCore.QSize(16777215, 30))
-        self.doubleSpinBox_max_frequency.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.doubleSpinBox_max_frequency.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.doubleSpinBox_max_frequency.setReadOnly(False)
         self.doubleSpinBox_max_frequency.setDecimals(0)
         self.doubleSpinBox_max_frequency.setMinimum(0.0)
         self.doubleSpinBox_max_frequency.setMaximum(1000.0)
         self.doubleSpinBox_max_frequency.setSingleStep(1.0)
-        self.doubleSpinBox_max_frequency.setObjectName(_fromUtf8("doubleSpinBox_max_frequency"))
+        self.doubleSpinBox_max_frequency.setObjectName(
+            _fromUtf8("doubleSpinBox_max_frequency")
+        )
         self.horizontalLayout_18.addWidget(self.doubleSpinBox_max_frequency)
         self.label_32 = QtGui.QLabel(self.layoutWidget2)
         self.label_32.setObjectName(_fromUtf8("label_32"))
@@ -477,7 +638,9 @@ class Ui_occamgui2D(object):
         self.checkBox_te_error = QtGui.QCheckBox(self.layoutWidget3)
         self.checkBox_te_error.setObjectName(_fromUtf8("checkBox_te_error"))
         self.horizontalLayout_20.addWidget(self.checkBox_te_error)
-        spacerItem22 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem22 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_20.addItem(spacerItem22)
         self.doubleSpinBox_te_error = QtGui.QDoubleSpinBox(self.layoutWidget3)
         self.doubleSpinBox_te_error.setMinimumSize(QtCore.QSize(0, 30))
@@ -488,7 +651,9 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_te_error.setSingleStep(1.0)
         self.doubleSpinBox_te_error.setObjectName(_fromUtf8("doubleSpinBox_te_error"))
         self.horizontalLayout_20.addWidget(self.doubleSpinBox_te_error)
-        spacerItem23 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem23 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_20.addItem(spacerItem23)
         self.horizontalLayout_25.addLayout(self.horizontalLayout_20)
         self.line = QtGui.QFrame(self.layoutWidget3)
@@ -498,14 +663,20 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_25.addWidget(self.line)
         self.horizontalLayout_22 = QtGui.QHBoxLayout()
         self.horizontalLayout_22.setObjectName(_fromUtf8("horizontalLayout_22"))
-        spacerItem24 = QtGui.QSpacerItem(13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem24 = QtGui.QSpacerItem(
+            13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_22.addItem(spacerItem24)
-        spacerItem25 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem25 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_22.addItem(spacerItem25)
         self.checkBox_tm_error = QtGui.QCheckBox(self.layoutWidget3)
         self.checkBox_tm_error.setObjectName(_fromUtf8("checkBox_tm_error"))
         self.horizontalLayout_22.addWidget(self.checkBox_tm_error)
-        spacerItem26 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem26 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_22.addItem(spacerItem26)
         self.doubleSpinBox_tm_error = QtGui.QDoubleSpinBox(self.layoutWidget3)
         self.doubleSpinBox_tm_error.setMinimumSize(QtCore.QSize(0, 30))
@@ -516,10 +687,14 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_tm_error.setSingleStep(1.0)
         self.doubleSpinBox_tm_error.setObjectName(_fromUtf8("doubleSpinBox_tm_error"))
         self.horizontalLayout_22.addWidget(self.doubleSpinBox_tm_error)
-        spacerItem27 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem27 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_22.addItem(spacerItem27)
         self.horizontalLayout_25.addLayout(self.horizontalLayout_22)
-        spacerItem28 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem28 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_25.addItem(spacerItem28)
         self.line_2 = QtGui.QFrame(self.layoutWidget3)
         self.line_2.setFrameShape(QtGui.QFrame.VLine)
@@ -528,14 +703,20 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_25.addWidget(self.line_2)
         self.horizontalLayout_24 = QtGui.QHBoxLayout()
         self.horizontalLayout_24.setObjectName(_fromUtf8("horizontalLayout_24"))
-        spacerItem29 = QtGui.QSpacerItem(13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem29 = QtGui.QSpacerItem(
+            13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_24.addItem(spacerItem29)
-        spacerItem30 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem30 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_24.addItem(spacerItem30)
         self.checkBox_tipper_error = QtGui.QCheckBox(self.layoutWidget3)
         self.checkBox_tipper_error.setObjectName(_fromUtf8("checkBox_tipper_error"))
         self.horizontalLayout_24.addWidget(self.checkBox_tipper_error)
-        spacerItem31 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem31 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_24.addItem(spacerItem31)
         self.doubleSpinBox_tipper_error = QtGui.QDoubleSpinBox(self.layoutWidget3)
         self.doubleSpinBox_tipper_error.setMinimumSize(QtCore.QSize(0, 30))
@@ -544,9 +725,13 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_tipper_error.setMinimum(0.0)
         self.doubleSpinBox_tipper_error.setMaximum(100.0)
         self.doubleSpinBox_tipper_error.setSingleStep(1.0)
-        self.doubleSpinBox_tipper_error.setObjectName(_fromUtf8("doubleSpinBox_tipper_error"))
+        self.doubleSpinBox_tipper_error.setObjectName(
+            _fromUtf8("doubleSpinBox_tipper_error")
+        )
         self.horizontalLayout_24.addWidget(self.doubleSpinBox_tipper_error)
-        spacerItem32 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem32 = QtGui.QSpacerItem(
+            40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_24.addItem(spacerItem32)
         self.horizontalLayout_25.addLayout(self.horizontalLayout_24)
         self.layoutWidget4 = QtGui.QWidget(occamgui2D)
@@ -561,10 +746,14 @@ class Ui_occamgui2D(object):
         self.label_17.setObjectName(_fromUtf8("label_17"))
         self.horizontalLayout_31.addWidget(self.label_17)
         self.doubleSpinBox_rms = QtGui.QDoubleSpinBox(self.layoutWidget4)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_rms.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_rms.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_rms.setSizePolicy(sizePolicy)
         self.doubleSpinBox_rms.setMinimumSize(QtCore.QSize(0, 30))
         self.doubleSpinBox_rms.setMaximumSize(QtCore.QSize(16777215, 30))
@@ -574,7 +763,9 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_rms.setProperty("value", 1.0)
         self.doubleSpinBox_rms.setObjectName(_fromUtf8("doubleSpinBox_rms"))
         self.horizontalLayout_31.addWidget(self.doubleSpinBox_rms)
-        spacerItem33 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem33 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_31.addItem(spacerItem33)
         self.horizontalLayout_36.addLayout(self.horizontalLayout_31)
         self.line_7 = QtGui.QFrame(self.layoutWidget4)
@@ -584,10 +775,14 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_36.addWidget(self.line_7)
         self.horizontalLayout_35 = QtGui.QHBoxLayout()
         self.horizontalLayout_35.setObjectName(_fromUtf8("horizontalLayout_35"))
-        spacerItem34 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem34 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_35.addItem(spacerItem34)
         self.label_16 = QtGui.QLabel(self.layoutWidget4)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_16.sizePolicy().hasHeightForWidth())
@@ -595,18 +790,26 @@ class Ui_occamgui2D(object):
         self.label_16.setObjectName(_fromUtf8("label_16"))
         self.horizontalLayout_35.addWidget(self.label_16)
         self.spinBox_max_no_iterations = QtGui.QSpinBox(self.layoutWidget4)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.spinBox_max_no_iterations.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.spinBox_max_no_iterations.sizePolicy().hasHeightForWidth()
+        )
         self.spinBox_max_no_iterations.setSizePolicy(sizePolicy)
         self.spinBox_max_no_iterations.setMinimumSize(QtCore.QSize(0, 30))
         self.spinBox_max_no_iterations.setMaximumSize(QtCore.QSize(50, 30))
         self.spinBox_max_no_iterations.setMinimum(1)
         self.spinBox_max_no_iterations.setProperty("value", 30)
-        self.spinBox_max_no_iterations.setObjectName(_fromUtf8("spinBox_max_no_iterations"))
+        self.spinBox_max_no_iterations.setObjectName(
+            _fromUtf8("spinBox_max_no_iterations")
+        )
         self.horizontalLayout_35.addWidget(self.spinBox_max_no_iterations)
-        spacerItem35 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem35 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_35.addItem(spacerItem35)
         self.horizontalLayout_36.addLayout(self.horizontalLayout_35)
         self.line_8 = QtGui.QFrame(self.layoutWidget4)
@@ -616,16 +819,22 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_36.addWidget(self.line_8)
         self.horizontalLayout_32 = QtGui.QHBoxLayout()
         self.horizontalLayout_32.setObjectName(_fromUtf8("horizontalLayout_32"))
-        spacerItem36 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem36 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_32.addItem(spacerItem36)
         self.label_24 = QtGui.QLabel(self.layoutWidget4)
         self.label_24.setObjectName(_fromUtf8("label_24"))
         self.horizontalLayout_32.addWidget(self.label_24)
         self.doubleSpinBox_rhostart = QtGui.QDoubleSpinBox(self.layoutWidget4)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_rhostart.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_rhostart.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_rhostart.setSizePolicy(sizePolicy)
         self.doubleSpinBox_rhostart.setMinimumSize(QtCore.QSize(0, 30))
         self.doubleSpinBox_rhostart.setMaximumSize(QtCore.QSize(16777215, 30))
@@ -650,21 +859,31 @@ class Ui_occamgui2D(object):
         self.label_21.setObjectName(_fromUtf8("label_21"))
         self.horizontalLayout_33.addWidget(self.label_21)
         self.doubleSpinBox_mergethreshold = QtGui.QDoubleSpinBox(self.layoutWidget5)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_mergethreshold.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_mergethreshold.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_mergethreshold.setSizePolicy(sizePolicy)
         self.doubleSpinBox_mergethreshold.setMinimumSize(QtCore.QSize(0, 30))
         self.doubleSpinBox_mergethreshold.setMaximumSize(QtCore.QSize(16777215, 30))
         self.doubleSpinBox_mergethreshold.setMaximum(100.0)
         self.doubleSpinBox_mergethreshold.setProperty("value", 0.75)
-        self.doubleSpinBox_mergethreshold.setObjectName(_fromUtf8("doubleSpinBox_mergethreshold"))
+        self.doubleSpinBox_mergethreshold.setObjectName(
+            _fromUtf8("doubleSpinBox_mergethreshold")
+        )
         self.horizontalLayout_33.addWidget(self.doubleSpinBox_mergethreshold)
-        spacerItem37 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem37 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_33.addItem(spacerItem37)
         self.horizontalLayout_37.addLayout(self.horizontalLayout_33)
-        spacerItem38 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem38 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_37.addItem(spacerItem38)
         self.line_9 = QtGui.QFrame(self.layoutWidget5)
         self.line_9.setFrameShape(QtGui.QFrame.VLine)
@@ -673,16 +892,22 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_37.addWidget(self.line_9)
         self.horizontalLayout_34 = QtGui.QHBoxLayout()
         self.horizontalLayout_34.setObjectName(_fromUtf8("horizontalLayout_34"))
-        spacerItem39 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem39 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_34.addItem(spacerItem39)
         self.label_26 = QtGui.QLabel(self.layoutWidget5)
         self.label_26.setObjectName(_fromUtf8("label_26"))
         self.horizontalLayout_34.addWidget(self.label_26)
         self.spinBox_maxblockwidth = QtGui.QSpinBox(self.layoutWidget5)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.spinBox_maxblockwidth.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.spinBox_maxblockwidth.sizePolicy().hasHeightForWidth()
+        )
         self.spinBox_maxblockwidth.setSizePolicy(sizePolicy)
         self.spinBox_maxblockwidth.setMinimumSize(QtCore.QSize(0, 30))
         self.spinBox_maxblockwidth.setMaximumSize(QtCore.QSize(500, 30))
@@ -694,7 +919,9 @@ class Ui_occamgui2D(object):
         self.label_22 = QtGui.QLabel(self.layoutWidget5)
         self.label_22.setObjectName(_fromUtf8("label_22"))
         self.horizontalLayout_34.addWidget(self.label_22)
-        spacerItem40 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem40 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_34.addItem(spacerItem40)
         self.horizontalLayout_37.addLayout(self.horizontalLayout_34)
         self.layoutWidget6 = QtGui.QWidget(occamgui2D)
@@ -709,14 +936,20 @@ class Ui_occamgui2D(object):
         self.label_7.setObjectName(_fromUtf8("label_7"))
         self.horizontalLayout_17.addWidget(self.label_7)
         self.lineEdit_modelname = QtGui.QLineEdit(self.layoutWidget6)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_modelname.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.lineEdit_modelname.sizePolicy().hasHeightForWidth()
+        )
         self.lineEdit_modelname.setSizePolicy(sizePolicy)
         self.lineEdit_modelname.setObjectName(_fromUtf8("lineEdit_modelname"))
         self.horizontalLayout_17.addWidget(self.lineEdit_modelname)
-        spacerItem41 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem41 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_17.addItem(spacerItem41)
         self.horizontalLayout_29.addLayout(self.horizontalLayout_17)
         self.line_10 = QtGui.QFrame(self.layoutWidget6)
@@ -726,24 +959,34 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_29.addWidget(self.line_10)
         self.horizontalLayout_21 = QtGui.QHBoxLayout()
         self.horizontalLayout_21.setObjectName(_fromUtf8("horizontalLayout_21"))
-        spacerItem42 = QtGui.QSpacerItem(17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem42 = QtGui.QSpacerItem(
+            17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_21.addItem(spacerItem42)
         self.label_8 = QtGui.QLabel(self.layoutWidget6)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Preferred)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_8.sizePolicy().hasHeightForWidth())
         self.label_8.setSizePolicy(sizePolicy)
         self.label_8.setMaximumSize(QtCore.QSize(50, 16777215))
-        self.label_8.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.label_8.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.label_8.setObjectName(_fromUtf8("label_8"))
         self.horizontalLayout_21.addWidget(self.label_8)
         self.comboBox_mode = QtGui.QComboBox(self.layoutWidget6)
         self.comboBox_mode.setEnabled(True)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.comboBox_mode.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.comboBox_mode.sizePolicy().hasHeightForWidth()
+        )
         self.comboBox_mode.setSizePolicy(sizePolicy)
         self.comboBox_mode.setMinimumSize(QtCore.QSize(90, 25))
         self.comboBox_mode.setMaximumSize(QtCore.QSize(16777215, 30))
@@ -755,7 +998,9 @@ class Ui_occamgui2D(object):
         self.comboBox_mode.addItem(_fromUtf8(""))
         self.comboBox_mode.addItem(_fromUtf8(""))
         self.horizontalLayout_21.addWidget(self.comboBox_mode)
-        spacerItem43 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem43 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_21.addItem(spacerItem43)
         self.horizontalLayout_29.addLayout(self.horizontalLayout_21)
         self.line_11 = QtGui.QFrame(self.layoutWidget6)
@@ -765,31 +1010,43 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_29.addWidget(self.line_11)
         self.horizontalLayout_28 = QtGui.QHBoxLayout()
         self.horizontalLayout_28.setObjectName(_fromUtf8("horizontalLayout_28"))
-        spacerItem44 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem44 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_28.addItem(spacerItem44)
         self.label_23 = QtGui.QLabel(self.layoutWidget6)
         self.label_23.setFrameShape(QtGui.QFrame.NoFrame)
         self.label_23.setFrameShadow(QtGui.QFrame.Plain)
-        self.label_23.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.label_23.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.label_23.setIndent(0)
         self.label_23.setObjectName(_fromUtf8("label_23"))
         self.horizontalLayout_28.addWidget(self.label_23)
         self.doubleSpinBox_strike = QtGui.QDoubleSpinBox(self.layoutWidget6)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.doubleSpinBox_strike.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.doubleSpinBox_strike.sizePolicy().hasHeightForWidth()
+        )
         self.doubleSpinBox_strike.setSizePolicy(sizePolicy)
         self.doubleSpinBox_strike.setMinimumSize(QtCore.QSize(63, 30))
         self.doubleSpinBox_strike.setMaximumSize(QtCore.QSize(16777215, 30))
-        self.doubleSpinBox_strike.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.doubleSpinBox_strike.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.doubleSpinBox_strike.setDecimals(1)
         self.doubleSpinBox_strike.setMinimum(-180.0)
         self.doubleSpinBox_strike.setMaximum(360.0)
         self.doubleSpinBox_strike.setSingleStep(1.0)
         self.doubleSpinBox_strike.setObjectName(_fromUtf8("doubleSpinBox_strike"))
         self.horizontalLayout_28.addWidget(self.doubleSpinBox_strike)
-        spacerItem45 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem45 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_28.addItem(spacerItem45)
         self.horizontalLayout_29.addLayout(self.horizontalLayout_28)
         self.layoutWidget7 = QtGui.QWidget(occamgui2D)
@@ -806,7 +1063,9 @@ class Ui_occamgui2D(object):
         self.spinBox_iterationstep = QtGui.QSpinBox(self.layoutWidget7)
         self.spinBox_iterationstep.setObjectName(_fromUtf8("spinBox_iterationstep"))
         self.horizontalLayout_38.addWidget(self.spinBox_iterationstep)
-        spacerItem46 = QtGui.QSpacerItem(17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem46 = QtGui.QSpacerItem(
+            17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_38.addItem(spacerItem46)
         self.horizontalLayout_41.addLayout(self.horizontalLayout_38)
         self.line_12 = QtGui.QFrame(self.layoutWidget7)
@@ -816,7 +1075,9 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_41.addWidget(self.line_12)
         self.horizontalLayout_40 = QtGui.QHBoxLayout()
         self.horizontalLayout_40.setObjectName(_fromUtf8("horizontalLayout_40"))
-        spacerItem47 = QtGui.QSpacerItem(13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem47 = QtGui.QSpacerItem(
+            13, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_40.addItem(spacerItem47)
         self._label_lagrange = QtGui.QLabel(self.layoutWidget7)
         self._label_lagrange.setObjectName(_fromUtf8("_label_lagrange"))
@@ -827,7 +1088,9 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_lagrange.setProperty("value", 3.0)
         self.doubleSpinBox_lagrange.setObjectName(_fromUtf8("doubleSpinBox_lagrange"))
         self.horizontalLayout_40.addWidget(self.doubleSpinBox_lagrange)
-        spacerItem48 = QtGui.QSpacerItem(17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem48 = QtGui.QSpacerItem(
+            17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_40.addItem(spacerItem48)
         self.horizontalLayout_41.addLayout(self.horizontalLayout_40)
         self.line_13 = QtGui.QFrame(self.layoutWidget7)
@@ -837,16 +1100,22 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_41.addWidget(self.line_13)
         self.horizontalLayout_39 = QtGui.QHBoxLayout()
         self.horizontalLayout_39.setObjectName(_fromUtf8("horizontalLayout_39"))
-        spacerItem49 = QtGui.QSpacerItem(17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem49 = QtGui.QSpacerItem(
+            17, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum
+        )
         self.horizontalLayout_39.addItem(spacerItem49)
         self.label_6 = QtGui.QLabel(self.layoutWidget7)
         self.label_6.setObjectName(_fromUtf8("label_6"))
         self.horizontalLayout_39.addWidget(self.label_6)
         self.comboBox_debuglevel = QtGui.QComboBox(self.layoutWidget7)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(
+            QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.comboBox_debuglevel.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.comboBox_debuglevel.sizePolicy().hasHeightForWidth()
+        )
         self.comboBox_debuglevel.setSizePolicy(sizePolicy)
         self.comboBox_debuglevel.setIconSize(QtCore.QSize(10, 16))
         self.comboBox_debuglevel.setObjectName(_fromUtf8("comboBox_debuglevel"))
@@ -869,62 +1138,358 @@ class Ui_occamgui2D(object):
         QtCore.QMetaObject.connectSlotsByName(occamgui2D)
 
     def retranslateUi(self, occamgui2D):
-        occamgui2D.setWindowTitle(QtGui.QApplication.translate("occamgui2D", "OCCAM 2D GUI - II", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_29.setText(QtGui.QApplication.translate("occamgui2D", "Occam2D-", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_4.setText(QtGui.QApplication.translate("occamgui2D", "Parameters", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_generateinputfile.setText(QtGui.QApplication.translate("occamgui2D", "Generate input files", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_quit.setText(QtGui.QApplication.translate("occamgui2D", "Exit", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_checkparameter.setText(QtGui.QApplication.translate("occamgui2D", "Check parameters", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_runoccam.setText(QtGui.QApplication.translate("occamgui2D", "Run OCCAM 2D", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_2.setText(QtGui.QApplication.translate("occamgui2D", "working directory", None, QtGui.QApplication.UnicodeUTF8))
-        self.button_browse_wd.setText(QtGui.QApplication.translate("occamgui2D", "...", None, QtGui.QApplication.UnicodeUTF8))
-        self.lineEdit_browse_wd.setText(QtGui.QApplication.translate("occamgui2D", ".", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_5.setText(QtGui.QApplication.translate("occamgui2D", "OCCAM executable", None, QtGui.QApplication.UnicodeUTF8))
-        self.button_browse_occam.setText(QtGui.QApplication.translate("occamgui2D", "...", None, QtGui.QApplication.UnicodeUTF8))
-        self.lineEdit_browse_occam.setText(QtGui.QApplication.translate("occamgui2D", "Occam2D", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_28.setText(QtGui.QApplication.translate("occamgui2D", "EDI files folder", None, QtGui.QApplication.UnicodeUTF8))
-        self.button_browse_edis.setText(QtGui.QApplication.translate("occamgui2D", "...", None, QtGui.QApplication.UnicodeUTF8))
-        self.lineEdit_browse_edi.setText(QtGui.QApplication.translate("occamgui2D", "edi", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_usestationlist.setText(QtGui.QApplication.translate("occamgui2D", "use station list file", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_loadstations.setText(QtGui.QApplication.translate("occamgui2D", "Load station list", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_usedatafile.setText(QtGui.QApplication.translate("occamgui2D", "use existing data file", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_loaddatafile.setText(QtGui.QApplication.translate("occamgui2D", "Load data file", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_3.setText(QtGui.QApplication.translate("occamgui2D", "Choose a data file name", None, QtGui.QApplication.UnicodeUTF8))
-        self.lineEdit_datafilename.setText(QtGui.QApplication.translate("occamgui2D", "OccamInputData.dat", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_usestartupfile.setText(QtGui.QApplication.translate("occamgui2D", "use old iteration as startup file", None, QtGui.QApplication.UnicodeUTF8))
-        self.pushButton_loadstartupfile.setText(QtGui.QApplication.translate("occamgui2D", "Load iteration file", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_18.setText(QtGui.QApplication.translate("occamgui2D", "Number of model layers", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_19.setText(QtGui.QApplication.translate("occamgui2D", "Layers per decade", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_25.setText(QtGui.QApplication.translate("occamgui2D", "Thickness of first layer", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_27.setText(QtGui.QApplication.translate("occamgui2D", "m", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_max_no_frequencies.setText(QtGui.QApplication.translate("occamgui2D", "Define max # frequencies", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_min_frequency.setText(QtGui.QApplication.translate("occamgui2D", "Define min frequency", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_31.setText(QtGui.QApplication.translate("occamgui2D", "Hz", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_max_frequency.setText(QtGui.QApplication.translate("occamgui2D", "Define max frequency", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_32.setText(QtGui.QApplication.translate("occamgui2D", "Hz", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_te_error.setText(QtGui.QApplication.translate("occamgui2D", "Set TE  minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_tm_error.setText(QtGui.QApplication.translate("occamgui2D", "Set TM  minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_tipper_error.setText(QtGui.QApplication.translate("occamgui2D", "Set Tipper minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_17.setText(QtGui.QApplication.translate("occamgui2D", "Target RMS", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_16.setText(QtGui.QApplication.translate("occamgui2D", "Maximum # iterations", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_24.setText(QtGui.QApplication.translate("occamgui2D", "Resistivity (homogeneous half space -- starting model)", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_30.setText(QtGui.QApplication.translate("occamgui2D", "Ohm m", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_21.setText(QtGui.QApplication.translate("occamgui2D", "Threshold ratio for amalgamating blocks", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_26.setText(QtGui.QApplication.translate("occamgui2D", "Maximum block width", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_22.setText(QtGui.QApplication.translate("occamgui2D", "m", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_7.setText(QtGui.QApplication.translate("occamgui2D", "Model name", None, QtGui.QApplication.UnicodeUTF8))
-        self.lineEdit_modelname.setText(QtGui.QApplication.translate("occamgui2D", "test1", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_8.setText(QtGui.QApplication.translate("occamgui2D", "Mode(s)", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_mode.setItemText(0, QtGui.QApplication.translate("occamgui2D", "TM + TE", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_mode.setItemText(1, QtGui.QApplication.translate("occamgui2D", "TM", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_mode.setItemText(2, QtGui.QApplication.translate("occamgui2D", "TE", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_mode.setItemText(3, QtGui.QApplication.translate("occamgui2D", "Tipper", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_mode.setItemText(4, QtGui.QApplication.translate("occamgui2D", "All", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_23.setText(QtGui.QApplication.translate("occamgui2D", "Strike angle", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_iterationstep.setText(QtGui.QApplication.translate("occamgui2D", "Current iteration step", None, QtGui.QApplication.UnicodeUTF8))
-        self._label_lagrange.setText(QtGui.QApplication.translate("occamgui2D", "Lagrange parameter", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_6.setText(QtGui.QApplication.translate("occamgui2D", "Debug level", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_debuglevel.setItemText(0, QtGui.QApplication.translate("occamgui2D", "1", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_debuglevel.setItemText(1, QtGui.QApplication.translate("occamgui2D", "2", None, QtGui.QApplication.UnicodeUTF8))
-        self.comboBox_debuglevel.setItemText(2, QtGui.QApplication.translate("occamgui2D", "0", None, QtGui.QApplication.UnicodeUTF8))
-
+        occamgui2D.setWindowTitle(
+            QtGui.QApplication.translate(
+                "occamgui2D", "OCCAM 2D GUI - II", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_29.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Occam2D-", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_4.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Parameters", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.pushButton_generateinputfile.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Generate input files",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.pushButton_quit.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Exit", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.pushButton_checkparameter.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Check parameters", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.pushButton_runoccam.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Run OCCAM 2D", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_2.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "working directory", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.button_browse_wd.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "...", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.lineEdit_browse_wd.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", ".", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_5.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "OCCAM executable", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.button_browse_occam.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "...", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.lineEdit_browse_occam.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Occam2D", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_28.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "EDI files folder", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.button_browse_edis.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "...", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.lineEdit_browse_edi.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "edi", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.checkBox_usestationlist.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "use station list file",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.pushButton_loadstations.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Load station list", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.checkBox_usedatafile.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "use existing data file",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.pushButton_loaddatafile.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Load data file", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_3.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Choose a data file name",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.lineEdit_datafilename.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "OccamInputData.dat", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.checkBox_usestartupfile.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "use old iteration as startup file",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.pushButton_loadstartupfile.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Load iteration file",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_18.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Number of model layers",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_19.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Layers per decade", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_25.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Thickness of first layer",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_27.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "m", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.checkBox_max_no_frequencies.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Define max # frequencies",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.checkBox_min_frequency.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Define min frequency",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_31.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Hz", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.checkBox_max_frequency.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Define max frequency",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_32.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Hz", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.checkBox_te_error.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Set TE  minimum error (%):",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.checkBox_tm_error.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Set TM  minimum error (%):",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.checkBox_tipper_error.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Set Tipper minimum error (%):",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_17.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Target RMS", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_16.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Maximum # iterations",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_24.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Resistivity (homogeneous half space -- starting model)",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_30.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Ohm m", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_21.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Threshold ratio for amalgamating blocks",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_26.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Maximum block width",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label_22.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "m", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_7.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Model name", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.lineEdit_modelname.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "test1", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_8.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Mode(s)", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.comboBox_mode.setItemText(
+            0,
+            QtGui.QApplication.translate(
+                "occamgui2D", "TM + TE", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.comboBox_mode.setItemText(
+            1,
+            QtGui.QApplication.translate(
+                "occamgui2D", "TM", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.comboBox_mode.setItemText(
+            2,
+            QtGui.QApplication.translate(
+                "occamgui2D", "TE", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.comboBox_mode.setItemText(
+            3,
+            QtGui.QApplication.translate(
+                "occamgui2D", "Tipper", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.comboBox_mode.setItemText(
+            4,
+            QtGui.QApplication.translate(
+                "occamgui2D", "All", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.label_23.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Strike angle", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_iterationstep.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D",
+                "Current iteration step",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self._label_lagrange.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Lagrange parameter", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_6.setText(
+            QtGui.QApplication.translate(
+                "occamgui2D", "Debug level", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.comboBox_debuglevel.setItemText(
+            0,
+            QtGui.QApplication.translate(
+                "occamgui2D", "1", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.comboBox_debuglevel.setItemText(
+            1,
+            QtGui.QApplication.translate(
+                "occamgui2D", "2", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )
+        self.comboBox_debuglevel.setItemText(
+            2,
+            QtGui.QApplication.translate(
+                "occamgui2D", "0", None, QtGui.QApplication.UnicodeUTF8
+            ),
+        )

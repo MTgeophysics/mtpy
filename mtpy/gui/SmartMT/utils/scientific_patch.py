@@ -56,7 +56,7 @@ def patch_QDoubleSpinBox(spinbox):
         groups = _float_re.search(text).groups()
         decimal = float(groups[1])
         decimal += steps
-        new_string = '{:g}'.format(decimal) + (groups[3] if groups[3] else "")
+        new_string = "{:g}".format(decimal) + (groups[3] if groups[3] else "")
         self.lineEdit().setText(new_string)
 
     spinbox.stepBy = types.MethodType(stepBy, spinbox)

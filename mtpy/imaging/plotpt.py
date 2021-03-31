@@ -227,7 +227,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         else:
             self._ellipse_dict = ellipse_dict
 
-        #self._read_ellipse_dict()
+        # self._read_ellipse_dict()
 
         self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
 
@@ -301,9 +301,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         for ii, ff in enumerate(self._mt.period):
             # make sure the ellipses will be visable
             if self.pt.phimax[ii] != 0:
-                eheight = (
-                    self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
-                )
+                eheight = self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
 
                 ewidth = self.ellipse_size
 
@@ -364,7 +362,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         xticks = []
         for tk in self.ax1.get_xticks():
             try:
-                tklabels.append(mtpl.labeldict[tk/self.ellipse_spacing])
+                tklabels.append(mtpl.labeldict[tk / self.ellipse_spacing])
                 xticks.append(tk)
             except KeyError:
                 pass
@@ -423,7 +421,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         )
 
         # ---------------plotStrikeAngle-----------------------------------
-                # --> set tick labels and limits
+        # --> set tick labels and limits
         xlimits = (
             np.floor(np.log10(self._mt.period[0])),
             np.ceil(np.log10(self._mt.period[-1])),
@@ -431,7 +429,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         self.ax2 = self.fig.add_subplot(3, 2, 3)
         az = self.pt.azimuth
         az_err = self.pt.azimuth_err
-        
+
         # put the strike into a coordinate system that goes from -90 to 90
         az[np.where(az > 90)] -= 180
         az[np.where(az < -90)] += 180
@@ -672,7 +670,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         # ----------------------plotEllipticity--------------------------------
         ellipticity = self.pt.ellipticity
         ellipticityerr = self.pt.ellipticity_err
-        
+
         self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
         erskew = self.ax5.errorbar(
             self._mt.period,

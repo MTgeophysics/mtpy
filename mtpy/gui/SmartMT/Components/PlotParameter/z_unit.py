@@ -20,4 +20,4 @@ class ZUnit(QGroupBox):
         self.ui.setupUi(self)
 
     def get_unit(self):
-        return 'km' if self.ui.radioButton_km.isChecked() else 'm'
+        return "km" if self.ui.radioButton_km.isChecked() else "m"

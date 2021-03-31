@@ -14,7 +14,7 @@ Each plot window contains max 4 stations (i.e. 16 plots).
 @UofA/LK Jan 2014
 
 """
-#--------------------------------------------------------------------
+# --------------------------------------------------------------------
 
 import numpy as np
 import os
@@ -25,10 +25,10 @@ from pylab import *
 # precision in decimal digits (used for comparing periods):
 precision = 3
 
-#--------------------------------------------------------------------
+# --------------------------------------------------------------------
 
-components = ['ZXX', 'ZXY', 'ZYX', 'ZYY']
-#components = ['ZXY','ZYX']
+components = ["ZXX", "ZXY", "ZYX", "ZYY"]
+# components = ['ZXY','ZYX']
 
 
 def checkdatafile(fn):
@@ -66,15 +66,15 @@ output:
 """
 
     if checkdatafile(datafile) is False:
-        print 'ERROR - invalid data file'
+        print "ERROR - invalid data file"
         sys.exit()
 
     if checkresponsefile(responsefile) is False:
-        print 'ERROR - invalid response file'
+        print "ERROR - invalid response file"
         sys.exit()
 
     if checkdata2response(datafile, responsefile) is False:
-        print 'ERROR - data and response file do not belong together'
+        print "ERROR - data and response file do not belong together"
         sys.exit()
 
     stationlist = []
@@ -90,7 +90,7 @@ output:
     Fin = open(datafile)
     for line in Fin:
         line = line.strip()
-        if (len(line) == 0) or (line[0] in ['#', '>']):
+        if (len(line) == 0) or (line[0] in ["#", ">"]):
             continue
         line = line.split()
 
@@ -99,7 +99,7 @@ output:
         if sta in data_dict:
             station_data = data_dict[sta]
         else:
-            print 'new station: ', sta
+            print "new station: ", sta
             station_data = [[], [], [], []]
 
         periodlist = station_data[0]
@@ -148,7 +148,7 @@ output:
     Fin2 = open(responsefile)
     for line in Fin2:
         line = line.strip()
-        if line[0] in ['#', '>']:
+        if line[0] in ["#", ">"]:
             continue
         line = line.split()
         sta = line[1].upper()
@@ -211,7 +211,7 @@ output:
 
 def plotZ(data_dictionary, no_comps=4, step=1):
 
-    close('all')
+    close("all")
     ion()
     # maximum station data in one figure:
     max_stations = 4
@@ -230,7 +230,7 @@ def plotZ(data_dictionary, no_comps=4, step=1):
 
         station_counter += 1
         # if station_counter >4 :
-        #	break
+        # 	break
 
         figure(fignum)
 
@@ -266,7 +266,7 @@ def plotZ(data_dictionary, no_comps=4, step=1):
                     try:
                         derr = float(data[2][idx_p][idx_c])
                     except:
-                        derr = 0.
+                        derr = 0.0
                     data_periods.append(period)
                     in_data_real.append(dr)
                     in_data_imag.append(di)
@@ -292,37 +292,35 @@ def plotZ(data_dictionary, no_comps=4, step=1):
             subfigure_index = subfig_index_vertical * 4 + subfig_index_horizontal + 1
             ax = subplot(max_stations, 4, subfigure_index)
 
-            plot(resp_periods[::-1], resp_real, c='b')
-            plot(resp_periods[::-1], resp_imag, c='r')
+            plot(resp_periods[::-1], resp_real, c="b")
+            plot(resp_periods[::-1], resp_imag, c="r")
 
             # scatter(data_periods,in_data_real,c='b',marker='o')
             orig_real = errorbar(
-                data_periods[
-                    ::-1],
+                data_periods[::-1],
                 in_data_real,
                 yerr=in_data_error,
-                c='b',
-                marker='x',
-                ls='none',
+                c="b",
+                marker="x",
+                ls="none",
             )
             # scatter(data_periods,in_data_imag,c='r',marker='x')
             orig_imag = errorbar(
-                data_periods[
-                    ::-1],
+                data_periods[::-1],
                 in_data_imag,
                 yerr=in_data_error,
-                c='r',
-                marker='x',
-                ls='none',
+                c="r",
+                marker="x",
+                ls="none",
             )
 
-            ax.set_xscale('log', nonposx='clip')
+            ax.set_xscale("log", nonposx="clip")
 
             if subfig_index_vertical == 0:
                 ax.set_title(comp)
 
             if subfig_index_vertical == (max_stations - 1):
-                ax.set_xlabel('Period (in s)')
+                ax.set_xlabel("Period (in s)")
 
             # print
             # subfig_index_vertical,subfig_index_horizontal,subfigure_index
@@ -333,14 +331,22 @@ def plotZ(data_dictionary, no_comps=4, step=1):
                 if subfig_index_horizontal == 1:
                     ax.set_ylabel(sta)
 
-            if (subfigure_index == 1) or (
-                    no_comps == 2 and subfigure_index == 2):
+            if (subfigure_index == 1) or (no_comps == 2 and subfigure_index == 2):
 
-                ax.legend([orig_real, orig_imag], ['RE', 'IM'], ncol=1,
-                          numpoints=1, markerscale=0.8, frameon=True, labelspacing=0.3,
-                          prop={'size': 8}, fancybox=True, shadow=False)
-            tick_params(axis='both', which='major', labelsize=8)
-            tick_params(axis='both', which='minor', labelsize=6)
+                ax.legend(
+                    [orig_real, orig_imag],
+                    ["RE", "IM"],
+                    ncol=1,
+                    numpoints=1,
+                    markerscale=0.8,
+                    frameon=True,
+                    labelspacing=0.3,
+                    prop={"size": 8},
+                    fancybox=True,
+                    shadow=False,
+                )
+            tick_params(axis="both", which="major", labelsize=8)
+            tick_params(axis="both", which="minor", labelsize=6)
 
         tight_layout()
 

@@ -21,7 +21,9 @@ class StationSelection(QGroupBox):
         self.ui.setupUi(self)
         self.mt_objs = None
 
-        self.ui.comboBox_station.currentIndexChanged.connect(self._current_station_changed)
+        self.ui.comboBox_station.currentIndexChanged.connect(
+            self._current_station_changed
+        )
 
     def _current_station_changed(self):
         self.station_changed.emit()

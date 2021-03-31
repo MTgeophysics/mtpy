@@ -48,20 +48,35 @@ def _rotate_transform(gt, angle, pivot_east, pivot_north):
     """
     ox, pw, rrot, oy, crot, ph = gt
     rot = math.radians(angle)
-    gt[0] = pivot_east + (ox - pivot_east) * math.cos(rot) \
+    gt[0] = (
+        pivot_east
+        + (ox - pivot_east) * math.cos(rot)
         + (oy - pivot_north) * math.sin(rot)
+    )
     gt[1] = pw * math.cos(rot)
     gt[2] = pw * -math.sin(rot)
-    gt[3] = pivot_north - (ox - pivot_east) * math.sin(rot) \
+    gt[3] = (
+        pivot_north
+        - (ox - pivot_east) * math.sin(rot)
         + (oy - pivot_north) * math.cos(rot)
+    )
 
     gt[4] = ph * math.sin(rot)
     gt[5] = ph * math.cos(rot)
     return gt
 
 
-def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
-                         angle=None, epsg_code=4283, center=None, rotate_origin=False):
+def array2geotiff_writer(
+    filename,
+    origin,
+    pixel_width,
+    pixel_height,
+    data,
+    angle=None,
+    epsg_code=4283,
+    center=None,
+    rotate_origin=False,
+):
     """Writes a 2D array as a single band geotiff raster and ASCII grid.
 
     Args:
@@ -93,11 +108,10 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
             gt = _rotate_transform(gt, angle, origin[0], origin[1])
         else:
             gt = _rotate_transform(gt, angle, center.east, center.north)
-        filename = '{}_rot{}.tif'\
-                   .format(os.path.splitext(filename)[0], angle)
+        filename = "{}_rot{}.tif".format(os.path.splitext(filename)[0], angle)
 
     rows, cols = data.shape
-    driver = gdal.GetDriverByName('GTiff')
+    driver = gdal.GetDriverByName("GTiff")
     out_raster = driver.Create(filename, cols, rows, 1, gdal.GDT_Float32)
     out_raster.SetGeoTransform(gt)
     out_band = out_raster.GetRasterBand(1)
@@ -110,7 +124,7 @@ def array2geotiff_writer(filename, origin, pixel_width, pixel_height, data,
 
     # output to ascii format
     ascii_filename = "{}.asc".format(os.path.splitext(filename)[0])
-    driver2 = gdal.GetDriverByName('AAIGrid')
+    driver2 = gdal.GetDriverByName("AAIGrid")
     driver2.CreateCopy(ascii_filename, out_raster)
 
     return filename, ascii_filename
@@ -165,8 +179,14 @@ def _strip_resgrid(res_model, y_pad, x_pad, z_pad):
     return res_model[y_pad, x_pad, z_pad]
 
 
-def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
-                     centers_north, north_cell_size, mesh_center_north):
+def _get_gdal_origin(
+    centers_east,
+    east_cell_size,
+    mesh_center_east,
+    centers_north,
+    north_cell_size,
+    mesh_center_north,
+):
     """Works out the upper left X, Y points of a grid.
 
     Args:
@@ -181,8 +201,10 @@ def _get_gdal_origin(centers_east, east_cell_size, mesh_center_east,
         float, float: The upper left coordinate of the image in
             relation to the survey center point. Used as GDAL origin.
     """
-    return (centers_east[0] + mesh_center_east - east_cell_size / 2,
-            centers_north[-1] + mesh_center_north + north_cell_size / 2)
+    return (
+        centers_east[0] + mesh_center_east - east_cell_size / 2,
+        centers_north[-1] + mesh_center_north + north_cell_size / 2,
+    )
 
 
 def _build_target_grid(centers_east, cell_size_east, centers_north, cell_size_north):
@@ -190,8 +212,12 @@ def _build_target_grid(centers_east, cell_size_east, centers_north, cell_size_no
     Simply a wrapper around np.meshgrid to allow testing and to avoid
     indexing mistakes.
     """
-    return np.meshgrid(np.arange(centers_east[0], centers_east[-1] + cell_size_east, cell_size_east),
-                       np.arange(centers_north[0], centers_north[-1] + cell_size_north, cell_size_north))
+    return np.meshgrid(
+        np.arange(centers_east[0], centers_east[-1] + cell_size_east, cell_size_east),
+        np.arange(
+            centers_north[0], centers_north[-1] + cell_size_north, cell_size_north
+        ),
+    )
 
 
 def _get_depth_indicies(centers_z, depths):
@@ -208,12 +234,15 @@ def _get_depth_indicies(centers_z, depths):
         set: A set of indicies closest to provided depths.
         list: If `depths` is None or empty, a list of all indicies.
     """
+
     def _nearest(array, value):
         """Get index for nearest element to value in an array.
         """
         idx = np.searchsorted(array, value, side="left")
-        if idx > 0 and (idx == len(array)
-                or math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+        if idx > 0 and (
+            idx == len(array)
+            or math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])
+        ):
             return idx - 1
         else:
             return idx
@@ -225,7 +254,9 @@ def _get_depth_indicies(centers_z, depths):
         return set(range(len(centers_z)))
 
 
-def _interpolate_slice(ce, cn, resgrid, depth_index, target_gridx, target_gridy, log_scale):
+def _interpolate_slice(
+    ce, cn, resgrid, depth_index, target_gridx, target_gridy, log_scale
+):
     """Interpolates the reisistivty model in log10 space across a grid.
 
     Args:
@@ -242,9 +273,12 @@ def _interpolate_slice(ce, cn, resgrid, depth_index, target_gridx, target_gridy,
         np.ndarray: A 2D slice of the resistivity model interpolated
             over a grid.
     """
-    interp_func = RegularGridInterpolator((ce, cn), np.log10(resgrid[:, :, depth_index].T),bounds_error=False)
-    res_slice = interp_func(np.vstack(
-        [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
+    interp_func = RegularGridInterpolator(
+        (ce, cn), np.log10(resgrid[:, :, depth_index].T), bounds_error=False
+    )
+    res_slice = interp_func(
+        np.vstack([target_gridx.flatten(), target_gridy.flatten()]).T
+    ).reshape(target_gridx.shape)
     if not log_scale:
         res_slice **= 10
     return res_slice
@@ -270,9 +304,23 @@ def list_depths(model_file, zpad=None):
     return cz[:-zpad]
 
 
-def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad=None,
-                   x_res=None, y_res=None, center_lat=None, center_lon=None, epsg_code=None,
-                   depths=None, angle=None, rotate_origin=False, log_scale=False):
+def create_geogrid(
+    data_file,
+    model_file,
+    out_dir,
+    x_pad=None,
+    y_pad=None,
+    z_pad=None,
+    x_res=None,
+    y_res=None,
+    center_lat=None,
+    center_lon=None,
+    epsg_code=None,
+    depths=None,
+    angle=None,
+    rotate_origin=False,
+    log_scale=False,
+):
     """Generate an output geotiff file and ASCII grid file.
 
     Args:
@@ -327,10 +375,12 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     center_lon = center.lon.item() if center_lon is None else center_lon
 
     if epsg_code is None:
-        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(center_lat, center_lon)
+        zone_number, is_northern, utm_zone = gis_tools.get_utm_zone(
+            center_lat, center_lon
+        )
         epsg_code = gis_tools.get_epsg(center_lat, center_lon)
         _logger.info("Input data epsg code has been inferred as {}".format(epsg_code))
-    
+
     print("Loaded model")
 
     # Get the center point of the model grid cells to use as points
@@ -339,8 +389,11 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     cn = _get_centers(model.grid_north)
     cz = _get_centers(model.grid_z)
 
-    print("Grid shape with padding: E = {}, N = {}, Z = {}"
-          .format(ce.shape, cn.shape, cz.shape))
+    print(
+        "Grid shape with padding: E = {}, N = {}, Z = {}".format(
+            ce.shape, cn.shape, cz.shape
+        )
+    )
 
     # Get X, Y, Z paddings
     x_pad = model.pad_east if x_pad is None else x_pad
@@ -354,8 +407,11 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
     cn = _strip_padding(cn, y_pad)
     cz = _strip_padding(cz, z_pad, keep_start=True)
 
-    print("Grid shape without padding: E = {}, N = {}, Z = {}"
-          .format(ce.shape, cn.shape, cz.shape))
+    print(
+        "Grid shape without padding: E = {}, N = {}, Z = {}".format(
+            ce.shape, cn.shape, cz.shape
+        )
+    )
 
     x_res = model.cell_size_east if x_res is None else x_res
     y_res = model.cell_size_north if y_res is None else y_res
@@ -376,23 +432,32 @@ def create_geogrid(data_file, model_file, out_dir, x_pad=None, y_pad=None, z_pad
 
     for di in indicies:
         print("Writing out slice {:.0f}m...".format(cz[di]))
-        data = _interpolate_slice(ce, cn, resgrid_nopad, di,
-                                  target_gridx, target_gridy, log_scale)
+        data = _interpolate_slice(
+            ce, cn, resgrid_nopad, di, target_gridx, target_gridy, log_scale
+        )
         if log_scale:
-            output_file = 'DepthSlice{:.0f}m_log10.tif'.format(cz[di])
+            output_file = "DepthSlice{:.0f}m_log10.tif".format(cz[di])
         else:
-            output_file = 'DepthSlice{:.0f}m.tif'.format(cz[di])
+            output_file = "DepthSlice{:.0f}m.tif".format(cz[di])
         output_file = os.path.join(out_dir, output_file)
-        array2geotiff_writer(output_file, origin, x_res, -y_res, data[::-1],
-                             epsg_code=epsg_code, angle=angle, center=center,
-                             rotate_origin=rotate_origin)
+        array2geotiff_writer(
+            output_file,
+            origin,
+            x_res,
+            -y_res,
+            data[::-1],
+            epsg_code=epsg_code,
+            angle=angle,
+            center=center,
+            rotate_origin=rotate_origin,
+        )
 
     print("Complete!")
     print("Geotiffs are located in '{}'".format(os.path.dirname(output_file)))
     return output_file
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """
     Example usage:
         python convert_modem_data_to_geogrid.py model.dat model.rho \
@@ -403,34 +468,65 @@ if __name__ == '__main__':
     resolution and rotate them 50 degrees about the center.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('modem_data', help="ModEM data file")
-    parser.add_argument('modem_model', help="ModEM model file")
-    parser.add_argument('out_dir', help="output directory")
-    parser.add_argument('--list-depths', action='store_true', default=False,
-                        help='list depth of every slice in model then exit')
-    parser.add_argument('--xpad', type=int, help='xpad value')
-    parser.add_argument('--ypad', type=int, help='ypad value')
-    parser.add_argument('--zpad', type=int, help='ypad value')
-    parser.add_argument('--xres', type=int, help="cell width in meters")
-    parser.add_argument('--yres', type=int, help="cell height in meters")
-    parser.add_argument('--epsg', type=int, help="EPSG code for CRS of the model")
-    parser.add_argument('--lat', type=float, help="grid center latitude in degrees")
-    parser.add_argument('--lon', type=float, help="grid center longitude in degrees")
-    parser.add_argument('--depths', type=int, nargs='*', help="depths for slices to convert (in "
-                        "meters) eg., '--depths 3 22 105 782'")
-    parser.add_argument('--angle', type=float, help="angle in degrees to rotate image by")
-    parser.add_argument('--rotate-origin', action='store_true', default=False,
-                        help='rotate around the original origin (upper left corner), '
-                             'otherwise image will be rotated about center')
-    parser.add_argument('--log-scale', action='store_true', default=False,
-                        help='scale the data by taking the log10 of data')
+    parser.add_argument("modem_data", help="ModEM data file")
+    parser.add_argument("modem_model", help="ModEM model file")
+    parser.add_argument("out_dir", help="output directory")
+    parser.add_argument(
+        "--list-depths",
+        action="store_true",
+        default=False,
+        help="list depth of every slice in model then exit",
+    )
+    parser.add_argument("--xpad", type=int, help="xpad value")
+    parser.add_argument("--ypad", type=int, help="ypad value")
+    parser.add_argument("--zpad", type=int, help="ypad value")
+    parser.add_argument("--xres", type=int, help="cell width in meters")
+    parser.add_argument("--yres", type=int, help="cell height in meters")
+    parser.add_argument("--epsg", type=int, help="EPSG code for CRS of the model")
+    parser.add_argument("--lat", type=float, help="grid center latitude in degrees")
+    parser.add_argument("--lon", type=float, help="grid center longitude in degrees")
+    parser.add_argument(
+        "--depths",
+        type=int,
+        nargs="*",
+        help="depths for slices to convert (in " "meters) eg., '--depths 3 22 105 782'",
+    )
+    parser.add_argument(
+        "--angle", type=float, help="angle in degrees to rotate image by"
+    )
+    parser.add_argument(
+        "--rotate-origin",
+        action="store_true",
+        default=False,
+        help="rotate around the original origin (upper left corner), "
+        "otherwise image will be rotated about center",
+    )
+    parser.add_argument(
+        "--log-scale",
+        action="store_true",
+        default=False,
+        help="scale the data by taking the log10 of data",
+    )
     args = parser.parse_args()
 
     if args.list_depths:
         with np.printoptions(suppress=True):
             print(list_depths(args.modem_model, zpad=args.zpad))
     else:
-        create_geogrid(args.modem_data, args.modem_model, args.out_dir, x_pad=args.xpad, y_pad=args.ypad,
-                       z_pad=args.zpad, x_res=args.xres, y_res=args.yres, center_lat=args.lat,
-                       center_lon=args.lon, depths=args.depths, epsg_code=args.epsg, angle=args.angle,
-                       rotate_origin=args.rotate_origin, log_scale=args.log_scale)
+        create_geogrid(
+            args.modem_data,
+            args.modem_model,
+            args.out_dir,
+            x_pad=args.xpad,
+            y_pad=args.ypad,
+            z_pad=args.zpad,
+            x_res=args.xres,
+            y_res=args.yres,
+            center_lat=args.lat,
+            center_lon=args.lon,
+            depths=args.depths,
+            epsg_code=args.epsg,
+            angle=args.angle,
+            rotate_origin=args.rotate_origin,
+            log_scale=args.log_scale,
+        )

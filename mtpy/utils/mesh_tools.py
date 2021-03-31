@@ -14,7 +14,6 @@ from mtpy.utils import gis_tools
 import scipy.interpolate as spi
 
 
-
 def grid_centre(grid_edges):
     """
     calculate the grid centres from an array that defines grid edges
@@ -22,10 +21,38 @@ def grid_centre(grid_edges):
     :returns: grid_centre: centre points of grid
     """
     return np.mean([grid_edges[1:], grid_edges[:-1]], axis=0)
-    
 
-def rotate_mesh(grid_east,grid_north,origin,
-                rotation_angle,return_centre = False):
+
+def get_rounding(cell_width):
+    """
+    Get the rounding number given the cell width. Will be one significant number less
+    than the cell width. This reduces weird looking meshes.
+    
+    :param cell_width: Width of mesh cell
+    :type cell_width: float
+    :return: digit to round to
+    :rtype: int
+    
+    .. code-block:: python
+        :linenos:
+        
+        >>> from mtpy.utils.mesh_tools import get_rounding
+        >>> get_rounding(9)
+        0
+        >>> get_rounding(90)
+        -1
+        >>> get_rounding(900)
+        -2
+        >>> get_rounding(9000)
+        -3
+    """
+
+    rounding = int(-1 * np.floor(np.log10(cell_width)))
+
+    return rounding
+
+
+def rotate_mesh(grid_east, grid_north, origin, rotation_angle, return_centre=False):
     """
     rotate a mesh defined by grid_east and grid_north.
     
@@ -38,43 +65,48 @@ def rotate_mesh(grid_east,grid_north,origin,
     :return: grid_east, grid_north - 2d arrays describing the east and north coordinates
 
     """
-    x0,y0 = origin
-    
+    x0, y0 = origin
+
     # centre of grid in relative coordinates
     if return_centre:
-        gce, gcn = [np.mean([arr[1:], arr[:-1]], axis=0)
-                  for arr in [grid_east,grid_north]]
+        gce, gcn = [
+            np.mean([arr[1:], arr[:-1]], axis=0) for arr in [grid_east, grid_north]
+        ]
     else:
         gce, gcn = grid_east, grid_north
-        
+
     # coordinates (2d array)
-    coords = np.array([arr.flatten() for arr in np.meshgrid(gce,gcn)])
+    coords = np.array([arr.flatten() for arr in np.meshgrid(gce, gcn)])
 
-
-    
     if rotation_angle != 0:
         # create the rotation matrix
         cos_ang = np.cos(np.deg2rad(rotation_angle))
         sin_ang = np.sin(np.deg2rad(rotation_angle))
-        rot_matrix = np.array([[cos_ang, sin_ang],
-                               [-sin_ang, cos_ang]])
+        rot_matrix = np.array([[cos_ang, sin_ang], [-sin_ang, cos_ang]])
 
         # rotate the relative grid coordinates
         new_coords = np.array(np.dot(rot_matrix, coords))
     else:
         new_coords = coords
-    
 
     # location of grid centres in real-world coordinates to interpolate elevation onto
-    xg = (new_coords[0] + x0).reshape(len(gcn),len(gce))
-    yg = (new_coords[1] + y0).reshape(len(gcn),len(gce))
-    
+    xg = (new_coords[0] + x0).reshape(len(gcn), len(gce))
+    yg = (new_coords[1] + y0).reshape(len(gcn), len(gce))
+
     return xg, yg
 
 
-def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=None,
-                                  surfacefile=None, surface=None, method='linear',
-                                  fast=True):
+def interpolate_elevation_to_grid(
+    grid_east,
+    grid_north,
+    epsg=None,
+    utm_zone=None,
+    surfacefile=None,
+    surface=None,
+    method="linear",
+    fast=True,
+    buffer=1,
+):
     """
     # Note: this documentation is outdated and seems to be copied from
     #  model.interpolate_elevation2. It needs to be updated. This
@@ -151,39 +183,43 @@ def interpolate_elevation_to_grid(grid_east, grid_north, epsg=None, utm_zone=Non
     if len(grid_east.shape) == 1:
         grid_east, grid_north = np.meshgrid(grid_east, grid_north)
 
-    if(fast):
-        buffer = 1  # use a buffer of 1 degree around mesh-bounds
-        mlatmin, mlonmin = gis_tools.project_point_utm2ll(grid_east.min(),
-                                                          grid_north.min(),
-                                                          epsg=epsg,
-                                                          utm_zone=utm_zone)
+    if fast:
+        # buffer = 1  # use a buffer of 1 degree around mesh-bounds
+        mlatmin, mlonmin = gis_tools.project_point_utm2ll(
+            grid_east.min(), grid_north.min(), epsg=epsg, utm_zone=utm_zone
+        )
 
-        mlatmax, mlonmax = gis_tools.project_point_utm2ll(grid_east.max(), 
-                                                          grid_north.max(),
-                                                          epsg=epsg,
-                                                          utm_zone=utm_zone)
-        subsetIndices = (lon >= mlonmin - buffer) & \
-                        (lon <= mlonmax + buffer) & \
-                        (lat >= mlatmin - buffer) & \
-                        (lat <= mlatmax + buffer)
+        mlatmax, mlonmax = gis_tools.project_point_utm2ll(
+            grid_east.max(), grid_north.max(), epsg=epsg, utm_zone=utm_zone
+        )
+        subsetIndices = (
+            (lon >= mlonmin - buffer)
+            & (lon <= mlonmax + buffer)
+            & (lat >= mlatmin - buffer)
+            & (lat <= mlatmax + buffer)
+        )
         lon = lon[subsetIndices]
         lat = lat[subsetIndices]
         elev = elev[subsetIndices]
 
     # end if
-    projected_points = gis_tools.project_point_ll2utm(lat, lon, epsg=epsg,
-                                                      utm_zone=utm_zone)
+    projected_points = gis_tools.project_point_ll2utm(
+        lat, lon, epsg=epsg, utm_zone=utm_zone
+    )
+
     # elevation in model grid
     # first, get lat,lon points of surface grid
-    points = np.vstack([arr.flatten() for arr in [projected_points.easting,
-                                                  projected_points.northing]]).T
+    points = np.vstack(
+        [arr.flatten() for arr in [projected_points.easting, projected_points.northing]]
+    ).T
+
     # corresponding surface elevation points
     values = elev.flatten()
     # xi, the model grid points to interpolate to
     xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
+
     # elevation on the centre of the grid nodes
-    elev_mg = spi.griddata(points, values, xi, 
-                           method=method).reshape(grid_north.shape)
+    elev_mg = spi.griddata(points, values, xi, method=method).reshape(grid_north.shape)
 
     return elev_mg
 
@@ -198,36 +234,32 @@ def get_nearest_index(array, value):
             
     """
     array = np.array(array)
-    
+
     abs_diff = np.abs(array - value)
-    
-    return np.where(abs_diff==np.amin(abs_diff))[0][0]
-    
+
+    return np.where(abs_diff == np.amin(abs_diff))[0][0]
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, 
-                              increment_factor=0.9):
+def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.9):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
-    """        
-    
+    """
+
     # make initial guess for maximum cell thickness
     max_cell_thickness = target_depth
     # make initial guess for log_z
-    log_z = np.logspace(np.log10(z1_layer), 
-                        np.log10(max_cell_thickness),
-                        num=n_layers)
+    log_z = np.logspace(np.log10(z1_layer), np.log10(max_cell_thickness), num=n_layers)
     counter = 0
-    
+
     while np.sum(log_z) > target_depth:
         max_cell_thickness *= increment_factor
-        log_z = np.logspace(np.log10(z1_layer), 
-                            np.log10(max_cell_thickness),
-                            num=n_layers) 
+        log_z = np.logspace(
+            np.log10(z1_layer), np.log10(max_cell_thickness), num=n_layers
+        )
         counter += 1
         if counter > 1e6:
-            break        
+            break
 
     return log_z
 
@@ -261,17 +293,22 @@ def get_padding_cells(cell_width, max_distance, num_cells, stretch):
     """
 
     # compute scaling factor
-    scaling = ((max_distance)/(cell_width*stretch))**(1./(num_cells-1)) 
-    
+    scaling = ((max_distance) / (cell_width * stretch)) ** (1.0 / (num_cells - 1))
+
     # make padding cell
     padding = np.zeros(num_cells)
     for ii in range(num_cells):
         # calculate the cell width for an exponential increase
-        exp_pad = np.round((cell_width*stretch)*scaling**ii, -2)
-        
+        exp_pad = np.round(
+            (cell_width * stretch) * scaling ** ii, get_rounding(cell_width)
+        )
+
         # calculate the cell width for a geometric increase by 1.2
-        mult_pad = np.round((cell_width*stretch)*((1-stretch**(ii+1))/(1-stretch)), -2)
-        
+        mult_pad = np.round(
+            (cell_width * stretch) * ((1 - stretch ** (ii + 1)) / (1 - stretch)),
+            get_rounding(cell_width),
+        )
+
         # take the maximum width for padding
         padding[ii] = max([exp_pad, mult_pad])
 
@@ -283,11 +320,13 @@ def get_padding_from_stretch(cell_width, pad_stretch, num_cells):
     get padding cells using pad stretch factor
     
     """
-    nodes = np.around(cell_width * (np.ones(num_cells)*pad_stretch)**np.arange(num_cells),-2)
-    
-    return np.array([nodes[:i].sum() for i in range(1,len(nodes)+1)])
-    
-    
+    nodes = np.around(
+        cell_width * (np.ones(num_cells) * pad_stretch) ** np.arange(num_cells),
+        get_rounding(cell_width),
+    )
+
+    return np.array([nodes[:i].sum() for i in range(1, len(nodes) + 1)])
+
 
 def get_padding_cells2(cell_width, core_max, max_distance, num_cells):
     """
@@ -295,30 +334,31 @@ def get_padding_cells2(cell_width, core_max, max_distance, num_cells):
     distance.  Make sure that each cell is larger than the one previously.
     """
     # check max distance is large enough to accommodate padding
-    max_distance = max(cell_width*num_cells, max_distance)
+    max_distance = max(cell_width * num_cells, max_distance)
 
-    cells = np.around(np.logspace(np.log10(core_max),np.log10(max_distance),num_cells), -2)
+    cells = np.around(
+        np.logspace(np.log10(core_max), np.log10(max_distance), num_cells),
+        get_rounding(cell_width),
+    )
     cells -= core_max
-        
+
     return cells
-    
-    
-def get_station_buffer(grid_east,grid_north,station_east,station_north,buf=10e3):
+
+
+def get_station_buffer(grid_east, grid_north, station_east, station_north, buf=10e3):
     """
     get cells within a specified distance (buf) of the stations
     returns a 2D boolean (True/False) array
     
     """
     first = True
-    for xs,ys in np.vstack([station_east,station_north]).T:
-        xgrid,ygrid = np.meshgrid(grid_east,grid_north)
-        station_distance = ((xs - xgrid)**2 + (ys - ygrid)**2)**0.5
+    for xs, ys in np.vstack([station_east, station_north]).T:
+        xgrid, ygrid = np.meshgrid(grid_east, grid_north)
+        station_distance = ((xs - xgrid) ** 2 + (ys - ygrid) ** 2) ** 0.5
         if first:
             where = station_distance < buf
             first = False
         else:
-            where = np.any([where,station_distance < buf],axis=0)
-            
+            where = np.any([where, station_distance < buf], axis=0)
+
     return where
-    
-    

@@ -11,14 +11,16 @@ except ImportError:
     try:
         from PyQt5 import QtCore
     except ImportError:
-        raise ImportError('Cannot find PyQt4 or PyQt5')
+        raise ImportError("Cannot find PyQt4 or PyQt5")
 
 
 class MyStream(QtCore.QObject):
     """
     this class will emit a signal
     """
+
     message = QtCore.pyqtSignal(str)
+
     def __init__(self, parent=None):
         super(MyStream, self).__init__(parent)
 

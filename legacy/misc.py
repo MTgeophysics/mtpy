@@ -66,7 +66,7 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     longest_window = 0
 
     window_idx = 0
-    print '\t\tMaximum time window covered by data files:', totalmax - totalmin
+    print "\t\tMaximum time window covered by data files:", totalmax - totalmin
 
     print '\t\tCheck data availablility - while-loop until "maximum time window" is reached...'
     while t1 < totallength:
@@ -94,13 +94,14 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
             ts_tmp = t1
             window_idx += 1
         t1 += 1
-        if t1 % (int(totallength / 100.)) == 0:
-            sys.stdout.write('\t\t{0:3} %\r'.format(
-                int(np.round(t1 / float(totallength) * 100))))
+        if t1 % (int(totallength / 100.0)) == 0:
+            sys.stdout.write(
+                "\t\t{0:3} %\r".format(int(np.round(t1 / float(totallength) * 100)))
+            )
             sys.stdout.flush()
 
     # ' \n\t\tChecking for last sample (include/exclude)...'
-    print '\n\t\t...Done!'
+    print "\n\t\t...Done!"
     # after the loop, check, if last sample belogs to a data window:
     if ts_tmp is not None:
         te_tmp = t1 - 1
@@ -112,41 +113,45 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
 
     # rounding limits of the time window to precision defined by the sampling
     # rate
-    precision = -int(np.log10(1. / sampling_rate))
+    precision = -int(np.log10(1.0 / sampling_rate))
     # print 'return time window parameters:'
     # print ta[start_idx],ta[end_idx] ,window_length, len(ta)
     # print '\t\tStart time, end time, samples: ',round(ta[start_idx], precision),\
     # round(ta[end_idx], precision), window_length#, len(ta))
 
-    window_length = (round(ta[end_idx], precision) -
-                     round(ta[start_idx], precision)) * sampling_rate
+    window_length = (
+        round(ta[end_idx], precision) - round(ta[start_idx], precision)
+    ) * sampling_rate
 
-    return (round(ta[start_idx], precision), round(
-        ta[end_idx], precision), window_length)
+    return (
+        round(ta[start_idx], precision),
+        round(ta[end_idx], precision),
+        window_length,
+    )
 
 
 def add_birrp_simple_parameters_to_dictionary(birrp_dictionary):
 
-    birrp_dictionary['ilev'] = 0
-    birrp_dictionary['ninp'] = 2
-    birrp_dictionary['tbw'] = 2
-    birrp_dictionary['uin'] = 0
-    birrp_dictionary['ainuin'] = 0.999
-    birrp_dictionary['nlev'] = 0
-    birrp_dictionary['npcs'] = 1
-    birrp_dictionary['nar'] = 5
-    birrp_dictionary['imode'] = 2
-    birrp_dictionary['jmode'] = 0
-    birrp_dictionary['nfil'] = 0
-    birrp_dictionary['nskip'] = 0
-    birrp_dictionary['theta1'] = 0
-    birrp_dictionary['theta2'] = 90
-    birrp_dictionary['phi'] = 0
+    birrp_dictionary["ilev"] = 0
+    birrp_dictionary["ninp"] = 2
+    birrp_dictionary["tbw"] = 2
+    birrp_dictionary["uin"] = 0
+    birrp_dictionary["ainuin"] = 0.999
+    birrp_dictionary["nlev"] = 0
+    birrp_dictionary["npcs"] = 1
+    birrp_dictionary["nar"] = 5
+    birrp_dictionary["imode"] = 2
+    birrp_dictionary["jmode"] = 0
+    birrp_dictionary["nfil"] = 0
+    birrp_dictionary["nskip"] = 0
+    birrp_dictionary["theta1"] = 0
+    birrp_dictionary["theta2"] = 90
+    birrp_dictionary["phi"] = 0
 
     return birrp_dictionary
 
 
-class MemoryCheck():
+class MemoryCheck:
     """Checks memory of a given system"""
 
     def __init__(self):
@@ -172,14 +177,17 @@ class MemoryCheck():
                 ("dwTotalPageFile", c_ulong),
                 ("dwAvailPageFile", c_ulong),
                 ("dwTotalVirtual", c_ulong),
-                ("dwAvailVirtual", c_ulong)
+                ("dwAvailVirtual", c_ulong),
             ]
+
         memoryStatus = MEMORYSTATUS()
         memoryStatus.dwLength = ctypes.sizeof(MEMORYSTATUS)
         kernel32.GlobalMemoryStatus(ctypes.byref(memoryStatus))
 
-        return int(memoryStatus.dwTotalPhys / 1024 **
-                   2), int(memoryStatus.dwAvailPhys / 1024**2)
+        return (
+            int(memoryStatus.dwTotalPhys / 1024 ** 2),
+            int(memoryStatus.dwAvailPhys / 1024 ** 2),
+        )
 
     def linuxRam(self):
         """Returns the RAM of a linux system"""

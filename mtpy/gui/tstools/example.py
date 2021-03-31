@@ -40,13 +40,10 @@ class TSWindow(QWidget):
     def __init__(self):
         super(TSWindow, self).__init__()
 
-
-
-
         # time edit
-        startlabel = QLabel('Start time')
+        startlabel = QLabel("Start time")
         self.starttime = QLineEdit()
-        endlabel = QLabel('End time')
+        endlabel = QLabel("End time")
         self.endtime = QLineEdit()
         buttonApply = QPushButton("Apply")
         buttonApply.clicked.connect(self.applytime)
@@ -66,7 +63,7 @@ class TSWindow(QWidget):
         self.scene.endtimechanged.connect(self.endtime.setText)
 
         # gap mark
-        gapmarkcheckbox = QCheckBox('mark gaps')
+        gapmarkcheckbox = QCheckBox("mark gaps")
         gapmarkcheckbox.stateChanged.connect(self.scene.togglegap)
 
         viewLayout = QVBoxLayout()
@@ -89,7 +86,6 @@ class TSWindow(QWidget):
         self.buttonExportMeta.clicked.connect(self.exportmeta)
         self.buttonExportWave = QPushButton("Export Waveforms")
         self.buttonExportWave.clicked.connect(self.exportwave)
-
 
         controlLayout = QVBoxLayout()
         controlLayout.addWidget(self.buttonOpenFile)
@@ -115,7 +111,7 @@ class TSWindow(QWidget):
         return
 
     def showwave(self, wave: QTreeWidgetItem):
-        if wave.childCount()==0:
+        if wave.childCount() == 0:
             self.scene.showwave(wave.text(0))
 
     def hidewave(self, wave: QTreeWidgetItem):
@@ -124,43 +120,42 @@ class TSWindow(QWidget):
 
     def showfullwave(self, wave: QTreeWidgetItem):
         if wave.childCount() == 0:
-            result = re.search('Time range: ([^\s]+) - ([^\s]+)\\n',wave.text(0))
-            #self.scene.showwave(wave.text(0), datetime.strptime(result.group(1), '%Y-%m-%dT%H:%M:%S.%fZ'), datetime.strptime(result.group(2), '%Y-%m-%dT%H:%M:%S.%fZ'))
+            result = re.search("Time range: ([^\s]+) - ([^\s]+)\\n", wave.text(0))
+            # self.scene.showwave(wave.text(0), datetime.strptime(result.group(1), '%Y-%m-%dT%H:%M:%S.%fZ'), datetime.strptime(result.group(2), '%Y-%m-%dT%H:%M:%S.%fZ'))
 
-            self.scene.showwave(wave.text(0), UTCDateTime(result.group(1)), UTCDateTime(result.group(2)))
-
-
-
-
-
+            self.scene.showwave(
+                wave.text(0), UTCDateTime(result.group(1)), UTCDateTime(result.group(2))
+            )
 
     def exportmeta(self):
-        fname = QFileDialog.getSaveFileName(self,
-                                            'Save as',
-                                            '/g/data1a/ge3/yuhang/tmp', 'Text files (*.txt)')
+        fname = QFileDialog.getSaveFileName(
+            self, "Save as", "/g/data1a/ge3/yuhang/tmp", "Text files (*.txt)"
+        )
         if len(fname[0]) > 0:
             self.scene.exportmetadata(fname)
 
     def openfile(self):
-        fname = QFileDialog.getOpenFileName(self,
-                                            'Open file',
-                                            '/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5', 'asdf file (*.h5)')
-                                            #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
+        fname = QFileDialog.getOpenFileName(
+            self,
+            "Open file",
+            "/g/data/ha3/Passive/_AusArray/OA/ASDF_BU/OA.h5",
+            "asdf file (*.h5)",
+        )
+        #'/g/data/ha3/rakib/ausLAMP/Data/Output/fixed/au.vic.h5', 'asdf file (*.h5)')
         if len(fname[0]) > 0:
             selecteditems = [i.text(0) for i in self.waveTree.selectedItems()]
             self.scene.loadfile(fname[0])
             self.waveTree.settree(self.scene.getlist(), selecteditems)
 
-
-
     def exportwave(self):
-        fname = QFileDialog.getSaveFileName(self,
-                                            'Save as',
-                                            '/g/data1a/ge3/yuhang/tmp', 'MiniSEED (*.MSEED);; Text files (*.txt)')
+        fname = QFileDialog.getSaveFileName(
+            self,
+            "Save as",
+            "/g/data1a/ge3/yuhang/tmp",
+            "MiniSEED (*.MSEED);; Text files (*.txt)",
+        )
         if len(fname[0]) > 0:
             self.scene.exportwaveform(fname)
-
-
 
 
 if __name__ == "__main__":
@@ -169,6 +164,5 @@ if __name__ == "__main__":
     widget = TSWindow()
     widget.resize(1680, 1050)
     widget.show()
-
 
     sys.exit(app.exec_())

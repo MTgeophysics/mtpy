@@ -1,4 +1,3 @@
-
 """
 mtpy/imaging/plotquality.py
 
@@ -12,7 +11,7 @@ mtpy/imaging/plotquality.py
 
 """
 
-#=================================================================
+# =================================================================
 
 
 import numpy as np
@@ -26,4 +25,4 @@ import copy
 import mtpy.processing.quality as MTq
 import mtpy.utils.exceptions as MTexceptions
 
-#=================================================================
+# =================================================================
