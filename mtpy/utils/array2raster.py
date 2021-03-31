@@ -40,6 +40,7 @@ class ModEM_to_Raster(object):
 
     def __init__(self, **kwargs):
         self.model_fn = kwargs.pop("model_fn", None)
+        self.model_obj = kwargs.pop("model_obj", None)
         self.save_path = kwargs.pop("save_path", os.getcwd())
         self.projection = kwargs.pop("projection", "WGS84")
         self.lower_left_corner = kwargs.pop("lower_left_corner", None)
@@ -60,39 +61,32 @@ class ModEM_to_Raster(object):
         model_obj = mtpy.modeling.modem.Model()
         model_obj.model_fn = self.model_fn
         model_obj.read_model_file()
+        
+        return model_obj
 
-        self.cell_size_east = np.median(model_obj.nodes_east)
-        self.cell_size_north = np.median(model_obj.nodes_north)
+        # self.cell_size_east = np.median(model_obj.nodes_east)
+        # self.cell_size_north = np.median(model_obj.nodes_north)
 
-        self.pad_east = np.where(
-            model_obj.nodes_east[0:10] > self.cell_size_east * 1.1
-        )[0][-1]
-        self.pad_north = np.where(
-            model_obj.nodes_north[0:10] > self.cell_size_north * 1.1
-        )[0][-1]
-        self.grid_z = model_obj.grid_z.copy()
-        self.res_array = model_obj.res_model[
-            self.pad_north : -self.pad_north, self.pad_east : -self.pad_east, :
-        ]
+        # self.pad_east = np.where(
+        #     model_obj.nodes_east[0:10] > self.cell_size_east * 1.1
+        # )[0][-1]
+        # self.pad_north = np.where(
+        #     model_obj.nodes_north[0:10] > self.cell_size_north * 1.1
+        # )[0][-1]
+        # self.grid_z = model_obj.grid_z.copy()
+        # self.res_array = model_obj.res_model[
+        #     self.pad_north : -self.pad_north, self.pad_east : -self.pad_east, :
+        # ]
 
     def get_model_lower_left_coord(
-        self, model_fn=None, model_center=None, pad_east=0, pad_north=0
+        self, model_obj, model_center=None, pad_east=0, pad_north=0
     ):
         """
         Find the models lower left hand corner in (lon, lat) decimal degrees
         """
-        if model_fn is not None:
-            self.model_fn = model_fn
-
-        if self.model_fn is None:
-            raise IOError("Need to input a ModEM model file name to read in")
 
         self.pad_east = pad_east
         self.pad_north = pad_north
-
-        model_obj = mtpy.modeling.modem.Model()
-        model_obj.model_fn = self.model_fn
-        model_obj.read_model_file()
 
         if model_center:
             center_east, center_north, center_zone = gis_tools.project_point_ll2utm(
@@ -126,15 +120,11 @@ class ModEM_to_Raster(object):
         else:
             raise IOError("Need to input model center (lon, lat)")
 
-    def interpolate_grid(self, pad_east=None, pad_north=None, cell_size=None):
+    def interpolate_grid(self, model_obj, pad_east=None, pad_north=None, cell_size=None):
         """
         interpolate the irregular model grid onto a regular grid.
         
         """
-
-        model_obj = mtpy.modeling.modem.Model()
-        model_obj.model_fn = self.model_fn
-        model_obj.read_model_file()
 
         self.grid_z = model_obj.grid_z.copy()
 
@@ -210,12 +200,15 @@ class ModEM_to_Raster(object):
             raise ValueError("Need to input an lower_left_corner as (lon, lat)")
         if save_path is not None:
             self.save_path = save_path
+            
+        if not self.model_obj:
+            self.model_obj = self._get_model()
 
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
 
         self.interpolate_grid(
-            pad_east=pad_east, pad_north=pad_north, cell_size=cell_size
+            self.model_obj, pad_east=pad_east, pad_north=pad_north, cell_size=cell_size
         )
 
         for ii in range(self.res_array.shape[2]):
@@ -257,9 +250,12 @@ class ModEM_to_Raster(object):
 
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
+            
+        if not self.model_obj:
+            self.model_obj = self._get_model()
 
         self.interpolate_grid(
-            pad_east=pad_east, pad_north=pad_north, cell_size=cell_size
+            self.model_obj, pad_east=pad_east, pad_north=pad_north, cell_size=cell_size
         )
         
         for key, value in depth_dict.items():
