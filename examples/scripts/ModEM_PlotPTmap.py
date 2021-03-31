@@ -40,7 +40,7 @@ for period_index in range(20):  # customise which periods to plot
         lw=0.5,  # linewidth of edge of ellipses
     )
 
-# save all plots to file
-ptmap.save_figure(
-    save_path=savepath, file_format="png", fig_dpi=400
-)  # change to your desired resolution
+    # save all plots to file
+    ptmap.save_all_figures(save_path=savepath,
+                      file_format='png',
+                      fig_dpi=400) # change to your desired resolution
