@@ -46,6 +46,7 @@ class Stations(object):
         self.station_locations = np.zeros(0, dtype=self.dtype)
         self.model_epsg = None
         self.model_utm_zone = None
+        self.rotation_angle = 0
 
         for key in list(kwargs.keys()):
             if hasattr(self, key):

@@ -456,7 +456,8 @@ class Data(object):
         get station locations from edi files
         """
         stations_obj = Stations(model_epsg=self.model_epsg,
-                                model_utm_zone=self.model_utm_zone)
+                                model_utm_zone=self.model_utm_zone,
+                                rotation_angle=self.rotation_angle)
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
         stations_obj.get_station_locations(mt_list)
 
