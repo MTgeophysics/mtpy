@@ -20,7 +20,6 @@ workdir = r'C:\test\ModEM'
 
 # path where edi files are located
 edipath = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
-
 ## period list (won't include periods outside of the range of the edi file) ###
 ## comment/uncomment your desired method ######################################
 ###############################################################################
@@ -102,7 +101,7 @@ mo.write_model_file(save_path=workdir)
 mo.plot_mesh()
 
 ## add topography to res model
-#mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
+mo.add_topography_to_model2(r'C:\mtpywin\mtpy\examples\data\AussieContinent_etopo1.asc')
 #mo.write_model_file(save_path=workdir)
 
 # update data elevations
