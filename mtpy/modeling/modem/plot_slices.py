@@ -498,24 +498,6 @@ class PlotSlices(object):
         """
         read in the files to get appropriate information
         """
-        # --> read in model file
-        if self.model_fn is not None:
-            if os.path.isfile(self.model_fn) == True:
-                md_model = Model()
-                md_model.read_model_file(self.model_fn)
-                self.res_model = md_model.res_model
-                self.grid_east = md_model.grid_east / self.dscale
-                self.grid_north = md_model.grid_north / self.dscale
-                self.grid_z = md_model.grid_z / self.dscale
-                self.nodes_east = md_model.nodes_east / self.dscale
-                self.nodes_north = md_model.nodes_north / self.dscale
-                self.nodes_z = md_model.nodes_z / self.dscale
-
-                self.md_model = md_model
-            else:
-                raise mtex.MTpyError_file_handling(
-                    '{0} does not exist, check path'.format(self.model_fn))
-
         # --> read in data file to get station locations
         if self.data_fn is not None:
             if os.path.isfile(self.data_fn) == True:
@@ -530,6 +512,31 @@ class PlotSlices(object):
                 self.md_data = md_data
             else:
                 print('Could not find data file {0}'.format(self.data_fn))
+
+        # --> read in model file
+        if self.model_fn is not None:
+            stations_object = None
+            try:
+                if hasattr(md_data,'station_locations'):
+                    stations_object = md_data.station_locations
+            except NameError:
+                pass
+                
+            if os.path.isfile(self.model_fn) == True:
+                md_model = Model(stations_object=stations_object)
+                md_model.read_model_file(self.model_fn)
+                self.res_model = md_model.res_model
+                self.grid_east = md_model.grid_east / self.dscale
+                self.grid_north = md_model.grid_north / self.dscale
+                self.grid_z = md_model.grid_z / self.dscale
+                self.nodes_east = md_model.nodes_east / self.dscale
+                self.nodes_north = md_model.nodes_north / self.dscale
+                self.nodes_z = md_model.nodes_z / self.dscale
+
+                self.md_model = md_model
+            else:
+                raise mtex.MTpyError_file_handling(
+                    '{0} does not exist, check path'.format(self.model_fn))
 
         # make grid meshes being sure the indexing is correct
         self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,

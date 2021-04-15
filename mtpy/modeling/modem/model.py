@@ -271,7 +271,9 @@ class Model(object):
         self.sea_level = 0.
 
         # strike angle to rotate grid to
-        self.mesh_rotation_angle = self.station_locations.rotation_angle
+        self.mesh_rotation_angle = 0
+        if self.station_locations is not None:
+            setattr(self,'mesh_rotation_angle',self.station_locations.rotation_angle)
 
         # --> attributes to be calculated
         # grid nodes
