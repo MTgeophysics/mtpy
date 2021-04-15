@@ -50,6 +50,7 @@ from mtpy.imaging.mtplottools import plot_errorbar
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.mesh_tools as mtmesh
 from mtpy.utils import gis_tools
+import tempfile
 
 
 # ==============================================================================
@@ -1389,7 +1390,8 @@ class Profile():
         ax.legend([m1, m2], ['Projected', 'Original'], loc='upper left',
                   prop={'size': fs})
         plt.show()
-        plt.savefig('/tmp/profile_angle0.png')
+        # plt.savefig('/tmp/profile_angle0.png')
+        plt.savefig(tempfile.gettempdir() + '/' + 'profile_angle0.png')
 
 
 class Regularization(Mesh):
