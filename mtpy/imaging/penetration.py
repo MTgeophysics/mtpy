@@ -335,7 +335,7 @@ class Depth3D(ImagingBase):
             minlon = bbox[0][0]
 
             # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
-            pixelsize = 0.002  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
+            pixelsize = kwargs.pop("pixelsize", 0.002)  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
 
             nx = int(np.ceil(xgrids / pixelsize))
             ny = int(np.ceil(ygrids / pixelsize))
@@ -623,14 +623,14 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
         per_index = np.argmin(np.fabs(zeta.freq - 1.0/selected_period))
         per = 1.0 / zeta.freq[per_index]
 
-        print("********* The period-index=%s coressponding to the selected_period %s"%(per_index, selected_period))
+        print("********* The period-index=%s corresponding to the selected_period %s"%(per_index, selected_period))
 
         if abs(selected_period - per) > (selected_period) * ptol:
             print("************** Different the selected period =", selected_period, per)
             #periods.append(np.nan)
             periods.append(selected_period)
             pen_depth.append(np.nan)
-            _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
+            _logger.warning("Nearest period {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
             pass
         else:      # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
 
