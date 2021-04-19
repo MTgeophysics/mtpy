@@ -40,7 +40,7 @@ if not os.path.isdir(mtpy_path):
 # edidir = os.path.join(mtpy_path,'examples/data/edi2')
 # edidir = r"C:\Users\u25656\Desktop\Wenping_EDI132\MT086_Edited_EDIs"
 # edidir = "/Datasets/MTWorkflow/Wenping_EDI132/MT086_Edited_EDIs"
-edidir = "/home/547/fxz547/MT086_Edited_EDIs"
+edidir = r"C:\mtpywin\mtpy\examples\data\edi2"
 
 
 # If you have own edi change the variable below according to your edi files folder
@@ -95,8 +95,8 @@ print("****** To do the pen3d plotting, pick a value from the above periods, whi
 
 # User MUST provide period value in seconds ("/Datasets/MTWorkflow/Wenping_EDI132/MT086_Edited_EDIs")
 #pen3d.plot_latlon_depth_profile(edidir,  0.1067, savefig=True, savepath=savepath, fig_dpi=400)  # period =0.1067s ec
-pen3d.plot_latlon_depth_profile(edidir,  95.33, savefig=True, savepath=savepath, fig_dpi=400)
-pen3d.plot_latlon_depth_profile(edidir,  48.9956, savefig=True, savepath=savepath, fig_dpi=400)
-pen3d.plot_latlon_depth_profile(edidir,  10.839, savefig=True, savepath=savepath, fig_dpi=400)
+pen3d.plot_latlon_depth_profile(edidir,  95.33, savefig=True, savepath=savepath, fig_dpi=400, pixelsize=0.002)
+pen3d.plot_latlon_depth_profile(edidir,  48.9956, savefig=True, savepath=savepath, fig_dpi=400, pixelsize=0.002)
+pen3d.plot_latlon_depth_profile(edidir,  10.839, savefig=True, savepath=savepath, fig_dpi=400, pixelsize=0.002)
 
 
