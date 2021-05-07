@@ -84,10 +84,13 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
         fn_list = kwargs.pop('fn_list', [])
 
-        if(len(fn_list)==0): raise NameError('File list is empty.')
+        
 
         # ----set attributes for the class-------------------------
-        self.mt_list = mtpl.get_mtlist(fn_list=fn_list)
+        self.mt_list = kwargs.pop('mt_list',
+                                  mtpl.get_mtlist(fn_list=fn_list))
+        
+        if(len(fn_list)==0 and (len(self.mt_list)==0)): raise NameError('File and MT object lists are both empty.')
 
         # read in map scale
         self.mapscale = kwargs.pop('mapscale', 'deg')

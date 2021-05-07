@@ -620,17 +620,33 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             else:
                 vals = np.array(raster_dict['vals'])
 
-            assert len(lons) == len(lats) == len(vals), 'Lons, Lats and Vals must all have the same length'
+            
 
             lons -= refpoint[0]
             lats -= refpoint[1]
             levels = raster_dict.pop('levels', 50)
             cmap = raster_dict.pop('cmap', 'rainbow')
             cbar_title = raster_dict.pop('cbar_title', 'Arbitrary Units')
-            triangulation = tri.Triangulation(lons, lats)
-            cbinfo = lpax.tricontourf(triangulation, vals,
-                                      levels=np.linspace(vals.min(), vals.max(), levels),
-                                      cmap=cmap)
+            
+            # if a 2D array provided, can use contourf and no need to triangulate
+            triangulate = True
+            if len(vals.shape) > 1:
+                if (lons.shape == lats.shape == vals.shape):
+                    triangulate = False
+                elif ((lons.shape == vals.shape[1]) and (lats.shape == vals.shape[0])):
+                    triangulate = False
+
+            if triangulate:
+                assert len(lons) == len(lats) == len(vals), 'Lons, Lats and Vals must all have the same length'
+                triangulation = tri.Triangulation(lons, lats)
+                cbinfo = lpax.tricontourf(triangulation, vals,
+                                          levels=np.linspace(vals.min(), vals.max(), levels),
+                                          cmap=cmap)
+            else:
+                cbinfo = lpax.contourf(lons,lats,vals,
+                                       levels=np.linspace(vals.min(), vals.max(), levels),
+                                          cmap=cmap)
+                
             if raster_dict['cbar_position'] is not None:
                 cbax = self.fig.add_axes(raster_dict['cbar_position'])
             else:

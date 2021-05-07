@@ -94,10 +94,12 @@ class Depth1D(ImagingBase):
             # One of the 4-components: XY
             penetration_depth = scale_param * \
                 np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+            periods[penetration_depth==0] = np.nan
+                
 
             # pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
             pen_zxy, = plt.loglog(
-                periods, penetration_depth, color='#000000', marker='*', label='Zxy')
+                periods, penetration_depth*1e-3, color='#000000', marker='*', label='Zxy')
             # See
             # http://matplotlib.org/1.3.1/examples/pylab_examples/line_styles.html
 
@@ -108,7 +110,7 @@ class Depth1D(ImagingBase):
                 np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
             pen_zyx, = plt.loglog(
-                periods, penetration_depth, color='g', marker='o', label='Zyx')
+                periods, penetration_depth*1e-3, color='g', marker='o', label='Zyx')
             legendh.append(pen_zyx)
 
         if 'det' in self._rholist:
@@ -118,25 +120,25 @@ class Depth1D(ImagingBase):
 
             # pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
             pen_det, = plt.loglog(
-                periods, det_penetration_depth, color='b', marker='^', label='Determinant')
+                periods, det_penetration_depth*1e-3, color='b', marker='^', label='Determinant')
             legendh.append(pen_det)
 
-            plt.legend(
-                handles=legendh,
-                bbox_to_anchor=(
-                    0.1,
-                    0.5),
-                loc=3,
-                ncol=1,
-                borderaxespad=0.)
+        plt.legend(
+            handles=legendh,
+            bbox_to_anchor=(
+                0.1,
+                0.5),
+            loc=3,
+            ncol=1,
+            borderaxespad=0.)
 
-            title = "Penetration Depth for file %s" % self._data.fn
-            plt.title(title)
-            plt.xlabel("Log Period (seconds)", fontsize=16)
-            plt.ylabel("Penetration Depth (meters)", fontsize=16)
-            plt.gca().invert_yaxis()
-            # set window title
-            self._fig.canvas.set_window_title(title)
+        title = "Penetration Depth for file %s" % self._data.fn
+        plt.title(title)
+        plt.xlabel("Log Period (seconds)", fontsize=16)
+        plt.ylabel("Penetration Depth (km)", fontsize=16)
+        plt.gca().invert_yaxis()
+        # set window title
+        self._fig.canvas.set_window_title(title)
 
 
 class Depth2D(ImagingBase):
@@ -185,7 +187,7 @@ class Depth2D(ImagingBase):
 
             plt.plot(
                 pr.station_locations,
-                pen,
+                np.array(pen)*1e-3,
                 "--",
                 #                marker="o",
                 #                markersize=12,
@@ -195,10 +197,11 @@ class Depth2D(ImagingBase):
             plt.legend()
 
         plt.ylabel(
-            'Penetration Depth (Metres) Computed by %s' %
+            'Penetration Depth (km) Computed by %s' %
             self._rho,
             fontsize=fontsize
         )
+        plt.gca().invert_yaxis()
         plt.yticks(fontsize=fontsize)
 
         plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=fontsize)
@@ -332,7 +335,7 @@ class Depth3D(ImagingBase):
             minlon = bbox[0][0]
 
             # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
-            pixelsize = 0.002  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
+            pixelsize = kwargs.pop("pixelsize", 0.002)  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
 
             nx = int(np.ceil(xgrids / pixelsize))
             ny = int(np.ceil(ygrids / pixelsize))
@@ -581,13 +584,13 @@ def load_edi_files(edi_path, file_list=None):
         edi_list = [mt.MT(os.path.join(edi_path, edi)) for edi in file_list]
     return edi_list
 
-#FZ reversed-fixed logic issues introduced in  https://github.com/MTgeophysics/mtpy/commit/817c9f4a6384460d57974fb7a6f80e04a8a4ce97
+# need further refactoring and testing
 def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whichrho='det'):
     """
     This is a more generic and useful function to compute the penetration depths
     of a list of edi files at given selected_period (in seconds, NOT freq).
     No assumption is made about the edi files period list.
-    A tolerance of 10% is used to identify the relevant edi files which contain the period of interest.
+    A tolerance of ptol=10% is used to identify the relevant edi files which contain the period of interest.
 
     :param ptol: freq error/tolerance, need to be consistent with phase_tensor_map.py, default is 0.1
     :param edi_file_list: edi file list of mt object list
@@ -610,38 +613,40 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
         elif not isinstance(mt_obj, mt.MT):
             raise Exception("Unsupported list of objects %s" % type(mt_obj))
 
+        # station id
+        stations.append(mt_obj.station)
+        # latlons
+        latlons.append((mt_obj.lat, mt_obj.lon))
+
         # the attribute Z
         zeta = mt_obj.Z
         per_index = np.argmin(np.fabs(zeta.freq - 1.0/selected_period))
         per = 1.0 / zeta.freq[per_index]
 
-        print("********* The period-index=%s coressponding to the selected_period %s"%(per_index, selected_period))
+        print("********* The period-index=%s corresponding to the selected_period %s"%(per_index, selected_period))
 
         if abs(selected_period - per) > (selected_period) * ptol:
             print("************** Different the selected period =", selected_period, per)
-            # periods.append(np.nan)
-            # pen_depth.append(np.nan)
-            _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
+            #periods.append(np.nan)
+            periods.append(selected_period)
+            pen_depth.append(np.nan)
+            _logger.warning("Nearest period {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
             pass
-        else:  # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
-            # station id
-            stations.append(mt_obj.station)
-            # latlons
-            latlons.append((mt_obj.lat, mt_obj.lon))
+        else:      # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
 
             print("********* Include this period at the index ", per,  per_index)
             periods.append(per)
 
             if whichrho == 'zxy':
-                penetration_depth = - scale_param * \
+                penetration_depth = scale_param * \
                     np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
             elif whichrho == 'zyx':
-                penetration_depth = - scale_param * \
+                penetration_depth = scale_param * \
                     np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
             elif whichrho == 'det':  # the 2X2 complex Z-matrix's determinant abs value
                 # determinant value at the given period index
                 det2 = np.abs(zeta.det[per_index])
-                penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+                penetration_depth = scale_param * np.sqrt(0.2 * per * det2 * per)
             else:
                 _logger.critical(
                     "unsupported method to compute penetration depth: %s",

@@ -8,7 +8,7 @@ sets up input files for running 2d occam inversions using the occam2d_rewrite mo
 
 """
 
-import mtpy.modeling.occam2d_rewrite as occam2d
+import mtpy.modeling.occam2d as occam2d
 import os
 import os.path as op
 import numpy as np
@@ -35,7 +35,8 @@ slst=[edi[0:-4] for edi in os.listdir(edipath) if edi.find('.edi')>0]
 ocd = occam2d.Data(edi_path=edipath,
                    station_list=slst,
                    interpolate_freq=True,
-                   freq=np.logspace(-3,3,37)
+                   freq=np.logspace(-3,3,37),
+                   model_mode='log_all'
                    )
 ocd.save_path = savepath
 ocd.freq_num = 50 # number of frequencies to invert for

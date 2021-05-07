@@ -43,9 +43,15 @@ def roundsf(number, sf):
     """
     # can't have < 1 s.f.
     sf = max(sf,1.)
-    rounding = int(np.ceil(-np.log10(number) + sf - 1.))
     
-    return np.round(number, rounding)
+    if np.iterable(number):
+        print("iterable")
+        rounding = (np.ceil(-np.log10(number) + sf - 1.)).astype(int)
+        return np.array([np.round(number[ii],rounding[ii]) for ii in range(len(rounding))])
+    else:
+        rounding = int(np.ceil(-np.log10(number) + sf - 1.))
+    
+        return np.round(number, rounding)
 
 
 def get_period_list(period_min,period_max,periods_per_decade,include_outside_range=True):

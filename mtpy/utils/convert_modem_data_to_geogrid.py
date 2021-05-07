@@ -242,7 +242,7 @@ def _interpolate_slice(ce, cn, resgrid, depth_index, target_gridx, target_gridy,
         np.ndarray: A 2D slice of the resistivity model interpolated
             over a grid.
     """
-    interp_func = RegularGridInterpolator((ce, cn), np.log10(resgrid[:, :, depth_index].T))
+    interp_func = RegularGridInterpolator((ce, cn), np.log10(resgrid[:, :, depth_index].T),bounds_error=False)
     res_slice = interp_func(np.vstack(
         [target_gridx.flatten(), target_gridy.flatten()]).T).reshape(target_gridx.shape)
     if not log_scale:

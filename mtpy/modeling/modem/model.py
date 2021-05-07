@@ -272,6 +272,8 @@ class Model(object):
 
         # strike angle to rotate grid to
         self.mesh_rotation_angle = 0
+        if self.station_locations is not None:
+            setattr(self,'mesh_rotation_angle',self.station_locations.rotation_angle)
 
         # --> attributes to be calculated
         # grid nodes
@@ -1335,7 +1337,6 @@ class Model(object):
         # --> get grid center and rotation angle
         if len(ilines) > line_index:
             for iline in ilines[line_index:]:
-                print(iline)
                 ilist = iline.strip().split()
                 # grid center
                 if len(ilist) == 3:

@@ -456,7 +456,8 @@ class Data(object):
         get station locations from edi files
         """
         stations_obj = Stations(model_epsg=self.model_epsg,
-                                model_utm_zone=self.model_utm_zone)
+                                model_utm_zone=self.model_utm_zone,
+                                rotation_angle=self.rotation_angle)
         mt_list = [self.mt_dict[s_key] for s_key in sorted(self.mt_dict.keys())]
         stations_obj.get_station_locations(mt_list)
 
@@ -877,7 +878,7 @@ class Data(object):
             raise DataError('Either specify a single error_type_z for all components, or ' \
                             'a 2x2 numpy array of error_type_z.')
         # end if
-
+        
         # compute error for z
         err_value = self.error_value_z / 100.
         for ss in range(self.data_array.shape[0]):
@@ -1432,7 +1433,7 @@ class Data(object):
                         except IndexError:
                             self.center_point.elev = 0.0
                             print('Did not find center elevation in data file')
-
+                        print(self.center_point.lat,self.center_point.lon)
                         ce, cn, cz = gis_tools.project_point_ll2utm(self.center_point.lat,
                                                                     self.center_point.lon,
                                                                     epsg=self.model_epsg,

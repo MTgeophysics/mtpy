@@ -47,7 +47,7 @@ _logger.setLevel(logging.INFO)
 # use the Zcompotent=[det, zxy, zyx]
 def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True,
                               savefig=True, savepath = None, fig_dpi=400,
-                              fontsize=14, file_format='png',ptol=0.1):
+                              fontsize=14, file_format='png',ptol=0.1, **kwargs):
     """
     MT penetration depth profile in lat-lon coordinates with pixelsize = 0.002
     :param savefig:
@@ -71,9 +71,9 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det', showfig=True,
 
     image = Depth3D(edis=edis, period=period, rho=zcomponent, ptol=ptol)
     if isinstance(period, int):  # period is considered as an index
-        image.plot(period_by_index=True, fontsize=fontsize)
+        image.plot(period_by_index=True, fontsize=fontsize, **kwargs)
     elif isinstance(period, float):  # period is considered as the actual value of period in second
-        image.plot(fontsize=fontsize)
+        image.plot(fontsize=fontsize, **kwargs)
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)
 
@@ -319,10 +319,14 @@ def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     latlong_d = (mt_obj.lat, mt_obj.lon, periods, penetration_depth)
     return latlong_d
 
-
 def create_penetration_depth_csv(edi_dir, outputcsv, zcomponent='det'):
     """ Loop over all edi files, and create a csv file with the columns:
     Header Lat, Lon, per0, per1,per2,.....
+
+    TODO:
+    calculate pen-depth for each period, and write into a file for each period, even if non-equal freq cross edi files.
+    Moved this function into edi_collection.create_penetration_depth_csv()
+
     lat, lon, pendepth0, pendepth1, ...
     :param edi_dir: path_to_edifiles_dir
     :param zcomponent: det | zxy  | zyx

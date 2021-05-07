@@ -28,9 +28,9 @@ elst = [op.join(edipath,f) for f in os.listdir(edipath) if (f.endswith('.edi'))]
 
 
 strikeplot = PlotStrike(fn_list=elst,
-                        fold=False,
-                        show_ptphimin=False,
-                        plot_type=2 # 1 means divide into separate plots for different decades
+                        fold=False, # plot over 360 degree range (True goes from 0 to 180)
+                        plot_orthogonal=False, # plot both strike and strike +90
+                        plot_type=1 # 1 means divide into separate plots for different decades
                                     # 2 means combine all data into one rose plot
                                     )
 #strikeplot.save_plot(savepath,
