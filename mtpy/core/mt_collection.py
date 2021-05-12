@@ -93,7 +93,7 @@ class MTCollection:
 
         return fn_list
 
-    def make_dataframe_from_file_list(self, mt_file_list, move_duplicates=True):
+    def make_dataframe_from_file_list(self, mt_file_list=None, move_duplicates=True):
         """
         create a :class:`pandas.DataFrame` from information in the file list
 
@@ -104,6 +104,9 @@ class MTCollection:
 
 
         """
+
+        if mt_file_list is None:
+            mt_file_list = self.make_mt_file_list()
 
         station_list = []
         for fn in mt_file_list:
@@ -242,10 +245,28 @@ class MTCollection:
             & (self.mt_df.latitude >= latitude_min)
             & (self.mt_df.latitude <= latitude_max)
         ]
+    
+    def write_shp_file(self, filename, bounding_box=None, epsg=4326):
+        """
+        
+        :param filename: DESCRIPTION
+        :type filename: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
+        """
+        coordinate_system = {"init": f"epsg:{epsg}"}
+        # write shape file
+        geometry_list = []
+        mt_df = self.make_dataframe_from_file_list()
+        for ii, row in mt_df.iterrows():
+            geometry_list.append(Point(row.longitude, row.latitude))
+        
+        gdf = gpd.GeoDataFrame(mt_df, crs=coordinate_system, geometry=geometry_list)
+        gdf.fn = gdf.fn.astype("str")
+        gdf.to_file(self.mt_path.joinpath(filename))
 
-# edi_path = Path(r"c:\Users\jpeacock\OneDrive - DOI\EDI_FILES")
-# coordinate_system = {"init": "epsg:4326"}
+        
 
 
 # station_list = []
