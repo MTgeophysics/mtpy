@@ -469,8 +469,7 @@ class PlotRMSMaps(object):
                 zorder=3,
             )
 
-            ax.tick_params(direction="out")
-            ax.grid(zorder=0, color=(0.75, 0.75, 0.75))
+            
 
             ax.set_xlim(
                 self.residual.residual_array["lon"].min() - self.pad_x,
@@ -495,6 +494,13 @@ class PlotRMSMaps(object):
             ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.xaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
+            ax.xaxis.set_minor_locator(MultipleLocator(.1))
+            ax.yaxis.set_minor_locator(MultipleLocator(.1))
+            
+            ax.tick_params(direction="out")
+            ax.grid(which="major", lw=.5, color=(0.5, 0.5, 0.5), ls='--')
+            ax.grid(which="minor", lw=.5, color=(0.75, 0.75, 0.75), ls='--')
+            ax.set_axisbelow(True)
 
         cb_ax = self.fig.add_axes([self.subplot_right + 0.02, 0.225, 0.02, 0.45])
         color_bar = mcb.ColorbarBase(
