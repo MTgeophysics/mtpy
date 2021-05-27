@@ -71,7 +71,7 @@ class Sgrid():
                         setattr(
                             self,
                             str.lower(param),
-                            line.strip().split()[1])
+                            line.strip().split()[1].replace('"',''))
 
     def _read_ascii_data(self, ascii_data_file=None):
 
