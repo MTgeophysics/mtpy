@@ -163,7 +163,7 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
             else:
                 err_arr = None
 
-            tetm_arr, tetm_err = MTcc.rotatematrix_incl_errors(
+            tetm_arr, tetm_err = MTcc.rotate_matrix_incl_errors(
                 z_obj.z[idx], strike_ang, inmatrix_err=err_arr
             )
 

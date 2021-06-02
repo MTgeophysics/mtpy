@@ -25,10 +25,8 @@ import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.analysis.pt as MTpt
-from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
-
-_logger = MtPyLog.get_mtpy_logger(__name__)
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 
 # ==============================================================================
@@ -367,6 +365,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         :param kwargs: keyword-value pairs
         """
         super(PlotPhaseTensorMaps, self).__init__(**kwargs)
+        self.logger = get_mtpy_logger(self.__class__.__name__)
 
         fn_list = kwargs.pop('fn_list', None)
         z_object_list = kwargs.pop('z_object_list', None)
@@ -946,7 +945,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
             # ==> print a message if couldn't find the freq
             else:
-                _logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station))
+                self.logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt.station))
 
         # --> set axes properties depending on map scale------------------------
         if self.mapscale == 'deg':
@@ -1248,7 +1247,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         else:  # FZ: assume save-fn is a path2file= "path2/afile.fmt"
             file_format = save_fn.split('.')[-1]
             if file_format is None or file_format not in ['png', 'jpg']:
-                _logger.error(
+                self.logger.error(
                     "Error: output file name is not correctly provided:",
                     save_fn)
                 raise Exception(
@@ -1267,7 +1266,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
             pass
 
         self.fig_fn = save_fn
-        _logger.debug('Saved figure to: %s', self.fig_fn)
+        self.logger.debug('Saved figure to: %s', self.fig_fn)
 
     def update_plot(self):
         """
@@ -1311,7 +1310,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # create a save path for files
         if save_path is None:
-            _logger.info("No save_path provided. ")
+            self.logger.info("No save_path provided. ")
             return None
             # try:
             #     svpath = os.path.join(os.path.dirname(self.mt_list[0].fn),
@@ -1391,7 +1390,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
                 station_location[stationmap[xyloc[ii, 0], xyloc[ii, 1]]] = (mt1.lon, mt1.lat, mt1.freq[j2])
             except IndexError:
-                _logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
+                self.logger.warn('Did not find {0:.5g} Hz for station {1}'.format(self.plot_freq, mt1.station))
 
         # ----------------------write files-------------------------------------
         svfn = 'Map_{0:.6g}Hz'.format(self.plot_freq)
@@ -1510,7 +1509,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         tablefid.write('\n')
 
-        _logger.info('Wrote files to {}'.format(svpath))
+        self.logger.info('Wrote files to {}'.format(svpath))
 
         return svpath
 
