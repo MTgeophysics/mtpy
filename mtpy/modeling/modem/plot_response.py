@@ -2054,7 +2054,7 @@ class PlotResponse(object):
             rsObj.calculate_residual_from_data(data_fn=self.data_fn,
                                                resp_fn=self.resp_fn,
                                                save=False)
-            rms = rsObj.rms
+            rms = rsObj.rms_array['rms']
         else:
             rms = np.nan
 
@@ -2158,7 +2158,8 @@ class PlotResponse(object):
             
             axp.set_ylim(self.phase_limits)
             axr.set_ylim(self.res_limits)
-            axr.set_title('%s, RMS=%.1f'%(sname,rms),fontdict=fontdict)
+            if np.any(np.isfinite(rms)):
+                axr.set_title('%s, RMS=%.1f'%(sname,rms[si]),fontdict=fontdict)
             
             axt[1].set_xlabel('Period, s',fontsize=self.font_size)
             axr.set_xlim(self.period_limits)
