@@ -144,7 +144,7 @@ class SurveyConfig(object):
         self.e_xaxis_azimuth = s_df[s_df.component == "ex"].azimuth.mode()[0]
         self.e_xaxis_length = s_df[s_df.component == "ex"].dipole_length.mode()[0]
         self.e_yaxis_azimuth = s_df[s_df.component == "ey"].azimuth.mode()[0]
-        self.e_yaxis_length = s_df[s_df.component == "hx"].dipole_length.mode()[0]
+        self.e_yaxis_length = s_df[s_df.component == "ey"].dipole_length.mode()[0]
         self.elevation = s_df.elevation.median()
         self.hx = s_df[s_df.component == "hx"].coil_number.mode()[0]
         self.hy = s_df[s_df.component == "hy"].coil_number.mode()[0]
