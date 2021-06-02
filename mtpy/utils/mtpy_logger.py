@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 import logging
 import logging.config
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 # =============================================================================
 # Global Variables
@@ -94,10 +95,11 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
         if fn.suffix not in [".log"]:
             fn = Path(fn.parent, f"{fn.stem}.log")
 
-        # fn_handler = logging.FileHandler(fn)
-        fn_handler = logging.handlers.RotatingFileHandler(
-            fn, maxBytes=2 ** 21, backupCount=2
-        )
+        exists = False
+        if fn.exists():
+            exists = True
+
+        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2**21)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
