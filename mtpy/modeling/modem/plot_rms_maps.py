@@ -359,16 +359,18 @@ class PlotRMSMaps(object):
         """
         plot rms in map view
         """
+        
         if self.tick_locator is None:
             x_locator = np.round((self.residual.residual_array['lon'].max() -
                                   self.residual.residual_array['lon'].min()) / 5, 2)
             y_locator = np.round((self.residual.residual_array['lat'].max() -
                                   self.residual.residual_array['lat'].min()) / 5, 2)
-
+            
             if x_locator > y_locator:
                 self.tick_locator = x_locator
-            elif x_locator < y_locator:
+            elif x_locator <= y_locator:
                 self.tick_locator = y_locator
+
 
         if self.pad_x is None:
             self.pad_x = self.tick_locator / 2

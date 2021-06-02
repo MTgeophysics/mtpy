@@ -189,11 +189,12 @@ class PlotResponse(object):
 
         self.plot_component = kwargs.pop('plot_component', 4)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
-        self.save_plots = kwargs.pop('plot_yn', False)
+        self.save_plots = kwargs.pop('save_plots', False)
         self.plot_z = kwargs.pop('plot_z', True)
         self.ylabel_pad = kwargs.pop('ylabel_pad', 1.25)
         self.label_axes = kwargs.pop('label_axes',True)
         self.shift_yx_phase = kwargs.pop('shift_yx_phase',False)
+        self.savepath = kwargs.pop('savepath','.')
 
         self.fig_list = []
 
@@ -2176,6 +2177,9 @@ class PlotResponse(object):
                 
                 axt[0].set_ylabel('Tipper, X',labelpad=0)
                 axt[1].set_ylabel('Tipper, Y',labelpad=0)
+                
+            if self.save_plots:
+                self.save_figure(os.path.join(self.savepath,sname+'.png'))
         
         
 
