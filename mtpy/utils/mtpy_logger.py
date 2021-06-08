@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 import logging
 import logging.config
+import queue
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 # =============================================================================
@@ -39,6 +40,30 @@ if not LOG_PATH.exists():
 if not CONF_FILE.exists():
     CONF_FILE = None
     print("No Logging configuration file found, using defaults.")
+    
+class EvictQueue(queue.Queue):
+    def __init__(self, maxsize):
+        self.discarded = 0
+        super().__init__(maxsize)
+
+    def put(self, item, block=False, timeout=None):
+        while True:
+            try:
+                super().put(item, block=False)
+            except queue.Full:
+                try:
+                    self.get_nowait()
+                    self.discarded += 1
+                except queue.Empty:
+                    pass
+                
+def speed_up_logs(): 
+    rootLogger = logging.getLogger()     
+    log_que = EvictQueue(1000)
+    queue_handler = logging.handlers.QueueHandler(log_que)
+    queue_listener = logging.handlers.QueueListener(log_que, *rootLogger.handlers)
+    queue_listener.start()
+    rootLogger.handlers = [queue_handler]
 
 
 def load_configure(config_fn=CONF_FILE):
@@ -100,6 +125,7 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
             exists = True
 
         fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2**21)
+        # fn_handler = logging.handlers.RotatingFileHandler(fn, maxBytes=2*21)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
@@ -112,5 +138,5 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
     #     null_handler.setFormatter(LOG_FORMAT)
     #     null_handler.setLevel(LEVEL_DICT[level.lower()])
     #     logger.addHandler(null_handler)
-
+    #speed_up_logs()
     return logger
