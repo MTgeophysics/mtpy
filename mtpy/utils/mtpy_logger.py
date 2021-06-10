@@ -124,19 +124,13 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
         if fn.exists():
             exists = True
 
-        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2**21)
+        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2**16, backupCount=2)
         # fn_handler = logging.handlers.RotatingFileHandler(fn, maxBytes=2*21)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
             logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
-    # commented this out because it leads to a drastic reduction in processing
-    # else, give it a null handler, which will go to default logger.
-    # else:
-    #     null_handler = logging.NullHandler()
-    #     null_handler.setFormatter(LOG_FORMAT)
-    #     null_handler.setLevel(LEVEL_DICT[level.lower()])
-    #     logger.addHandler(null_handler)
+
     #speed_up_logs()
     return logger
