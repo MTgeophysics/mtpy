@@ -2098,7 +2098,7 @@ class PlotResponse(object):
                    fig.add_subplot(gs[3,0],xscale='log',sharex=axr)]
             
             
-            for di in range(2):
+            for di in range(len(data_objects)):
                 dObj = data_objects[di]
                 
                 zObj = Z(z_array=dObj.data_array['z'][si],
