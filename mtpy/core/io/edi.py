@@ -2212,7 +2212,7 @@ class HMeasurement(object):
     def __init__(self, **kwargs):
 
         self._kw_list = ["id", "chtype", "x", "y", "azm", "acqchan"]
-        self._fmt_list = ["<10.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
             if "f" in fmt or "g" in fmt:
                 setattr(self, key.lower(), 0.0)
@@ -2279,7 +2279,7 @@ class EMeasurement(object):
     def __init__(self, **kwargs):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._kw_list = ["id", "chtype", "x", "y", "x2", "y2", "acqchan"]
-        self._fmt_list = ["<10.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.1f", "<4"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
             if "f" in fmt or "g" in fmt:
                 setattr(self, key.lower(), 0.0)
@@ -2779,7 +2779,7 @@ def write_edi(mt_object, fn=None):
         r_dict = run.to_dict(single=True)
 
         for rk, rv in r_dict.items():
-            if rv not in [None]:
+            if rv not in [None, "1980-01-01T00:00:00+00:00"]:
                 if rk[0:2] in ["ex", "ey", "hx", "hy", "hz", "te", "rr"]:
                     if rk[0:2] == "te":
                         comp = "temperature"

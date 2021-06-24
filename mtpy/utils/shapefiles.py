@@ -325,10 +325,10 @@ class PTShapeFile(object):
             periods = self.plot_period
 
         # for plot_per in self.plot_period:
-        for plot_per in periods:
+        for ii, plot_per in enumerate(periods):
             # shape file path
             shape_fn = os.path.join(
-                self.save_path, "PT_{0:.5g}s_{1}.shp".format(plot_per, self.projection)
+                self.save_path, f"{ii}_PT_{plot_per:.0f}s_{self.projection}.shp"
             )
 
             # remove the shape file if it already exists, has trouble over
@@ -798,11 +798,11 @@ class TipperShapeFile(object):
 
         self._get_tip_array()
 
-        for plot_per in self.plot_period:
+        for ii, plot_per in enumerate(self.plot_period):
             # shape file path
             shape_fn = os.path.join(
                 self.save_path,
-                "Tip_{0:.5g}s_{1}_real.shp".format(plot_per, self.projection),
+                f"{ii}_TIP_REAL_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over
@@ -908,7 +908,7 @@ class TipperShapeFile(object):
 
                 #
                 # 5) create a field to color by
-                new_feature.SetField("Name", tp_arr["station"])
+                new_feature.SetField("Name", tp_arr["station"].decode("UTF-8"))
                 new_feature.SetField("mag_real", tp_arr["mag_real"])
                 new_feature.SetField("ang_real", tp_arr["ang_real"])
 
@@ -939,11 +939,11 @@ class TipperShapeFile(object):
 
         self._get_tip_array()
 
-        for plot_per in self.plot_period:
+        for ii, plot_per in enumerate(self.plot_period):
             # shape file path
             shape_fn = os.path.join(
                 self.save_path,
-                "Tip_{0:.5g}s_{1}_imag.shp".format(plot_per, self.projection),
+                f"{ii}_TIP_IMAG_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over

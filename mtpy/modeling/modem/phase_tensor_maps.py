@@ -349,8 +349,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for ii, key in enumerate(self.data_obj.mt_dict.keys()):
             east = self.data_obj.mt_dict[key].grid_east / self.dscale
             north = self.data_obj.mt_dict[key].grid_north / self.dscale
-            lon = self.data_obj.mt_dict[key].lon
-            lat = self.data_obj.mt_dict[key].lat
+            lon = self.data_obj.mt_dict[key].longitude
+            lat = self.data_obj.mt_dict[key].latitude
             dpt = self.data_obj.mt_dict[key].pt
             data_pt_arr[:, ii]["east"] = east
             data_pt_arr[:, ii]["north"] = north
