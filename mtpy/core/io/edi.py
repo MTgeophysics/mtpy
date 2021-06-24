@@ -946,6 +946,10 @@ class Edi(object):
         sm.provenance.software.version = self.Header.progvers
         sm.transfer_function.processed_date = self.Header.filedate
         sm.transfer_function.runs_processed = sm.run_names
+        
+        for key, value in self.Info.info_dict.items():
+            if "provenance" in key:
+                sm.set_attr_from_name(key, value)
 
         # dates
         if self.Header.acqdate is not None:
@@ -986,6 +990,9 @@ class Edi(object):
                 sm.transfer_function.sign_convention = value
             if "mtft" in key or "emtf" in key or "mtedit" in key:
                 sm.transfer_function.processing_parameters.append(f"{key}={value}")
+                
+            if "provenance" in key:
+                sm.set_attr_from_name(key, value)
 
         if self.Header.filedate is not None:
             sm.transfer_function.processed_date = self.Header.filedate
@@ -1005,6 +1012,7 @@ class Edi(object):
                 rr.rrhx = self.rrhx_metadata
             if self.rrhy_metadata.component in ["rrhy"]:
                 rr.rrhy = self.rrhy_metadata
+                
 
         return sm
 
@@ -1049,6 +1057,11 @@ class Edi(object):
                 electric.positive.y2 = electric.dipole_length * np.sin(
                     np.deg2rad(meas.azimuth)
                 )
+                
+            for key, value in self.Info.info_dict.items():
+                if f".{comp}." in key:
+                    key = key.split(f".{comp}.", 1)[-1]
+                    electric.set_attr_from_name(key, value)
 
         return electric
 
@@ -1693,8 +1706,6 @@ class Information(object):
             self.get_info_list()
 
         self.info_dict = {}
-        colon_find = None
-        equals_find = None
         # make info items attributes of Information
         for ll in self.info_list:
             l_list = [None, ""]
@@ -1716,26 +1727,25 @@ class Information(object):
 
             # need to check if there is an = or : seperator, which ever
             # comes first is assumed to be the delimiter
-            if ll.find(":") > 0:
-                colon_find = ll.find(":")
-            if ll.find("=") > 0:
-                equals_find = ll.find("=")
-            if colon_find is not None and equals_find is not None:
+            sep = None
+            if ll.find(":") > -1 and ll.find(":") > -1:
                 if ll.find(":") < ll.find("="):
-                    l_list = ll.split(":")
+                    sep = ":"
                 else:
-                    l_list = ll.split("=")
-            elif colon_find is not None:
-                l_list = ll.split(":")
-            elif equals_find is not None:
-                l_list = ll.split("=")
-            else:
-                l_list[0] = ll
-            if l_list[0] is not None and len(l_list) > 1:
-                l_key = l_list[0]
-                l_value = l_list[1].strip()
+                    sep = "="
+            
+            if ll.count(":") == 1:
+                sep = ":"
+                # colon_find = ll.find(":")
+            if ll.count("=") == 1:
+                sep = "="
+            if sep:
+                l_list = ll.split(sep, 1)
+                if len(l_list) == 2:
+                    l_key = l_list[0].strip()
+                    l_value = l_list[1].strip().replace('"', "")
+                    self.info_dict[l_key] = l_value
 
-                self.info_dict[l_key] = l_value.replace('"', "")
             else:
                 self.info_dict[l_list[0]] = None
 
@@ -2164,11 +2174,14 @@ class DefineMeasurement(object):
             setattr(self, f"meas_{channel.component.lower()}", meas)
 
         if "h" in channel.component:
+            azm = channel.measurement_azimuth
+            if azm != channel.translated_azimuth:
+                azm = channel.translated_azimuth
             meas = HMeasurement(
                 **{
                     "x": channel.location.x,
                     "y": channel.location.y,
-                    "azm": channel.measurement_azimuth,
+                    "azm": azm,
                     "chtype": channel.component,
                     "id": channel.channel_id,
                     "acqchan": channel.channel_number,
@@ -2212,7 +2225,7 @@ class HMeasurement(object):
     def __init__(self, **kwargs):
 
         self._kw_list = ["id", "chtype", "x", "y", "azm", "acqchan"]
-        self._fmt_list = ["<.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.0f"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
             if "f" in fmt or "g" in fmt:
                 setattr(self, key.lower(), 0.0)
@@ -2279,7 +2292,7 @@ class EMeasurement(object):
     def __init__(self, **kwargs):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._kw_list = ["id", "chtype", "x", "y", "x2", "y2", "acqchan"]
-        self._fmt_list = ["<.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.1f", "<4"]
+        self._fmt_list = ["<.10g", "<3", "<4.1f", "<4.1f", "<4.1f", "<4.1f", "<4.0f"]
         for key, fmt in zip(self._kw_list, self._fmt_list):
             if "f" in fmt or "g" in fmt:
                 setattr(self, key.lower(), 0.0)
@@ -2711,7 +2724,7 @@ def write_edi(mt_object, fn=None):
     edi_obj.Tipper = mt_object.Tipper
 
     ### fill header information from survey
-    edi_obj.Header.survey = mt_object.survey_metadata.survey_id
+    edi_obj.Header.survey = mt_object.survey_metadata.id
     edi_obj.Header.project = mt_object.survey_metadata.project
     edi_obj.Header.loc = mt_object.survey_metadata.geographic_name
     edi_obj.Header.country = mt_object.survey_metadata.country
@@ -2805,6 +2818,7 @@ def write_edi(mt_object, fn=None):
                             "negative.latitude",
                             "negative.longitude",
                             "negative.elevation",
+                            "sample_rate",
                         ]
                     ]
                     if rk not in skip_list:
