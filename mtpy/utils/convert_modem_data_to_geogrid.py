@@ -21,8 +21,11 @@ import os
 import argparse
 import math
 
-import gdal
-import osr
+try:
+    from osgeo import gdal, osr
+except:
+    import gdal
+    import osr
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
