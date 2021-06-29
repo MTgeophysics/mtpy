@@ -401,7 +401,10 @@ def z_error2r_phi_error(z_real, z_imag, error):
 
     z_amp = np.abs(z_real + 1j * z_imag)
 
-    z_rel_err = error / z_amp
+    if z_amp == 0:
+        z_rel_err = 0.0
+    else:
+        z_rel_err = error / z_amp
 
     res_rel_err = 2.0 * z_rel_err
 

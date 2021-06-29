@@ -1380,18 +1380,18 @@ def get_station_locations(mt_list, map_scale="latlon", ref_point=(0, 0)):
     map_station_dict = {}
     # need to sort by station
     for ii, mt in enumerate(mt_list):
-        lat_list[ii] = mt.lat
-        lon_list[ii] = mt.lon
-        elev_list[ii] = mt.elev
+        lat_list[ii] = mt.latitude
+        lon_list[ii] = mt.longitude
+        elev_list[ii] = mt.elevation
 
         # if map scale is lat lon set parameters
         if map_scale == "latlon":
-            x = mt.lon - ref_point[0]
-            y = mt.lat - ref_point[1]
+            x = mt.longitude - ref_point[0]
+            y = mt.latitude - ref_point[1]
 
         # if map scale is in meters easting and northing
         elif map_scale == "eastnorth" or map_scale == "eastnorthkm":
-            east, north, zone = gis_tools.project_point_ll2utm(mt.lat, mt.lon)
+            east, north, zone = gis_tools.project_point_ll2utm(mt.latitude, mt.longitude)
 
             east /= dscale
             north /= dscale
@@ -1427,7 +1427,7 @@ def get_station_locations(mt_list, map_scale="latlon", ref_point=(0, 0)):
         x_arr[ii] = x
         y_arr[ii] = y
 
-        map_station_dict[mt.station] = (x, y, mt.elev)
+        map_station_dict[mt.station] = (x, y, mt.elevation)
 
     return map_station_dict, x_arr, y_arr
 
