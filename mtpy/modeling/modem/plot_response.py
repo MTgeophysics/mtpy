@@ -689,7 +689,6 @@ class PlotResponse(object):
                 if aa < 4 and self.plot_z is False:
                     ylabels = ax.get_yticklabels()
                     ylabels[0] = ""
-                    ylabels[1] = ""
                     ax.set_yticklabels(ylabels)
                     ax.set_yscale("log", nonposy="clip")
                     if aa == 0 or aa == 3:
@@ -718,7 +717,7 @@ class PlotResponse(object):
                     ax.set_ylabel("Tipper", fontdict=fontdict)
 
                 if aa > 7:
-                    ax.yaxis.set_minor_locator(MultipleLocator(0.1))
+                    ax.yaxis.set_major_locator(MultipleLocator(0.1))
                     if self.tipper_limits is not None:
                         ax.set_ylim(self.tipper_limits)
                     else:
@@ -738,8 +737,6 @@ class PlotResponse(object):
                 if aa < 8:
                     ylabels[-1] = ""
                     ylabels[0] = ""
-                    if aa < 4:
-                        ylabels[1] = ""
                     ax.set_yticklabels(ylabels)
                     plt.setp(ax.get_xticklabels(), visible=False)
 

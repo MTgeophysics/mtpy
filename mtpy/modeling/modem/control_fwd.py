@@ -14,7 +14,7 @@ import os
 
 from mtpy.utils import exceptions as mtex
 
-__all__ = ['ControlFwd']
+__all__ = ["ControlFwd"]
 
 
 class ControlFwd(object):
@@ -27,40 +27,54 @@ class ControlFwd(object):
 
     def __init__(self, **kwargs):
 
-        self.num_qmr_iter = kwargs.pop('num_qmr_iter', 40)
-        self.max_num_div_calls = kwargs.pop('max_num_div_calls', 20)
-        self.max_num_div_iters = kwargs.pop('max_num_div_iters', 100)
-        self.misfit_tol_fwd = kwargs.pop('misfit_tol_fwd', 1.0e-7)
-        self.misfit_tol_adj = kwargs.pop('misfit_tol_adj', 1.0e-7)
-        self.misfit_tol_div = kwargs.pop('misfit_tol_div', 1.0e-5)
+        self.num_qmr_iter = kwargs.pop("num_qmr_iter", 40)
+        self.max_num_div_calls = kwargs.pop("max_num_div_calls", 20)
+        self.max_num_div_iters = kwargs.pop("max_num_div_iters", 100)
+        self.misfit_tol_fwd = kwargs.pop("misfit_tol_fwd", 1.0e-7)
+        self.misfit_tol_adj = kwargs.pop("misfit_tol_adj", 1.0e-7)
+        self.misfit_tol_div = kwargs.pop("misfit_tol_div", 1.0e-5)
 
-        self.save_path = kwargs.pop('save_path', os.getcwd())
-        self.fn_basename = kwargs.pop('fn_basename', 'control.fwd')
-        self.control_fn = kwargs.pop('control_fn', os.path.join(self.save_path,
-                                                                self.fn_basename))
+        self.save_path = kwargs.pop("save_path", os.getcwd())
+        self.fn_basename = kwargs.pop("fn_basename", "control.fwd")
+        self.control_fn = kwargs.pop(
+            "control_fn", os.path.join(self.save_path, self.fn_basename)
+        )
 
-        self._control_keys = ['Number of QMR iters per divergence correction',
-                              'Maximum number of divergence correction calls',
-                              'Maximum number of divergence correction iters',
-                              'Misfit tolerance for EM forward solver',
-                              'Misfit tolerance for EM adjoint solver',
-                              'Misfit tolerance for divergence correction']
+        self._control_keys = [
+            "Number of QMR iters per divergence correction",
+            "Maximum number of divergence correction calls",
+            "Maximum number of divergence correction iters",
+            "Misfit tolerance for EM forward solver",
+            "Misfit tolerance for EM adjoint solver",
+            "Misfit tolerance for divergence correction",
+        ]
 
-        self._control_dict = dict([(key, value)
-                                   for key, value in zip(self._control_keys,
-                                                         [self.num_qmr_iter,
-                                                          self.max_num_div_calls,
-                                                          self.max_num_div_iters,
-                                                          self.misfit_tol_fwd,
-                                                          self.misfit_tol_adj,
-                                                          self.misfit_tol_div])])
-        self._string_fmt_dict = dict([(key, value)
-                                      for key, value in zip(self._control_keys,
-                                                            ['<.0f', '<.0f', '<.0f', '<.1e', '<.1e',
-                                                             '<.1e'])])
+        self._control_dict = dict(
+            [
+                (key, value)
+                for key, value in zip(
+                    self._control_keys,
+                    [
+                        self.num_qmr_iter,
+                        self.max_num_div_calls,
+                        self.max_num_div_iters,
+                        self.misfit_tol_fwd,
+                        self.misfit_tol_adj,
+                        self.misfit_tol_div,
+                    ],
+                )
+            ]
+        )
+        self._string_fmt_dict = dict(
+            [
+                (key, value)
+                for key, value in zip(
+                    self._control_keys, ["<.0f", "<.0f", "<.0f", "<.1e", "<.1e", "<.1e"]
+                )
+            ]
+        )
 
-    def write_control_file(self, control_fn=None, save_path=None,
-                           fn_basename=None):
+    def write_control_file(self, control_fn=None, save_path=None, fn_basename=None):
         """
         write control file
 
@@ -92,25 +106,33 @@ class ControlFwd(object):
 
         self.control_fn = os.path.join(self.save_path, self.fn_basename)
 
-        self._control_dict = dict([(key, value)
-                                   for key, value in zip(self._control_keys,
-                                                         [self.num_qmr_iter,
-                                                          self.max_num_div_calls,
-                                                          self.max_num_div_iters,
-                                                          self.misfit_tol_fwd,
-                                                          self.misfit_tol_adj,
-                                                          self.misfit_tol_div])])
+        self._control_dict = dict(
+            [
+                (key, value)
+                for key, value in zip(
+                    self._control_keys,
+                    [
+                        self.num_qmr_iter,
+                        self.max_num_div_calls,
+                        self.max_num_div_iters,
+                        self.misfit_tol_fwd,
+                        self.misfit_tol_adj,
+                        self.misfit_tol_div,
+                    ],
+                )
+            ]
+        )
 
         clines = []
         for key in self._control_keys:
             value = self._control_dict[key]
             str_fmt = self._string_fmt_dict[key]
-            clines.append('{0:<47}: {1:{2}}\n'.format(key, value, str_fmt))
+            clines.append("{0:<47}: {1:{2}}\n".format(key, value, str_fmt))
 
-        with open(self.control_fn, 'w') as cfid:
+        with open(self.control_fn, "w") as cfid:
             cfid.writelines(clines)
 
-        print('Wrote ModEM control file to {0}'.format(self.control_fn))
+        print("Wrote ModEM control file to {0}".format(self.control_fn))
 
     def read_control_file(self, control_fn=None):
         """
@@ -121,32 +143,38 @@ class ControlFwd(object):
             self.control_fn = control_fn
 
         if self.control_fn is None:
-            raise mtex.MTpyError_file_handling('control_fn is None, input '
-                                               'control file')
+            raise mtex.MTpyError_file_handling(
+                "control_fn is None, input " "control file"
+            )
 
         if os.path.isfile(self.control_fn) is False:
-            raise mtex.MTpyError_file_handling('Could not find {0}'.format(
-                self.control_fn))
+            raise mtex.MTpyError_file_handling(
+                "Could not find {0}".format(self.control_fn)
+            )
 
         self.save_path = os.path.dirname(self.control_fn)
         self.fn_basename = os.path.basename(self.control_fn)
 
-        with open(self.control_fn, 'r') as cfid:
+        with open(self.control_fn, "r") as cfid:
             clines = cfid.readlines()
 
             for cline in clines:
-                clist = cline.strip().split(':')
+                clist = cline.strip().split(":")
                 if len(clist) == 2:
-    
+
                     try:
                         self._control_dict[clist[0].strip()] = float(clist[1])
                     except ValueError:
                         self._control_dict[clist[0].strip()] = clist[1]
 
         # set attributes
-        attr_list = ['num_qmr_iter', 'max_num_div_calls', 'max_num_div_iters',
-                     'misfit_tol_fwd', 'misfit_tol_adj', 'misfit_tol_div']
+        attr_list = [
+            "num_qmr_iter",
+            "max_num_div_calls",
+            "max_num_div_iters",
+            "misfit_tol_fwd",
+            "misfit_tol_adj",
+            "misfit_tol_div",
+        ]
         for key, kattr in zip(self._control_keys, attr_list):
             setattr(self, kattr, self._control_dict[key])
-
-

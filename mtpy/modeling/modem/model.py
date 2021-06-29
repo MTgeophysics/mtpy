@@ -29,7 +29,7 @@ from mtpy.utils import (
     gis_tools as gis_tools,
     filehandling as mtfh,
 )
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 from .exception import ModelError
 import mtpy.utils.gocad as mtgocad
 
@@ -171,7 +171,7 @@ class Model(object):
     """
 
     def __init__(self, stations_object=None, data_object=None, **kwargs):
-        self._logger = get_mtpy_logger(self.__class__.__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         self.station_locations = None
         self.data_obj = None
@@ -276,6 +276,30 @@ class Model(object):
                         key, kwargs[key]
                     )
                 )
+                
+    def __str__(self):
+        lines = ["ModEM Model Object:", "-" * 20]
+                # --> print out useful information
+        try:
+            lines.append(
+            f"\tNumber of stations = {len(self.station_locations.station)}")
+        except AttributeError:
+            lines.append(
+            "\tNumber of stations = unknown")
+        lines.append("\tDimensions: ")
+        lines.append(f"\t\te-w = {self.grid_east.size}")
+        lines.append(f"\t\tn-s = {self.grid_north.size}")
+        lines.append(f"\t\tz  = {self.grid_z.size} (without 7 air layers)")
+        lines.append("\tExtensions: ")
+        lines.append(f"\t\te-w = {self.nodes_east.__abs__().sum():.1f} (m)")
+        lines.append( f"\t\tn-s = {self.nodes_north.__abs__().sum():.1f} (m)")
+        lines.append(f"\t\t0-z = {self.nodes_z.__abs__().sum():.1f} (m)")
+        lines.append("-" * 20)
+        return "\n".join(lines)
+        
+    def __repr__(self):
+        return self.__str__()
+        
 
     # --> make nodes and grid symbiotic so if you set one the other one
     #     gets set as well
@@ -1425,7 +1449,7 @@ class Model(object):
         shift_north=0,
         shift_z=0,
         units="km",
-        coordinate_system='nez+',
+        coordinate_system="nez+",
     ):
         """
         Write a VTK file to plot in 3D rendering programs like Paraview
@@ -1486,9 +1510,8 @@ class Model(object):
             vtk_x = (self.grid_east + shift_east) * scale
             vtk_z = -1 * (self.grid_z + shift_z) * scale
             cell_data = {"resistivity": np.rot90(self.res_model)}
-            
-        gridToVTK(vtk_fn, vtk_x, vtk_y, vtk_z, cellData=cell_data)
 
+        gridToVTK(vtk_fn, vtk_x, vtk_y, vtk_z, cellData=cell_data)
 
         self._logger.info("Wrote model file to {}".format(vtk_fn))
         self.print_model_file_summary()
@@ -2168,7 +2191,9 @@ class Model(object):
             depthindices = [depth_index]
 
         for k in depthindices:
-            fname = os.path.join(savepath, outfile_basename + "_%1im.xyz" % z[k])
+            fname = os.path.join(
+                savepath, outfile_basename + "_%1im.xyz" % self.grid_z[k]
+            )
 
             # get relevant depth slice
             vals = resvals[:, :, k].flatten()
@@ -2184,27 +2209,27 @@ class Model(object):
         self, save_fn, c_east=0, c_north=0, c_z=0, pad_north=0, pad_east=0, pad_z=0
     ):
         """
-        Write a xyz file that Geosoft can read in.
+        Write an XYZ file readable by Geosoft
+        
+        All input units are in meters.
+        
+        :param save_fn: full path to save file to
+        :type save_fn: string or Path
+        :param c_east: center point in the east direction, defaults to 0
+        :type c_east: float, optional
+        :param c_north: center point in the north direction, defaults to 0
+        :type c_north: float, optional
+        :param c_z: center point elevation, defaults to 0
+        :type c_z: float, optional
+        :param pad_north: number of cells to cut from the north-south edges, defaults to 0
+        :type pad_north: int, optional
+        :param pad_east: number of cells to cut from the east-west edges, defaults to 0
+        :type pad_east: int, optional
+        :param pad_z: number of cells to cut from the bottom, defaults to 0
+        :type pad_z: int, optional
 
-        :param save_fn: DESCRIPTION
-        :type save_fn: TYPE
-        :param geographic_east: DESCRIPTION
-        :type geographic_east: TYPE
-        :param geographic_north: DESCRIPTION
-        :type geographic_north: TYPE
-        :param geographic_z: DESCRIPTION
-        :type geographic_z: TYPE
-        :param pad_x: DESCRIPTION, defaults to 0
-        :type pad_x: TYPE, optional
-        :param pad_y: DESCRIPTION, defaults to 0
-        :type pad_y: TYPE, optional
-        :param pad_z: DESCRIPTION, defaults to 0
-        :type pad_z: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
 
         """
-
         lines = [
             r"/ ------------------------------------------------------------------------------",
             r"/ XYZ  IMPORT [01/25/2021]",

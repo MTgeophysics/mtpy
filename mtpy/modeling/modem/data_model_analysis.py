@@ -26,10 +26,9 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from mtpy.modeling.modem import Data, Model
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 
-logger = get_mtpy_logger(__name__)
-
+logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 class DataModelAnalysis(object):

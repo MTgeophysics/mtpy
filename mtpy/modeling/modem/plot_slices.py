@@ -17,7 +17,7 @@ from matplotlib.colors import Normalize
 from matplotlib.widgets import Button, RadioButtons, SpanSelector
 
 from mtpy.modeling.modem import Data, Model
-from mtpy.utils import exceptions as mtex,basemap_tools
+from mtpy.utils import exceptions as mtex, basemap_tools
 from mtpy.utils.gis_tools import epsg_project
 from mtpy.utils.calculator import nearest_index
 from mtpy.utils.mesh_tools import rotate_mesh
@@ -25,9 +25,8 @@ from mtpy.utils.mesh_tools import rotate_mesh
 from mtpy.imaging.seismic import Segy, VelocityModel
 
 from scipy.spatial import cKDTree
-
 from scipy.interpolate import interp1d
-from matplotlib import colors,cm
+from matplotlib import colors, cm
 from matplotlib.ticker import LogLocator
 
 __all__ = ["PlotSlices"]
@@ -205,31 +204,26 @@ class PlotSlices(object):
         self.station_north = None
         self.station_names = None
 
-        self.station_id = kwargs.pop('station_id', None)
-        self.station_font_size = kwargs.pop('station_font_size', 4)
-        self.station_font_pad = kwargs.pop('station_font_pad', 1.0)
-        self.station_font_weight = kwargs.pop('station_font_weight', 'bold')
-        self.station_font_rotation = kwargs.pop('station_font_rotation', 60)
-        self.station_font_color = kwargs.pop('station_font_color', 'k')
-        self.station_marker = kwargs.pop('station_marker',
-                                         r"$\blacktriangledown$")
-        self.station_color = kwargs.pop('station_color', 'k')
-        self.ms = kwargs.pop('ms', 10)
+        self.station_id = kwargs.pop("station_id", None)
+        self.station_font_size = kwargs.pop("station_font_size", 4)
+        self.station_font_pad = kwargs.pop("station_font_pad", 1.0)
+        self.station_font_weight = kwargs.pop("station_font_weight", "bold")
+        self.station_font_rotation = kwargs.pop("station_font_rotation", 60)
+        self.station_font_color = kwargs.pop("station_font_color", "k")
+        self.station_marker = kwargs.pop("station_marker", r"$\blacktriangledown$")
+        self.station_color = kwargs.pop("station_color", "k")
+        self.ms = kwargs.pop("ms", 10)
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        self.plot_stations = kwargs.pop('plot_stations', False)
-        self.xminorticks = kwargs.pop('xminorticks', 1000)
-        self.yminorticks = kwargs.pop('yminorticks', 1000)
-        self.plot_grid = kwargs.pop('plot_grid', False)
-        self.draw_colorbar = kwargs.pop('draw_colorbar', True)
-        self.save_path = kwargs.pop('save_path', os.getcwd())
-        self.save_format = kwargs.pop('save_format', 'png')
+        self.plot_yn = kwargs.pop("plot_yn", "y")
+        self.plot_stations = kwargs.pop("plot_stations", False)
+        self.xminorticks = kwargs.pop("xminorticks", 1000)
+        self.yminorticks = kwargs.pop("yminorticks", 1000)
+        self.plot_grid = kwargs.pop("plot_grid", False)
+        self.draw_colorbar = kwargs.pop("draw_colorbar", True)
+        self.save_path = kwargs.pop("save_path", os.getcwd())
+        self.save_format = kwargs.pop("save_format", "png")
 
-
-        self.current_label_desc = {'N-E': 'Depth',
-                                   'N-Z': 'Easting',
-                                   'E-Z': 'Northing'}
-       
+        self.current_label_desc = {"N-E": "Depth", "N-Z": "Easting", "E-Z": "Northing"}
 
         # read data
         self.read_files()
@@ -545,26 +539,37 @@ class PlotSlices(object):
 
                 self.md_data = md_data
             else:
-                print('Could not find data file {0}'.format(self.data_fn))
+                print("Could not find data file {0}".format(self.data_fn))
 
         # make grid meshes being sure the indexing is correct
-        self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(self.grid_east,
-                                                               self.grid_z,
-                                                               indexing='ij')
-        self.mesh_nz_north, self.mesh_nz_vertical = np.meshgrid(self.grid_north,
-                                                                self.grid_z,
-                                                                indexing='ij')
-        self.mesh_en_east, self.mesh_en_north = np.meshgrid(self.grid_east,
-                                                            self.grid_north,
-                                                            indexing='ij')
-        self.axis_values = {'N-E':self.grid_z,
-                            'N-Z':self.grid_east,
-                            'E-Z':self.grid_north} 
-                
-                
-    def basemap_plot(self, depth, basemap = None,tick_interval=None, save=False, 
-                     save_path=None, new_figure=True,mesh_rotation_angle=0.,
-                     overlay=False,clip=[0,0],**basemap_kwargs):
+        self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(
+            self.grid_east, self.grid_z, indexing="ij"
+        )
+        self.mesh_nz_north, self.mesh_nz_vertical = np.meshgrid(
+            self.grid_north, self.grid_z, indexing="ij"
+        )
+        self.mesh_en_east, self.mesh_en_north = np.meshgrid(
+            self.grid_east, self.grid_north, indexing="ij"
+        )
+        self.axis_values = {
+            "N-E": self.grid_z,
+            "N-Z": self.grid_east,
+            "E-Z": self.grid_north,
+        }
+
+    def basemap_plot(
+        self,
+        depth,
+        basemap=None,
+        tick_interval=None,
+        save=False,
+        save_path=None,
+        new_figure=True,
+        mesh_rotation_angle=0.0,
+        overlay=False,
+        clip=[0, 0],
+        **basemap_kwargs
+    ):
         """
         plot model depth slice on a basemap using basemap modules in matplotlib
         
@@ -600,7 +605,7 @@ class PlotSlices(object):
         depthIdx = nearest_index(depth, self._mcz * self.dscale)
 
         if new_figure:
-            plt.figure()
+            plt.figure(figsize=self.fig_size)
 
         # get eastings/northings of mesh
         ge, gn = self.md_model.grid_east, self.md_model.grid_north
@@ -796,17 +801,6 @@ class PlotSlices(object):
         for ax in axList:
             ax.tick_params(axis="both", length=2)
 
-        # make grid meshes being sure the indexing is correct
-        self.mesh_ez_east, self.mesh_ez_vertical = np.meshgrid(
-            self.grid_east, self.grid_z, indexing="ij"
-        )
-        self.mesh_nz_north, self.mesh_nz_vertical = np.meshgrid(
-            self.grid_north, self.grid_z, indexing="ij"
-        )
-        self.mesh_en_east, self.mesh_en_north = np.meshgrid(
-            self.grid_east, self.grid_north, indexing="ij"
-        )
-
         # --> plot east vs vertical
         self._update_ax_ez()
 
@@ -878,11 +872,9 @@ class PlotSlices(object):
         # end func
 
         self.current_range = self.z_limits
-        self.current_label = 'N-E'
+        self.current_label = "N-E"
 
-        self.axis_cursor_colors = {'N-E':'r',
-                                   'N-Z':'b',
-                                   'E-Z':'g'}
+        self.axis_cursor_colors = {"N-E": "r", "N-Z": "b", "E-Z": "g"}
         self.selected_indices = []
 
         self.ax_span.scatter(

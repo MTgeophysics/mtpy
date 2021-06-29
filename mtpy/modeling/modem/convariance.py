@@ -13,7 +13,7 @@ import os
 
 import numpy as np
 
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 from .exception import CovarianceError
 from .model import Model
 
@@ -34,7 +34,7 @@ class Covariance(object):
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):
-        self._logger = get_mtpy_logger(self.__class__.__name__)
+        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
 
         self.grid_dimensions = grid_dimensions
         self.smoothing_east = 0.3

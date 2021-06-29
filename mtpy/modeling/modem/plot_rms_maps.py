@@ -26,13 +26,12 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mtpy.utils import basemap_tools
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.utils.mtpylog import MtPyLog
 from mtpy.utils.gis_tools import epsg_project
 from mtpy.modeling.modem import Residual
 
 __all__ = ["PlotRMSMaps"]
-_logger = get_mtpy_logger(__name__)
-
+_logger = MtPyLog.get_mtpy_logger(__name__)
 
 
 class PlotRMSMaps(object):
@@ -256,34 +255,21 @@ class PlotRMSMaps(object):
         rms = np.zeros(self.residual.residual_array.shape[0])
         self.residual.get_rms()
         if plot_dict["label"].startswith("$Z"):
-            rms = self.residual.rms_array["rms_z_component_period"][
-                :, self.period_index, ii, jj
-            ]
+            if self.period_index == "all":
+                rms = self.residual.rms_array["rms_z_component"][:, ii, jj]
+            else:
+                rms = self.residual.rms_array["rms_z_component_period"][
+                    :, self.period_index, ii, jj
+                ]
         elif plot_dict["label"].startswith("$T"):
-            rms = self.residual.rms_array["rms_tip_component_period"][
-                :, self.period_index, ii, jj
-            ]
+            if self.period_index == "all":
+                rms = self.residual.rms_array["rms_tip_component"][:, ii, jj]
+            else:
+                rms = self.residual.rms_array["rms_tip_component_period"][
+                    :, self.period_index, ii, jj
+                ]
 
-        # for ridx in range(len(self.residual.residual_array)):
-
-        #     if self.period_index == 'all':
-        #         r_arr = self.residual.rms_array[ridx]
-        #         if plot_dict['label'].startswith('$Z'):
-        #             rms[ridx] = r_arr['rms_z']
-        #         else:
-        #             rms[ridx] = r_arr['rms_tip']
-        #     else:
-        #         r_arr = self.residual.residual_array[ridx]
-        #         # calulate the rms self.residual/error
-        #         if plot_dict['label'].startswith('$Z'):
-        #             rms[ridx] = r_arr['z'][self.period_index, ii, jj].__abs__() / \
-        #                 r_arr['z_err'][self.period_index, ii, jj].real
-
-        #         else:
-        #             rms[ridx] = r_arr['tip'][self.period_index, ii, jj].__abs__() / \
-        #                 r_arr['tip_err'][self.period_index, ii, jj].real
-
-        filt = np.nan_to_num(rms).astype(bool)
+        filt = np.nan_to_num(rms).astype(bool) #.reshape(self.residual.rms_array.size)
 
         if len(rms[filt]) == 0:
             _logger.warning(
@@ -469,7 +455,8 @@ class PlotRMSMaps(object):
                 zorder=3,
             )
 
-            
+            ax.tick_params(direction="out")
+            ax.grid(zorder=0, color=(0.75, 0.75, 0.75))
 
             ax.set_xlim(
                 self.residual.residual_array["lon"].min() - self.pad_x,
@@ -494,13 +481,6 @@ class PlotRMSMaps(object):
             ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.xaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
-            ax.xaxis.set_minor_locator(MultipleLocator(.1))
-            ax.yaxis.set_minor_locator(MultipleLocator(.1))
-            
-            ax.tick_params(direction="out")
-            ax.grid(which="major", lw=.5, color=(0.5, 0.5, 0.5), ls='--')
-            ax.grid(which="minor", lw=.5, color=(0.75, 0.75, 0.75), ls='--')
-            ax.set_axisbelow(True)
 
         cb_ax = self.fig.add_axes([self.subplot_right + 0.02, 0.225, 0.02, 0.45])
         color_bar = mcb.ColorbarBase(
@@ -521,7 +501,6 @@ class PlotRMSMaps(object):
         """
         plot the misfit as a map instead of points
         """
-        rms_1 = 1.0 / self.rms_max
 
         if self.tick_locator is None:
             x_locator = np.round(
