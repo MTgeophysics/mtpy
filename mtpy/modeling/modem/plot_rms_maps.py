@@ -26,12 +26,12 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mtpy.utils import basemap_tools
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
-from mtpy.utils.mtpylog import MtPyLog
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.gis_tools import epsg_project
 from mtpy.modeling.modem import Residual
 
 __all__ = ["PlotRMSMaps"]
-_logger = MtPyLog.get_mtpy_logger(__name__)
+_logger = get_mtpy_logger(__name__)
 
 
 class PlotRMSMaps(object):
