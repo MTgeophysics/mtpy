@@ -1035,8 +1035,12 @@ class Model(object):
         ax.set_ylim((np.floor(self.station_locations.rel_north.min()) - 1000, 
                      np.ceil(self.station_locations.rel_north.max()) + 1000))
 
-
         plt.show()
+        
+        plt.clim(0,400)
+        
+        return ax
+        
         
     def plot_sealevel_resistivity(self):
         """
@@ -1997,7 +2001,7 @@ class Model(object):
 
         
         for k in depthindices:
-            fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
+            fname = os.path.join(savepath,outfile_basename+'_%1im.xyz'%z[0][0][k])
             
             # get relevant depth slice
             vals = resvals[:,:,k].flatten()

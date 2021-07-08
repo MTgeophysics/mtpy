@@ -189,11 +189,12 @@ class PlotResponse(object):
 
         self.plot_component = kwargs.pop('plot_component', 4)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
-        self.save_plots = kwargs.pop('plot_yn', False)
+        self.save_plots = kwargs.pop('save_plots', False)
         self.plot_z = kwargs.pop('plot_z', True)
         self.ylabel_pad = kwargs.pop('ylabel_pad', 1.25)
         self.label_axes = kwargs.pop('label_axes',True)
         self.shift_yx_phase = kwargs.pop('shift_yx_phase',False)
+        self.savepath = kwargs.pop('savepath','.')
 
         self.fig_list = []
 
@@ -2053,7 +2054,7 @@ class PlotResponse(object):
             rsObj.calculate_residual_from_data(data_fn=self.data_fn,
                                                resp_fn=self.resp_fn,
                                                save=False)
-            rms = rsObj.rms
+            rms = rsObj.rms_array['rms']
         else:
             rms = np.nan
 
@@ -2097,7 +2098,7 @@ class PlotResponse(object):
                    fig.add_subplot(gs[3,0],xscale='log',sharex=axr)]
             
             
-            for di in range(2):
+            for di in range(len(data_objects)):
                 dObj = data_objects[di]
                 
                 zObj = Z(z_array=dObj.data_array['z'][si],
@@ -2157,7 +2158,8 @@ class PlotResponse(object):
             
             axp.set_ylim(self.phase_limits)
             axr.set_ylim(self.res_limits)
-            axr.set_title('%s, RMS=%.1f'%(sname,rms),fontdict=fontdict)
+            if np.any(np.isfinite(rms)):
+                axr.set_title('%s, RMS=%.1f'%(sname,rms[si]),fontdict=fontdict)
             
             axt[1].set_xlabel('Period, s',fontsize=self.font_size)
             axr.set_xlim(self.period_limits)
@@ -2176,6 +2178,9 @@ class PlotResponse(object):
                 
                 axt[0].set_ylabel('Tipper, X',labelpad=0)
                 axt[1].set_ylabel('Tipper, Y',labelpad=0)
+                
+            if self.save_plots:
+                self.save_figure(os.path.join(self.savepath,sname+'.png'))
         
         
 
