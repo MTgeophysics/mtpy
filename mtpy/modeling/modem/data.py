@@ -777,11 +777,11 @@ class Data(object):
         for ii, s_key in enumerate(sorted(mt_dict.keys())):
             mt_obj = mt_dict[s_key]
             data_array[ii]["station"] = mt_obj.station
-            data_array[ii]["lat"] = mt_obj.lat
-            data_array[ii]["lon"] = mt_obj.lon
+            data_array[ii]["lat"] = mt_obj.latitude
+            data_array[ii]["lon"] = mt_obj.longitude
             data_array[ii]["east"] = mt_obj.east
             data_array[ii]["north"] = mt_obj.north
-            data_array[ii]["elev"] = mt_obj.elev
+            data_array[ii]["elev"] = mt_obj.elevation
             data_array[ii]["zone"] = mt_obj.utm_zone
             try:
                 data_array[ii]["rel_east"] = mt_obj.grid_east
@@ -1878,12 +1878,12 @@ class Data(object):
             self.mt_dict[s_key].Tipper.compute_mag_direction()
 
             self.data_array[ii]["station"] = mt_obj.station
-            self.data_array[ii]["lat"] = mt_obj.lat
-            self.data_array[ii]["lon"] = mt_obj.lon
+            self.data_array[ii]["lat"] = mt_obj.latitude
+            self.data_array[ii]["lon"] = mt_obj.longitude
             self.data_array[ii]["east"] = mt_obj.east
             self.data_array[ii]["north"] = mt_obj.north
             self.data_array[ii]["zone"] = mt_obj.utm_zone
-            self.data_array[ii]["elev"] = mt_obj.elev
+            self.data_array[ii]["elev"] = mt_obj.elevation
             self.data_array[ii]["rel_elev"] = mt_obj.grid_elev
             self.data_array[ii]["rel_east"] = mt_obj.grid_east
             self.data_array[ii]["rel_north"] = mt_obj.grid_north

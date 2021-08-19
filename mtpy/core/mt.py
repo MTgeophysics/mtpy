@@ -12,6 +12,7 @@ from copy import deepcopy
 
 import numpy as np
 from scipy import interpolate as spi
+import xarray as xr
 
 from mt_metadata.transfer_functions import tf as metadata
 from mtpy.utils import gis_tools
@@ -885,6 +886,22 @@ class MT(object):
 
         mt_obj = read_file(fn, file_type=file_type)
         self.__dict__.update(mt_obj.__dict__)
+        
+    def to_xarray(self):
+        """
+        Make an xarray from the data.
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        d = xr.DataArray(data=self.Z.z,
+                         dims=["frequency", "z"],
+                         coords={"frequency": self.frequencies},
+                         )
+        return d
+        
+        
 
 
 # ==============================================================================
