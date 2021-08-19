@@ -34,7 +34,7 @@ tab = " " * 4
 # ==============================================================================
 # EDI Class
 # ==============================================================================
-class Edi(object):
+class EDI(object):
     """
     This class is for .edi files, mainly reading and writing.  Has been tested
     on Winglink and Phoenix output .edi's, which are meant to follow the
@@ -916,6 +916,8 @@ class Edi(object):
         sm.country = self.Header.country
 
         for key, value in self.Info.info_dict.items():
+            if key is None:
+                key = "extra"
             key = key.lower()
             if key in ["project"]:
                 setattr(sm, key, value)
@@ -948,6 +950,8 @@ class Edi(object):
         sm.transfer_function.runs_processed = sm.run_names
         
         for key, value in self.Info.info_dict.items():
+            if key is None:
+                continue
             if "provenance" in key:
                 sm.set_attr_from_name(key, value)
 
@@ -957,6 +961,8 @@ class Edi(object):
 
         # processing information
         for key, value in self.Info.info_dict.items():
+            if key is None:
+                continue
             key = key.lower()
             if "transfer_function" in key:
                 key = key.split("transfer_function.")[1]
@@ -1036,6 +1042,8 @@ class Edi(object):
             electric.negative.y = meas.y
             electric.positive.y2 = meas.y2
             for k, v in self.Info.info_dict.items():
+                if k is None:
+                    continue
                 if f"{comp}." in k:
                     key = k.split(f"{comp}.")[1].strip()
                     if key == "manufacturer":
@@ -1059,6 +1067,8 @@ class Edi(object):
                 )
                 
             for key, value in self.Info.info_dict.items():
+                if key is None:
+                    continue
                 if f".{comp}." in key:
                     key = key.split(f".{comp}.", 1)[-1]
                     electric.set_attr_from_name(key, value)
@@ -1100,6 +1110,8 @@ class Edi(object):
             except AttributeError:
                 pass
             for k, v in self.Info.info_dict.items():
+                if k is None:
+                    continue
                 if f"{comp}." in k:
                     key = k.split(f"{comp}.")[1].strip()
                     if key == "manufacturer":
@@ -1561,8 +1573,8 @@ class Header(object):
                 try:
                     value = "{0:.3f}".format(value)
                 except ValueError:
-                    raise Exception("value error for key elev or declination")
-                    # value = '0.000'
+                    # raise Exception("value error for key elev or declination")
+                    value = '0.000'
 
             if key in ["filedate"]:
                 value = get_now_utc()
@@ -1622,6 +1634,7 @@ class Information(object):
         self.edi_lines = edi_lines
         self.info_list = []
         self.info_dict = {}
+        self.phoenix_col_width = 32
 
         if self.fn is not None or self.edi_lines is not None:
             self.read_info()
@@ -1681,14 +1694,15 @@ class Information(object):
                     else:
                         pass
             elif info_find:
+                line = line.strip()
                 if line.lower().find("run information") >= 0:
                     phoenix_file = True
-                if phoenix_file and len(line) > 40:
-                    self.info_list.append(line[0:37].strip())
-                    phoenix_list_02.append(line[38:].strip())
+                if phoenix_file and len(line) > self.phoenix_col_width:
+                    self.info_list.append(line[0:self.phoenix_col_width].strip())
+                    phoenix_list_02.append(line[self.phoenix_col_width:].strip())
                 else:
-                    if len(line.strip()) > 1:
-                        self.info_list.append(line.strip())
+                    if len(line) > 1:
+                        self.info_list.append(line)
 
         self.info_list += phoenix_list_02
         # validate the information list
@@ -2680,7 +2694,7 @@ def read_edi(fn):
     from mtpy.core import mt
     st = MTime().now()
 
-    edi_obj = Edi()
+    edi_obj = EDI()
     edi_obj.read_edi_file(fn)
 
     mt_obj = mt.MT()
@@ -2719,7 +2733,7 @@ def write_edi(mt_object, fn=None):
     if not isinstance(mt_object, mt.MT):
         raise ValueError("Input must be an mtpy.core.mt.MT object")
 
-    edi_obj = Edi()
+    edi_obj = EDI()
     edi_obj.Z = mt_object.Z
     edi_obj.Tipper = mt_object.Tipper
 
