@@ -40,6 +40,8 @@ class MTCollection:
 
     def __str__(self):
         lines = [f"MT file path: {self.mt_path}"]
+        if self.mt_df is not None:
+            lines += [f"\t Number of Stations: {len(self.mt_df)}"]
         return "\n".join(lines)
 
     def __repr__(self):

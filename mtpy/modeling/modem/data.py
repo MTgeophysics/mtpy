@@ -1664,7 +1664,7 @@ class Data(object):
             raise DataError("data_fn is None, enter a data file to read.")
         elif not self.data_fn.is_file():
             raise DataError("Could not find {0}, check path".format(self.data_fn))
-
+        
         with open(self.data_fn, "r") as dfid:
             dlines = dfid.readlines()
 
@@ -1817,12 +1817,12 @@ class Data(object):
 
             # if the station data has not been filled yet, fill it
             if not tf_dict[dd[1]]:
-                data_dict[dd[1]].lat = dd[2]
-                data_dict[dd[1]].lon = dd[3]
+                data_dict[dd[1]].latitude = dd[2]
+                data_dict[dd[1]].longitude = dd[3]
                 data_dict[dd[1]].grid_north = dd[4]
                 data_dict[dd[1]].grid_east = dd[5]
                 data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elev = dd[6]
+                data_dict[dd[1]].elevation = dd[6]
                 data_dict[dd[1]].station = dd[1]
                 tf_dict[dd[1]] = True
             # fill in the impedance tensor with appropriate values
@@ -2708,3 +2708,48 @@ class Data(object):
         plt.show()
 
         return median_rho, mean_rho
+    
+    def fix_data_file(self, fn=None, n=3):
+        """
+        A newer compiled version of Modem outputs slightly different headers
+        This aims to convert that into the older format
+        
+        :param fn: DESCRIPTION, defaults to None
+        :type fn: TYPE, optional
+        :param n: DESCRIPTION, defaults to 3
+        :type n: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if fn:
+            self.data_fn = Path(fn)
+        with self.data_fn.open() as fid:
+            lines = fid.readlines()
+        
+        
+        def fix_line(line_list):
+            return " ".join("".join(line_list).replace("\n", "").split()) + "\n"
+        
+        
+        h1 = fix_line(lines[0:n])
+        h2 = fix_line(lines[n : 2 * n])
+        
+        find = None
+        for index, line in enumerate(lines[2 * n + 1 :], start=2 * n + 1):
+            if line.find("#") >= 0:
+                find = index
+                break
+        
+        if find is not None:
+            h3 = fix_line(lines[find : find + n])
+            h4 = fix_line(lines[find + n : find + 2 * n])
+        
+            new_lines = [h1, h2] + lines[2 * n : find] + [h3, h4] + lines[find + 2 * n :]
+        else:
+            new_lines = [h1, h2] + lines[2 * n :]
+        
+        with self.data_fn.open("w") as fid:
+            fid.writelines(new_lines)
+            
+        return self.data_fn
