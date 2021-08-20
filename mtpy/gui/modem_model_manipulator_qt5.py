@@ -14,7 +14,7 @@ import sys
 
 # from PyQt5 import QtCore, QtWidgets
 try:
-    from PyQt5 import QtCore, QtGui, QtWidgets
+    from PyQt5 import QtCore, QtWidgets
 except ImportError:
     raise ImportError("This version needs PyQt5")
 
@@ -521,7 +521,7 @@ class ModelWidget(QtWidgets.QWidget):
         self.cb_ax.set_yticklabels(
             [
                 "{0:.4g}".format(np.round(ii, 0))
-                for ii in np.logspace(self._res_limits[0], self._res_limits[1], num=11)
+                for ii in np.logspace(self._res_limits[0], self._res_limits[1], num=10)
             ]
         )
 

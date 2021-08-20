@@ -258,61 +258,12 @@ class MTCollection:
         coordinate_system = {"init": f"epsg:{epsg}"}
         # write shape file
         geometry_list = []
-        mt_df = self.make_dataframe_from_file_list()
-        for ii, row in mt_df.iterrows():
+        if self.mt_df is None:
+            self.mt_df = self.make_dataframe_from_file_list()
+        for ii, row in self.mt_df.iterrows():
             geometry_list.append(Point(row.longitude, row.latitude))
         
-        gdf = gpd.GeoDataFrame(mt_df, crs=coordinate_system, geometry=geometry_list)
+        gdf = gpd.GeoDataFrame(self.mt_df, crs=coordinate_system, geometry=geometry_list)
         gdf.fn = gdf.fn.astype("str")
         gdf.to_file(self.mt_path.joinpath(filename))
 
-        
-
-
-# station_list = []
-# for fn in edi_path.glob("*.edi"):
-#     m = mt.MT(fn)
-#     entry = {}
-#     entry["fn"] = fn
-#     entry["ID"] = m.station
-#     entry["start"] = m.station_metadata.time_period.start
-#     entry["end"] = m.station_metadata.time_period.end
-#     entry["latitude"] = m.latitude
-#     entry["longitude"] = m.longitude
-#     entry["elevation"] = m.elevation
-#     entry["acquired_by"] = m.station_metadata.acquired_by.author
-#     entry["period_min"] = 1./m.Z.freq.max()
-#     entry["period_max"] = 1./m.Z.freq.min()
-#     entry["file_date"] = m.station_metadata.provenance.creation_time
-#     entry["survey"] = m.survey_metadata.survey_id
-
-#     # add entry to list to put into data frame
-#     station_list.append(entry)
-
-
-# # write csv file to querry
-# sdf = pd.DataFrame(station_list)
-# duplicates = sdf[sdf.duplicated(["latitude", "longitude"])]
-# if len(duplicates) > 0:
-#     print(f"Found {len(sdf)} duplicates, moving oldest to 'Duplicates'")
-#     dup_path = edi_path.joinpath("Duplicates")
-#     if not dup_path.exists():
-#         dup_path.mkdir()
-#     for ii, row in duplicates.iterrows():
-#         fn = Path(row.fn)
-#         new_fn = dup_path.joinpath(Path(row.fn).name)
-#         try:
-#             fn.rename(new_fn)
-#         except FileNotFoundError:
-#             print(f"Could not find {fn} --> skipping")
-# sdf = sdf.drop_duplicates(subset=["latitude", "longitude"], keep="first")
-# sdf.to_csv(edi_path.joinpath("all_mt_stations.csv"), index=False)
-
-# # write shape file
-# geometry_list = []
-# for ii, row in sdf.iterrows():
-#     geometry_list.append(Point(row.longitude, row.latitude))
-
-# gdf = gpd.GeoDataFrame(sdf, crs=coordinate_system, geometry=geometry_list)
-# gdf.fn = gdf.fn.astype("str")
-# gdf.to_file(edi_path.joinpath("all_mt_stations.shp"))
