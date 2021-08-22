@@ -746,7 +746,7 @@ class Z3D2EDI(object):
                 block_count += 1
                 blocks_read_total += block_birrp_df.nread.mean()
                 if blocks_read_total > self._max_nread:
-                    dn = blocks_read_total - self.max_nread
+                    dn = blocks_read_total - self._max_nread
                     block_birrp_df.nread = block_birrp_df.nread.mean() - dn
                     print('WARNING: reached maximum points to read' +
                           ' {0}. \nCutting last block to {1}.'.format(
