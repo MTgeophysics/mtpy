@@ -246,7 +246,7 @@ class MTTS(object):
             if isinstance(self._ts.index[0], int):
                 sr = self._sampling_rate
             else:
-                sr = 1E9/self._ts.index[0].freq.nanos
+                sr = 1E9/float((self._ts.index[1:] - self._ts.index[:-1]).unique()[0].to_numpy())
         else:
             sr = self._sampling_rate
         return np.round(sr, 0)
@@ -267,7 +267,7 @@ class MTTS(object):
             if isinstance(self._ts.index[0], int):
                 return
             else:
-                if 1E9/self._ts.index[0].freq.nanos == self._sampling_rate:
+                if 1E9/float((self._ts.index[1:] - self._ts.index[:-1]).unique()[0].to_numpy()) == self._sampling_rate:
                     return
                 else:
                     if self.start_time_utc is not None:
@@ -340,7 +340,7 @@ class MTTS(object):
         try:
             epoch_sec = float(epoch_sec)
         except ValueError:
-            raise MTTSError("Need to input epoch_sec as a float not {0} {1".format(type(epoch_sec), self.fn_ascii))
+            raise MTTSError("Need to input epoch_sec as a float not {0} {1}".format(type(epoch_sec), self.fn_ascii))
 
         dt_struct = datetime.datetime.utcfromtimestamp(epoch_sec)
         # these should be self cosistent
@@ -449,7 +449,9 @@ class MTTS(object):
         if dec_factor > 1:
             if dec_factor > 8:
                 n_dec = np.log2(dec_factor)/np.log2(8)
+                print(f"n_dec = {n_dec}")
                 dec_list = [8] * int(n_dec) + [int(2**(3 * n_dec % 1))]
+                print(f"dec_list = {dec_list}")
                 decimated_data = signal.decimate(self.ts.data, 8, n=8)
                 for dec in dec_list[1:]:
                     if dec == 0:
@@ -463,6 +465,15 @@ class MTTS(object):
             self.ts = decimated_data
             self.sampling_rate /= float(dec_factor)
             self._set_dt_index(start_time, self.sampling_rate)
+            
+    def resample(self, new_sample_rate):
+        """
+        Use pandas to resample data
+        """
+        
+        ndf = '{0:.0f}N'.format(1. / (new_sample_rate) * 1E9)
+        
+        self.ts = self.ts.resample(ndf).median()
 
     def low_pass_filter(self, low_pass_freq=15, cutoff_freq=55):
         """

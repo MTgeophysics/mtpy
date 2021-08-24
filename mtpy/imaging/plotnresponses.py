@@ -747,8 +747,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # --> set axes properties
                 plt.setp(axr.get_xticklabels(), visible=False)
-                axr.set_yscale('log', nonposy='clip')
-                axr.set_xscale('log', nonposx='clip')
+                axr.set_yscale('log', nonpositive='clip')
+                axr.set_xscale('log', nonpositive='clip')
                 axr.set_xlim(self.x_limits)
                 axr.set_ylim(self.res_limits)
                 axr.grid(True, alpha=.25, which='both',
@@ -835,7 +835,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         self.plot_strike == 'n':
                     axp.set_xlabel('Period (s)', fontdict)
 
-                axp.set_xscale('log', nonposx='clip')
+                axp.set_xscale('log', nonpositive='clip')
                 if self.phase_limits is None:
                     self.phase_limits = (-179.9,179.9)
                 axp.set_ylim(self.phase_limits)
@@ -941,7 +941,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axt.yaxis.set_minor_locator(MultipleLocator(.1))
                     axt.set_xlabel('Period (s)', fontdict=fontdict)
 
-                    axt.set_xscale('log', nonposx='clip')
+                    axt.set_xscale('log', nonpositive='clip')
                     if self.tipper_limits is None:
                         tmax = max([tyr.max(), tyi.max()])
                         if tmax > 1:
@@ -1092,7 +1092,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axst.set_ylim(self.strike_limits)
                     axst.yaxis.set_major_locator(MultipleLocator(30))
                     axst.yaxis.set_minor_locator(MultipleLocator(5))
-                    axst.set_xscale('log', nonposx='clip')
+                    axst.set_xscale('log', nonpositive='clip')
                     axst.grid(True, alpha=.25, which='both',
                               color=(.25, .25, .25),
                               lw=.25)
@@ -1145,7 +1145,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     else:
                         plt.setp(axsk.get_yticklabels(), visible=False)
                     axsk.set_xlabel('Period (s)', fontdict)
-                    axsk.set_xscale('log', nonposx='clip')
+                    axsk.set_xscale('log', nonpositive='clip')
 
                     # set th xaxis tick labels to invisible
                     if pdict['skew'] != nrows - 1:
@@ -1344,8 +1344,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     # --> set axes properties
                     plt.setp(axr2.get_xticklabels(), visible=False)
                     plt.setp(axr2.get_yticklabels(), visible=False)
-                    axr2.set_yscale('log', nonposy='clip')
-                    axr2.set_xscale('log', nonposx='clip')
+                    axr2.set_yscale('log', nonpositive='clip')
+                    axr2.set_xscale('log', nonpositive='clip')
                     axr2.set_xlim(self.x_limits)
                     axr2.set_ylim(self.res_limits)
                     axr2.grid(True,
@@ -1399,7 +1399,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     plt.setp(axp2.get_xticklabels(), visible=False)
                     plt.setp(axp2.get_yticklabels(), visible=False)
                     axp2.set_xlabel('Period (s)', fontdict)
-                    axp2.set_xscale('log', nonposx='clip')
+                    axp2.set_xscale('log', nonpositive='clip')
                     if self.phase_limits is None:
                         self.phase_limits=(-179.9,179.9)
                     axp2.set_ylim(self.phase_limits)
@@ -1457,8 +1457,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     else:
                         plt.setp(axr.get_yticklabels(), visible=False)
 
-                    axr.set_yscale('log', nonposy='clip')
-                    axr.set_xscale('log', nonposx='clip')
+                    axr.set_yscale('log', nonpositive='clip')
+                    axr.set_xscale('log', nonpositive='clip')
                     axr.set_ylim(self.res_limits)
                     axr.set_xlim(self.xlimits)
                     axr.grid(True, alpha=.25,
@@ -1475,7 +1475,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     else:
                         plt.setp(axp.get_yticklabels(), visible=False)
 
-                    axp.set_xscale('log', nonposx='clip')
+                    axp.set_xscale('log', nonpositive='clip')
                     axp.set_ylim(self.phase_limits)
                     axp.yaxis.set_major_locator(MultipleLocator(15))
                     axp.yaxis.set_minor_locator(MultipleLocator(5))
@@ -2053,8 +2053,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         ellipd.set_edgecolor(cxy[ii])
 
             # -------set axis properties---------------------------------------
-            self.axrxy.set_yscale('log', nonposy='clip')
-            self.axrxy.set_xscale('log', nonposx='clip')
+            self.axrxy.set_yscale('log', nonpositive='clip')
+            self.axrxy.set_xscale('log', nonpositive='clip')
             self.axrxy.set_ylim(self.res_limits)
             self.axrxy.set_xlim(self.x_limits)
             self.axrxy.grid(True, alpha=.25,
@@ -2085,8 +2085,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             self.axrxy.set_ylabel('App. Resistivity($\Omega \cdot$m)',
                                   fontdict=fontdict)
 
-            self.axryx.set_yscale('log', nonposy='clip')
-            self.axryx.set_xscale('log', nonposx='clip')
+            self.axryx.set_yscale('log', nonpositive='clip')
+            self.axryx.set_xscale('log', nonpositive='clip')
             self.axryx.set_ylim(self.res_limits)
             self.axryx.set_xlim(self.x_limits)
             self.axryx.grid(True, alpha=.25,
@@ -2113,7 +2113,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             # --> set axes properties
             self.axpxy.set_xlabel('Period(s)', fontdict=fontdict)
             self.axpxy.set_ylabel('Phase(deg)', fontdict=fontdict)
-            self.axpxy.set_xscale('log', nonposx='clip')
+            self.axpxy.set_xscale('log', nonpositive='clip')
             self.axpxy.set_ylim(self.phase_limits)
             self.axpxy.yaxis.set_major_locator(MultipleLocator(15))
             self.axpxy.yaxis.set_minor_locator(MultipleLocator(5))
@@ -2126,7 +2126,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 self.axpxy.set_xlabel('')
 
             self.axpyx.set_xlabel('Period(s)', fontdict=fontdict)
-            self.axpyx.set_xscale('log', nonposx='clip')
+            self.axpyx.set_xscale('log', nonpositive='clip')
             self.axpyx.set_ylim(self.phase_limits)
             self.axpyx.yaxis.set_major_locator(MultipleLocator(15))
             self.axpyx.yaxis.set_minor_locator(MultipleLocator(5))
@@ -2185,8 +2185,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
             if self.plot_num == 2:
                 # --> set axes properties for resxx
-                self.axrxy.set_yscale('log', nonposy='clip')
-                self.axrxy.set_xscale('log', nonposx='clip')
+                self.axrxy.set_yscale('log', nonpositive='clip')
+                self.axrxy.set_xscale('log', nonpositive='clip')
                 self.axrxy.set_xlim(self.x_limits)
                 self.axrxy.grid(True,
                                 alpha=.25,
@@ -2196,8 +2196,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 plt.setp(self.axrxy.get_xticklabels(), visible=False)
 
                 # --> set axes properties for resyy
-                self.axryx.set_yscale('log', nonposy='clip')
-                self.axryx.set_xscale('log', nonposx='clip')
+                self.axryx.set_yscale('log', nonpositive='clip')
+                self.axryx.set_xscale('log', nonpositive='clip')
                 self.axryx.set_xlim(self.x_limits)
                 self.axryx.grid(True,
                                 alpha=.25,
@@ -2208,7 +2208,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # --> set axes properties Phasexx
                 self.axpxy.set_xlabel('Period(s)', fontdict)
-                self.axpxy.set_xscale('log', nonposx='clip')
+                self.axpxy.set_xscale('log', nonpositive='clip')
                 self.axpxy.set_ylim(ymin=-179.9, ymax=179.9)
                 self.axpxy.yaxis.set_major_locator(MultipleLocator(30))
                 self.axpxy.yaxis.set_minor_locator(MultipleLocator(5))
@@ -2220,7 +2220,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # --> set axes properties Phaseyy
                 self.axpyx.set_xlabel('Period(s)', fontdict)
-                self.axpyx.set_xscale('log', nonposx='clip')
+                self.axpyx.set_xscale('log', nonpositive='clip')
                 self.axpyx.set_ylim(ymin=-179.9, ymax=179.9)
                 self.axpyx.yaxis.set_major_locator(MultipleLocator(30))
                 self.axpyx.yaxis.set_minor_locator(MultipleLocator(5))
@@ -2301,7 +2301,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 self.axst.set_ylim(self.strike_limits)
                 self.axst.yaxis.set_major_locator(MultipleLocator(30))
                 self.axst.yaxis.set_minor_locator(MultipleLocator(5))
-                self.axst.set_xscale('log', nonposx='clip')
+                self.axst.set_xscale('log', nonpositive='clip')
                 self.axst.grid(True, alpha=.25,
                                which='both',
                                color=(.25, .25, .25),
@@ -2327,7 +2327,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 self.axsk.set_ylabel('Skew(deg)', fontdict)
                 self.axsk.set_xlabel('Period(s)',
                                      fontdict=fontdict)
-                self.axsk.set_xscale('log', nonposx='clip')
+                self.axsk.set_xscale('log', nonpositive='clip')
                 self.axsk.grid(True, alpha=.25,
                                which='both',
                                color=(.25, .25, .25),

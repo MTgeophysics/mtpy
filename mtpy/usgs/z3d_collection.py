@@ -502,7 +502,8 @@ class Z3DCollection(object):
                     print('INFO: Using scales {0} = {1} m'.format(row.component,
                                                             row.dipole_length))
                 # decimate to the required sampling rate
-                t_obj.decimate(int(z_obj.df/new_sampling_rate))
+                t_obj.resample(new_sampling_rate)
+                # t_obj.decimate(int(z_obj.df/new_sampling_rate))
                 # fill the new time series with the data at appropriate times
                 print(f"start = {t_obj.ts.index[0]}, end = {t_obj.ts.index[-1]}")
                 new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) &
