@@ -59,7 +59,7 @@ logger = get_mtpy_logger(__name__)
 plugins = {
     "edi": {"file_types": ["edi"], "reader": edi.read_edi, "writer": edi.write_edi},
     "zmm": {
-        "file_types": ["zmm", "zrr"],
+        "file_types": ["zmm", "zrr", "zss"],
         "reader": zmm.read_zmm,
         "writer": zmm.write_zmm,
     },

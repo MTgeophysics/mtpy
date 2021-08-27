@@ -107,7 +107,7 @@ class ZMMHeader(object):
         if value is None:
             return
         value = Path(value)
-        if value.suffix.lower() in [".zmm", ".zrr"]:
+        if value.suffix.lower() in [".zmm", ".zrr", ".zss"]:
             self._zfn = value
         else:
             msg = f"Input file must be a *.zmm or *.zrr file not {value.suffix}"
