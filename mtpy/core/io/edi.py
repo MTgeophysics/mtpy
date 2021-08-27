@@ -137,7 +137,7 @@ class EDI(object):
 
     def __str__(self):
         lines = [f"Station: {self.station}", "-" * 50]
-        lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
+        lines.append(f"\tSurvey:        {self.survey_metadata.id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
         lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
         lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
@@ -910,7 +910,7 @@ class EDI(object):
                 sm.project = self.Header.prospect
             except AttributeError:
                 pass
-        sm.survey_id = self.Header.survey
+        sm.id = self.Header.survey
         sm.acquired_by.author = self.Header.acqby
         sm.geographic_name = self.Header.loc
         sm.country = self.Header.country
@@ -922,7 +922,7 @@ class EDI(object):
             if key in ["project"]:
                 setattr(sm, key, value)
             if key in ["survey"]:
-                sm.survey_id = value
+                sm.id = value
 
         return sm
 

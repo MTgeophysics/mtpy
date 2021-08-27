@@ -139,7 +139,7 @@ class MT(object):
 
     def __str__(self):
         lines = [f"Station: {self.station}", "-" * 50]
-        lines.append(f"\tSurvey:        {self.survey_metadata.survey_id}")
+        lines.append(f"\tSurvey:        {self.survey_metadata.id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
         lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
         lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
