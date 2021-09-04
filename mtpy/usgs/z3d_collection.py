@@ -470,7 +470,6 @@ class Z3DCollection(object):
 
             # sort the data frame by date
             comp_df = comp_df.sort_values('start')
-            print(comp_df)
 
             # get start date and end at last start date, get time difference
             start_dt = comp_df.start.min()
@@ -493,7 +492,6 @@ class Z3DCollection(object):
             # loop over each z3d file for the given component
             for row in comp_df.itertuples():
                 z_obj = zen.Zen3D(row.fn_z3d)
-                print(row.fn_z3d)
                 z_obj.read_z3d()
                 t_obj = z_obj.ts_obj
                 if row.component in ['ex', 'ey']:
@@ -505,7 +503,6 @@ class Z3DCollection(object):
                 t_obj.resample(new_sampling_rate)
                 # t_obj.decimate(int(z_obj.df/new_sampling_rate))
                 # fill the new time series with the data at appropriate times
-                print(f"start = {t_obj.ts.index[0]}, end = {t_obj.ts.index[-1]}")
                 new_ts.ts.data[(new_ts.ts.index >= t_obj.ts.index[0]) &
                                 (new_ts.ts.index <= t_obj.ts.index[-1])] = t_obj.ts.data
                 # get the end date as the last z3d file

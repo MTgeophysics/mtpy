@@ -643,7 +643,12 @@ class ScriptFile(BIRRPParameters):
                 s_lines += ['{0:0.0f}'.format(fn_arr['nread'].min())]
 
                 for cc in self.comp_list:
-                    fn_index = np.where(fn_arr['comp'] == cc)[0][0]
+                    try:
+                        fn_index = np.where(fn_arr['comp'] == cc)[0][0]
+                    except IndexError as error:
+                        print(f"WARNING: with {cc} can not find in {fn_arr['comp']}")
+                        print(f"ERROR MESSAGE: {error}")
+                        raise IndexError(error)
 
                     if ff == 0:
                         fn_lines = self.make_fn_lines_block_00(fn_arr[fn_index])
@@ -668,7 +673,7 @@ class ScriptFile(BIRRPParameters):
             try:
                 fid.write('\n'.join(s_lines))
             except TypeError:
-                print(s_lines)
+                print(f"ERROR: {s_lines}")
 
         print('INFO: Wrote script file to {0}'.format(self.script_fn))
 
