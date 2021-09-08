@@ -329,12 +329,10 @@ class MTCollection:
                 if len(avg_df) > 1:
                     m_list = [mt.MT(row.fn) for row in avg_df.itertuples()]
                     # interpolate onto a similar period range
-                    print(m_list)
                     f_list = []
                     for m in m_list:
                         f_list += m.Z.freq.tolist()
                     f = np.unique(np.array(f_list))
-                    print(f)
                     f = np.logspace(np.log10(f.min()), np.log10(f.max()), 48)
                     for m in m_list:
                         m.Z, m.Tipper = m.interpolate(f, bounds_error=False)
