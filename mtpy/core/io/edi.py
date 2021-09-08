@@ -2806,39 +2806,58 @@ def write_edi(mt_object, fn=None):
         r_dict = run.to_dict(single=True)
 
         for rk, rv in r_dict.items():
-            if rv not in [None, "1980-01-01T00:00:00+00:00"]:
-                if rk[0:2] in ["ex", "ey", "hx", "hy", "hz", "te", "rr"]:
-                    if rk[0:2] == "te":
-                        comp = "temperature"
-                    elif rk[0:2] == "rr":
-                        comp = rk[0:4]
-                    else:
-                        comp = rk[0:2]
-                    if write_dict[comp] is False:
-                        continue
-                    skip_list = [
-                        f"{comp}.{ff}"
-                        for ff in [
-                            "filter.name",
-                            "filter.applied",
-                            "time_period.start",
-                            "time_period.end",
-                            "location.elevation",
-                            "location.latitude",
-                            "location.longitude",
-                            "positive.latitude",
-                            "positive.longitude",
-                            "positive.elevation",
-                            "negative.latitude",
-                            "negative.longitude",
-                            "negative.elevation",
-                            "sample_rate",
-                        ]
-                    ]
-                    if rk not in skip_list:
-                        edi_obj.Info.info_list.append(f"{run.id}.{rk} = {rv}")
+            if rv in [None, "1980-01-01T00:00:00+00:00"]:
+                continue
+            if rk[0:2] in ["ex", "ey", "hx", "hy", "hz", "te", "rr"]:
+                if rk[0:2] == "te":
+                    comp = "temperature"
+                elif rk[0:2] == "rr":
+                    comp = rk[0:4]
                 else:
+                    comp = rk[0:2]
+                if write_dict[comp] is False:
+                    continue
+                skip_list = [
+                    f"{comp}.{ff}"
+                    for ff in [
+                        "filter.name",
+                        "filter.applied",
+                        "time_period.start",
+                        "time_period.end",
+                        "location.elevation",
+                        "location.latitude",
+                        "location.longitude",
+                        "location.x",
+                        "location.y",
+                        "location.z",
+                        "positive.latitude",
+                        "positive.longitude",
+                        "positive.elevation",
+                        "positive.x",
+                        "positive.x2",
+                        "positive.y",
+                        "positive.y2",
+                        "positive.z",
+                        "positive.z2",
+                        "negative.latitude",
+                        "negative.longitude",
+                        "negative.elevation",
+                        "negative.x",
+                        "negative.x2",
+                        "negative.y",
+                        "negative.y2",
+                        "negative.z",
+                        "negative.z2",
+                        "sample_rate",
+                        "data_quality.rating.value",
+                        "data_quality.flag",
+                    ]
+                ]
+                
+                if rk not in skip_list:
                     edi_obj.Info.info_list.append(f"{run.id}.{rk} = {rv}")
+            else:
+                edi_obj.Info.info_list.append(f"{run.id}.{rk} = {rv}")
 
     ### fill measurement
     edi_obj.Measurement.refelev = mt_object.elevation

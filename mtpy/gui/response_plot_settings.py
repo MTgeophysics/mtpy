@@ -44,7 +44,7 @@ class PlotSettings(object):
         self.phase_yx_limits = kwargs.pop("phase_yx_limits", None)
         self.phase_yy_limits = kwargs.pop("phase_yy_limits", None)
 
-        self.tipper_limits = kwargs.pop("tipper_limits", None)
+        self.tipper_limits = kwargs.pop("tipper_limits", (-1.1, 1.1))
 
         self.subplot_wspace = kwargs.pop("subplot_wspace", 0.2)
         self.subplot_hspace = kwargs.pop("subplot_hspace", 0.0)

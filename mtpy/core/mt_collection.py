@@ -14,7 +14,10 @@ Created on Mon Jan 11 15:36:38 2021
 # Imports
 # =============================================================================
 from pathlib import Path
+
+import numpy as np
 import pandas as pd
+
 import geopandas as gpd
 from shapely.geometry import Point
 import xarray as xr
@@ -127,7 +130,7 @@ class MTCollection:
             entry["period_min"] = 1.0 / m.Z.freq.max()
             entry["period_max"] = 1.0 / m.Z.freq.min()
             entry["n_periods"] = m.Z.freq.size
-            entry["survey"] = m.survey_metadata.survey_id
+            entry["survey"] = m.survey_metadata.id
             entry["fn"] = fn
             entry["file_date"] = m.station_metadata.provenance.creation_time
 
@@ -154,6 +157,7 @@ class MTCollection:
         """
 
         new_df = self.make_dataframe_from_file_list(fn_list)
+        self.mt_df.append(new_df, ignore_index=True)
         return self._check_for_duplicates(self.mt_df.append(new_df, ignore_index=True))
 
     def _check_for_duplicates(self, mt_df, locate="location"):
@@ -180,6 +184,7 @@ class MTCollection:
                 fn = Path(row.fn)
                 new_fn = dup_path.joinpath(Path(row.fn).name)
                 try:
+                    self.logger.info("Moved %s to Duplicates", new_fn.name)
                     fn.rename(new_fn)
                 except FileNotFoundError:
                     self.logger.debug(f"Could not find {fn} --> skipping")
@@ -196,8 +201,8 @@ class MTCollection:
         :rtype: TYPE
 
         """
-
         self.mt_df = pd.read_csv(csv_fn)
+        self.mt_path = Path(csv_fn).parent
 
     def to_csv(self, filename):
         """
@@ -216,7 +221,7 @@ class MTCollection:
         self.mt_df.to_csv(filename, index=False)
         self.logger.info(f"Wrote CSV file to {filename}")
 
-    def apply_bbox(self, longitude_min, longitude_max, latitude_min, latitude_max):
+    def apply_bbox(self, x_min, x_max, y_min, y_max, units="degrees", utm_zone=None):
         """
         Return :class:`pandas.DataFrame` of station within bounding box
 
@@ -232,22 +237,44 @@ class MTCollection:
         :rtype: :class:`pandas.DataFrame`
 
         """
-        msg = (
-            "Applying bounding box: "
-            f"lon_min = {longitude_min:.6g}, "
-            f"lon_max = {longitude_max:.6g}, "
-            f"lat_min = {latitude_min:.6g}, "
-            f"lat_max = {latitude_max:.6g}"
-        )
-        self.logger.debug(msg)
-
-        return self.mt_df.loc[
-            (self.mt_df.longitude >= longitude_min)
-            & (self.mt_df.longitude <= longitude_max)
-            & (self.mt_df.latitude >= latitude_min)
-            & (self.mt_df.latitude <= latitude_max)
-        ]
+        if units in ["degrees"]:
+            msg = (
+                "Applying bounding box: "
+                f"lon_min = {x_min:.6g}, "
+                f"lon_max = {x_max:.6g}, "
+                f"lat_min = {y_min:.6g}, "
+                f"lat_max = {y_max:.6g}"
+            )
+            self.logger.debug(msg)
     
+            return self.mt_df.loc[
+                (self.mt_df.longitude >= x_min)
+                & (self.mt_df.longitude <= x_max)
+                & (self.mt_df.latitude >= y_min)
+                & (self.mt_df.latitude <= y_max)
+            ]
+        
+        if units in ["m"]:
+            if utm_zone is None:
+                raise ValueError("UTM Zone must be input")
+                
+            msg = (
+                "Applying bounding box: "
+                f"east_min = {x_min:.6g}, "
+                f"east_max = {x_max:.6g}, "
+                f"north_min = {y_min:.6g}, "
+                f"north_max = {y_max:.6g}"
+                f"utm_zone = {utm_zone}"
+            )
+            self.logger.debug(msg)
+    
+            return self.mt_df[self.mt_df.utm_zone == utm_zone].loc[
+                (self.mt_df.easting >= x_min)
+                & (self.mt_df.easting <= x_max)
+                & (self.mt_df.northing >= y_min)
+                & (self.mt_df.northing <= y_max)
+            ]
+        
     def write_shp_file(self, filename, bounding_box=None, epsg=4326):
         """
         
@@ -268,4 +295,92 @@ class MTCollection:
         gdf = gpd.GeoDataFrame(self.mt_df, crs=coordinate_system, geometry=geometry_list)
         gdf.fn = gdf.fn.astype("str")
         gdf.to_file(self.mt_path.joinpath(filename))
+        
+    def average_stations(self, cell_size_m, bounding_box=None, save_dir=None):
+        """
+        Average nearby stations to make it easier to invert
+        
+        :param cell_size_m: DESCRIPTION
+        :type cell_size_m: TYPE
+        :param bounding_box: DESCRIPTION, defaults to None
+        :type bounding_box: TYPE, optional
+        :param save_dir: DESCRIPTION, defaults to None
+        :type save_dir: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
 
+        """
+        r = cell_size_m
+        count = 1
+        s_list = []
+        
+        if bounding_box:
+            df = self.apply_bbox(*bounding_box)
+        
+        else:
+            df = self.mt_df
+            
+        
+        for ee in np.arange(df.east.min(), df.east.max(), r):
+            for nn in np.arange(df.north.min(), df.north.max(), r):
+                bbox = ()
+                avg_df = 
+                avg_z = data_obj.data_array[
+                    np.where(
+                        (data_obj.data_array["rel_east"] >= ee)
+                        & (data_obj.data_array["rel_east"] <= ee + r)
+                        & (data_obj.data_array["rel_north"] > nn)
+                        & (data_obj.data_array["rel_north"] <= nn + r)
+                    )
+                ]
+                if len(avg_z["lat"]) > 1:
+                    mt_avg = mt.MT()
+                    avg_z["z"][np.where(avg_z["z"] == 0 + 0j)] = np.nan + 1j * np.nan
+                    avg_z["z_err"][np.where(avg_z["z_err"] == 0)] = np.nan
+                    avg_z["tip"][np.where(avg_z["z"] == 0 + 0j)] = np.nan + 1j * np.nan
+                    avg_z["tip_err"][np.where(avg_z["z_err"] == 0)] = np.nan
+        
+                    mt_avg.Z = mt.MTz.Z(
+                        z_array=np.nanmean(avg_z["z"], axis=0),
+                        z_err_array=np.nanmean(avg_z["z_err"], axis=0),
+                        freq=1.0 / data_obj.period_list,
+                    )
+                    mt_avg.Tipper = mt.MTz.Tipper(
+                        tipper_array=np.nanmean(avg_z["tip"], axis=0),
+                        tipper_err_array=np.nanmean(avg_z["tip_err"], axis=0),
+                        freq=1.0 / data_obj.period_list,
+                    )
+                    mt_avg.latitude = avg_z["lat"].mean()
+                    mt_avg.longitude = avg_z["lon"].mean()
+                    mt_avg.elevation = avg_z["elev"].mean()
+                    mt_avg.station = f"AVG{count:03}"
+                    mt_avg.station_metadata.comments = (
+                        "avgeraged_stations = " + ",".join(avg_z["station"].tolist())
+                    )
+                    try:
+                        edi_obj = mt_avg.write_mt_file(save_dir=new_edi_path)
+                        print(f"wrote average file {edi_obj.fn}")
+        
+                        s_list.append(
+                            {"count": count, "stations": avg_z["station"].tolist()}
+                        )
+                        count += 1
+        
+                        # remove averaged stations
+                        try:
+                            data_obj.data_array, data_obj.mt_dict = data_obj.remove_station(
+                                avg_z["station"].tolist()
+                            )
+                        except KeyError:
+                            print("Could not remove {avg_z['station'].tolist()}")
+        
+                        # add averaged station
+                        data_obj.data_array, data_obj.mt_dict = data_obj.add_station(
+                            mt_object=mt_avg
+                        )
+                    except Exception as error:
+                        print(f"{error} ")
+                        print(avg_z['station'].tolist())
+        
+                else:
+                    continue
