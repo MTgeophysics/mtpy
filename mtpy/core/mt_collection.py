@@ -297,7 +297,7 @@ class MTCollection:
         gdf.to_file(self.mt_path.joinpath(filename))
         
     def average_stations(self, cell_size_m, bounding_box=None, save_dir=None,
-                         units="deg", utm_zone=None):
+                         units="deg", utm_zone=None, count=1):
         """
         Average nearby stations to make it easier to invert
         
@@ -311,10 +311,9 @@ class MTCollection:
         :rtype: TYPE
 
         """
-    
+        if save_dir is None:
+            save_dir = self.mt_path
         r = cell_size_m
-        count = 1
-        s_list = []
         
         if bounding_box:
             df = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
@@ -322,65 +321,68 @@ class MTCollection:
         else:
             df = self.mt_df
             
-        
-        for ee in np.arange(df.east.min(), df.east.max(), r):
-            for nn in np.arange(df.north.min(), df.north.max(), r):
+        new_fn_list = []
+        for ee in np.arange(df.easting.min(), df.easting.max(), r):
+            for nn in np.arange(df.northing.min(), df.northing.max(), r):
                 bbox = (ee, ee + r, nn, nn + r)
                 avg_df = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
                 if len(avg_df) > 1:
                     m_list = [mt.MT(row.fn) for row in avg_df.itertuples()]
-                    f = np.array(list(set([m.Z.freq for m in m_list])))
-                    m_list = [m.interpolate(f) for m in m_list]
+                    # interpolate onto a similar period range
+                    print(m_list)
+                    f_list = []
+                    for m in m_list:
+                        f_list += m.Z.freq.tolist()
+                    f = np.unique(np.array(f_list))
+                    print(f)
+                    f = np.logspace(np.log10(f.min()), np.log10(f.max()), 48)
+                    for m in m_list:
+                        m.Z, m.Tipper = m.interpolate(f, bounds_error=False)
+                    avg_z = np.array([m.Z.z for m in m_list])
+                    avg_z_err = np.array([m.Z.z_err for m in m_list])
+                    avg_t = np.array([m.Tipper.tipper for m in m_list])
+                    avg_t_err = np.array([m.Tipper.tipper_err for m in m_list])
                     
+                    avg_z[np.where(avg_z==0 + 0j)] = np.nan + 1j * np.nan
+                    avg_z_err[np.where(avg_z_err==0)] = np.nan
+                    avg_t[np.where(avg_t==0 + 0j)] = np.nan + 1j * np.nan
+                    avg_t_err[np.where(avg_t_err==0 + 0j)] = np.nan
                     
-                        
-                #     mt_avg = mt.MT()
-                #     avg_z["z"][np.where(avg_z["z"] == 0 + 0j)] = np.nan + 1j * np.nan
-                #     avg_z["z_err"][np.where(avg_z["z_err"] == 0)] = np.nan
-                #     avg_z["tip"][np.where(avg_z["z"] == 0 + 0j)] = np.nan + 1j * np.nan
-                #     avg_z["tip_err"][np.where(avg_z["z_err"] == 0)] = np.nan
+                    avg_z = np.nanmean(avg_z, axis=0)
+                    avg_z_err = np.nanmean(avg_z_err, axis=0)
+                    avg_t = np.nanmean(avg_t, axis=0)
+                    avg_t_err = np.nanmean(avg_t_err, axis=0)
+                    
+                    mt_avg = mt.MT()
+                    mt_avg.Z.freq = f
+                    mt_avg.Z.z = avg_z
+                    mt_avg.Z.z_err = avg_z_err
+                    
+                    mt_avg.Tipper.freq = f
+                    mt_avg.Tipper.tipper = avg_t
+                    mt_avg.Tipper.tipper_err = avg_t_err
+                    
+                    mt_avg.latitude = np.mean(np.array([m.latitude for m in m_list]))
+                    mt_avg.longitude = np.mean(np.array([m.longitude for m in m_list]))
+                    mt_avg.elevation = np.mean(np.array([m.elevation for m in m_list]))
+                    mt_avg.station = f"AVG{count:03}"
+                    mt_avg.station_metadata.comments = (
+                        "avgeraged_stations = " + ",".join([m.station for m in m_list])
+                        )
+                    
+                    try:
+                        edi_obj = mt_avg.write_mt_file(save_dir=save_dir)
+                        print(f"wrote average file {edi_obj.fn}")
+                        new_fn_list.append(edi_obj.fn)
+                        count += 1 
+            
+  
+                    except Exception as error:
+                        print(f"{error} ")
         
-                #     mt_avg.Z = mt.MTz.Z(
-                #         z_array=np.nanmean(avg_z["z"], axis=0),
-                #         z_err_array=np.nanmean(avg_z["z_err"], axis=0),
-                #         freq=1.0 / data_obj.period_list,
-                #     )
-                #     mt_avg.Tipper = mt.MTz.Tipper(
-                #         tipper_array=np.nanmean(avg_z["tip"], axis=0),
-                #         tipper_err_array=np.nanmean(avg_z["tip_err"], axis=0),
-                #         freq=1.0 / data_obj.period_list,
-                #     )
-                #     mt_avg.latitude = avg_z["lat"].mean()
-                #     mt_avg.longitude = avg_z["lon"].mean()
-                #     mt_avg.elevation = avg_z["elev"].mean()
-                #     mt_avg.station = f"AVG{count:03}"
-                #     mt_avg.station_metadata.comments = (
-                #         "avgeraged_stations = " + ",".join(avg_z["station"].tolist())
-                #     )
-                #     try:
-                #         edi_obj = mt_avg.write_mt_file(save_dir=new_edi_path)
-                #         print(f"wrote average file {edi_obj.fn}")
+                else:
+                    continue
+                
+        new_df = self.make_dataframe_from_file_list(new_fn_list)
         
-                #         s_list.append(
-                #             {"count": count, "stations": avg_z["station"].tolist()}
-                #         )
-                #         count += 1
-        
-                #         # remove averaged stations
-                #         try:
-                #             data_obj.data_array, data_obj.mt_dict = data_obj.remove_station(
-                #                 avg_z["station"].tolist()
-                #             )
-                #         except KeyError:
-                #             print("Could not remove {avg_z['station'].tolist()}")
-        
-                #         # add averaged station
-                #         data_obj.data_array, data_obj.mt_dict = data_obj.add_station(
-                #             mt_object=mt_avg
-                #         )
-                #     except Exception as error:
-                #         print(f"{error} ")
-                #         print(avg_z['station'].tolist())
-        
-                # else:
-                #     continue
+        return new_df
