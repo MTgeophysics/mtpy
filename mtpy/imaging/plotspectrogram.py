@@ -15,6 +15,7 @@ Created on Mon Aug 19 16:24:29 2013
 # =================================================================
 
 import numpy as np
+from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import mtpy.processing.tf as mttf
@@ -460,35 +461,45 @@ class PlotTF(object):
 
             # plot time series
             st = self.start_time
-            time_array = np.arange(
-                st, st + self.time_series.size / self.df, 1.0 / self.df
-            )
+            time_array = (st + np.arange(self.time_series.size)) / self.df
+            if self.time_units in ["hrs"]:
+                time_array /= 3600
+                
+            elif self.time_units in ["min"]:
+                time_array /= 60
+                
+            elif self.time_units in ["sec"]:
+                time_array /= 1
 
             self.axts.plot(
                 time_array, self.time_series, color=self.line_color_ts, lw=self.lw
             )
-            self.axts.axis("tight")
+            self.axts.set_xlim(time_array[0], time_array[-1])
+            #self.axts.axis("tight")
 
-            FX = np.fft.fft(mttf.padzeros(self.time_series))
-            FXfreq = np.fft.fftfreq(len(FX), 1.0 / self.df)
+            # FX = np.fft.fft(mttf.padzeros(self.time_series))
+            # FXfreq = np.fft.fftfreq(len(FX), 1.0 / self.df)
 
             # plot power spectra
+            f, p = signal.welch(self.time_series, 
+                                **{"fs": self.df, "nperseg": self.tf_nfbins*16}) 
             if self.freq_scale == "log":
-                self.axps.loglog(
-                    abs(FX[0 : len(FX) / 2] / max(abs(FX))),
-                    FXfreq[0 : len(FX) / 2],
-                    color=self.line_color_ps,
-                    lw=self.lw,
-                )
+                self.axps.loglog(p, f, lw=self.lw, color=self.line_color_ps)
+                #     abs(FX[0 : int(len(FX) / 2)] / max(abs(FX))),
+                #     FXfreq[0 : int(len(FX) / 2)],
+                #     color=self.line_color_ps,
+                #     lw=self.lw,
+                # )
             else:
-                self.axps.semilogx(
-                    abs(FX[0 : len(FX) / 2] / max(abs(FX))),
-                    FXfreq[0 : len(FX) / 2],
-                    color=self.line_color_ps,
-                    lw=self.lw,
-                )
-            self.axps.axis("tight")
-            self.axps.set_ylim(self.freq_list[1], self.freq_list[-1])
+                self.axps.semilogx(p, f, lw=self.lw, color=self.line_color_ps)
+                # self.axps.semilogx(
+                #     abs(FX[0 : len(FX) / 2] / max(abs(FX))),
+                #     FXfreq[0 : len(FX) / 2],
+                #     color=self.line_color_ps,
+                #     lw=self.lw,
+                # )
+            # self.axps.axis("tight")
+            self.axps.set_ylim(f[0], f[-1])
         else:
             self.axtf = self.fig.add_subplot(1, 1, 1, aspect=self.plot_aspect_ratio)
 
@@ -543,7 +554,8 @@ class PlotTF(object):
             )
 
         # --> make the plot look nice
-        self.axtf.set_xlabel("time({0})".format(self.time_units), fontdict=fdict)
+        self.axtf.set_xlabel("time({0})".format(self.time_units), 
+                             fontdict=fdict, labelpad=.001)
         self.axtf.xaxis.set_major_locator(MultipleLocator(x_major_tick))
         self.axtf.xaxis.set_minor_locator(MultipleLocator(x_minor_tick))
 
@@ -553,7 +565,8 @@ class PlotTF(object):
             self.axtf.set_ylabel("frequency (Hz)", fontdict=fdict)
         if self.plot_title != None:
             self.axtf.set_title(self.plot_title, fontdict=fdict)
-
+            
+        self.fig.tight_layout()
         plt.show()
 
     def update_plot(self):

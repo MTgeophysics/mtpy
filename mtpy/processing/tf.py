@@ -69,12 +69,12 @@ def padzeros(f, npad=None, pad_pattern=None):
     else:
         pass
     if m != 0:
-        fpad = np.zeros((npad, m), dtype=type(f[0, 0]))
+        fpad = np.zeros((int(npad), int(m)), dtype=type(f[0, 0]))
         fpad[0:n, m - 1] = f[0:n, m - 1]
         if pad_pattern is not None:
             fpad[n:npad, m - 1] = pad_pattern
     else:
-        fpad = np.zeros(npad, dtype=type(f[0]))
+        fpad = np.zeros(int(npad), dtype=type(f[0]))
         fpad[0:n] = f[0:n]
         if pad_pattern is not None:
             fpad[n:npad] = pad_pattern

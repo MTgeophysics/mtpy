@@ -85,7 +85,7 @@ def calculate_leap_seconds(year, month, day):
         15: {"min": datetime.date(2009, 1, 1), "max": datetime.date(2012, 6, 30)},
         16: {"min": datetime.date(2012, 6, 30), "max": datetime.date(2015, 6, 30)},
         17: {"min": datetime.date(2015, 6, 30), "max": datetime.date(2016, 12, 31)},
-        18: {"min": datetime.date(2016, 12, 31), "max": datetime.date(2020, 12, 1)},
+        18: {"min": datetime.date(2016, 12, 31), "max": datetime.date(2021, 12, 1)},
     }
 
     year = int(year)
@@ -1513,7 +1513,7 @@ class Zen3D(object):
         except AttributeError:
             self.read_z3d()
 
-        self.ts_obj.ts = self.ts_obj.apply_addaptive_notch_filter(**notch_dict)
+        self.ts_obj.apply_addaptive_notch_filter(**notch_dict)
 
     # ==================================================
     def write_ascii_mt_file(self, save_fn=None, fmt="%.8e", notch_dict=None, dec=1):
@@ -1645,6 +1645,7 @@ class Zen3D(object):
         frequency_window=1,
         n_freq_bins=2 ** 9,
         sigma_L=None,
+        plot_type="tf",
     ):
         """
         plot the spectrogram of the data using the S-method
@@ -1679,6 +1680,7 @@ class Zen3D(object):
             "df": self.df,
             "nfbins": n_freq_bins,
             "sigmaL": sigma_L,
+            "plot_type": plot_type,
         }
         ptf = plotspectrogram.PlotTF(self.ts_obj.ts.data.to_numpy(), **kwargs)
 
