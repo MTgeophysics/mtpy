@@ -851,6 +851,16 @@ class MTplot(mt.MT):
                 return 1.0 / self.Tipper.freq
         else:
             return 1.0 / self.Z.freq
+        
+    @property
+    def frequency(self):
+        if np.all(self.Z.z == 0 + 0j):
+            if np.all(self.Tipper.tipper == 0 + 0j):
+                return None
+            else:
+                return self.Tipper.freq
+        else:
+            return self.Z.freq
 
 
 # ==============================================================================

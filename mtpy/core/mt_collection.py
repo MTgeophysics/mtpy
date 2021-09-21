@@ -254,7 +254,7 @@ class MTCollection:
                 & (self.mt_df.latitude <= y_max)
             ]
         
-        if units in ["m"]:
+        elif units in ["m"]:
             if utm_zone is None:
                 raise ValueError("UTM Zone must be input")
                 
@@ -297,7 +297,7 @@ class MTCollection:
         gdf.to_file(self.mt_path.joinpath(filename))
         
     def average_stations(self, cell_size_m, bounding_box=None, save_dir=None,
-                         units="deg", utm_zone=None, count=1):
+                         units="degrees", utm_zone=None, count=1, n_periods=48):
         """
         Average nearby stations to make it easier to invert
         
@@ -333,7 +333,7 @@ class MTCollection:
                     for m in m_list:
                         f_list += m.Z.freq.tolist()
                     f = np.unique(np.array(f_list))
-                    f = np.logspace(np.log10(f.min()), np.log10(f.max()), 48)
+                    f = np.logspace(np.log10(f.min()), np.log10(f.max()), n_periods)
                     for m in m_list:
                         m.Z, m.Tipper = m.interpolate(f, bounds_error=False)
                     avg_z = np.array([m.Z.z for m in m_list])

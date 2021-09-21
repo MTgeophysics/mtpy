@@ -482,7 +482,7 @@ class PlotTF(object):
 
             # plot power spectra
             f, p = signal.welch(self.time_series, 
-                                **{"fs": self.df, "nperseg": self.tf_nfbins*16}) 
+                                **{"fs": self.df, "nperseg": self.tf_nfbins*8}) 
             if self.freq_scale == "log":
                 self.axps.loglog(p, f, lw=self.lw, color=self.line_color_ps)
                 #     abs(FX[0 : int(len(FX) / 2)] / max(abs(FX))),
@@ -499,7 +499,7 @@ class PlotTF(object):
                 #     lw=self.lw,
                 # )
             # self.axps.axis("tight")
-            self.axps.set_ylim(f[0], f[-1])
+            self.axps.set_ylim(self.freq_list[1], self.freq_list[-1])
         else:
             self.axtf = self.fig.add_subplot(1, 1, 1, aspect=self.plot_aspect_ratio)
 

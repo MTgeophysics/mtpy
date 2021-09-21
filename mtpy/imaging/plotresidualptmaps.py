@@ -373,8 +373,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                       
     """
 
-    def __init__(self, fn_list1, fn_list2, **kwargs):
+    def __init__(self, fn_list1, fn_list2, frequencies=np.logspace(-3, 3, 40),
+                 **kwargs):
         assert len(fn_list1) == len(fn_list2)
+        
+        super().__init__()
+        
+        self.freq_list = frequencies
         self.fn_list1 = fn_list1
         self.fn_list2 = fn_list2
 
@@ -384,7 +389,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.residual_pt_list = None
         self.rpt_array = None
         self.med_filt_kernel = kwargs.pop("med_filt_kernel", None)
-
+        self._filt_applied = False
         # --> set colorbar properties---------------------------------
         # set orientation to horizontal
         cb_dict = kwargs.pop("cb_dict", {})
@@ -408,47 +413,29 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.xpad = kwargs.pop("xpad", 0.005)
             self.ypad = kwargs.pop("ypad", 0.005)
             # --> set the ellipse properties -------------------
-            self._ellipse_dict = kwargs.pop(
-                "ellipse_dict",
-                {
-                    "range": (0, 10),
-                    "cmap": "mt_yl2rd",
-                    "size": 0.005,
-                    "colorby": "geometric_mean",
-                },
-            )
-            self._read_ellipse_dict()
+            self.ellipse_range = (0, 10)
+            self.ellipse_cmap = "mt_yl2rd"
+            self.ellipse_size = .005
+            self.ellipse_colorby = "geometric_mean"
             self.ellipse_scale = kwargs.pop("ellipse_scale", None)
         elif self.map_scale == "m":
             self.xpad = kwargs.pop("xpad", 1000)
             self.ypad = kwargs.pop("ypad", 1000)
             # --> set the ellipse properties -------------------
-            self._ellipse_dict = kwargs.pop(
-                "ellipse_dict",
-                {
-                    "range": (0, 5),
-                    "cmap": "mt_yl2rd",
-                    "size": 500,
-                    "colorby": "geometric_mean",
-                },
-            )
-            self._read_ellipse_dict()
+            self.ellipse_range = (0, 5)
+            self.ellipse_cmap = "mt_yl2rd"
+            self.ellipse_size = 500
+            self.ellipse_colorby = "geometric_mean"
             self.ellipse_scale = kwargs.pop("ellipse_scale", None)
 
         elif self.map_scale == "km":
             self.xpad = kwargs.pop("xpad", 1)
             self.ypad = kwargs.pop("ypad", 1)
             # --> set the ellipse properties -------------------
-            self._ellipse_dict = kwargs.pop(
-                "ellipse_dict",
-                {
-                    "range": (0, 5),
-                    "cmap": "mt_yl2rd",
-                    "size": 0.5,
-                    "colorby": "geometric_mean",
-                },
-            )
-            self._read_ellipse_dict()
+            self.ellipse_range = (0, 5)
+            self.ellipse_cmap = "mt_yl2rd"
+            self.ellipse_size = .500
+            self.ellipse_colorby = "geometric_mean"
             self.ellipse_scale = kwargs.pop("ellipse_scale", None)
 
         self.font_size = kwargs.pop("font_size", 7)
@@ -556,9 +543,9 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
 
         freq_list = []
         for mt1 in self.mt_list1:
-            freq_list.extend(mt1.freq)
+            freq_list.extend(mt1.frequency)
         for mt2 in self.mt_list2:
-            freq_list.extend(mt2.freq)
+            freq_list.extend(mt2.frequency)
 
         self.freq_list = np.array(sorted(set(freq_list), reverse=True))
 
@@ -569,10 +556,10 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         plot
         """
 
-        self._get_freq_list()
-        freq_dict = dict(
-            [(np.round(key, 5), value) for value, key in enumerate(self.freq_list)]
-        )
+        # self._get_freq_list()
+        # freq_dict = dict(
+        #     [(np.round(key, 5), value) for value, key in enumerate(self.freq_list)]
+        # )
 
         num_freq = self.freq_list.shape[0]
         num_station = len(self.mt_list1)
@@ -596,40 +583,47 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         )
 
         self.residual_pt_list = []
+        freq_dict = dict([(np.round(ff, 5), ii) for ii, ff in enumerate(self.freq_list)])
+        
         for mm, mt1 in enumerate(self.mt_list1):
             station_find = False
-            fdict1 = dict([(np.round(ff, 5), ii) for ii, ff in enumerate(mt1.freq)])
             for mt2 in self.mt_list2:
-                if mt2.station == mt1.station:
-                    fdict2 = dict(
-                        [(np.round(ff, 5), ii) for ii, ff in enumerate(mt2.freq)]
-                    )
+                if abs(mt1.latitude - mt2.latitude) < .001 and \
+                    abs(mt1.longitude - mt2.longitude) < .001:
+                    print(mt1.station, mt2.station)
+                # if mt2.station == mt1.station:
+                    # fdict2 = dict(
+                    #     [(np.round(ff, 5), ii) for ii, ff in enumerate(mt2.frequency)]
+                    # )
 
-                    # need to make sure only matched frequencies are compared
-                    index_1 = []
-                    index_2 = []
-                    for key1 in sorted(fdict1.keys()):
-                        try:
-                            index_2.append(fdict2[key1])
-                            index_1.append(fdict1[key1])
-                        except KeyError:
-                            "Did not find {0:.4e} Hz in {1}".format(key1, mt2.fn)
+                    # # need to make sure only matched frequencies are compared
+                    # index_1 = []
+                    # index_2 = []
+                    # for key1 in sorted(fdict1.keys()):
+                    #     try:
+                    #         index_2.append(fdict2[key1])
+                    #         index_1.append(fdict1[key1])
+                    #     except KeyError:
+                    #         "Did not find {0:.4e} Hz in {1}".format(key1, mt2.fn)
 
-                    # need to sort the index list, otherwise weird things happen
-                    index_1.sort()
-                    index_2.sort()
-
+                    # # need to sort the index list, otherwise weird things happen
+                    # index_1.sort()
+                    # index_2.sort()
+                    new_z1, new_t1 = mt1.interpolate(self.freq_list,
+                                                     bounds_error=False)
+                    new_z2, new_t2 = mt2.interpolate(self.freq_list,
+                                                     bounds_error=False)
                     # create new Z objects that have similar frequencies
-                    new_z1 = mtpl.mtz.Z(
-                        z_array=mt1.z[index_1],
-                        z_err_array=mt1.z_err[index_1],
-                        freq=mt1.freq[index_1],
-                    )
-                    new_z2 = mtpl.mtz.Z(
-                        z_array=mt2.z[index_2],
-                        z_err_array=mt2.z_err[index_2],
-                        freq=mt2.freq[index_2],
-                    )
+                    # new_z1 = mtpl.mtz.Z(
+                    #     z_array=mt1.Z.z[index_1],
+                    #     z_err_array=mt1.Z.z_err[index_1],
+                    #     freq=mt1.Z.freq[index_1],
+                    # )
+                    # new_z2 = mtpl.mtz.Z(
+                    #     z_array=mt2.Z.z[index_2],
+                    #     z_err_array=mt2.Z.z_err[index_2],
+                    #     freq=mt2.Z.freq[index_2],
+                    # )
 
                     # make new phase tensor objects
                     pt1 = mtpt.PhaseTensor(z_object=new_z1)
@@ -641,8 +635,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
 
                     # add some attributes to residual phase tensor object
                     rpt.station = mt1.station
-                    rpt.lat = mt1.lat
-                    rpt.lon = mt1.lon
+                    rpt.lat = mt1.latitude
+                    rpt.lon = mt1.longitude
 
                     # append to list for manipulating later
                     self.residual_pt_list.append(rpt)
@@ -654,9 +648,9 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     # rpt, need this for filtering.
                     st_1, st_2 = self.station_id
                     self.rpt_array[mm]["station"] = mt1.station[st_1:st_2]
-                    self.rpt_array[mm]["lat"] = mt1.lat
-                    self.rpt_array[mm]["lon"] = mt1.lon
-                    self.rpt_array[mm]["elev"] = mt1.elev
+                    self.rpt_array[mm]["lat"] = mt1.latitude
+                    self.rpt_array[mm]["lon"] = mt1.longitude
+                    self.rpt_array[mm]["elev"] = mt1.elevation
 
                     rpt_fdict = dict(
                         [
@@ -671,21 +665,19 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                 rr = rpt_fdict[np.round(freq, 5)]
 
                                 self.rpt_array[mm]["phimin"][aa] = abs(
-                                    rpt.residual_pt.phimin[0][rr]
+                                    rpt.residual_pt.phimin[rr]
                                 )
                                 self.rpt_array[mm]["phimax"][aa] = abs(
-                                    rpt.residual_pt.phimax[0][rr]
+                                    rpt.residual_pt.phimax[rr]
                                 )
-                                self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[
-                                    0
-                                ][rr]
+                                self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[rr]
                                 self.rpt_array[mm]["azimuth"][
                                     aa
-                                ] = rpt.residual_pt.azimuth[0][rr]
+                                ] = rpt.residual_pt.azimuth[rr]
                                 self.rpt_array[mm]["geometric_mean"][aa] = np.sqrt(
                                     abs(
-                                        rpt.residual_pt.phimin[0][rr]
-                                        * rpt.residual_pt.phimax[0][rr]
+                                        rpt.residual_pt.phimin[rr]
+                                        * rpt.residual_pt.phimax[rr]
                                     )
                                 )
                             except IndexError:
@@ -719,7 +711,12 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
 
         # get relative positions for plotting
         self._get_relative_position()
-
+        
+        if self.med_filt_kernel is not None:
+            try:
+                self._apply_median_filter(kernel=self.med_filt_kernel)
+            except:
+                print("Warning - Could not apply median filter")
     # -------------------------------------------------------------------
     def _apply_median_filter(self, kernel=(3, 3)):
         """
@@ -728,6 +725,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         kernel is (station, frequency)
         
         """
+        print(f"Applying 2D median filter with size {self.med_filt_kernel}")
 
         filt_phimin_arr = sps.medfilt2d(self.rpt_array["phimin"], kernel_size=kernel)
         filt_phimax_arr = sps.medfilt2d(self.rpt_array["phimax"], kernel_size=kernel)
@@ -820,18 +818,10 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         """
         get frequency to plot
         """
-        ftol_m = 1 - self.ftol
-        ftol_p = 1 + self.ftol
-        try:
-            self.plot_freq_index = np.where(self.freq_list == self.plot_freq)[0][0]
-        except IndexError:
-            try:
-                self.plot_freq_index = np.where(
-                    (self.freq_list >= self.plot_freq * ftol_m)
-                    & (self.freq_list <= self.plot_freq * ftol_p)
-                )[0][0]
-            except IndexError:
-                raise ValueError("could not find {0} Hz".format(self.plot_freq))
+        
+        array = np.asarray(self.freq_list)
+        self.plot_freq_index = np.abs(array - self.plot_freq).argmin()
+        print(f"--> Plotting {self.freq_list[self.plot_freq_index]:.6g} Hz")                     
 
     # ------------------------------------------------------------------------
     def plot(self):
@@ -839,14 +829,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         plot residual phase tensor
         """
         # get residual phase tensor for plotting
-        self._compute_residual_pt()
-
-        # filter data if desired
-        if self.med_filt_kernel is not None:
-            try:
-                self._apply_median_filter(kernel=self.med_filt_kernel)
-            except:
-                print("Warning - Could not apply median filter")
+        if self.rpt_array is None:
+            self._compute_residual_pt()
 
         # get frequency index
         self._get_plot_freq_index()
@@ -1113,6 +1097,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         # put the grid lines behind
         #        [line.set_zorder(10000) for line in self.ax.lines]
         self.ax.set_axisbelow(True)
+        
 
         plt.show()
 

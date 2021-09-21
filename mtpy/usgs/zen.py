@@ -1646,6 +1646,7 @@ class Zen3D(object):
         n_freq_bins=2 ** 9,
         sigma_L=None,
         plot_type="tf",
+        fig_num=2,
     ):
         """
         plot the spectrogram of the data using the S-method
@@ -1681,6 +1682,7 @@ class Zen3D(object):
             "nfbins": n_freq_bins,
             "sigmaL": sigma_L,
             "plot_type": plot_type,
+            "fig_num": fig_num,
         }
         ptf = plotspectrogram.PlotTF(self.ts_obj.ts.data.to_numpy(), **kwargs)
 
