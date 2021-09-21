@@ -718,13 +718,13 @@ class PlotResponses(QtWidgets.QWidget):
                 ax.set_yticklabels(ylabels)
                 plt.setp(ax.get_xticklabels(), visible=False)
                 if self.plot_z == True:
-                    ax.set_yscale("log", nonposy="clip")
+                    ax.set_yscale("log", nonpositive="clip")
 
             else:
                 ax.set_xlabel("Period (s)", fontdict=fontdict)
 
             if aa < 4 and self.plot_z is False:
-                ax.set_yscale("log", nonposy="clip")
+                ax.set_yscale("log", nonpositive="clip")
 
             # set axes labels
             if aa == 0:
@@ -748,7 +748,7 @@ class PlotResponses(QtWidgets.QWidget):
                 else:
                     pass
 
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_xscale("log", nonpositive="clip")
             ax.set_xlim(
                 xmin=10 ** (np.floor(np.log10(period[0]))) * 1.01,
                 xmax=10 ** (np.ceil(np.log10(period[-1]))) * 0.99,
@@ -1198,6 +1198,7 @@ class PlotResponses(QtWidgets.QWidget):
 
         f_idx = self._get_frequency_range(x1, x2)
 
+        print(self._key, self._ax_index)
         for ff in f_idx:
             period = self.modem_data.period_list[ff]
             if self._key == "z":
@@ -1239,7 +1240,7 @@ class PlotResponses(QtWidgets.QWidget):
                     ms=self.plot_settings.ms * 2,
                     mew=4,
                 )
-                self._ax.plot(
+                self._ax2.plot(
                     period,
                     self.modem_data.mt_dict[self.station]
                     .Tipper.tipper[ff, self._comp_index_x, self._comp_index_y]
@@ -1250,10 +1251,10 @@ class PlotResponses(QtWidgets.QWidget):
                     mew=4,
                 )
 
-                self.modem_data.mt_dict[self.station].Z.z[
+                self.modem_data.mt_dict[self.station].Tipper.tipper[
                     ff, self._comp_index_x, self._comp_index_y
                 ] = (0.0 + 0.0 * 1j)
-                self.modem_data.mt_dict[self.station].Z.z_err[
+                self.modem_data.mt_dict[self.station].Tipper.tipper_err[
                     ff, self._comp_index_x, self._comp_index_y
                 ] = 0.0
         self._ax.figure.canvas.draw()

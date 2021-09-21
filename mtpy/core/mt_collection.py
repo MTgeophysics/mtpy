@@ -322,8 +322,8 @@ class MTCollection:
             df = self.mt_df
             
         new_fn_list = []
-        for ee in np.arange(df.easting.min(), df.easting.max(), r):
-            for nn in np.arange(df.northing.min(), df.northing.max(), r):
+        for ee in np.arange(df.easting.min() - r/2, df.easting.max() + r, r):
+            for nn in np.arange(df.northing.min() - r/2, df.northing.max() + r, r):
                 bbox = (ee, ee + r, nn, nn + r)
                 avg_df = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
                 if len(avg_df) > 1:
@@ -370,14 +370,13 @@ class MTCollection:
                     
                     try:
                         edi_obj = mt_avg.write_mt_file(save_dir=save_dir)
-                        print(f"wrote average file {edi_obj.fn}")
+                        self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1 
             
   
                     except Exception as error:
-                        print(f"{error} ")
-        
+                        self.logger.exception("Failed to average files %s", error)        
                 else:
                     continue
                 

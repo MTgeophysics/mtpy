@@ -352,7 +352,18 @@ def propagate_error_rect2polar(x, x_error, y, y_error):
     if x_error >= np.abs(x) and y_error >= np.abs(y):
         origin_in_box = True
 
-    lo_polar_points = [cmath.polar(np.complex(*i)) for i in lo_points]
+    try:
+        lo_polar_points = [cmath.polar(complex(*i)) for i in lo_points] 
+    except OverflowError:
+        lo_polar_points = []
+        for i in lo_points:
+            real, imag = i
+            if abs(real) > 1E32:
+                real = 1E32
+            if abs(imag) > 1E32:
+                imag = 1E32
+            lo_polar_points.append(cmath.polar(complex(real, imag)))
+
 
     lo_rho = [i[0] for i in lo_polar_points]
     lo_phi = [math.degrees(i[1]) % 360 for i in lo_polar_points]

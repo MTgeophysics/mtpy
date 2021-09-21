@@ -210,7 +210,6 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
         
         self.station_plot = PlotStations(self.plot_response.modem_data.station_locations)
         self.station_plot.plot()
-        print(self.station_plot.station_locations)
         
         self.station_plot.show()
         self.station_plot.stationChanged.connect(self.station_picked)
@@ -280,6 +279,8 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             self.plot_response.station = station_list[0]
 
         self.plot_response.plot()
+        
+        self.station_plot.redraw_plot(self.plot_response.modem_data.station_locations)
 
     def remove_station(self):
         """
@@ -311,6 +312,8 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             self.plot_response.station = station_list[0]
 
         self.plot_response.plot()
+        
+        self.station_plot.redraw_plot(self.plot_response.modem_data.station_locations)
 
     def get_resp_fn(self):
         """

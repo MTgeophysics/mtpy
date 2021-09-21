@@ -184,7 +184,19 @@ class PlotStations(QtWidgets.QWidget):
             self.station_locations.station_locations["station"][self.current_index],
             **self.current_text_dict
             )
-        self.ax.figure.canvas.draw()            
+        self.ax.figure.canvas.draw()  
+
+    def redraw_plot(self, new_station_locations):
+        """
+        
+        :param new_station_locations: DESCRIPTION
+        :type new_station_locations: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """   
+        self.station_locations = new_station_locations
+        self.plot()
 
     def on_pick(self, event):
         try:
