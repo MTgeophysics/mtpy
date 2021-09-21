@@ -311,7 +311,7 @@ class PlotResponses(QtWidgets.QWidget):
             fn_basename=os.path.basename(save_fn),
             compute_error=False,
             fill=True,
-            elevation=True,
+            elevation=self.modem_data.topography,
         )
 
     def apply_edits(self):

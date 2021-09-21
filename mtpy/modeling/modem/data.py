@@ -252,6 +252,8 @@ class Data(object):
         self._center_lat = None
         self._center_lon = None
         self._center_elev = None
+        
+        self.topography = True
 
         self.inv_mode_dict = {
             "1": ["Full_Impedance", "Full_Vertical_Components"],
@@ -506,8 +508,14 @@ class Data(object):
         data_array[:]["rel_north"] = stations_obj.rel_north
         data_array[:]["rel_elev"] = stations_obj.rel_elev
         data_array[:]["zone"] = stations_obj.utm_zone
+        
+        # fill mt_dict
+        for row in data_array:
+            mt_dict[row["station"]].grid_east = row["rel_east"]
+            mt_dict[row["station"]].grid_north = row["rel_north"]
+            mt_dict[row["station"]].grid_elev = row["rel_elev"]
 
-        return data_array
+        return data_array, mt_dict
 
     def get_data_periods(self, mt_dict):
         """
@@ -633,7 +641,7 @@ class Data(object):
                 self._rotation_angle
             )
         )
-        self.data_array = self.fill_data_array(self.mt_dict)
+        self.data_array, self.mt_dict = self.fill_data_array(self.mt_dict)
 
     def _initialise_empty_data_array(
         self,
@@ -719,7 +727,7 @@ class Data(object):
             mtObj.station = sname
             self.mt_dict[sname] = mtObj
 
-        self.data_array = self.get_relative_station_locations(
+        self.data_array, self.mt_dict = self.get_relative_station_locations(
             self.mt_dict, self.data_array
         )
 
@@ -893,7 +901,7 @@ class Data(object):
         #  then get them from Station object
         if not rel_distance:
             try:
-                data_array = self.get_relative_station_locations(mt_dict, data_array)
+                data_array, mt_dict = self.get_relative_station_locations(mt_dict, data_array)
             except ValueError as error:
                 if self.model_epsg is None and self.model_utm_zone is None:
                     msg = (
@@ -906,7 +914,7 @@ class Data(object):
                     self.logger.error(error)
                     raise ValueError(error)
 
-        return data_array
+        return data_array, mt_dict
 
     @staticmethod
     def filter_periods(mt_obj, per_array):
@@ -1230,9 +1238,9 @@ class Data(object):
             self.data_fn = fn_basename
 
         self.data_fn = Path(self.save_path, self.data_fn)
+
         if self.mt_dict is None:
             self.mt_dict = self.make_mt_dict()
-
         self.period_list = self.make_period_list(self.mt_dict)
 
         # rotate data if desired
@@ -1249,7 +1257,7 @@ class Data(object):
 
         # be sure to fill in data array
         if fill:
-            self.data_array = self.fill_data_array(
+            self.data_array, self.mt_dict = self.fill_data_array(
                 self.mt_dict,
                 new_edi_dir=new_edi_dir,
                 use_original_freq=use_original_freq,
@@ -1904,6 +1912,10 @@ class Data(object):
         if center_utm is not None:
             self.data_array["east"] = self.data_array["rel_east"] + center_utm[0]
             self.data_array["north"] = self.data_array["rel_north"] + center_utm[1]
+            
+        if np.all(self.data_array["rel_elev"] == 0):
+            self.topography = False
+
 
     def write_vtk_station_file(
         self,
@@ -2327,14 +2339,14 @@ class Data(object):
             add_mt_dict[mt_obj.station] = mt_obj
             new_mt_dict[mt_obj.station] = mt_obj
 
-        add_data_array = self.fill_data_array(add_mt_dict, new_edi_dir=new_edi_dir)
+        add_data_array, add_mt_dict = self.fill_data_array(add_mt_dict, new_edi_dir=new_edi_dir)
         add_data_array = self.compute_inv_error(add_data_array)
 
         new_data_array = np.append(self.data_array, add_data_array)
         # need to sort stations because that is how things are calculated
         # for station location
         new_data_array.sort(kind="station")
-        new_data_array = self.get_relative_station_locations(
+        new_data_array, new_mt_dict = self.get_relative_station_locations(
             new_mt_dict, new_data_array
         )
         return new_data_array, new_mt_dict

@@ -242,8 +242,8 @@ class ModEMPlotResponse(QtWidgets.QMainWindow):
             save_path=save_fn.parent,
             fn_basename=save_fn.name,
             compute_error=False,
-            fill=False,
-            elevation=True,
+            fill=True,
+            elevation=self.plot_response.modem_data.topography,
         )
 
     def new_data_file(self):
