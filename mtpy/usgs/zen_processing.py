@@ -149,7 +149,7 @@ class SurveyConfig(object):
         self.hy = s_df[s_df.component == 'hy'].coil_number.mode()[0]
         try:
             self.hz = s_df[s_df.component == 'hz'].coil_number.mode()[0]
-        except IndexError:
+        except (IndexError, KeyError):
             self.hz = ''
         self.lat = s_df.latitude.median()
         self.location = 'Earth'
