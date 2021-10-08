@@ -43,7 +43,7 @@ MTCollection
     - Keeps metadata of each xarray.DataArray
     - Can easily interpolate or pick frequencies
     - Can easily query for location, period range, date, data type, etc.
-    - This should be the base for nearl all functionality for imaging, modeling, analysis.  This will likely reduce the code base as well because it will remove redundancies.
+    - This should be the base for nearly all functionality for imaging, modeling, analysis.  This will likely reduce the code base as well because it will remove redundancies.
     - Could add to/from_modem, to/from_occam, etc here or in the modeling modules.
     - Add to/from NetCDF or HDF5 so that a user would only have to read in the various transfer function files once.
     - Add functions to add/remove stations
