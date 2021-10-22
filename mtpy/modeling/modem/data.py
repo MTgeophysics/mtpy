@@ -2163,7 +2163,6 @@ class Data(object):
             fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,
         )
 
-        return station_index_x, station_index_y
 
     # FZ: moved from the modem_data_to_phase_tensor.py ref: AUSLAMP-112
     def compute_phase_tensor(self, datfile, outdir):
