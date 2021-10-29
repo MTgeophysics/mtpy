@@ -34,21 +34,34 @@ class MTCollection:
     Collection of mt data
     """
 
-    def __init__(self, mt_path=None):
-        self._mt_path = self.check_path(mt_path)
-        self.mt_df = None
+    def __init__(self, dataframe=None, mt_path=None):
+        self.mt_path = mt_path
+        self.dataframe = dataframe
         self.logger = get_mtpy_logger(
             f"{__name__}.{self.__class__.__name__}", fn="mt_collection"
         )
 
     def __str__(self):
         lines = [f"MT file path: {self.mt_path}"]
-        if self.mt_df is not None:
-            lines += [f"\t Number of Stations: {len(self.mt_df)}"]
+        if self.dataframe is not None:
+            lines += [f"\t Number of Stations: {len(self.dataframe)}"]
         return "\n".join(lines)
 
     def __repr__(self):
         return self.__str__()
+    
+    @property
+    def dataframe(self):
+        return self._dataframe
+    
+    @dataframe.setter
+    def dataframe(self, value):
+        if value is None:
+            self._dataframe = None
+        elif isinstance(value, pd.DataFrame):
+            self._dataframe = value
+        else:
+            raise ValueError(f"Input must be pandas.DataFrame not {type(value)}")
 
     @property
     def mt_path(self):
@@ -137,11 +150,11 @@ class MTCollection:
             # add entry to list to put into data frame
             station_list.append(entry)
 
-        mt_df = pd.DataFrame(station_list)
+        dataframe = pd.DataFrame(station_list)
         if move_duplicates:
-            mt_df = self._check_for_duplicates(mt_df)
+            dataframe = self._check_for_duplicates(dataframe)
 
-        return mt_df
+        return dataframe
 
     def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
         """
@@ -157,25 +170,27 @@ class MTCollection:
         """
 
         new_df = self.make_dataframe_from_file_list(fn_list)
-        self.mt_df.append(new_df, ignore_index=True)
-        return self._check_for_duplicates(self.mt_df.append(new_df, ignore_index=True))
+        self.dataframe = self.dataframe.append(new_df, ignore_index=True)
+        if remove_duplicates:
+            self.dataframe = self._check_for_duplicates(self.dataframe)
 
-    def _check_for_duplicates(self, mt_df, locate="location"):
+
+    def _check_for_duplicates(self, dataframe, locate="location"):
         """
         Check for duplicate station locations in a MT DataFrame
 
-        :param mt_df: DESCRIPTION
-        :type mt_df: TYPE
+        :param dataframe: DESCRIPTION
+        :type dataframe: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
         # write csv file to querry
-        duplicates = mt_df[mt_df.duplicated(["latitude", "longitude"])]
+        duplicates = dataframe[dataframe.duplicated(["latitude", "longitude"])]
         if len(duplicates) > 0:
             self.logger.info(
-                f"Found {len(mt_df)} duplicates, moving oldest to 'Duplicates'"
+                f"Found {len(dataframe)} duplicates, moving oldest to 'Duplicates'"
             )
             dup_path = self.mt_path.joinpath("Duplicates")
             if not dup_path.exists():
@@ -188,9 +203,9 @@ class MTCollection:
                     fn.rename(new_fn)
                 except FileNotFoundError:
                     self.logger.debug(f"Could not find {fn} --> skipping")
-        mt_df = mt_df.drop_duplicates(subset=["latitude", "longitude"], keep="first")
+        dataframe = dataframe.drop_duplicates(subset=["latitude", "longitude"], keep="first")
 
-        return mt_df
+        return dataframe
 
     def from_csv(self, csv_fn):
         """
@@ -201,7 +216,7 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        self.mt_df = pd.read_csv(csv_fn)
+        self.dataframe = pd.read_csv(csv_fn)
         self.mt_path = Path(csv_fn).parent
 
     def to_csv(self, filename):
@@ -218,7 +233,7 @@ class MTCollection:
         if filename.parent.as_posix() == ".":
             if self.mt_path is not None:
                 filename = self.mt_path.joinpath(filename)
-        self.mt_df.to_csv(filename, index=False)
+        self.dataframe.to_csv(filename, index=False)
         self.logger.info(f"Wrote CSV file to {filename}")
 
     def apply_bbox(self, x_min, x_max, y_min, y_max, units="degrees", utm_zone=None):
@@ -247,12 +262,13 @@ class MTCollection:
             )
             self.logger.debug(msg)
     
-            return self.mt_df.loc[
-                (self.mt_df.longitude >= x_min)
-                & (self.mt_df.longitude <= x_max)
-                & (self.mt_df.latitude >= y_min)
-                & (self.mt_df.latitude <= y_max)
-            ]
+            return MTCollection(dataframe=self.dataframe.loc[
+                    (self.dataframe.longitude >= x_min)
+                    & (self.dataframe.longitude <= x_max)
+                    & (self.dataframe.latitude >= y_min)
+                    & (self.dataframe.latitude <= y_max)
+                ],
+                mt_path=self.mt_path)
         
         elif units in ["m"]:
             if utm_zone is None:
@@ -268,14 +284,15 @@ class MTCollection:
             )
             self.logger.debug(msg)
     
-            return self.mt_df[self.mt_df.utm_zone == utm_zone].loc[
-                (self.mt_df.easting >= x_min)
-                & (self.mt_df.easting <= x_max)
-                & (self.mt_df.northing >= y_min)
-                & (self.mt_df.northing <= y_max)
-            ]
+            return  MTCollection(self.dataframe[self.dataframe.utm_zone == utm_zone].loc[
+                    (self.dataframe.easting >= x_min)
+                    & (self.dataframe.easting <= x_max)
+                    & (self.dataframe.northing >= y_min)
+                    & (self.dataframe.northing <= y_max)
+                ], 
+                mt_path=self.mt_path)
         
-    def write_shp_file(self, filename, bounding_box=None, epsg=4326):
+    def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
         
         :param filename: DESCRIPTION
@@ -287,14 +304,16 @@ class MTCollection:
         coordinate_system = {"init": f"epsg:{epsg}"}
         # write shape file
         geometry_list = []
-        if self.mt_df is None:
-            self.mt_df = self.make_dataframe_from_file_list()
-        for ii, row in self.mt_df.iterrows():
+        if self.dataframe is None:
+            self.dataframe = self.make_dataframe_from_file_list()
+        for ii, row in self.dataframe.iterrows():
             geometry_list.append(Point(row.longitude, row.latitude))
         
-        gdf = gpd.GeoDataFrame(self.mt_df, crs=coordinate_system, geometry=geometry_list)
+        gdf = gpd.GeoDataFrame(self.dataframe, crs=coordinate_system, geometry=geometry_list)
         gdf.fn = gdf.fn.astype("str")
         gdf.to_file(self.mt_path.joinpath(filename))
+        
+        return gdf
         
     def average_stations(self, cell_size_m, bounding_box=None, save_dir=None,
                          units="degrees", utm_zone=None, count=1, n_periods=48):
@@ -316,10 +335,12 @@ class MTCollection:
         r = cell_size_m
         
         if bounding_box:
-            df = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
+            mc = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
         
         else:
-            df = self.mt_df
+            mc = self.dataframe
+            
+        df = mc.dataframe
             
         new_fn_list = []
         for ee in np.arange(df.easting.min() - r/2, df.easting.max() + r, r):
@@ -379,7 +400,6 @@ class MTCollection:
                         self.logger.exception("Failed to average files %s", error)        
                 else:
                     continue
-                
-        new_df = self.make_dataframe_from_file_list(new_fn_list)
         
-        return new_df
+        return MTCollection(self.make_dataframe_from_file_list(new_fn_list),
+                            self.mt_path)
