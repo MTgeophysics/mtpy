@@ -1376,7 +1376,7 @@ class Header(object):
             return
         try:
             self._acqdate = MTime(value)
-        except MTex.MTTimeError as error:
+        except MTTimeError as error:
             msg = f"Cannot set Header.acqdata with {value}. {error}"
             self.logger.debug(msg)
 

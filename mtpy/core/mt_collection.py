@@ -346,9 +346,10 @@ class MTCollection:
         for ee in np.arange(df.easting.min() - r/2, df.easting.max() + r, r):
             for nn in np.arange(df.northing.min() - r/2, df.northing.max() + r, r):
                 bbox = (ee, ee + r, nn, nn + r)
-                avg_df = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
-                if len(avg_df) > 1:
-                    m_list = [mt.MT(row.fn) for row in avg_df.itertuples()]
+                avg_mc = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
+    
+                if len(avg_mc.dataframe) > 1:
+                    m_list = [mt.MT(row.fn) for row in avg_mc.dataframe.itertuples()]
                     # interpolate onto a similar period range
                     f_list = []
                     for m in m_list:

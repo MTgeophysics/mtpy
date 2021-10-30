@@ -198,7 +198,6 @@ class Stations(object):
         """
         get mt_objects from a list of files or mt_objects
         """
-
         if isinstance(input_list, (list, np.ndarray)):
             if isinstance(input_list[0], mt.MT):
                 return input_list
