@@ -9,9 +9,10 @@ Usage:
 
 Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
+
+Updated: 2021/02/04 to use Path instead of os and glob (JP)
 """
 
-import glob
 from pathlib import Path
 import sys
 
@@ -23,24 +24,10 @@ import mtpy.core.mt as mt
 from mtpy.imaging.penetration import get_index, load_edi_files, Depth3D
 from mtpy.utils.mtpy_decorator import deprecated
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-import logging
-
-# mpl.rcParams['lines.linewidth'] = 2
-# mpl.rcParams['lines.color'] = 'r'
-
-# mpl.rcParams['figure.figsize'] = [20, 10]
 
 # get a logger object for this module, using the utility class MtPyLog to
 # config the logger
-_logger = get_mtpy_logger(__name__)
-# _logger.setLevel(logging.DEBUG)
-_logger.setLevel(logging.INFO)
-
-
-# logger =
-# MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) #
-# specific
-
+_logger = get_mtpy_logger(__name__, level="info")
 
 # This is the major function to be maintained!!!
 # use the Zcompotent=[det, zxy, zyx]
@@ -66,23 +53,12 @@ def plot_latlon_depth_profile(
     :return:
     """
 
-    # edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
-    # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
-    # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
-
-    # 1 get a list of edi files, which are suppose to be in a profile.
-    # edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
-
-    # logger.debug("edi files: %s", edifiles)
-
     edis = load_edi_files(edi_dir)
 
     image = Depth3D(edis=edis, period=period, rho=zcomponent, ptol=ptol)
     if isinstance(period, int):  # period is considered as an index
         image.plot(period_by_index=True, fontsize=fontsize)
-    elif isinstance(
-        period, float
-    ):  # period is considered as the actual value of period in second
+    elif isinstance(period, float): # period in seconds
         image.plot(fontsize=fontsize)
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)
@@ -97,9 +73,6 @@ def plot_latlon_depth_profile(
         path2savefile = Path(savepath, savefn)
         image.export_image(path2savefile, dpi=fig_dpi, bbox_inches="tight")
 
-    # may want to remove the following 2 lines
-    # plt.clf()
-    # plt.close()
     return
 
 
