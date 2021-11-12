@@ -148,8 +148,8 @@ class Depth2D(ImagingBase):
     depth profile at the given periods vs stations.
     """
 
-    def __init__(self, selected_periods, data=None, ptol=0.05, rho='det'):
-        super(Depth2D, self).__init__()
+    def __init__(self, selected_periods, data=None, ptol=0.05, rho="det"):
+        super().__init__()
         self._selected_periods = selected_periods
         self._ptol = ptol
         self._rho = None
@@ -253,8 +253,8 @@ class Depth3D(ImagingBase):
     Setting a smaller value for ptol may result less MT sites data included.
     """
 
-    def __init__(self, edis=None, period=None, rho='det', ptol=0.1):
-        super(Depth3D, self).__init__()
+    def __init__(self, edis=None, period=None, rho="det", ptol=0.1):
+        super().__init__()
         self._rho = None
         self._period = None
         self._period_fmt = None
@@ -539,7 +539,7 @@ def get_penetration_depth_by_index(mt_obj_list, per_index, whichrho='det'):
         # station id
         stations.append(mt_obj.station)
         # latlons
-        latlons.append((mt_obj.lat, mt_obj.lon))
+        latlons.append((mt_obj.latitude, mt_obj.longitude))
         # the attribute Z
         zeta = mt_obj.Z
 
@@ -608,15 +608,15 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
 
     _logger.info("Getting nearest period to {} for all stations".format(selected_period))
     for mt_obj in mt_obj_list:
-        if isinstance(mt_obj, str) and os.path.isfile(mt_obj):
+        if isinstance(mt_obj, (str, Path)):
             mt_obj = mt.MT(mt_obj)
         elif not isinstance(mt_obj, mt.MT):
-            raise Exception("Unsupported list of objects %s" % type(mt_obj))
+            raise Exception(f"Unsupported list of objects {type(mt_obj)}")
 
         # station id
         stations.append(mt_obj.station)
         # latlons
-        latlons.append((mt_obj.lat, mt_obj.lon))
+        latlons.append((mt_obj.latitude, mt_obj.longitude))
 
         # the attribute Z
         zeta = mt_obj.Z
@@ -630,7 +630,11 @@ def get_penetration_depth_by_period(mt_obj_list, selected_period, ptol=0.1, whic
             #periods.append(np.nan)
             periods.append(selected_period)
             pen_depth.append(np.nan)
-            _logger.warning("Nearest preiod {} on station {} was beyond tolerance of {} ".format(per, mt_obj.Site.id, ptol))
+            _logger.warning(
+                "Nearest preiod {} on station {} was beyond tolerance of {} ".format(
+                    per, mt_obj.station, ptol
+                )
+            )
             pass
         else:      # Otherwise do this block to compute the edi's pen-depth correspond to the selected_period
 
