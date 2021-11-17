@@ -449,7 +449,7 @@ class JFile(object):
         if not np.all(self.Tipper.tipper == 0):
             r1.hz = metadata.Magnetic(component="hz", channel_id=5)
 
-        sm.run_list.append(r1)
+        sm.runs.append(r1)
         sm.id = self.station
         sm.data_type = "MT"
 
@@ -461,7 +461,7 @@ class JFile(object):
         sm.provenance.software.name = "BIRRP"
         sm.provenance.software.version = "5"
         sm.transfer_function.processed_date = MTime(self.fn.stat().st_ctime).iso_str
-        sm.transfer_function.runs_processed = sm.run_names
+        sm.transfer_function.runs_processed = sm.run_list
         # add birrp parameters
         for key, value in self.header_dict.items():
             sm.transfer_function.processing_parameters.append(f"{key} = {value}")

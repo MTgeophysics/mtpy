@@ -1238,7 +1238,7 @@ class Z3D2EDI(object):
             sr_key = int(edi_fn.parts[-2])
             if sr_key in list(sr_dict.keys()):
                 try:
-                    edi_obj = mtedi.Edi(edi_fn)
+                    edi_obj = mtedi.EDI(edi_fn)
                     # locate frequency range
                     f_index = np.where(
                         (edi_obj.Z.freq >= sr_dict[sr_key][1])
@@ -1295,10 +1295,10 @@ class Z3D2EDI(object):
         else:
             new_t = mtedi.MTz.Tipper()
 
-        edi_obj = mtedi.Edi(edi_fn_list[0])
+        edi_obj = mtedi.EDI(edi_fn_list[0])
         edi_obj.Z = new_z
         edi_obj.Tipper = new_t
-        edi_obj.Data_sect.nfreq = new_z.z.shape[0]
+        edi_obj.Data.nfreq = new_z.z.shape[0]
 
         n_edi_fn = Path.joinpath(
             Path(self.station_ts_dir),

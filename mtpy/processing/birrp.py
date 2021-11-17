@@ -909,6 +909,9 @@ class J2Edi(object):
         """
         read in survey configuration file and output into a useful dictionary
         """
+        if survey_config_fn is None:
+            return
+        
         if survey_config_fn is not None:
             self.surve_config_fn = survey_config_fn
 
@@ -998,22 +1001,24 @@ class J2Edi(object):
         """
         fill header data
         """
-        self.mt_obj.lat = self.survey_config_dict["latitude"]
-        self.mt_obj.lon = self.survey_config_dict["longitude"]
-        self.mt_obj.Site.start_date = self.survey_config_dict["date"]
-        self.mt_obj.Site.survey = self.survey_config_dict["location"]
+        if self.survey_config_dict is None:
+            return
+        self.mt_obj.latitude = self.survey_config_dict["latitude"]
+        self.mt_obj.longitude = self.survey_config_dict["longitude"]
+        self.mt_obj.station_metadata.time_period.start = self.survey_config_dict["date"]
+        self.mt_obj.survey_metadata.id = self.survey_config_dict["location"]
         self.mt_obj.station = self.survey_config_dict["station"]
-        self.mt_obj.elev = self.survey_config_dict["elevation"]
-        self.mt_obj.Site.acquired_by = self.survey_config_dict["network"]
+        self.mt_obj.elevation = self.survey_config_dict["elevation"]
+        self.mt_obj.station_metadata.acquired_by.name = self.survey_config_dict["network"]
 
     def _fill_info(self):
         """
         fill information section
         """
-        self.mt_obj.Notes.info_dict = {}
-
+        self.mt_obj.station_metadata.comments = []
         for key in sorted(self.birrp_dict.keys()):
-            setattr(self.mt_obj.Processing, "birrp_" + key, self.birrp_dict[key])
+            self.mt_obj.station_metadata.comments.append(
+                f"birrp_{key} = {self.birrp_dict[key]}")
 
     def _fill_field_notes(self):
         """
@@ -1248,13 +1253,13 @@ class J2Edi(object):
         # fill in different blocks of the edi file
         self._fill_site()
         self._fill_info()
-        self._fill_field_notes()
+        #self._fill_field_notes()
 
         # write edi file
         edi_fn = mtfh.make_unique_filename(
             os.path.join(self.birrp_dir, "{0}.edi".format(self.station))
         )
 
-        edi_fn = self.mt_obj._write_edi_file(new_edi_fn=edi_fn)
+        edi_fn = self.mt_obj.write_mt_file(edi_fn)
 
         return edi_fn
