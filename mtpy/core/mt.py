@@ -114,12 +114,12 @@ class MT(object):
         # set metadata for the station
         self.survey_metadata = metadata.Survey()
         self.station_metadata = metadata.Station()
-        self.station_metadata.run_list.append(metadata.Run())
-        self.station_metadata.run_list[0].ex = metadata.Electric(component="ex")
-        self.station_metadata.run_list[0].ey = metadata.Electric(component="ey")
-        self.station_metadata.run_list[0].hx = metadata.Magnetic(component="hx")
-        self.station_metadata.run_list[0].hy = metadata.Magnetic(component="hy")
-        self.station_metadata.run_list[0].hz = metadata.Magnetic(component="hz")
+        self.station_metadata.runs.append(metadata.Run())
+        self.station_metadata.runs[0].ex = metadata.Electric(component="ex")
+        self.station_metadata.runs[0].ey = metadata.Electric(component="ey")
+        self.station_metadata.runs[0].hx = metadata.Magnetic(component="hx")
+        self.station_metadata.runs[0].hy = metadata.Magnetic(component="hy")
+        self.station_metadata.runs[0].hz = metadata.Magnetic(component="hz")
 
         self._east = None
         self._north = None

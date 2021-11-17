@@ -23,13 +23,8 @@ import mtpy.utils.exceptions as mtex
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
-import mtpy.core.edi as mtedi
-import mtpy.core.ts as mtts
+import mtpy.core.io.edi as mtedi
 from mtpy.usgs import z3d_collection as zc
-
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from matplotlib.ticker import MultipleLocator
 
 # ==============================================================================
 datetime_fmt = "%Y-%m-%d,%H:%M:%S"
@@ -150,7 +145,7 @@ class SurveyConfig(object):
         self.hy = s_df[s_df.component == "hy"].coil_number.mode()[0]
         try:
             self.hz = s_df[s_df.component == "hz"].coil_number.mode()[0]
-        except IndexError:
+        except (IndexError, KeyError):
             self.hz = ""
         self.lat = s_df.latitude.median()
         self.location = "Earth"
