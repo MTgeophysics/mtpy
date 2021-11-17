@@ -929,7 +929,7 @@ class EDI(object):
     @property
     def station_metadata(self):
         sm = metadata.Station()
-        sm.run_list.append(metadata.Run(id=f"{self.station}a"))
+        sm.runs.append(metadata.Run(id=f"{self.station}a"))
         sm.id = self.station
         sm.data_type = "MT"
         sm.channels_recorded = self.Measurement.channels_recorded
@@ -947,7 +947,7 @@ class EDI(object):
         sm.provenance.software.name = self.Header.fileby
         sm.provenance.software.version = self.Header.progvers
         sm.transfer_function.processed_date = self.Header.filedate
-        sm.transfer_function.runs_processed = sm.run_names
+        sm.transfer_function.runs_processed = sm.run_list
         
         for key, value in self.Info.info_dict.items():
             if key is None:
@@ -985,11 +985,11 @@ class EDI(object):
                     runs = value.split(",")
                 else:
                     runs = value.split()
-                sm.run_list = []
+                sm.runs = []
                 for rr in runs:
-                    sm.run_list.append(metadata.Run(id=rr))
-                sm.transfer_function.runs_processed = runs
-
+                    sm.runs.append(metadata.Run(id=rr))
+                sm.transfer_function.runs_processed = sm.run_list
+                
             elif key == "sitename":
                 sm.geographic_name = value
             elif key == "signconvention":
@@ -1007,7 +1007,7 @@ class EDI(object):
         sm.comments = "\n".join(self.Info.info_list)
 
         # add information to runs
-        for rr in sm.run_list:
+        for rr in sm.runs:
             rr.ex = self.ex_metadata
             rr.ey = self.ey_metadata
             rr.hx = self.hx_metadata
@@ -1376,7 +1376,7 @@ class Header(object):
             return
         try:
             self._acqdate = MTime(value)
-        except MTex.MTTimeError as error:
+        except MTTimeError as error:
             msg = f"Cannot set Header.acqdata with {value}. {error}"
             self.logger.debug(msg)
 
@@ -2783,7 +2783,7 @@ def write_edi(mt_object, fn=None):
             edi_obj.Info.info_list.append(f"provenance.{k} = {v}")
 
     # write field notes
-    for run in mt_object.station_metadata.run_list:
+    for run in mt_object.station_metadata.runs:
         write_dict = dict(
             [
                 (comp, False)

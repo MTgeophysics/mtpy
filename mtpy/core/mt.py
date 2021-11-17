@@ -448,62 +448,62 @@ class MT(object):
     @property
     def ex_metadata(self):
         """ EX metadata """
-        return self.station_metadata.run_list[0].ex
+        return self.station_metadata.runs[0].ex
 
     @ex_metadata.setter
     def ex_metadata(self, value):
         """ set EX metadata """
-        self.station_metadata.run_list[0].ex = value
+        self.station_metadata.runs[0].ex = value
 
     @property
     def ey_metadata(self):
         """ EY metadata """
-        return self.station_metadata.run_list[0].ey
+        return self.station_metadata.runs[0].ey
 
     @ey_metadata.setter
     def ey_metadata(self, value):
         """ set EY metadata """
-        self.station_metadata.run_list[0].ey = value
+        self.station_metadata.runs[0].ey = value
 
     @property
     def hx_metadata(self):
         """ HX metadata """
-        return self.station_metadata.run_list[0].hx
+        return self.station_metadata.runs[0].hx
 
     @hx_metadata.setter
     def hx_metadata(self, value):
         """ set hx metadata """
-        self.station_metadata.run_list[0].hx = value
+        self.station_metadata.runs[0].hx = value
 
     @property
     def hy_metadata(self):
         """ HY metadata """
-        return self.station_metadata.run_list[0].hy
+        return self.station_metadata.runs[0].hy
 
     @hy_metadata.setter
     def hy_metadata(self, value):
         """ set hy metadata """
-        self.station_metadata.run_list[0].hy = value
+        self.station_metadata.runs[0].hy = value
 
     @property
     def hz_metadata(self):
         """ HZ metadata """
-        return self.station_metadata.run_list[0].hz
+        return self.station_metadata.runs[0].hz
 
     @hz_metadata.setter
     def hz_metadata(self, value):
         """ set hz metadata """
-        self.station_metadata.run_list[0].hz = value
+        self.station_metadata.runs[0].hz = value
 
     @property
     def rrhx_metadata(self):
         """ RRHX metadata """
-        return self.station_metadata.run_list[0].rrhx
+        return self.station_metadata.runs[0].rrhx
 
     @property
     def rrhy_metadata(self):
         """ RRHY metadata """
-        return self.station_metadata.run_list[0].rrhy
+        return self.station_metadata.runs[0].rrhy
 
     def remove_distortion(self, num_freq=None):
         """

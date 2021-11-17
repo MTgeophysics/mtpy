@@ -1450,6 +1450,7 @@ class Model(object):
         shift_z=0,
         units="km",
         coordinate_system="nez+",
+        label = "resistivity",
     ):
         """
         Write a VTK file to plot in 3D rendering programs like Paraview
@@ -1503,13 +1504,13 @@ class Model(object):
             vtk_x = (self.grid_north + shift_north) * scale
             vtk_y = (self.grid_east + shift_east) * scale
             vtk_z = (self.grid_z + shift_z) * scale
-            cell_data = {"resistivity": self.res_model}
+            cell_data = {label: self.res_model}
 
         elif coordinate_system == "enz-":
             vtk_y = (self.grid_north + shift_north) * scale
             vtk_x = (self.grid_east + shift_east) * scale
             vtk_z = -1 * (self.grid_z + shift_z) * scale
-            cell_data = {"resistivity": np.rot90(self.res_model)}
+            cell_data = {label: np.rot90(self.res_model)}
 
         gridToVTK(vtk_fn, vtk_x, vtk_y, vtk_z, cellData=cell_data)
 
