@@ -621,6 +621,7 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
     :rtype: pyproj.Proj function
 
     """
+    
     if utm_zone is None and epsg is None:
         raise GISError("Need to input either UTM zone or EPSG number")
 
@@ -629,10 +630,13 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
         pp = pyproj.Proj("EPSG:%d" % (epsg))
 
     elif epsg is None:
+        if datum is None:
+            datum = "WGS84"
         zone_number, is_northern = split_utm_zone(utm_zone)
         zone = "north" if is_northern else "south"
-        proj_str = "+proj=utm +zone=%d +%s +datum=%s" % (zone_number, zone, datum)
+        proj_str = f"+proj=utm +zone={zone_number} +{zone} +datum={datum}"
         pp = pyproj.Proj(proj_str)
+
 
     return pp
 
@@ -697,6 +701,7 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
     if HAS_GDAL:
         ll2utm = _get_gdal_projection_ll2utm(datum, utm_zone, epsg)
     else:
+        
         ll2utm = _get_pyproj_projection(datum, utm_zone, epsg)
 
     # return different results depending on if lat/lon are iterable
