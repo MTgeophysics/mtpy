@@ -334,20 +334,20 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         self.residual_pt_list = []
         self.freq_list = None
+        self.nfreq = 42
         self.rpt_array = None
         self.med_filt_kernel = kwargs.pop("med_filt_kernel", None)
         self.rot90 = kwargs.pop("rot90", True)
 
         # --> set the ellipse properties
-        self._ellipse_dict = kwargs.pop(
-            "ellipse_dict",
-            {"cmap": "mt_yl2rd", "range": (0, 10), "colorby": "geometric_mean"},
-        )
-        self._read_ellipse_dict()
+        self.ellipse_cmap = kwargs.pop("cmap", "mt_yl2rd")
+        self.ellipse_range = kwargs.pop("range", (0, 10))
+        self.ellipse_colorby = kwargs.pop("colorby", "geometric_mean")
         self.ellipse_scale = kwargs.pop("ellipse_scale", 10)
+        self.ellipse_size = kwargs.pop("ellipse_size", 2)
 
         # --> set colorbar properties---------------------------------
-        # set orientation to horizontal
+        # set orientation to horizonstal
         cb_dict = kwargs.pop("cb_dict", {})
         try:
             self.cb_orientation = cb_dict["orientation"]
@@ -452,11 +452,14 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         freq_list = []
         for mt1 in self.mt_list1:
-            freq_list.extend(mt1.freq)
-        for mt2 in self.mt_list2:
-            freq_list.extend(mt2.freq)
+            freq_list.extend(mt1.frequency)
+        for mt2 in self.mt_list2:   
+            freq_list.extend(mt2.frequency)
 
-        self.freq_list = np.array(sorted(set(freq_list), reverse=True))
+        flist = np.array(sorted(set(freq_list), reverse=True))
+        self.freq_list = np.logspace(np.log10(flist.min()), 
+                                     np.log10(flist.max()), 
+                                     self.nfreq)
 
     # ------------------------------------------------------------------
     def _compute_residual_pt(self):
@@ -466,12 +469,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
         """
         log_path = os.path.dirname(os.path.dirname(self.fn_list1[0]))
         log_fn = os.path.join(log_path, "Residual_PT.log")
-        logfid = file(log_fn, "w")
+        logfid = open(log_fn, "w")
 
         self._get_freq_list()
-        freq_dict = dict(
-            [(np.round(key, 5), value) for value, key in enumerate(self.freq_list)]
-        )
 
         num_freq = self.freq_list.shape[0]
         num_station = len(self.mt_list1)
@@ -480,7 +480,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.rpt_array = np.zeros(
             num_station,
             dtype=[
-                ("station", "|S10"),
+                ("station", "U10"),
                 ("freq", (np.float, num_freq)),
                 ("lat", np.float),
                 ("lon", np.float),
@@ -497,51 +497,52 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.residual_pt_list = []
         for mm, mt1 in enumerate(self.mt_list1):
             station_find = False
-            fdict1 = dict([(np.round(ff, 5), ii) for ii, ff in enumerate(mt1.freq)])
+            mt1.Z, mt1.Tipper = mt1.interpolate(self.freq_list, bounds_error=False)
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
+                    mt2.Z, mt2.Tipper = mt2.interpolate(self.freq_list, bounds_error=False)
                     logfid.write("{0}{1}{0}\n".format("=" * 30, mt1.station))
-                    fdict2 = dict(
-                        [(np.round(ff, 5), ii) for ii, ff in enumerate(mt2.freq)]
-                    )
+                    # fdict2 = dict(
+                    #     [(np.round(ff, 5), ii) for ii, ff in enumerate(mt2.frequency)]
+                    # )
 
-                    # need to make sure only matched frequencies are compared
-                    index_1 = []
-                    index_2 = []
-                    for key1 in sorted(fdict1.keys()):
-                        try:
-                            index_2.append(fdict2[key1])
-                            index_1.append(fdict1[key1])
-                            logfid.write("-" * 20 + "\n")
-                            logfid.write("found {0} in both\n".format(key1))
-                            logfid.write(
-                                "Index 1={0}, Index 2={1}\n".format(
-                                    fdict1[key1], fdict2[key1]
-                                )
-                            )
-                        except KeyError:
-                            "Did not find {0:.4e} Hz in {1}".format(key1, mt2.fn)
+                    # # need to make sure only matched frequencies are compared
+                    # index_1 = []
+                    # index_2 = []
+                    # for key1 in sorted(fdict1.keys()):
+                    #     try:
+                    #         index_2.append(fdict2[key1])
+                    #         index_1.append(fdict1[key1])
+                    #         logfid.write("-" * 20 + "\n")
+                    #         logfid.write("found {0} in both\n".format(key1))
+                    #         logfid.write(
+                    #             "Index 1={0}, Index 2={1}\n".format(
+                    #                 fdict1[key1], fdict2[key1]
+                    #             )
+                    #         )
+                    #     except KeyError:
+                    #         "Did not find {0:.4e} Hz in {1}".format(key1, mt2.fn)
 
-                    # need to sort the index list, otherwise weird things
-                    # happen
-                    index_1.sort()
-                    index_2.sort()
+                    # # need to sort the index list, otherwise weird things
+                    # # happen
+                    # index_1.sort()
+                    # index_2.sort()
 
-                    # create new Z objects that have similar frequencies
-                    new_z1 = mtpl.mtz.Z(
-                        z_array=mt1.z[index_1],
-                        z_err_array=mt1.z_err[index_1],
-                        freq=mt1.freq[index_1],
-                    )
-                    new_z2 = mtpl.mtz.Z(
-                        z_array=mt2.z[index_2],
-                        z_err_array=mt2.z_err[index_2],
-                        freq=mt2.freq[index_2],
-                    )
+                    # # create new Z objects that have similar frequencies
+                    # new_z1 = mtpl.mtz.Z(
+                    #     z_array=mt1.Z.z[index_1],
+                    #     z_err_array=mt1.Z.z_err[index_1],
+                    #     freq=mt1.frequency[index_1],
+                    # )
+                    # new_z2 = mtpl.mtz.Z(
+                    #     z_array=mt2.Z.z[index_2],
+                    #     z_err_array=mt2.Z.z_err[index_2],
+                    #     freq=mt2.frequency[index_2],
+                    # )
 
                     # make new phase tensor objects
-                    pt1 = mtpt.PhaseTensor(z_object=new_z1)
-                    pt2 = mtpt.PhaseTensor(z_object=new_z2)
+                    pt1 = mtpt.PhaseTensor(z_object=mt1.Z)
+                    pt2 = mtpt.PhaseTensor(z_object=mt2.Z)
 
                     # compute residual phase tensor
                     rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
@@ -549,8 +550,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
                     # add some attributes to residual phase tensor object
                     rpt.station = mt1.station
-                    rpt.lat = mt1.lat
-                    rpt.lon = mt1.lon
+                    rpt.lat = mt1.latitude
+                    rpt.lon = mt1.longitude
 
                     # append to list for manipulating later
                     self.residual_pt_list.append(rpt)
@@ -562,92 +563,100 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     # rpt, need this for filtering.
                     st_1, st_2 = self.station_id
                     self.rpt_array[mm]["station"] = mt1.station[st_1:st_2]
-                    self.rpt_array[mm]["lat"] = mt1.lat
-                    self.rpt_array[mm]["lon"] = mt1.lon
-                    self.rpt_array[mm]["elev"] = mt1.elev
+                    self.rpt_array[mm]["lat"] = mt1.latitude
+                    self.rpt_array[mm]["lon"] = mt1.longitude
+                    self.rpt_array[mm]["elev"] = mt1.elevation
                     self.rpt_array[mm]["freq"][:] = self.freq_list
-
-                    rpt_fdict = dict(
-                        [
-                            (np.round(key, 5), value)
-                            for value, key in enumerate(rpt.freq)
-                        ]
+                    self.rpt_array[mm]["phimin"][:] = rpt.residual_pt.phimin
+                    self.rpt_array[mm]["phimax"][:] = rpt.residual_pt.phimax
+                    self.rpt_array[mm]["azimuth"][:] = rpt.residual_pt.azimuth
+                    self.rpt_array[mm]["skew"][:] = rpt.residual_pt.skew
+                    self.rpt_array[mm]["geometric_mean"][:] = np.sqrt(
+                        abs(
+                            rpt.residual_pt.phimin
+                            * rpt.residual_pt.phimax
+                        )
                     )
 
-                    for f_index, freq in enumerate(rpt.freq):
-                        aa = freq_dict[np.round(freq, 5)]
-                        try:
-                            rr = rpt_fdict[np.round(freq, 5)]
-                            try:
-                                self.rpt_array[mm]["phimin"][
-                                    aa
-                                ] = rpt.residual_pt.phimin[0][rr]
-                                self.rpt_array[mm]["phimax"][
-                                    aa
-                                ] = rpt.residual_pt.phimax[0][rr]
-                                self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[
-                                    0
-                                ][rr]
-                                self.rpt_array[mm]["azimuth"][
-                                    aa
-                                ] = rpt.residual_pt.azimuth[0][rr]
-                                self.rpt_array[mm]["geometric_mean"][aa] = np.sqrt(
-                                    abs(
-                                        rpt.residual_pt.phimin[0][rr]
-                                        * rpt.residual_pt.phimax[0][rr]
-                                    )
-                                )
-                                logfid.write("Freq={0:.5f} ".format(freq))
-                                logfid.write(
-                                    "Freq_list_index={0} ".format(
-                                        np.where(self.freq_list == freq)[0][0]
-                                    )
-                                )
-                                logfid.write("rpt_array_index={0} ".format(aa))
-                                logfid.write("rpt_dict={0} ".format(rr))
-                                logfid.write(
-                                    "rpt.freq_index={0} ".format(
-                                        np.where(rpt.freq == freq)[0][0]
-                                    )
-                                )
-                                logfid.write(
-                                    "Phi_max={0:2f} ".format(
-                                        rpt.residual_pt.phimax[0][rr]
-                                    )
-                                )
-                                logfid.write(
-                                    "Phi_min={0:2f} ".format(
-                                        rpt.residual_pt.phimin[0][rr]
-                                    )
-                                )
-                                logfid.write(
-                                    "Skew={0:2f} ".format(rpt.residual_pt.beta[0][rr])
-                                )
-                                logfid.write(
-                                    "Azimuth={0:2f}\n".format(
-                                        rpt.residual_pt.azimuth[0][rr]
-                                    )
-                                )
+                    # rpt_fdict = dict(
+                    #     [
+                    #         (np.round(key, 5), value)
+                    #         for value, key in enumerate(rpt.freq)
+                    #     ]
+                    # )
 
-                            except IndexError:
-                                print("-" * 50)
-                                print(mt1.station)
-                                print("freq_index for 1:  {0}".format(f_index))
-                                print("freq looking for:  {0}".format(freq))
-                                print("index in big    :  {0}".format(aa))
-                                print("index in 1      :  {0} ".format(rr))
-                                print(
-                                    "len_1 = {0}, len_2 = {1}".format(
-                                        len(mt2.freq), len(mt1.freq)
-                                    )
-                                )
-                                print("len rpt_freq = {0}".format(len(rpt.freq)))
-                        except KeyError:
-                            print(
-                                "Station {0} does not have {1:.5f}Hz".format(
-                                    mt1.station, freq
-                                )
-                            )
+                    # for f_index, freq in enumerate(rpt.freq):
+                    #     aa = freq_dict[np.round(freq, 5)]
+                    #     try:
+                    #         rr = rpt_fdict[np.round(freq, 5)]
+                    #         try:
+                    #             self.rpt_array[mm]["phimin"][
+                    #                 aa
+                    #             ] = rpt.residual_pt.phimin[rr]
+                    #             self.rpt_array[mm]["phimax"][
+                    #                 aa
+                    #             ] = rpt.residual_pt.phimax[rr]
+                    #             self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[rr]
+                    #             self.rpt_array[mm]["azimuth"][
+                    #                 aa
+                    #             ] = rpt.residual_pt.azimuth[rr]
+                    #             self.rpt_array[mm]["geometric_mean"][aa] = np.sqrt(
+                    #                 abs(
+                    #                     rpt.residual_pt.phimin[rr]
+                    #                     * rpt.residual_pt.phimax[rr]
+                    #                 )
+                    #             )
+                    #             logfid.write("Freq={0:.5f} ".format(freq))
+                    #             logfid.write(
+                    #                 "Freq_list_index={0} ".format(
+                    #                     np.where(self.freq_list == freq)[0][0]
+                    #                 )
+                    #             )
+                    #             logfid.write("rpt_array_index={0} ".format(aa))
+                    #             logfid.write("rpt_dict={0} ".format(rr))
+                    #             logfid.write(
+                    #                 "rpt.freq_index={0} ".format(
+                    #                     np.where(rpt.freq == freq)[0][0]
+                    #                 )
+                    #             )
+                    #             logfid.write(
+                    #                 "Phi_max={0:2f} ".format(
+                    #                     rpt.residual_pt.phimax[rr]
+                    #                 )
+                    #             )
+                    #             logfid.write(
+                    #                 "Phi_min={0:2f} ".format(
+                    #                     rpt.residual_pt.phimin[rr]
+                    #                 )
+                    #             )
+                    #             logfid.write(
+                    #                 "Skew={0:2f} ".format(rpt.residual_pt.beta[rr])
+                    #             )
+                    #             logfid.write(
+                    #                 "Azimuth={0:2f}\n".format(
+                    #                     rpt.residual_pt.azimuth[rr]
+                    #                 )
+                    #             )
+
+                    #         except IndexError:
+                    #             print("-" * 50)
+                    #             print(mt1.station)
+                    #             print("freq_index for 1:  {0}".format(f_index))
+                    #             print("freq looking for:  {0}".format(freq))
+                    #             print("index in big    :  {0}".format(aa))
+                    #             print("index in 1      :  {0} ".format(rr))
+                    #             print(
+                    #                 "len_1 = {0}, len_2 = {1}".format(
+                    #                     len(mt2.frequency), len(mt1.frequency)
+                    #                 )
+                    #             )
+                    #             print("len rpt_freq = {0}".format(len(rpt.freq)))
+                    #     except KeyError:
+                    #         print(
+                    #             "Station {0} does not have {1:.5f}Hz".format(
+                    #                 mt1.station, freq
+                    #             )
+                    #         )
 
                     break
                 else:
@@ -790,7 +799,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
             except ValueError:
                 raise NameError("{0} is not supported".format(self.ellipse_colorby))
 
-            for jj, ff in enumerate(self.freq_list):
+            for jj, ff in enumerate(rpt["freq"]):
                 if phimin[jj] == 0.0 or phimax[jj] == 0.0:
                     pass
                 else:
@@ -850,7 +859,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         # --> Set plot parameters
         # need to sort the offsets and station labels so they plot correctly
-        sdtype = [("offset", np.float), ("station", "|S10")]
+        sdtype = [("offset", np.float), ("station", "U10")]
         slist = np.array(
             [
                 (oo, ss)
