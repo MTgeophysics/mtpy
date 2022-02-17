@@ -26,7 +26,7 @@ def main():
 def plotedi(fn, saveplot=False, component=None):
     edi = MTedi.Edi()
     try:
-        edi.readfile(fn)
+        edi.read_edi_file(fn)
     except:
         print('\n\tERROR - not a valid EDI file: {0}\n'.format(fn))
         sys.exit()
@@ -81,7 +81,8 @@ def plotedi(fn, saveplot=False, component=None):
         phierr_te.append(p[0, 1])
         phierr_tm.append(p[1, 0])
 
-    periods = 1. / edi.freq
+    # periods = 1. / edi.freq
+    periods = 1. / edi.Z.freq
 
     resplotelement_xy = None
     resplotelement_yx = None
@@ -97,9 +98,9 @@ def plotedi(fn, saveplot=False, component=None):
             periods, res_tm, reserr_tm, marker='x', c='r', fmt='x')
     pylab.xscale('log', nonposx='clip')
     pylab.yscale('log', nonposy='clip')
-    minval = pylab.min(pylab.min(res_te, res_tm))
-    maxval = pylab.max(pylab.max(res_te, res_tm))
-    pylab.xlim(0.5 * pylab.min(periods), 2 * pylab.max(periods))
+    minval = pylab.np.min(pylab.minimum(res_te, res_tm))
+    maxval = pylab.np.max(pylab.maximum(res_te, res_tm))
+    pylab.xlim(0.5 * pylab.np.min(periods), 2 * pylab.np.max(periods))
 
     # ylim([0.1,100])
     pylab.ylim([minval / 10, maxval * 10])
