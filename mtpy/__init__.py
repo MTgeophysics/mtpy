@@ -11,12 +11,7 @@ MTpy
 __version__ = "1.1.5"
 
 # load mtpy default logging config
-from mtpy.core.mt import MT
-
-__all__ = ["MT"]
-
 from mtpy.utils.mtpy_logger import load_configure, get_mtpy_logger
-
 
 load_configure()
 
@@ -25,3 +20,8 @@ debug_logger.debug("Starting MTpy Debug Log File")
 
 error_logger = get_mtpy_logger("error", fn="mtpy_error", level="error")
 matplotlib_logger = get_mtpy_logger("matplotlib", fn="matplotlib_warn", level="warning")
+
+from mtpy.core.mt import MT
+from mtpy.core.mt_collection import MTCollection
+
+__all__ = ["MT", "MTCollection"]

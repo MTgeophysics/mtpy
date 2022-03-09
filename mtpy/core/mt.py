@@ -11,7 +11,6 @@ from pathlib import Path
 
 import numpy as np
 from scipy import interpolate as spi
-import xarray as xr
 
 from mt_metadata.transfer_functions.core import TF
 
@@ -39,64 +38,6 @@ class MT(TF):
 
         self.save_dir = Path.cwd()
 
-    @property
-    def east(self):
-        """easting (m)"""
-        return self._east
-
-    @east.setter
-    def east(self, easting):
-        """
-        set easting in meters
-
-        upon setting latitude and longitude are recalculated
-        """
-        self._east = float(easting)
-        if self.north is not None and self.utm_zone is not None:
-            self.logger.debug("Calculating latitude and longitude from UTM")
-            self._latitude, self._longitude = gis_tools.project_point_utm2ll(
-                self.east, self.north, self.utm_zone
-            )
-
-    @property
-    def north(self):
-        """northing (m)"""
-        return self._north
-
-    @north.setter
-    def north(self, northing):
-        """
-        set northing in meters
-
-        upon setting latitude and longitude are recalculated
-        """
-        self._north = float(northing)
-        if self.east is not None and self.utm_zone is not None:
-            self.logger.debug("Calculating latitude and longitude from UTM")
-            self._latitude, self._longitude = gis_tools.project_point_utm2ll(
-                self.east, self.north, self.utm_zone
-            )
-
-    @property
-    def utm_zone(self):
-        """utm zone"""
-        return self._utm_zone
-
-    @utm_zone.setter
-    def utm_zone(self, utm_zone):
-        """
-        set UTM zone
-
-        upon setting latitude and longitude are recalculated
-
-        TODO: need a validation from utm zone
-        """
-        self._utm_zone = utm_zone
-        if self.latitude is None and self.longitude is None:
-            self.logger.debug("Calculating latitude and longitude from UTM")
-            self.east, self.north, self._utm_zone = gis_tools.project_point_ll2utm(
-                self.latitude, self.longitude, utm_zone=self.utm_zone
-            )
 
     @property
     def rotation_angle(self):

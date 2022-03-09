@@ -20,8 +20,7 @@ import pandas as pd
 
 import geopandas as gpd
 from shapely.geometry import Point
-import xarray as xr
-from mtpy.core import mt
+from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
@@ -31,21 +30,23 @@ from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 class MTCollection:
     """
-    Collection of mt data
+    Collection of transfer functions
+    
     """
 
     def __init__(self, dataframe=None, mt_path=None):
-        self.mt_path = mt_path
+
         self.dataframe = dataframe
         self.logger = get_mtpy_logger(
             f"{__name__}.{self.__class__.__name__}", fn="mt_collection"
         )
+        self.mt_dict = {}
 
     def __str__(self):
-        lines = [f"MT file path: {self.mt_path}"]
         if self.dataframe is not None:
-            lines += [f"\t Number of Stations: {len(self.dataframe)}"]
-        return "\n".join(lines)
+           return str(self.dataframe.head())
+        else:
+            return "Bummer, no stations in this collection."
 
     def __repr__(self):
         return self.__str__()
@@ -63,14 +64,6 @@ class MTCollection:
         else:
             raise ValueError(f"Input must be pandas.DataFrame not {type(value)}")
 
-    @property
-    def mt_path(self):
-        return self._mt_path
-
-    @mt_path.setter
-    def mt_path(self, value):
-        self._mt_path = self.check_path(value)
-
     def check_path(self, mt_path):
         if mt_path is None:
             return None
@@ -82,12 +75,13 @@ class MTCollection:
                 raise IOError(msg)
             return mt_path
 
-    def make_mt_file_list(self, mt_path=None, file_types=["edi"]):
+    def make_mt_file_list(self, mt_path, file_types=["edi"]):
         """
         Get a list of MT file from a given path
 
         :param mt_path: full path to where the MT transfer functions are stored
-        :type mt_path: string or :class:`pathlib.Path`
+        or a list of paths
+        :type mt_path: string or :class:`pathlib.Path` or list
 
         :param file_types: List of file types to look for given their extension
         :type file_types: list
@@ -99,36 +93,35 @@ class MTCollection:
             - avg - Zonge output file
 
         """
-        if mt_path is not None:
-            self.mt_path = mt_path
-        if self.mt_path is None:
-            self.logger.info("MT file path is None, returning None.")
-            return None
+        if isinstance(mt_path, (str, Path)):
+            mt_path = [self.check_path(mt_path)]
+        elif isinstance(mt_path, list):
+            mt_path = [self.check_path(path) for path in mt_path]
+        else:
+            raise TypeError(f"Not sure what to do with {type(mt_path)}")
 
         fn_list = []
-        for ext in file_types:
-            fn_list += list(self.mt_path.glob(f"*.{ext}"))
+        for path in mt_path:
+            for ext in file_types:
+                fn_list += list(path.glob(f"*.{ext}"))
 
         return fn_list
 
-    def make_dataframe_from_file_list(self, mt_file_list=None, move_duplicates=True):
+    def make_dataframe_from_file_list(self, mt_file_list, move_duplicates=True):
         """
         create a :class:`pandas.DataFrame` from information in the file list
 
         :param mt_file_list: list of paths to MT tranfer function files
         :type mt_file_list: list of :class:`pathlib.Path` objects
-        :return: Data frame with information about each transfer function
-        :rtype: :class:`pandas.DataFrame`
 
+        fills self.dataframe and self.mt_dict
 
         """
 
-        if mt_file_list is None:
-            mt_file_list = self.make_mt_file_list()
-
         station_list = []
+        self.mt_dict = {}
         for fn in mt_file_list:
-            m = mt.MT(fn)
+            m = MT(fn)
             entry = {}
             entry["ID"] = m.station
             entry["start"] = m.station_metadata.time_period.start
@@ -136,9 +129,6 @@ class MTCollection:
             entry["latitude"] = m.latitude
             entry["longitude"] = m.longitude
             entry["elevation"] = m.elevation
-            entry["easting"] = m.east
-            entry["northing"] = m.north
-            entry["utm_zone"] = m.utm_zone
             entry["acquired_by"] = m.station_metadata.acquired_by.author
             entry["period_min"] = 1.0 / m.Z.freq.max()
             entry["period_max"] = 1.0 / m.Z.freq.min()
@@ -146,15 +136,20 @@ class MTCollection:
             entry["survey"] = m.survey_metadata.id
             entry["fn"] = fn
             entry["file_date"] = m.station_metadata.provenance.creation_time
-
+            entry["has_impedance"] = m.has_impedance()
+            entry["has_tipper"] = m.has_tipper()
+            
             # add entry to list to put into data frame
             station_list.append(entry)
+            
+            # add transfer function to mt_dict
+            self.mt_dict[m.station] = m
 
         dataframe = pd.DataFrame(station_list)
         if move_duplicates:
             dataframe = self._check_for_duplicates(dataframe)
 
-        return dataframe
+        self.dataframe = dataframe
 
     def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
         """
@@ -192,17 +187,23 @@ class MTCollection:
             self.logger.info(
                 f"Found {len(dataframe)} duplicates, moving oldest to 'Duplicates'"
             )
-            dup_path = self.mt_path.joinpath("Duplicates")
-            if not dup_path.exists():
-                dup_path.mkdir()
+            
             for ii, row in duplicates.iterrows():
                 fn = Path(row.fn)
+                dup_path = fn.parent.joinpath("Duplicates")
+                if not dup_path.exists():
+                    dup_path.mkdir()
+                
                 new_fn = dup_path.joinpath(Path(row.fn).name)
                 try:
                     self.logger.info("Moved %s to Duplicates", new_fn.name)
                     fn.rename(new_fn)
                 except FileNotFoundError:
                     self.logger.debug(f"Could not find {fn} --> skipping")
+                    
+                # pop the duplicated station off the mt dictionary
+                self.mt_dict.pop(row.ID)
+                
         dataframe = dataframe.drop_duplicates(subset=["latitude", "longitude"], keep="first")
 
         return dataframe
@@ -347,7 +348,7 @@ class MTCollection:
                 avg_mc = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
     
                 if len(avg_mc.dataframe) > 1:
-                    m_list = [mt.MT(row.fn) for row in avg_mc.dataframe.itertuples()]
+                    m_list = [MT(row.fn) for row in avg_mc.dataframe.itertuples()]
                     # interpolate onto a similar period range
                     f_list = []
                     for m in m_list:
@@ -371,7 +372,7 @@ class MTCollection:
                     avg_t = np.nanmean(avg_t, axis=0)
                     avg_t_err = np.nanmean(avg_t_err, axis=0)
                     
-                    mt_avg = mt.MT()
+                    mt_avg = MT()
                     mt_avg.Z.freq = f
                     mt_avg.Z.z = avg_z
                     mt_avg.Z.z_err = avg_z_err
