@@ -8,275 +8,36 @@
 
 # ==============================================================================
 from pathlib import Path
-from copy import deepcopy
 
 import numpy as np
 from scipy import interpolate as spi
 import xarray as xr
 
-from mt_metadata.transfer_functions import tf as metadata
-from mtpy.utils import gis_tools
-from mtpy.utils.mtpy_logger import get_mtpy_logger
-import mtpy.core.z as MTz
+from mt_metadata.transfer_functions.core import TF
+
+from mtpy.core.z import Z, Tipper
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
-from mtpy.core.io.readwrite import read_file, write_file
+from mtpy.utils import gis_tools
 
 
 # =============================================================================
-class MT(object):
+class MT(TF):
     """
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
 
-    The most used attributes are made available from MT, namely the following.
-
-    ===================== =====================================================
-    Attribute             Description
-    ===================== =====================================================
-    station               station name
-    latitude                   station latitude in decimal degrees
-    longitude                   station longitude in decimal degrees
-    elevation                  station elevation in meters
-    Z                     mtpy.core.z.Z object for impedance tensor
-    Tipper                mtpy.core.z.Tipper object for tipper
-    pt                    mtpy.analysis.pt.PhaseTensor for phase tensor
-    east                  station location in UTM coordinates assuming WGS-84
-    north                 station location in UTM coordinates assuming WGS-84
-    utm_zone              zone of UTM coordinates assuming WGS-84
-    rotation_angle        rotation angle of the data
-    fn                    absolute path to the data file
-    ===================== =====================================================
-
-    Other information is contained with in the different class attributes. For
-    instance survey name is in MT.Site.survey
-
-    .. note::
-
-        * The best way to see what all the information is and where it is
-          contained would be to write out a configuration file ::
-
-              >>> import mtpy.core.mt as mt
-              >>> mt_obj = mt.MT()
-              >>> mt_obj.write_cfg_file(r"/home/mt/generic.cfg")
-
-        * Currently EDI, XML, and j file are supported to read in information,
-          and can write out EDI and XML formats.  Will be extending to j and
-          Egberts Z format.
-
-    ===================== =====================================================
-    Methods               Description
-    ===================== =====================================================
-    read_mt_file          read in a MT file [ EDI | XML | j ]
-    write_mt_file         write a MT file [ EDI | XML ]
-    read_cfg_file         read a configuration file
-    write_cfg_file        write a configuration file
-    remove_distortion     remove distortion  following Bibby et al. [2005]
-    remove_static_shift   Shifts apparent resistivity curves up or down
-    interpolate           interpolates Z and T onto specified frequency array.
-    ===================== =====================================================
-
-
-    Examples
-    -------------------
-    :Read from an .edi File: ::
-
-        >>> import mtpy.core.mt as mt
-        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
-
-    :Remove Distortion: ::
-
-        >>> import mtpy.core.mt as mt
-        >>> mt1 = mt.MT(fn=r"/home/mt/edi_files/mt01.edi")
-        >>> D, new_z = mt1.remove_distortion()
-        >>> mt1.write_mt_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
-        >>>                    new_Z=new_z)
-
-    :Remove Static Shift: ::
-
-        >>> new_z_obj = mt_obj.remove_static_shift(ss_x=.78, ss_y=1.1)
-        >>> # write a new edi file
-        >>> mt_obj.write_mt_file(new_fn=r"/home/edi_files/s01_ss.edi",
-        >>>                       new_Z=new_z)
-        >>> wrote file to: /home/edi_files/s01_ss.edi
-
-    :Interpolate: ::
-
-        >>> new_freq = np.logspace(-3, 3, num=24)
-        >>> new_z_obj, new_tipper_obj = mt_obj.interpolate(new_freq)
-        >>> mt_obj.write_mt_file(new_Z=new_z_obj, new_Tipper=new_tipper_obj)
-        >>> wrote file to: /home/edi_files/s01_RW.edi
+    
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        super().__init__(fn=fn, **kwargs)
 
-        # set metadata for the station
-        self.survey_metadata = metadata.Survey()
-        self.station_metadata = metadata.Station()
-        self.station_metadata.runs.append(metadata.Run())
-        self.station_metadata.runs[0].ex = metadata.Electric(component="ex")
-        self.station_metadata.runs[0].ey = metadata.Electric(component="ey")
-        self.station_metadata.runs[0].hx = metadata.Magnetic(component="hx")
-        self.station_metadata.runs[0].hy = metadata.Magnetic(component="hy")
-        self.station_metadata.runs[0].hz = metadata.Magnetic(component="hz")
-
-        self._east = None
-        self._north = None
-        self._utm_zone = None
-
-        self._Z = MTz.Z()
-        self._Tipper = MTz.Tipper()
+        self._Z = Z()
+        self._Tipper = Tipper()
         self._rotation_angle = 0
 
         self.save_dir = Path.cwd()
-        self._fn = None
-        self.fn = fn
-
-        # provide key words to fill values if an edi file does not exist
-        for key in list(kwargs.keys()):
-            setattr(self, key, kwargs[key])
-
-    def __str__(self):
-        lines = [f"Station: {self.station}", "-" * 50]
-        lines.append(f"\tSurvey:        {self.survey_metadata.id}")
-        lines.append(f"\tProject:       {self.survey_metadata.project}")
-        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
-        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
-        lines.append(f"\tLatitude:      {self.latitude:.3f}")
-        lines.append(f"\tLongitude:     {self.longitude:.3f}")
-        lines.append(f"\tElevation:     {self.elevation:.3f}")
-        lines.append("\tDeclination:   ")
-        lines.append(
-            f"\t\tValue:     {self.station_metadata.location.declination.value}"
-        )
-        lines.append(
-            f"\t\tModel:     {self.station_metadata.location.declination.model}"
-        )
-        if self.Z.z is not None:
-            lines.append("\tImpedance:     True")
-        else:
-            lines.append("\tImpedance:     False")
-        if self.Tipper.tipper is not None:
-            lines.append("\tTipper:        True")
-        else:
-            lines.append("\tTipper:        False")
-
-        if self.Z.z is not None:
-            lines.append(f"\tN Periods:     {len(self.Z.freq)}")
-
-            lines.append("\tPeriod Range:")
-            lines.append(f"\t\tMin:   {self.periods.min():.5E} s")
-            lines.append(f"\t\tMax:   {self.periods.max():.5E} s")
-
-            lines.append("\tFrequency Range:")
-            lines.append(f"\t\tMin:   {self.frequencies.max():.5E} Hz")
-            lines.append(f"\t\tMax:   {self.frequencies.min():.5E} Hz")
-
-        return "\n".join(lines)
-
-    def __repr__(self):
-        lines = []
-        lines.append(f"station='{self.station}'")
-        lines.append(f"latitude={self.latitude:.2f}")
-        lines.append(f"longitude={self.longitude:.2f}")
-        lines.append(f"elevation={self.elevation:.2f}")
-
-        return f"MT( {(', ').join(lines)} )"
-
-    def __eq__(self, other):
-        is_equal = True
-        if not isinstance(other, MT):
-            self.logger.info(f"Comparing object is not MT, type {type(other)}")
-            is_equal = False
-        if self.station_metadata != other.station_metadata:
-            self.logger.info("Station metadata is not equal")
-            is_equal = False
-        if self.survey_metadata != other.survey_metadata:
-            self.logger.info("Survey Metadata is not equal")
-            is_equal = False
-        if self.Z != other.Z:
-            self.logger.info("Z is not equal")
-            is_equal = False
-        if self.Tipper != other.Tipper:
-            self.logger.info("Tipper is not equal")
-            is_equal = False
-        return is_equal
-
-    def copy(self):
-        return deepcopy(self)
-
-    # ==========================================================================
-    # Properties
-    # ==========================================================================
-    @property
-    def fn(self):
-        """ reference to original data file"""
-        return self._fn
-
-    @fn.setter
-    def fn(self, value):
-        """ set file name """
-        try:
-            self._fn = Path(value)
-            if self._fn.exists():
-                self.read_mt_file(self._fn)
-            else:
-                self.logger.warning(f"Could not find {self._fn} skip reading.")
-        except TypeError:
-            self._fn = None
-
-    @property
-    def latitude(self):
-        """Latitude"""
-        return self.station_metadata.location.latitude
-
-    @latitude.setter
-    def latitude(self, latitude):
-        """
-        set latitude making sure the input is in decimal degrees
-
-        upon setting utm coordinates are recalculated
-        """
-        self.station_metadata.location.latitude = latitude
-        if self.longitude is not None or self.longitude != 0.0:
-            self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
-                self.latitude,
-                self.longitude,
-                datum=self.station_metadata.location.datum,
-            )
-
-    @property
-    def longitude(self):
-        """Longitude"""
-        return self.station_metadata.location.longitude
-
-    @longitude.setter
-    def longitude(self, longitude):
-        """
-        set longitude making sure the input is in decimal degrees
-
-        upon setting utm coordinates are recalculated
-        """
-        self.station_metadata.location.longitude = longitude
-        if self.latitude is not None or self.latitude != 0.0:
-            self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
-                self.latitude,
-                self.longitude,
-                datum=self.station_metadata.location.datum,
-            )
-
-    @property
-    def elevation(self):
-        """Elevation"""
-        return self.station_metadata.location.elevation
-
-    @elevation.setter
-    def elevation(self, elevation):
-        """
-        set elevation, should be input as meters
-        """
-        self.station_metadata.location.elevation = elevation
 
     @property
     def east(self):
@@ -365,8 +126,11 @@ class MT(object):
 
     @property
     def Z(self):
-        """mtpy.core.z.Z object to hole impedance tensor"""
-        return self._Z
+        """mtpy.core.z.Z object to hold impedance tensor"""
+        
+        if self.has_impedance:
+            return Z(z=self.impedance, z_err=self.impedance_error, freq=self.frequency)
+        return Z()
 
     @Z.setter
     def Z(self, z_object):
@@ -377,8 +141,7 @@ class MT(object):
         for strike angle
         """
 
-        self._Z = z_object
-        self._Z.compute_resistivity_phase()
+        self.impedance 
 
     @property
     def Tipper(self):
