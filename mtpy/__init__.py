@@ -11,7 +11,12 @@ MTpy
 __version__ = "1.1.5"
 
 # load mtpy default logging config
+from mtpy.core.mt import MT
+
+__all__ = ["MT"]
+
 from mtpy.utils.mtpy_logger import load_configure, get_mtpy_logger
+
 
 load_configure()
 

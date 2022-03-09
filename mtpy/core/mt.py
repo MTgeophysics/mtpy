@@ -110,6 +110,8 @@ class MT(TF):
         positive to East as 90.
 
         upon setting rotates Z and Tipper
+        
+        TODO figure this out with xarray
         """
 
         self._rotation_angle = theta_r
@@ -128,8 +130,8 @@ class MT(TF):
     def Z(self):
         """mtpy.core.z.Z object to hold impedance tensor"""
         
-        if self.has_impedance:
-            return Z(z=self.impedance, z_err=self.impedance_error, freq=self.frequency)
+        if self.has_impedance():
+            return Z(z_array=self.impedance, z_err_array=self.impedance_error, freq=self.frequency)
         return Z()
 
     @Z.setter
@@ -141,12 +143,18 @@ class MT(TF):
         for strike angle
         """
 
-        self.impedance 
+        self.impedance = z_object.z
+        self.impedance_error = z_object.z_err
 
     @property
     def Tipper(self):
         """mtpy.core.z.Tipper object to hold tipper information"""
-        return self._Tipper
+        
+        if self.has_tipper():
+            return Tipper(tipper_array=self.tipper,
+                          tipper_err_array=self.tipper_error,
+                          freq=self.frequency)
+        
 
     @Tipper.setter
     def Tipper(self, t_object):
@@ -156,52 +164,8 @@ class MT(TF):
         recalculate tipper angle and magnitude
         """
 
-        self._Tipper = t_object
-        if self._Tipper is not None:
-            self._Tipper.compute_amp_phase()
-            self._Tipper.compute_mag_direction()
-
-    @property
-    def periods(self):
-        if self.Z is not None:
-            return 1.0 / self.Z.freq
-        elif self.Tipper is not None:
-            return 1.0 / self.Tipper.freq
-        return None
-
-    @periods.setter
-    def periods(self, value):
-        self.logger.warning(
-            "Cannot set MT.periods directly," + " set either Z.freq or Tipper.freq"
-        )
-        return
-
-    @property
-    def frequencies(self):
-        if self.Z is not None:
-            return self.Z.freq
-        elif self.Tipper is not None:
-            return self.Tipper.freq
-        return None
-
-    @frequencies.setter
-    def frequencies(self, value):
-        self.logger.warning(
-            "Cannot set MT.frequencies directly," + " set either Z.freq or Tipper.freq"
-        )
-        return
-
-    @property
-    def station(self):
-        """station name"""
-        return self.station_metadata.id
-
-    @station.setter
-    def station(self, station_name):
-        """
-        set station name
-        """
-        self.station_metadata.id = station_name
+        self.tipper = t_object.tipper
+        self.tipper_error = t_object.tipper_err
 
     @property
     def pt(self):
@@ -291,7 +255,7 @@ class MT(TF):
             >>>                    new_Z=new_z)
 
         """
-        dummy_z_obj = MTz.copy.deepcopy(self.Z)
+        dummy_z_obj = Z.copy.deepcopy(self.Z)
         D, new_z_object = MTdistortion.remove_distortion(
             z_object=dummy_z_obj, num_freq=num_freq
         )
@@ -337,7 +301,7 @@ class MT(TF):
             reduce_res_factor_x=ss_x, reduce_res_factor_y=ss_y
         )
 
-        new_z_obj = MTz.Z(
+        new_z_obj = Z(
             z_array=new_z, z_err_array=self.Z.z_err.copy(), freq=self.Z.freq.copy()
         )
 
@@ -400,33 +364,33 @@ class MT(TF):
         if bounds_error:
 
             # logger.debug("new freq array %s", new_freq_array)
-            if self.Z.freq.min() > new_freq_array.min():
+            if self.frequency.min() > new_freq_array.min():
                 raise ValueError(
                     "New frequency minimum of {0:.5g}".format(new_freq_array.min())
                     + " is smaller than old frequency minimum of {0:.5g}".format(
-                        self.Z.freq.min()
+                        self.frequency.min()
                     )
                     + ".  The new frequency range needs to be within the "
                     + "bounds of the old one."
                 )
-            if self.Z.freq.max() < new_freq_array.max():
+            if self.frequency.max() < new_freq_array.max():
                 raise ValueError(
                     "New frequency maximum of {0:.5g}".format(new_freq_array.max())
                     + "is smaller than old frequency maximum of {0:.5g}".format(
-                        self.Z.freq.max()
+                        self.frequency.max()
                     )
                     + ".  The new frequency range needs to be within the "
                     + "bounds of the old one."
                 )
 
-        # make a new Z object
-        new_Z = MTz.Z(
+        # make a new Z object 
+        new_Z = Z(
             z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
             z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)),
             freq=new_freq_array,
         )
 
-        new_Tipper = MTz.Tipper(
+        new_Tipper = Tipper(
             tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
             freq=new_freq_array,
@@ -553,119 +517,7 @@ class MT(TF):
 
         return plot_obj
         # raise NotImplementedError
-
-    def write_mt_file(
-        self,
-        fn=None,
-        save_dir=None,
-        fn_basename=None,
-        file_type="edi",
-        longitude_format="longitude",
-        latlon_format="dms",
-    ):
-        """
-        Write an mt file, the supported file types are EDI and XML.
-
-        .. todo:: jtype and Gary Egberts z format
-
-        :param fn: full path to file to save to
-        :type fn: :class:`pathlib.Path` or string
-
-        :param save_dir: full path save directory
-        :type save_dir: string
-
-        :param fn_basename: name of file with or without extension
-        :type fn_basename: string
-
-        :param file_type: [ 'edi' | 'xml' ]
-        :type file_type: string
-
-        :param longitude_format:  whether to write longitude as longitude or LONG. 
-                                  options are 'longitude' or 'LONG', default 'longitude'
-        :type longitude_format:  string
-        :param latlon_format:  format of latitude and longitude in output edi,
-                               degrees minutes seconds ('dms') or decimal 
-                               degrees ('dd')
-        :type latlon_format:  string
-
-        :returns: full path to file
-        :rtype: string
-
-        :Example: ::
-
-            >>> mt_obj.write_mt_file(file_type='xml')
-
-        """
-
-        if fn is not None:
-            new_fn = Path(fn)
-            self.save_dir = new_fn.parent
-            fn_basename = new_fn.name
-
-        if save_dir is not None:
-            self.save_dir = Path(save_dir)
-
-        if fn_basename is not None:
-            fn_basename = Path(fn_basename)
-            if fn_basename.suffix in ["", None]:
-                fn_basename += f".{file_type}"
-
-        if fn_basename is None:
-            fn_basename = Path(f"{self.station}.{file_type}")
-
-        if file_type is None:
-            file_type = fn_basename.suffix.lower()[1:]
-        if file_type not in ["edi", "xml", "j", "zmm", "zrr"]:
-            msg = f"File type {file_type} not supported yet."
-            self.logger.error(msg)
-            raise MTError(msg)
-
-        fn = self.save_dir.joinpath(fn_basename)
-
-        return write_file(self, fn, file_type=file_type)
-
-    def read_mt_file(self, fn, file_type=None):
-        """
-
-        Read an MT response file.
-
-        .. note:: Currently only .edi, .xml, and .j files are supported
-
-        :param fn: full path to input file
-        :type fn: string
-
-        :param file_type: ['edi' | 'j' | 'xml' | ... ]
-                          if None, automatically detects file type by
-                          the extension.
-        :type file_type: string
-
-        :Example: ::
-
-            >>> import mtpy.core.mt as mt
-            >>> mt_obj = mt.MT()
-            >>> mt_obj.read_mt_file(r"/home/mt/mt01.xml")
-
-        """
-
-        mt_obj = read_file(fn, file_type=file_type)
-        self.__dict__.update(mt_obj.__dict__)
         
-    def to_xarray(self):
-        """
-        Make an xarray from the data.
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        
-        d = xr.DataArray(data=self.Z.z,
-                         dims=["frequency", "z"],
-                         coords={"frequency": self.frequencies},
-                         )
-        return d
-        
-        
-
 
 # ==============================================================================
 #             Error
