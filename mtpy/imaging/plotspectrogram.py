@@ -546,6 +546,7 @@ class PlotTF(object):
             )
 
             self.cb = plt.colorbar(
+                cbp,
                 orientation=self.cb_orientation,
                 shrink=self.cb_shrink,
                 pad=self.cb_pad,

@@ -335,12 +335,10 @@ class MTCollection:
         r = cell_size_m
         
         if bounding_box:
-            mc = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
+            df = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
         
         else:
-            mc = self.dataframe
-            
-        df = mc.dataframe
+            df = self.dataframe
             
         new_fn_list = []
         for ee in np.arange(df.easting.min() - r/2, df.easting.max() + r, r):

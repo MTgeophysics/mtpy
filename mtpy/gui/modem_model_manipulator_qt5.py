@@ -510,6 +510,7 @@ class ModelWidget(QtWidgets.QWidget):
             vmax=self.res_limits[1],
             cmap=self.cmap,
             picker=5,
+            shading="auto",
         )
         self.cb_ax.set_yticks(
             np.arange(
@@ -1274,6 +1275,7 @@ class ModelWidget(QtWidgets.QWidget):
             vmax=self.res_limits[1],
             cmap=self.cmap,
             picker=5,
+            shading="auto",
         )
         self.cb_ax.set_yticks(
             np.arange(
@@ -1285,7 +1287,7 @@ class ModelWidget(QtWidgets.QWidget):
         self.cb_ax.set_yticklabels(
             [
                 "{0:.4g}".format(np.round(ii, 0))
-                for ii in np.logspace(self._res_limits[0], self._res_limits[1], num=11)
+                for ii in np.logspace(self._res_limits[0], self._res_limits[1], num=10)
             ]
         )
         (self.res_line,) = self.cb_ax.plot(

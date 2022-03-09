@@ -147,7 +147,7 @@ def interpolate(
     return result
 
 
-def main(data_file, model_file, output_file, source_proj=None):
+def main(data_file, model_file, output_file, source_proj=None, grid_epsg=4326):
     """
     Generate an output netcdf file from data_file and model_file
     :param data_file: modem.dat
@@ -176,7 +176,8 @@ def main(data_file, model_file, output_file, source_proj=None):
     else:
         epsg_code = source_proj  # integer
 
-    source_proj = Proj(init="epsg:" + str(epsg_code))
+    source_proj = Proj(init=f"epsg:{epsg_code}")
+    grid_proj = Proj(init=f"epsg:{grid_epsg}")
 
     resistivity_data = {
         "x": center.east.item() + (model.grid_east[1:] + model.grid_east[:-1]) / 2,
@@ -185,11 +186,6 @@ def main(data_file, model_file, output_file, source_proj=None):
         "resistivity": np.transpose(model.res_model, axes=(2, 0, 1)),
     }
 
-    grid_proj = Proj(
-        init="epsg:4326"
-    )  # output grid Coordinate systems: 4326, 4283, 3112
-    grid_proj = Proj(init="epsg:4283")  # output grid Coordinate system 4326, 4283, 3112
-    grid_proj = Proj(init="epsg:3112")  # output grid Coordinate system 4326, 4283, 3112
     result = interpolate(
         resistivity_data,
         source_proj,
@@ -218,10 +214,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("modem_data", help="ModEM data file")
     parser.add_argument("modem_model", help="ModEM model file")
-    parser.add_argument("--epsg", help="EPSG code for source CRS", type=int)
+    parser.add_argument("--source_epsg", help="EPSG code for source CRS", type=int)
+    parser.add_argument("--output_epsg", help="EPSG code for output CRS", type=int)
     parser.add_argument(
         "--output-file", default="output.nc", help="Name of output NetCDF file"
     )
     args = parser.parse_args()
 
-    main(args.modem_data, args.modem_model, args.output_file, args.epsg)
+    main(args.modem_data, args.modem_model, args.output_file, args.source_epsg,
+         args.output_epsg)

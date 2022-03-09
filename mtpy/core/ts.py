@@ -171,14 +171,15 @@ class MTTS(object):
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
             try:
                 ts_arr["data"]
-                self._ts = ts_arr
-                self._set_dt_index(self.start_time_utc, self.sampling_rate)
+                
 
             except AttributeError:
                 raise MTTSError(
                     'Data frame needs to have a column named "data" '
                     + "where the time series data is stored"
                 )
+            self._ts = ts_arr
+            self._set_dt_index(self.start_time_utc, self.sampling_rate)
         else:
             raise MTTSError(
                 "Data type {0} not supported".format(type(ts_arr))
