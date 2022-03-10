@@ -107,7 +107,7 @@ class MTCollection:
 
         return fn_list
 
-    def make_dataframe_from_file_list(self, mt_file_list, move_duplicates=True):
+    def _make_dataframe_from_file_list(self, mt_file_list, move_duplicates=True):
         """
         create a :class:`pandas.DataFrame` from information in the file list
 
@@ -119,10 +119,17 @@ class MTCollection:
         """
 
         station_list = []
-        self.mt_dict = {}
         for fn in mt_file_list:
             m = MT(fn)
             entry = {}
+            if m.station in self.mt_dict.keys():
+                count = 1
+                new_station = f"{m.station}_{count:02}"
+                while new_station in self.mt_dict.keys():
+                    count += 1
+                    new_station = f"{new_station[:-3]}_{count:02}"
+                m.station = new_station
+                
             entry["ID"] = m.station
             entry["start"] = m.station_metadata.time_period.start
             entry["end"] = m.station_metadata.time_period.end
@@ -150,7 +157,37 @@ class MTCollection:
             dataframe = self._check_for_duplicates(dataframe)
 
         self.dataframe = dataframe
+        
+    def make_dataframe(self, file_list=None, file_paths=None, file_types=["edi"],
+                       move_duplicates=True):
+        """
+        Make a dataframe from a file list or list of paths
+        
+        :param file_list: DESCRIPTION, defaults to None
+        :type file_list: TYPE, optional
+        :param file_paths: DESCRIPTION, defaults to None
+        :type file_paths: TYPE, optional
+        :param file_types: DESCRIPTION, defaults to ["edi"]
+        :type file_types: TYPE, optional
+        :param move_duplicates: DESCRIPTION, defaults to True
+        :type move_duplicates: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
 
+        """
+        
+        if file_list:
+            self._make_dataframe_from_file_list(file_list, move_duplicates=move_duplicates)
+        
+        elif file_paths:
+            self._make_dataframe_from_file_list(
+                self.make_mt_file_list(file_paths, file_types), 
+                move_duplicates=move_duplicates)
+
+        else:
+            raise ValueError("Need to input either file_list or file_paths")
+            
+            
     def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
         """
         Add stations from a list of files
@@ -170,7 +207,7 @@ class MTCollection:
             self.dataframe = self._check_for_duplicates(self.dataframe)
 
 
-    def _check_for_duplicates(self, dataframe, locate="location"):
+    def _check_for_duplicates(self, dataframe, locate="location", sig_figs=6):
         """
         Check for duplicate station locations in a MT DataFrame
 
@@ -180,12 +217,21 @@ class MTCollection:
         :rtype: TYPE
 
         """
-
-        # write csv file to querry
-        duplicates = dataframe[dataframe.duplicated(["latitude", "longitude"])]
+        if locate == "location":
+            dataframe.latitude = np.round(dataframe.latitude, sig_figs)
+            dataframe.longitude = np.round(dataframe.longitude, sig_figs)
+            
+            query = ["latitude", "longitude"]
+            
+        elif locate.lower() in ["id", "station"]:
+            query = ["ID"]
+        else:
+            raise ValueError(f"Not sure what to do with {locate}.")
+            
+        duplicates = dataframe[dataframe.duplicated(query)]
         if len(duplicates) > 0:
             self.logger.info(
-                f"Found {len(dataframe)} duplicates, moving oldest to 'Duplicates'"
+                f"Found {len(duplicates)} duplicates, moving oldest to 'Duplicates'"
             )
             
             for ii, row in duplicates.iterrows():
@@ -204,9 +250,12 @@ class MTCollection:
                 # pop the duplicated station off the mt dictionary
                 self.mt_dict.pop(row.ID)
                 
-        dataframe = dataframe.drop_duplicates(subset=["latitude", "longitude"], keep="first")
+        dataframe = dataframe.drop_duplicates(subset=query, keep="first")
 
         return dataframe
+        
+        
+            
 
     def from_csv(self, csv_fn):
         """
