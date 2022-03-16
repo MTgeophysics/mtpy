@@ -1785,8 +1785,8 @@ class Data(object):
         period_dict = dict([(per, ii) for ii, per in enumerate(self.period_list)])
 
         data_dict = {}
-        z_dummy = np.zeros((len(self.period_list), 2, 2), dtype="complex")
-        t_dummy = np.zeros((len(self.period_list), 1, 2), dtype="complex")
+        z_dummy = np.ones((len(self.period_list), 2, 2), dtype="complex")
+        t_dummy = np.ones((len(self.period_list), 1, 2), dtype="complex")
 
         index_dict = {
             "zxx": (0, 0),
@@ -1802,16 +1802,12 @@ class Data(object):
         tf_dict = {}
         for station in station_list:
             data_dict[station] = mt.MT()
-            data_dict[station].Z = mtz.Z(
-                z_array=z_dummy.copy(),
-                z_err_array=z_dummy.copy().real,
-                freq=1.0 / self.period_list,
-            )
-            data_dict[station].Tipper = mtz.Tipper(
-                tipper_array=t_dummy.copy(),
-                tipper_err_array=t_dummy.copy().real,
-                freq=1.0 / self.period_list,
-            )
+            data_dict[station].period = self.period_list
+            data_dict[station].impedance = z_dummy.copy()
+            data_dict[station].impedance_error = z_dummy.copy().real
+            data_dict[station].tipper = t_dummy.copy()
+            data_dict[station].tipper_error = t_dummy.copy().real
+
             # make sure that the station data starts out with false to fill
             # the data later
             tf_dict[station] = False
@@ -1853,21 +1849,21 @@ class Data(object):
                 elif self.units.lower() not in ("[v/m]/[t]", "[mv/km]/[nt]"):
                     raise DataError('Unsupported unit "{}"'.format(self.units))
 
-                data_dict[dd[1]].Z.z[p_index, ii, jj] = z_value
-                data_dict[dd[1]].Z.z_err[p_index, ii, jj] = z_err
+                data_dict[dd[1]].impedance[p_index, ii, jj] = z_value
+                data_dict[dd[1]].impedance_error[p_index, ii, jj] = z_err
             # fill in tipper with appropriate values
             elif dd[7].find("T") == 0:
                 if self.wave_sign_tipper == "+":
-                    data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8] + 1j * dd[9]
+                    data_dict[dd[1]].tipper[p_index, ii, jj] = dd[8] + 1j * dd[9]
                 elif self.wave_sign_tipper == "-":
-                    data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8] - 1j * dd[9]
+                    data_dict[dd[1]].tipper[p_index, ii, jj] = dd[8] - 1j * dd[9]
                 else:
                     raise DataError(
                         'Incorrect wave sign "{}" (tipper)'.format(
                             self.wave_sign_tipper
                         )
                     )
-                data_dict[dd[1]].Tipper.tipper_err[p_index, ii, jj] = dd[10]
+                data_dict[dd[1]].tipper_error[p_index, ii, jj] = dd[10]
 
         # make mt_dict an attribute for easier manipulation later
         self.mt_dict = data_dict

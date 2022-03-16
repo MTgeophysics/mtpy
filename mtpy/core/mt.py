@@ -83,7 +83,9 @@ class MT(TF):
         recalculate phase tensor and invariants, which shouldn't change except
         for strike angle
         """
-
+        if not isinstance(z_object.freq, type(None)):
+            if not (self.frequency == z_object.freq).all(): 
+                self.frequency = z_object.freq
         self.impedance = z_object.z
         self.impedance_error = z_object.z_err
 
@@ -105,6 +107,9 @@ class MT(TF):
         recalculate tipper angle and magnitude
         """
 
+        if not isinstance(t_object.freq, type(None)):
+            if not (self.frequency == t_object.freq).all(): 
+                self.frequency = t_object.freq
         self.tipper = t_object.tipper
         self.tipper_error = t_object.tipper_err
 
