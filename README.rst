@@ -1,7 +1,7 @@
 MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Modelling and Visualization
 ==================================
 
-|Build Status|  |Documentation Status|
+|Documentation Status|
 
 How to Cite
 ===========
@@ -88,9 +88,6 @@ Conventions Used in the MTPy Software
 13. 0 degrees azimuth = North
 
 
-
-.. |Build Status| image:: https://travis-ci.org/MTgeophysics/mtpy.svg?branch=develop
-   :target: https://travis-ci.org/MTgeophysics/mtpy
 
 .. |Coverage Status| image:: https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop
    :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop

@@ -4,31 +4,14 @@
 
 # Check for setuptools package:
 
-try:
-    from setuptools import setup
-except ImportError:
-    setuptools = False
-    from distutils.core import setup
-else:
-    setuptools = True
+from setuptools import setup, find_packages
 
-import codecs
-import os.path
+with open("README.md") as readme_file:
+    readme = readme_file.read()
 
+with open("HISTORY.rst") as history_file:
+    history = history_file.read()
 
-def read(rel_path):
-    here = os.path.abspath(os.path.dirname(__file__))
-    with codecs.open(os.path.join(here, rel_path), "r") as fp:
-        return fp.read()
-
-
-def get_version(rel_path):
-    for line in read(rel_path).splitlines():
-        if line.startswith("__version__"):
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
-    else:
-        raise RuntimeError("Unable to find version string.")
 
 
 LONG_DESC = """
@@ -82,14 +65,8 @@ setup_kwargs["packages"] = [
     "mtpy.utils",
     "mtpy.modeling",
     "mtpy.modeling.modem",
-    "mtpy.contrib",
-    "mtpy.contrib.netcdf",
     "mtpy.processing",
     "mtpy.analysis",
-    #'tests',
-    #'mtpy.test',
-    "mtpy.uofa",
-    "mtpy.usgs",
     "mtpy.gui",
 ]
 
@@ -100,19 +77,20 @@ setup_kwargs["install_requires"] = [
     "pyyaml",
     "pyproj",
     "configparser",
+    "mt_metadata",
+    "mth5",
 ]
 
 setup_kwargs["data_files"] = [("data", ["mtpy/utils/epsg.npy"])]
 
 setup(
     name="mtpy",
-    version=get_version("mtpy/__init__.py"),
-    author="Alison Kirkby,Fei Zhang,Jared Peacock,Rakib Hassan, Jinming Duan",
-    author_email="Fei.Zhang@ga.gov.au",
+    version=get_version("2.0.0"),
+    author="Jared Peacock,Alison Kirkby,Fei Zhang,,Rakib Hassan, Jinming Duan",
+    author_email="jpeacock@usgs.gov",
     description="Python toolkit for standard magnetotelluric data processing.",
     long_description=LONG_DESC,
-    url="https://github.com/MTgeophysics/mtpy",
-    # data_files=[('', ['mtpy/utils/epsg.npy',]),], #this will install datafiles in wearied palce such as ~/.local/
+    url="https://github.com/MTgeophysics/mtpy/tree/v2",
     include_package_data=True,
     license="GNU GENERAL PUBLIC LICENSE v3",
     classifiers=[
