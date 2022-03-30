@@ -44,7 +44,7 @@ class TestMTCollection(unittest.TestCase):
 
     def test_dataframe(self):
         with self.subTest("shape"):
-            self.assertEqual(self.mc.dataframe, (11, 14))
+            self.assertEqual(self.mc.dataframe.shape, (11, 14))
         with self.subTest("has columns"):
             self.assertListEqual(
                 self.mc.dataframe.columns.to_list(),
@@ -84,41 +84,45 @@ class TestMTCollection(unittest.TestCase):
             )
         with self.subTest("latitude"):
             self.assertTrue(
-                np.isclose(self.mc.dataframe.latitude.to_numpy()),
-                np.array(
-                    [
-                        -22.82372222,
-                        34.470528,
-                        32.83331167,
-                        34.727,
-                        0.0,
-                        22.69137833,
-                        -23.05113333,
-                        35.55,
-                        -30.930285,
-                        44.631,
-                        -34.646,
-                    ]
-                ),
+                np.isclose(
+                    self.mc.dataframe.latitude.to_numpy(),
+                    np.array(
+                        [
+                            -22.82372222,
+                            34.470528,
+                            32.83331167,
+                            34.727,
+                            0.0,
+                            22.69137833,
+                            -23.05113333,
+                            35.55,
+                            -30.930285,
+                            44.631,
+                            -34.646,
+                        ]
+                    ),
+                ).all(),
             )
         with self.subTest("longitude"):
             self.assertTrue(
-                np.isclose(self.mc.dataframe.longitude.to_numpy()),
-                np.array(
-                    [
-                        139.29469444,
-                        -108.712288,
-                        -107.08305667,
-                        -115.735,
-                        0.0,
-                        139.70504,
-                        139.46753333,
-                        -106.28333333,
-                        127.22923,
-                        -110.44,
-                        137.006,
-                    ]
-                ),
+                np.isclose(
+                    self.mc.dataframe.longitude.to_numpy(),
+                    np.array(
+                        [
+                            139.29469444,
+                            -108.712288,
+                            -107.08305667,
+                            -115.735,
+                            0.0,
+                            139.70504,
+                            139.46753333,
+                            -106.28333333,
+                            127.22923,
+                            -110.44,
+                            137.006,
+                        ]
+                    ),
+                ).all(),
             )
         with self.subTest("tf_id"):
             self.assertListEqual(
@@ -157,7 +161,7 @@ class TestMTCollection(unittest.TestCase):
                         ],
                         dtype=bool,
                     ),
-                )
+                ).all()
             )
         with self.subTest("has_tipper"):
             self.assertTrue(
@@ -179,12 +183,12 @@ class TestMTCollection(unittest.TestCase):
                         ],
                         dtype=bool,
                     ),
-                )
+                ).all()
             )
         with self.subTest("has_covariance"):
             self.assertTrue(
                 np.isclose(
-                    self.mc.dataframe.has_tipper.to_numpy(),
+                    self.mc.dataframe.has_covariance.to_numpy(),
                     np.array(
                         [
                             True,
@@ -201,7 +205,7 @@ class TestMTCollection(unittest.TestCase):
                         ],
                         dtype=bool,
                     ),
-                )
+                ).all()
             )
         with self.subTest("period_min"):
             self.assertTrue(
@@ -222,12 +226,12 @@ class TestMTCollection(unittest.TestCase):
                             7.93999902e-03,
                         ]
                     ),
-                )
+                ).all()
             )
         with self.subTest("period_max"):
             self.assertTrue(
                 np.isclose(
-                    self.mc.dataframe.period_min.to_numpy(),
+                    self.mc.dataframe.period_max.to_numpy(),
                     np.array(
                         [
                             2.94117647e03,
@@ -243,7 +247,7 @@ class TestMTCollection(unittest.TestCase):
                             2.73083324e03,
                         ]
                     ),
-                )
+                ).all()
             )
 
     def tearDown(self):
