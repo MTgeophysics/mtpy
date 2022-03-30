@@ -35,12 +35,11 @@ class MT(TF):
         self._Z = Z()
         self._Tipper = Tipper()
         self._rotation_angle = 0
-        self._utm_location = {'east': 0, 'north': 0, 'zone':None}
-    
+        self._utm_location = {"east": 0, "north": 0, "zone": None}
+
         self.save_dir = Path.cwd()
-        
+
         self.project_to_utm()
-        
 
     def project_to_utm(self):
         """
@@ -50,13 +49,13 @@ class MT(TF):
         :rtype: TYPE
 
         """
-        
+
         if self.latitude and self.longitude:
             east, north, zone = gis_tools.project_point_ll2utm(
-                self.latitude, self.longitude)
-            self._utm_location = {
-                "east": east, "north": north, "zone": zone}
-            
+                self.latitude, self.longitude
+            )
+            self._utm_location = {"east": east, "north": north, "zone": zone}
+
     def project_to_ll(self):
         """
         project point to utm
@@ -65,37 +64,37 @@ class MT(TF):
         :rtype: TYPE
 
         """
-        
+
         if self.east != 0 and self.north != 0 and self.utm_zone != None:
             self.latitude, self.longitude = gis_tools.project_point_utm2ll(
-                self.east, self.north, self.utm_zone)
-            
-            
+                self.east, self.north, self.utm_zone
+            )
+
     @property
     def east(self):
         """ easting """
         return self._utm_location["east"]
-    
+
     @east.setter
     def east(self, value):
         """ set east """
         self._utm_location["east"] = value
-    
+
     @property
     def north(self):
         """ northing """
         return self._utm_location["north"]
-    
+
     @north.setter
     def north(self, value):
         """ set north"""
         self._utm_location["north"] = value
-    
+
     @property
     def utm_zone(self):
         """ utm zone """
         return self._utm_location["zone"]
-    
+
     @utm_zone.setter
     def utm_zone(self, value):
         """ set utm_zone """
@@ -128,15 +127,17 @@ class MT(TF):
                 "{0:.3f} degrees".format(self._rotation_angle)
             )
         )
-        
-    
 
     @property
     def Z(self):
         """mtpy.core.z.Z object to hold impedance tensor"""
-        
+
         if self.has_impedance():
-            return Z(z_array=self.impedance, z_err_array=self.impedance_error, freq=self.frequency)
+            return Z(
+                z_array=self.impedance,
+                z_err_array=self.impedance_error,
+                freq=self.frequency,
+            )
         return Z()
 
     @Z.setter
@@ -148,7 +149,7 @@ class MT(TF):
         for strike angle
         """
         if not isinstance(z_object.freq, type(None)):
-            if not (self.frequency == z_object.freq).all(): 
+            if not (self.frequency == z_object.freq).all():
                 self.frequency = z_object.freq
         self.impedance = z_object.z
         self.impedance_error = z_object.z_err
@@ -156,12 +157,13 @@ class MT(TF):
     @property
     def Tipper(self):
         """mtpy.core.z.Tipper object to hold tipper information"""
-        
+
         if self.has_tipper():
-            return Tipper(tipper_array=self.tipper,
-                          tipper_err_array=self.tipper_error,
-                          freq=self.frequency)
-        
+            return Tipper(
+                tipper_array=self.tipper,
+                tipper_err_array=self.tipper_error,
+                freq=self.frequency,
+            )
 
     @Tipper.setter
     def Tipper(self, t_object):
@@ -172,7 +174,7 @@ class MT(TF):
         """
 
         if not isinstance(t_object.freq, type(None)):
-            if not (self.frequency == t_object.freq).all(): 
+            if not (self.frequency == t_object.freq).all():
                 self.frequency = t_object.freq
         self.tipper = t_object.tipper
         self.tipper_error = t_object.tipper_err
@@ -393,7 +395,7 @@ class MT(TF):
                     + "bounds of the old one."
                 )
 
-        # make a new Z object 
+        # make a new Z object
         new_Z = Z(
             z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
             z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)),
@@ -527,7 +529,7 @@ class MT(TF):
 
         return plot_obj
         # raise NotImplementedError
-        
+
 
 # ==============================================================================
 #             Error

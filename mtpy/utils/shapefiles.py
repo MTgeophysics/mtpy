@@ -801,8 +801,7 @@ class TipperShapeFile(object):
         for ii, plot_per in enumerate(self.plot_period):
             # shape file path
             shape_fn = os.path.join(
-                self.save_path,
-                f"{ii}_TIP_REAL_{plot_per:.0f}s_{self.projection}.shp",
+                self.save_path, f"{ii}_TIP_REAL_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over
@@ -942,8 +941,7 @@ class TipperShapeFile(object):
         for ii, plot_per in enumerate(self.plot_period):
             # shape file path
             shape_fn = os.path.join(
-                self.save_path,
-                f"{ii}_TIP_IMAG_{plot_per:.0f}s_{self.projection}.shp",
+                self.save_path, f"{ii}_TIP_IMAG_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over

@@ -851,7 +851,7 @@ class MTplot(mt.MT):
                 return 1.0 / self.Tipper.freq
         else:
             return 1.0 / self.Z.freq
-        
+
     @property
     def frequency(self):
         if np.all(self.Z.z == 0 + 0j):
@@ -1401,7 +1401,9 @@ def get_station_locations(mt_list, map_scale="latlon", ref_point=(0, 0)):
 
         # if map scale is in meters easting and northing
         elif map_scale == "eastnorth" or map_scale == "eastnorthkm":
-            east, north, zone = gis_tools.project_point_ll2utm(mt.latitude, mt.longitude)
+            east, north, zone = gis_tools.project_point_ll2utm(
+                mt.latitude, mt.longitude
+            )
 
             east /= dscale
             north /= dscale

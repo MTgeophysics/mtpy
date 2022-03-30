@@ -13,7 +13,7 @@ EDI_DATA_DIR_BB = Path(TEST_MTPY_ROOT, "data/BBMT")
 EDI_DATA_DIR_3 = Path(TEST_MTPY_ROOT, "data/edifiles")
 EDI_DATA_DIR_4 = Path(TEST_MTPY_ROOT, "data/edifiles2")
 
-EDI_DATA_LIST =[EDI_DATA_DIR, EDI_DATA_DIR2, EDI_DATA_DIR_3, EDI_DATA_DIR_4]
+EDI_DATA_LIST = [EDI_DATA_DIR, EDI_DATA_DIR2, EDI_DATA_DIR_3, EDI_DATA_DIR_4]
 
 AUS_TOPO_FILE = Path(TEST_MTPY_ROOT, "examples/data/AussieContinent_etopo1.asc")
 SAMPLE_DIR = Path(TEST_MTPY_ROOT, "examples/model_files")

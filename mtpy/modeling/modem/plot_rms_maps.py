@@ -269,7 +269,7 @@ class PlotRMSMaps(object):
                     :, self.period_index, ii, jj
                 ]
 
-        filt = np.nan_to_num(rms).astype(bool) #.reshape(self.residual.rms_array.size)
+        filt = np.nan_to_num(rms).astype(bool)  # .reshape(self.residual.rms_array.size)
 
         if len(rms[filt]) == 0:
             _logger.warning(

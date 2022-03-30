@@ -453,13 +453,13 @@ class PlotResidualPTps(mtpl.MTEllipse):
         freq_list = []
         for mt1 in self.mt_list1:
             freq_list.extend(mt1.frequency)
-        for mt2 in self.mt_list2:   
+        for mt2 in self.mt_list2:
             freq_list.extend(mt2.frequency)
 
         flist = np.array(sorted(set(freq_list), reverse=True))
-        self.freq_list = np.logspace(np.log10(flist.min()), 
-                                     np.log10(flist.max()), 
-                                     self.nfreq)
+        self.freq_list = np.logspace(
+            np.log10(flist.min()), np.log10(flist.max()), self.nfreq
+        )
 
     # ------------------------------------------------------------------
     def _compute_residual_pt(self):
@@ -500,7 +500,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
             mt1.Z, mt1.Tipper = mt1.interpolate(self.freq_list, bounds_error=False)
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
-                    mt2.Z, mt2.Tipper = mt2.interpolate(self.freq_list, bounds_error=False)
+                    mt2.Z, mt2.Tipper = mt2.interpolate(
+                        self.freq_list, bounds_error=False
+                    )
                     logfid.write("{0}{1}{0}\n".format("=" * 30, mt1.station))
                     # fdict2 = dict(
                     #     [(np.round(ff, 5), ii) for ii, ff in enumerate(mt2.frequency)]
@@ -572,10 +574,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     self.rpt_array[mm]["azimuth"][:] = rpt.residual_pt.azimuth
                     self.rpt_array[mm]["skew"][:] = rpt.residual_pt.skew
                     self.rpt_array[mm]["geometric_mean"][:] = np.sqrt(
-                        abs(
-                            rpt.residual_pt.phimin
-                            * rpt.residual_pt.phimax
-                        )
+                        abs(rpt.residual_pt.phimin * rpt.residual_pt.phimax)
                     )
 
                     # rpt_fdict = dict(

@@ -621,7 +621,7 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
     :rtype: pyproj.Proj function
 
     """
-    
+
     if utm_zone is None and epsg is None:
         raise GISError("Need to input either UTM zone or EPSG number")
 
@@ -636,7 +636,6 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
         zone = "north" if is_northern else "south"
         proj_str = f"+proj=utm +zone={zone_number} +{zone} +datum={datum}"
         pp = pyproj.Proj(proj_str)
-
 
     return pp
 
@@ -701,7 +700,7 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
     if HAS_GDAL:
         ll2utm = _get_gdal_projection_ll2utm(datum, utm_zone, epsg)
     else:
-        
+
         ll2utm = _get_pyproj_projection(datum, utm_zone, epsg)
 
     # return different results depending on if lat/lon are iterable
@@ -851,19 +850,18 @@ def epsg_project(x, y, epsg_from, epsg_to, proj_str=None):
         x and y coordinates of projected point.
 
     """
-    
+
     try:
         import pyproj
     except ImportError:
         print("please install pyproj")
         return
-    
+
     # option to add custom projection
     # print("epsg",epsg_from,epsg_to,"proj_str",proj_str)
-    if 0 in [epsg_from,epsg_to]:
+    if 0 in [epsg_from, epsg_to]:
         EPSG_DICT[0] = proj_str
-    
-    
+
     try:
         p1 = pyproj.Proj(EPSG_DICT[epsg_from])
         p2 = pyproj.Proj(EPSG_DICT[epsg_to])
@@ -872,8 +870,6 @@ def epsg_project(x, y, epsg_from, epsg_to, proj_str=None):
         return
 
     return pyproj.transform(p1, p2, x, y)
-
-
 
 
 def utm_wgs84_conv(lat, lon):

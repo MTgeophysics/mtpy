@@ -464,10 +464,10 @@ class PlotTF(object):
             time_array = (st + np.arange(self.time_series.size)) / self.df
             if self.time_units in ["hrs"]:
                 time_array /= 3600
-                
+
             elif self.time_units in ["min"]:
                 time_array /= 60
-                
+
             elif self.time_units in ["sec"]:
                 time_array /= 1
 
@@ -475,14 +475,15 @@ class PlotTF(object):
                 time_array, self.time_series, color=self.line_color_ts, lw=self.lw
             )
             self.axts.set_xlim(time_array[0], time_array[-1])
-            #self.axts.axis("tight")
+            # self.axts.axis("tight")
 
             # FX = np.fft.fft(mttf.padzeros(self.time_series))
             # FXfreq = np.fft.fftfreq(len(FX), 1.0 / self.df)
 
             # plot power spectra
-            f, p = signal.welch(self.time_series, 
-                                **{"fs": self.df, "nperseg": self.tf_nfbins*8}) 
+            f, p = signal.welch(
+                self.time_series, **{"fs": self.df, "nperseg": self.tf_nfbins * 8}
+            )
             if self.freq_scale == "log":
                 self.axps.loglog(p, f, lw=self.lw, color=self.line_color_ps)
                 #     abs(FX[0 : int(len(FX) / 2)] / max(abs(FX))),
@@ -555,8 +556,9 @@ class PlotTF(object):
             )
 
         # --> make the plot look nice
-        self.axtf.set_xlabel("time({0})".format(self.time_units), 
-                             fontdict=fdict, labelpad=.001)
+        self.axtf.set_xlabel(
+            "time({0})".format(self.time_units), fontdict=fdict, labelpad=0.001
+        )
         self.axtf.xaxis.set_major_locator(MultipleLocator(x_major_tick))
         self.axtf.xaxis.set_minor_locator(MultipleLocator(x_minor_tick))
 
@@ -566,7 +568,7 @@ class PlotTF(object):
             self.axtf.set_ylabel("frequency (Hz)", fontdict=fdict)
         if self.plot_title != None:
             self.axtf.set_title(self.plot_title, fontdict=fdict)
-            
+
         self.fig.tight_layout()
         plt.show()
 

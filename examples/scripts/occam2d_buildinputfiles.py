@@ -29,12 +29,13 @@ slst = [edi[0:-4] for edi in os.listdir(edipath) if edi.find(".edi") > 0]
 
 
 # create an occam data object
-ocd = occam2d.Data(edi_path=edipath,
-                   station_list=slst,
-                   interpolate_freq=True,
-                   freq=np.logspace(-3,3,37),
-                   model_mode='log_all'
-                   )
+ocd = occam2d.Data(
+    edi_path=edipath,
+    station_list=slst,
+    interpolate_freq=True,
+    freq=np.logspace(-3, 3, 37),
+    model_mode="log_all",
+)
 ocd.save_path = savepath
 ocd.freq_num = 50  # number of frequencies to invert for
 

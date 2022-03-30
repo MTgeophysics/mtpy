@@ -911,7 +911,7 @@ class J2Edi(object):
         """
         if survey_config_fn is None:
             return
-        
+
         if survey_config_fn is not None:
             self.surve_config_fn = survey_config_fn
 
@@ -1009,7 +1009,9 @@ class J2Edi(object):
         self.mt_obj.survey_metadata.id = self.survey_config_dict["location"]
         self.mt_obj.station = self.survey_config_dict["station"]
         self.mt_obj.elevation = self.survey_config_dict["elevation"]
-        self.mt_obj.station_metadata.acquired_by.name = self.survey_config_dict["network"]
+        self.mt_obj.station_metadata.acquired_by.name = self.survey_config_dict[
+            "network"
+        ]
 
     def _fill_info(self):
         """
@@ -1018,7 +1020,8 @@ class J2Edi(object):
         self.mt_obj.station_metadata.comments = []
         for key in sorted(self.birrp_dict.keys()):
             self.mt_obj.station_metadata.comments.append(
-                f"birrp_{key} = {self.birrp_dict[key]}")
+                f"birrp_{key} = {self.birrp_dict[key]}"
+            )
 
     def _fill_field_notes(self):
         """
@@ -1253,7 +1256,7 @@ class J2Edi(object):
         # fill in different blocks of the edi file
         self._fill_site()
         self._fill_info()
-        #self._fill_field_notes()
+        # self._fill_field_notes()
 
         # write edi file
         edi_fn = mtfh.make_unique_filename(

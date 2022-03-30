@@ -276,30 +276,29 @@ class Model(object):
                         key, kwargs[key]
                     )
                 )
-                
+
     def __str__(self):
         lines = ["ModEM Model Object:", "-" * 20]
-                # --> print out useful information
+        # --> print out useful information
         try:
             lines.append(
-            f"\tNumber of stations = {len(self.station_locations.station)}")
+                f"\tNumber of stations = {len(self.station_locations.station)}"
+            )
         except AttributeError:
-            lines.append(
-            "\tNumber of stations = unknown")
+            lines.append("\tNumber of stations = unknown")
         lines.append("\tDimensions: ")
         lines.append(f"\t\te-w = {self.grid_east.size}")
         lines.append(f"\t\tn-s = {self.grid_north.size}")
         lines.append(f"\t\tz  = {self.grid_z.size} (without 7 air layers)")
         lines.append("\tExtensions: ")
         lines.append(f"\t\te-w = {self.nodes_east.__abs__().sum():.1f} (m)")
-        lines.append( f"\t\tn-s = {self.nodes_north.__abs__().sum():.1f} (m)")
+        lines.append(f"\t\tn-s = {self.nodes_north.__abs__().sum():.1f} (m)")
         lines.append(f"\t\t0-z = {self.nodes_z.__abs__().sum():.1f} (m)")
         lines.append("-" * 20)
         return "\n".join(lines)
-        
+
     def __repr__(self):
         return self.__str__()
-        
 
     # --> make nodes and grid symbiotic so if you set one the other one
     #     gets set as well
@@ -1450,7 +1449,7 @@ class Model(object):
         shift_z=0,
         units="km",
         coordinate_system="nez+",
-        label = "resistivity",
+        label="resistivity",
     ):
         """
         Write a VTK file to plot in 3D rendering programs like Paraview

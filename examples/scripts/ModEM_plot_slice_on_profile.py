@@ -41,4 +41,3 @@ plt.ylabel("Depth, km", fontsize=fs)
 plt.savefig(
     op.join(savepath, "DepthSlice.png"), dpi=400
 )  # change to your desired figure resolution
-

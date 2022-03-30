@@ -1,6 +1,7 @@
 import os
 import os.path as op
-os.chdir(r'C:\mtpywin\mtpy') # change to path to your mtpy installation
+
+os.chdir(r"C:\mtpywin\mtpy")  # change to path to your mtpy installation
 
 from mtpy.modeling.modem import PlotSlices
 from matplotlib import cm
@@ -36,5 +37,3 @@ pObj = PlotSlices(
     plot_yn="y",
     fig_dpi=400,  # change to your preferred file resolution
 )
-
-

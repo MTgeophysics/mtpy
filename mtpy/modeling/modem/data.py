@@ -252,7 +252,7 @@ class Data(object):
         self._center_lat = None
         self._center_lon = None
         self._center_elev = None
-        
+
         self.topography = True
 
         self.inv_mode_dict = {
@@ -508,7 +508,7 @@ class Data(object):
         data_array[:]["rel_north"] = stations_obj.rel_north
         data_array[:]["rel_elev"] = stations_obj.rel_elev
         data_array[:]["zone"] = stations_obj.utm_zone
-        
+
         # fill mt_dict
         for row in data_array:
             mt_dict[row["station"]].grid_east = row["rel_east"]
@@ -901,7 +901,9 @@ class Data(object):
         #  then get them from Station object
         if not rel_distance:
             try:
-                data_array, mt_dict = self.get_relative_station_locations(mt_dict, data_array)
+                data_array, mt_dict = self.get_relative_station_locations(
+                    mt_dict, data_array
+                )
             except ValueError as error:
                 if self.model_epsg is None and self.model_utm_zone is None:
                     msg = (
@@ -1672,7 +1674,7 @@ class Data(object):
             raise DataError("data_fn is None, enter a data file to read.")
         elif not self.data_fn.is_file():
             raise DataError("Could not find {0}, check path".format(self.data_fn))
-        
+
         with open(self.data_fn, "r") as dfid:
             dlines = dfid.readlines()
 
@@ -1908,10 +1910,9 @@ class Data(object):
         if center_utm is not None:
             self.data_array["east"] = self.data_array["rel_east"] + center_utm[0]
             self.data_array["north"] = self.data_array["rel_north"] + center_utm[1]
-            
+
         if np.all(self.data_array["rel_elev"] == 0):
             self.topography = False
-
 
     def write_vtk_station_file(
         self,
@@ -2159,7 +2160,6 @@ class Data(object):
             fn_basename=self.data_fn.stem + "_topo.dat", fill=False, elevation=True,
         )
 
-
     # FZ: moved from the modem_data_to_phase_tensor.py ref: AUSLAMP-112
     def compute_phase_tensor(self, datfile, outdir):
         """
@@ -2334,7 +2334,9 @@ class Data(object):
             add_mt_dict[mt_obj.station] = mt_obj
             new_mt_dict[mt_obj.station] = mt_obj
 
-        add_data_array, add_mt_dict = self.fill_data_array(add_mt_dict, new_edi_dir=new_edi_dir)
+        add_data_array, add_mt_dict = self.fill_data_array(
+            add_mt_dict, new_edi_dir=new_edi_dir
+        )
         add_data_array = self.compute_inv_error(add_data_array)
 
         new_data_array = np.append(self.data_array, add_data_array)
@@ -2715,7 +2717,7 @@ class Data(object):
         plt.show()
 
         return median_rho, mean_rho
-    
+
     def fix_data_file(self, fn=None, n=3):
         """
         A newer compiled version of Modem outputs slightly different headers
@@ -2733,30 +2735,30 @@ class Data(object):
             self.data_fn = Path(fn)
         with self.data_fn.open() as fid:
             lines = fid.readlines()
-        
-        
+
         def fix_line(line_list):
             return " ".join("".join(line_list).replace("\n", "").split()) + "\n"
-        
-        
+
         h1 = fix_line(lines[0:n])
         h2 = fix_line(lines[n : 2 * n])
-        
+
         find = None
         for index, line in enumerate(lines[2 * n + 1 :], start=2 * n + 1):
             if line.find("#") >= 0:
                 find = index
                 break
-        
+
         if find is not None:
             h3 = fix_line(lines[find : find + n])
             h4 = fix_line(lines[find + n : find + 2 * n])
-        
-            new_lines = [h1, h2] + lines[2 * n : find] + [h3, h4] + lines[find + 2 * n :]
+
+            new_lines = (
+                [h1, h2] + lines[2 * n : find] + [h3, h4] + lines[find + 2 * n :]
+            )
         else:
             new_lines = [h1, h2] + lines[2 * n :]
-        
+
         with self.data_fn.open("w") as fid:
             fid.writelines(new_lines)
-            
+
         return self.data_fn

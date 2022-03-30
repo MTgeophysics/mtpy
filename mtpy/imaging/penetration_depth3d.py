@@ -58,7 +58,7 @@ def plot_latlon_depth_profile(
     image = Depth3D(edis=edis, period=period, rho=zcomponent, ptol=ptol)
     if isinstance(period, int):  # period is considered as an index
         image.plot(period_by_index=True, fontsize=fontsize)
-    elif isinstance(period, float): # period in seconds
+    elif isinstance(period, float):  # period in seconds
         image.plot(fontsize=fontsize)
     else:
         raise Exception("Wrong type of the parameter period, %s" % period)

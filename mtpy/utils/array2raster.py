@@ -76,13 +76,11 @@ class ModEM_to_Raster(object):
             self.pad_north : -self.pad_north, self.pad_east : -self.pad_east, :
         ]
 
-    def get_model_lower_left_coord(
-        self, model_center=None, pad_east=0, pad_north=0
-    ):
+    def get_model_lower_left_coord(self, model_center=None, pad_east=0, pad_north=0):
         """
         Find the models lower left hand corner in (lon, lat) decimal degrees
         """
-        
+
         self.pad_east = pad_east
         self.pad_north = pad_north
 
@@ -167,7 +165,9 @@ class ModEM_to_Raster(object):
             self.model_obj.grid_north[:-1, None], self.model_obj.grid_east[None, :-1]
         )
 
-        new_res_arr = np.zeros((new_north.size, new_east.size, self.model_obj.nodes_z.size))
+        new_res_arr = np.zeros(
+            (new_north.size, new_east.size, self.model_obj.nodes_z.size)
+        )
 
         for z_index in range(self.model_obj.grid_z.shape[0] - 1):
             res = self.model_obj.res_model[:, :, z_index]
@@ -220,9 +220,11 @@ class ModEM_to_Raster(object):
                 projection=self.projection,
                 rotation_angle=self.rotation_angle,
             )
-            print(os.path.join(
-                self.save_path, "Depth_{0:.2f}_{1}.tif".format(d, self.projection)
-            ))
+            print(
+                os.path.join(
+                    self.save_path, "Depth_{0:.2f}_{1}.tif".format(d, self.projection)
+                )
+            )
 
 
 # ==============================================================================
