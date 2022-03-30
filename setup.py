@@ -23,7 +23,7 @@ requirements = [
     "mt_metadata",
     "mth5",
     "pandas",
-    "xarray",
+    "geopandas",
 ]
 
 setup_requirements = [
