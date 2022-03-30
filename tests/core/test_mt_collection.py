@@ -249,6 +249,19 @@ class TestMTCollection(unittest.TestCase):
                     ),
                 ).all()
             )
+            
+    def test_get_tf(self):
+        entry = self.mc.dataframe.iloc[0]
+        
+        tf = self.mc.get_tf(entry.tf_id)
+        
+        with self.subTest("is instance"):
+            self.assertIsInstance(tf, MT)
+            
+            
+        
+            
+        
 
     def tearDown(self):
         self.mc.mth5_collection.close_mth5()

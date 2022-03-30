@@ -53,11 +53,16 @@ class MTCollection:
     def __str__(self):
         lines = [f"Working Directory: {self.working_directory}"]
         lines.append(f"MTH5 file:         {self.mth5_filename}")
-
+        if self.mth5_collection.h5_is_read():
+            lines.append(f"\tNumber of Transfer Functions: {len(self.dataframe)}")
         return "\n".join(lines)
 
     def __repr__(self):
         return self.__str__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
 
     @property
     def working_directory(self):
