@@ -64,12 +64,3 @@ MTpy is licensed under the GPL version 3
 
 The license agreement is contained in the repository and should be kept together with the code.
 
-
-
-.. |Coverage Status| image:: https://coveralls.io/repos/github/MTgeophysics/mtpy/badge.svg?branch=develop
-   :target: https://coveralls.io/github/MTgeophysics/mtpy?branch=develop
-
-.. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
-   :target: http://mtpy2.readthedocs.io/en/develop/
-
-
