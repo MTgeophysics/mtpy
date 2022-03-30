@@ -70,7 +70,6 @@ class MTCollection:
         value = Path(value)
         if not value.exists():
             raise IOError(f"could not find directory {value}")
-
         self._cwd = value
 
     @property
@@ -90,7 +89,8 @@ class MTCollection:
             return True
         return False
 
-    def make_file_list(self, mt_path, file_types=["edi"]):
+    @staticmethod
+    def make_file_list(mt_path, file_types=["edi"]):
         """
         Get a list of MT file from a given path
 
@@ -108,18 +108,27 @@ class MTCollection:
             - avg - Zonge output file
 
         """
+
+        def check_path(mt_path):
+            if mt_path is None:
+                return None
+            else:
+                mt_path = Path(mt_path)
+                if not mt_path.exists():
+                    msg = f"{mt_path} does not exists"
+                    raise IOError(msg)
+                return mt_path
+
         if isinstance(mt_path, (str, Path)):
-            mt_path = [self.check_path(mt_path)]
+            mt_path = [check_path(mt_path)]
         elif isinstance(mt_path, list):
-            mt_path = [self.check_path(path) for path in mt_path]
+            mt_path = [check_path(path) for path in mt_path]
         else:
             raise TypeError(f"Not sure what to do with {type(mt_path)}")
-
         fn_list = []
         for path in mt_path:
             for ext in file_types:
                 fn_list += list(path.glob(f"*.{ext}"))
-
         return fn_list
 
     def initialize_collection(
@@ -141,6 +150,16 @@ class MTCollection:
 
         self.mth5_collection.open_mth5(self.mth5_filename, mode)
 
+    def close(self):
+        """
+        close mth5
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        self.mth5_collection.close_mth5()
+
     def add_tf(self, transfer_function):
         """
         transfer_function could be a transfer function object, a file name,
@@ -154,17 +173,13 @@ class MTCollection:
         """
         if not isinstance(transfer_function, (list, tuple, np.ndarray)):
             transfer_function = [transfer_function]
-
         for item in transfer_function:
             if isinstance(item, MT):
                 self._from_mt_object(item)
-
             elif isinstance(item, (str, Path)):
                 self._from_file(item)
-
             else:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
-
         self.mth5_collection.tf_summary.summarize()
 
     def get_tf(self, tf_id):
@@ -182,8 +197,12 @@ class MTCollection:
             ref = self.dataframe[self.dataframe.tf_id == tf_id].hdf5_reference[0]
         except IndexError:
             raise ValueError(f"Could not find {tf_id} in collection.")
+        mt_object = MT()
+        tf_object = self.mth5_collection.from_reference(ref)
 
-        return self.mth5_collection.from_reference(ref)
+        mt_object.__dict__.update(tf_object.___dict__)
+
+        return mt_object
 
     def _from_file(self, filename):
         """
@@ -198,13 +217,11 @@ class MTCollection:
 
         if not self.mth5_collection.h5_is_write():
             raise ValueError("Must initiate an MTH5 file first.")
-
         if not isinstance(filename, (str, Path)):
             raise TypeError(f"filename must be a string or Path not {type(filename)}")
-
         mt_object = MT(filename)
 
-        self._from_tf_object(mt_object)
+        self._from_mt_object(mt_object)
 
     def _from_mt_object(self, mt_object):
         """
@@ -218,7 +235,6 @@ class MTCollection:
 
         if mt_object.survey_metadata.id in [None, ""]:
             mt_object.survey_metadata.id = "unknown_survey"
-
         self.mth5_collection.add_transfer_function(mt_object)
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
@@ -237,13 +253,10 @@ class MTCollection:
                 self.dataframe.longitude = np.round(self.dataframe.longitude, sig_figs)
 
                 query = ["latitude", "longitude"]
-
             elif locate not in self.dataframe.columns:
                 raise ValueError(f"Not sure what to do with {locate}.")
-
             else:
                 query = [locate]
-
             return self.dataframe[self.dataframe.duplicated(query)]
         return None
 
@@ -301,7 +314,6 @@ class MTCollection:
             geometry_list = []
             for ii, row in self.dataframe.iterrows():
                 geometry_list.append(Point(row.longitude, row.latitude))
-
             df_trim = self.dataframe[
                 self.dataframe.columns[
                     ~self.dataframe.columns.isin(
@@ -338,10 +350,8 @@ class MTCollection:
 
         if bounding_box:
             df = self.apply_bbox(*bounding_box)
-
         else:
             df = self.dataframe
-
         new_fn_list = []
         for ee in np.arange(df.longitude.min() - r / 2, df.longitude.max() + r, r):
             for nn in np.arange(df.latitude.min() - r / 2, df.latitude.max() + r, r):
@@ -404,12 +414,10 @@ class MTCollection:
                             self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
-
                     except Exception as error:
                         self.logger.exception("Failed to average files %s", error)
                 else:
                     continue
-
         return MTCollection(
             self.make_dataframe_from_file_list(new_fn_list), self.mt_path
         )
