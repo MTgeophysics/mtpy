@@ -16,7 +16,6 @@ Created on Mon Jan 11 15:36:38 2021
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 import geopandas as gpd
 from shapely.geometry import Point
@@ -44,6 +43,8 @@ class MTCollection:
         self.working_directory = working_directory
 
         self.mth5_collection = MTH5()
+        
+        self._added = False
 
         self.logger = get_mtpy_logger(
             f"{__name__}.{self.__class__.__name__}", fn="mt_collection"
@@ -81,20 +82,13 @@ class MTCollection:
         """ return a summary of transfer functions """
 
         if self.mth5_collection.h5_is_read():
-            self.mth5_collection.tf_summary.summarize()
             return self.mth5_collection.tf_summary.to_dataframe()
         return None
-
-    def check_path(self, mt_path):
-        if mt_path is None:
-            return None
-        else:
-            mt_path = Path(mt_path)
-            if not mt_path.exists():
-                msg = f"{mt_path} does not exists"
-                self.logger.error(msg)
-                raise IOError(msg)
-            return mt_path
+    
+    def has_data(self):
+        if self.dataframe is not None:
+            return True
+        return False
 
     def make_file_list(self, mt_path, file_types=["edi"]):
         """
@@ -146,8 +140,53 @@ class MTCollection:
         self.working_directory = working_directory
 
         self.mth5_collection.open_mth5(self.mth5_filename, mode)
+        
+    def add_tf(self, transfer_function):
+        """
+        transfer_function could be a transfer function object, a file name,
+        a list of either.
+        g
+        :param transfer_function: DESCRIPTION
+        :type transfer_function: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-    def from_file_list(self, file_list):
+        """
+        if not isinstance(transfer_function, (list, tuple, np.ndarray)):
+            transfer_function = [transfer_function]
+            
+        for item in transfer_function:
+            if isinstance(item, MT):
+                self._from_mt_object(item)
+                
+            elif isinstance(item, (str, Path)):
+                self._from_file(item)
+        
+            else:
+                raise TypeError(f"Not sure want to do with {type(item)}.")
+                
+        self.mth5_collection.tf_summary.summarize()
+        
+    def get_tf(self, tf_id):
+        """
+        
+        Get transfer function
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        try:
+            ref = self.dataframe[self.dataframe.tf_id==tf_id].hdf5_reference[0]
+        except IndexError:
+            raise ValueError(f"Could not find {tf_id} in collection.")
+            
+        return self.mth5_collection.from_reference(ref)
+        
+
+    def _from_file(self, filename):
         """
         Add transfer functions for a list of file names
         
@@ -161,19 +200,32 @@ class MTCollection:
         if not self.mth5_collection.h5_is_write():
             raise ValueError("Must initiate an MTH5 file first.")
 
-        if not isinstance(file_list, (list, tuple, np.ndarray)):
+        if not isinstance(filename, (str, Path)):
             raise TypeError(
-                f"file list must be a list, tuple, np.ndarray not {type(file_list)}"
+                f"filename must be a string or Path not {type(filename)}"
             )
 
-        for fn in file_list:
-            mt_obj = MT(fn)
-            if mt_obj.survey_metadata.id in [None, ""]:
-                mt_obj.survey_metadata.id = "unknown_survey"
+        mt_object = MT(filename)
+            
+        self._from_tf_object(mt_object)
 
-            self.mth5_collection.add_transfer_function(mt_obj)
+            
+    def _from_mt_object(self, mt_object):
+        """
+        
+        :param mt_object: DESCRIPTION
+        :type mt_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-    def _check_for_duplicates(self, dataframe, locate="location", sig_figs=6):
+        """
+
+        if mt_object.survey_metadata.id in [None, ""]:
+            mt_object.survey_metadata.id = "unknown_survey"
+            
+        self.mth5_collection.add_transfer_function(mt_object)
+
+    def check_for_duplicates(self, locate="location", sig_figs=6):
         """
         Check for duplicate station locations in a MT DataFrame
 
@@ -183,73 +235,24 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        if locate == "location":
-            dataframe.latitude = np.round(dataframe.latitude, sig_figs)
-            dataframe.longitude = np.round(dataframe.longitude, sig_figs)
+        if self.has_data():
+            if locate == "location":
+                self.dataframe.latitude = np.round(self.dataframe.latitude, sig_figs)
+                self.dataframe.longitude = np.round(self.dataframe.longitude, sig_figs)
+    
+                query = ["latitude", "longitude"]
+    
+            elif locate not in self.dataframe.columns:
+                raise ValueError(f"Not sure what to do with {locate}.")
+            
+            else:
+                query = [locate]
 
-            query = ["latitude", "longitude"]
+            return self.dataframe[self.dataframe.duplicated(query)]
+        return None
 
-        elif locate.lower() in ["id", "station"]:
-            query = ["ID"]
-        else:
-            raise ValueError(f"Not sure what to do with {locate}.")
 
-        duplicates = dataframe[dataframe.duplicated(query)]
-        if len(duplicates) > 0:
-            self.logger.info(
-                f"Found {len(duplicates)} duplicates, moving oldest to 'Duplicates'"
-            )
-
-            for ii, row in duplicates.iterrows():
-                fn = Path(row.fn)
-                dup_path = fn.parent.joinpath("Duplicates")
-                if not dup_path.exists():
-                    dup_path.mkdir()
-
-                new_fn = dup_path.joinpath(Path(row.fn).name)
-                try:
-                    self.logger.info("Moved %s to Duplicates", new_fn.name)
-                    fn.rename(new_fn)
-                except FileNotFoundError:
-                    self.logger.debug(f"Could not find {fn} --> skipping")
-
-                # pop the duplicated station off the mt dictionary
-                self.mt_dict.pop(row.ID)
-
-        dataframe = dataframe.drop_duplicates(subset=query, keep="first")
-
-        return dataframe
-
-    def from_csv(self, csv_fn):
-        """
-        Read in a csv of 
-        :param csv_fn: DESCRIPTION
-        :type csv_fn: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        self.dataframe = pd.read_csv(csv_fn)
-        self.mt_path = Path(csv_fn).parent
-
-    def to_csv(self, filename):
-        """
-        Write dataframe to a CSV file
-
-        :param filename: DESCRIPTION
-        :type filename: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        filename = Path(filename)
-        if filename.parent.as_posix() == ".":
-            if self.mt_path is not None:
-                filename = self.mt_path.joinpath(filename)
-        self.dataframe.to_csv(filename, index=False)
-        self.logger.info(f"Wrote CSV file to {filename}")
-
-    def apply_bbox(self, x_min, x_max, y_min, y_max, units="degrees", utm_zone=None):
+    def apply_bbox(self, lon_min, lon_max, lat_min, lat_max):
         """
         Return :class:`pandas.DataFrame` of station within bounding box
 
@@ -265,84 +268,62 @@ class MTCollection:
         :rtype: :class:`pandas.DataFrame`
 
         """
-        if units in ["degrees"]:
+        
+        if self.has_data():
             msg = (
                 "Applying bounding box: "
-                f"lon_min = {x_min:.6g}, "
-                f"lon_max = {x_max:.6g}, "
-                f"lat_min = {y_min:.6g}, "
-                f"lat_max = {y_max:.6g}"
+                f"lon_min = {lon_min:.6g}, "
+                f"lon_max = {lon_max:.6g}, "
+                f"lat_min = {lat_min:.6g}, "
+                f"lat_max = {lat_max:.6g}"
             )
             self.logger.debug(msg)
+    
+            return self.dataframe.loc[
+                    (self.dataframe.longitude >= lon_min)
+                    & (self.dataframe.longitude <= lon_max)
+                    & (self.dataframe.latitude >= lat_min)
+                    & (self.dataframe.latitude <= lat_max)
+                ]
+        return None
 
-            return MTCollection(
-                dataframe=self.dataframe.loc[
-                    (self.dataframe.longitude >= x_min)
-                    & (self.dataframe.longitude <= x_max)
-                    & (self.dataframe.latitude >= y_min)
-                    & (self.dataframe.latitude <= y_max)
-                ],
-                mt_path=self.mt_path,
-            )
-
-        elif units in ["m"]:
-            if utm_zone is None:
-                raise ValueError("UTM Zone must be input")
-
-            msg = (
-                "Applying bounding box: "
-                f"east_min = {x_min:.6g}, "
-                f"east_max = {x_max:.6g}, "
-                f"north_min = {y_min:.6g}, "
-                f"north_max = {y_max:.6g}"
-                f"utm_zone = {utm_zone}"
-            )
-            self.logger.debug(msg)
-
-            return MTCollection(
-                self.dataframe[self.dataframe.utm_zone == utm_zone].loc[
-                    (self.dataframe.easting >= x_min)
-                    & (self.dataframe.easting <= x_max)
-                    & (self.dataframe.northing >= y_min)
-                    & (self.dataframe.northing <= y_max)
-                ],
-                mt_path=self.mt_path,
-            )
 
     def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
         
         :param filename: DESCRIPTION
         :type filename: TYPE
+        :param bounding_box: DESCRIPTION, defaults to None
+        :type bounding_box: TYPE, optional
+        :param epsg: DESCRIPTION, defaults to 4326
+        :type epsg: TYPE, optional
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        coordinate_system = {"init": f"epsg:{epsg}"}
-        # write shape file
-        geometry_list = []
-        if self.dataframe is None:
-            self.dataframe = self.make_dataframe_from_file_list()
-        for ii, row in self.dataframe.iterrows():
-            geometry_list.append(Point(row.longitude, row.latitude))
-
-        gdf = gpd.GeoDataFrame(
-            self.dataframe, crs=coordinate_system, geometry=geometry_list
-        )
-        gdf.fn = gdf.fn.astype("str")
-        gdf.to_file(self.mt_path.joinpath(filename))
-
-        return gdf
+        if self.has_data():
+            coordinate_system = {"init": f"epsg:{epsg}"}
+            # write shape file
+            geometry_list = []
+            for ii, row in self.dataframe.iterrows():
+                geometry_list.append(Point(row.longitude, row.latitude))
+    
+            df_trim = self.dataframe[self.dataframe.columns[~self.dataframe.columns.isin(["hdf5_reference", "station_hdf5_reference"])]]
+            gdf = gpd.GeoDataFrame(
+                df_trim, crs=coordinate_system, geometry=geometry_list
+            )
+            gdf.to_file(self.working_directory.joinpath(filename))
+    
+            return gdf
+        return None
 
     def average_stations(
         self,
         cell_size_m,
         bounding_box=None,
-        save_dir=None,
-        units="degrees",
-        utm_zone=None,
         count=1,
         n_periods=48,
+        new_file=True,
     ):
         """
         Average nearby stations to make it easier to invert
@@ -357,24 +338,23 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        if save_dir is None:
-            save_dir = self.mt_path
-        r = cell_size_m
+
+        r = cell_size_m / 111000. 
 
         if bounding_box:
-            df = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
+            df = self.apply_bbox(*bounding_box)
 
         else:
             df = self.dataframe
 
         new_fn_list = []
-        for ee in np.arange(df.easting.min() - r / 2, df.easting.max() + r, r):
-            for nn in np.arange(df.northing.min() - r / 2, df.northing.max() + r, r):
+        for ee in np.arange(df.longitude.min() - r / 2, df.longitude.max() + r, r):
+            for nn in np.arange(df.latitude.min() - r / 2, df.latitude.max() + r, r):
                 bbox = (ee, ee + r, nn, nn + r)
-                avg_mc = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
+                avg_mc = self.apply_bbox(*bbox)
 
                 if len(avg_mc.dataframe) > 1:
-                    m_list = [MT(row.fn) for row in avg_mc.dataframe.itertuples()]
+                    m_list = [self.mth5_collection.from_reference(row.hdf5_reference) for row in avg_mc.dataframe.itertuples()]
                     # interpolate onto a similar period range
                     f_list = []
                     for m in m_list:
@@ -414,10 +394,14 @@ class MTCollection:
                     mt_avg.station_metadata.comments = (
                         "avgeraged_stations = " + ",".join([m.station for m in m_list])
                     )
-
+                    mt_avg.survey_metadata.id = "averaged"
+                    self.add_tf(mt_avg)
+                    
                     try:
-                        edi_obj = mt_avg.write_mt_file(save_dir=save_dir)
-                        self.logger.info(f"wrote average file {edi_obj.fn}")
+                        
+                        if new_file:
+                            edi_obj = mt_avg.write_mt_file(save_dir=self.working_directory())
+                            self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
 
