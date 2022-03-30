@@ -43,7 +43,7 @@ class MTCollection:
         self.working_directory = working_directory
 
         self.mth5_collection = MTH5()
-        
+
         self._added = False
 
         self.logger = get_mtpy_logger(
@@ -84,7 +84,7 @@ class MTCollection:
         if self.mth5_collection.h5_is_read():
             return self.mth5_collection.tf_summary.to_dataframe()
         return None
-    
+
     def has_data(self):
         if self.dataframe is not None:
             return True
@@ -140,7 +140,7 @@ class MTCollection:
         self.working_directory = working_directory
 
         self.mth5_collection.open_mth5(self.mth5_filename, mode)
-        
+
     def add_tf(self, transfer_function):
         """
         transfer_function could be a transfer function object, a file name,
@@ -154,19 +154,19 @@ class MTCollection:
         """
         if not isinstance(transfer_function, (list, tuple, np.ndarray)):
             transfer_function = [transfer_function]
-            
+
         for item in transfer_function:
             if isinstance(item, MT):
                 self._from_mt_object(item)
-                
+
             elif isinstance(item, (str, Path)):
                 self._from_file(item)
-        
+
             else:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
-                
+
         self.mth5_collection.tf_summary.summarize()
-        
+
     def get_tf(self, tf_id):
         """
         
@@ -179,12 +179,11 @@ class MTCollection:
 
         """
         try:
-            ref = self.dataframe[self.dataframe.tf_id==tf_id].hdf5_reference[0]
+            ref = self.dataframe[self.dataframe.tf_id == tf_id].hdf5_reference[0]
         except IndexError:
             raise ValueError(f"Could not find {tf_id} in collection.")
-            
+
         return self.mth5_collection.from_reference(ref)
-        
 
     def _from_file(self, filename):
         """
@@ -201,15 +200,12 @@ class MTCollection:
             raise ValueError("Must initiate an MTH5 file first.")
 
         if not isinstance(filename, (str, Path)):
-            raise TypeError(
-                f"filename must be a string or Path not {type(filename)}"
-            )
+            raise TypeError(f"filename must be a string or Path not {type(filename)}")
 
         mt_object = MT(filename)
-            
+
         self._from_tf_object(mt_object)
 
-            
     def _from_mt_object(self, mt_object):
         """
         
@@ -222,7 +218,7 @@ class MTCollection:
 
         if mt_object.survey_metadata.id in [None, ""]:
             mt_object.survey_metadata.id = "unknown_survey"
-            
+
         self.mth5_collection.add_transfer_function(mt_object)
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
@@ -239,18 +235,17 @@ class MTCollection:
             if locate == "location":
                 self.dataframe.latitude = np.round(self.dataframe.latitude, sig_figs)
                 self.dataframe.longitude = np.round(self.dataframe.longitude, sig_figs)
-    
+
                 query = ["latitude", "longitude"]
-    
+
             elif locate not in self.dataframe.columns:
                 raise ValueError(f"Not sure what to do with {locate}.")
-            
+
             else:
                 query = [locate]
 
             return self.dataframe[self.dataframe.duplicated(query)]
         return None
-
 
     def apply_bbox(self, lon_min, lon_max, lat_min, lat_max):
         """
@@ -268,7 +263,7 @@ class MTCollection:
         :rtype: :class:`pandas.DataFrame`
 
         """
-        
+
         if self.has_data():
             msg = (
                 "Applying bounding box: "
@@ -278,15 +273,14 @@ class MTCollection:
                 f"lat_max = {lat_max:.6g}"
             )
             self.logger.debug(msg)
-    
-            return self.dataframe.loc[
-                    (self.dataframe.longitude >= lon_min)
-                    & (self.dataframe.longitude <= lon_max)
-                    & (self.dataframe.latitude >= lat_min)
-                    & (self.dataframe.latitude <= lat_max)
-                ]
-        return None
 
+            return self.dataframe.loc[
+                (self.dataframe.longitude >= lon_min)
+                & (self.dataframe.longitude <= lon_max)
+                & (self.dataframe.latitude >= lat_min)
+                & (self.dataframe.latitude <= lat_max)
+            ]
+        return None
 
     def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
@@ -307,23 +301,24 @@ class MTCollection:
             geometry_list = []
             for ii, row in self.dataframe.iterrows():
                 geometry_list.append(Point(row.longitude, row.latitude))
-    
-            df_trim = self.dataframe[self.dataframe.columns[~self.dataframe.columns.isin(["hdf5_reference", "station_hdf5_reference"])]]
+
+            df_trim = self.dataframe[
+                self.dataframe.columns[
+                    ~self.dataframe.columns.isin(
+                        ["hdf5_reference", "station_hdf5_reference"]
+                    )
+                ]
+            ]
             gdf = gpd.GeoDataFrame(
                 df_trim, crs=coordinate_system, geometry=geometry_list
             )
             gdf.to_file(self.working_directory.joinpath(filename))
-    
+
             return gdf
         return None
 
     def average_stations(
-        self,
-        cell_size_m,
-        bounding_box=None,
-        count=1,
-        n_periods=48,
-        new_file=True,
+        self, cell_size_m, bounding_box=None, count=1, n_periods=48, new_file=True,
     ):
         """
         Average nearby stations to make it easier to invert
@@ -339,7 +334,7 @@ class MTCollection:
 
         """
 
-        r = cell_size_m / 111000. 
+        r = cell_size_m / 111000.0
 
         if bounding_box:
             df = self.apply_bbox(*bounding_box)
@@ -354,7 +349,10 @@ class MTCollection:
                 avg_mc = self.apply_bbox(*bbox)
 
                 if len(avg_mc.dataframe) > 1:
-                    m_list = [self.mth5_collection.from_reference(row.hdf5_reference) for row in avg_mc.dataframe.itertuples()]
+                    m_list = [
+                        self.mth5_collection.from_reference(row.hdf5_reference)
+                        for row in avg_mc.dataframe.itertuples()
+                    ]
                     # interpolate onto a similar period range
                     f_list = []
                     for m in m_list:
@@ -396,11 +394,13 @@ class MTCollection:
                     )
                     mt_avg.survey_metadata.id = "averaged"
                     self.add_tf(mt_avg)
-                    
+
                     try:
-                        
+
                         if new_file:
-                            edi_obj = mt_avg.write_mt_file(save_dir=self.working_directory())
+                            edi_obj = mt_avg.write_mt_file(
+                                save_dir=self.working_directory()
+                            )
                             self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
