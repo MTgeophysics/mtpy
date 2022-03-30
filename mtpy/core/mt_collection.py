@@ -20,8 +20,11 @@ import pandas as pd
 
 import geopandas as gpd
 from shapely.geometry import Point
+
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
+
+from mth5.mth5 import MTH5
 
 # =============================================================================
 #
@@ -34,36 +37,57 @@ class MTCollection:
     
     """
 
-    def __init__(self, dataframe=None, mt_path=None):
+    def __init__(self, working_directory=None):
 
-        self.dataframe = dataframe
+        self._cwd = Path().cwd()
+        self._mth5_basename = "mt_collection"
+        self.working_directory = working_directory
+        
+        self.mth5_collection = MTH5()
+
         self.logger = get_mtpy_logger(
             f"{__name__}.{self.__class__.__name__}", fn="mt_collection"
         )
-        self.mt_dict = {}
+
 
     def __str__(self):
-        if self.dataframe is not None:
-           return str(self.dataframe.head())
-        else:
-            return "Bummer, no stations in this collection."
+        lines = [f"Working Directory: {self.working_directory}"]
+        lines.append(f"MTH5 file:         {self.mth5_filename}")
+        
+        return "\n".join(lines)
+        
 
     def __repr__(self):
         return self.__str__()
     
     @property
-    def dataframe(self):
-        return self._dataframe
+    def working_directory(self):
+        return self._cwd
     
-    @dataframe.setter
-    def dataframe(self, value):
+    @working_directory.setter
+    def working_directory(self, value):
         if value is None:
-            self._dataframe = None
-        elif isinstance(value, pd.DataFrame):
-            self._dataframe = value
-        else:
-            raise ValueError(f"Input must be pandas.DataFrame not {type(value)}")
-
+            return
+        value = Path(value)
+        if not value.exists():
+            raise IOError(f"could not find directory {value}")
+            
+        self._cwd = value
+        
+    @property
+    def mth5_filename(self):
+        return self.working_directory.joinpath(f"{self._mth5_basename}.h5")
+    
+    @property
+    def dataframe(self):
+        """ return a summary of transfer functions """
+        
+        if self.mth5_collection.h5_is_read():
+            self.mth5_collection.tf_summary.summarize()
+            return self.mth5_collection.tf_summary.to_dataframe()
+        return None
+    
+    
     def check_path(self, mt_path):
         if mt_path is None:
             return None
@@ -75,7 +99,7 @@ class MTCollection:
                 raise IOError(msg)
             return mt_path
 
-    def make_mt_file_list(self, mt_path, file_types=["edi"]):
+    def make_file_list(self, mt_path, file_types=["edi"]):
         """
         Get a list of MT file from a given path
 
@@ -107,104 +131,46 @@ class MTCollection:
 
         return fn_list
 
-    def _make_dataframe_from_file_list(self, mt_file_list, move_duplicates=True):
+    def initialize_collection(self, basename="mt_collection", working_directory=None, mode="a"):
         """
-        create a :class:`pandas.DataFrame` from information in the file list
-
-        :param mt_file_list: list of paths to MT tranfer function files
-        :type mt_file_list: list of :class:`pathlib.Path` objects
-
-        fills self.dataframe and self.mt_dict
-
-        """
-
-        station_list = []
-        for fn in mt_file_list:
-            m = MT(fn)
-            entry = {}
-            if m.station in self.mt_dict.keys():
-                count = 1
-                new_station = f"{m.station}_{count:02}"
-                while new_station in self.mt_dict.keys():
-                    count += 1
-                    new_station = f"{new_station[:-3]}_{count:02}"
-                m.station = new_station
-                
-            entry["ID"] = m.station
-            entry["start"] = m.station_metadata.time_period.start
-            entry["end"] = m.station_metadata.time_period.end
-            entry["latitude"] = m.latitude
-            entry["longitude"] = m.longitude
-            entry["elevation"] = m.elevation
-            entry["acquired_by"] = m.station_metadata.acquired_by.author
-            entry["period_min"] = 1.0 / m.Z.freq.max()
-            entry["period_max"] = 1.0 / m.Z.freq.min()
-            entry["n_periods"] = m.Z.freq.size
-            entry["survey"] = m.survey_metadata.id
-            entry["fn"] = fn
-            entry["file_date"] = m.station_metadata.provenance.creation_time
-            entry["has_impedance"] = m.has_impedance()
-            entry["has_tipper"] = m.has_tipper()
-            
-            # add entry to list to put into data frame
-            station_list.append(entry)
-            
-            # add transfer function to mt_dict
-            self.mt_dict[m.station] = m
-
-        dataframe = pd.DataFrame(station_list)
-        if move_duplicates:
-            dataframe = self._check_for_duplicates(dataframe)
-
-        self.dataframe = dataframe
+        Initialize an mth5
         
-    def make_dataframe(self, file_list=None, file_paths=None, file_types=["edi"],
-                       move_duplicates=True):
+        :param basename: DESCRIPTION, defaults to "mt_collection"
+        :type basename: TYPE, optional
+        :param working_directory: DESCRIPTION, defaults to None
+        :type working_directory: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
         """
-        Make a dataframe from a file list or list of paths
+        self._mth5_basename = basename
+        self.working_directory = working_directory
         
-        :param file_list: DESCRIPTION, defaults to None
-        :type file_list: TYPE, optional
-        :param file_paths: DESCRIPTION, defaults to None
-        :type file_paths: TYPE, optional
-        :param file_types: DESCRIPTION, defaults to ["edi"]
-        :type file_types: TYPE, optional
-        :param move_duplicates: DESCRIPTION, defaults to True
-        :type move_duplicates: TYPE, optional
+        self.mth5_collection.open_mth5(self.mth5_filename, mode)
+        
+    def from_file_list(self, file_list):
+        """
+        Add transfer functions for a list of file names
+        
+        :param file_list: DESCRIPTION
+        :type file_list: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
         
-        if file_list:
-            self._make_dataframe_from_file_list(file_list, move_duplicates=move_duplicates)
-        
-        elif file_paths:
-            self._make_dataframe_from_file_list(
-                self.make_mt_file_list(file_paths, file_types), 
-                move_duplicates=move_duplicates)
-
-        else:
-            raise ValueError("Need to input either file_list or file_paths")
+        if not self.mth5_collection.h5_is_write():
+            raise ValueError("Must initiate an MTH5 file first.")
             
-            
-    def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
-        """
-        Add stations from a list of files
+        if not isinstance(file_list, (list, tuple, np.ndarray)):
+            raise TypeError(f"file list must be a list, tuple, np.ndarray not {type(file_list)}")
         
-        :param fn_list: DESCRIPTION
-        :type fn_list: TYPE
-        :param remove_duplicates: DESCRIPTION, defaults to True
-        :type remove_duplicates: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        for fn in file_list:
+            mt_obj = MT(fn)
+            if mt_obj.survey_metadata.id in [None, ""]:
+                mt_obj.survey_metadata.id = "unknown_survey"
 
-        """
-
-        new_df = self.make_dataframe_from_file_list(fn_list)
-        self.dataframe = self.dataframe.append(new_df, ignore_index=True)
-        if remove_duplicates:
-            self.dataframe = self._check_for_duplicates(self.dataframe)
+            self.mth5_collection.add_transfer_function(mt_obj)
 
 
     def _check_for_duplicates(self, dataframe, locate="location", sig_figs=6):

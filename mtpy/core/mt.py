@@ -35,9 +35,71 @@ class MT(TF):
         self._Z = Z()
         self._Tipper = Tipper()
         self._rotation_angle = 0
-
+        self._utm_location = {'east': 0, 'north': 0, 'zone':None}
+    
         self.save_dir = Path.cwd()
+        
+        self.project_to_utm()
+        
 
+    def project_to_utm(self):
+        """
+        project point to utm
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if self.latitude and self.longitude:
+            east, north, zone = gis_tools.project_point_ll2utm(
+                self.latitude, self.longitude)
+            self._utm_location = {
+                "east": east, "north": north, "zone": zone}
+            
+    def project_to_ll(self):
+        """
+        project point to utm
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if self.east != 0 and self.north != 0 and self.utm_zone != None:
+            self.latitude, self.longitude = gis_tools.project_point_utm2ll(
+                self.east, self.north, self.utm_zone)
+            
+            
+    @property
+    def east(self):
+        """ easting """
+        return self._utm_location["east"]
+    
+    @east.setter
+    def east(self, value):
+        """ set east """
+        self._utm_location["east"] = value
+    
+    @property
+    def north(self):
+        """ northing """
+        return self._utm_location["north"]
+    
+    @north.setter
+    def north(self, value):
+        """ set north"""
+        self._utm_location["north"] = value
+    
+    @property
+    def utm_zone(self):
+        """ utm zone """
+        return self._utm_location["zone"]
+    
+    @utm_zone.setter
+    def utm_zone(self, value):
+        """ set utm_zone """
+        self._utm_location["utm_zone"] = value
 
     @property
     def rotation_angle(self):
@@ -66,6 +128,8 @@ class MT(TF):
                 "{0:.3f} degrees".format(self._rotation_angle)
             )
         )
+        
+    
 
     @property
     def Z(self):
