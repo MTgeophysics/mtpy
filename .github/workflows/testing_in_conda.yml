@@ -1,0 +1,52 @@
+name: TestingInConda
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  setup-build:
+    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: [3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        update-conda: false
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Env
+      shell: bash
+      run: |
+        python --version
+        conda create -n mtpy-test python=${{ matrix.python-version }}
+        source activate mtpy-test
+        conda install pytest
+        conda install pytest-cov
+        
+    - name: Install Our Package
+      shell: bash
+      run: |
+        source activate mtpy-test
+        pip install -e .
+        conda list
+    - name: Run Tests
+      shell: bash
+      run: |
+        source activate mtpy-test
+        pytest --cov=./ --cov-report=xml --cov=mtpy
+        
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
