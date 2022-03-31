@@ -249,19 +249,17 @@ class TestMTCollection(unittest.TestCase):
                     ),
                 ).all()
             )
-            
+
     def test_get_tf(self):
         entry = self.mc.dataframe.iloc[0]
-        
+
         tf = self.mc.get_tf(entry.tf_id)
-        
+
         with self.subTest("is instance"):
             self.assertIsInstance(tf, MT)
-            
-            
-        
-            
-        
+        original = MT(mt_metadata.TF_EDI_PHOENIX)
+        with self.subTest("same"):
+            self.assertEqual(tf, original)
 
     def tearDown(self):
         self.mc.mth5_collection.close_mth5()

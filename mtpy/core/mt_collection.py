@@ -205,7 +205,9 @@ class MTCollection:
         mt_object = MT()
         tf_object = self.mth5_collection.from_reference(ref)
 
-        mt_object.__dict__.update(tf_object.___dict__)
+        mt_object.survey_metadata.update(tf_object.survey_metadata)
+        mt_object.station_metadata.update(tf_object.station_metadata)
+        mt_object.dataset = tf_object.dataset
 
         return mt_object
 
