@@ -199,15 +199,13 @@ class MTCollection:
 
         """
         try:
-            ref = self.dataframe[self.dataframe.tf_id == tf_id].hdf5_reference[0]
+            ref = self.dataframe[self.dataframe.tf_id == tf_id].hdf5_reference.values[0]
         except IndexError:
             raise ValueError(f"Could not find {tf_id} in collection.")
         mt_object = MT()
         tf_object = self.mth5_collection.from_reference(ref)
 
-        mt_object.survey_metadata.update(tf_object.survey_metadata)
-        mt_object.station_metadata.update(tf_object.station_metadata)
-        mt_object.dataset = tf_object.dataset
+        mt_object.__dict__.update(tf_object.__dict__)
 
         return mt_object
 
