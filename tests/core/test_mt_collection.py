@@ -257,8 +257,12 @@ class TestMTCollection(unittest.TestCase):
 
         with self.subTest("is instance"):
             self.assertIsInstance(tf, MT)
-        original = MT(mt_metadata.TF_EDI_PHOENIX)
         with self.subTest("same"):
+            original = MT(mt_metadata.TF_EDI_PHOENIX)
+            original.survey_metadata.id = tf.survey_metadata.id
+            original.survey_metadata.hdf5_reference = tf.survey_metadata.hdf5_reference
+            original.survey_metadata.mth5_type = tf.survey_metadata.mth5_type
+
             self.assertEqual(tf, original)
 
     def tearDown(self):
