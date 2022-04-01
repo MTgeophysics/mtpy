@@ -15,12 +15,12 @@ Created on Mon Jan 11 15:36:38 2021
 # =============================================================================
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from mtpy import MT, MTCollection
 
 import mt_metadata
+from mth5.helpers import validate_name
 
 
 # =============================================================================
@@ -28,14 +28,14 @@ import mt_metadata
 # =============================================================================
 class TestMTCollection(unittest.TestCase):
     def setUp(self):
-        fn_list = [
+        self.fn_list = [
             value for key, value in mt_metadata.__dict__.items() if key.startswith("TF")
         ]
 
         self.mc = MTCollection()
         self.mc.initialize_collection("test_collection")
 
-        self.mc.add_tf(fn_list)
+        self.mc.add_tf(self.fn_list)
 
         self.true_dataframe = pd.DataFrame(
             {
@@ -48,13 +48,13 @@ class TestMTCollection(unittest.TestCase):
                     5: "YSW212abcdefghijkl",
                     6: "GEO858",
                     7: "TEST01",
-                    8: "Geoscience Australia",
+                    8: "Geoscience_Australia",
                     9: "s08",
                     10: "SAGE_2005",
                 },
                 "survey": {
                     0: "BOULIA",
-                    1: "CONUS South",
+                    1: "CONUS_South",
                     2: "unknown_survey",
                     3: "unknown_survey",
                     4: "unknown_survey",
@@ -113,7 +113,7 @@ class TestMTCollection(unittest.TestCase):
                     5: "ysw212abcdefghijkl",
                     6: "GEO858",
                     7: "TEST01",
-                    8: "Geoscience Australia",
+                    8: "Geoscience_Australia",
                     9: "s08",
                     10: "SAGE_2005",
                 },
@@ -250,20 +250,33 @@ class TestMTCollection(unittest.TestCase):
         self.assertTrue((h5_df == true_df).all().all())
 
     def test_get_tf(self):
-        entry = self.mc.dataframe.iloc[0]
+        for tf_fn in self.fn_list:
+            if tf_fn.stem in ["spectra_in", "spectra_out"]:
+                continue
+            original = MT(tf_fn)
 
-        tf = self.mc.get_tf(entry.tf_id)
+            h5_tf = self.mc.get_tf(validate_name(original.tf_id))
 
-        with self.subTest("is instance"):
-            self.assertIsInstance(tf, MT)
-        with self.subTest("same"):
-            original = MT(mt_metadata.TF_EDI_PHOENIX)
-            original.survey_metadata.id = tf.survey_metadata.id
-            original.survey_metadata.hdf5_reference = tf.survey_metadata.hdf5_reference
-            original.survey_metadata.mth5_type = tf.survey_metadata.mth5_type
+            original.survey_metadata.id = h5_tf.survey_metadata.id
+            original.survey_metadata.hdf5_reference = (
+                h5_tf.survey_metadata.hdf5_reference
+            )
+            original.survey_metadata.mth5_type = h5_tf.survey_metadata.mth5_type
+            original.station_metadata.acquired_by.author = (
+                h5_tf.station_metadata.acquired_by.author
+            )
 
-            self.assertEqual(tf, original)
+            with self.subTest(original.tf_id):
+                self.mc.logger.info(f"testing: {original.tf_id} from {tf_fn.name}")
+                self.assertEqual(h5_tf, original)
 
     def tearDown(self):
         self.mc.mth5_collection.close_mth5()
         self.mc.mth5_filename.unlink()
+
+
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()

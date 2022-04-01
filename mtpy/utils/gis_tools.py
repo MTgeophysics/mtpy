@@ -37,14 +37,11 @@ from mtpy.utils import HAS_GDAL, EPSG_DICT, NEW_GDAL
 if HAS_GDAL:
     from osgeo import osr
     from osgeo.ogr import OGRERR_NONE
-
 else:
     import pyproj
-
 _logger = get_mtpy_logger(__name__)
 if NEW_GDAL:
     _logger.info("INFO: GDAL version 3 detected")
-
 # =============================================================================
 # GIS Error container
 # =============================================================================
@@ -94,7 +91,6 @@ def convert_position_str2float(position_str):
 
     if position_str in [None, "None"]:
         return None
-
     if ":" in position_str:
         if position_str.count(":") != 2:
             msg = (
@@ -118,7 +114,6 @@ def convert_position_str2float(position_str):
                 + "Position needs to be DD.decimal_degrees"
             )
             raise GISError(msg)
-
     return position_value
 
 
@@ -130,16 +125,12 @@ def assert_lat_value(latitude):
         return None
     try:
         lat_value = float(latitude)
-
     except TypeError:
         return None
-
     except ValueError:
         lat_value = convert_position_str2float(latitude)
-
     if abs(lat_value) >= 90:
         raise GISError("|Latitude = {0:.5f}| > 90, unacceptable!".format(lat_value))
-
     return lat_value
 
 
@@ -151,16 +142,12 @@ def assert_lon_value(longitude):
         return None
     try:
         lon_value = float(longitude)
-
     except TypeError:
         return None
-
     except ValueError:
         lon_value = convert_position_str2float(longitude)
-
     if abs(lon_value) >= 180:
         raise GISError("|Longitude = {0:.5f}| > 180, unacceptable!".format(lon_value))
-
     return lon_value
 
 
@@ -174,7 +161,6 @@ def assert_elevation_value(elevation):
     except (ValueError, TypeError):
         elev_value = 0.0
         _logger.warn("{0} is not a number, setting elevation to 0".format(elevation))
-
     return elev_value
 
 
@@ -197,7 +183,6 @@ def convert_position_float2str(position):
 
     if not isinstance(position, float):
         raise GISError("Given value is not a float")
-
     deg = int(position)
     minutes = (abs(position) - abs(deg)) * 60.0
 
@@ -207,11 +192,9 @@ def convert_position_float2str(position):
     if sec >= 60.0:
         minutes += 1
         sec = 0
-
     if int(minutes) == 60:
         deg += 1
         minutes = 0
-
     return "{0:.0f}:{1:02.0f}:{2:05.2f}".format(deg, int(minutes), sec)
 
 
@@ -297,7 +280,6 @@ def utm_letter_designator(latitude):
     for key, value in letter_dict.items():
         if value[1] >= latitude >= value[0]:
             return key
-
     return "Z"
 
 
@@ -328,13 +310,11 @@ def split_utm_zone(utm_zone):
     elif isinstance(utm_zone, str):
         zone_number = int(utm_zone[0:-1])
         is_northern = True if utm_zone[-1].lower() > "n" else False
-
     else:
         msg = "utm_zone type {0}, {1} not supported".format(
             type(utm_zone), str(utm_zone)
         )
         raise NotImplementedError(msg)
-
     return zone_number, is_northern
 
 
@@ -421,7 +401,6 @@ def _get_gdal_coordinate_system(datum):
                 datum
             )
         )
-
     return cs
 
 
@@ -438,11 +417,9 @@ def validate_epsg(epsg):
     """
     if isinstance(epsg, int):
         return epsg
-
     else:
         if epsg is None:
             return None
-
         try:
             epsg = int(epsg)
             return epsg
@@ -470,7 +447,6 @@ def validate_utm_zone(utm_zone):
         utm_zone = int(utm_zone)
     else:
         utm_zone = str(utm_zone)
-
     return utm_zone
 
 
@@ -494,15 +470,14 @@ def validate_input_values(values, location_type=None):
 
     """
     if isinstance(values, (int, float)):
-        values = np.array([values], dtype=np.float)
+        values = np.array([values], dtype=float)
     elif isinstance(values, (list, tuple)):
-        values = np.array(values, dtype=np.float)
+        values = np.array(values, dtype=float)
     elif isinstance(values, str):
         values = [ss.strip() for ss in values.strip().split(",")]
         values = np.array(values)
     elif isinstance(values, np.ndarray):
-        values = values.astype(np.float)
-
+        values = values.astype(float)
     # Flatten to 1D
     values = values.flatten()
 
@@ -512,16 +487,14 @@ def validate_input_values(values, location_type=None):
                 values[ii] = assert_lat_value(value)
             except GISError as error:
                 raise GISError("{0}\n Bad input value at index {1}".format(error, ii))
-        values = values.astype(np.float)
-
+        values = values.astype(float)
     if location_type in ["lon", "longitude"]:
         for ii, value in enumerate(values):
             try:
                 values[ii] = assert_lon_value(value)
             except GISError as error:
                 raise GISError("{0}\n Bad input value at index {1}".format(error, ii))
-        values = values.astype(np.float)
-
+        values = values.astype(float)
     return values
 
 
@@ -547,7 +520,6 @@ def _get_gdal_projection_ll2utm(datum, utm_zone, epsg):
     """
     if utm_zone is None and epsg is None:
         raise GISError("Need to input either UTM zone or EPSG number")
-
     ll_cs = _get_gdal_coordinate_system(datum)
 
     # project point on to EPSG coordinate system if given
@@ -559,7 +531,6 @@ def _get_gdal_projection_ll2utm(datum, utm_zone, epsg):
 
         zone_number, is_northern = split_utm_zone(utm_zone)
         utm_cs.SetUTM(zone_number, is_northern)
-
     return osr.CoordinateTransformation(ll_cs, utm_cs).TransformPoint
 
 
@@ -585,7 +556,6 @@ def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
     """
     if utm_zone is None and epsg is None:
         raise GISError("Need to input either UTM zone or EPSG number")
-
     # zone_number, is_northern = split_utm_zone(utm_zone)
 
     if epsg is not None:
@@ -594,7 +564,6 @@ def _get_gdal_projection_utm2ll(datum, utm_zone, epsg):
         zone_number, is_northern = split_utm_zone(utm_zone)
         utm_cs = _get_gdal_coordinate_system(datum)
         utm_cs.SetUTM(zone_number, is_northern)
-
     ll_cs = utm_cs.CloneGeogCS()
     return osr.CoordinateTransformation(utm_cs, ll_cs).TransformPoint
 
@@ -624,11 +593,9 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
 
     if utm_zone is None and epsg is None:
         raise GISError("Need to input either UTM zone or EPSG number")
-
     if isinstance(epsg, int):
         # pp = pyproj.Proj("+init=EPSG:%d" % (epsg))
         pp = pyproj.Proj("EPSG:%d" % (epsg))
-
     elif epsg is None:
         if datum is None:
             datum = "WGS84"
@@ -636,7 +603,6 @@ def _get_pyproj_projection(datum, utm_zone, epsg):
         zone = "north" if is_northern else "south"
         proj_str = f"+proj=utm +zone={zone_number} +{zone} +datum={datum}"
         pp = pyproj.Proj(proj_str)
-
     return pp
 
 
@@ -688,7 +654,6 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
     """
     if lat is None or lon is None:
         return None, None, None
-
     # make sure the lat and lon are in decimal degrees
     lat = validate_input_values(lat, location_type="lat")
     lon = validate_input_values(lon, location_type="lon")
@@ -702,14 +667,13 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
     else:
 
         ll2utm = _get_pyproj_projection(datum, utm_zone, epsg)
-
     # return different results depending on if lat/lon are iterable
     projected_point = np.zeros_like(
         lat,
         dtype=[
-            ("easting", np.float),
-            ("northing", np.float),
-            ("elev", np.float),
+            ("easting", float),
+            ("northing", float),
+            ("elev", float),
             ("utm_zone", "U3"),
         ],
     )
@@ -719,14 +683,11 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
             point = ll2utm(lat[ii], lon[ii])
         else:
             point = ll2utm(lon[ii], lat[ii])
-
         projected_point["easting"][ii] = point[0]
         projected_point["northing"][ii] = point[1]
         if HAS_GDAL:
             projected_point["elev"][ii] = point[2]
-
         projected_point["utm_zone"][ii] = utm_zone
-
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array
     if len(projected_point) == 1:
@@ -793,10 +754,9 @@ def project_point_utm2ll(easting, northing, utm_zone, datum="WGS84", epsg=None):
         utm2ll = _get_gdal_projection_utm2ll(datum, utm_zone, epsg)
     else:
         utm2ll = _get_pyproj_projection(datum, utm_zone, epsg)
-
     # return different results depending on if lat/lon are iterable
     projected_point = np.zeros_like(
-        easting, dtype=[("latitude", np.float), ("longitude", np.float)]
+        easting, dtype=[("latitude", float), ("longitude", float)]
     )
     for ii in range(easting.size):
         if HAS_GDAL:
@@ -809,12 +769,10 @@ def project_point_utm2ll(easting, northing, utm_zone, datum="WGS84", epsg=None):
             except GISError:
                 projected_point["latitude"][ii] = round(point[1], 6)
                 projected_point["longitude"][ii] = round(point[0], 6)
-
         else:
             point = utm2ll(easting[ii], northing[ii], inverse=True)
             projected_point["latitude"][ii] = round(point[1], 6)
             projected_point["longitude"][ii] = round(point[0], 6)
-
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array
     if len(projected_point) == 1:
@@ -856,19 +814,16 @@ def epsg_project(x, y, epsg_from, epsg_to, proj_str=None):
     except ImportError:
         print("please install pyproj")
         return
-
     # option to add custom projection
     # print("epsg",epsg_from,epsg_to,"proj_str",proj_str)
     if 0 in [epsg_from, epsg_to]:
         EPSG_DICT[0] = proj_str
-
     try:
         p1 = pyproj.Proj(EPSG_DICT[epsg_from])
         p2 = pyproj.Proj(EPSG_DICT[epsg_to])
     except KeyError:
         print("Surface or data epsg either not in dictionary or None")
         return
-
     return pyproj.transform(p1, p2, x, y)
 
 
@@ -890,10 +845,8 @@ def utm_wgs84_conv(lat, lon):
     # checking correctess
     if abs(lat - new_lat) > 1.0 * np.e - 10:
         print("Warning: lat and new_lat should be equal!")
-
     if abs(lon - new_lon) > 1.0 * np.e - 10:
         print("Warning: lon and new_lon should be equal!")
-
     return tup
 
 
