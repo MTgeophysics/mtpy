@@ -251,8 +251,6 @@ class TestMTCollection(unittest.TestCase):
 
     def test_get_tf(self):
         for tf_fn in self.fn_list:
-            if tf_fn.stem in ["spectra_in", "spectra_out"]:
-                continue
             original = MT(tf_fn)
 
             h5_tf = self.mc.get_tf(validate_name(original.tf_id))
@@ -266,6 +264,9 @@ class TestMTCollection(unittest.TestCase):
                 h5_tf.station_metadata.acquired_by.author
             )
 
+            if tf_fn.stem in ["spectra_in", "spectra_out"]:
+                self.assertTrue((original.dataset == h5_tf.dataset).all())
+                continue
             with self.subTest(original.tf_id):
                 self.mc.logger.info(f"testing: {original.tf_id} from {tf_fn.name}")
                 self.assertEqual(h5_tf, original)
