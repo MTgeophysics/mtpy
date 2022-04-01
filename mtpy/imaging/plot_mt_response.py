@@ -11,7 +11,7 @@ Created 2017
 @author: jpeacock
 """
 # ==============================================================================
-import os
+from pathlib import Path
 
 import numpy as np
 
@@ -419,14 +419,14 @@ class PlotMTResponse(PlotSettings):
     def _has_tipper(self):
         if self.plot_tipper.find("y") == 0 or self.plot_tipper:
             if self.Tipper is None or (self.Tipper.tipper == 0 + 0j).all():
-                self.logger.info(f"No Tipper data for station {self.station}")
+                self._logger.info(f"No Tipper data for station {self.station}")
                 self.plot_tipper = False
 
     def _has_pt(self):
         if self.plot_pt:
             # if np.all(self.Z.z == 0 + 0j) or self.Z is None:
             if self.pt is None:  # no phase tensor object provided
-                print("No Tipper data for station {0}".format(self.station))
+                self._logger.info(f"No PT data for station {self.station}")
                 self.plot_pt = False
 
     def _set_subplot_params(self):
@@ -1056,7 +1056,7 @@ class PlotMTResponse(PlotSettings):
         file_format="pdf",
         orientation="portrait",
         fig_dpi=None,
-        close_plot="y",
+        close_plot=True,
     ):
         """
         save_plot will save the figure to save_fn.
@@ -1102,21 +1102,21 @@ class PlotMTResponse(PlotSettings):
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-        if not os.path.isdir(save_fn):
-            file_format = save_fn[-3:]
+        save_fn = Path(save_fn)
+        if not save_fn.is_dir():
+            file_format = save_fn.suffix
         else:
-            save_fn = os.path.join(save_fn, self.station + "_ResPhase." + file_format)
+            save_fn = save_fn.joinpath(f"{self.station}_mt_response.{file_format}")
         self.fig.savefig(
             save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
         )
 
-        if close_plot == "y":
-            plt.clf()
+        if close_plot:
             plt.close(self.fig)
         else:
             pass
         self.fig_fn = save_fn
-        print("Saved figure to: " + self.fig_fn)
+        self._logger.info(f"Saved figure to: {self.fig_fn}")
 
     def update_plot(self):
         """
