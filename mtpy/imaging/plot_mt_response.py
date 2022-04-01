@@ -137,10 +137,10 @@ class PlotMTResponse(PlotSettings):
             return None
 
     def _has_tipper(self):
-        if self.plot_tipper.find("y") == 0 or self.plot_tipper:
+        if self.plot_tipper.find("y") >= 0:
             if self.Tipper is None or (self.Tipper.tipper == 0 + 0j).all():
                 self._logger.info(f"No Tipper data for station {self.station}")
-                self.plot_tipper = False
+                self.plot_tipper = "n"
 
     def _has_pt(self):
         if self.plot_pt:
@@ -164,7 +164,7 @@ class PlotMTResponse(PlotSettings):
         # now
         index = 0
         nrows = 1
-        if self.plot_tipper.find("y") >= 0 or self.plot_tipper:
+        if self.plot_tipper.find("y") >= 0:
             pdict["tip"] = index
             index += 1
             nrows = 2
@@ -172,7 +172,11 @@ class PlotMTResponse(PlotSettings):
             pdict["pt"] = index
             nrows = 2
             index += 1
-        gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=[3, 1.5])
+        if nrows == 1:
+            hr = [1]
+        elif nrows == 2:
+            hr = [2, 1]
+        gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=hr)
         gs_rp = gridspec.GridSpecFromSubplotSpec(
             2,
             2,
@@ -216,20 +220,16 @@ class PlotMTResponse(PlotSettings):
         self.axp.yaxis.set_label_coords(label_coords[0], label_coords[1])
 
         # --> plot tipper
-        try:
+        if self.plot_tipper.find("y") >= 0:
             self.axt = self.fig.add_subplot(gs_aux[pdict["tip"], :],)
             self.axt.yaxis.set_label_coords(label_coords[0], label_coords[1])
-        except KeyError:
-            pass
         # --> plot phase tensors
-        try:
+        if self.plot_pt:
             # can't share axis because not on the same scale
             # Removed aspect = "equal" for now, it flows better, if you want
             # a detailed analysis look at plot pt
             self.axpt = self.fig.add_subplot(gs_aux[pdict["pt"], :])
             self.axpt.yaxis.set_label_coords(label_coords[0], label_coords[1])
-        except KeyError:
-            pass
         return label_coords
 
     def _get_nonzero_indices(self):
@@ -354,11 +354,11 @@ class PlotMTResponse(PlotSettings):
         # check the phase to see if any point are outside of [0:90]
         phase_limits = self.set_phase_limits(self.Z.phase)
         # --> set axes properties
-        if self.plot_tipper.find("y") < 0 or not self.plot_pt or not self.plot_tipper:
+        if self.plot_tipper.find("y") < 0 or not self.plot_pt:
             self.axp.set_xlabel("Period (s)", self.font_dict)
         self.axp.set_ylabel("Phase (deg)", self.font_dict)
         self.axp.set_xscale("log", nonpositive="clip")
-        self.axp.set_ylim(self.phase_limits)
+        self.axp.set_ylim(phase_limits)
         self.axp.yaxis.set_major_locator(MultipleLocator(15))
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
         self.axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
@@ -387,7 +387,7 @@ class PlotMTResponse(PlotSettings):
         )
 
         # --> set axes properties
-        if self.plot_tipper.find("y") < 0 or not self.plot_pt or not self.plot_tipper:
+        if self.plot_tipper.find("y") < 0 or not self.plot_pt:
             self.axp2.set_xlabel("Period (s)", self.font_dict)
         self.axp2.set_xscale("log", nonpositive="clip")
         self.axp2.set_ylim(ymin=-179.9, ymax=179.9)
