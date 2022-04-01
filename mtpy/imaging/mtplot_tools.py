@@ -180,6 +180,7 @@ class PlotSettings(MTArrows, MTEllipse):
         self.font_size = 7
         self.marker_size = 2.5
         self.marker_lw = 0.75
+        self.marker_color = "b"
         self.lw = 1
         self.plot_title = None
 
@@ -219,6 +220,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
         # plot limits
         self.x_limits = None
+        self.y_limits = None
         self.res_limits = None
         self.phase_limits = None
         self.tipper_limits = None
@@ -230,6 +232,15 @@ class PlotSettings(MTArrows, MTEllipse):
         self.show_plot = True
         self.plot_tipper = False
         self.plot_pt = False
+
+        self.text_size = 7
+        self.text_weight = "normal"
+        self.text_color = "k"
+        self.text_ha = "center"
+        self.text_va = "baseline"
+        self.text_angle = 0
+        self.text_x_pad = None
+        self.text_y_pad = None
 
         # Set class property values from kwargs and pop them
         for v in vars(self):

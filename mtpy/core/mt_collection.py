@@ -302,6 +302,28 @@ class MTCollection:
             ]
         return None
 
+    def to_geo_df(self, epsg=4326):
+        """
+        Make a geopandas dataframe for easier GIS manipulation
+        
+        """
+        coordinate_system = {"init": f"epsg:{epsg}"}
+        gdf = gpd.GeoDataFrame(
+            self.dataframe[
+                self.dataframe.columns[
+                    ~self.dataframe.columns.isin(
+                        ["hdf5_reference", "station_hdf5_reference"]
+                    )
+                ]
+            ],
+            geometry=gpd.points_from_xy(
+                self.dataframe.longitude, self.dataframe.latitude
+            ),
+            crs=coordinate_system,
+        )
+
+        return gdf
+
     def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
         

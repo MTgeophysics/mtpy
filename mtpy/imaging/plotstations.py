@@ -13,17 +13,17 @@ Created on Fri Jun 07 18:20:00 2013
 """
 
 # ==============================================================================
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import mtpy.imaging.mtplottools as mtpt
+from mtpy.imaging.mtplot_tools import PlotSettings
 import mtpy.utils.exceptions as mtex
 
 # ==============================================================================
 
 
-class PlotStations(object):
+class PlotStations(PlotSettings):
     """
     plot station locations in map view.
 
@@ -226,39 +226,19 @@ class PlotStations(object):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, df, **kwargs):
 
-        fn_list = kwargs.pop("fn_list", None)
-        mt_object_list = kwargs.pop("mt_object_list", None)
-
-        # ----set attributes for the class-------------------------
-        self.mt_list = mtpt.MTplot_list(fn_list=fn_list, mt_object_list=mt_object_list)
+        super().__init__(**kwargs)
+        self.df = df
 
         # --> set plot properties
-        self.fig_num = kwargs.pop("fig_num", 1)
         self.plot_title = kwargs.pop("plot_title", None)
-        self.fig_dpi = kwargs.pop("fig_dpi", 300)
-        self.fig_size = kwargs.pop("fig_size", None)
-        self.font_size = kwargs.pop("font_size", 7)
         self.stationid = kwargs.pop("stationid", [0, 4])
-        self.xlimits = kwargs.pop("xlimits", None)
-        self.ylimits = kwargs.pop("ylimits", None)
+
         self.ref_point = kwargs.pop("ref_point", (0, 0))
 
         self.map_scale = kwargs.pop("map_scale", "latlon")
-        self.marker = kwargs.pop("marker", "v")
-        self.marker_size = kwargs.pop("marker_size", 10)
-        self.marker_color = kwargs.pop("marker_color", "k")
         self.plot_names = kwargs.pop("plot_names", True)
-
-        self.text_size = kwargs.pop("text_size", 7)
-        self.text_weight = kwargs.pop("text_weight", "normal")
-        self.text_color = kwargs.pop("text_color", "k")
-        self.text_ha = kwargs.pop("text_ha", "center")
-        self.text_va = kwargs.pop("text_va", "baseline")
-        self.text_angle = kwargs.pop("text_angle", 0)
-        self.text_x_pad = kwargs.pop("text_x_pad", None)
-        self.text_y_pad = kwargs.pop("text_y_pad", None)
 
         self.image_file = kwargs.pop("image_file", None)
         self.image_extent = kwargs.pop("image_extent", None)
@@ -268,27 +248,50 @@ class PlotStations(object):
                 raise mtex.MTpyError_inputarguments(
                     "Need to input extents " + "of the image as" + "(x0, y0, x1, y1)"
                 )
-
+        self._set_subplot_parameters()
         # --> plot if desired
-        self.plot_yn = kwargs.pop("plot_yn", "y")
-        if self.plot_yn == "y":
+        if self.show_plot:
             self.plot()
 
-    def plot(self):
-        """
-        plots the station locations
-
-        """
+    def _set_subplot_parameters(self):
         plt.rcParams["font.size"] = self.font_size
         plt.rcParams["figure.subplot.left"] = 0.09
         plt.rcParams["figure.subplot.right"] = 0.98
         plt.rcParams["figure.subplot.bottom"] = 0.09
         plt.rcParams["figure.subplot.top"] = 0.98
 
-        # get station locations
-        self.mt_list.get_station_locations(
-            map_scale=self.map_scale, ref_point=self.ref_point
-        )
+    def _get_xlimits(self, x):
+        if np.sign(x.min()) == -1:
+            self.xlimits = (
+                x.min() * 1.002,
+                x.max() * 0.998,
+            )
+        else:
+            self.xlimits = (
+                x.min() * 0.998,
+                x.max() * 1.002,
+            )
+
+    def _get_ylimits(self, y):
+        if np.sign(y.min()) == -1:
+            self.xlimits = (
+                y.min() * 1.002,
+                y.max() * 0.998,
+            )
+        else:
+            self.xlimits = (
+                y.min() * 0.998,
+                y.max() * 1.002,
+            )
+
+    def _get_xy(self):
+        pass
+
+    def plot(self):
+        """
+        plots the station locations
+
+        """
 
         text_dict = {
             "size": self.text_size,
@@ -297,44 +300,20 @@ class PlotStations(object):
             "color": self.text_color,
         }
 
-        font_dict = {"size": self.font_size + 2, "weight": "bold"}
-
-        if self.xlimits is None:
-            if np.sign(self.mt_list.map_xarr.min()) == -1:
-                self.xlimits = (
-                    self.mt_list.map_xarr.min() * 1.002,
-                    self.mt_list.map_xarr.max() * 0.998,
-                )
-            else:
-                self.xlimits = (
-                    self.mt_list.map_xarr.min() * 0.998,
-                    self.mt_list.map_xarr.max() * 1.002,
-                )
-
-        if self.ylimits is None:
-            if np.sign(self.mt_list.map_yarr.min()) == -1:
-                self.ylimits = (
-                    self.mt_list.map_yarr.min() * 1.002,
-                    self.mt_list.map_yarr.max() * 0.998,
-                )
-            else:
-                self.ylimits = (
-                    self.mt_list.map_yarr.min() * 0.998,
-                    self.mt_list.map_yarr.max() * 1.002,
-                )
-
         if self.map_scale == "latlon":
             xlabel = "Longitude (deg)"
             ylabel = "Latitude (deg)"
 
+            if self.xlimits is None:
+                self._get_xlimits(self.df.longitude)
+            if self.ylimits is None:
+                self._get_ylimits(self.df.latitude)
         elif self.map_scale == "eastnorth":
             xlabel = "Easting (m)"
             ylabel = "Northing (m)"
-
         elif self.map_scale == "eastnorthkm":
             xlabel = "Easting (km)"
             ylabel = "Northing (km)"
-
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
@@ -345,7 +324,6 @@ class PlotStations(object):
         if self.image_file is not None:
             im = plt.imread(self.image_file)
             self.ax.imshow(im, origin="lower", extent=self.image_extent, aspect="auto")
-
         for key in list(self.mt_list.map_dict.keys()):
             self.ax.scatter(
                 self.mt_list.map_dict[key][0],
@@ -360,7 +338,6 @@ class PlotStations(object):
                     self.text_x_pad = 0.0009 * self.mt_list.map_dict[key][0]
                 if self.text_y_pad is None:
                     self.text_y_pad = 0.0009 * self.mt_list.map_dict[key][1]
-
                 self.ax.text(
                     self.mt_list.map_dict[key][0] + self.text_x_pad,
                     self.mt_list.map_dict[key][1]
@@ -370,10 +347,9 @@ class PlotStations(object):
                     horizontalalignment=self.text_ha,
                     fontdict=text_dict,
                 )
-
         # set axis properties
-        self.ax.set_xlabel(xlabel, fontdict=font_dict)
-        self.ax.set_ylabel(ylabel, fontdict=font_dict)
+        self.ax.set_xlabel(xlabel, fontdict=self.font_dict)
+        self.ax.set_ylabel(ylabel, fontdict=self.font_dict)
         self.ax.grid(alpha=0.35, color=(0.25, 0.25, 0.25))
         self.ax.set_xlim(self.xlimits)
         self.ax.set_ylim(self.ylimits)
@@ -406,14 +382,12 @@ class PlotStations(object):
                 raise IOError("Need to input save_path, could not find a path")
         else:
             svpath = save_path
-
         if self.map_scale == "latlon":
             hdr_list = ["Station", "Longitude(deg)", "Latitude(deg)", "Elevation(m)"]
         elif self.map_scale == "eastnorth":
             hdr_list = ["Station", "Easting(m)", "Northing(m)", "Elevation(m)"]
         elif self.map_scale == "eastnorthkm":
             hdr_list = ["Station", "Easting(km)", "Northing(km)", "Elevation(m)"]
-
         self.mt_list.get_station_locations(
             map_scale=self.map_scale, ref_point=self.ref_point
         )
@@ -439,7 +413,6 @@ class PlotStations(object):
             else:
                 tline = "{0:<15}{1: ^15.1f}{2: ^15.1f}{3: ^15.1f}\n".format(ss, x, y, z)
             tfid.write(tline)
-
         tfid.close()
 
         print("Saved file to: ", fn_svpath)
@@ -499,7 +472,6 @@ class PlotStations(object):
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(
@@ -507,28 +479,23 @@ class PlotStations(object):
             )
             plt.clf()
             plt.close(self.fig)
-
         else:
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
             if not os.path.exists(os.path.join(save_fn, "station_map")):
                 os.mkdir(os.path.join(save_fn, "station_map"))
                 save_fn = os.path.join(save_fn, "station_map")
-
             save_fn = os.path.join(
                 save_fn, "PTmap_" + self.ellipse_colorby + sf + "Hz." + file_format
             )
             self.fig.savefig(
                 save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
             )
-
         if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
-
         else:
             pass
-
         self.fig_fn = save_fn
         print("Saved figure to: " + self.fig_fn)
 
