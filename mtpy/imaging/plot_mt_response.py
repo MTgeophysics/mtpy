@@ -523,9 +523,8 @@ class PlotMTResponse(PlotSettings):
             self._nz_tx = np.nonzero(self.Tipper.tipper[:, 0, 0])
             self._nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
 
-    def _plot_resistivity(self):
-        # ---------plot the apparent resistivity--------------------------------
-        # --> plot as error bars and just as points xy, yx
+    def _plot_resistivity_od(self):
+
         # res_xy
         self.ebxyr = plot_errorbar(
             self.axr,
@@ -566,61 +565,24 @@ class PlotMTResponse(PlotSettings):
             borderpad=0.02,
         )
 
-    def plot(self, show=True):
-        """
-        plotResPhase(filename,fig_num) will plot the apparent resistivity and 
-        phase for a single station. 
-
-        """
-
-        self._has_tipper()
-        self.has_pt()
-
-        # set x-axis limits from short period to long period
-        if self.x_limits is None:
-            self.x_limits = self.set_period_limits(self.period)
-        if self.res_limits is None:
-            self.res_limits = self.set_resistivity_limits(self.Z.resistivity)
-        # make figure instance
-        self._set_subplot_params()
-        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
-        self.fig.clf()
-
-        self._setup_subplots()
-
+    def _plot_phase_od(self):
         # -----Plot the phase---------------------------------------------------
         # phase_xy
-        self.ebxyp = self.axp.errorbar(
+        self.ebxyp = plot_errorbar(
+            self.axr,
             self.period[self._nz_xy],
             self.Z.phase_xy[self._nz_xy],
-            marker=self.xy_marker,
-            ms=self.marker_size,
-            mew=self.lw,
-            mec=self.xy_color,
-            color=self.xy_color,
-            ecolor=self.xy_color,
-            ls=self.xy_ls,
-            lw=self.lw,
-            yerr=self.Z.phase_err_xy[self._nz_xy],
-            capsize=self.marker_size,
-            capthick=self.lw,
+            y_error=self.Z.phase_err_xy[self._nz_xy],
+            **self.xy_error_bar_properties,
         )
 
         # phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = self.axp.errorbar(
+        self.ebyxp = plot_errorbar(
+            self.axr,
             self.period[self._nz_yx],
             self.Z.phase_yx[self._nz_yx] + 180,
-            marker=self.yx_marker,
-            ms=self.marker_size,
-            mew=self.lw,
-            mec=self.yx_color,
-            color=self.yx_color,
-            ecolor=self.yx_color,
-            ls=self.yx_ls,
-            lw=self.lw,
-            yerr=self.Z.phase_err_yx[self._nz_yx],
-            capsize=self.marker_size,
-            capthick=self.lw,
+            y_error=self.Z.phase_err_yx[self._nz_yx],
+            **self.yx_error_bar_properties,
         )
 
         # check the phase to see if any point are outside of [0:90]
@@ -646,10 +608,35 @@ class PlotMTResponse(PlotSettings):
         self.axp.yaxis.set_major_locator(MultipleLocator(15))
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
         self.axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        # set th xaxis tick labels to invisible
-        if self.plot_tipper.find("y") >= 0 or self.plot_pt == "y":
-            plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
-            self.axp.set_xlabel("")
+        # # set th xaxis tick labels to invisible
+        # if self.plot_tipper.find("y") >= 0 or self.plot_pt == "y":
+        #     plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
+        #     self.axp.set_xlabel("")
+
+    def plot(self, show=True):
+        """
+        plotResPhase(filename,fig_num) will plot the apparent resistivity and 
+        phase for a single station. 
+
+        """
+
+        self._has_tipper()
+        self.has_pt()
+
+        # set x-axis limits from short period to long period
+        if self.x_limits is None:
+            self.x_limits = self.set_period_limits(self.period)
+        if self.res_limits is None:
+            self.res_limits = self.set_resistivity_limits(self.Z.resistivity)
+        # make figure instance
+        self._set_subplot_params()
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        self.fig.clf()
+
+        self._setup_subplots()
+
+        self._plot_resistivity_od()
+
         # -----plot tipper----------------------------------------------------
         if self.plot_tipper.find("y") == 0:
 
