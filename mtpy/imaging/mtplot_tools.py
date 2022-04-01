@@ -311,6 +311,58 @@ class PlotSettings(MTArrows, MTEllipse):
                     )
                 ),
             )
+        if mode == "d":
+            return (
+                10
+                ** (
+                    np.floor(
+                        np.log10(
+                            min(
+                                [
+                                    np.nanmin(resistivity[:, 0, 0]),
+                                    np.nanmin(resistivity[:, 1, 1]),
+                                ]
+                            )
+                        )
+                    )
+                ),
+                10
+                ** (
+                    np.ceil(
+                        np.log10(
+                            max(
+                                [
+                                    np.nanmax(resistivity[:, 0, 0]),
+                                    np.nanmax(resistivity[:, 1, 1]),
+                                ]
+                            )
+                        )
+                    )
+                ),
+            )
+
+    def set_phase_limits(self, phase, mode="od"):
+        if mode == "od":
+            ph_min = 0
+            ph_max = 90
+            if min(phase[:, 0, 1]) < 0 or min(phase[:, 1, 0] + 180) < 0:
+                ph_min = min([min(phase[:, 0, 1]), min(phase[:, 1, 0])])
+                if ph_min > 0:
+                    ph_min = 0
+            else:
+                ph_min = 0
+            if max(phase[:, 0, 1]) > 90 or max(phase[:, 1, 0] + 180) > 90:
+                ph_max = min([max(phase[:, 0, 1]), max(phase[:, 1, 0] + 180)])
+                if ph_max < 91:
+                    ph_max = 89.9
+            else:
+                ph_max = 89.9
+            return (ph_min, ph_max)
+        elif mode == "d":
+            ph_min = -180
+            ph_max = 180
+
+            return (ph_min, ph_max)
 
     @property
     def xy_error_bar_properties(self):

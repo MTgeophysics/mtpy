@@ -434,7 +434,7 @@ class PlotMTResponse(PlotSettings):
         plt.rcParams["font.size"] = self.font_size
         plt.rcParams["figure.subplot.bottom"] = 0.1
         plt.rcParams["figure.subplot.top"] = 0.93
-        plt.rcParams["figure.subplot.left"] = 0.80
+        plt.rcParams["figure.subplot.left"] = 0.12
         plt.rcParams["figure.subplot.right"] = 0.98
 
     def _setup_subplots(self):
@@ -452,8 +452,7 @@ class PlotMTResponse(PlotSettings):
             pdict["pt"] = index
             nrows = 2
             index += 1
-        print(nrows)
-        gs_master = gridspec.GridSpec(nrows, 1, hspace=0.1)
+        gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=[3, 1.5])
         gs_rp = gridspec.GridSpecFromSubplotSpec(
             2,
             2,
@@ -464,7 +463,7 @@ class PlotMTResponse(PlotSettings):
         )
         if nrows == 2:
             gs_aux = gridspec.GridSpecFromSubplotSpec(
-                index, 1, subplot_spec=gs_master[0], hspace=0.05
+                index, 1, subplot_spec=gs_master[1], hspace=0.05
             )
         # --> make figure for xy,yx components
         if self.plot_num == 1 or self.plot_num == 3:
@@ -505,7 +504,9 @@ class PlotMTResponse(PlotSettings):
         # --> plot phase tensors
         try:
             # can't share axis because not on the same scale
-            self.axpt = self.fig.add_subplot(gs_aux[pdict["pt"], :], aspect="equal")
+            # Removed aspect = "equal" for now, it flows better, if you want
+            # a detailed analysis look at plot pt
+            self.axpt = self.fig.add_subplot(gs_aux[pdict["pt"], :])
             self.axpt.yaxis.set_label_coords(label_coords[0], label_coords[1])
         except KeyError:
             pass
@@ -526,6 +527,8 @@ class PlotMTResponse(PlotSettings):
             self._nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
 
     def _plot_resistivity_od(self):
+
+        res_limits = self.set_resistivity_limits(self.Z.resistivity, mode="od")
 
         # res_xy
         self.ebxyr = plot_errorbar(
@@ -553,7 +556,7 @@ class PlotMTResponse(PlotSettings):
         self.axr.set_yscale("log", nonpositive="clip")
         self.axr.set_xscale("log", nonpositive="clip")
         self.axr.set_xlim(self.x_limits)
-        self.axr.set_ylim(self.res_limits)
+        self.axr.set_ylim(res_limits)
         self.axr.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
 
         self.axr.legend(
@@ -568,20 +571,22 @@ class PlotMTResponse(PlotSettings):
         )
 
     def _plot_resistivity_d(self):
-        # res_xy
+
+        res_limits = self.set_resistivity_limits(self.Z.resistivity, mode="d")
+        # res_xx
         self.ebxxr = plot_errorbar(
             self.axr2,
             self.period[self._nz_xx],
-            self.Z.res_xy[self._nz_xx],
+            self.Z.res_xx[self._nz_xx],
             y_error=self.Z.res_err_xx[self._nz_xx],
             **self.xy_error_bar_properties,
         )
 
-        # res_yx
+        # res_yy
         self.ebyyr = plot_errorbar(
             self.axr2,
             self.period[self._nz_yy],
-            self.Z.res_yx[self._nz_yy],
+            self.Z.res_yy[self._nz_yy],
             y_error=self.Z.res_err_yy[self._nz_yy],
             **self.yx_error_bar_properties,
         )
@@ -591,13 +596,14 @@ class PlotMTResponse(PlotSettings):
         self.axr2.set_yscale("log", nonpositive="clip")
         self.axr2.set_xscale("log", nonpositive="clip")
         self.axr2.set_xlim(self.x_limits)
+        self.axr2.set_ylim(res_limits)
         self.axr2.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
 
         self.axr2.legend(
-            (self.ebxxr[0], self.ebyyr[0], self.ebxxr2[0], self.ebyyr2[0]),
-            ("$Z_{xx}$", "$Z_{yy}$", "$Z2_{xx}$", "$Z2_{yy}$"),
+            (self.ebxxr[0], self.ebyyr[0]),
+            ("$Z_{xx}$", "$Z_{yy}$"),
             loc=3,
             markerscale=1,
             borderaxespad=0.01,
@@ -626,22 +632,10 @@ class PlotMTResponse(PlotSettings):
         )
 
         # check the phase to see if any point are outside of [0:90]
-        if self.phase_limits is None:
-            if min(self.Z.phase_xy) < 0 or min(self.Z.phase_yx + 180) < 0:
-                pymin = min([min(self.Z.phase_xy), min(self.Z.phase_yx)])
-                if pymin > 0:
-                    pymin = 0
-            else:
-                pymin = 0
-            if max(self.Z.phase_xy) > 90 or max(self.Z.phase_yx + 180) > 90:
-                pymax = min([max(self.Z.phase_xy), max(self.Z.phase_yx + 180)])
-                if pymax < 91:
-                    pymax = 89.9
-            else:
-                pymax = 89.9
-            self.phase_limits = (pymin, pymax)
+        phase_limits = self.set_phase_limits(self.Z.phase)
         # --> set axes properties
-        self.axp.set_xlabel("Period (s)", self.font_dict)
+        if self.plot_tipper.find("y") < 0 or not self.plot_pt or not self.plot_tipper:
+            self.axp.set_xlabel("Period (s)", self.font_dict)
         self.axp.set_ylabel("Phase (deg)", self.font_dict)
         self.axp.set_xscale("log", nonpositive="clip")
         self.axp.set_ylim(self.phase_limits)
@@ -658,7 +652,7 @@ class PlotMTResponse(PlotSettings):
         self.ebxyp = plot_errorbar(
             self.axp2,
             self.period[self._nz_xx],
-            self.Z.phase_xy[self._nz_xx],
+            self.Z.phase_xx[self._nz_xx],
             y_error=self.Z.phase_err_xx[self._nz_xx],
             **self.xy_error_bar_properties,
         )
@@ -667,13 +661,14 @@ class PlotMTResponse(PlotSettings):
         self.ebyxp = plot_errorbar(
             self.axp2,
             self.period[self._nz_yy],
-            self.Z.phase_yy[self._nz_yy] + 180,
+            self.Z.phase_yy[self._nz_yy],
             y_error=self.Z.phase_err_yy[self._nz_yy],
             **self.yx_error_bar_properties,
         )
 
         # --> set axes properties
-        self.axp2.set_xlabel("Period (s)", self.font_dict)
+        if self.plot_tipper.find("y") < 0 or not self.plot_pt or not self.plot_tipper:
+            self.axp2.set_xlabel("Period (s)", self.font_dict)
         self.axp2.set_xscale("log", nonpositive="clip")
         self.axp2.set_ylim(ymin=-179.9, ymax=179.9)
         self.axp2.yaxis.set_major_locator(MultipleLocator(30))
@@ -811,7 +806,7 @@ class PlotMTResponse(PlotSettings):
             )
 
             # set th xaxis tick labels to invisible
-            if self.plot_pt == "y":
+            if self.plot_pt:
                 plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
                 self.axt.set_xlabel("")
 
