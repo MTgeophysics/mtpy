@@ -134,8 +134,8 @@ class MT(TF):
 
         if self.has_impedance():
             return Z(
-                z_array=self.impedance,
-                z_err_array=self.impedance_error,
+                z_array=self.impedance.to_numpy(),
+                z_err_array=self.impedance_error.to_numpy(),
                 freq=self.frequency,
             )
         return Z()
@@ -160,8 +160,8 @@ class MT(TF):
 
         if self.has_tipper():
             return Tipper(
-                tipper_array=self.tipper,
-                tipper_err_array=self.tipper_error,
+                tipper_array=self.tipper.to_numpy(),
+                tipper_err_array=self.tipper_error.to_numpy(),
                 freq=self.frequency,
             )
 
@@ -364,14 +364,12 @@ class MT(TF):
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
-
         if period_buffer is not None:
             if 0.0 < period_buffer < 1.0:
                 period_buffer += 1.0
                 self.logger.warning(
                     "Period buffer must be > 1. Updating to", period_buffer
                 )
-
         # check the bounds of the new frequency array
         if bounds_error:
 
@@ -394,7 +392,6 @@ class MT(TF):
                     + ".  The new frequency range needs to be within the "
                     + "bounds of the old one."
                 )
-
         # make a new Z object
         new_Z = Z(
             z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
@@ -445,7 +442,6 @@ class MT(TF):
                             new_nz_index_update.append(new_nz_index[ifidx])
                     new_f = np.array(new_f_update)
                     new_nz_index = np.array(new_nz_index_update)
-
                 # create a function that does 1d interpolation
                 z_func_real = spi.interp1d(f, z_real, kind=interp_type)
                 z_func_imag = spi.interp1d(f, z_imag, kind=interp_type)
@@ -456,14 +452,12 @@ class MT(TF):
                     new_f
                 )
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
-
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
             return new_Z, new_Tipper
-
         # interpolate the Tipper
         for jj in range(2):
             # get indicies of non-zero components
@@ -471,7 +465,6 @@ class MT(TF):
 
             if len(nz_index[0]) < 2:
                 continue
-
             # get non-zero components
             t_real = self.Tipper.tipper[nz_index, 0, jj].real
             t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
@@ -498,7 +491,6 @@ class MT(TF):
             ) + 1j * t_func_imag(new_f)
 
             new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
-
         new_Tipper.compute_mag_direction()
 
         return new_Z, new_Tipper
