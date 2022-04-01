@@ -181,6 +181,7 @@ class PlotSettings(MTArrows, MTEllipse):
         self.marker_size = 2.5
         self.marker_lw = 0.75
         self.marker_color = "b"
+        self.marker = "v"
         self.lw = 1
         self.plot_title = None
 
@@ -239,8 +240,8 @@ class PlotSettings(MTArrows, MTEllipse):
         self.text_ha = "center"
         self.text_va = "baseline"
         self.text_angle = 0
-        self.text_x_pad = None
-        self.text_y_pad = None
+        self.text_x_pad = 0
+        self.text_y_pad = 0
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
@@ -462,6 +463,15 @@ class PlotSettings(MTArrows, MTEllipse):
             "head_width": self.arrow_head_width,
             "head_length": self.arrow_head_length,
             "length_includes_head": False,
+        }
+
+    @property
+    def text_dict(self):
+        return {
+            "size": self.text_size,
+            "weight": self.text_weight,
+            "rotation": self.text_angle,
+            "color": self.text_color,
         }
 
 

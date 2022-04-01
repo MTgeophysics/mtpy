@@ -17,6 +17,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+import contextily as cx
 from mtpy.imaging.mtplot_tools import PlotSettings
 import mtpy.utils.exceptions as mtex
 
@@ -29,216 +31,22 @@ class PlotStations(PlotSettings):
 
     Need to input one of the following lists:
 
-    Arguments:
-    ----------
-        **fn_list** : list of strings
-                     full paths to .edi files to plot. *default* is None
-
-        **mt_object** : class mtpy.imaging.mtplot.MTplot
-                        object of mtpy.imaging.mtplot.MTplot
-                        *default* is None
-
-    Optional Key Words:
-    -------------------
-        *fig_dpi*: float
-                   dots per inch resolution of figure. *default* is 300.
-
-        *fig_num*: int
-                   number of figure instance. *default* is 1.
-
-        *fig_size*: [x, y]
-                    figure dimensions in inches. *default* is None.
-
-        *font_size*: float
-                     size of tick labels, axes labels will be +2.
-                     *default* is 7
-
-        *image_extent*: (xmin, xmax, ymin, ymax)
-                        extent of image in map coordinates, must be input if
-                        image_file is not None. *default* is None.
-
-        *image_file*: string
-                      full path to base image file, can be .jpg, .png, or .svg
-                      *default* is None.
-
-        *map_scale*: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
-                     scale of map, either in:
-                         - 'latlon' --> latitude and longitude in decimal
-                                        degrees
-                         - 'eastnorth' --> easting and northing in meters
-                         - 'eastnorthkm' --> easting and northing in kilometers
-
-        *marker*: string or int
-                  type of marker used to represent station location.  For all
-                  marker options:
-
-                ============================== ================================
-                marker                         description
-                ============================== ================================
-                ``7``                          caretdown
-                ``4``                          caretleft
-                ``5``                          caretright
-                ``6``                          caretup
-                ``'o'``                        circle
-                ``'D'``                        diamond
-                ``'h'``                        hexagon1
-                ``'H'``                        hexagon2
-                ``'_'``                        hline
-                ``''``                         nothing
-                ``'None'``                     nothing
-                ``None``                       nothing
-                ``' '``                        nothing
-                ``'8'``                        octagon
-                ``'p'``                        pentagon
-                ``','``                        pixel
-                ``'+'``                        plus
-                ``'.'``                        point
-                ``'s'``                        square
-                ``'*'``                        star
-                ``'d'``                        thin_diamond
-                ``3``                          tickdown
-                ``0``                          tickleft
-                ``1``                          tickright
-                ``2``                          tickup
-                ``'1'``                        tri_down
-                ``'3'``                        tri_left
-                ``'4'``                        tri_right
-                ``'2'``                        tri_up
-                ``'v'``                        triangle_down
-                ``'<'``                        triangle_left
-                ``'>'``                        triangle_right
-                ``'^'``                        triangle_up
-                ``'|'``                        vline
-                ``'x'``                        x
-                ``'$...$'``                    render the string using mathtext
-                ============================== ================================
-
-        *marker_color*: string or (red, green, blue) on a scale of 0 to 1.
-                        color of station marker. *default* is black
-
-        *marker_size*: float
-                       size of station marker in points. *default* is 10.
-
-        *plot_names*: [ True | False ]
-                     plot station names next to marker. *default* is True.
-
-        *plot_title*: string
-                      title of plot
-
-        *plot_yn*: [ 'y' | 'n' ]
-                   plot on initialization.  *default* is 'y'.
-
-        *ref_point*: (x, y)
-                     reference point to center map on. *default* is (0, 0).
-
-        *text_angle*: float
-                      angle of station label in degrees. *default* is 0.
-
-        *text_color*: string or (red, green, blue) on a scale [0,1]
-                      color of station label. *default* is black.
-
-        *text_ha*: [ 'center' | 'right' | 'left' ]
-                   horizontal alignment of station label relative to the
-                   station location. *default* is 'center'.
-
-        *text_pad*: float
-                    padding from station marker to station label in map
-                    units.
-
-        *text_size*: float
-                     font size of station label.  *default* is 7.
-
-        *text_va*: [ 'center' | 'top' | 'bottom' | 'baseline' ]
-                   vertical alignment of station label. *default* is 'baseline'
-
-        *text_weight*: [ 'ultralight' | 'light' | 'normal' | 'regular' |
-                         'book' | 'medium' | 'roman' | 'semibold' |
-                         'demibold' | 'demi' | 'bold' | 'heavy' |
-                         'extra bold' | 'black' ]
-                       weight of station label.  *default* is 'normal'.
-
-        *xlimits*: (xmin, xmax)
-                   limits of map in east-west direction.  *default* is None,
-                   which computes limits from data.
-
-        *ylimits*: (ymin, ymax)
-                   limits of map in north-south direction.  *default* is None,
-                   which computes limits from data.
-
-    :Example: ::
-
-        >>> import mtpy.imaging.mtplot as mtplot
-        >>> import os
-        >>> edipath = '/home/MT/edifiles'
-        >>> edilist = [os.path.join(edipath, edi)
-        >>> ...       for edi in os.listdir(edipath)
-        >>> ...       if edi.find('.edi')>0]
-        >>> ps1 = mtplot.plot_station_locations(fn_list=edilist)
-        >>> # change station label padding and properties
-        >>> ps1.text_pad = .001
-        >>> ps1.text_angle = 60
-        >>> ps1.text_size = 8
-        >>> ps1.text_color = (.5, .5, 0) #orangeish
-        >>> ps1.redraw_plot()
-        >>> ps1.save_plot('/home/MT/figures', file_format='pdf')
-        saved figure to '/home/MT/figures/station_map.pdf'
-
-    =================== =======================================================
-     Attributes          Description
-    =================== =======================================================
-        ax              matplotlib.axes instance of station map
-        fig             matplotlib.figure instance of map figure
-        fig_dpi         dots-per-inch resolution of figure
-        fig_num         number of figure instance
-        fig_size        size of figure in inches
-        font_size       font size of tick labels
-        image_extent    (xmin, xmax, ymin, ymax) extent of image if input
-        image_file      full path to base image file, can be .jpg, .png or .svg
-        map_scale       [ 'latlon' | 'eastnorth' | 'eastnorthkm' ] map scale
-        marker          station marker, see above for options
-        marker_color    color of marker
-        marker_size     size of marker in points
-        mt_list          list of mtpy.imaging.mtplottools.MTplot instances
-        plot_names      [ True | False ] plot station names next to markers
-        plot_title      title of plot
-        plot_yn         [ 'y' | 'n' ] plot on initializing PlotStations
-        ref_point       reference point to center map on.
-        stationid       (index0, index1) to get station label from station name
-        text_angle      angle of station label
-        text_color      color of station label
-        text_ha         horizontal alignment of station label, see above
-        text_pad        padding of station label in y direction
-        text_size       font size of station label
-        text_va         vertical alignment of station label
-        text_weight     font weight of station label
-        xlimits         limits of map in east-west direction
-        ylimits         limits of map in north-south direction
-    =================== =======================================================
-
-    Methods:
-    ---------
-        * *plot*: plots the pseudosection according to keywords
-        * *redraw_plot*: redraws the plot, use if you change some of the
-                         attributes.
-        * *update_plot*: updates the plot, use if you change some of the
-                         axes attributes, figure needs to be open to update.
-        * *save_plot*: saves the plot to given filepath.
+   
 
     """
 
-    def __init__(self, df, **kwargs):
+    def __init__(self, geo_df, **kwargs):
 
         super().__init__(**kwargs)
-        self.df = df
+        self.gdf = geo_df
 
         # --> set plot properties
-        self.plot_title = kwargs.pop("plot_title", None)
-        self.stationid = kwargs.pop("stationid", [0, 4])
+        self.plot_title = None
+        self.station_id = None
+        self.ref_point = (0, 0)
 
-        self.ref_point = kwargs.pop("ref_point", (0, 0))
-
-        self.map_scale = kwargs.pop("map_scale", "latlon")
-        self.plot_names = kwargs.pop("plot_names", True)
+        self.map_epsg = 4326
+        self.plot_names = True
 
         self.image_file = kwargs.pop("image_file", None)
         self.image_extent = kwargs.pop("image_extent", None)
@@ -293,27 +101,20 @@ class PlotStations(PlotSettings):
 
         """
 
-        text_dict = {
-            "size": self.text_size,
-            "weight": self.text_weight,
-            "rotation": self.text_angle,
-            "color": self.text_color,
-        }
+        # if self.map_scale == "latlon":
+        #     xlabel = "Longitude (deg)"
+        #     ylabel = "Latitude (deg)"
 
-        if self.map_scale == "latlon":
-            xlabel = "Longitude (deg)"
-            ylabel = "Latitude (deg)"
-
-            if self.xlimits is None:
-                self._get_xlimits(self.df.longitude)
-            if self.ylimits is None:
-                self._get_ylimits(self.df.latitude)
-        elif self.map_scale == "eastnorth":
-            xlabel = "Easting (m)"
-            ylabel = "Northing (m)"
-        elif self.map_scale == "eastnorthkm":
-            xlabel = "Easting (km)"
-            ylabel = "Northing (km)"
+        #     if self.xlimits is None:
+        #         self._get_xlimits(self.df.longitude)
+        #     if self.ylimits is None:
+        #         self._get_ylimits(self.df.latitude)
+        # elif self.map_scale == "eastnorth":
+        #     xlabel = "Easting (m)"
+        #     ylabel = "Northing (m)"
+        # elif self.map_scale == "eastnorthkm":
+        #     xlabel = "Easting (km)"
+        #     ylabel = "Northing (km)"
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
@@ -324,98 +125,38 @@ class PlotStations(PlotSettings):
         if self.image_file is not None:
             im = plt.imread(self.image_file)
             self.ax.imshow(im, origin="lower", extent=self.image_extent, aspect="auto")
-        for key in list(self.mt_list.map_dict.keys()):
-            self.ax.scatter(
-                self.mt_list.map_dict[key][0],
-                self.mt_list.map_dict[key][1],
-                marker=self.marker,
-                c=self.marker_color,
-                s=self.marker_size,
-            )
+        # plot stations
+        gax = self.gdf.plot(
+            ax=self.ax,
+            marker=self.marker,
+            color=self.marker_color,
+            markersize=self.marker_size,
+        )
 
-            if self.plot_names == True:
-                if self.text_x_pad is None:
-                    self.text_x_pad = 0.0009 * self.mt_list.map_dict[key][0]
-                if self.text_y_pad is None:
-                    self.text_y_pad = 0.0009 * self.mt_list.map_dict[key][1]
-                self.ax.text(
-                    self.mt_list.map_dict[key][0] + self.text_x_pad,
-                    self.mt_list.map_dict[key][1]
-                    + self.text_y_pad * np.sign(self.mt_list.map_dict[key][1]),
-                    key[self.stationid[0] : self.stationid[1]],
-                    verticalalignment=self.text_va,
-                    horizontalalignment=self.text_ha,
-                    fontdict=text_dict,
-                )
+        for x, y, label in zip(
+            self.gdf.geometry.x, self.gdf.geometry.y, self.gdf.station
+        ):
+            gax.annotate(
+                label,
+                xy=(x, y),
+                ha="center",
+                va="baseline",
+                xytext=(x, y + self.text_y_pad),
+                rotation=self.text_angle,
+                color=self.text_color,
+            )
+        if self.image_file is None:
+            cx.add_basemap(
+                gax, crs=self.gdf.crs.to_string(), source=cx.providers.USGS.USTopo
+            )
         # set axis properties
-        self.ax.set_xlabel(xlabel, fontdict=self.font_dict)
-        self.ax.set_ylabel(ylabel, fontdict=self.font_dict)
+        self.ax.set_xlabel("latitude", fontdict=self.font_dict)
+        self.ax.set_ylabel("longitude", fontdict=self.font_dict)
         self.ax.grid(alpha=0.35, color=(0.25, 0.25, 0.25))
-        self.ax.set_xlim(self.xlimits)
-        self.ax.set_ylim(self.ylimits)
+        # self.ax.set_xlim(self.xlimits)
+        # self.ax.set_ylim(self.ylimits)
 
         plt.show()
-
-    def write_station_locations(self, save_path=None):
-        """
-        Write text file containing station locations in map coordinates and
-        relative to ref_point.
-
-        Arguments:
-        ----------
-            **save_path**: string
-                           full path to folder to save file, or full path to
-                           the file to save to. *default* is None, which uses
-                           the directory path of files used to plot.
-
-        Returns:
-        ---------
-            **fn_save_path**: string
-                              full path to text file
-
-        """
-
-        if save_path is None:
-            try:
-                svpath = os.path.dirname(self.mt_list.mt_list[0].fn)
-            except TypeError:
-                raise IOError("Need to input save_path, could not find a path")
-        else:
-            svpath = save_path
-        if self.map_scale == "latlon":
-            hdr_list = ["Station", "Longitude(deg)", "Latitude(deg)", "Elevation(m)"]
-        elif self.map_scale == "eastnorth":
-            hdr_list = ["Station", "Easting(m)", "Northing(m)", "Elevation(m)"]
-        elif self.map_scale == "eastnorthkm":
-            hdr_list = ["Station", "Easting(km)", "Northing(km)", "Elevation(m)"]
-        self.mt_list.get_station_locations(
-            map_scale=self.map_scale, ref_point=self.ref_point
-        )
-
-        fn_svpath = os.path.join(
-            svpath, "StationLocations_{0}.txt".format(self.map_scale)
-        )
-        tfid = open(fn_svpath, "w")
-
-        hdr_str = (
-            ["{0:<15}".format(hdr_list[0])]
-            + ["{0:^15}".format(hh) for hh in hdr_list[1:]]
-            + ["\n"]
-        )
-
-        tfid.write("".join(hdr_str))
-        for ss in list(self.mt_list.map_dict.keys()):
-            x = self.mt_list.map_dict[ss][0]
-            y = self.mt_list.map_dict[ss][1]
-            z = self.mt_list.map_dict[ss][2]
-            if self.map_scale == "latlon":
-                tline = "{0:<15}{1: ^15.3f}{2: ^15.3f}{3: ^15.1f}\n".format(ss, x, y, z)
-            else:
-                tline = "{0:<15}{1: ^15.1f}{2: ^15.1f}{3: ^15.1f}\n".format(ss, x, y, z)
-            tfid.write(tline)
-        tfid.close()
-
-        print("Saved file to: ", fn_svpath)
 
     def save_plot(
         self,
@@ -423,7 +164,7 @@ class PlotStations(PlotSettings):
         file_format="pdf",
         orientation="portrait",
         fig_dpi=None,
-        close_plot="y",
+        close_plot=True,
     ):
         """
         save_plot will save the figure to save_fn.
@@ -468,34 +209,19 @@ class PlotStations(PlotSettings):
 
         """
 
-        sf = "_{0:.6g}".format(self.plot_freq)
-
+        save_fn = Path(save_fn)
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-        if os.path.isdir(save_fn) == False:
-            file_format = save_fn[-3:]
+        if not save_fn.is_dir():
+            file_format = save_fn.suffix
+        else:
+            save_fn = save_fn.joinpath("station.png")
             self.fig.savefig(
                 save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
             )
-            plt.clf()
             plt.close(self.fig)
-        else:
-            if not os.path.exists(save_fn):
-                os.mkdir(save_fn)
-            if not os.path.exists(os.path.join(save_fn, "station_map")):
-                os.mkdir(os.path.join(save_fn, "station_map"))
-                save_fn = os.path.join(save_fn, "station_map")
-            save_fn = os.path.join(
-                save_fn, "PTmap_" + self.ellipse_colorby + sf + "Hz." + file_format
-            )
-            self.fig.savefig(
-                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
-            )
-        if close_plot == "y":
-            plt.clf()
+        if close_plot:
             plt.close(self.fig)
-        else:
-            pass
         self.fig_fn = save_fn
         print("Saved figure to: " + self.fig_fn)
 
