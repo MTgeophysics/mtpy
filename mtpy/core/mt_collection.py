@@ -198,6 +198,8 @@ class MTCollection:
         :rtype: TYPE
 
         """
+        # if not isinstance(tf_id, (list, tuple, np.ndarray)):
+        #     tf_id = [tf_id]
         try:
             ref = self.dataframe[self.dataframe.tf_id == tf_id].hdf5_reference.values[0]
         except IndexError:
@@ -334,6 +336,21 @@ class MTCollection:
             return gdf
         return None
 
+    def plot_mt_response(self, tf_id, **kwargs):
+        """
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        mt_object = self.get_tf(tf_id)
+        return mt_object.plot_mt_response(**kwargs)
+
     def average_stations(
         self, cell_size_m, bounding_box=None, count=1, n_periods=48, new_file=True,
     ):
@@ -351,6 +368,7 @@ class MTCollection:
 
         """
 
+        # cell size in degrees
         r = cell_size_m / 111000.0
 
         if bounding_box:
