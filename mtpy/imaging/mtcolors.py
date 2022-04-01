@@ -280,6 +280,7 @@ cmapdict = {
     "mt_rdylbu": mt_rdylbu,
 }
 # add matplotlib built-in colormaps
+# should use register_cmap and then use get_cmap to remove deprication warning
 cmapdict.update(cm.cmap_d)
 
 # make functions for getting the color from each map according to the variable
@@ -294,43 +295,33 @@ def get_color(cvar, cmap):
     if cmap == "mt_yl2rd":
         plot_color = get_mt_yl2rd(cvar)
         return plot_color
-
     elif cmap == "mt_wh2bl":
         plot_color = get_mt_wh2bl(cvar)
         return plot_color
-
     elif cmap == "mt_bl2wh2rd" or cmap == "mt_seg_bl2wh2rd":
         plot_color = get_mt_bl2wh2rd(cvar)
         return plot_color
-
     elif cmap == "mt_bl2yl2rd":
         plot_color = get_mt_bl2yl2rd(cvar)
         return plot_color
-
     elif cmap == "mt_bl2gr2rd":
         plot_color = get_mt_bl2gr2rd(cvar)
         return plot_color
-
     elif cmap == "mt_rd2gr2bl":
         plot_color = get_mt_rd2gr2bl(cvar)
         return plot_color
-
     elif cmap == "mt_wh2or":
         plot_color = get_mt_wh2or(cvar)
         return plot_color
-
     elif cmap == "mt_rd2wh2bl":
         plot_color = get_mt_rd2wh2bl(cvar)
         return plot_color
-
     elif cmap == "mt_rd2wh2bl_r":
         plot_color = get_mt_rd2wh2bl_r(cvar)
         return plot_color
-
     else:
         try:
             return get_matplotlib_cval(cmap, cvar)
-
         except:
             print("Color map: {0} is not supported yet.".format(cmap))
 
@@ -355,7 +346,6 @@ def get_mt_yl2rd(cvar):
         plot_color = (1, 1, 0)
     else:
         plot_color = (1, 1 - abs(cvar), 0.1)
-
     return plot_color
 
 
@@ -371,7 +361,6 @@ def get_mt_wh2bl(cvar):
         plot_color = (1, 1, 1)
     else:
         plot_color = (1 - abs(cvar), 1 - abs(cvar), 1)
-
     return plot_color
 
 
@@ -387,7 +376,6 @@ def get_mt_wh2or(cvar):
         plot_color = (1, 1, 1)
     else:
         plot_color = (1, abs(cvar) * 0.5 + 0.5, abs(cvar))
-
     return plot_color
 
 
@@ -405,7 +393,6 @@ def get_mt_bl2wh2rd(cvar):
         plot_color = (1, 1 - cvar, 1 - cvar)
     elif cvar >= 1:
         plot_color = (1, 0, 0)
-
     return plot_color
 
 
@@ -423,7 +410,6 @@ def get_mt_bl2yl2rd(cvar):
         plot_color = (1, 1 - cvar, 0.01)
     elif cvar >= 1:
         plot_color = (1, 0, 0)
-
     return plot_color
 
 
@@ -441,7 +427,6 @@ def get_mt_bl2gr2rd(cvar):
         plot_color = (1, 1 - cvar / 2, 1 - cvar)
     elif cvar >= 1:
         plot_color = (1, 0, 0)
-
     return plot_color
 
 
@@ -459,7 +444,6 @@ def get_mt_rd2gr2bl(cvar):
         plot_color = (1 - cvar, 1 - cvar / 2, 1)
     elif cvar >= 1:
         plot_color = (0, 0, 1)
-
     return plot_color
 
 
@@ -477,7 +461,6 @@ def get_mt_rd2wh2bl(cvar):
         plot_color = (1 - cvar, 1 - cvar / 3, 1)
     elif cvar >= 1:
         plot_color = (0, 0, 1)
-
     return plot_color
 
 
@@ -500,7 +483,6 @@ def get_mt_rd2wh2bl_r(cvar):
         plot_color = (-cvar + 1.5, -0.6 * cvar + 0.6, 0)
     elif cvar >= 1:
         plot_color = (0.5, 0, 0)
-
     return plot_color
 
 
@@ -523,7 +505,6 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     ]:
         if ckmin is None or ckmax is None:
             raise IOError("Need to input min and max values for plotting")
-
         """
         cvar = (colorx-ckmin)/(ckmax-ckmin)
         if cmap == 'mt_bl2wh2rd' or cmap == 'mt_bl2yl2rd' or \
@@ -549,11 +530,9 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             return cmapdict[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
-
     elif comp == "skew_seg" or comp == "normalized_skew_seg":
         if bounds is None:
             raise IOError("Need to input bounds for segmented colormap")
-
         """
         for bb in range(bounds.shape[0]):
             if colorx >= bounds[bb] and colorx < bounds[bb+1]:
@@ -585,7 +564,6 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
                 step
                 * round(float(colorx - np.sign(colorx) * (abs(colorx) % step)) / step)
             )
-
         if cmap in list(cmapdict.keys()):
             return cmapdict[cmap](norm(colorx))
         else:

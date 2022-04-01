@@ -131,7 +131,6 @@ class MTEllipse:
         for v in vars(self):
             if v in list(kwargs.keys()):
                 setattr(self, v, kwargs.pop(v, None))
-                
         self.get_range()
         self.get_color_map()
 
@@ -139,9 +138,9 @@ class MTEllipse:
         """
         get a color map 
         """
-        if if self.ellipse_colorby in ["skew_seg","normalized_skew_seg"]:
+        if self.ellipse_colorby in ["skew_seg", "normalized_skew_seg"]:
             self.ellipse_cmap = "mt_seg_bl2wh2rd"
-        
+
     def get_range(self):
         """ 
         get an appropriate range for the colorby
@@ -160,6 +159,7 @@ class MTEllipse:
                 self.ellipse_range = (0, 1, 0.1)
             else:
                 self.ellipse_range = (0, 90, 5)
+
 
 # ==============================================================================
 # Plot settings
@@ -225,7 +225,7 @@ class PlotSettings(MTArrows, MTEllipse):
         self.strike_limits = None
         self.skew_limits = None
         self.pt_limits = None
-        
+
         # Show Plot
         self.show_plot = True
         self.plot_tipper = False
@@ -235,7 +235,6 @@ class PlotSettings(MTArrows, MTEllipse):
         for v in vars(self):
             if v in list(kwargs.keys()):
                 setattr(self, v, kwargs.pop(v, None))
-                
         self.cb_label_dict = {
             "phiminang": r"$\Phi_{min}$ (deg)",
             "phimin": r"$\Phi_{min}$ (deg)",
@@ -255,9 +254,8 @@ class PlotSettings(MTArrows, MTEllipse):
         self.period_label_dict = dict(
             [(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)]
         )
-        
-    @staticmethod
-    def set_period_limits(period):
+
+    def set_period_limits(self, period):
         """
         set period limits
         
@@ -265,14 +263,13 @@ class PlotSettings(MTArrows, MTEllipse):
         :rtype: TYPE
 
         """
-        
+
         return (
             10 ** (np.floor(np.log10(period.min()))),
             10 ** (np.ceil(np.log10(period.max()))),
         )
-    
-    @staticmethod
-    def set_resistivity_limits(resistivity, mode="od"):
+
+    def set_resistivity_limits(self, resistivity, mode="od"):
         """
         set resistivity limits
         
@@ -287,26 +284,34 @@ class PlotSettings(MTArrows, MTEllipse):
 
         if mode == "od":
             return (
-            10
-            ** (
-                np.floor(
-                    np.log10(
-                        min([np.nanmin(resistivity[:, 0, 1]),
-                             np.nanmin(resistivity[:, 1, 0])])
+                10
+                ** (
+                    np.floor(
+                        np.log10(
+                            min(
+                                [
+                                    np.nanmin(resistivity[:, 0, 1]),
+                                    np.nanmin(resistivity[:, 1, 0]),
+                                ]
+                            )
+                        )
                     )
-                )
-            ),
-            10
-            ** (
-                np.ceil(
-                    np.log10(
-                        max([np.nanmax(resistivity[:, 0, 1]),
-                             np.nanmax(resistivity[:, 1, 0])])
+                ),
+                10
+                ** (
+                    np.ceil(
+                        np.log10(
+                            max(
+                                [
+                                    np.nanmax(resistivity[:, 0, 1]),
+                                    np.nanmax(resistivity[:, 1, 0]),
+                                ]
+                            )
+                        )
                     )
-                )
+                ),
             )
-        )
-        
+
     @property
     def xy_error_bar_properties(self):
         """
@@ -326,8 +331,8 @@ class PlotSettings(MTArrows, MTEllipse):
             "lw": self.lw,
             "capsize": self.marker_size,
             "capthick": self.lw,
-            }
-    
+        }
+
     @property
     def yx_error_bar_properties(self):
         """
@@ -347,11 +352,55 @@ class PlotSettings(MTArrows, MTEllipse):
             "lw": self.lw,
             "capsize": self.marker_size,
             "capthick": self.lw,
-            }
-    
+        }
+
+    @property
+    def det_error_bar_properties(self):
+        """
+        xy error bar properties for xy mode
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        return {
+            "marker": self.det_marker,
+            "ms": self.marker_size,
+            "mew": self.lw,
+            "mec": self.det_color,
+            "color": self.det_color,
+            "ecolor": self.det_color,
+            "ls": self.det_ls,
+            "lw": self.lw,
+            "capsize": self.marker_size,
+            "capthick": self.lw,
+        }
+
     @property
     def font_dict(self):
         return {"size": self.font_size + 2, "weight": "bold"}
+
+    @property
+    def arrow_real_properties(self):
+        return {
+            "lw": self.arrow_lw,
+            "facecolor": self.arrow_color_real,
+            "edgecolor": self.arrow_color_real,
+            "head_width": self.arrow_head_width,
+            "head_length": self.arrow_head_length,
+            "length_includes_head": False,
+        }
+
+    @property
+    def arrow_imag_properties(self):
+        return {
+            "lw": self.arrow_lw,
+            "facecolor": self.arrow_color_imag,
+            "edgecolor": self.arrow_color_imag,
+            "head_width": self.arrow_head_width,
+            "head_length": self.arrow_head_length,
+            "length_includes_head": False,
+        }
+
 
 # ==============================================================================
 # grid data onto a map view
@@ -466,21 +515,7 @@ def make_value_str(
 # ==============================================================================
 # function for error bar plots
 # ==============================================================================
-def plot_errorbar(
-    ax,
-    x_array,
-    y_array,
-    y_error=None,
-    x_error=None,
-    color="k",
-    marker="x",
-    ms=2,
-    ls=":",
-    lw=1,
-    e_capsize=2,
-    e_capthick=0.5,
-    picker=None,
-):
+def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None, **kwargs):
     """
     convinience function to make an error bar instance
     
@@ -506,6 +541,9 @@ def plot_errorbar(
                     
         **marker** : string
                      marker type to plot data as
+        
+        **mew** : string
+                     marker edgewidth
                      
         **ms** : float
                  size of marker
@@ -542,23 +580,24 @@ def plot_errorbar(
         y_err = y_error
     else:
         y_err = None
+    plt_settings = {
+        "color": "k",
+        "marker": "x",
+        "mew": 1,
+        "mec": "k",
+        "ms": 2,
+        "ls": ":",
+        "lw": 1,
+        "capsize": 2,
+        "capthick": 0.5,
+        "ecolor": "k",
+        "elinewidth": 1,
+        "picker": None,
+    }
+
+    for key, value in kwargs.items():
+        plt_settings[key] = value
     errorbar_object = ax.errorbar(
-        x_array,
-        y_array,
-        marker=marker,
-        ms=ms,
-        mfc="None",
-        mew=lw,
-        mec=color,
-        ls=ls,
-        xerr=x_err,
-        yerr=y_err,
-        ecolor=color,
-        color=color,
-        picker=picker,
-        lw=lw,
-        elinewidth=lw,
-        capsize=e_capsize,
-        #                                  capthick=e_capthick
+        x_array, y_array, xerr=x_err, yerr=y_err, **plt_settings
     )
     return errorbar_object
