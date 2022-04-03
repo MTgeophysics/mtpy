@@ -20,7 +20,7 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
+import mtpy.imaging.mtplot_tools as mtpl
 from mtpy.analysis.pt import PhaseTensor
 from mtpy.analysis.zinvariants import Zinvariants
 
@@ -363,7 +363,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
         if self.ellipse_size == 2 and self.ellipse_spacing == 1:
             self.ellipse_size = 0.25
-
         # --> set text box parameters
         self.text_location = kwargs.pop("text_location", None)
         self.text_xpad = kwargs.pop("text_xpad", 1.35)
@@ -389,7 +388,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         """
         for ii, mt in enumerate(self.mt_list):
             mt.rotation_angle = value
-
         self._rotation_angle = value
 
     # --> on setting plot_ make sure to update the order and list
@@ -477,7 +475,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             if self.plot_dict[key].find("y") == 0:
                 pdict[key] = index
                 index += 1
-
         # get number of rows needed
         nrows = index
 
@@ -510,10 +507,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             if self.fig_size is None:
                 if self.plot_num == 1 or self.plot_num == 3:
                     self.fig_size = [ns * 4, 6]
-
                 elif self.plot_num == 2:
                     self.fig_size = [ns * 8, 6]
-
             # make a figure instance
             self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
@@ -558,7 +553,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             )
                         ),
                     )
-
                 # create a grid to place the figures into, set to have 2 rows
                 # and 2 columns to put any of the 4 components.  Make the phase
                 # plot slightly shorter than the apparent resistivity plot and
@@ -583,7 +577,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     )  # --> make figure for xy,yx components
                     # space out the subplots
                     # gs.update(hspace=.05, wspace=.02, left=.1)
-
                 # --> make figure for all 4 components
                 elif self.plot_num == 2:
                     # --> create the axes instances
@@ -595,7 +588,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     # space out the subplots
                     # gs.update(hspace=.05, wspace=.02, left=.07)
-
                 # place y coordinate labels in the same location
                 axr.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 axp.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
@@ -606,7 +598,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
-
                 # --> plot phase tensors
                 try:
                     # can't share axis because not on the same scale
@@ -616,7 +607,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
-
                 # --> plot strike
                 try:
                     axst = self.fig.add_subplot(
@@ -625,7 +615,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axst.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
-
                 # --> plot skew
                 try:
                     axsk = self.fig.add_subplot(
@@ -634,7 +623,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     axsk.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
-
                 # ---------plot the apparent resistivity----------------------
                 # --> plot as error bars and just as points xy-blue, yx-red
                 # res_xy
@@ -694,7 +682,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     )
                 else:
                     plt.setp(axr.get_yticklabels(), visible=False)
-
                 # -----Plot the phase----------------------------------------
                 # phase_xy
                 ebxyp = axp.errorbar(
@@ -733,20 +720,17 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     pymin = min(0, min([min(rp.phase_xy), min(rp.phase_yx)]))
                     pymax = max(89.9, max([max(rp.phase_xy), max(rp.phase_yx)]))
                     self.phase_limits = (pymin, pymax)
-
                 # --> set axes properties
                 if ii == 0:
                     axp.set_ylabel("Phase (deg)", fontdict)
                 else:
                     plt.setp(axp.get_yticklabels(), visible=False)
-
                 if (
                     self.plot_tipper == "n"
                     and self.plot_skew == "n"
                     and self.plot_strike == "n"
                 ):
                     axp.set_xlabel("Period (s)", fontdict)
-
                 axp.set_xscale("log", nonpositive="clip")
                 if self.phase_limits is None:
                     self.phase_limits = (-179.9, 179.9)
@@ -772,7 +756,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 if len(list(pdict.keys())) > 2:
                     plt.setp(axp.xaxis.get_ticklabels(), visible=False)
                     plt.setp(axp.xaxis.get_label(), visible=False)
-
                 # -----plot tipper--------------------------------------------
                 if self._plot_tipper.find("y") == 0:
                     plt.setp(axp.xaxis.get_ticklabels(), visible=False)
@@ -821,7 +804,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 line1 = axt.plot(0, 0, self.arrow_color_real)
                                 tiplist.append(line1[0])
                                 tiplabel.append("real")
-
                         # --> plot imaginary arrows
                         if self.plot_tipper.find("i") > 0:
                             axt.arrow(
@@ -840,7 +822,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 line2 = axt.plot(0, 0, self.arrow_color_imag)
                                 tiplist.append(line2[0])
                                 tiplabel.append("imag")
-
                     # make a line at 0 for reference
                     axt.plot(mt.period, [0] * nt, "k", lw=0.5)
 
@@ -860,7 +841,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         axt.set_ylabel("Tipper", fontdict=fontdict)
                     else:
                         plt.setp(axt.get_yticklabels(), visible=False)
-
                     # set axis properties
                     axt.yaxis.set_major_locator(MultipleLocator(0.2))
                     axt.yaxis.set_minor_locator(MultipleLocator(0.1))
@@ -871,13 +851,10 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         tmax = max([tyr.max(), tyi.max()])
                         if tmax > 1:
                             tmax = 0.899
-
                         tmin = min([tyr.min(), tyi.min()])
                         if tmin < -1:
                             tmin = -0.899
-
                         self.tipper_limits = (tmin - 0.1, tmax + 0.1)
-
                     axt.set_ylim(self.tipper_limits)
                     axt.grid(
                         True,
@@ -900,11 +877,9 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     if pdict["tip"] != nrows - 1:
                         plt.setp(axt.get_yticklabels(), visible=False)
-
                     # need to reset the xlimits caouse they get reset when calling
                     # set_ticks for some reason
                     axt.set_xlim(np.log10(self.xlimits[0]), np.log10(self.xlimits[1]))
-
                 # ------plot strike angles----------------------------------------------
                 if self._plot_strike.find("y") == 0:
 
@@ -937,7 +912,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         stlabel.append("Z_inv")
                         st_maxlist.append(s1.max())
                         st_minlist.append(s1.min())
-
                     if self._plot_strike.find("p") > 0:
                         # strike from phase tensor
                         pt = mt.pt  # type: PhaseTensor
@@ -967,7 +941,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         stlabel.append("PT")
                         st_maxlist.append(s2.max())
                         st_minlist.append(s2.min())
-
                     if self._plot_strike.find("t") > 0:
                         # strike from tipper
                         tp = mt.Tipper
@@ -997,7 +970,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         stlabel.append("Tip")
                         st_maxlist.append(s3.max())
                         st_minlist.append(s3.min())
-
                     # --> set axes properties
                     if self.strike_limits is None:
                         stmin = min(st_minlist)
@@ -1005,7 +977,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             stmin -= 3
                         else:
                             stmin = -89.99
-
                         stmax = max(st_maxlist)
                         if stmin + 3 < 90:
                             stmin += 3
@@ -1015,7 +986,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             -max([abs(stmin), abs(stmax)]),
                             max([abs(stmin), abs(stmax)]),
                         )
-
                     axst.plot(axr.get_xlim(), [0, 0], color="k", lw=0.5)
                     if ii == 0:
                         axst.set_ylabel("Strike", fontdict=fontdict)
@@ -1048,11 +1018,9 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             )
                         except:
                             pass
-
                     # set th xaxis tick labels to invisible
                     if pdict["strike"] != nrows - 1:
                         plt.setp(axst.xaxis.get_ticklabels(), visible=False)
-
                 # ------plot skew angle---------------------------------------------
                 if self._plot_skew == "y":
                     # strike from phase tensor
@@ -1077,7 +1045,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     stlabel.append("Skew")
                     if self.skew_limits is None:
                         self.skew_limits = (-9, 9)
-
                     axsk.set_ylim(self.skew_limits)
                     axsk.yaxis.set_major_locator(MultipleLocator(3))
                     axsk.yaxis.set_minor_locator(MultipleLocator(1))
@@ -1091,7 +1058,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     # set th xaxis tick labels to invisible
                     if pdict["skew"] != nrows - 1:
                         plt.setp(axsk.xaxis.get_ticklabels(), visible=False)
-
                 # ----plot phase tensor ellipse---------------------------------------
                 if self._plot_pt == "y":
                     # get phase tensor instance
@@ -1104,27 +1070,22 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         ckstep = float(self.ellipse_range[2])
                     except IndexError:
                         ckstep = 3
-
                     if cmap == "mt_seg_bl2wh2rd":
                         bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
                         nseg = float((ckmax - ckmin) / (2 * ckstep))
-
                     # get the properties to color the ellipses by
                     if (
                         self.ellipse_colorby == "phiminang"
                         or self.ellipse_colorby == "phimin"
                     ):
                         colorarray = pt.phimin
-
                     elif self.ellipse_colorby == "phidet":
                         colorarray = np.sqrt(abs(pt.det)) * (180 / np.pi)
-
                     elif (
                         self.ellipse_colorby == "skew"
                         or self.ellipse_colorby == "skew_seg"
                     ):
                         colorarray = pt.beta
-
                     elif self.ellipse_colorby == "ellipticity":
                         colorarray = pt.ellipticity
                     elif self.ellipse_colorby in ["strike", "azimuth"]:
@@ -1132,10 +1093,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         self.ellipse_range = (-90, 90)
                         ckmin = self.ellipse_range[0]
                         ckmax = self.ellipse_range[1]
-
                     else:
                         raise NameError(self.ellipse_colorby + " is not supported")
-
                     # -------------plot ellipses-----------------------------------
                     for kk, ff in enumerate(mt.period):
                         # make sure the ellipses will be visable
@@ -1177,7 +1136,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                     ckmax,
                                 )
                             )
-
                     # ----set axes properties-----------------------------------------------
                     # --> set tick labels and limits
                     axpt.set_xlim(
@@ -1211,7 +1169,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     plt.setp(axpt.get_yticklabels(), visible=False)
                     if pdict["pt"] != nrows - 1:
                         plt.setp(axpt.get_xticklabels(), visible=False)
-
                     # add colorbar for PT only for first plot
                     if ii == 0:
                         axpos = axpt.get_position()
@@ -1274,7 +1231,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             mtpl.ckdict[self.ellipse_colorby],
                             fontdict={"size": self.font_size},
                         )
-
                 # ==  == Plot the Z_xx, Z_yy components if desired ==
                 if self.plot_num == 2:
                     # ---------plot the apparent resistivity----------------
@@ -1338,7 +1294,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             handletextpad=0.2,
                             borderpad=0.02,
                         )
-
                     # -----Plot the phase-----------------------------------
                     axp2 = self.fig.add_subplot(gs[1, 1], sharex=axr, sharey=axp)
                     axp2.yaxis.set_label_coords(-0.1, 0.5)
@@ -1399,7 +1354,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     if len(list(pdict.keys())) > 2:
                         plt.setp(axp2.xaxis.get_ticklabels(), visible=False)
                         plt.setp(axp2.xaxis.get_label(), visible=False)
-
                 # == =Plot the Determinant if desired ==  ==  ==  ==
                 if self.plot_num == 3:
 
@@ -1443,7 +1397,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         )
                     else:
                         plt.setp(axr.get_yticklabels(), visible=False)
-
                     axr.set_yscale("log", nonpositive="clip")
                     axr.set_xscale("log", nonpositive="clip")
                     axr.set_ylim(self.res_limits)
@@ -1461,10 +1414,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                     if ii == 0:
                         axp.set_ylabel("Phase (deg)", fontdict)
-
                     else:
                         plt.setp(axp.get_yticklabels(), visible=False)
-
                     axp.set_xscale("log", nonpositive="clip")
                     axp.set_ylim(self.phase_limits)
                     axp.yaxis.set_major_locator(MultipleLocator(15))
@@ -1486,13 +1437,11 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         color=(0.25, 0.25, 0.25),
                         lw=0.25,
                     )
-
                 # make title and show
 
                 axr.set_title(mt.station, fontsize=self.font_size, fontweight="bold")
             if show:
                 plt.show()
-
         # ===Plot all responses into one plot to compare changes ==
         if self.plot_style == "compare":
             ns = len(self.mt_list)
@@ -1533,11 +1482,9 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 if self.plot_num == 1 or self.plot_num == 3:
                     self.fig_size = [8, 6]
                     pass
-
                 elif self.plot_num == 2:
                     self.fig_size = [8, 6]
                     nrows += 1
-
             # make a figure instance
             self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
@@ -1553,7 +1500,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
                 # space out the subplots
                 gs.update(hspace=0.05, wspace=0.02, left=0.1)
-
             # --> make figure for all 4 components
             elif self.plot_num == 2:
                 # set label coordinates
@@ -1565,7 +1511,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 for key in pdict:
                     if key != "res" and key != "phase":
                         pdict[key] += 1
-
             # --> create the axes instances
             # apparent resistivity axis
             self.axrxy = self.fig.add_subplot(gs[0, 0])
@@ -1590,7 +1535,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #                                 labelcoords[1])
             except KeyError:
                 pass
-
             # --> plot phase tensors
             try:
                 # can't share axis because not on the same scale
@@ -1599,7 +1543,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #                                  labelcoords[1])
             except KeyError:
                 pass
-
             # --> plot strike
             try:
                 self.axst = self.fig.add_subplot(
@@ -1609,7 +1552,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #                                  labelcoords[1])
             except KeyError:
                 pass
-
             # --> plot skew
             try:
                 self.axsk = self.fig.add_subplot(
@@ -1619,7 +1561,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 #                                  labelcoords[1])
             except KeyError:
                 pass
-
             for ii, mt in enumerate(self.mt_list):
                 # get the reistivity and phase object
 
@@ -1648,7 +1589,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     )
                 if self.phase_limits is None:
                     self.phase_limits = (0, 89.9)
-
                 stationlist.append(mt.station)
 
                 # ==  ==  ==  == =Plot Z_xy and Z_yx ==
@@ -1807,7 +1747,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         capsize=self.marker_size,
                         elinewidth=self.marker_lw,
                     )
-
                 # ===Plot the Determinant if desired ==
                 if self.plot_num == 3:
                     # res_det
@@ -1845,7 +1784,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     )
 
                     legendlistxy.append(ebdetr)
-
                 # -----plot tipper----------------------------------------------
                 if self._plot_tipper.find("y") == 0:
 
@@ -1899,7 +1837,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                             tmin = max([-1, tmin])
                             tmax = min([1, tmax])
                             self.tipper_limits = (tmin, tmax)
-
                         # --> plot real arrows
                         if self._plot_tipper.find("r") > 0:
                             self.axt.arrow(
@@ -1914,7 +1851,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 head_length=self.arrow_head_length,
                                 length_includes_head=False,
                             )
-
                         # --> plot imaginary arrows
                         if self._plot_tipper.find("i") > 0:
                             self.axt.arrow(
@@ -1927,10 +1863,8 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 head_length=self.arrow_head_length,
                                 length_includes_head=False,
                             )
-
                     lt = self.axt.plot(0, 0, lw=1, color=ctipr[ii])
                     tiplist.append(lt[0])
-
                 # ------plot strike angles----------------------------------------------
                 if self._plot_strike.find("y") == 0:
                     if self._plot_strike.find("p") > 0:
@@ -1959,7 +1893,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         )
 
                         stlist.append(ps2[0])
-
                     if self._plot_strike.find("t") > 0:
                         # strike from tipper
                         s3 = mt.Tipper.angle_real + 90
@@ -1985,7 +1918,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         )
 
                         stlist.append(ps3[0])
-
                 # ------plot skew angle---------------------------------------------
                 if self._plot_skew == "y":
                     # strike from phase tensor
@@ -2007,7 +1939,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         elinewidth=self.marker_lw,
                     )
                     stlist.append(ps4[0])
-
                 # ----plot phase tensor ellipse---------------------------------------
                 if self._plot_pt == "y":
                     # get phase tensor instance
@@ -2020,33 +1951,26 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                         ckstep = float(self.ellipse_range[2])
                     except IndexError:
                         ckstep = 3
-
                     if cmap == "mt_seg_bl2wh2rd":
                         bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
                         nseg = float((ckmax - ckmin) / (2 * ckstep))
-
                     # get the properties to color the ellipses by
                     if (
                         self.ellipse_colorby == "phiminang"
                         or self.ellipse_colorby == "phimin"
                     ):
                         colorarray = mt.pt.phimin
-
                     elif self.ellipse_colorby == "phidet":
                         colorarray = np.sqrt(abs(mt.pt.det)) * (180 / np.pi)
-
                     elif (
                         self.ellipse_colorby == "skew"
                         or self.ellipse_colorby == "skew_seg"
                     ):
                         colorarray = mt.pt.beta
-
                     elif self.ellipse_colorby == "ellipticity":
                         colorarray = mt.pt.ellipticity
-
                     else:
                         raise NameError(self.ellipse_colorby + " is not supported")
-
                     # -------------plot ellipses-----------------------------------
                     for kk, ff in enumerate(mt.period):
                         # make sure the ellipses will be visable
@@ -2093,7 +2017,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                 )
                             )
                         ellipd.set_edgecolor(cxy[ii])
-
             # -------set axis properties---------------------------------------
             self.axrxy.set_yscale("log", nonpositive="clip")
             self.axrxy.set_xscale("log", nonpositive="clip")
@@ -2111,7 +2034,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             else:
                 txloc = self.text_location[0]
                 tyloc = self.text_location[1]
-
             self.text = self.axrxy.text(
                 txloc,
                 tyloc,
@@ -2152,7 +2074,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             # check the phase to see if any point are outside of [0:90]
             if self.phase_limits is None:
                 self.phase_limits = (0, 89.99)
-
             # --> set axes properties
             self.axpxy.set_xlabel("Period(s)", fontdict=fontdict)
             self.axpxy.set_ylabel("Phase(deg)", fontdict=fontdict)
@@ -2166,7 +2087,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             if len(list(pdict.keys())) > 2:
                 plt.setp(self.axpxy.xaxis.get_ticklabels(), visible=False)
                 self.axpxy.set_xlabel("")
-
             self.axpyx.set_xlabel("Period(s)", fontdict=fontdict)
             self.axpyx.set_xscale("log", nonpositive="clip")
             self.axpyx.set_ylim(self.phase_limits)
@@ -2180,7 +2100,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
             if len(list(pdict.keys())) > 2:
                 plt.setp(self.axpyx.xaxis.get_ticklabels(), visible=False)
                 self.axpyx.set_xlabel("")
-
             # make legend
             if self.plot_num == 1:
                 self.axrxy.legend(
@@ -2206,7 +2125,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     handletextpad=0.2,
                     borderpad=0.25,
                 )
-
             elif self.plot_num == 3:
                 llist = [ll[0] for ll in legendlistxy]
                 slist = [ss + "_det" for ss in stationlist]
@@ -2231,7 +2149,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     handletextpad=0.2,
                     borderpad=0.25,
                 )
-
             if self.plot_num == 2:
                 # --> set axes properties for resxx
                 self.axrxy.set_yscale("log", nonpositive="clip")
@@ -2275,7 +2192,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     self.axpxy.set_xlabel("")
                     plt.setp(self.axpyx.xaxis.get_ticklabels(), visible=False)
                     self.axpyx.set_xlabel("")
-
             if self._plot_tipper.find("y") == 0:
                 self.axt.plot(self.axt.get_xlim(), [0, 0], color="k", lw=0.5)
                 # --> set axis properties Tipper
@@ -2284,7 +2200,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                     self.axpxy.set_xlabel("")
                     plt.setp(self.axpyx.get_xticklabels(), visible=False)
                     self.axpyx.set_xlabel("")
-
                 self.axt.yaxis.set_major_locator(MultipleLocator(0.2))
                 self.axt.yaxis.set_minor_locator(MultipleLocator(0.1))
                 self.axt.set_xlabel("Period(s)", fontdict=fontdict)
@@ -2325,7 +2240,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 if pdict["tip"] != nrows - 1:
                     plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
                     self.axt.set_xlabel(" ")
-
             # --> set axes properties for strike and skew
             if self._plot_strike[0] == "y":
 
@@ -2354,7 +2268,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 if pdict["strike"] != nrows - 1:
                     plt.setp(self.axst.xaxis.get_ticklabels(), visible=False)
                     self.axst.set_xlabel(" ")
-
             # --> set axes properties for skew
             if self._plot_skew == "y":
                 self.axsk.set_ylim(self.skew_limits)
@@ -2409,7 +2322,6 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                 plt.setp(self.axpt.get_yticklabels(), visible=False)
                 if pdict["pt"] != nrows - 1:
                     plt.setp(self.axpt.get_xticklabels(), visible=False)
-
                 # add colorbar for PT
                 axpos = self.axpt.get_position()
                 cb_position = (

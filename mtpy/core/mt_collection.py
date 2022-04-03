@@ -22,6 +22,7 @@ from shapely.geometry import Point
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.imaging import PlotStations, PlotMTResponse
 
 from mth5.mth5 import MTH5
 
@@ -136,7 +137,7 @@ class MTCollection:
                 fn_list += list(path.glob(f"*.{ext}"))
         return fn_list
 
-    def initialize_collection(
+    def open_collection(
         self, basename="mt_collection", working_directory=None, mode="a"
     ):
         """
@@ -155,7 +156,7 @@ class MTCollection:
 
         self.mth5_collection.open_mth5(self.mth5_filename, mode)
 
-    def close(self):
+    def close_collection(self):
         """
         close mth5
         
@@ -307,7 +308,7 @@ class MTCollection:
         Make a geopandas dataframe for easier GIS manipulation
         
         """
-        coordinate_system = {"init": f"epsg:{epsg}"}
+        coordinate_system = f"epsg:{epsg}"
         gdf = gpd.GeoDataFrame(
             self.dataframe[
                 self.dataframe.columns[
@@ -357,21 +358,6 @@ class MTCollection:
 
             return gdf
         return None
-
-    def plot_mt_response(self, tf_id, **kwargs):
-        """
-        
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :param **kwargs: DESCRIPTION
-        :type **kwargs: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        mt_object = self.get_tf(tf_id)
-        return mt_object.plot_mt_response(**kwargs)
 
     def average_stations(
         self, cell_size_m, bounding_box=None, count=1, n_periods=48, new_file=True,
@@ -463,6 +449,35 @@ class MTCollection:
                         self.logger.exception("Failed to average files %s", error)
                 else:
                     continue
-        return MTCollection(
-            self.make_dataframe_from_file_list(new_fn_list), self.mt_path
-        )
+        # return MTCollection(
+        #     self.make_dataframe_from_file_list(new_fn_list), self.mt_path
+        # )
+
+    def plot_mt_response(self, tf_id, **kwargs):
+        """
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        mt_object = self.get_tf(tf_id)
+        return mt_object.plot_mt_response(**kwargs)
+
+    def plot_stations(self, gdf=None, map_epsg=4326, **kwargs):
+        """
+        plot stations
+        
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if gdf is None:
+            gdf = self.to_geo_df(epsg=map_epsg)
+        return PlotStations(gdf, **kwargs)

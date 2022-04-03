@@ -20,7 +20,7 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
+import mtpy.imaging.mtplot_tools as mtpl
 import mtpy.analysis.pt as mtpt
 import scipy.signal as sps
 
@@ -428,7 +428,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ellipse_size = 500
             self.ellipse_colorby = "geometric_mean"
             self.ellipse_scale = kwargs.pop("ellipse_scale", None)
-
         elif self.map_scale == "km":
             self.xpad = kwargs.pop("xpad", 1)
             self.ypad = kwargs.pop("ypad", 1)
@@ -438,7 +437,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ellipse_size = 0.500
             self.ellipse_colorby = "geometric_mean"
             self.ellipse_scale = kwargs.pop("ellipse_scale", None)
-
         self.font_size = kwargs.pop("font_size", 7)
 
         # --> set the freq to plot
@@ -460,16 +458,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self._rot_z = kwargs.pop("rot_z", 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
             self._rot_z = np.array([self._rot_z] * len(self.mt_list1))
-
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
         elif type(self._rot_z) is np.ndarray:
             if self._rot_z.shape[0] != len(self.mt_list1):
                 self._rot_z = np.repeat(self._rot_z, len(self.mt_list1))
-
         else:
             pass
-
         # --> set background image properties
         image_dict = kwargs.pop("image_dict", None)
         if image_dict != None:
@@ -478,10 +473,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 self.image_file = image_dict["file"]
                 if not os.path.isfile(image_dict["file"]):
                     raise IOError("Image file does not exist")
-
             except KeyError:
                 raise IOError("Need to include filename if plotting an image")
-
             # make sure an extent is given
             try:
                 self.image_extent = image_dict["extent"]
@@ -490,7 +483,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     "Need to include the extent of the image as "
                     + "(left, right, bottom, top)"
                 )
-
         # --> set a central reference point
         self.plot_reference_point = kwargs.pop("reference_point", (0, 0))
 
@@ -517,16 +509,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         # mt_list for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
             self._rot_z = np.array([rot_z] * len(self.mt_list))
-
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0] != len(self.mt_list):
                 self._rot_z = np.repeat(rot_z, len(self.mt_list))
-
         else:
             pass
-
         for ii, mt in enumerate(self.mt_list):
             mt.rot_z = self._rot_z[ii]
 
@@ -547,7 +536,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             freq_list.extend(mt1.frequency)
         for mt2 in self.mt_list2:
             freq_list.extend(mt2.frequency)
-
         self.freq_list = np.array(sorted(set(freq_list), reverse=True))
 
     # ------------------------------------------------------------------
@@ -704,13 +692,11 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                     mt1.station, freq
                                 )
                             )
-
                     break
                 else:
                     pass
             if station_find == False:
                 print("Did not find {0} from list 1 in list 2".format(mt1.station))
-
         # from the data get the relative offsets and sort the data by them
         self.rpt_array.sort(order=["lon", "lat"])
 
@@ -759,7 +745,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             if self.map_scale == "deg":
                 plotx = rpt["lon"] - self.plot_reference_point[0]
                 ploty = rpt["lat"] - self.plot_reference_point[1]
-
             # if map scale is in meters easting and northing
             elif self.map_scale == "m":
                 east, north, zone = gis_tools.project_point_ll2utm(
@@ -771,7 +756,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     zone1 = zone
                     plotx = east - self.plot_reference_point[0]
                     ploty = north - self.plot_reference_point[1]
-
                 # read in all the other point
                 else:
                     # check to make sure the zone is the same this needs
@@ -789,7 +773,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     else:
                         plotx = east - self.plot_reference_point[0]
                         ploty = north - self.plot_reference_point[1]
-
             # if map_scale is in km easting and northing
             elif self.map_scale == "km":
                 east, north, zone = gis_tools.project_point_ll2utm(
@@ -799,7 +782,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     zone1 = zone
                     plotx = (east - self.plot_reference_point[0]) / 1000.0
                     ploty = (north - self.plot_reference_point[1]) / 1000.0
-
                 else:
                     if zone1 != zone:
                         print("Zone change at station {0}".format(rpt["station"]))
@@ -809,13 +791,11 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                             east += 500000
                         else:
                             east -= 500000
-
                         plotx = (east - self.plot_reference_point[0]) / 1000.0
                         ploty = (north - self.plot_reference_point[1]) / 1000.0
                     else:
                         plotx = (east - self.plot_reference_point[0]) / 1000.0
                         ploty = (north - self.plot_reference_point[1]) / 1000.0
-
             # put the location of each ellipse into an array in x and y
             rpt["plotx"] = plotx
             rpt["ploty"] = ploty
@@ -837,7 +817,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         # get residual phase tensor for plotting
         if self.rpt_array is None:
             self._compute_residual_pt()
-
         # get frequency index
         self._get_plot_freq_index()
 
@@ -855,7 +834,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             title_freq = "{0:.5g} (s)".format(1.0 / self.plot_freq)
         else:
             title_freq = "{0:.5g} (Hz)".format(self.plot_freq)
-
         self.fig = plt.figure(title_freq, self.fig_size, dpi=self.fig_dpi)
 
         # clear the figure if there is already one up
@@ -870,7 +848,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ax.imshow(im, origin="lower", extent=self.image_extent, aspect="auto")
         except AttributeError:
             pass
-
         # set some local parameters
         es = float(self.ellipse_size)
         cmap = self.ellipse_cmap
@@ -892,14 +869,11 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         if cmap == "mt_seg_bl2wh2rd":
             bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
             nseg = float((ckmax - ckmin) / (2 * ckstep))
-
         # set tick parameters depending on the map_scale
         if self.map_scale == "deg":
             self.tickstrfmt = "%.3f"
-
         elif self.map_scale == "m" or self.map_scale == "km":
             self.tickstrfmt = "%.0f"
-
         # --> get size of largest ellipse for this frequency for
         #    normalization to give an indication of the size of
         #    change.
@@ -907,7 +881,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             emax = self.rpt_array["phimax"].max()
         else:
             emax = self.ellipse_scale
-
         # --> plot
         for ii, rpt in enumerate(self.rpt_array):
             # --> get ellipse properties
@@ -915,17 +888,14 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             if rpt["phimax"][f_index] == 0 and rpt["phimax"][f_index] == 0:
                 eheight = 0.0000001 * es
                 ewidth = 0.0000001 * es
-
             elif rpt["phimax"][f_index] > 100 or rpt["phimax"][f_index] > 100:
                 eheight = 0.0000001 * es
                 ewidth = 0.0000001 * es
                 print("Bad data at {0}".format(rpt["station"]))
-
             else:
                 scaling = es / emax
                 eheight = rpt["phimin"][f_index] * scaling
                 ewidth = rpt["phimax"][f_index] * scaling
-
             # make an ellipse
             if self.rot90 == True:
                 ellipd = patches.Ellipse(
@@ -941,7 +911,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     height=eheight,
                     angle=rpt["azimuth"][f_index],
                 )
-
             # get ellipse color
             if cmap.find("seg") > 0:
                 ellipd.set_facecolor(
@@ -953,7 +922,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 ellipd.set_facecolor(
                     mtcl.get_plot_color(rpt[ckey][f_index], ckey, cmap, ckmin, ckmax)
                 )
-
             # ==> add ellipse to the plot
             self.ax.add_artist(ellipd)
 
@@ -967,7 +935,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     verticalalignment="baseline",
                     fontdict=self.station_font_dict,
                 )
-
         # --> set axes properties depending on map scale------------------------
         if self.map_scale == "deg":
             self.ax.set_xlabel(
@@ -976,7 +943,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ax.set_ylabel(
                 "Latitude", fontsize=self.font_size + 2, fontweight="bold"
             )
-
         elif self.map_scale == "m":
             self.ax.set_xlabel(
                 "Easting (m)", fontsize=self.font_size + 2, fontweight="bold"
@@ -984,7 +950,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ax.set_ylabel(
                 "Northing (m)", fontsize=self.font_size + 2, fontweight="bold"
             )
-
         elif self.map_scale == "km":
             self.ax.set_xlabel(
                 "Easting (km)", fontsize=self.font_size + 2, fontweight="bold"
@@ -992,7 +957,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ax.set_ylabel(
                 "Northing (km)", fontsize=self.font_size + 2, fontweight="bold"
             )
-
         # --> set plot limits
         self.ax.set_xlim(
             self.rpt_array["plotx"].min() - self.xpad,
@@ -1012,7 +976,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             title_freq = "{0:.5g} (s)".format(1.0 / self.plot_freq)
         else:
             title_freq = "{0:.5g} (Hz)".format(self.plot_freq)
-
         if not self.plot_title:
             self.ax.set_title(
                 "Phase Tensor Map for {0}".format(title_freq),
@@ -1025,7 +988,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 fontsize=self.font_size + 2,
                 fontweight="bold",
             )
-
         # make a grid with gray lines
         self.ax.grid(alpha=0.25)
 
@@ -1036,7 +998,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             )
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
-
         if cmap == "mt_seg_bl2wh2rd":
             # make a color list
             self.clist = [
@@ -1067,7 +1028,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
                 orientation=self.cb_orientation,
             )
-
         # label the color bar accordingly
         self.cb.set_label(
             mtpl.ckdict[ckey], fontdict={"size": self.font_size, "weight": "bold"}
@@ -1077,13 +1037,11 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         if self.cb_orientation == "horizontal":
             self.cb.ax.xaxis.set_label_position("top")
             self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
-
         elif self.cb_orientation == "vertical":
             self.cb.ax.yaxis.set_label_position("right")
             self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis="y", direction="in")
-
         # --> add reference ellipse
         ref_ellip = patches.Ellipse((0, 0.0), width=es, height=es, angle=0)
         ref_ellip.set_facecolor((0, 0, 0))
@@ -1161,7 +1119,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
 
         if fig_dpi == None:
             fig_dpi = self.fig_dpi
-
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(
@@ -1173,14 +1130,12 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             )
             plt.clf()
             plt.close(self.fig)
-
         else:
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
             if not os.path.exists(os.path.join(save_fn, "PTMaps")):
                 os.mkdir(os.path.join(save_fn, "PTMaps"))
                 save_fn = os.path.join(save_fn, "PTMaps")
-
             save_fn = os.path.join(
                 save_fn, "PTmap_" + self.ellipse_colorby + sf + "Hz." + file_format
             )
@@ -1191,14 +1146,11 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 orientation=orientation,
                 bbox_inches="tight",
             )
-
         if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
-
         else:
             pass
-
         self.fig_fn = save_fn
         print("Saved figure to: " + self.fig_fn)
 

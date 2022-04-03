@@ -15,7 +15,7 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
+import mtpy.imaging.mtplot_tools as mtpl
 
 # reload(mtpl)
 # ==============================================================================
@@ -185,7 +185,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self.pt = pt_object
             self._mt = mtpl.MTplot()
             self._mt.freq = self.pt.freq
-
         self.font_size = kwargs.pop("font_size", 7)
         self.fig_dpi = kwargs.pop("dpi", 300)
         self.fig_num = kwargs.pop("fig_num", 1)
@@ -226,7 +225,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self._ellipse_dict = {"size": 0.25}
         else:
             self._ellipse_dict = ellipse_dict
-
         # self._read_ellipse_dict()
 
         self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
@@ -266,7 +264,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self.pt.rotate(self.rot_z)
             # self.zinv = self._mt.Z.invariants
             # self.zinv.rotate(self.rot_z)
-
         cmap = self.ellipse_cmap
         ckmin = self.ellipse_range[0]
         ckmax = self.ellipse_range[1]
@@ -274,27 +271,20 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             ckstep = float(self.ellipse_range[2])
         except IndexError:
             ckstep = 3
-
         if cmap == "mt_seg_bl2wh2rd":
             bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
             nseg = float((ckmax - ckmin) / (2 * ckstep))
-
         # get the properties to color the ellipses by
         if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
             colorarray = self.pt.phimin
-
         elif self.ellipse_colorby == "phidet":
             colorarray = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
-
         elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
             colorarray = self.pt.beta
-
         elif self.ellipse_colorby == "ellipticity":
             colorarray = self.pt.ellipticity
-
         else:
             raise NameError(self.ellipse_colorby + " is not supported")
-
         # -------------plotPhaseTensor-----------------------------------
         self.ax1 = self.fig.add_subplot(3, 1, 1, aspect="equal")
 
@@ -304,12 +294,10 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                 eheight = self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
 
                 ewidth = self.ellipse_size
-
             else:
                 # tiny instead of nothing
                 eheight = 0.01 * self.ellipse_size
                 ewidth = 0.01 * self.ellipse_size
-
             # ewidth = self.pt.phimax[ii]/self.pt.phimax[ii]*\
             #                                                  self.ellipse_size
 
@@ -349,7 +337,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                         colorarray[ii], self.ellipse_colorby, cmap, ckmin, ckmax
                     )
                 )
-
         # ----set axes properties-----------------------------------------------
         # --> set tick labels and limits
         xlimits = (
@@ -510,7 +497,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
 
             stlist.append(ps3[0])
             stlabel.append("Tipper")
-
         self.ax2.legend(
             stlist,
             stlabel,
@@ -530,7 +516,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
 
         if self.strike_limits is None:
             self.strike_limits = (-89.99, 89.99)
-
         self.ax2.set_yscale("linear")
         self.ax2.set_xscale("log", nonposx="clip")
         self.ax2.set_xlim(xmax=10 ** xlimits[-1], xmin=10 ** xlimits[0])
@@ -588,7 +573,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                 self.pt_limits[0] = -9.9
             if self.pt_limits[1] > 100:
                 self.pt_limits[1] = 99.99
-
         self.ax3.set_xscale("log", nonposx="clip")
         self.ax3.set_yscale("linear")
 
@@ -772,7 +756,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(
@@ -780,7 +763,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             )
             plt.clf()
             plt.close(self.fig)
-
         else:
             station = self._mt.station
             if station is None:
@@ -789,14 +771,11 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self.fig.savefig(
                 save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
             )
-
         if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
-
         else:
             pass
-
         self.fig_fn = save_fn
         print("Saved figure to: " + self.fig_fn)
 

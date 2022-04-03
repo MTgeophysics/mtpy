@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
+import mtpy.imaging.mtplot_tools as mtpl
 
 
 # ==============================================================================
@@ -352,13 +352,11 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             self.cb_orientation = cb_dict["orientation"]
         except KeyError:
             self.cb_orientation = "vertical"
-
         # set the position to middle outside the plot
         try:
             self.cb_position = cb_dict["position"]
         except KeyError:
             self.cb_position = None
-
         # set the stretching in each direction
         stretch = kwargs.pop("stretch", (200, 25))
         if isinstance(stretch, float) or isinstance(stretch, int):
@@ -367,7 +365,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         else:
             self.xstretch = stretch[0]
             self.ystretch = stretch[1]
-
         # --> set plot properties
         self.fig_num = kwargs.pop("fig_num", 1)
         self.plot_num = kwargs.pop("plot_num", 1)
@@ -389,7 +386,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             self.scale_arrow_dict["size"] = 1.0
         if "text_offset_y" not in list(self.scale_arrow_dict.keys()):
             self.scale_arrow_dict["text_offset_y"] = 0.0
-
         # --> set induction arrow properties -------------------------------
         self.plot_tipper = kwargs.pop("plot_tipper", "n")
 
@@ -418,7 +414,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         """
         for ii, mt in enumerate(self.mt_list):
             mt.rotation_angle = value
-
         self._rotation_angle = value
 
     def plot(self, show=True):
@@ -460,7 +455,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             ckstep = float(self.ellipse_range[2])
         except IndexError:
             ckstep = 3
-
         nseg = float((ckmax - ckmin) / (2 * ckstep))
 
         if cmap == "mt_seg_bl2wh2rd":
@@ -496,7 +490,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                         )
                     else:
                         offset = 0
-
             self.offsetlist.append(offset)
 
             # get phase tensor elements and flip so the top is small
@@ -521,30 +514,23 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     tmi = np.zeros(len(mt.period))
                     tar = np.zeros(len(mt.period))
                     tai = np.zeros(len(mt.period))
-
                 aheight = self.arrow_head_length
                 awidth = self.arrow_head_width
                 alw = self.arrow_lw
-
             # get the properties to color the ellipses by
             if self.ellipse_colorby == "phimin":
                 color_array = pt.phimin[::-1]
-
             elif self.ellipse_colorby == "phimax":
                 color_array = pt.phimin[::-1]
-
             elif self.ellipse_colorby == "phidet":
                 color_array = np.sqrt(abs(pt.det[::-1])) * (180 / np.pi)
-
             elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
                 color_array = pt.beta[::-1]
-
             elif (
                 self.ellipse_colorby == "normalized_skew"
                 or self.ellipse_colorby == "normalized_skew_seg"
             ):
                 color_array = 2 * pt.beta[::-1]
-
             elif self.ellipse_colorby == "ellipticity":
                 color_array = pt.ellipticity[::-1]
             elif self.ellipse_colorby in ["strike", "azimuth"]:
@@ -552,17 +538,14 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 color_array[color_array > 90] -= 180
             else:
                 raise NameError(self.ellipse_colorby + " is not supported")
-
             # get the number of periods
             n = len(periodlist)
 
             if ii == 0:
                 plot_periodlist = periodlist
-
             else:
                 if n > len(plot_periodlist):
                     plot_periodlist = periodlist
-
             # get min and max of the color array for scaling later
             minlist.append(min(color_array))
             maxlist.append(max(color_array))
@@ -606,7 +589,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                             color_array[jj], self.ellipse_colorby, cmap, ckmin, ckmax
                         )
                     )
-
                 # == =add the ellipse to the plot == ========
                 self.ax.add_artist(ellipd)
 
@@ -650,7 +632,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                 head_width=awidth,
                                 head_length=aheight,
                             )
-
                     # --> plot imaginary tipper
                     if self.plot_tipper == "yri" or self.plot_tipper == "yi":
                         txi = (
@@ -687,7 +668,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                 head_width=awidth,
                                 head_length=aheight,
                             )
-
         # --> Set plot parameters
         self._plot_periodlist = plot_periodlist
         n = len(plot_periodlist)
@@ -713,7 +693,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             self.ax.set_ylabel(
                 "Period (s)", fontsize=self.font_size + 2, fontweight="bold"
             )
-
         elif self.tscale == "frequency":
             yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)]
             self.ax.set_ylabel(
@@ -750,7 +729,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             )
         else:
             self.ax.set_xlim(self.xlimits)
-
         # --> set y-limits
         if self.ylimits is None:
             #            self.ax.set_ylim(pmax+es*2, pmin-es*2)
@@ -766,7 +744,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             pass
         else:
             self.ax.set_title(self.plot_title, fontsize=self.font_size + 2)
-
         # make a legend for the induction arrows
         if self.plot_tipper.find("y") == 0:
             if self.plot_tipper == "yri":
@@ -790,7 +767,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     borderaxespad=0.005,
                     borderpad=0.25,
                 )
-
             elif self.plot_tipper == "yr":
                 treal = self.ax.plot(
                     np.arange(10) * 0.000005,
@@ -807,7 +783,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     borderaxespad=0.005,
                     borderpad=0.25,
                 )
-
             elif self.plot_tipper == "yi":
                 timag = self.ax.plot(
                     np.arange(10) * 0.000005,
@@ -824,7 +799,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     borderaxespad=0.005,
                     borderpad=0.25,
                 )
-
             # make a scale arrow
             if self.scale_arrow:
                 print(
@@ -850,7 +824,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     * self.ystretch,
                     "|T| = %3.1f" % txrl,
                 )
-
         # put a grid on the plot
         self.ax.grid(alpha=0.25, which="both", color=(0.25, 0.25, 0.25))
 
@@ -867,7 +840,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             )
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
-
         if cmap == "mt_seg_bl2wh2rd":
             # make a color list
             self.clist = [
@@ -898,7 +870,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
                 orientation=self.cb_orientation,
             )
-
         # label the color bar accordingly
         self.cb.set_label(
             mtpl.ckdict[ck], fontdict={"size": self.font_size, "weight": "bold"}
@@ -908,13 +879,11 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
         if self.cb_orientation == "horizontal":
             self.cb.ax.xaxis.set_label_position("top")
             self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
-
         elif self.cb_orientation == "vertical":
             self.cb.ax.yaxis.set_label_position("right")
             self.cb.ax.yaxis.set_label_coords(1.5, 0.5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis="y", direction="in")
-
         # --> add reference ellipse
         ref_ellip = patches.Ellipse((0, 0.0), width=es, height=es, angle=0)
         ref_ellip.set_facecolor((0, 0, 0))
@@ -950,21 +919,16 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 raise IOError("Need to input save_path, could not find a path")
         else:
             svpath = save_path
-
         # check to see if plot has been run if not run it
         try:
             plist = self._plot_periodlist
-
         except AttributeError:
             self.plot()
             plist = self._plot_periodlist
-
         if plist[0] > plist[-1]:
             plist = plist[::-1]
-
         if self.tscale == "frequency":
             plist = 1.0 / plist
-
         # match station list with mt list
         slist = [
             mt
@@ -1008,7 +972,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             tiplistraz[tt, 0] = t1
             tiplisti[tt, 0] = t1
             tiplistiaz[tt, 0] = t1
-
         # fill out the rest of the values
         for kk, mt in enumerate(slist, 1):
 
@@ -1017,17 +980,14 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
             if self.tscale == "period":
                 tlist = mt.period
-
             elif self.tscale == "frequency":
                 tlist = mt.frequency
-
             try:
                 stationstr = "{0:^8}".format(
                     mt.station[self.station_id[0] : self.station_id[1]]
                 )
             except AttributeError:
                 stationstr = "{0:^8}".format(mt.station)
-
             # -->  get station name as header in each file
             sklist[0, kk] = stationstr
             phiminlist[0, kk] = stationstr
@@ -1052,7 +1012,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     tiplistraz[1:, kk] = tip.angle_real
                     tiplisti[1:, kk] = tip.mag_imag
                     tiplistiaz[1:, kk] = tip.angle_imag
-
             # otherwise search the period list to find a cooresponding period
             else:
                 for mm, t1 in enumerate(plist):
@@ -1063,7 +1022,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                         t1_yn = True
                     elif tlist[mm] > t1 * (1 - ptol) and tlist[mm] < t1 * (1 + ptol):
                         t1_yn = True
-
                     if t1_yn == True:
                         # add on the value to the present row
                         if pt.beta[0] is not None:
@@ -1072,14 +1030,12 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                             phimaxlist[mm + 1, kk] = pt.phimax[0][mm]
                             elliplist[mm + 1, kk] = pt.ellipticity[0][mm]
                             azimlist[mm + 1, kk] = pt.azimuth[0][mm]
-
                         # add on the value to the present row
                         if tip.mag_real is not None:
                             tiplistr[mm + 1, kk] = tip.mag_real[mm]
                             tiplistraz[mm + 1, kk] = tip.angle_real[mm]
                             tiplisti[mm + 1, kk] = tip.mag_imag[mm]
                             tiplistiaz[mm + 1, kk] = tip.angle_imag[mm]
-
                     elif t1_yn == False:
                         for ff, t2 in enumerate(tlist):
                             if t2 > t1 * (1 - ptol) and t2 < t1 * (1 + ptol):
@@ -1090,7 +1046,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                     phimaxlist[mm + 1, kk] = pt.phimax[0][ff]
                                     elliplist[mm + 1, kk] = pt.ellipticity[0][ff]
                                     azimlist[mm + 1, kk] = pt.azimuth[0][ff]
-
                                 # add on the value to the present row
                                 if tip.mag_real is not None:
                                     tiplistr[mm + 1, kk] = tip.mag_real[ff]
@@ -1101,7 +1056,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                                 break
                             else:
                                 t1_yn = False
-
         # write the arrays into lines properly formatted
         t1_kwargs = {
             "spacing": "{0:^8} ",
@@ -1191,7 +1145,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                     tpiazline += mtpl.make_value_str(
                         float(tiplistiaz[tt, ss]), **t2_kwargs
                     )
-
             # be sure to end the line after each period
             sklines.append(skline + "\n")
             phiminlines.append(pminline + "\n")
@@ -1202,7 +1155,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             tprazlines.append(tprazline + "\n")
             tpilines.append(tpiline + "\n")
             tpiazlines.append(tpiazline + "\n")
-
         # write files
         skfid = open(os.path.join(svpath, "PseudoSection.skew"), "w")
         skfid.writelines(sklines)
@@ -1330,7 +1282,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-
         if os.path.isdir(save_fn) is False:
             file_format = save_fn[-3:]
             self.fig.savefig(
@@ -1340,7 +1291,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 orientation=orientation,
                 bbox_inches="tight",
             )
-
         else:
             save_fn = os.path.join(save_fn, "_PTPseudoSection." + file_format)
             self.fig.savefig(
@@ -1350,14 +1300,11 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
                 orientation=orientation,
                 bbox_inches="tight",
             )
-
         if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
-
         else:
             pass
-
         self.fig_fn = save_fn
         print("Saved figure to: " + self.fig_fn)
 
@@ -1405,12 +1352,10 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-
         # FZ: fixed the following logic
         if os.path.isdir(save_fn):  # FZ: assume save-fn is a directory
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
-
             # make a file name
             fname = "PT_Pseudo_Section_DPI%s_%s.%s" % (
                 str(self.fig_dpi),
@@ -1430,7 +1375,6 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             if file_format is None or file_format not in ["png", "jpg"]:
                 print(("Error: output file name is not correctly provided:", save_fn))
                 raise Exception("output file name is not correctly provided!!!")
-
             path2savefile = save_fn
             self.fig.savefig(
                 path2savefile,
@@ -1441,13 +1385,11 @@ class PlotPhaseTensorPseudoSection(mtpl.PlotSettings):
             )
             # plt.clf()
             # plt.close(self.fig)
-
         if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
         else:
             pass
-
         self.fig_fn = path2savefile
         # logger.debug('Saved figure to: %s', self.fig_fn)
         print(("Saved figure to: ", self.fig_fn))

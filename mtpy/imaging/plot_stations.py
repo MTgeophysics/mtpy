@@ -21,6 +21,7 @@ import numpy as np
 import contextily as cx
 from mtpy.imaging.mtplot_tools import PlotSettings
 import mtpy.utils.exceptions as mtex
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # ==============================================================================
 
@@ -37,8 +38,7 @@ class PlotStations(PlotSettings):
 
     def __init__(self, geo_df, **kwargs):
 
-        super().__init__(**kwargs)
-        self.gdf = geo_df
+        self._logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         # --> set plot properties
         self.plot_title = None
@@ -48,25 +48,31 @@ class PlotStations(PlotSettings):
         self.map_epsg = 4326
         self.plot_names = True
 
-        self.image_file = kwargs.pop("image_file", None)
-        self.image_extent = kwargs.pop("image_extent", None)
+        self.image_file = None
+        self.image_extent = None
 
+        super().__init__(**kwargs)
+        self.gdf = geo_df
+
+        self._set_subplot_parameters()
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         if self.image_file is not None:
             if self.image_extent is None:
                 raise mtex.MTpyError_inputarguments(
                     "Need to input extents " + "of the image as" + "(x0, y0, x1, y1)"
                 )
-        self._set_subplot_parameters()
         # --> plot if desired
         if self.show_plot:
             self.plot()
 
     def _set_subplot_parameters(self):
         plt.rcParams["font.size"] = self.font_size
-        plt.rcParams["figure.subplot.left"] = 0.09
-        plt.rcParams["figure.subplot.right"] = 0.98
-        plt.rcParams["figure.subplot.bottom"] = 0.09
-        plt.rcParams["figure.subplot.top"] = 0.98
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
 
     def _get_xlimits(self, x):
         if np.sign(x.min()) == -1:
@@ -92,29 +98,12 @@ class PlotStations(PlotSettings):
                 y.max() * 1.002,
             )
 
-    def _get_xy(self):
-        pass
-
     def plot(self):
         """
         plots the station locations
 
         """
 
-        # if self.map_scale == "latlon":
-        #     xlabel = "Longitude (deg)"
-        #     ylabel = "Latitude (deg)"
-
-        #     if self.xlimits is None:
-        #         self._get_xlimits(self.df.longitude)
-        #     if self.ylimits is None:
-        #         self._get_ylimits(self.df.latitude)
-        # elif self.map_scale == "eastnorth":
-        #     xlabel = "Easting (m)"
-        #     ylabel = "Northing (m)"
-        # elif self.map_scale == "eastnorthkm":
-        #     xlabel = "Easting (km)"
-        #     ylabel = "Northing (km)"
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
@@ -146,15 +135,18 @@ class PlotStations(PlotSettings):
                 color=self.text_color,
             )
         if self.image_file is None:
-            cx.add_basemap(
-                gax, crs=self.gdf.crs.to_string(), source=cx.providers.USGS.USTopo
-            )
+            try:
+                cx.add_basemap(
+                    gax, crs=self.gdf.crs.to_string(), source=cx.providers.USGS.USTopo
+                )
+            except Exception as error:
+                self._logger.warning(f"Could not add base map because {error}")
         # set axis properties
         self.ax.set_xlabel("latitude", fontdict=self.font_dict)
         self.ax.set_ylabel("longitude", fontdict=self.font_dict)
         self.ax.grid(alpha=0.35, color=(0.25, 0.25, 0.25))
-        # self.ax.set_xlim(self.xlimits)
-        # self.ax.set_ylim(self.ylimits)
+        self.ax.set_xlim(self._get_xlimits(self.gdf.geometry.x))
+        self.ax.set_ylim(self._get_ylimits(self.gdf.geometry.x))
 
         plt.show()
 

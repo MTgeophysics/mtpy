@@ -87,16 +87,17 @@ section and strike angle.
 
 """
 # ==============================================================================
-import mtpy.imaging.plotnresponses as plotnresponses
-import mtpy.imaging.plotpseudosection as plotrpps
-import mtpy.imaging.plotpt as plotpt
-import mtpy.imaging.phase_tensor_maps as plotptmaps
-import mtpy.imaging.phase_tensor_pseudosection as plotptps
-import mtpy.imaging.plotresidualptmaps as plotresidualptmaps
-import mtpy.imaging.plotresidualptps as plotresidualptps
-import mtpy.imaging.plot_mt_response as plotresponse
-import mtpy.imaging.plotstations as plotstations
-import mtpy.imaging.plotstrike as plotstrike
+
+from .plot_mt_responses import PlotMultipleResponses
+from .plot_pseudosection import PlotResPhasePseudoSection
+from .plot_pt import PlotPhaseTensor
+from .phase_tensor_maps import PlotPhaseTensorMaps
+from .phaste_tensor_pseudosection import PlotPhaseTensorPseudoSection
+from .plot_residual_pt_maps import PlotResidualPTMaps
+from .plot_residual_pt_ps import PlotResidualPTps
+from .plot_mt_response import PlotMTResponse
+from .plot_stations import PlotStations
+from .plot_strike import PlotStrike
 
 # reload(plotpt)
 # reload(plotptmaps)

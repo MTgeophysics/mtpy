@@ -22,7 +22,7 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
+import mtpy.imaging.mtplot_tools as mtpl
 from mtpy.utils.mtpylog import MtPyLog
 import mtpy.analysis.pt as MTpt
 import matplotlib.tri as tri
@@ -86,7 +86,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
         if len(fn_list) == 0:
             raise NameError("File list is empty.")
-
         # ----set attributes for the class-------------------------
         self.mt_list = mtpl.get_mtlist(fn_list=fn_list)
 
@@ -113,7 +112,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         self.kwargs = kwargs
         for key in vars(self):
             self.kwargs.pop(key, None)
-
         self.axesList = []
 
     # end func
@@ -168,7 +166,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
             try:
                 if not isinstance(hull, Delaunay):
                     hull = Delaunay(hull)
-
                 return hull.find_simplex(p) >= 0
             except:
                 from scipy.optimize import linprog
@@ -206,7 +203,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
             vmin = np.ones((2, 2)) * vmin
         if not np.iterable(vmax):
             vmax = np.ones((2, 2)) * vmax
-
         # set position properties for the plot
         plt.rcParams["font.size"] = self.font_size
         plt.rcParams["figure.subplot.left"] = 0.1
@@ -430,7 +426,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                                 mt_obj.station,
                                 fontsize=self.font_size - 2,
                             )
-
                 # Label plots
                 label = ""
                 if i == 0 and j == 0:
@@ -453,7 +448,6 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                         label = "$\\rho_{yy}$"
                     else:
                         label = "$\\phi_{yy}$"
-
                 ax.text(
                     0.8,
                     0.9,
@@ -471,11 +465,9 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
             self.fig.suptitle("Apparent Resistivity Maps for" + suffix, y=0.985)
         else:
             self.fig.suptitle("Phase Maps for" + suffix, y=0.985)
-
         plt.tight_layout(rect=[0, 0.025, 1, 0.975])
         if show:
             plt.show()
-
         fn = os.path.join(save_path, "%s.%0.2f.%s" % (type, freq, file_ext))
         self.fig.savefig(fn, dpi=self.fig_dpi)
 

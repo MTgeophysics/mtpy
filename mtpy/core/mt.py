@@ -18,6 +18,7 @@ from mtpy.core.z import Z, Tipper
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 from mtpy.utils import gis_tools
+from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
 
 
 # =============================================================================
@@ -508,10 +509,7 @@ class MT(TF):
 
         """
 
-        from mtpy.imaging import plot_mt_response
-
-        # todo change this to the format of the new imaging API
-        plot_obj = plot_mt_response.PlotMTResponse(
+        plot_obj = PlotMTResponse(
             z_object=self.Z,
             t_object=self.Tipper,
             pt_obj=self.pt,
@@ -520,7 +518,6 @@ class MT(TF):
         )
 
         return plot_obj
-        # raise NotImplementedError
 
 
 # ==============================================================================

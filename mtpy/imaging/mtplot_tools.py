@@ -243,6 +243,11 @@ class PlotSettings(MTArrows, MTEllipse):
         self.text_x_pad = 0
         self.text_y_pad = 0
 
+        self.subplot_left = 0.09
+        self.subplot_right = 0.9
+        self.subplot_bottom = 0.09
+        self.subplot_top = 0.98
+
         # Set class property values from kwargs and pop them
         for v in vars(self):
             if v in list(kwargs.keys()):
