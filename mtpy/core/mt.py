@@ -519,6 +519,16 @@ class MT(TF):
 
         return plot_obj
 
+    def plot_phase_tensor(self, **kwargs):
+        """
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
+
 
 # ==============================================================================
 #             Error

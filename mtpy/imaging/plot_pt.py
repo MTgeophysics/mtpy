@@ -26,9 +26,12 @@ class PlotPhaseTensor(PlotBase):
     
     """
 
-    def __init__(self, pt_object, **kwargs):
+    def __init__(self, pt_object, station=None, **kwargs):
         super().__init__()
-        self.pt_object = pt_object
+        self.pt = pt_object
+        self.station = station
+        self.skew_cutoff = 3
+        self.ellip_cutoff = 0.1
 
         self.cb_position = (0.045, 0.78, 0.015, 0.12)
 
@@ -60,6 +63,8 @@ class PlotPhaseTensor(PlotBase):
         plots the phase tensor elements
         """
 
+        if self.x_limits is None:
+            self.x_limits = self.set_period_limits(1.0 / self.pt.freq)
         # --> create plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
@@ -102,8 +107,8 @@ class PlotPhaseTensor(PlotBase):
         # ---------------plotStrikeAngle-----------------------------------
         # --> set tick labels and limits
         xlimits = (
-            np.floor(np.log10(self._mt.period[0])),
-            np.ceil(np.log10(self._mt.period[-1])),
+            np.floor(np.log10(1.0 / self.pt.freq[0])),
+            np.ceil(np.log10(1.0 / self.pt.freq[-1])),
         )
         self.ax2 = self.fig.add_subplot(3, 2, 3)
         az = self.pt.azimuth
@@ -118,7 +123,7 @@ class PlotPhaseTensor(PlotBase):
 
         # plot phase tensor strike
         ps2 = self.ax2.errorbar(
-            self._mt.period,
+            1.0 / self.pt.freq,
             az,
             marker=self.strike_pt_marker,
             ms=self.marker_size,
@@ -134,89 +139,18 @@ class PlotPhaseTensor(PlotBase):
 
         stlist.append(ps2[0])
         stlabel.append("PT")
-        # try:
-        #     strike = self.zinv.strike
-        #     strikeerr = np.nan_to_num(self.zinv.strike_err)
-        #     # put the strike into a coordinate system that goes from -90 to 90
-        #     strike[np.where(strike > 90)] = strike[np.where(strike > 90)] - 180
-        #     strike[np.where(strike < -90)] = strike[np.where(strike < -90)] + 180
-
-        #     # plot invariant strike
-        #     erxy = self.ax2.errorbar(
-        #         self._mt.period,
-        #         strike,
-        #         marker=self.strike_inv_marker,
-        #         ms=self.marker_size,
-        #         mfc=self.strike_inv_color,
-        #         mec=self.strike_inv_color,
-        #         mew=self.marker_lw,
-        #         ls="none",
-        #         yerr=strikeerr,
-        #         ecolor=self.strike_inv_color,
-        #         capsize=self.marker_size,
-        #         elinewidth=self.marker_lw,
-        #     )
-
-        #     stlist.append(erxy[0])
-        #     stlabel.append("Z_inv")
-        # except AttributeError:
-        #     print("Could not get z_invariants from pt, input z if desired.")
-
-        if self._mt.Tipper is not None and (self._mt.Tipper.tipper.all() != 0):
-            # strike from tipper
-            tp = self._mt.Tipper
-            s3 = tp.angle_real + 90
-
-            # fold to go from -90 to 90
-            s3[np.where(s3 > 90)] = s3[np.where(s3 > 90)] - 180
-            s3[np.where(s3 < -90)] = s3[np.where(s3 < -90)] + 180
-
-            # plot strike with error bars
-            ps3 = self.ax2.errorbar(
-                self._mt.period,
-                s3,
-                marker=self.strike_tp_marker,
-                ms=self.marker_size,
-                mfc=self.strike_tp_color,
-                mec=self.strike_tp_color,
-                mew=self.marker_lw,
-                ls="none",
-                yerr=np.zeros_like(s3),
-                ecolor=self.strike_tp_color,
-                capsize=self.marker_size,
-                elinewidth=self.marker_lw,
-            )
-
-            stlist.append(ps3[0])
-            stlabel.append("Tipper")
-        self.ax2.legend(
-            stlist,
-            stlabel,
-            loc="lower left",
-            markerscale=0.5 * self.marker_size,
-            borderaxespad=0.01,
-            labelspacing=0.1,
-            handletextpad=0.2,
-            ncol=len(stlist),
-            borderpad=0.1,
-            columnspacing=0.1,
-        )
-
-        leg = plt.gca().get_legend()
-        ltext = leg.get_texts()  # all the text.Text instance in the legend
-        plt.setp(ltext, fontsize=6)  # the legend text fontsize
 
         if self.strike_limits is None:
             self.strike_limits = (-89.99, 89.99)
         self.ax2.set_yscale("linear")
-        self.ax2.set_xscale("log", nonposx="clip")
+        self.ax2.set_xscale("log", nonpositive="clip")
         self.ax2.set_xlim(xmax=10 ** xlimits[-1], xmin=10 ** xlimits[0])
         self.ax2.set_ylim(self.strike_limits)
         self.ax2.yaxis.set_major_locator(MultipleLocator(20))
         self.ax2.yaxis.set_minor_locator(MultipleLocator(5))
         self.ax2.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        self.ax2.set_ylabel("Angle (deg)", fontdict=font_dict)
-        self.ax2.set_title("Strike", fontdict=font_dictt)
+        self.ax2.set_ylabel("Angle (deg)", fontdict=self.font_dict)
+        self.ax2.set_title("Strike", fontdict=self.font_dict)
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin
@@ -227,31 +161,31 @@ class PlotPhaseTensor(PlotBase):
         self.ax3 = self.fig.add_subplot(3, 2, 4, sharex=self.ax2)
 
         ermin = self.ax3.errorbar(
-            self._mt.period,
+            1.0 / self.pt.freq,
             minphi,
-            marker=self.ptmin_marker,
+            marker=self.xy_marker,
             ms=self.marker_size,
             mfc="None",
-            mec=self.ptmin_color,
+            mec=self.xy_color,
             mew=self.marker_lw,
             ls="None",
             yerr=minphierr,
-            ecolor=self.ptmin_color,
+            ecolor=self.xy_color,
             capsize=self.marker_size,
             elinewidth=self.marker_lw,
         )
 
         ermax = self.ax3.errorbar(
-            self._mt.period,
+            1.0 / self.pt.freq,
             maxphi,
-            marker=self.ptmax_marker,
+            marker=self.yx_marker,
             ms=self.marker_size,
             mfc="None",
-            mec=self.ptmax_color,
+            mec=self.yx_color,
             mew=self.marker_lw,
             ls="None",
             yerr=maxphierr,
-            ecolor=self.ptmax_color,
+            ecolor=self.yx_color,
             capsize=self.marker_size,
             elinewidth=self.marker_lw,
         )
@@ -265,7 +199,7 @@ class PlotPhaseTensor(PlotBase):
                 self.pt_limits[0] = -9.9
             if self.pt_limits[1] > 100:
                 self.pt_limits[1] = 99.99
-        self.ax3.set_xscale("log", nonposx="clip")
+        self.ax3.set_xscale("log", nonpositive="clip")
         self.ax3.set_yscale("linear")
 
         self.ax3.legend(
@@ -288,9 +222,9 @@ class PlotPhaseTensor(PlotBase):
         self.ax3.set_ylim(self.pt_limits)
         self.ax3.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
 
-        self.ax3.set_ylabel("Phase (deg)", fontdict=font_dict)
+        self.ax3.set_ylabel("Phase (deg)", fontdict=self.font_dict)
         self.ax3.set_title(
-            "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$", fontdict=font_dictt
+            "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$", fontdict=self.font_dict
         )
 
         # -----------------------plotSkew---------------------------------------
@@ -300,7 +234,7 @@ class PlotPhaseTensor(PlotBase):
 
         self.ax4 = self.fig.add_subplot(3, 2, 5, sharex=self.ax2)
         erskew = self.ax4.errorbar(
-            self._mt.period,
+            1.0 / self.pt.freq,
             skew,
             marker=self.skew_marker,
             ms=self.marker_size,
@@ -331,17 +265,17 @@ class PlotPhaseTensor(PlotBase):
             lw=1,
         )
 
-        self.ax4.set_xscale("log", nonposx="clip")
+        self.ax4.set_xscale("log", nonpositive="clip")
         self.ax4.set_yscale("linear")
-        self.ax4.yaxis.set_major_locator(MultipleLocator(ckstep))
+        self.ax4.yaxis.set_major_locator(MultipleLocator(self.ellipse_range[2]))
 
         if self.skew_limits is None:
             self.skew_limits = (-10, 10)
         self.ax4.set_ylim(self.skew_limits)
         self.ax4.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        self.ax4.set_xlabel("Period (s)", fontdict=font_dict)
-        self.ax4.set_ylabel("Skew Angle (deg)", fontdict=font_dict)
-        self.ax4.set_title("Skew Angle", fontdict=font_dictt)
+        self.ax4.set_xlabel("Period (s)", fontdict=self.font_dict)
+        self.ax4.set_ylabel("Skew Angle (deg)", fontdict=self.font_dict)
+        self.ax4.set_title("Skew Angle", fontdict=self.font_dict)
 
         # ----------------------plotEllipticity--------------------------------
         ellipticity = self.pt.ellipticity
@@ -349,16 +283,16 @@ class PlotPhaseTensor(PlotBase):
 
         self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
         erskew = self.ax5.errorbar(
-            self._mt.period,
+            1.0 / self.pt.freq,
             ellipticity,
-            marker=self.ellip_marker,
+            marker=self.det_marker,
             ms=self.marker_size,
             mfc="None",
-            mec=self.ellip_color,
+            mec=self.det_color,
             mew=self.marker_lw,
             ls="None",
             yerr=ellipticityerr,
-            ecolor=self.ellip_color,
+            ecolor=self.det_color,
             capsize=self.marker_size,
             elinewidth=self.marker_lw,
         )
@@ -368,26 +302,27 @@ class PlotPhaseTensor(PlotBase):
             [10 ** xlimits[0], 10 ** xlimits[-1]],
             [self.ellip_cutoff, self.ellip_cutoff],
             ls="--",
-            color=self.ellip_color,
+            color=self.det_color,
             lw=1,
         )
 
-        self.ax5.set_xscale("log", nonposx="clip")
+        self.ax5.set_xscale("log", nonpositive="clip")
         self.ax5.set_yscale("linear")
 
         self.ax5.yaxis.set_major_locator(MultipleLocator(0.1))
 
         self.ax5.set_ylim(ymin=0, ymax=1)
         self.ax5.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        self.ax5.set_xlabel("Period (s)", fontdict=font_dict)
+        self.ax5.set_xlabel("Period (s)", fontdict=self.font_dict)
         self.ax5.set_ylabel(
-            "$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$", fontdict=font_dict
+            "$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$",
+            fontdict=self.font_dict,
         )
-        self.ax5.set_title("Ellipticity", fontdict=font_dictt)
+        self.ax5.set_title("Ellipticity", fontdict=self.font_dict)
 
         try:
             self.fig.suptitle(
-                "Phase Tensor Elements for: " + self._mt.station,
+                "Phase Tensor Elements for: " + self.station,
                 fontdict={"size": self.font_size + 3, "weight": "bold"},
             )
         except:
@@ -456,7 +391,7 @@ class PlotPhaseTensor(PlotBase):
             plt.clf()
             plt.close(self.fig)
         else:
-            station = self._mt.station
+            station = self.station
             if station is None:
                 station = "MT01"
             save_fn = os.path.join(save_fn, station + "_PhaseTensor." + file_format)

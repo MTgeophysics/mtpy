@@ -140,7 +140,7 @@ class MTEllipse:
         self.ellipse_colorby = "phimin"
         self.ellipse_range = (0, 90, 10)
         self.ellipse_cmap = "mt_bl2gr2rd"
-        self.ellipse_spacing = 2
+        self.ellipse_spacing = 1
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
