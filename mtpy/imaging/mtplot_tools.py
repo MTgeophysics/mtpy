@@ -496,10 +496,12 @@ class PlotBase(PlotSettings):
     """
 
     def __init__(self, **kwargs):
-        self._logger = get_mtpy_logger(
+        super().__init__(**kwargs)
+
+        self.logger = get_mtpy_logger(
             f"{self.__class__.__module__}.{self.__class__.__name__}"
         )
-        super().__init__(**kwargs)
+
         self._basename = self.__class__.__name__.lower()
 
     def __str__(self):
@@ -589,7 +591,7 @@ class PlotBase(PlotSettings):
         else:
             pass
         self.fig_fn = save_fn
-        self._logger.info(f"Saved figure to: {self.fig_fn}")
+        self.logger.info(f"Saved figure to: {self.fig_fn}")
 
     def update_plot(self):
         """
