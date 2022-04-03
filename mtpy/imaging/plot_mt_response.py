@@ -11,8 +11,6 @@ Created 2017
 @author: jpeacock
 """
 # ==============================================================================
-from pathlib import Path
-
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -23,8 +21,13 @@ import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 
 import mtpy.imaging.mtcolors as mtcl
-from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging.mtplot_tools import PlotBase, plot_errorbar
+from mtpy.imaging.mtplot_tools import (
+    PlotBase,
+    plot_errorbar,
+    plot_pt_lateral,
+    get_log_tick_labels,
+    make_color_list,
+)
 
 # ==============================================================================
 #  Plot apparent resistivity and phase
@@ -510,25 +513,6 @@ class PlotMTResponse(PlotBase):
                 plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
                 self.axt.set_xlabel("")
 
-    def _get_pt_color_array(self):
-        # get the properties to color the ellipses by
-        if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
-            color_array = self.pt.phimin
-        elif self.ellipse_colorby == "phimaxang" or self.ellipse_colorby == "phimax":
-            color_array = self.pt.phimax
-        elif self.ellipse_colorby == "phidet":
-            color_array = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
-        elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
-            color_array = self.pt.beta
-        elif self.ellipse_colorby == "ellipticity":
-            color_array = self.pt.ellipticity
-        elif self.ellipse_colorby in ["strike", "azimuth"]:
-            color_array = self.pt.azimuth % 180
-            color_array[np.where(color_array > 90)] -= 180
-        else:
-            raise NameError(self.ellipse_colorby + " is not supported")
-        return color_array
-
     def _plot_pt(self):
         # ----plot phase tensor ellipse---------------------------------------
         if self.plot_pt:
@@ -536,6 +520,7 @@ class PlotMTResponse(PlotBase):
             cmap = self.ellipse_cmap
             ckmin = self.ellipse_range[0]
             ckmax = self.ellipse_range[1]
+            bounds = None
             try:
                 ckstep = float(self.ellipse_range[2])
             except IndexError:
@@ -543,62 +528,28 @@ class PlotMTResponse(PlotBase):
             if cmap == "mt_seg_bl2wh2rd":
                 bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
                 nseg = float((ckmax - ckmin) / (2 * ckstep))
-            color_array = self._get_pt_color_array()
+            color_array = self.get_pt_color_array(self.pt)
 
             # -------------plot ellipses-----------------------------------
-            for ii, ff in enumerate(self.period):
-                # make sure the ellipses will be visable
-                eheight = self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
-                ewidth = self.pt.phimax[ii] / self.pt.phimax[ii] * self.ellipse_size
+            self.cbax, self.cbpt, = plot_pt_lateral(
+                self.axpt,
+                self.pt,
+                color_array,
+                self.ellipse_properties,
+                bounds,
+                self.fig,
+            )
 
-                # create an ellipse scaled by phimin and phimax and oriented
-                # along the azimuth which is calculated as clockwise but needs
-                # to be plotted counter-clockwise hence the negative sign.
-                ellipd = patches.Ellipse(
-                    (np.log10(ff) * self.ellipse_spacing, 0),
-                    width=ewidth,
-                    height=eheight,
-                    angle=90 - self.pt.azimuth[ii],
-                )
-
-                self.axpt.add_patch(ellipd)
-
-                # get ellipse color
-                if cmap.find("seg") > 0:
-                    ellipd.set_facecolor(
-                        mtcl.get_plot_color(
-                            color_array[ii],
-                            self.ellipse_colorby,
-                            cmap,
-                            ckmin,
-                            ckmax,
-                            bounds=bounds,
-                        )
-                    )
-                else:
-                    ellipd.set_facecolor(
-                        mtcl.get_plot_color(
-                            color_array[ii], self.ellipse_colorby, cmap, ckmin, ckmax
-                        )
-                    )
             # ----set axes properties-----------------------------------------------
             # --> set tick labels and limits
             self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
 
-            tklabels = []
-            xticks = []
-            for tk in self.axpt.get_xticks():
-                try:
-                    tklabels.append(self.period_label_dict[tk])
-                    xticks.append(tk)
-                except KeyError:
-                    pass
+            tklabels, xticks = get_log_tick_labels(self.axpt)
+
             self.axpt.set_xticks(xticks)
             self.axpt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
             self.axpt.set_xlabel("Period (s)", fontdict=self.font_dict)
-            self.axpt.set_ylim(
-                ymin=-1.5 * self.ellipse_size, ymax=1.5 * self.ellipse_size
-            )
+
             # need to reset the x_limits caouse they get reset when calling
             # set_ticks for some reason
             self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
@@ -608,57 +559,6 @@ class PlotMTResponse(PlotBase):
 
             plt.setp(self.axpt.get_yticklabels(), visible=False)
 
-            # add colorbar for PT
-            axpos = self.axpt.get_position()
-            cb_position = (
-                axpos.bounds[0] - 0.0575,
-                axpos.bounds[1] + 0.02,
-                0.01,
-                axpos.bounds[3] * 0.75,
-            )
-            self.cbax = self.fig.add_axes(cb_position)
-            if cmap == "mt_seg_bl2wh2rd":
-                # make a color list
-                clist = [
-                    (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-                ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
-
-                # make segmented colormap
-                mt_seg_bl2wh2rd = colors.ListedColormap(clist)
-
-                # make bounds so that the middle is white
-                bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
-
-                # normalize the colors
-                norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
-
-                # make the colorbar
-                self.cbpt = mcb.ColorbarBase(
-                    self.cbax,
-                    cmap=mt_seg_bl2wh2rd,
-                    norm=norms,
-                    orientation="vertical",
-                    ticks=bounds[1:-1],
-                )
-            else:
-                self.cbpt = mcb.ColorbarBase(
-                    self.cbax,
-                    cmap=mtcl.cmapdict[cmap],
-                    norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
-                    orientation="vertical",
-                )
-            self.cbpt.set_ticks([ckmin, (ckmax - ckmin) / 2, ckmax])
-            self.cbpt.set_ticklabels(
-                [
-                    "{0:.0f}".format(ckmin),
-                    "{0:.0f}".format((ckmax - ckmin) / 2),
-                    "{0:.0f}".format(ckmax),
-                ]
-            )
-            self.cbpt.ax.yaxis.set_label_position("left")
-            self.cbpt.ax.yaxis.set_label_coords(-1.05, 0.5)
-            self.cbpt.ax.yaxis.tick_right()
-            self.cbpt.ax.tick_params(axis="y", direction="in")
             self.cbpt.set_label(
                 self.cb_label_dict[self.ellipse_colorby],
                 fontdict={"size": self.font_size},

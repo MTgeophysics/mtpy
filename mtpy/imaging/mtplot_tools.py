@@ -12,9 +12,18 @@ import numpy as np
 
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.patches as patches
+import matplotlib.colorbar as mcb
+import mtpy.imaging.mtcolors as mtcl
 
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
+# =============================================================================
+# Global Parameters
+# =============================================================================
+
+period_label_dict = dict([(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)])
 # ==============================================================================
 # Arrows properties for induction vectors
 # ==============================================================================
@@ -131,6 +140,7 @@ class MTEllipse:
         self.ellipse_colorby = "phimin"
         self.ellipse_range = (0, 90, 10)
         self.ellipse_cmap = "mt_bl2gr2rd"
+        self.ellipse_spacing = 2
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
@@ -164,6 +174,39 @@ class MTEllipse:
                 self.ellipse_range = (0, 1, 0.1)
             else:
                 self.ellipse_range = (0, 90, 5)
+
+    def get_pt_color_array(self, pt_object):
+        """
+        Get the appropriat color by array
+        """
+
+        # get the properties to color the ellipses by
+        if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
+            color_array = pt_object.phimin
+        elif self.ellipse_colorby == "phimaxang" or self.ellipse_colorby == "phimax":
+            color_array = pt_object.phimax
+        elif self.ellipse_colorby == "phidet":
+            color_array = np.sqrt(abs(pt_object.det)) * (180 / np.pi)
+        elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
+            color_array = pt_object.beta
+        elif self.ellipse_colorby == "ellipticity":
+            color_array = pt_object.ellipticity
+        elif self.ellipse_colorby in ["strike", "azimuth"]:
+            color_array = pt_object.azimuth % 180
+            color_array[np.where(color_array > 90)] -= 180
+        else:
+            raise NameError(self.ellipse_colorby + " is not supported")
+        return color_array
+
+    @property
+    def ellipse_properties(self):
+        return {
+            "size": self.ellipse_size,
+            "range": self.ellipse_range,
+            "cmap": self.ellipse_cmap,
+            "colorby": self.ellipse_colorby,
+            "spacing": self.ellipse_spacing,
+        }
 
 
 # ==============================================================================
@@ -253,6 +296,8 @@ class PlotSettings(MTArrows, MTEllipse):
         self.subplot_right = 0.9
         self.subplot_bottom = 0.09
         self.subplot_top = 0.98
+        self.subplot_wspace = None
+        self.subplot_hspace = None
 
         # Set class property values from kwargs and pop them
         for v in vars(self):
@@ -274,9 +319,7 @@ class PlotSettings(MTArrows, MTEllipse):
             "azimuth": r"Azimuth (deg)",
         }
 
-        self.period_label_dict = dict(
-            [(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)]
-        )
+        self.period_label_dict = period_label_dict
 
     def set_period_limits(self, period):
         """
@@ -521,6 +564,11 @@ class PlotBase(PlotSettings):
         plt.rcParams["figure.subplot.top"] = self.subplot_top
         plt.rcParams["figure.subplot.left"] = self.subplot_left
         plt.rcParams["figure.subplot.right"] = self.subplot_right
+
+        if self.subplot_wspace is not None:
+            plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
+        if self.subplot_hspace is not None:
+            plt.rcParams["figure.subplot.hspace"] = self.subplot_hspace
 
     def plot(self):
         pass
@@ -829,3 +877,166 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None, **kwargs):
         x_array, y_array, xerr=x_err, yerr=y_err, **plt_settings
     )
     return errorbar_object
+
+
+def add_colorbar_axis(ax, fig):
+    # add colorbar for PT
+    axpos = ax.get_position()
+    cb_position = (
+        axpos.bounds[0] - 0.0575,
+        axpos.bounds[1] + 0.02,
+        0.01,
+        axpos.bounds[3] * 0.75,
+    )
+
+    cbax = fig.add_axes(cb_position)
+    return cbax
+
+
+def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, bounds=None, fig=None):
+    """
+    
+    :param ax: DESCRIPTION
+    :type ax: TYPE
+    :param pt_obj: DESCRIPTION
+    :type pt_obj: TYPE
+    :param color_array: DESCRIPTION
+    :type color_array: TYPE
+    :param ellipse_properties: DESCRIPTION
+    :type ellipse_properties: TYPE
+    :param bounds: DESCRIPTION, defaults to None
+    :type bounds: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    # -------------plot ellipses-----------------------------------
+    for ii, ff in enumerate(1.0 / pt_obj.freq):
+        # make sure the ellipses will be visable
+        eheight = pt_obj.phimin[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
+        ewidth = pt_obj.phimax[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
+
+        # create an ellipse scaled by phimin and phimax and oriented
+        # along the azimuth which is calculated as clockwise but needs
+        # to be plotted counter-clockwise hence the negative sign.
+        ellipd = patches.Ellipse(
+            (np.log10(ff) * ellipse_properties["spacing"], 0),
+            width=ewidth,
+            height=eheight,
+            angle=90 - pt_obj.azimuth[ii],
+        )
+
+        ax.add_patch(ellipd)
+
+        # get ellipse color
+        ellipd.set_facecolor(
+            mtcl.get_plot_color(
+                color_array[ii],
+                ellipse_properties["colorby"],
+                ellipse_properties["cmap"],
+                ellipse_properties["range"][0],
+                ellipse_properties["range"][1],
+                bounds=bounds,
+            )
+        )
+    # set axis properties
+
+    ax.set_ylim(
+        ymin=-1.5 * ellipse_properties["size"], ymax=1.5 * ellipse_properties["size"]
+    )
+    if fig is not None:
+        cbax = add_colorbar_axis(ax, fig)
+    if ellipse_properties["cmap"] == "mt_seg_bl2wh2rd":
+        # make the colorbar
+        nseg = float(
+            (ellipse_properties["range"][1] - ellipse_properties["range"][0])
+            / (2 * ellipse_properties["range"][2])
+        )
+        cbpt = make_color_list(
+            cbax,
+            nseg,
+            ellipse_properties["range"][0],
+            ellipse_properties["range"][1],
+            ellipse_properties["range"][2],
+        )
+    else:
+        cbpt = mcb.ColorbarBase(
+            cbax,
+            cmap=mtcl.cmapdict[ellipse_properties["cmap"]],
+            norm=colors.Normalize(
+                vmin=ellipse_properties["range"][0], vmax=ellipse_properties["range"][1]
+            ),
+            orientation="vertical",
+        )
+    cbpt.set_ticks(
+        [
+            ellipse_properties["range"][0],
+            (ellipse_properties["range"][1] - ellipse_properties["range"][0]) / 2,
+            ellipse_properties["range"][1],
+        ]
+    )
+    cbpt.set_ticklabels(
+        [
+            f"{ellipse_properties['range'][0]:.0f}",
+            f"{(ellipse_properties['range'][1] - ellipse_properties['range'][0]) / 2:.0f}",
+            f"{ellipse_properties['range'][1]:.0f}",
+        ]
+    )
+
+    cbpt.ax.yaxis.set_label_position("left")
+    cbpt.ax.yaxis.set_label_coords(-1.05, 0.5)
+    cbpt.ax.yaxis.tick_right()
+    cbpt.ax.tick_params(axis="y", direction="in")
+
+    return cbax, cbpt
+
+
+def get_log_tick_labels(ax):
+    """
+    
+    :param ax: DESCRIPTION
+    :type ax: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    tklabels = []
+    xticks = []
+    for tk in ax.get_xticks():
+        try:
+            tklabels.append(period_label_dict[tk])
+            xticks.append(tk)
+        except KeyError:
+            pass
+    return tklabels, xticks
+
+
+def make_color_list(cbax, nseg, ckmin, ckmax, ckstep):
+    """
+    
+    """
+
+    # make a color list
+    clist = [(cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))] + [
+        (1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
+    ]
+
+    # make segmented colormap
+    mt_seg_bl2wh2rd = colors.ListedColormap(clist)
+
+    # make bounds so that the middle is white
+    bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
+
+    # normalize the colors
+    norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
+
+    # make the colorbar
+    return mcb.ColorbarBase(
+        cbax,
+        cmap=mt_seg_bl2wh2rd,
+        norm=norms,
+        orientation="vertical",
+        ticks=bounds[1:-1],
+    )

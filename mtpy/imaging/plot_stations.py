@@ -12,9 +12,7 @@ Created on Fri Jun 07 18:20:00 2013
 @author: jpeacock-pr
 """
 
-# ==============================================================================
-from pathlib import Path
-
+# =============================================================================
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -29,9 +27,9 @@ class PlotStations(PlotBase):
     """
     plot station locations in map view.
 
-    Need to input one of the following lists:
-
-   
+    Uses contextily to get the basemap.  
+    See https://contextily.readthedocs.io/en/latest/index.html for more 
+    information about options.
 
     """
 
@@ -97,9 +95,15 @@ class PlotStations(PlotBase):
                 y.max() * 1.002,
             )
 
-    def plot(self):
+    def plot(self, cx_source=cx.providers.USGS.USTopo, cx_zoom=None):
         """
-        plots the station locations
+        
+        :param cx_source: DESCRIPTION, defaults to cx.providers.USGS.USTopo
+        :type cx_source: TYPE, optional
+        :param cx_zoom: DESCRIPTION, defaults to None
+        :type cx_zoom: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
 
         """
 
@@ -135,11 +139,14 @@ class PlotStations(PlotBase):
             )
         if self.image_file is None:
             try:
+                cx_kwargs = {"crs": self.gdf.crs.to_string(), "source": cx_source}
+                if cx_zoom is not None:
+                    cx_kwargs["zoom"] = cx_zoom
                 cx.add_basemap(
-                    gax, crs=self.gdf.crs.to_string(), source=cx.providers.USGS.USTopo
+                    gax, **cx_kwargs,
                 )
             except Exception as error:
-                self._logger.warning(f"Could not add base map because {error}")
+                self.logger.warning(f"Could not add base map because {error}")
         # set axis properties
         self.ax.set_xlabel("latitude", fontdict=self.font_dict)
         self.ax.set_ylabel("longitude", fontdict=self.font_dict)

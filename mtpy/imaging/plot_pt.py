@@ -36,7 +36,13 @@ class PlotPhaseTensor(PlotBase):
 
         self.cb_position = (0.045, 0.78, 0.015, 0.12)
 
-        if self.plot_yn == "y":
+        self.subplot_left = 0.1
+        self.subplot_right = 0.98
+        self.subplot_bottom = 0.1
+        self.subplot_top = 0.95
+        self.subplot_wspace = 0.21
+        self.subplot_hspace = 0.5
+        if self.show_plot:
             self.plot()
 
     def plot(self):
