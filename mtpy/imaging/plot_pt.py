@@ -27,7 +27,7 @@ class PlotPhaseTensor(PlotBase):
     """
 
     def __init__(self, pt_object, station=None, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
         self.pt = pt_object
         self.station = station
         self.skew_cutoff = 3
@@ -75,7 +75,7 @@ class PlotPhaseTensor(PlotBase):
         color_array = self.get_pt_color_array(self.pt)
 
         # -------------plotPhaseTensor-----------------------------------
-        self.axpt = self.fig.add_subplot(3, 1, 1, aspect="equal")
+        self.axpt = self.fig.add_subplot(3, 1, 1)
 
         self.cbax, self.cbpt, = plot_pt_lateral(
             self.axpt, self.pt, color_array, self.ellipse_properties, self.fig,

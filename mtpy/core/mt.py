@@ -526,7 +526,7 @@ class MT(TF):
         :rtype: TYPE
 
         """
-
+        kwargs["ellipse_size"] = 0.5
         return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
 
 
