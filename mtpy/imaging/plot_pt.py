@@ -11,11 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from matplotlib.ticker import MultipleLocator
-import matplotlib.colors as colors
-import matplotlib.patches as patches
-import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
-from mtpy.imaging.mtplot_tools import PlotBase
+from mtpy.imaging.mtplot_tools import PlotBase, plot_pt_lateral, get_log_tick_labels
 
 # reload(mtpl)
 # ==============================================================================
@@ -42,180 +38,65 @@ class PlotPhaseTensor(PlotBase):
         self.subplot_top = 0.95
         self.subplot_wspace = 0.21
         self.subplot_hspace = 0.5
+
+        self._set_subplot_params()
         if self.show_plot:
             self.plot()
 
-    def plot(self):
+    def _rotate_pt(self, rotation_angle):
+        """
+        
+        :param rotation_angle: DESCRIPTION
+        :type rotation_angle: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        self.pt.rotate(rotation_angle)
+
+    def plot(self, rotation_angle=None):
         """
         plots the phase tensor elements
         """
-
-        # Set plot parameters
-        plt.rcParams["font.size"] = self.font_size
-        plt.rcParams["figure.subplot.left"] = 0.1
-        plt.rcParams["figure.subplot.right"] = 0.98
-        plt.rcParams["figure.subplot.bottom"] = 0.1
-        plt.rcParams["figure.subplot.top"] = 0.95
-        plt.rcParams["figure.subplot.wspace"] = 0.21
-        plt.rcParams["figure.subplot.hspace"] = 0.5
-
-        font_dict = {"size": self.font_size, "weight": "bold"}
-        font_dictt = {"size": self.font_size + 2, "weight": "bold"}
 
         # --> create plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
         # get phase tensor instance
-        try:
-            self.pt
-            self.pt.rotate(self.rot_z)
-        except AttributeError:
-            self.pt = self._mt.pt
-            self.pt.rotate(self.rot_z)
-            # self.zinv = self._mt.Z.invariants
-            # self.zinv.rotate(self.rot_z)
-        cmap = self.ellipse_cmap
-        ckmin = self.ellipse_range[0]
-        ckmax = self.ellipse_range[1]
-        try:
-            ckstep = float(self.ellipse_range[2])
-        except IndexError:
-            ckstep = 3
-        if cmap == "mt_seg_bl2wh2rd":
-            bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-            nseg = float((ckmax - ckmin) / (2 * ckstep))
-        # get the properties to color the ellipses by
-        if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
-            colorarray = self.pt.phimin
-        elif self.ellipse_colorby == "phidet":
-            colorarray = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
-        elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
-            colorarray = self.pt.beta
-        elif self.ellipse_colorby == "ellipticity":
-            colorarray = self.pt.ellipticity
-        else:
-            raise NameError(self.ellipse_colorby + " is not supported")
+        if rotation_angle is not None:
+            self._rotate_pt(rotation_angle)
+        color_array = self.get_pt_color_array(self.pt)
+
         # -------------plotPhaseTensor-----------------------------------
-        self.ax1 = self.fig.add_subplot(3, 1, 1, aspect="equal")
+        self.axpt = self.fig.add_subplot(3, 1, 1, aspect="equal")
 
-        for ii, ff in enumerate(self._mt.period):
-            # make sure the ellipses will be visable
-            if self.pt.phimax[ii] != 0:
-                eheight = self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
+        self.cbax, self.cbpt, = plot_pt_lateral(
+            self.axpt, self.pt, color_array, self.ellipse_properties, self.fig,
+        )
 
-                ewidth = self.ellipse_size
-            else:
-                # tiny instead of nothing
-                eheight = 0.01 * self.ellipse_size
-                ewidth = 0.01 * self.ellipse_size
-            # ewidth = self.pt.phimax[ii]/self.pt.phimax[ii]*\
-            #                                                  self.ellipse_size
-
-            # alternative scaling
-            # eheight = self.pt.phimin[ii]/max(np.abs(self.pt.phimax[0]))*\
-            #                                                   self.ellipse_size
-            # ewidth = self.pt.phimax[ii]/max(np.abs(self.pt.phimax[0]))*\
-            #                                                   self.ellipse_size
-
-            # create an ellipse scaled by phimin and phimax and oriented along
-            # the azimuth which is calculated as clockwise but needs to
-            # be plotted counter-clockwise hence the negative sign.
-            ellipd = patches.Ellipse(
-                (np.log10(ff) * self.ellipse_spacing, 0),
-                width=ewidth,
-                height=eheight,
-                angle=90 - self.pt.azimuth[ii],
-            )
-
-            self.ax1.add_patch(ellipd)
-
-            # get ellipse color
-            if cmap.find("seg") > 0:
-                ellipd.set_facecolor(
-                    mtcl.get_plot_color(
-                        colorarray[ii],
-                        self.ellipse_colorby,
-                        cmap,
-                        ckmin,
-                        ckmax,
-                        bounds=bounds,
-                    )
-                )
-            else:
-                ellipd.set_facecolor(
-                    mtcl.get_plot_color(
-                        colorarray[ii], self.ellipse_colorby, cmap, ckmin, ckmax
-                    )
-                )
         # ----set axes properties-----------------------------------------------
         # --> set tick labels and limits
-        xlimits = (
-            np.floor(np.log10(self._mt.period[0]) * self.ellipse_spacing),
-            np.ceil(np.log10(self._mt.period[-1]) * self.ellipse_spacing),
-        )
+        self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
 
-        self.ax1.set_xlim(xlimits)
-        tklabels = []
-        xticks = []
-        for tk in self.ax1.get_xticks():
-            try:
-                tklabels.append(mtpl.labeldict[tk / self.ellipse_spacing])
-                xticks.append(tk)
-            except KeyError:
-                pass
-        self.ax1.set_xticks(xticks)
-        self.ax1.set_xticklabels(tklabels, fontdict={"size": self.font_size})
-        self.ax1.set_xlabel("Period (s)", fontdict=font_dict)
-        self.ax1.set_ylim(ymin=-1.2 * self.ellipse_size, ymax=1.2 * self.ellipse_size)
+        tklabels, xticks = get_log_tick_labels(self.axpt)
 
-        self.ax1.grid(
+        self.axpt.set_xticks(xticks)
+        self.axpt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
+        self.axpt.set_xlabel("Period (s)", fontdict=self.font_dict)
+
+        # need to reset the x_limits caouse they get reset when calling
+        # set_ticks for some reason
+        self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+        self.axpt.grid(
             True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25
         )
-        self.ax1.set_axisbelow(True)
 
-        plt.setp(self.ax1.get_yticklabels(), visible=False)
-        # add colorbar for PT
-        self.cbax = self.fig.add_axes(self.cb_position)
-        if cmap == "mt_seg_bl2wh2rd":
-            # make a color list
-            clist = [
-                (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-            ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
+        plt.setp(self.axpt.get_yticklabels(), visible=False)
 
-            # make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(clist)
-
-            # make bounds so that the middle is white
-            bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
-
-            # normalize the colors
-            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
-
-            # make the colorbar
-            self.cbpt = mcb.ColorbarBase(
-                self.cbax,
-                cmap=mt_seg_bl2wh2rd,
-                norm=norms,
-                orientation="vertical",
-                ticks=bounds[1:-1],
-            )
-        else:
-            self.cbpt = mcb.ColorbarBase(
-                self.cbax,
-                cmap=mtcl.cmapdict[cmap],
-                norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
-                orientation="vertical",
-            )
-        self.cbpt.set_ticks([ckmin, ckmax])
-        self.cbpt.set_ticklabels(["{0:.0f}".format(ckmin), "{0:.0f}".format(ckmax)])
-        self.cbpt.ax.yaxis.set_label_position("left")
-        self.cbpt.ax.yaxis.set_label_coords(-1.05, 0.5)
-        self.cbpt.ax.yaxis.tick_right()
-        self.cbpt.ax.tick_params(axis="y", direction="in")
         self.cbpt.set_label(
-            mtpl.ckdict[self.ellipse_colorby],
-            fontdict={"size": self.font_size, "weight": "bold"},
+            self.cb_label_dict[self.ellipse_colorby], fontdict={"size": self.font_size},
         )
 
         # ---------------plotStrikeAngle-----------------------------------

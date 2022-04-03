@@ -893,7 +893,7 @@ def add_colorbar_axis(ax, fig):
     return cbax
 
 
-def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, bounds=None, fig=None):
+def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, fig=None):
     """
     
     :param ax: DESCRIPTION
@@ -910,7 +910,21 @@ def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, bounds=None, fi
     :rtype: TYPE
 
     """
-
+    bounds = None
+    try:
+        ellipse_properties["range"][2]
+    except IndexError:
+        ellipse_properties["range"][2] = 3
+    if ellipse_properties["cmap"] == "mt_seg_bl2wh2rd":
+        bounds = np.arange(
+            ellipse_properties["range"][0],
+            ellipse_properties["range"][1] + ellipse_properties["range"][2],
+            ellipse_properties["range"][2],
+        )
+        nseg = float(
+            (ellipse_properties["range"][1] - ellipse_properties["range"][0])
+            / (2 * ellipse_properties["range"][2])
+        )
     # -------------plot ellipses-----------------------------------
     for ii, ff in enumerate(1.0 / pt_obj.freq):
         # make sure the ellipses will be visable

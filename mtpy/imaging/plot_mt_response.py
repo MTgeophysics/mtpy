@@ -15,18 +15,13 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import matplotlib.colors as colors
-import matplotlib.patches as patches
-import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 
-import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.mtplot_tools import (
     PlotBase,
     plot_errorbar,
     plot_pt_lateral,
     get_log_tick_labels,
-    make_color_list,
 )
 
 # ==============================================================================
@@ -517,27 +512,11 @@ class PlotMTResponse(PlotBase):
         # ----plot phase tensor ellipse---------------------------------------
         if self.plot_pt:
 
-            cmap = self.ellipse_cmap
-            ckmin = self.ellipse_range[0]
-            ckmax = self.ellipse_range[1]
-            bounds = None
-            try:
-                ckstep = float(self.ellipse_range[2])
-            except IndexError:
-                ckstep = 3
-            if cmap == "mt_seg_bl2wh2rd":
-                bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-                nseg = float((ckmax - ckmin) / (2 * ckstep))
             color_array = self.get_pt_color_array(self.pt)
 
             # -------------plot ellipses-----------------------------------
             self.cbax, self.cbpt, = plot_pt_lateral(
-                self.axpt,
-                self.pt,
-                color_array,
-                self.ellipse_properties,
-                bounds,
-                self.fig,
+                self.axpt, self.pt, color_array, self.ellipse_properties, self.fig,
             )
 
             # ----set axes properties-----------------------------------------------
