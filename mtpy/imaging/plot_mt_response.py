@@ -24,14 +24,14 @@ import matplotlib.gridspec as gridspec
 
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging.mtplot_tools import PlotSettings, plot_errorbar
+from mtpy.imaging.mtplot_tools import PlotBase, plot_errorbar
 
 # ==============================================================================
 #  Plot apparent resistivity and phase
 # ==============================================================================
 
 
-class PlotMTResponse(PlotSettings):
+class PlotMTResponse(PlotBase):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment it supports the input of an .edi file. Other formats that will
@@ -70,14 +70,12 @@ class PlotMTResponse(PlotSettings):
         self, z_object=None, t_object=None, pt_obj=None, station="MT Response", **kwargs
     ):
         super().__init__(**kwargs)
-        self._logger = get_mtpy_logger(
-            f"{self.__class__.__module__}.{self.__class__.__name__}"
-        )
 
         self.Z = z_object
         self.Tipper = t_object
         self.pt = pt_obj
         self.station = station
+        self._basename = f"{self.station}_mt_response"
 
         self.phase_quadrant = 1
 
@@ -102,27 +100,9 @@ class PlotMTResponse(PlotSettings):
         # layout params
         self.show_resphase_xticklabels = False
 
-        self.show_plot = True
-
-        for key in list(kwargs.keys()):
-            if hasattr(self, key):
-                setattr(self, key, kwargs[key])
-            else:
-                self._logger.warn(
-                    "Argument {}={} is not supported thus not been set.".format(
-                        key, kwargs[key]
-                    )
-                )
         # plot on initializing
         if self.show_plot:
             self.plot()
-
-    def __str__(self):
-        """
-        rewrite the string builtin to give a useful message
-        """
-
-        return "Plot resitivity, phase, induction vectors, phase tensor for station {self.station}."
 
     @property
     def period(self):
@@ -769,107 +749,3 @@ class PlotMTResponse(PlotSettings):
         # be sure to show
         if show:
             plt.show()
-
-    def save_plot(
-        self,
-        save_fn,
-        file_format="pdf",
-        orientation="portrait",
-        fig_dpi=None,
-        close_plot=True,
-    ):
-        """
-        save_plot will save the figure to save_fn.
-
-        Arguments:
-        -----------
-
-            **save_fn** : string
-                          full path to save figure to, can be input as
-                          * directory path -> the directory path to save to
-                            in which the file will be saved as 
-                            save_fn/station_name_ResPhase.file_format
-
-                          * full path -> file will be save to the given 
-                            path.  If you use this option then the format
-                            will be assumed to be provided by the path
-
-            **file_format** : [ pdf | eps | jpg | png | svg ]
-                              file type of saved figure pdf,svg,eps... 
-
-            **orientation** : [ landscape | portrait ]
-                              orientation in which the file will be saved
-                              *default* is portrait
-
-            **fig_dpi** : int
-                          The resolution in dots-per-inch the file will be
-                          saved.  If None then the fig_dpi will be that at 
-                          which the figure was made.  I don't think that 
-                          it can be larger than fig_dpi of the figure.
-
-            **close_plot** : [ y | n ]
-                             * 'y' will close the plot after saving.
-                             * 'n' will leave plot open
-
-        :Example: ::
-
-            >>> # to save plot as jpg
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> p1.save_plot(r'/home/MT/figures', file_format='jpg')
-
-        """
-
-        if fig_dpi is None:
-            fig_dpi = self.fig_dpi
-        save_fn = Path(save_fn)
-        if not save_fn.is_dir():
-            file_format = save_fn.suffix
-        else:
-            save_fn = save_fn.joinpath(f"{self.station}_mt_response.{file_format}")
-        self.fig.savefig(
-            save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
-        )
-
-        if close_plot:
-            plt.close(self.fig)
-        else:
-            pass
-        self.fig_fn = save_fn
-        self._logger.info(f"Saved figure to: {self.fig_fn}")
-
-    def update_plot(self):
-        """
-        update any parameters that where changed using the built-in draw from
-        canvas.  
-
-        Use this if you change an of the .fig or axes properties
-
-        :Example: ::
-
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
-            >>> p1.update_plot()
-
-        """
-
-        self.fig.canvas.draw()
-
-    def redraw_plot(self):
-        """
-        use this function if you updated some attributes and want to re-plot.
-
-        :Example: ::
-
-            >>> # change the color and marker of the xy components
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> p1.xy_color = (.5,.5,.9)
-            >>> p1.xy_marker = '*'
-            >>> p1.redraw_plot()
-        """
-
-        self.fig.clf()
-        self.plot()

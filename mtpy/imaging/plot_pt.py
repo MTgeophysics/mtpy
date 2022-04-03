@@ -15,221 +15,26 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplot_tools as mtpl
+from mtpy.imaging.mtplot_tools import PlotBase
 
 # reload(mtpl)
 # ==============================================================================
 
 
-class PlotPhaseTensor(mtpl.MTEllipse):
+class PlotPhaseTensor(PlotBase):
     """
     Will plot phase tensor, strike angle, min and max phase angle,
     azimuth, skew, and ellipticity as subplots on one plot.  It can plot
     the resistivity tensor along side the phase tensor for comparison.
 
-    Arguments:
-    ----------
-
-        **fn** : string
-               filename containing impedance (.edi) is the only
-               format supported at the moment
-
-        **z_object** : class mtpy.core.z.Z
-                      object of mtpy.core.z.  If this is input be sure the
-                      attribute z.freq is filled.  *default* is None
-
-        **mt_object** : class mtpy.imaging.mtpl.MTplot.mtpl.MTplot
-                        object of mtpy.imaging.mtpl.MTplot.mtpl.MTplot
-                        *default* is None
-
-        **pt_object** : class mtpy.analysis.pt
-                        phase tensor object of mtpy.analysis.pt.  If this is
-                        input then the ._mt attribute is set to None cause
-                        at the moment cannot tranform the phase tensor to z
-                        *default* is None
-
-        **fignum** : int (figure number)
-
-        **rot_z** : float (angle in degrees)
-                     rotation angle clockwise positive assuming 0 is North.
-                     *Default* is 0
-
-        **plot_yn** : [ 'y' | 'n' ]
-
-
-        **dpi** : int
-                  Dots-per-inch resolution of figure.
-                  *Default* is 300
-
-        **ellipse_dict** : dictionary
-                          dictionary of parameters for the phase tensor
-                          ellipses with keys:
-                          * 'size' -> size of ellipse in points
-                                     *default* is .25
-
-                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' |
-                                    'skew_seg' | 'phidet' | 'ellipticity' ]
-
-                                    - 'phimin' -> colors by minimum phase
-                                    - 'phimax' -> colors by maximum phase
-                                    - 'skew' -> colors by skew
-                                    - 'skew_seg' -> colors by skew in
-                                                   discrete segments
-                                                   defined by the range
-                                    - 'phidet' -> colors by determinant of
-                                                 the phase tensor
-                                    - 'ellipticity' -> colors by ellipticity
-                                    *default* is 'phimin'
-
-                          * 'range' : tuple (min, max, step)
-                                     Need to input at least the min and max
-                                     and if using 'skew_seg' to plot
-                                     discrete values input step as well
-                                     *default* depends on 'colorby'
-
-                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' |
-                                      'mt_wh2bl' | 'mt_rd2bl' |
-                                      'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
-                                      'mt_rd2gr2bl' ]
-
-                                   - 'mt_yl2rd' -> yellow to red
-                                   - 'mt_bl2yl2rd' -> blue to yellow to red
-                                   - 'mt_wh2bl' -> white to blue
-                                   - 'mt_rd2bl' -> red to blue
-                                   - 'mt_bl2wh2rd' -> blue to white to red
-                                   - 'mt_bl2gr2rd' -> blue to green to red
-                                   - 'mt_rd2gr2bl' -> red to green to blue
-                                   - 'mt_seg_bl2wh2rd' -> discrete blue to
-                                                         white to red
-
-
-
-    :Example: ::
-
-        #To plot just the phase tensor components
-        >>> import mtpy.imaging.mtplot as mtplot
-        >>> pt1 = mtplot.plot_pt(fn=r"/home/MT/edifiles/MT01.edi")
-
-    Attributes:
-    -----------
-        -ax1      matplotlib.axes object for the phase tensor ellipses
-        -cbpt     matplotlib.colors.ColorBarBase object for coloring ellipses
-        -ax2      matplotlib.axes object for the strike angle
-        -ax3      matplotlib.axes object for minimum and maximum phase
-        -ax4      matplotlib.axes object for skew angle
-        -ax5      matplotlib.axes object for ellipticity
-
-        -font_size  size of font for the axes labels, titles will be +2
-        -fignum     number of the figure instance
-        -fig_size   size of figure in inches
-        -plot_yn    boolean to tell the class to plot on instance creation
-        -dpi        dots-per-inch resolution of figure
-
-        -strike_inv_marker   marker for strike determined from invariants
-                             in ax2
-        -strike_inv_color    color for invariant marker in ax2
-        -strike_pt_marker    marker for strike determined from pt in ax2
-        -strike_pt_color     color for pt strike in ax2
-        -strike_tp_marker    marker for strike determined from Tipper in ax2
-        -strike_tp_color     color for tipper strike in ax2
-
-        -ptmin_marker  marker for minimum phase in ax3
-        -ptmin_color   color for minimum phase markers in ax3
-        -ptmax_marker  marker for maximum phase in ax3
-        -ptmax_color   color for maximum phase markers in ax3
-
-        -skew_marker   marker for skew angle determined from pt in ax4
-        -skew_color    color for skew angle in ax4
-
-        -ellip_marker  marker for ellipticity determined from pt in ax5
-        -ellip_color   color for ellipticity in ax5
-
-        -marker_size   size of the marker in all plots
-        -marker_lw     width of face lines for markers in all plots
-
-        -pt_limits      limits on the minimu phase and maximum phase (deg)
-        -strike_limits  limits on the strike angle in degrees, note the strike
-                        is calculated to go from -90 to 90.
-        -skew_limits    limits on skew angles (deg)
-        -ellip_limits   limits on ellipticity ratio from [0,1]
-
-        -skew_cutoff    plots a line in ax4 at positive and negative of this
-                        value to visually recognize 3D effects
-        -ellip_cutoff   plots a line in ax5 to represent the cutoff of 2D
-
-        -ellipse_cmap     color map for coloring ellipses of ax1
-        -ellipse_colorby  parameter to color the ellipses by
-        -ellipse_range    min and max values for coloring ellipses
-        -ellipse_size     scaling factor of ellipses
-        -ellipse_spacing  spacing between ellipses
-
-        -mt            mtpy.imaging.mtpl.MTplot.mtpl.MTplot object (PlotPhaseTensor._mt)
-
+    
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, pt_object, **kwargs):
         super().__init__()
-        fn = kwargs.pop("fn", None)
-        z_object = kwargs.pop("z_object", None)
-        mt_object = kwargs.pop("mt_object", None)
-        pt_object = kwargs.pop("pt_object", None)
+        self.pt_object = pt_object
 
-        # --> get mt object
-        if fn is not None:
-            self._mt = mtpl.MTplot(fn=fn)
-        elif z_object is not None:
-            self._mt = mtpl.MTplot(z_object=z_object)
-        elif mt_object is not None:
-            self._mt = mt_object
-        elif pt_object is not None:
-            self.pt = pt_object
-            self._mt = mtpl.MTplot()
-            self._mt.freq = self.pt.freq
-        self.font_size = kwargs.pop("font_size", 7)
-        self.fig_dpi = kwargs.pop("dpi", 300)
-        self.fig_num = kwargs.pop("fig_num", 1)
-        self.fig_size = kwargs.pop("fig_size", [8, 8])
-        self.rot_z = kwargs.pop("rot_z", 0)
-        self.plot_yn = kwargs.pop("plot_yn", "y")
-
-        self.ptmin_marker = kwargs.pop("ptmin_marker", "o")
-        self.ptmax_marker = kwargs.pop("ptmax_marker", "s")
-        self.strike_inv_marker = kwargs.pop("strike_inv_marker", "s")
-        self.strike_pt_marker = kwargs.pop("strike_pt_marker", "o")
-        self.strike_tp_marker = kwargs.pop("strike_tp_marker", "v")
-        self.skew_marker = kwargs.pop("skew_marker", "s")
-        self.ellip_marker = kwargs.pop("ellip_marker", "s")
-
-        self.ptmin_color = kwargs.pop("ptmin_color", "r")
-        self.ptmax_color = kwargs.pop("ptmax_color", "b")
-        self.strike_inv_color = kwargs.pop("strike_inv_color", "c")
-        self.strike_pt_color = kwargs.pop("strike_pt_color", "purple")
-        self.strike_tp_color = kwargs.pop("strike_tp_color", (0.5, 0.5, 0))
-        self.skew_color = kwargs.pop("skew_color", "g")
-        self.ellip_color = kwargs.pop("ellip_color", "orange")
-
-        self.marker_size = kwargs.pop("marker_size", 2)
-        self.marker_lw = kwargs.pop("marker_lw", 0.5)
-
-        self.pt_limits = kwargs.pop("pt_limits", None)
-        self.strike_limits = kwargs.pop("strike_limits", None)
-        self.ellip_limits = kwargs.pop("ellip_limits", None)
-        self.skew_limits = kwargs.pop("skew_limits", None)
-
-        self.skew_cutoff = kwargs.pop("skew_cutoff", 3)
-        self.ellip_cutoff = kwargs.pop("ellip_cutoff", 0.2)
-
-        # read ellipse dict
-        ellipse_dict = kwargs.pop("ellipse_dict", None)
-        if ellipse_dict is None:
-            self._ellipse_dict = {"size": 0.25}
-        else:
-            self._ellipse_dict = ellipse_dict
-        # self._read_ellipse_dict()
-
-        self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
-
-        self.cb_position = kwargs.pop("cb_position", (0.045, 0.78, 0.015, 0.12))
+        self.cb_position = (0.045, 0.78, 0.015, 0.12)
 
         if self.plot_yn == "y":
             self.plot()

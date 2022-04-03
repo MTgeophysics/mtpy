@@ -28,7 +28,6 @@ from mtpy.analysis.zinvariants import Zinvariants
 # reload(mtpl)
 
 # ============================================================================
-from mtpy.core.mt import MT
 
 
 class PlotMultipleResponses(mtpl.PlotSettings):
