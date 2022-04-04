@@ -280,8 +280,10 @@ class PlotSettings(MTArrows, MTEllipse):
 
         # Show Plot
         self.show_plot = True
-        self.plot_tipper = False
+        self.plot_tipper = "n"
         self.plot_pt = False
+        self.plot_strike = False
+        self.plot_skew = False
 
         self.text_size = 7
         self.text_weight = "normal"
@@ -300,9 +302,8 @@ class PlotSettings(MTArrows, MTEllipse):
         self.subplot_hspace = None
 
         # Set class property values from kwargs and pop them
-        for v in vars(self):
-            if v in list(kwargs.keys()):
-                setattr(self, v, kwargs.pop(v, None))
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         self.cb_label_dict = {
             "phiminang": r"$\Phi_{min}$ (deg)",
             "phimin": r"$\Phi_{min}$ (deg)",
@@ -335,7 +336,7 @@ class PlotSettings(MTArrows, MTEllipse):
             10 ** (np.ceil(np.log10(period.max()))),
         )
 
-    def set_resistivity_limits(self, resistivity, mode="od"):
+    def set_resistivity_limits(self, resistivity, mode="od", scale="log"):
         """
         set resistivity limits
         
@@ -349,15 +350,17 @@ class PlotSettings(MTArrows, MTEllipse):
         """
 
         if mode == "od":
-            return (
+            nz_xy = np.nonzero(resistivity[:, 0, 1])
+            nz_yx = np.nonzero(resistivity[:, 1, 0])
+            limits = [
                 10
                 ** (
                     np.floor(
                         np.log10(
                             min(
                                 [
-                                    np.nanmin(resistivity[:, 0, 1]),
-                                    np.nanmin(resistivity[:, 1, 0]),
+                                    np.nanmin(resistivity[nz_xy, 0, 1]),
+                                    np.nanmin(resistivity[nz_yx, 1, 0]),
                                 ]
                             )
                         )
@@ -369,24 +372,26 @@ class PlotSettings(MTArrows, MTEllipse):
                         np.log10(
                             max(
                                 [
-                                    np.nanmax(resistivity[:, 0, 1]),
-                                    np.nanmax(resistivity[:, 1, 0]),
+                                    np.nanmax(resistivity[nz_xy, 0, 1]),
+                                    np.nanmax(resistivity[nz_yx, 1, 0]),
                                 ]
                             )
                         )
                     )
                 ),
-            )
+            ]
         if mode == "d":
-            return (
+            nz_xx = np.nonzero(resistivity[:, 0, 1])
+            nz_yy = np.nonzero(resistivity[:, 1, 0])
+            limits = [
                 10
                 ** (
                     np.floor(
                         np.log10(
                             min(
                                 [
-                                    np.nanmin(resistivity[:, 0, 0]),
-                                    np.nanmin(resistivity[:, 1, 1]),
+                                    np.nanmin(resistivity[nz_xx, 0, 0]),
+                                    np.nanmin(resistivity[nz_yy, 1, 1]),
                                 ]
                             )
                         )
@@ -398,31 +403,36 @@ class PlotSettings(MTArrows, MTEllipse):
                         np.log10(
                             max(
                                 [
-                                    np.nanmax(resistivity[:, 0, 0]),
-                                    np.nanmax(resistivity[:, 1, 1]),
+                                    np.nanmax(resistivity[nz_xx, 0, 0]),
+                                    np.nanmax(resistivity[nz_yy, 1, 1]),
                                 ]
                             )
                         )
                     )
                 ),
-            )
+            ]
+        if scale == "log":
+            if limits[0] == 0:
+                limits[0] = 0.1
+        return limits
 
     def set_phase_limits(self, phase, mode="od"):
         if mode == "od":
-            ph_min = 0
-            ph_max = 90
-            if min(phase[:, 0, 1]) < 0 or min(phase[:, 1, 0] + 180) < 0:
-                ph_min = min([min(phase[:, 0, 1]), min(phase[:, 1, 0])])
-                if ph_min > 0:
-                    ph_min = 0
-            else:
+            nz_xy = np.nonzero(phase[:, 0, 1])
+            nz_yx = np.nonzero(phase[:, 1, 0])
+
+            ph_min = min(
+                [np.nanmin(phase[nz_xy, 0, 1]), np.nanmin(phase[nz_yx, 1, 0] + 180)]
+            )
+            if ph_min > 0:
                 ph_min = 0
-            if max(phase[:, 0, 1]) > 90 or max(phase[:, 1, 0] + 180) > 90:
-                ph_max = min([max(phase[:, 0, 1]), max(phase[:, 1, 0] + 180)])
-                if ph_max < 91:
-                    ph_max = 89.9
             else:
+                ph_min = round(ph_min / 5) * 5
+            ph_max = max([np.nanmax(phase[:, 0, 1]), np.nanmax(phase[:, 1, 0] + 180)])
+            if ph_max < 91:
                 ph_max = 89.9
+            else:
+                ph_max = round(ph_max / 5) * 5
             return (ph_min, ph_max)
         elif mode == "d":
             ph_min = -180
@@ -678,6 +688,53 @@ class PlotBase(PlotSettings):
         self.plot()
 
 
+# =============================================================================
+#  plotting functions
+# =============================================================================
+def plot_resistivity(ax, period, resistivity, error, **properties):
+    """
+    plot apparent resistivity to the given axis with given properties
+    
+    :param ax: DESCRIPTION
+    :type ax: TYPE
+    :param resistivity: DESCRIPTION
+    :type resistivity: TYPE
+    :param period: DESCRIPTION
+    :type period: TYPE
+    :param **properties: DESCRIPTION
+    :type **properties: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    nz = np.nonzero(resistivity)
+
+    return plot_errorbar(
+        ax, period[nz], resistivity[nz], y_error=error[nz], **properties,
+    )
+
+
+def plot_phase(ax, period, phase, error, **properties):
+    """
+    plot apparent resistivity to the given axis with given properties
+    
+    :param ax: DESCRIPTION
+    :type ax: TYPE
+    :param resistivity: DESCRIPTION
+    :type resistivity: TYPE
+    :param period: DESCRIPTION
+    :type period: TYPE
+    :param **properties: DESCRIPTION
+    :type **properties: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    nz = np.nonzero(phase)
+
+    return plot_errorbar(ax, period[nz], phase[nz], y_error=error[nz], **properties,)
+
+
 # ==============================================================================
 # grid data onto a map view
 # ==============================================================================
@@ -928,6 +985,8 @@ def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, fig=None):
     # -------------plot ellipses-----------------------------------
     for ii, ff in enumerate(1.0 / pt_obj.freq):
         # make sure the ellipses will be visable
+        if pt_obj.phimax[ii] == 0:
+            continue
         eheight = pt_obj.phimin[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
         ewidth = pt_obj.phimax[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
 
@@ -1054,3 +1113,7 @@ def make_color_list(cbax, nseg, ckmin, ckmax, ckstep):
         orientation="vertical",
         ticks=bounds[1:-1],
     )
+
+
+def round_to_step(num, base=5):
+    return base * round(num / base)

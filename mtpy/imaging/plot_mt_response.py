@@ -19,9 +19,10 @@ import matplotlib.gridspec as gridspec
 
 from mtpy.imaging.mtplot_tools import (
     PlotBase,
-    plot_errorbar,
     plot_pt_lateral,
     get_log_tick_labels,
+    plot_resistivity,
+    plot_phase,
 )
 
 # ==============================================================================
@@ -67,6 +68,8 @@ class PlotMTResponse(PlotBase):
     def __init__(
         self, z_object=None, t_object=None, pt_obj=None, station="MT Response", **kwargs
     ):
+        self.plot_num = 1
+        self.rotation_angle = 0
         super().__init__(**kwargs)
 
         self.Z = z_object
@@ -74,11 +77,6 @@ class PlotMTResponse(PlotBase):
         self.pt = pt_obj
         self.station = station
         self._basename = f"{self.station}_mt_response"
-
-        self.phase_quadrant = 1
-
-        self.plot_num = kwargs.pop("plot_num", 1)
-        self.rotation_angle = kwargs.pop("rotation_angle", 0)
 
         if self.Tipper is not None:
             self.plot_tipper = "yri"
@@ -97,6 +95,11 @@ class PlotMTResponse(PlotBase):
             self.ellipse_size = 0.25
         # layout params
         self.show_resphase_xticklabels = False
+        # subplot parameters
+        self.subplot_left = 0.12
+        self.subplot_right = 0.98
+        self.subplot_bottom = 0.1
+        self.subplot_top = 0.93
 
         # plot on initializing
         if self.show_plot:
@@ -114,6 +117,22 @@ class PlotMTResponse(PlotBase):
         else:
             return None
 
+    # ---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+
+    @rotation_angle.setter
+    def rotation_angle(self, theta_r):
+        """
+        only a single value is allowed
+        """
+        if not theta_r == 0:
+
+            self.Z.rotate(theta_r)
+            self.Tipper.rotate(theta_r)
+            self.pt.rotate(theta_r)
+
     def _has_tipper(self):
         if self.plot_tipper.find("y") >= 0:
             if self.Tipper is None or (self.Tipper.tipper == 0 + 0j).all():
@@ -126,14 +145,6 @@ class PlotMTResponse(PlotBase):
             if self.pt is None:  # no phase tensor object provided
                 self._logger.info(f"No PT data for station {self.station}")
                 self.plot_pt = False
-
-    def _set_subplot_params(self):
-        # set some parameters of the figure and subplot spacing
-        plt.rcParams["font.size"] = self.font_size
-        plt.rcParams["figure.subplot.bottom"] = 0.1
-        plt.rcParams["figure.subplot.top"] = 0.93
-        plt.rcParams["figure.subplot.left"] = 0.12
-        plt.rcParams["figure.subplot.right"] = 0.98
 
     def _setup_subplots(self):
         # create a dictionary for the number of subplots needed
@@ -210,39 +221,24 @@ class PlotMTResponse(PlotBase):
             self.axpt.yaxis.set_label_coords(label_coords[0], label_coords[1])
         return label_coords
 
-    def _get_nonzero_indices(self):
-        self._nz_xx = np.nonzero(self.Z.z[:, 0, 0])
-        self._nz_xy = np.nonzero(self.Z.z[:, 0, 1])
-        self._nz_yx = np.nonzero(self.Z.z[:, 1, 0])
-        self._nz_yy = np.nonzero(self.Z.z[:, 1, 1])
-
-        self._nz_tx = None
-        self._nz_ty = None
-
-        if self.Tipper is not None:  # fix github issue #24.
-            # NOTE the following lines seems not have any effect anyway
-            self._nz_tx = np.nonzero(self.Tipper.tipper[:, 0, 0])
-            self._nz_ty = np.nonzero(self.Tipper.tipper[:, 0, 1])
-
     def _plot_resistivity_od(self):
 
         res_limits = self.set_resistivity_limits(self.Z.resistivity, mode="od")
-
         # res_xy
-        self.ebxyr = plot_errorbar(
+        self.ebxyr = plot_resistivity(
             self.axr,
-            self.period[self._nz_xy],
-            self.Z.res_xy[self._nz_xy],
-            y_error=self.Z.res_err_xy[self._nz_xy],
+            self.period,
+            self.Z.res_xy,
+            self.Z.res_err_xy,
             **self.xy_error_bar_properties,
         )
 
         # res_yx
-        self.ebyxr = plot_errorbar(
+        self.ebyxr = plot_resistivity(
             self.axr,
-            self.period[self._nz_yx],
-            self.Z.res_yx[self._nz_yx],
-            y_error=self.Z.res_err_yx[self._nz_yx],
+            self.period,
+            self.Z.res_yx,
+            self.Z.res_err_yx,
             **self.yx_error_bar_properties,
         )
 
@@ -272,20 +268,20 @@ class PlotMTResponse(PlotBase):
 
         res_limits = self.set_resistivity_limits(self.Z.resistivity, mode="d")
         # res_xx
-        self.ebxxr = plot_errorbar(
+        self.ebxxr = plot_resistivity(
             self.axr2,
-            self.period[self._nz_xx],
-            self.Z.res_xx[self._nz_xx],
-            y_error=self.Z.res_err_xx[self._nz_xx],
+            self.period,
+            self.Z.res_xx,
+            self.Z.res_err_xx,
             **self.xy_error_bar_properties,
         )
 
         # res_yy
-        self.ebyyr = plot_errorbar(
+        self.ebyyr = plot_resistivity(
             self.axr2,
-            self.period[self._nz_yy],
-            self.Z.res_yy[self._nz_yy],
-            y_error=self.Z.res_err_yy[self._nz_yy],
+            self.period,
+            self.Z.res_yy,
+            self.Z.res_err_yy,
             **self.yx_error_bar_properties,
         )
 
@@ -312,20 +308,20 @@ class PlotMTResponse(PlotBase):
 
     def _plot_phase_od(self):
         # phase_xy
-        self.ebxyp = plot_errorbar(
+        self.ebxyp = plot_phase(
             self.axp,
-            self.period[self._nz_xy],
-            self.Z.phase_xy[self._nz_xy],
-            y_error=self.Z.phase_err_xy[self._nz_xy],
+            self.period,
+            self.Z.phase_xy,
+            self.Z.phase_err_xy,
             **self.xy_error_bar_properties,
         )
 
         # phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = plot_errorbar(
+        self.ebyxp = plot_phase(
             self.axp,
-            self.period[self._nz_yx],
-            self.Z.phase_yx[self._nz_yx] + 180,
-            y_error=self.Z.phase_err_yx[self._nz_yx],
+            self.period,
+            self.Z.phase_yx + 180,
+            self.Z.phase_err_yx,
             **self.yx_error_bar_properties,
         )
 
@@ -337,30 +333,30 @@ class PlotMTResponse(PlotBase):
         self.axp.set_ylabel("Phase (deg)", self.font_dict)
         self.axp.set_xscale("log", nonpositive="clip")
         self.axp.set_ylim(phase_limits)
-        self.axp.yaxis.set_major_locator(MultipleLocator(15))
-        self.axp.yaxis.set_minor_locator(MultipleLocator(5))
+        if phase_limits[0] < -10 or phase_limits[1] > 100:
+            self.axp.yaxis.set_major_locator(MultipleLocator(30))
+            self.axp.yaxis.set_minor_locator(MultipleLocator(10))
+        else:
+            self.axp.yaxis.set_major_locator(MultipleLocator(15))
+            self.axp.yaxis.set_minor_locator(MultipleLocator(5))
         self.axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        # # set th xaxis tick labels to invisible
-        # if self.plot_tipper.find("y") >= 0 or self.plot_pt == "y":
-        #     plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
-        #     self.axp.set_xlabel("")
 
     def _plot_phase_d(self):
         # phase_xx
-        self.ebxyp = plot_errorbar(
+        self.ebxyp = plot_phase(
             self.axp2,
-            self.period[self._nz_xx],
-            self.Z.phase_xx[self._nz_xx],
-            y_error=self.Z.phase_err_xx[self._nz_xx],
+            self.period,
+            self.Z.phase_xx,
+            self.Z.phase_err_xx,
             **self.xy_error_bar_properties,
         )
 
-        # phase_yy
-        self.ebyxp = plot_errorbar(
+        # phase_yx: Note add 180 to place it in same quadrant as phase_xy
+        self.ebyxp = plot_phase(
             self.axp2,
-            self.period[self._nz_yy],
-            self.Z.phase_yy[self._nz_yy],
-            y_error=self.Z.phase_err_yy[self._nz_yy],
+            self.period,
+            self.Z.phase_yy,
+            self.Z.phase_err_yy,
             **self.yx_error_bar_properties,
         )
 
@@ -377,18 +373,20 @@ class PlotMTResponse(PlotBase):
 
     def _plot_determinant(self):
         # res_det
-        self.ebdetr = self.axr.errorbar(
+        self.ebdetr = plot_resistivity(
+            self.axr,
             self.period,
             self.Z.res_det,
-            yerr=self.Z.res_det_err,
+            self.Z.res_det_err,
             **self.det_error_bar_properties,
         )
 
         # phase_det
-        self.ebdetp = self.axp.errorbar(
+        self.ebdetp = plot_phase(
+            self.axp,
             self.period,
             self.Z.phase_det,
-            yerr=self.Z.phase_det_err,
+            self.Z.phase_det_err,
             **self.det_error_bar_properties,
         )
 
@@ -552,7 +550,6 @@ class PlotMTResponse(PlotBase):
 
         self._has_tipper()
         self._has_pt()
-        self._get_nonzero_indices()
 
         # set x-axis limits from short period to long period
         if self.x_limits is None:

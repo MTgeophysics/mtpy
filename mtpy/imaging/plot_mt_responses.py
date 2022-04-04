@@ -20,7 +20,7 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplot_tools as mtpl
+from mtpy.imaging.mtplot_tools import PlotBase
 from mtpy.analysis.pt import PhaseTensor
 from mtpy.analysis.zinvariants import Zinvariants
 
@@ -30,22 +30,11 @@ from mtpy.analysis.zinvariants import Zinvariants
 # ============================================================================
 
 
-class PlotMultipleResponses(mtpl.PlotSettings):
+class PlotMultipleResponses(PlotBase):
     """
     plots multiple MT responses simultaneously either in single plots or in
     one plot of sub-figures or in a single plot with subfigures for each
     component.
-
-    expecting only one type of input --> can be:
-        **fn_list** : list of filenames to plot
-
-         **z_object_list** : list of mtpy.core.z.Z objects
-
-         **res_object_list** : list of mtpy.imaging.mtplot.ResPhase objects
-
-         **tipper_object_list** : list of mtpy.imaging.mtplot.Tipper objects
-
-         **mt_object_list** : list of mtpy.imaging.mtplot.MTplot objects
 
 
     Arguments:
@@ -97,190 +86,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
                                         are plotted.
 
 
-        **plot_title** : string
-                    title of plot
-                    *default* is station name
 
-        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
-                          Plots the tipper in a bottom pannel
-                          * 'yri'  --> plots the real and imaginar parts
-                          * 'yr'   --> plots just the real part
-                          * 'yi'   --> plots just the imaginary part
-
-                          **Note:** the convention is to point towards a
-                          conductor.  Can change this by setting the
-                          parameter arrow_direction = 1.
-
-        **plot_strike** : [ 'y' | 1 | 2 | 3 | 'n' ]
-                          Plots the strike angle from different parameters:
-                              * 'y'  --> plots strike angle determined from
-                                         the invariants of Weaver et al. [2000]
-                                         and the phase tensor of
-                                         Caldwell et al. [2004], if Tipper is
-                                         plotted the strike of the tipper is
-                                         also plotted.
-
-                               * 1  --> plots strike angle determined from
-                                        the invariants of Weaver et al. [2000]
-                               * 2  --> plots strike angle determined from
-                                        the phase tensor of
-                                        Caldwell et al. [2004]
-                               * 3  --> plots strike angle determined from
-                                        the tipper
-                               * 'n' --> doesn't plot the strike, *default*
-
-        **plot_skew** : [ 'y' | 'n' ]
-                       string for plotting skew angle.  This is plotted in
-                       the same plot as strike angle at the moment.
-                           * 'y' for plotting the skew
-                           * 'n' for not plotting skew *default*
-
-        **fig_dpi** : int
-                 dots-per-inch resolution, *default* is 300
-
-
-        :Example: ::
-
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> import os
-            >>> edipath = r"/home/Edifiles"
-            >>> edilist = [os.path.join(edipath,edi)
-            >>> ...       for edi in os.listdir(edipath)
-            >>> ...       if edi.find('.edi')>0]
-            >>> plot each station in a subplot all in one figure with tipper
-            >>> rp1 = mtplot.PlotMultipleResPhase(fn_list=edilist, plotnum=1,
-            >>> ...                                plot_tipper='yr',
-            >>> ...                                plot_style='all')
-
-
-    Attributes:
-    -----------
-        -mt_list         list of mtplot.MTplot objects made from inputs
-        -fignum         figure number for plotting
-        -fig_size       figure size in inches [width, height]
-        -plotnum        plot type, see arguments for details
-        -title          title of the plot, *default* is station name
-        -dpi            Dots-per-inch resolution of plot, *default* is 300
-        -rotz           Rotate impedance tensor by this angle (deg) assuming
-                        that North is 0 and angle is positive clockwise
-
-        -plot_tipper    string to tell the program to plot tipper arrows or
-                        not, see accepted values above in arguments
-
-        -plot_strike    string or integer telling the program to plot the
-                        strike angle, see values above in arguments
-
-        -plot_skew      string to tell the program to plot skew angle.
-                        The skew is plotted in the same subplot as the strike
-                        angle at the moment
-
-
-        -period          period array cooresponding to the impedance tensor
-        -font_size       size of font for the axis ticklabels, note that the
-                         axis labels will be font_size+2
-
-        -axr             matplotlib.axes object for the xy,yx resistivity plot.
-        -axp             matplotlib.axes object for the xy,yx phase plot
-        -axt             matplotlib.axes object for the tipper plot
-        -ax2r            matplotlib.axes object for the xx,yy resistivity plot
-        -ax2p            matplotlib.axes object for the xx,yy phase plot
-        -axs             matplotlib.axes object for the strike plot
-        -axs2            matplotlib.axes object for the skew plot
-
-        ..
-
-             **Note:** that from these axes object you have control of the
-             plot.  You can do this by changing any parameter in the
-             axes object and then calling update_plot()
-
-        -erxyr          class matplotlib.container.ErrorbarContainer for
-                        xy apparent resistivity.
-        -erxyp          class matplotlib.container.ErrorbarContainer for
-                        xy.
-        -eryxr          class matplotlib.container.ErrorbarContainer for
-                        yx apparent resistivity.
-        -eryxp          class matplotlib.container.ErrorbarContainer for
-                        yx phase.
-
-        ..
-
-            **Note:** that from these line objects you can manipulate the
-            error bar properties and then call update_plot()
-
-        -xy_ls           line style for xy and xx components, *default* is None
-        -yx_ls           line style for yx and yy components, *default* is None
-        -det_ls          line style for determinant, *default* is None
-
-        -xy_marker       marker for xy and xx, *default* is squares
-        -yx_marker       marker for yx and yy, *default* is circles
-        -det_marker      marker for determinant, *default* is diamonds
-
-        -xy_color        marker color for xy and xx, *default* is blue
-        -yx_color        marker color for yx and yy, *default* is red
-        -det_color       marker color for determinant, *default* is green
-
-        -xy_mfc          marker face color for xy and xx, *default* is None
-        -yx_mfc          marker face color for yx and yy, *default* is None
-        -det_mfc         marker face color for determinant, *default* is None
-
-        -skew_marker     marker for skew angle, *default* is 'd'
-        -skew_color      color for skew angle, *default* is 'orange'
-
-        -strike_inv_marker  marker for strike angle determined by invariants
-                            *default* is '^'
-        -strike_inv_color   color for strike angle determined by invaraiants
-                            *default* is (.2, .2, .7)
-        -strike_pt_marker  marker for strike angle determined by pt,
-                           *default* is'v'
-        -strike_pt_color   color for strike angle determined by pt
-                           *default* is (.7, .2, .2)
-
-        -strike_tip_marker  marker for strike angle determined by tipper
-                            *default* is '>'
-        -strike_tip_color   color for strike angle determined by tipper
-                            *default* is (.2, .7, .2)
-
-        -marker_size     size of marker in relative dimenstions, *default* is 2
-        -marker_lw       line width of marker, *default* is 100./dpi
-        ..
-
-         *For more on line and marker styles see matplotlib.lines.Line2D*
-
-        -arrow_lw          line width of the arrow, *default* is 0.75
-        -arrow_head_width  head width of the arrow, *default* is 0 for no arrow
-                           head.  Haven't found a good way to scale the arrow
-                           heads in a log scale.
-
-        -arrow_head_height  head width of the arrow, *default* is 0 for no arrow
-                            head.  Haven't found a good way to scale the arrow
-                            heads in a log scale.
-
-        -arrow_color_real  color of the real arrows, *default* is black
-        -arrow_color_imag  color of the imaginary arrows, *default* is blue
-
-        -arrow_direction   0 for pointing towards a conductor and -1 for
-                           pointing away from a conductor.
-
-
-        -xlimits        limits on the x-limits (period), *default* is None
-                        which will estimate the min and max from the data,
-                        setting the min as the floor(min(period)) and the max
-                        as ceil(max(period)).  Input in linear scale if you
-                        want to change the period limits, ie. (.1,1000)
-
-        -res_limits     limits on the resistivity, *default* is None, which
-                        will estimate the min and max from the data, rounding
-                        to the lowest and highest increments to the power of 10
-                        Input in linear scale if you want to change them,
-                        ie. (1,10000). Note this only sets the xy and yx
-                        components, not the xx and yy.
-
-        -phase_limits   limits on the phase, *default* is (0,90) but will
-                        adapt to the data if there is phase above 90 or below
-                        0.  Input in degrees.  Note this only changes the xy
-                        and yx components.
-
-        -tipper_limits  limits of the y-axis, *default* is (-1,1)
 
     """
 
@@ -289,7 +95,7 @@ class PlotMultipleResponses(mtpl.PlotSettings):
         Initialize parameters
         """
 
-        super(PlotMultipleResponses, self).__init__()
+        super().__init__(**kwargs)
 
         fn_list = kwargs.pop("fn_list", None)
         z_object_list = kwargs.pop("z_object_list", None)
@@ -359,20 +165,9 @@ class PlotMultipleResponses(mtpl.PlotSettings):
 
         # ellipse_properties
         self.ellipse_size = 0.25
-        self.ellipse_spacing = kwargs.pop("ellipse_spacing", 1)
-        if self.ellipse_size == 2 and self.ellipse_spacing == 1:
-            self.ellipse_size = 0.25
-        # --> set text box parameters
-        self.text_location = kwargs.pop("text_location", None)
-        self.text_xpad = kwargs.pop("text_xpad", 1.35)
-        self.text_ypad = kwargs.pop("text_ypad", 0.75)
-        self.text_size = kwargs.pop("text_size", 7)
-        self.text_weight = kwargs.pop("text_weight", "bold")
-
-        self.plot_yn = kwargs.pop("plot_yn", "y")
 
         # plot on initializing
-        if self.plot_yn == "y":
+        if self.show_plot:
             self.plot()
 
     # ---need to rotate data on setting rotz

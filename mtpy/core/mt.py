@@ -118,8 +118,13 @@ class MT(TF):
         """
 
         self._rotation_angle = theta_r
-        self._Z.rotate(theta_r)
-        self._Tipper.rotate(theta_r)
+        self.Z.rotate(theta_r)
+        self.impedance = self.Z.z
+        self.impedance_error = self.Z.z_err
+
+        self.Tipper.rotate(theta_r)
+        self.tipper = self.Tipper.tipper
+        self.tipper_error = self.Tipper.tipper_err
         self.pt.rotate(theta_r)
 
         self.logger.info(
