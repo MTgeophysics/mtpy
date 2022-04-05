@@ -279,7 +279,7 @@ class PlotMTResponse(PlotBase):
 
         for comp, prop in zip(comps, props):
             if comp == "yx":
-                plot_resistivity(
+                plot_phase(
                     axp,
                     period,
                     getattr(z_obj, f"phase_{comp}") + 180,
@@ -287,7 +287,7 @@ class PlotMTResponse(PlotBase):
                     **prop,
                 )
             else:
-                plot_resistivity(
+                plot_phase(
                     axp,
                     period,
                     getattr(z_obj, f"phase_{comp}"),

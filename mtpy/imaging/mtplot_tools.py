@@ -358,7 +358,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
         """
 
-        if mode == "od":
+        if mode in ["od", "det"]:
             nz_xy = np.nonzero(resistivity[:, 0, 1])
             nz_yx = np.nonzero(resistivity[:, 1, 0])
             limits = [
