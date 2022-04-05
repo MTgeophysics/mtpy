@@ -24,6 +24,15 @@ from mtpy.utils.mtpy_logger import get_mtpy_logger
 # =============================================================================
 
 period_label_dict = dict([(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)])
+
+
+def get_period_limits(period):
+    return (
+        10 ** (np.floor(np.log10(period.min()))),
+        10 ** (np.ceil(np.log10(period.max()))),
+    )
+
+
 # ==============================================================================
 # Arrows properties for induction vectors
 # ==============================================================================
@@ -1063,6 +1072,104 @@ def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, fig=None):
     cbpt.ax.tick_params(axis="y", direction="in")
 
     return cbax, cbpt
+
+
+def plot_tipper_lateral(
+    axt, t_obj, plot_tipper, real_properties, imag_properties, font_size=6
+):
+    """
+    
+    :param axt: DESCRIPTION
+    :type axt: TYPE
+    :param t_obj: DESCRIPTION
+    :type t_obj: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    if plot_tipper.find("y") == 0 or plot_tipper:
+        txr = t_obj.mag_real * np.cos(np.deg2rad(t_obj.angle_real))
+        tyr = t_obj.mag_real * np.sin(np.deg2rad(t_obj.angle_real))
+
+        txi = t_obj.mag_imag * np.cos(np.deg2rad(t_obj.angle_imag))
+        tyi = t_obj.mag_imag * np.sin(np.deg2rad(t_obj.angle_imag))
+
+        nt = len(txr)
+        period = 1.0 / t_obj.freq
+        x_limits = get_period_limits(period)
+
+        tiplist = []
+        tiplabel = []
+
+        for aa in range(nt):
+            xlenr = txr[aa] * np.log10(period[aa])
+            xleni = txi[aa] * np.log10(period[aa])
+
+            # --> plot real arrows
+            if plot_tipper.find("r") > 0:
+                axt.arrow(
+                    np.log10(period[aa]), 0, xlenr, tyr[aa], **real_properties,
+                )
+
+                if aa == 0:
+                    line1 = axt.plot(0, 0, real_properties["facecolor"])
+                    tiplist.append(line1[0])
+                    tiplabel.append("real")
+            # --> plot imaginary arrows
+            if plot_tipper.find("i") > 0:
+                axt.arrow(
+                    np.log10(period[aa]), 0, xleni, tyi[aa], **imag_properties,
+                )
+                if aa == 0:
+                    line2 = axt.plot(0, 0, imag_properties["facecolor"])
+                    tiplist.append(line2[0])
+                    tiplabel.append("imag")
+        # make a line at 0 for reference
+        axt.plot(np.log10(period), [0] * nt, "k", lw=0.5)
+
+        axt.legend(
+            tiplist,
+            tiplabel,
+            loc="upper left",
+            markerscale=1,
+            borderaxespad=0.01,
+            labelspacing=0.07,
+            handletextpad=0.2,
+            borderpad=0.1,
+            prop={"size": 6},
+        )
+
+        # set axis properties
+
+        axt.set_xlim(np.log10(x_limits[0]), np.log10(x_limits[1]))
+
+        tklabels = []
+        xticks = []
+
+        for tk in axt.get_xticks():
+            try:
+                tklabels.append(period_label_dict[tk])
+                xticks.append(tk)
+            except KeyError:
+                pass
+        axt.set_xticks(xticks)
+        axt.set_xticklabels(tklabels, fontdict={"size": font_size})
+        # need to reset the x_limits caouse they get reset when calling
+        # set_ticks for some reason
+        axt.set_xlim(np.log10(x_limits[0]), np.log10(x_limits[1]))
+
+        # axt.set_xscale('log', nonpositive='clip')
+        tmax = max([np.nanmax(tyr), np.nanmax(tyi)])
+        if tmax > 1:
+            tmax = 0.899
+        tmin = min([np.nanmin(tyr), np.nanmin(tyi)])
+        if tmin < -1:
+            tmin = -0.899
+        tipper_limits = (tmin - 0.1, tmax + 0.1)
+        axt.set_ylim(tipper_limits)
+        axt.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+    return axt
 
 
 def get_log_tick_labels(ax):

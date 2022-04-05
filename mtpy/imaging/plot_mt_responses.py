@@ -26,6 +26,7 @@ from mtpy.imaging.mtplot_tools import (
     get_log_tick_labels,
     plot_resistivity,
     plot_phase,
+    plot_tipper_lateral,
 )
 
 
@@ -139,18 +140,175 @@ class PlotMultipleResponses(PlotBase):
             tf.rotation_angle = value
         self._rotation_angle = value
 
-    def _has_tipper(self):
+    def _has_tipper(self, t_obj):
         if self.plot_tipper.find("y") >= 0:
-            if self.Tipper is None or (self.Tipper.tipper == 0 + 0j).all():
+            if t_obj is None or (t_obj.tipper == 0 + 0j).all():
                 self._logger.info(f"No Tipper data for station {self.station}")
                 self.plot_tipper = "n"
 
-    def _has_pt(self):
+    def _has_pt(self, pt):
         if self.plot_pt:
             # if np.all(self.Z.z == 0 + 0j) or self.Z is None:
-            if self.pt is None:  # no phase tensor object provided
+            if pt is None:  # no phase tensor object provided
                 self._logger.info(f"No PT data for station {self.station}")
                 self.plot_pt = False
+
+    def _plot_resistivity(self, axr, period, z_obj, mode="od", index=0):
+
+        if mode == "od":
+            comps = ["xy", "yx"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        elif mode == "d":
+            comps = ["xx", "yy"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        elif mode == "det":
+            comps = ["det"]
+            props = [self.det_error_bar_properties]
+        res_limits = self.set_resistivity_limits(z_obj.resistivity, mode=mode)
+        x_limits = self.set_period_limits(period)
+
+        eb_list = []
+        label_list = []
+        for comp, prop in zip(comps, props):
+            ebax = plot_resistivity(
+                axr,
+                period,
+                getattr(z_obj, f"res_{comp}"),
+                getattr(z_obj, f"res_err_{comp}"),
+                **prop,
+            )
+            eb_list.append(ebax[0])
+            label_list.append(f"$Z_{comp}$")
+        # --> set axes properties
+        plt.setp(axr.get_xticklabels(), visible=False)
+
+        axr.set_yscale("log", nonpositive="clip")
+        axr.set_xscale("log", nonpositive="clip")
+        axr.set_xlim(x_limits)
+        axr.set_ylim(res_limits)
+        axr.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+
+        if index == 0:
+            axr.set_ylabel(
+                "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=self.font_dict
+            )
+        axr.legend(
+            eb_list,
+            label_list,
+            loc=3,
+            markerscale=1,
+            borderaxespad=0.01,
+            labelspacing=0.07,
+            handletextpad=0.2,
+            borderpad=0.02,
+        )
+        return axr, eb_list, label_list
+
+    def _plot_phase(self, axp, period, z_obj, mode="od", index=0):
+        if mode == "od":
+            comps = ["xy", "yx"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        elif mode == "d":
+            comps = ["xx", "yy"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        elif mode == "det":
+            comps = ["det"]
+            props = [self.det_error_bar_properties]
+        phase_limits = self.set_phase_limits(z_obj.phase, mode=mode)
+        x_limits = self.set_period_limits(period)
+
+        for comp, prop in zip(comps, props):
+            phase = getattr(z_obj, f"phase_{comp}")
+            if comp == "yx":
+                phase += 180
+            ebax = plot_resistivity(
+                axr, period, phase, getattr(z_obj, f"phase_err_{comp}"), **prop,
+            )
+        # --> set axes properties
+        if index == 0:
+            axp.set_ylabel("Phase (deg)", self.font_dict)
+        axp.set_xscale("log", nonpositive="clip")
+
+        axp.set_ylim(phase_limits)
+        if phase_limits[0] < -10 or phase_limits[1] > 100:
+            axp.yaxis.set_major_locator(MultipleLocator(30))
+            axp.yaxis.set_minor_locator(MultipleLocator(10))
+        else:
+            axp.yaxis.set_major_locator(MultipleLocator(15))
+            axp.yaxis.set_minor_locator(MultipleLocator(5))
+        axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+
+        return axp
+
+    def _plot_determinant(self):
+
+        self.axr.legend(
+            (self.ebxyr[0], self.ebyxr[0], self.ebdetr[0]),
+            ("$Z_{xy}$", "$Z_{yx}$", "$\det(\mathbf{\hat{Z}})$"),
+            loc=3,
+            markerscale=1,
+            borderaxespad=0.01,
+            labelspacing=0.07,
+            handletextpad=0.2,
+            borderpad=0.02,
+        )
+
+    def _plot_tipper(self, axt, period, t_obj, index=0):
+        axt = plot_tipper_lateral(
+            axt,
+            t_obj,
+            self.plot_tipper,
+            self.arrow_real_properties,
+            self.arrow_imag_properties,
+            self.font_size,
+        )
+
+        axt.set_xlabel("Period (s)", fontdict=self.font_dict)
+
+        axt.yaxis.set_major_locator(MultipleLocator(0.2))
+        axt.yaxis.set_minor_locator(MultipleLocator(0.1))
+        axt.set_xlabel("Period (s)", fontdict=self.font_dict)
+        axt.set_ylabel("Tipper", fontdict=self.font_dict)
+
+        # set th xaxis tick labels to invisible
+        if self.plot_pt:
+            plt.setp(axt.xaxis.get_ticklabels(), visible=False)
+            axt.set_xlabel("")
+
+    def _plot_pt(self):
+        # ----plot phase tensor ellipse---------------------------------------
+        if self.plot_pt:
+
+            color_array = self.get_pt_color_array(self.pt)
+
+            # -------------plot ellipses-----------------------------------
+            self.cbax, self.cbpt, = plot_pt_lateral(
+                self.axpt, self.pt, color_array, self.ellipse_properties, self.fig,
+            )
+
+            # ----set axes properties-----------------------------------------------
+            # --> set tick labels and limits
+            self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+
+            tklabels, xticks = get_log_tick_labels(self.axpt)
+
+            self.axpt.set_xticks(xticks)
+            self.axpt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
+            self.axpt.set_xlabel("Period (s)", fontdict=self.font_dict)
+
+            # need to reset the x_limits caouse they get reset when calling
+            # set_ticks for some reason
+            self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+            self.axpt.grid(
+                True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25
+            )
+
+            plt.setp(self.axpt.get_yticklabels(), visible=False)
+
+            self.cbpt.set_label(
+                self.cb_label_dict[self.ellipse_colorby],
+                fontdict={"size": self.font_size},
+            )
 
     def _setup_subplots(self, n_stations=1, index=0):
         # create a dictionary for the number of subplots needed
@@ -233,7 +391,7 @@ class PlotMultipleResponses(PlotBase):
             axpt = self.fig.add_subplot(gs_aux[pdict["pt"], :])
             axpt.yaxis.set_label_coords(label_coords[0], label_coords[1])
         return axr, axp, axr2, axp2, axt, axpt, label_coords
-    
+
     def _plot_all(self):
         ns = len(self.mt_list)
 
@@ -286,9 +444,7 @@ class PlotMultipleResponses(PlotBase):
             axr.set_xscale("log", nonpositive="clip")
             axr.set_xlim(x_limits)
             axr.set_ylim(res_limits)
-            axr.grid(
-                True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
-            )
+            axr.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
             if ii == 0:
                 axr.set_ylabel(
                     "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=self.font_dict
@@ -338,9 +494,7 @@ class PlotMultipleResponses(PlotBase):
             axp.set_xlim(self.x_limits)
             axp.yaxis.set_major_locator(MultipleLocator(15))
             axp.yaxis.set_minor_locator(MultipleLocator(5))
-            axp.grid(
-                True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
-            )
+            axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
 
             tklabels = [
                 mtpl.labeldict[tt]
@@ -353,9 +507,6 @@ class PlotMultipleResponses(PlotBase):
 
             axp.set_xticklabels(tklabels, fontdict={"size": self.font_size})
 
-            if len(list(pdict.keys())) > 2:
-                plt.setp(axp.xaxis.get_ticklabels(), visible=False)
-                plt.setp(axp.xaxis.get_label(), visible=False)
             # -----plot tipper--------------------------------------------
             if self._plot_tipper.find("y") == 0:
                 plt.setp(axp.xaxis.get_ticklabels(), visible=False)
@@ -457,11 +608,7 @@ class PlotMultipleResponses(PlotBase):
                     self.tipper_limits = (tmin - 0.1, tmax + 0.1)
                 axt.set_ylim(self.tipper_limits)
                 axt.grid(
-                    True,
-                    alpha=0.25,
-                    which="both",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
 
                 tklabels = []
@@ -597,11 +744,7 @@ class PlotMultipleResponses(PlotBase):
                 axst.yaxis.set_minor_locator(MultipleLocator(5))
                 axst.set_xscale("log", nonpositive="clip")
                 axst.grid(
-                    True,
-                    alpha=0.25,
-                    which="both",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
                 if ii == 0:
                     try:
@@ -682,8 +825,7 @@ class PlotMultipleResponses(PlotBase):
                 elif self.ellipse_colorby == "phidet":
                     colorarray = np.sqrt(abs(pt.det)) * (180 / np.pi)
                 elif (
-                    self.ellipse_colorby == "skew"
-                    or self.ellipse_colorby == "skew_seg"
+                    self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg"
                 ):
                     colorarray = pt.beta
                 elif self.ellipse_colorby == "ellipticity":
@@ -759,11 +901,7 @@ class PlotMultipleResponses(PlotBase):
                 )
 
                 axpt.grid(
-                    True,
-                    alpha=0.25,
-                    which="major",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
 
                 plt.setp(axpt.get_yticklabels(), visible=False)
@@ -793,9 +931,7 @@ class PlotMultipleResponses(PlotBase):
                         mt_seg_bl2wh2rd = colors.ListedColormap(clist)
 
                         # make bounds so that the middle is white
-                        bounds = np.arange(
-                            ckmin - ckstep, ckmax + 2 * ckstep, ckstep
-                        )
+                        bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
 
                         # normalize the colors
                         norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
@@ -877,11 +1013,7 @@ class PlotMultipleResponses(PlotBase):
                 axr2.set_xlim(self.x_limits)
                 axr2.set_ylim(self.res_limits)
                 axr2.grid(
-                    True,
-                    alpha=0.25,
-                    which="both",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
                 if ii == 0:
                     axr2.legend(
@@ -944,11 +1076,7 @@ class PlotMultipleResponses(PlotBase):
                 # axp2.set_xticklabels(tklabels,
                 #                      fontdict={'size': self.font_size})
                 axp2.grid(
-                    True,
-                    alpha=0.25,
-                    which="both",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
 
                 if len(list(pdict.keys())) > 2:
@@ -1003,11 +1131,7 @@ class PlotMultipleResponses(PlotBase):
                 axr.set_ylim(self.res_limits)
                 axr.set_xlim(self.xlimits)
                 axr.grid(
-                    True,
-                    alpha=0.25,
-                    which="both",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
 
                 # --> set axes properties
@@ -1032,18 +1156,13 @@ class PlotMultipleResponses(PlotBase):
 
                 axp.set_xticklabels(tklabels, fontdict={"size": self.font_size})
                 axp.grid(
-                    True,
-                    alpha=0.25,
-                    which="both",
-                    color=(0.25, 0.25, 0.25),
-                    lw=0.25,
+                    True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25,
                 )
             # make title and show
 
             axr.set_title(mt.station, fontsize=self.font_size, fontweight="bold")
         if show:
             plt.show()
-        
 
     # ---plot the resistivity and phase
     def plot(self):
@@ -1056,8 +1175,7 @@ class PlotMultipleResponses(PlotBase):
 
         # -----Plot All in one figure with each plot as a subfigure------------
         if self.plot_style == "all":
-
-            
+            pass
         # ===Plot all responses into one plot to compare changes ==
         if self.plot_style == "compare":
             ns = len(self.mt_list)

@@ -23,6 +23,7 @@ from mtpy.imaging.mtplot_tools import (
     get_log_tick_labels,
     plot_resistivity,
     plot_phase,
+    plot_tipper_lateral,
 )
 
 # ==============================================================================
@@ -221,41 +222,45 @@ class PlotMTResponse(PlotBase):
             self.axpt.yaxis.set_label_coords(label_coords[0], label_coords[1])
         return label_coords
 
-    def _plot_resistivity_od(self):
+    def _plot_resistivity(self, axr, period, z_obj, mode="od"):
 
-        res_limits = self.set_resistivity_limits(self.Z.resistivity, mode="od")
-        # res_xy
-        self.ebxyr = plot_resistivity(
-            self.axr,
-            self.period,
-            self.Z.res_xy,
-            self.Z.res_err_xy,
-            **self.xy_error_bar_properties,
-        )
+        if mode == "od":
+            comps = ["xy", "yx"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        elif mode == "d":
+            comps = ["xx", "yy"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        res_limits = self.set_resistivity_limits(z_obj.resistivity, mode=mode)
+        x_limits = self.set_period_limits(period)
 
-        # res_yx
-        self.ebyxr = plot_resistivity(
-            self.axr,
-            self.period,
-            self.Z.res_yx,
-            self.Z.res_err_yx,
-            **self.yx_error_bar_properties,
-        )
-
+        eb_list = []
+        label_list = []
+        for comp, prop in zip(comps, props):
+            ebax = plot_resistivity(
+                axr,
+                period,
+                getattr(z_obj, f"res_{comp}"),
+                getattr(z_obj, f"res_err_{comp}"),
+                **prop,
+            )
+            eb_list.append(ebax)
+            label_list.append(f"$Z_{comp}$")
         # --> set axes properties
-        plt.setp(self.axr.get_xticklabels(), visible=False)
-        self.axr.set_ylabel(
-            "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=self.font_dict
-        )
-        self.axr.set_yscale("log", nonpositive="clip")
-        self.axr.set_xscale("log", nonpositive="clip")
-        self.axr.set_xlim(self.x_limits)
-        self.axr.set_ylim(res_limits)
-        self.axr.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+        plt.setp(axr.get_xticklabels(), visible=False)
 
-        self.axr.legend(
-            (self.ebxyr[0], self.ebyxr[0]),
-            ("$Z_{xy}$", "$Z_{yx}$"),
+        axr.set_yscale("log", nonpositive="clip")
+        axr.set_xscale("log", nonpositive="clip")
+        axr.set_xlim(x_limits)
+        axr.set_ylim(res_limits)
+        axr.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+
+        if mode == "od":
+            axr.set_ylabel(
+                "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=self.font_dict
+            )
+        axr.legend(
+            eb_list,
+            label_list,
             loc=3,
             markerscale=1,
             borderaxespad=0.01,
@@ -263,113 +268,47 @@ class PlotMTResponse(PlotBase):
             handletextpad=0.2,
             borderpad=0.02,
         )
+        return eb_list, label_list
 
-    def _plot_resistivity_d(self):
+    def _plot_phase(self, axp, period, z_obj, mode="od", index=0):
+        if mode == "od":
+            comps = ["xy", "yx"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        elif mode == "d":
+            comps = ["xx", "yy"]
+            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+        phase_limits = self.set_phase_limits(z_obj.phase, mode=mode)
 
-        res_limits = self.set_resistivity_limits(self.Z.resistivity, mode="d")
-        # res_xx
-        self.ebxxr = plot_resistivity(
-            self.axr2,
-            self.period,
-            self.Z.res_xx,
-            self.Z.res_err_xx,
-            **self.xy_error_bar_properties,
-        )
-
-        # res_yy
-        self.ebyyr = plot_resistivity(
-            self.axr2,
-            self.period,
-            self.Z.res_yy,
-            self.Z.res_err_yy,
-            **self.yx_error_bar_properties,
-        )
-
+        for comp, prop in zip(comps, props):
+            if comp == "yx":
+                plot_resistivity(
+                    axp,
+                    period,
+                    getattr(z_obj, f"phase_{comp}") + 180,
+                    getattr(z_obj, f"phase_err_{comp}"),
+                    **prop,
+                )
+            else:
+                plot_resistivity(
+                    axp,
+                    period,
+                    getattr(z_obj, f"phase_{comp}"),
+                    getattr(z_obj, f"phase_err_{comp}"),
+                    **prop,
+                )
         # --> set axes properties
-        plt.setp(self.axr2.get_xticklabels(), visible=False)
-        self.axr2.set_yscale("log", nonpositive="clip")
-        self.axr2.set_xscale("log", nonpositive="clip")
-        self.axr2.set_xlim(self.x_limits)
-        self.axr2.set_ylim(res_limits)
-        self.axr2.grid(
-            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
-        )
+        if mode == "od":
+            axp.set_ylabel("Phase (deg)", self.font_dict)
+        axp.set_xscale("log", nonpositive="clip")
 
-        self.axr2.legend(
-            (self.ebxxr[0], self.ebyyr[0]),
-            ("$Z_{xx}$", "$Z_{yy}$"),
-            loc=3,
-            markerscale=1,
-            borderaxespad=0.01,
-            labelspacing=0.07,
-            handletextpad=0.2,
-            borderpad=0.02,
-        )
-
-    def _plot_phase_od(self):
-        # phase_xy
-        self.ebxyp = plot_phase(
-            self.axp,
-            self.period,
-            self.Z.phase_xy,
-            self.Z.phase_err_xy,
-            **self.xy_error_bar_properties,
-        )
-
-        # phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = plot_phase(
-            self.axp,
-            self.period,
-            self.Z.phase_yx + 180,
-            self.Z.phase_err_yx,
-            **self.yx_error_bar_properties,
-        )
-
-        # check the phase to see if any point are outside of [0:90]
-        phase_limits = self.set_phase_limits(self.Z.phase)
-        # --> set axes properties
-        if self.plot_tipper.find("y") < 0 or not self.plot_pt:
-            self.axp.set_xlabel("Period (s)", self.font_dict)
-        self.axp.set_ylabel("Phase (deg)", self.font_dict)
-        self.axp.set_xscale("log", nonpositive="clip")
-        self.axp.set_ylim(phase_limits)
+        axp.set_ylim(phase_limits)
         if phase_limits[0] < -10 or phase_limits[1] > 100:
-            self.axp.yaxis.set_major_locator(MultipleLocator(30))
-            self.axp.yaxis.set_minor_locator(MultipleLocator(10))
+            axp.yaxis.set_major_locator(MultipleLocator(30))
+            axp.yaxis.set_minor_locator(MultipleLocator(10))
         else:
-            self.axp.yaxis.set_major_locator(MultipleLocator(15))
-            self.axp.yaxis.set_minor_locator(MultipleLocator(5))
-        self.axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-
-    def _plot_phase_d(self):
-        # phase_xx
-        self.ebxyp = plot_phase(
-            self.axp2,
-            self.period,
-            self.Z.phase_xx,
-            self.Z.phase_err_xx,
-            **self.xy_error_bar_properties,
-        )
-
-        # phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = plot_phase(
-            self.axp2,
-            self.period,
-            self.Z.phase_yy,
-            self.Z.phase_err_yy,
-            **self.yx_error_bar_properties,
-        )
-
-        # --> set axes properties
-        if self.plot_tipper.find("y") < 0 or not self.plot_pt:
-            self.axp2.set_xlabel("Period (s)", self.font_dict)
-        self.axp2.set_xscale("log", nonpositive="clip")
-        self.axp2.set_ylim(ymin=-179.9, ymax=179.9)
-        self.axp2.yaxis.set_major_locator(MultipleLocator(30))
-        self.axp2.yaxis.set_minor_locator(MultipleLocator(5))
-        self.axp2.grid(
-            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
-        )
+            axp.yaxis.set_major_locator(MultipleLocator(15))
+            axp.yaxis.set_minor_locator(MultipleLocator(5))
+        axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
 
     def _plot_determinant(self):
         # res_det
@@ -402,81 +341,15 @@ class PlotMTResponse(PlotBase):
         )
 
     def _plot_tipper(self):
-        # -----plot tipper----------------------------------------------------
-        if self.plot_tipper.find("y") == 0 or self.plot_tipper:
-
-            txr = self.Tipper.mag_real * np.cos(np.deg2rad(self.Tipper.angle_real))
-            tyr = self.Tipper.mag_real * np.sin(np.deg2rad(self.Tipper.angle_real))
-
-            txi = self.Tipper.mag_imag * np.cos(np.deg2rad(self.Tipper.angle_imag))
-            tyi = self.Tipper.mag_imag * np.sin(np.deg2rad(self.Tipper.angle_imag))
-
-            nt = len(txr)
-
-            tiplist = []
-            tiplabel = []
-
-            for aa in range(nt):
-                xlenr = txr[aa] * np.log10(self.period[aa])
-                xleni = txi[aa] * np.log10(self.period[aa])
-
-                # --> plot real arrows
-                if self.plot_tipper.find("r") > 0:
-                    self.axt.arrow(
-                        np.log10(self.period[aa]),
-                        0,
-                        xlenr,
-                        tyr[aa],
-                        **self.arrow_real_properties,
-                    )
-
-                    if aa == 0:
-                        line1 = self.axt.plot(0, 0, self.arrow_color_real)
-                        tiplist.append(line1[0])
-                        tiplabel.append("real")
-                # --> plot imaginary arrows
-                if self.plot_tipper.find("i") > 0:
-                    self.axt.arrow(
-                        np.log10(self.period[aa]),
-                        0,
-                        xleni,
-                        tyi[aa],
-                        **self.arrow_imag_properties,
-                    )
-                    if aa == 0:
-                        line2 = self.axt.plot(0, 0, self.arrow_color_imag)
-                        tiplist.append(line2[0])
-                        tiplabel.append("imag")
-            # make a line at 0 for reference
-            self.axt.plot(np.log10(self.period), [0] * nt, "k", lw=0.5)
-
-            self.axt.legend(
-                tiplist,
-                tiplabel,
-                loc="upper left",
-                markerscale=1,
-                borderaxespad=0.01,
-                labelspacing=0.07,
-                handletextpad=0.2,
-                borderpad=0.1,
-                prop={"size": self.font_size},
-            )
-
-            # set axis properties
-
-            self.axt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
-
-            tklabels = []
-            xticks = []
-
-            for tk in self.axt.get_xticks():
-                try:
-                    tklabels.append(self.period_label_dict[tk])
-                    xticks.append(tk)
-                except KeyError:
-                    pass
-            self.axt.set_xticks(xticks)
-            self.axt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
+        self.axt = plot_tipper_lateral(
+            self.axt,
+            self.Tipper,
+            self.plot_tipper,
+            self.arrow_real_properties,
+            self.arrow_imag_properties,
+            self.font_size,
+        )
+        if self.plot_tipper.find("y") >= 0:
             self.axt.set_xlabel("Period (s)", fontdict=self.font_dict)
             # need to reset the x_limits caouse they get reset when calling
             # set_ticks for some reason
@@ -486,20 +359,6 @@ class PlotMTResponse(PlotBase):
             self.axt.yaxis.set_minor_locator(MultipleLocator(0.1))
             self.axt.set_xlabel("Period (s)", fontdict=self.font_dict)
             self.axt.set_ylabel("Tipper", fontdict=self.font_dict)
-
-            # self.axt.set_xscale('log', nonpositive='clip')
-            if self.tipper_limits is None:
-                tmax = max([np.nanmax(tyr), np.nanmax(tyi)])
-                if tmax > 1:
-                    tmax = 0.899
-                tmin = min([np.nanmin(tyr), np.nanmin(tyi)])
-                if tmin < -1:
-                    tmin = -0.899
-                self.tipper_limits = (tmin - 0.1, tmax + 0.1)
-            self.axt.set_ylim(self.tipper_limits)
-            self.axt.grid(
-                True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
-            )
 
             # set th xaxis tick labels to invisible
             if self.plot_pt:
@@ -563,15 +422,19 @@ class PlotMTResponse(PlotBase):
 
         self._setup_subplots()
 
-        self._plot_resistivity_od()
-        self._plot_phase_od()
+        eb_list, labels = self._plot_resistivity(
+            self.axr, self.period, self.Z, mode="od"
+        )
+        self.ebxyr = eb_list[0]
+        self.ebyxr = eb_list[1]
+        self._plot_phase(self.axp, self.period, self.Z, mode="od")
         self._plot_tipper()
         self._plot_pt()
 
         # ===Plot the xx, yy components if desired==============================
         if self.plot_num == 2:
-            self._plot_resistivity_d()
-            self._plot_phase_d()
+            self._plot_resistivity(self.axr2, self.period, self.Z, mode="d")
+            self._plot_phase(self.axp2, self.period, self.Z, mode="d")
         # ===Plot the Determinant if desired==================================
         if self.plot_num == 3:
             self._plot_determinant()
