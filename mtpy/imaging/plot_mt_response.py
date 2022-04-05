@@ -94,8 +94,6 @@ class PlotMTResponse(PlotBase):
         self.ellipse_spacing = 1
         if self.ellipse_size == 2 and self.ellipse_spacing == 1:
             self.ellipse_size = 0.25
-        # layout params
-        self.show_resphase_xticklabels = False
         # subplot parameters
         self.subplot_left = 0.12
         self.subplot_right = 0.98
@@ -438,48 +436,6 @@ class PlotMTResponse(PlotBase):
         # ===Plot the Determinant if desired==================================
         if self.plot_num == 3:
             self._plot_determinant()
-        if self.show_resphase_xticklabels:
-            if self.plot_num in [1, 3]:
-                self.gs.update(hspace=0.2, wspace=0.15, left=0.1)
-            else:
-                self.gs.update(hspace=0.2, wspace=0.15, left=0.07)
-                plt.setp(self.axp2.xaxis.get_ticklabels(), visible=True)
-                plt.setp(self.axr2.xaxis.get_ticklabels(), visible=True)
-                self.axr2.tick_params(
-                    axis="x",
-                    pad=2,
-                    direction="in",
-                    which="both",
-                    labelsize=self.font_size - 1,
-                )
-                self.axp2.tick_params(
-                    axis="x",
-                    pad=2,
-                    direction="in",
-                    which="both",
-                    labelsize=self.font_size - 1,
-                )
-                self.axp2.set_xlabel(
-                    "Period (s)", fontsize=self.font_size - 1, labelpad=0
-                )  #
-            plt.setp(self.axr.xaxis.get_ticklabels(), visible=True)
-            plt.setp(self.axp.xaxis.get_ticklabels(), visible=True)
-            self.axr.tick_params(
-                axis="x",
-                pad=2,
-                direction="in",
-                which="both",
-                labelsize=self.font_size - 1,
-            )
-            self.axp.tick_params(
-                axis="x",
-                pad=2,
-                direction="in",
-                which="both",
-                labelsize=self.font_size - 1,
-            )
-        #            self.axp.set_xlabel('Period (s)',fontsize=self.font_size-2,labelpad=0)
-
         # make plot_title and show
         if self.plot_title is None:
             self.plot_title = self.station
