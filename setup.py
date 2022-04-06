@@ -48,14 +48,12 @@ setup_kwargs = {}
 
 setup_kwargs["entry_points"] = {
     "console_scripts": [
-        "ws2vtk = mtpy.utils.ws2vtk:main",
-        "modem_pyqt = mtpy.gui.modem_pyqt:main",
-        "modem_plot_response = mtpy.gui.modem_plot_response:main",
+        "modem_plot_response = mtpy.gui.modem_plot_response_qt5:main",
         "modem_plot_pt_maps = mtpy.gui.modem_plot_pt_maps:main",
-        "modem_mesh_builder = mtpy.gui.modem_mesh_builder:main",
-        "modem2vtk = mtpy.utils.modem2vtk:main",
+        "modem_model_manipulator = mtpy.gui.modem_model_manipulator_qt5:main",
+        "modem2vtk = mtpy.utils.convert_model_to_vtk_qt5:main",
         "occam1d_gui = mtpy.gui.occam1d_gui:main",
-        "edi_editor = mtpy.gui.edi_editor:main",
+        "edi_editor = mtpy.gui.edi_editor_qt5:main",
     ]
 }
 
@@ -100,6 +98,10 @@ setup_kwargs["install_requires"] = [
     "pyyaml",
     "pyproj",
     "configparser",
+    "concurrent-log-handler",
+    "mt-metadata", 
+    "PyQt5",
+    "geopandas",
 ]
 
 setup_kwargs["data_files"] = [("data", ["mtpy/utils/epsg.npy"])]
