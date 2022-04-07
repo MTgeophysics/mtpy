@@ -1115,11 +1115,11 @@ def plot_tipper_lateral(
     """
 
     if plot_tipper.find("y") == 0 or plot_tipper:
-        txr = t_obj.mag_real * np.cos(np.deg2rad(t_obj.angle_real))
-        tyr = t_obj.mag_real * np.sin(np.deg2rad(t_obj.angle_real))
+        txr = t_obj.mag_real * np.cos(np.deg2rad(-t_obj.angle_real))
+        tyr = t_obj.mag_real * np.sin(np.deg2rad(-t_obj.angle_real))
 
-        txi = t_obj.mag_imag * np.cos(np.deg2rad(t_obj.angle_imag))
-        tyi = t_obj.mag_imag * np.sin(np.deg2rad(t_obj.angle_imag))
+        txi = t_obj.mag_imag * np.cos(np.deg2rad(-t_obj.angle_imag))
+        tyi = t_obj.mag_imag * np.sin(np.deg2rad(-t_obj.angle_imag))
 
         nt = len(txr)
         period = 1.0 / t_obj.freq
