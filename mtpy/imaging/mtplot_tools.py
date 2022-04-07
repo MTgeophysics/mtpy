@@ -15,8 +15,9 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
+from matplotlib.lines import Line2D
 
+import mtpy.imaging.mtcolors as mtcl
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
@@ -959,7 +960,16 @@ def add_colorbar_axis(ax, fig):
     return cbax
 
 
-def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, fig=None):
+def plot_pt_lateral(
+    ax,
+    pt_obj,
+    color_array,
+    ellipse_properties,
+    y_shift=0,
+    fig=None,
+    edge_color=None,
+    n_index=0,
+):
     """
     
     :param ax: DESCRIPTION
@@ -1003,7 +1013,7 @@ def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, fig=None):
         # along the azimuth which is calculated as clockwise but needs
         # to be plotted counter-clockwise hence the negative sign.
         ellipd = patches.Ellipse(
-            (np.log10(ff) * ellipse_properties["spacing"], 0),
+            (np.log10(ff) * ellipse_properties["spacing"], y_shift),
             width=ewidth,
             height=eheight,
             angle=90 - pt_obj.azimuth[ii],
@@ -1022,60 +1032,72 @@ def plot_pt_lateral(ax, pt_obj, color_array, ellipse_properties, fig=None):
                 bounds=bounds,
             )
         )
+        if edge_color is not None:
+            ellipd.set_edgecolor(edge_color)
     # set axis properties
-
     ax.set_ylim(
-        ymin=-1.5 * ellipse_properties["size"], ymax=1.5 * ellipse_properties["size"]
+        ymin=-1.5 * ellipse_properties["size"],
+        ymax=y_shift + 1.5 * ellipse_properties["size"],
     )
-    if fig is not None:
-        cbax = add_colorbar_axis(ax, fig)
-    if ellipse_properties["cmap"] == "mt_seg_bl2wh2rd":
-        # make the colorbar
-        nseg = float(
-            (ellipse_properties["range"][1] - ellipse_properties["range"][0])
-            / (2 * ellipse_properties["range"][2])
+    cbax = None
+    cbpt = None
+    if n_index == 0:
+        if fig is not None:
+            cbax = add_colorbar_axis(ax, fig)
+        if ellipse_properties["cmap"] == "mt_seg_bl2wh2rd":
+            # make the colorbar
+            nseg = float(
+                (ellipse_properties["range"][1] - ellipse_properties["range"][0])
+                / (2 * ellipse_properties["range"][2])
+            )
+            cbpt = make_color_list(
+                cbax,
+                nseg,
+                ellipse_properties["range"][0],
+                ellipse_properties["range"][1],
+                ellipse_properties["range"][2],
+            )
+        else:
+            cbpt = mcb.ColorbarBase(
+                cbax,
+                cmap=mtcl.cmapdict[ellipse_properties["cmap"]],
+                norm=colors.Normalize(
+                    vmin=ellipse_properties["range"][0],
+                    vmax=ellipse_properties["range"][1],
+                ),
+                orientation="vertical",
+            )
+        cbpt.set_ticks(
+            [
+                ellipse_properties["range"][0],
+                (ellipse_properties["range"][1] - ellipse_properties["range"][0]) / 2,
+                ellipse_properties["range"][1],
+            ]
         )
-        cbpt = make_color_list(
-            cbax,
-            nseg,
-            ellipse_properties["range"][0],
-            ellipse_properties["range"][1],
-            ellipse_properties["range"][2],
+        cbpt.set_ticklabels(
+            [
+                f"{ellipse_properties['range'][0]:.0f}",
+                f"{(ellipse_properties['range'][1] - ellipse_properties['range'][0]) / 2:.0f}",
+                f"{ellipse_properties['range'][1]:.0f}",
+            ]
         )
-    else:
-        cbpt = mcb.ColorbarBase(
-            cbax,
-            cmap=mtcl.cmapdict[ellipse_properties["cmap"]],
-            norm=colors.Normalize(
-                vmin=ellipse_properties["range"][0], vmax=ellipse_properties["range"][1]
-            ),
-            orientation="vertical",
-        )
-    cbpt.set_ticks(
-        [
-            ellipse_properties["range"][0],
-            (ellipse_properties["range"][1] - ellipse_properties["range"][0]) / 2,
-            ellipse_properties["range"][1],
-        ]
-    )
-    cbpt.set_ticklabels(
-        [
-            f"{ellipse_properties['range'][0]:.0f}",
-            f"{(ellipse_properties['range'][1] - ellipse_properties['range'][0]) / 2:.0f}",
-            f"{ellipse_properties['range'][1]:.0f}",
-        ]
-    )
 
-    cbpt.ax.yaxis.set_label_position("left")
-    cbpt.ax.yaxis.set_label_coords(-1.05, 0.5)
-    cbpt.ax.yaxis.tick_right()
-    cbpt.ax.tick_params(axis="y", direction="in")
-
+        cbpt.ax.yaxis.set_label_position("left")
+        cbpt.ax.yaxis.set_label_coords(-1.05, 0.5)
+        cbpt.ax.yaxis.tick_right()
+        cbpt.ax.tick_params(axis="y", direction="in")
     return cbax, cbpt
 
 
 def plot_tipper_lateral(
-    axt, t_obj, plot_tipper, real_properties, imag_properties, font_size=6
+    axt,
+    t_obj,
+    plot_tipper,
+    real_properties,
+    imag_properties,
+    font_size=6,
+    legend=True,
+    zero_reference=False,
 ):
     """
     
@@ -1102,44 +1124,45 @@ def plot_tipper_lateral(
         tiplist = []
         tiplabel = []
 
+        if plot_tipper.find("r") > 0:
+            line = Line2D([0], [0], color=real_properties["facecolor"], lw=1)
+            tiplist.append(line)
+            tiplabel.append("real")
+        if plot_tipper.find("i") > 0:
+            line = Line2D([0], [0], color=imag_properties["facecolor"], lw=1)
+            tiplist.append(line)
+            tiplabel.append("imag")
         for aa in range(nt):
             xlenr = txr[aa] * np.log10(period[aa])
             xleni = txi[aa] * np.log10(period[aa])
 
+            if xlenr == 0 and xleni == 0:
+                continue
             # --> plot real arrows
             if plot_tipper.find("r") > 0:
                 axt.arrow(
                     np.log10(period[aa]), 0, xlenr, tyr[aa], **real_properties,
                 )
-
-                if aa == 0:
-                    line1 = axt.plot(0, 0, real_properties["facecolor"])
-                    tiplist.append(line1[0])
-                    tiplabel.append("real")
             # --> plot imaginary arrows
             if plot_tipper.find("i") > 0:
                 axt.arrow(
                     np.log10(period[aa]), 0, xleni, tyi[aa], **imag_properties,
                 )
-                if aa == 0:
-                    line2 = axt.plot(0, 0, imag_properties["facecolor"])
-                    tiplist.append(line2[0])
-                    tiplabel.append("imag")
         # make a line at 0 for reference
-        axt.plot(np.log10(period), [0] * nt, "k", lw=0.5)
-
-        axt.legend(
-            tiplist,
-            tiplabel,
-            loc="upper left",
-            markerscale=1,
-            borderaxespad=0.01,
-            labelspacing=0.07,
-            handletextpad=0.2,
-            borderpad=0.1,
-            prop={"size": 6},
-        )
-
+        if zero_reference:
+            axt.plot(np.log10(period), [0] * nt, "k", lw=0.5)
+        if legend:
+            axt.legend(
+                tiplist,
+                tiplabel,
+                loc="upper left",
+                markerscale=1,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.1,
+                prop={"size": 6},
+            )
         # set axis properties
 
         axt.set_xlim(np.log10(x_limits[0]), np.log10(x_limits[1]))
@@ -1169,7 +1192,7 @@ def plot_tipper_lateral(
         tipper_limits = (tmin - 0.1, tmax + 0.1)
         axt.set_ylim(tipper_limits)
         axt.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-    return axt
+    return axt, tiplist, tiplabel
 
 
 def get_log_tick_labels(ax):

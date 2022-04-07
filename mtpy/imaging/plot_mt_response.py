@@ -339,7 +339,7 @@ class PlotMTResponse(PlotBase):
         )
 
     def _plot_tipper(self):
-        self.axt = plot_tipper_lateral(
+        self.axt, _, _ = plot_tipper_lateral(
             self.axt,
             self.Tipper,
             self.plot_tipper,
@@ -371,7 +371,7 @@ class PlotMTResponse(PlotBase):
 
             # -------------plot ellipses-----------------------------------
             self.cbax, self.cbpt, = plot_pt_lateral(
-                self.axpt, self.pt, color_array, self.ellipse_properties, self.fig,
+                self.axpt, self.pt, color_array, self.ellipse_properties, fig=self.fig,
             )
 
             # ----set axes properties-----------------------------------------------

@@ -11,15 +11,11 @@ YG: the code there is massey, todo may need to rewrite it sometime
 
 # ============================================================================
 
-import matplotlib.colorbar as mcb
-import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 
-import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.mtplot_tools import (
     PlotBase,
     plot_pt_lateral,
@@ -116,19 +112,6 @@ class PlotMultipleResponses(PlotBase):
             tf.rotation_angle = value
         self._rotation_angle = value
 
-    def _has_tipper(self, t_obj):
-        if self.plot_tipper.find("y") >= 0:
-            if t_obj is None or (t_obj.tipper == 0 + 0j).all():
-                self._logger.info(f"No Tipper data for station {self.station}")
-                self.plot_tipper = "n"
-
-    def _has_pt(self, pt):
-        if self.plot_pt:
-            # if np.all(self.Z.z == 0 + 0j) or self.Z is None:
-            if pt is None:  # no phase tensor object provided
-                self._logger.info(f"No PT data for station {self.station}")
-                self.plot_pt = False
-
     def _plot_resistivity(self, axr, period, z_obj, mode="od", index=0, axr2=None):
 
         if mode == "od":
@@ -198,22 +181,34 @@ class PlotMultipleResponses(PlotBase):
 
         return eb_list, label_list
 
-    def _plot_phase(self, axp, period, z_obj, mode="od", index=0):
+    def _plot_phase(self, axp, period, z_obj, mode="od", index=0, axp2=None):
         if mode == "od":
             comps = ["xy", "yx"]
+            if axp2 is not None:
+                ax_list = [axp, axp2]
+            else:
+                ax_list = [axp, axp]
             props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
         elif mode == "d":
             comps = ["xx", "yy"]
             props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
         elif mode == "det":
-            comps = ["det"]
-            props = [self.det_error_bar_properties]
+            comps = ["xy", "yx", "det"]
+            props = [
+                self.xy_error_bar_properties,
+                self.yx_error_bar_properties,
+                self.det_error_bar_properties,
+            ]
+            if axp2 is not None:
+                ax_list = [axp, axp2, axp]
+            else:
+                ax_list = [axp, axp, axp]
         phase_limits = self.set_phase_limits(z_obj.phase, mode=mode)
 
-        for comp, prop in zip(comps, props):
+        for comp, prop, ax in zip(comps, props, ax_list):
             if comp == "yx":
                 plot_phase(
-                    axp,
+                    ax,
                     period,
                     getattr(z_obj, f"phase_{comp}") + 180,
                     getattr(z_obj, f"phase_err_{comp}"),
@@ -221,34 +216,37 @@ class PlotMultipleResponses(PlotBase):
                 )
             else:
                 plot_phase(
-                    axp,
+                    ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
                     getattr(z_obj, f"phase_err_{comp}"),
                     **prop,
                 )
+            ax.set_ylim(phase_limits)
+            if phase_limits[0] < -10 or phase_limits[1] > 100:
+                ax.yaxis.set_major_locator(MultipleLocator(30))
+                ax.yaxis.set_minor_locator(MultipleLocator(10))
+            else:
+                ax.yaxis.set_major_locator(MultipleLocator(15))
+                ax.yaxis.set_minor_locator(MultipleLocator(5))
+            ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+            ax.set_xscale("log", nonpositive="clip")
         # --> set axes properties
         if index == 0:
             axp.set_ylabel("Phase (deg)", self.font_dict)
-        axp.set_xscale("log", nonpositive="clip")
 
-        axp.set_ylim(phase_limits)
-        if phase_limits[0] < -10 or phase_limits[1] > 100:
-            axp.yaxis.set_major_locator(MultipleLocator(30))
-            axp.yaxis.set_minor_locator(MultipleLocator(10))
-        else:
-            axp.yaxis.set_major_locator(MultipleLocator(15))
-            axp.yaxis.set_minor_locator(MultipleLocator(5))
-        axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-
-    def _plot_tipper(self, axt, period, t_obj, index=0):
-        axt = plot_tipper_lateral(
+    def _plot_tipper(
+        self, axt, period, t_obj, index=0, legend=False, zero_reference=False
+    ):
+        axt, tip_list, tip_label = plot_tipper_lateral(
             axt,
             t_obj,
             self.plot_tipper,
             self.arrow_real_properties,
             self.arrow_imag_properties,
             self.font_size,
+            legend=legend,
+            zero_reference=zero_reference,
         )
 
         axt.set_xlabel("Period (s)", fontdict=self.font_dict)
@@ -256,14 +254,15 @@ class PlotMultipleResponses(PlotBase):
         axt.yaxis.set_major_locator(MultipleLocator(0.2))
         axt.yaxis.set_minor_locator(MultipleLocator(0.1))
         axt.set_xlabel("Period (s)", fontdict=self.font_dict)
-        axt.set_ylabel("Tipper", fontdict=self.font_dict)
-
+        if index == 0:
+            axt.set_ylabel("Tipper", fontdict=self.font_dict)
         # set th xaxis tick labels to invisible
         if self.plot_pt:
             plt.setp(axt.xaxis.get_ticklabels(), visible=False)
             axt.set_xlabel("")
+        return tip_list, tip_label
 
-    def _plot_pt(self, axpt, period, pt_obj, index=0):
+    def _plot_pt(self, axpt, period, pt_obj, index=0, y_shift=0, edge_color=None):
         # ----plot phase tensor ellipse---------------------------------------
         if self.plot_pt:
 
@@ -272,7 +271,14 @@ class PlotMultipleResponses(PlotBase):
 
             # -------------plot ellipses-----------------------------------
             self.cbax, self.cbpt, = plot_pt_lateral(
-                axpt, pt_obj, color_array, self.ellipse_properties, self.fig,
+                axpt,
+                pt_obj,
+                color_array,
+                self.ellipse_properties,
+                y_shift,
+                self.fig,
+                edge_color,
+                index,
             )
 
             # ----set axes properties-----------------------------------------------
@@ -316,9 +322,9 @@ class PlotMultipleResponses(PlotBase):
             hr = [1]
         elif nrows == 2:
             hr = [2, 1]
-        return nrows, index, hr
+        return nrows, index, hr, pdict
 
-    def _setup_subplots(self, gs_master, n_stations=1, n_index=0):
+    def _setup_subplots(self, gs_master, n_stations=1, n_index=0, plot_num=1):
         # create a dictionary for the number of subplots needed
         pdict = {"res": 0, "phase": 1}
         # start the index at 2 because resistivity and phase is permanent for
@@ -330,7 +336,7 @@ class PlotMultipleResponses(PlotBase):
         axt = None
         axpt = None
 
-        nrows, index, hr = self._get_nrows()
+        nrows, index, hr, pdict = self._get_nrows()
 
         gs_rp = gridspec.GridSpecFromSubplotSpec(
             2,
@@ -345,7 +351,7 @@ class PlotMultipleResponses(PlotBase):
                 index, 1, subplot_spec=gs_master[1, n_index], hspace=0.05
             )
         # --> make figure for xy,yx components
-        if self.plot_num == 1 or self.plot_num == 3:
+        if plot_num == 1 or plot_num == 3:
             # set label coordinates
             label_coords = (-0.075, 0.5)
 
@@ -356,7 +362,7 @@ class PlotMultipleResponses(PlotBase):
             # phase axis that shares period axis with resistivity
             axp = self.fig.add_subplot(gs_rp[1, :], sharex=axr)
         # --> make figure for all 4 components
-        elif self.plot_num == 2:
+        elif plot_num == 2:
             # set label coordinates
             label_coords = (-0.095, 0.5)
 
@@ -388,7 +394,7 @@ class PlotMultipleResponses(PlotBase):
         return axr, axp, axr2, axp2, axt, axpt, label_coords
 
     def _plot_all(self):
-        ns = len(self.mt_list)
+        ns = len(self.tf_list)
 
         # set figure size according to what the plot will be.
         if self.fig_size is None:
@@ -396,14 +402,14 @@ class PlotMultipleResponses(PlotBase):
                 self.fig_size = [ns * 4, 6]
             elif self.plot_num == 2:
                 self.fig_size = [ns * 8, 6]
-        nrows, n_index, hr = self._get_nrows()
+        nrows, n_index, hr, pdict = self._get_nrows()
         gs_master = gridspec.GridSpec(nrows, ns, hspace=0.05, height_ratios=hr)
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
         for ii, mt in enumerate(self.tf_list):
             axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
-                gs_master, n_stations=ns, index=ii
+                gs_master, n_stations=ns, n_index=ii, plot_num=self.plot_num
             )
 
             # plot apparent resistivity od
@@ -434,113 +440,170 @@ class PlotMultipleResponses(PlotBase):
 
             axr.set_title(mt.station, fontsize=self.font_size, fontweight="bold")
 
+    def _plot_compare(self):
+        ns = len(self.tf_list)
+
+        # make color lists for the plots going light to dark
+        cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns) for cc in range(ns)]
+        cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
+        cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
+        ctipr = [(0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)]
+        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
+
+        # make marker lists for the different components
+        mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
+        myx = ["o", "h", "8", "p", "H", 7, 4, 6] * ns
+
+        legend_list_xy = []
+        legend_list_yx = []
+        legend_list_tip_r = []
+        legend_list_tip_i = []
+        station_list = []
+
+        # make a figure instance
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        nrows, n_index, hr, pdict = self._get_nrows()
+        gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=hr)
+        axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
+            gs_master, plot_num=2
+        )
+
+        for ii, mt in enumerate(self.tf_list):
+            self.xy_color = cxy[ii]
+            self.xy_marker = mxy[ii]
+            self.yx_color = cyx[ii]
+            self.yx_marker = myx[ii]
+            self.det_color = cdet[ii]
+            self.det_marker = mxy[ii]
+            self.arrow_color_real = ctipr[ii]
+            self.arrow_color_imag = ctipi[ii]
+
+            # plot apparent resistivity od
+            if self.plot_num == 1:
+                eb_list, label_list = self._plot_resistivity(
+                    axr, mt.period, mt.Z, mode="od", axr2=axr2,
+                )
+
+                # plot phase od
+                self._plot_phase(axp, mt.period, mt.Z, mode="od", index=ii, axp2=axp2)
+            # Plot Determinant
+            elif self.plot_num == 3:
+                # plot apparent resistivity od
+                eb_list, label_list = self._plot_resistivity(
+                    axr, mt.period, mt.Z, mode="det"
+                )
+
+                # plot phase od
+                self._plot_phase(axp, mt.period, mt.Z, mode="det")
+            # plot diagonal components
+            if self.plot_num == 2:
+                print("compare mode does not support plotting diagonal components")
+            # plot tipper
+            tip_list, tip_label = self._plot_tipper(axt, mt.period, mt.Tipper)
+            if self.plot_tipper.find("r") > 0:
+                legend_list_tip_r.append(tip_list[0])
+                if self.plot_tipper.find("i") > 0:
+                    legend_list_tip_i.append(tip_list[1])
+            elif self.plot_tipper.find("i") > 0:
+                legend_list_tip_i.append(tip_list[0])
+            # plot phase tensor
+            self._plot_pt(
+                axpt,
+                mt.period,
+                mt.pt,
+                y_shift=ii * self.ellipse_size,
+                edge_color=cxy[ii],
+            )
+
+            legend_list_xy += [eb_list[0]]
+            legend_list_yx += [eb_list[1]]
+            station_list.append(mt.station)
+        if self.plot_tipper.find("y") >= 0:
+            axt.set_ylim(-1, 1)
+        # make legend
+        if self.plot_num == 1:
+            axr.legend(
+                legend_list_xy,
+                station_list,
+                loc=3,
+                ncol=2,
+                markerscale=0.75,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.25,
+            )
+
+            axr2.legend(
+                legend_list_yx,
+                station_list,
+                loc=3,
+                ncol=2,
+                markerscale=0.75,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.25,
+            )
+
+            if self.plot_tipper.find("r") > 0:
+                axt.legend(
+                    legend_list_tip_r,
+                    station_list,
+                    loc=3,
+                    ncol=2,
+                    markerscale=0.75,
+                    borderaxespad=0.01,
+                    labelspacing=0.07,
+                    handletextpad=0.2,
+                    borderpad=0.25,
+                )
+            if self.plot_tipper.find("i") > 0:
+                axt.legend(
+                    legend_list_tip_i,
+                    station_list,
+                    loc=1,
+                    ncol=2,
+                    markerscale=0.75,
+                    borderaxespad=0.01,
+                    labelspacing=0.07,
+                    handletextpad=0.2,
+                    borderpad=0.25,
+                )
+        self.axr = axr
+        self.axp = axp
+        self.axr2 = axr2
+        self.axp2 = axp2
+        self.axt = axt
+        self.axpt = axpt
+
+    def _plot_single(self):
+        p_dict = {}
+        for ii, tf in enumerate(self.tf_list, 1):
+            p = tf.plot_mt_response(
+                **{
+                    "fig_num": ii,
+                    "plot_tipper": self.plot_tipper,
+                    "plot_pt": self.plot_pt,
+                    "plot_num": self.plot_num,
+                }
+            )
+            p_dict[tf.station] = p
+        return p_dict
+
     # ---plot the resistivity and phase
     def plot(self):
         """
         plot the apparent resistivity and phase
         """
-        self._has_pt()
-        self._has_tipper()
+
         self._set_subplot_params()
 
-        # -----Plot All in one figure with each plot as a subfigure------------
+        # Plot all in one figure as subplots
         if self.plot_style == "all":
             self._plot_all()
-        # ===Plot all responses into one plot to compare changes ==
-        if self.plot_style == "compare":
-            ns = len(self.mt_list)
-
-            # make color lists for the plots going light to dark
-            cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns) for cc in range(ns)]
-            cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
-            cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
-            ctipr = [
-                (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)
-            ]
-            ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
-
-            # make marker lists for the different components
-            mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
-            myx = ["o", "h", "8", "p", "H", 7, 4, 6] * ns
-
-            legend_list_xy = []
-            legend_list_yx = []
-            station_list = []
-
-            nrows, n_index, hr = self._get_nrows()
-            gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=hr)
-            axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
-                gs_master
-            )
-
-            # make a figure instance
-            self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
-
-            for ii, mt in enumerate(self.mt_list):
-                self.xy_color = cxy[ii]
-                self.xy_marker = mxy[ii]
-                self.yx_color = cyx[ii]
-                self.yx_marker = myx[ii]
-                self.det_color = cdet[ii]
-                self.det_marker = mxy[ii]
-                self.arrow_color_real = ctipr[ii]
-                self.arrow_color_imag = ctipi[ii]
-
-                # plot apparent resistivity od
-                if self.plot_num == 1:
-                    eb_list, label_list = self._plot_resistivity(
-                        axr, mt.period, mt.Z, mode="od"
-                    )
-
-                    # plot phase od
-                    self._plot_phase(axp, mt.period, mt.Z, mode="od", index=ii)
-                # Plot Determinant
-                elif self.plot_num == 3:
-                    # plot apparent resistivity od
-                    eb_list, label_list = self._plot_resistivity(
-                        axr, mt.period, mt.Z, mode="det"
-                    )
-
-                    # plot phase od
-                    self._plot_phase(axp, mt.period, mt.Z, mode="det")
-                # plot diagonal components
-                if self.plot_num == 2:
-                    # plot apparent resistivity od
-                    self._plot_resistivity(axr2, mt.period, mt.Z, mode="d")
-
-                    # plot phase od
-                    self._plot_phase(axp2, mt.period, mt.Z, mode="d")
-                # plot tipper
-                self._plot_tipper(axt, mt.period, mt.Tipper)
-
-                # plot phase tensor
-                self._plot_pt(axpt, mt.period, mt.pt)
-
-                legend_list_xy += eb_list[0]
-                legend_list_yx += eb_list[1]
-                station_list.append(mt.station)
-            # make legend
-            if self.plot_num == 1:
-                axr.legend(
-                    legend_list_xy,
-                    station_list,
-                    loc=3,
-                    ncol=2,
-                    markerscale=0.75,
-                    borderaxespad=0.01,
-                    labelspacing=0.07,
-                    handletextpad=0.2,
-                    borderpad=0.25,
-                )
-
-                axr2.legend(
-                    legend_list_yx,
-                    station_list,
-                    loc=3,
-                    ncol=2,
-                    markerscale=0.75,
-                    borderaxespad=0.01,
-                    labelspacing=0.07,
-                    handletextpad=0.2,
-                    borderpad=0.25,
-                )
+        #  Plot all responses into one plot to compare changes
+        elif self.plot_style == "compare":
+            self._plot_compare()
+        elif self.plot_style in [1, "1", "single"]:
+            return self._plot_single()

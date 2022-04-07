@@ -17,12 +17,13 @@ from pathlib import Path
 
 import numpy as np
 
+import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging import PlotStations, PlotMTResponse
+from mtpy.imaging import PlotStations, PlotMTResponse, PlotMultipleResponses
 
 from mth5.mth5 import MTH5
 
@@ -464,9 +465,14 @@ class MTCollection:
         :rtype: TYPE
 
         """
-
-        mt_object = self.get_tf(tf_id)
-        return mt_object.plot_mt_response(**kwargs)
+        if isinstance(tf_id, str):
+            mt_object = self.get_tf(tf_id)
+            return mt_object.plot_mt_response(**kwargs)
+        elif isinstance(tf_id, (list, tuple, np.ndarray, pd.Series)):
+            tf_list = []
+            for tf_name in tf_id:
+                tf_list.append(self.get_tf(tf_name))
+            return PlotMultipleResponses(tf_list, **kwargs)
 
     def plot_stations(self, gdf=None, map_epsg=4326, **kwargs):
         """
