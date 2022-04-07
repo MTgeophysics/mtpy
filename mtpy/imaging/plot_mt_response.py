@@ -282,8 +282,9 @@ class PlotMTResponse(PlotBase):
                 plot_phase(
                     axp,
                     period,
-                    getattr(z_obj, f"phase_{comp}") + 180,
+                    getattr(z_obj, f"phase_{comp}"),
                     getattr(z_obj, f"phase_err_{comp}"),
+                    yx=True,
                     **prop,
                 )
             else:
@@ -292,6 +293,7 @@ class PlotMTResponse(PlotBase):
                     period,
                     getattr(z_obj, f"phase_{comp}"),
                     getattr(z_obj, f"phase_err_{comp}"),
+                    yx=False,
                     **prop,
                 )
         # --> set axes properties

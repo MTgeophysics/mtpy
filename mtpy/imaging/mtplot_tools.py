@@ -359,7 +359,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
         """
 
-        if mode in ["od", "det"]:
+        if mode in ["od", "det", "det_only"]:
             nz_xy = np.nonzero(resistivity[:, 0, 1])
             nz_yx = np.nonzero(resistivity[:, 1, 0])
             limits = [
@@ -427,7 +427,7 @@ class PlotSettings(MTArrows, MTEllipse):
         return limits
 
     def set_phase_limits(self, phase, mode="od"):
-        if mode == "od":
+        if mode in ["od", "det", "det_only"]:
             nz_xy = np.nonzero(phase[:, 0, 1])
             nz_yx = np.nonzero(phase[:, 1, 0])
 
@@ -724,7 +724,7 @@ def plot_resistivity(ax, period, resistivity, error, **properties):
     )
 
 
-def plot_phase(ax, period, phase, error, **properties):
+def plot_phase(ax, period, phase, error, yx=False, **properties):
     """
     plot apparent resistivity to the given axis with given properties
     
@@ -740,8 +740,12 @@ def plot_phase(ax, period, phase, error, **properties):
     :rtype: TYPE
 
     """
+    # need this for the yx component
     nz = np.nonzero(phase)
-
+    if yx:
+        return plot_errorbar(
+            ax, period[nz], phase[nz] + 180, y_error=error[nz], **properties,
+        )
     return plot_errorbar(ax, period[nz], phase[nz], y_error=error[nz], **properties,)
 
 

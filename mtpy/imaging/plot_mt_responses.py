@@ -139,6 +139,10 @@ class PlotMultipleResponses(PlotBase):
                 ax_list = [axr, axr2, axr]
             else:
                 ax_list = [axr, axr, axr]
+        elif mode == "det_only":
+            comps = ["det"]
+            props = [self.det_error_bar_properties]
+            ax_list = [axr]
         res_limits = self.set_resistivity_limits(z_obj.resistivity, mode=mode)
         x_limits = self.set_period_limits(period)
 
@@ -153,7 +157,7 @@ class PlotMultipleResponses(PlotBase):
                 **prop,
             )
             eb_list.append(ebax[0])
-            label_list.append(f"$Z_{comp}$")
+            label_list.append("$Z_{" + comp + "}$")
             # --> set axes properties
             plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -203,6 +207,10 @@ class PlotMultipleResponses(PlotBase):
                 ax_list = [axp, axp2, axp]
             else:
                 ax_list = [axp, axp, axp]
+        elif mode == "det_only":
+            comps = ["det"]
+            props = [self.det_error_bar_properties]
+            ax_list = [axp]
         phase_limits = self.set_phase_limits(z_obj.phase, mode=mode)
 
         for comp, prop, ax in zip(comps, props, ax_list):
@@ -210,8 +218,9 @@ class PlotMultipleResponses(PlotBase):
                 plot_phase(
                     ax,
                     period,
-                    getattr(z_obj, f"phase_{comp}") + 180,
+                    getattr(z_obj, f"phase_{comp}"),
                     getattr(z_obj, f"phase_err_{comp}"),
+                    yx=True,
                     **prop,
                 )
             else:
@@ -220,6 +229,7 @@ class PlotMultipleResponses(PlotBase):
                     period,
                     getattr(z_obj, f"phase_{comp}"),
                     getattr(z_obj, f"phase_err_{comp}"),
+                    yx=False,
                     **prop,
                 )
             ax.set_ylim(phase_limits)
@@ -324,7 +334,9 @@ class PlotMultipleResponses(PlotBase):
             hr = [2, 1]
         return nrows, index, hr, pdict
 
-    def _setup_subplots(self, gs_master, n_stations=1, n_index=0, plot_num=1):
+    def _setup_subplots(
+        self, gs_master, n_stations=1, n_index=0, plot_num=1, hspace=0.05, wspace=0.15
+    ):
         # create a dictionary for the number of subplots needed
         pdict = {"res": 0, "phase": 1}
         # start the index at 2 because resistivity and phase is permanent for
@@ -343,18 +355,20 @@ class PlotMultipleResponses(PlotBase):
             2,
             subplot_spec=gs_master[0, n_index],
             height_ratios=[2, 1.5],
-            hspace=0.05,
-            wspace=0.15,
+            hspace=hspace,
+            wspace=wspace,
         )
         if nrows == 2:
             gs_aux = gridspec.GridSpecFromSubplotSpec(
-                index, 1, subplot_spec=gs_master[1, n_index], hspace=0.05
+                index, 1, subplot_spec=gs_master[1, n_index], hspace=hspace
             )
         # --> make figure for xy,yx components
         if plot_num == 1 or plot_num == 3:
             # set label coordinates
-            label_coords = (-0.075, 0.5)
-
+            if self.plot_style == "compare":
+                label_coords = (-0.075, 0.5)
+            elif self.plot_style == "compare":
+                label_coords = (-0.095, 0.5)
             # --> create the axes instances
             # apparent resistivity axis
             axr = self.fig.add_subplot(gs_rp[0, :])
@@ -409,22 +423,33 @@ class PlotMultipleResponses(PlotBase):
 
         for ii, mt in enumerate(self.tf_list):
             axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
-                gs_master, n_stations=ns, n_index=ii, plot_num=self.plot_num
+                gs_master,
+                n_stations=ns,
+                n_index=ii,
+                plot_num=self.plot_num,
+                hspace=0.075,
+                wspace=0.09,
             )
 
             # plot apparent resistivity od
             if self.plot_num == 1:
                 self._plot_resistivity(axr, mt.period, mt.Z, mode="od", index=ii)
-
+                if self.res_limits is not None:
+                    axr.set_ylim(self.res_limits)
                 # plot phase od
                 self._plot_phase(axp, mt.period, mt.Z, mode="od", index=ii)
+                if self.phase_limits is not None:
+                    axp.set_ylim(self.phase_limits)
             # Plot Determinant
             elif self.plot_num == 3:
                 # plot apparent resistivity od
                 self._plot_resistivity(axr, mt.period, mt.Z, mode="det", index=ii)
-
+                if self.res_limits is not None:
+                    axr.set_ylim(self.res_limits)
                 # plot phase od
                 self._plot_phase(axp, mt.period, mt.Z, mode="det", index=ii)
+                if self.phase_limits is not None:
+                    axp.set_ylim(self.phase_limits)
             # plot diagonal components
             if self.plot_num == 2:
                 # plot apparent resistivity od
@@ -434,13 +459,19 @@ class PlotMultipleResponses(PlotBase):
                 self._plot_phase(axp2, mt.period, mt.Z, mode="d", index=ii)
             # plot tipper
             self._plot_tipper(axt, mt.period, mt.Tipper, index=ii)
-
+            if self.tipper_limits is not None:
+                axt.set_ylim(self.tipper_limits)
             # plot phase tensor
             self._plot_pt(axpt, mt.period, mt.pt, index=ii)
 
             axr.set_title(mt.station, fontsize=self.font_size, fontweight="bold")
 
     def _plot_compare(self):
+        # plot diagonal components
+        if self.plot_num == 2:
+            raise ValueError(
+                "Compare mode does not support plotting diagonal components yet"
+            )
         ns = len(self.tf_list)
 
         # make color lists for the plots going light to dark
@@ -456,18 +487,22 @@ class PlotMultipleResponses(PlotBase):
 
         legend_list_xy = []
         legend_list_yx = []
-        legend_list_tip_r = []
-        legend_list_tip_i = []
+        legend_list_tip = []
         station_list = []
+        station_list_t = []
 
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         nrows, n_index, hr, pdict = self._get_nrows()
         gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=hr)
-        axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
-            gs_master, plot_num=2
-        )
-
+        if self.plot_num == 1:
+            axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
+                gs_master, plot_num=2
+            )
+        elif self.plot_num == 3:
+            axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
+                gs_master, plot_num=1
+            )
         for ii, mt in enumerate(self.tf_list):
             self.xy_color = cxy[ii]
             self.xy_marker = mxy[ii]
@@ -490,22 +525,22 @@ class PlotMultipleResponses(PlotBase):
             elif self.plot_num == 3:
                 # plot apparent resistivity od
                 eb_list, label_list = self._plot_resistivity(
-                    axr, mt.period, mt.Z, mode="det"
+                    axr, mt.period, mt.Z, mode="det_only"
                 )
 
                 # plot phase od
-                self._plot_phase(axp, mt.period, mt.Z, mode="det")
-            # plot diagonal components
-            if self.plot_num == 2:
-                print("compare mode does not support plotting diagonal components")
+                self._plot_phase(axp, mt.period, mt.Z, mode="det_only")
             # plot tipper
             tip_list, tip_label = self._plot_tipper(axt, mt.period, mt.Tipper)
             if self.plot_tipper.find("r") > 0:
-                legend_list_tip_r.append(tip_list[0])
+                legend_list_tip.append(tip_list[0])
+                station_list_t.append(f"{mt.station}_{tip_label[0]}")
                 if self.plot_tipper.find("i") > 0:
-                    legend_list_tip_i.append(tip_list[1])
+                    legend_list_tip.append(tip_list[1])
+                    station_list_t.append(f"{mt.station}_{tip_label[1]}")
             elif self.plot_tipper.find("i") > 0:
-                legend_list_tip_i.append(tip_list[0])
+                legend_list_tip.append(tip_list[0])
+                station_list_t.append(f"{mt.station}_{tip_label[0]}")
             # plot phase tensor
             self._plot_pt(
                 axpt,
@@ -516,10 +551,20 @@ class PlotMultipleResponses(PlotBase):
             )
 
             legend_list_xy += [eb_list[0]]
-            legend_list_yx += [eb_list[1]]
+            if self.plot_num in [1, 2]:
+                legend_list_yx += [eb_list[1]]
             station_list.append(mt.station)
-        if self.plot_tipper.find("y") >= 0:
-            axt.set_ylim(-1, 1)
+        # set limits
+        if self.res_limits is not None:
+            axr.set_ylim(self.res_limits)
+            if axr2 is not None:
+                axr2.set_ylim(self.res_limits)
+        if self.phase_limits is not None:
+            axp.set_ylim(self.phase_limits)
+            if axp2 is not None:
+                axp2.set_ylim(self.phase_limits)
+        if self.tipper_limits is not None:
+            axt.set_ylim(self.tipper_limits)
         # make legend
         if self.plot_num == 1:
             axr.legend(
@@ -545,31 +590,30 @@ class PlotMultipleResponses(PlotBase):
                 handletextpad=0.2,
                 borderpad=0.25,
             )
-
-            if self.plot_tipper.find("r") > 0:
-                axt.legend(
-                    legend_list_tip_r,
-                    station_list,
-                    loc=3,
-                    ncol=2,
-                    markerscale=0.75,
-                    borderaxespad=0.01,
-                    labelspacing=0.07,
-                    handletextpad=0.2,
-                    borderpad=0.25,
-                )
-            if self.plot_tipper.find("i") > 0:
-                axt.legend(
-                    legend_list_tip_i,
-                    station_list,
-                    loc=1,
-                    ncol=2,
-                    markerscale=0.75,
-                    borderaxespad=0.01,
-                    labelspacing=0.07,
-                    handletextpad=0.2,
-                    borderpad=0.25,
-                )
+        elif self.plot_num == 3:
+            axr.legend(
+                legend_list_xy,
+                station_list,
+                loc=3,
+                ncol=2,
+                markerscale=0.75,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.25,
+            )
+        if self.plot_tipper.find("y") >= 0:
+            axt.legend(
+                legend_list_tip,
+                station_list_t,
+                loc=3,
+                ncol=2,
+                markerscale=0.75,
+                borderaxespad=0.01,
+                labelspacing=0.07,
+                handletextpad=0.2,
+                borderpad=0.25,
+            )
         self.axr = axr
         self.axp = axp
         self.axr2 = axr2
@@ -597,10 +641,14 @@ class PlotMultipleResponses(PlotBase):
         plot the apparent resistivity and phase
         """
 
+        self.subplot_right = 0.98
         self._set_subplot_params()
 
         # Plot all in one figure as subplots
         if self.plot_style == "all":
+            self.subplot_left = 0.04
+            self.subplot_top = 0.96
+            self._set_subplot_params()
             self._plot_all()
         #  Plot all responses into one plot to compare changes
         elif self.plot_style == "compare":

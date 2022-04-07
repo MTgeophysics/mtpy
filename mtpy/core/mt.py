@@ -116,22 +116,18 @@ class MT(TF):
         
         TODO figure this out with xarray
         """
-
         self._rotation_angle = theta_r
-        self.Z.rotate(theta_r)
-        self.impedance = self.Z.z
-        self.impedance_error = self.Z.z_err
+        z_copy = self.Z.copy()
+        t_copy = self.Tipper.copy()
 
-        self.Tipper.rotate(theta_r)
-        self.tipper = self.Tipper.tipper
-        self.tipper_error = self.Tipper.tipper_err
-        self.pt.rotate(theta_r)
+        z_copy.rotate(theta_r)
+        self.Z = z_copy
+
+        t_copy.rotate(theta_r)
+        self.Tipper = t_copy
 
         self.logger.info(
-            (
-                "Rotated Z, Tipper, Phase Tensor and Zinvariants by"
-                "{0:.3f} degrees".format(self._rotation_angle)
-            )
+            f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
         )
 
     @property
