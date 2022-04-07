@@ -316,7 +316,7 @@ class PlotMTResponse(PlotBase):
             self.axr,
             self.period,
             self.Z.res_det,
-            self.Z.res_det_err,
+            self.Z.res_err_det,
             **self.det_error_bar_properties,
         )
 
@@ -325,7 +325,7 @@ class PlotMTResponse(PlotBase):
             self.axp,
             self.period,
             self.Z.phase_det,
-            self.Z.phase_det_err,
+            self.Z.phase_err_det,
             **self.det_error_bar_properties,
         )
 
