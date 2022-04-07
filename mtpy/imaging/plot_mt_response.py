@@ -69,15 +69,14 @@ class PlotMTResponse(PlotBase):
     def __init__(
         self, z_object=None, t_object=None, pt_obj=None, station="MT Response", **kwargs
     ):
-        self.plot_num = 1
-        self.rotation_angle = 0
-        super().__init__(**kwargs)
-
         self.Z = z_object
         self.Tipper = t_object
         self.pt = pt_obj
         self.station = station
         self._basename = f"{self.station}_mt_response"
+        self.plot_num = 1
+        self.rotation_angle = 0
+        super().__init__(**kwargs)
 
         if self.Tipper is not None:
             self.plot_tipper = "yri"
