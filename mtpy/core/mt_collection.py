@@ -23,7 +23,7 @@ from shapely.geometry import Point
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging import PlotStations, PlotMTResponse, PlotMultipleResponses
+from mtpy.imaging import PlotStations, PlotMultipleResponses
 
 from mth5.mth5 import MTH5
 
