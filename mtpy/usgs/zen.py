@@ -2166,6 +2166,7 @@ class ZenSchedule(object):
         gain=0,
         save_path=None,
         schedule_fn="zen_schedule.MTsch",
+        version=4,
     ):
 
         """
@@ -2217,7 +2218,10 @@ class ZenSchedule(object):
         )
 
         # make a list of lines to write to a file for ZenAcq
-        zacq_list = []
+        if version >= 4:
+            zacq_list = ["$TX=0", "$Type=339"]
+        elif version < 4:
+            zacq_list = []
         for ii, ss in enumerate(self.sa_list[:-1]):
             t0 = self._convert_time_to_seconds(ss["time"])
             t1 = self._convert_time_to_seconds(self.sa_list[ii + 1]["time"])
@@ -2225,17 +2229,22 @@ class ZenSchedule(object):
                 t1 += 24 * 3600
 
             # subtract 10 seconds for transition between schedule items.
-            t_diff = t1 - t0 - self._resync_pause
-            zacq_list.append(
-                "$schline{0:.0f} = {1:.0f},{2:.0f},{3:.0f}\n".format(
-                    ii + 1, t_diff, int(self.sr_dict[str(ss["df"])]), 1
-                )
-            )
+            duration = t1 - t0 - self._resync_pause
+            sr = int(self.sr_dict[str(ss["df"])])
+            if version >= 4:
+                zacq_list.append(f"$schline{ii+1} = {duration:.0f},{sr:.0f},1,0,0")
+            elif version < 4:
+                zacq_list.append(f"$schline{ii+1} = {duration:.0f},{sr:.0f},1")
+            
+        if version >= 4:
+            zacq_list += [
+                "$DayRepeat=0", "$RelativeOffsetSeconds=0", "$AutoSleep=0"
+                ]
 
         fn = os.path.join(save_path, schedule_fn)
-        fid = open(fn, "w")
-        fid.writelines(zacq_list[0:16])
-        fid.close()
+        with open(fn, "w") as fid:
+            fid.write("\n".join(zacq_list))
+    
 
         print("Wrote schedule file to {0}".format(fn))
         print("+--------------------------------------+")
