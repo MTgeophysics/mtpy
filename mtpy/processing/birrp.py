@@ -769,7 +769,7 @@ def run(birrp_exe, script_file):
     print("INFO: Starting Birrp processing at {0}...".format(st))
 
     birrp_process = subprocess.Popen(
-        f"birrp_exe + < {local_script_fn}", stdin=subprocess.PIPE, shell=True
+        f"{birrp_exe} + < {local_script_fn}", stdin=subprocess.PIPE, shell=True
     )
     birrp_process.wait()
     et = datetime.now()
