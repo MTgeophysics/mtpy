@@ -750,15 +750,15 @@ class Z3D2EDI(object):
                 rr_block_list = []
                 for rr_entry in rr_df.itertuples():
                     if rr_entry.start > stop:
-                        print(
-                            "INFO: Skipping {0} starts after station".format(
-                                rr_entry.station
-                            )
-                        )
+                        print(f"{rr_entry.station} {rr_entry.start} > {stop}")
+                        print('INFO: Skipping {0} starts after station'.format(
+                              rr_entry.station))
                         continue
                     t_diff = abs((rr_entry.start - start).total_seconds()) * sr
+                    print(t_diff)
                     # check to see if the difference is within given tolerance
-                    if t_diff <= self._tol_dict[sr]["s_diff"]:
+                    if t_diff <= self._tol_dict[sr]['s_diff']:
+                        print(f"tdiff: {t_diff}")
                         # check number of samples
                         rr_samples = rr_entry.n_samples - t_diff
                         if rr_samples < self._tol_dict[sr]["min_points"]:
@@ -781,6 +781,7 @@ class Z3D2EDI(object):
                                     rr_stations[rr_entry.station],
                                 )
                             )
+
                 # check to make sure there are remote references
                 if len(rr_block_list) > 1:
                     rr_block_birrp_df = self.make_block_df(rr_block_list)
@@ -790,7 +791,7 @@ class Z3D2EDI(object):
                 block_count += 1
                 blocks_read_total += block_birrp_df.nread.mean()
                 if blocks_read_total > self._max_nread:
-                    dn = blocks_read_total - self.max_nread
+                    dn = blocks_read_total - self._max_nread
                     block_birrp_df.nread = block_birrp_df.nread.mean() - dn
                     print(
                         "WARNING: reached maximum points to read"
@@ -1135,9 +1136,11 @@ class Z3D2EDI(object):
                 self.station_z3d_dir, self.rr_station_z3d_dir, **kw_dict
             )
         # make birrp dictionary
+
         birrp_dict = self.get_birrp_dict(
             z3d_df, df_list=df_list, use_blocks_dict=use_blocks_dict
         )
+
 
         # write script files for birrp
         sfn_list = self.write_script_files(

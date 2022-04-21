@@ -68,7 +68,11 @@ class Sgrid:
                     self.ncells = [int(val) for val in line.strip().split()[1:]]
                 for param in ["ASCII_DATA_FILE"]:
                     if line.startswith(param):
-                        setattr(self, str.lower(param), line.strip().split()[1])
+                        setattr(
+                            self,
+                            str.lower(param),
+                            line.strip().split()[1].replace('"',''))
+
 
     def _read_ascii_data(self, ascii_data_file=None):
 
