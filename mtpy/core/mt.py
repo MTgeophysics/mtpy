@@ -112,7 +112,7 @@ class MT(object):
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         # set metadata for the station
-        self.survey_metadata = metadata.Survey()
+        self.survey_metadata = metadata.Survey(datum="WGS84")
         self.station_metadata = metadata.Station()
         self.station_metadata.runs.append(metadata.Run())
         self.station_metadata.runs[0].ex = metadata.Electric(component="ex")
@@ -161,7 +161,6 @@ class MT(object):
             lines.append("\tTipper:        True")
         else:
             lines.append("\tTipper:        False")
-
         if self.Z.z is not None:
             lines.append(f"\tN Periods:     {len(self.Z.freq)}")
 
@@ -172,7 +171,6 @@ class MT(object):
             lines.append("\tFrequency Range:")
             lines.append(f"\t\tMin:   {self.frequencies.max():.5E} Hz")
             lines.append(f"\t\tMax:   {self.frequencies.min():.5E} Hz")
-
         return "\n".join(lines)
 
     def __repr__(self):
@@ -211,12 +209,12 @@ class MT(object):
     # ==========================================================================
     @property
     def fn(self):
-        """ reference to original data file"""
+        """reference to original data file"""
         return self._fn
 
     @fn.setter
     def fn(self, value):
-        """ set file name """
+        """set file name"""
         try:
             self._fn = Path(value)
             if self._fn.exists():
@@ -447,62 +445,62 @@ class MT(object):
 
     @property
     def ex_metadata(self):
-        """ EX metadata """
+        """EX metadata"""
         return self.station_metadata.runs[0].ex
 
     @ex_metadata.setter
     def ex_metadata(self, value):
-        """ set EX metadata """
+        """set EX metadata"""
         self.station_metadata.runs[0].ex = value
 
     @property
     def ey_metadata(self):
-        """ EY metadata """
+        """EY metadata"""
         return self.station_metadata.runs[0].ey
 
     @ey_metadata.setter
     def ey_metadata(self, value):
-        """ set EY metadata """
+        """set EY metadata"""
         self.station_metadata.runs[0].ey = value
 
     @property
     def hx_metadata(self):
-        """ HX metadata """
+        """HX metadata"""
         return self.station_metadata.runs[0].hx
 
     @hx_metadata.setter
     def hx_metadata(self, value):
-        """ set hx metadata """
+        """set hx metadata"""
         self.station_metadata.runs[0].hx = value
 
     @property
     def hy_metadata(self):
-        """ HY metadata """
+        """HY metadata"""
         return self.station_metadata.runs[0].hy
 
     @hy_metadata.setter
     def hy_metadata(self, value):
-        """ set hy metadata """
+        """set hy metadata"""
         self.station_metadata.runs[0].hy = value
 
     @property
     def hz_metadata(self):
-        """ HZ metadata """
+        """HZ metadata"""
         return self.station_metadata.runs[0].hz
 
     @hz_metadata.setter
     def hz_metadata(self, value):
-        """ set hz metadata """
+        """set hz metadata"""
         self.station_metadata.runs[0].hz = value
 
     @property
     def rrhx_metadata(self):
-        """ RRHX metadata """
+        """RRHX metadata"""
         return self.station_metadata.runs[0].rrhx
 
     @property
     def rrhy_metadata(self):
-        """ RRHY metadata """
+        """RRHY metadata"""
         return self.station_metadata.runs[0].rrhy
 
     def remove_distortion(self, num_freq=None):
@@ -625,14 +623,12 @@ class MT(object):
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
-
         if period_buffer is not None:
             if 0.0 < period_buffer < 1.0:
                 period_buffer += 1.0
                 self.logger.warning(
                     "Period buffer must be > 1. Updating to", period_buffer
                 )
-
         # check the bounds of the new frequency array
         if bounds_error:
 
@@ -655,7 +651,6 @@ class MT(object):
                     + ".  The new frequency range needs to be within the "
                     + "bounds of the old one."
                 )
-
         # make a new Z object
         new_Z = MTz.Z(
             z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
@@ -706,7 +701,6 @@ class MT(object):
                             new_nz_index_update.append(new_nz_index[ifidx])
                     new_f = np.array(new_f_update)
                     new_nz_index = np.array(new_nz_index_update)
-
                 # create a function that does 1d interpolation
                 z_func_real = spi.interp1d(f, z_real, kind=interp_type)
                 z_func_imag = spi.interp1d(f, z_imag, kind=interp_type)
@@ -717,14 +711,12 @@ class MT(object):
                     new_f
                 )
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
-
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
             return new_Z, new_Tipper
-
         # interpolate the Tipper
         for jj in range(2):
             # get indicies of non-zero components
@@ -732,7 +724,6 @@ class MT(object):
 
             if len(nz_index[0]) < 2:
                 continue
-
             # get non-zero components
             t_real = self.Tipper.tipper[nz_index, 0, jj].real
             t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
@@ -759,7 +750,6 @@ class MT(object):
             ) + 1j * t_func_imag(new_f)
 
             new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
-
         new_Tipper.compute_mag_direction()
 
         return new_Z, new_Tipper
@@ -817,11 +807,11 @@ class MT(object):
         :param file_type: [ 'edi' | 'xml' ]
         :type file_type: string
 
-        :param longitude_format:  whether to write longitude as longitude or LONG. 
+        :param longitude_format:  whether to write longitude as longitude or LONG.
                                   options are 'longitude' or 'LONG', default 'longitude'
         :type longitude_format:  string
         :param latlon_format:  format of latitude and longitude in output edi,
-                               degrees minutes seconds ('dms') or decimal 
+                               degrees minutes seconds ('dms') or decimal
                                degrees ('dd')
         :type latlon_format:  string
 
@@ -838,25 +828,20 @@ class MT(object):
             new_fn = Path(fn)
             self.save_dir = new_fn.parent
             fn_basename = new_fn.name
-
         if save_dir is not None:
             self.save_dir = Path(save_dir)
-
         if fn_basename is not None:
             fn_basename = Path(fn_basename)
             if fn_basename.suffix in ["", None]:
                 fn_basename += f".{file_type}"
-
         if fn_basename is None:
             fn_basename = Path(f"{self.station}.{file_type}")
-
         if file_type is None:
             file_type = fn_basename.suffix.lower()[1:]
         if file_type not in ["edi", "xml", "j", "zmm", "zrr"]:
             msg = f"File type {file_type} not supported yet."
             self.logger.error(msg)
             raise MTError(msg)
-
         fn = self.save_dir.joinpath(fn_basename)
 
         return write_file(self, fn, file_type=file_type)
@@ -886,7 +871,7 @@ class MT(object):
 
         mt_obj = read_file(fn, file_type=file_type)
         self.__dict__.update(mt_obj.__dict__)
-        
+
     def to_xarray(self):
         """
         Make an xarray from the data.
@@ -894,14 +879,13 @@ class MT(object):
         :rtype: TYPE
 
         """
-        
-        d = xr.DataArray(data=self.Z.z,
-                         dims=["frequency", "z"],
-                         coords={"frequency": self.frequencies},
-                         )
+
+        d = xr.DataArray(
+            data=self.Z.z,
+            dims=["frequency", "z"],
+            coords={"frequency": self.frequencies},
+        )
         return d
-        
-        
 
 
 # ==============================================================================
