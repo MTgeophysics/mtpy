@@ -342,6 +342,21 @@ class Z3D2EDI(object):
             setattr(self, key, kwargs[key])
 
     @property
+    def edi_fn_list(self):
+        if self.edi_fn:
+            if isinstance(self.edi_fn, list):
+                edi_list = []
+                for item in self.edi_fn:
+                    if isinstance(item, mtedi.EDI):
+                        edi_list.append(item.fn)
+                    else:
+                        edi_list.append(item)
+                return edi_list
+            if isinstance(self.edi_fn, mtedi.EDI):
+                return [self.edi_fn.fn]
+            return [self.edi_fn]
+
+    @property
     def station_z3d_dir(self):
         return self._station_z3d_dir
 
@@ -984,19 +999,21 @@ class Z3D2EDI(object):
             self.edi_fn = edi_fn_list
         if type(self.edi_fn) is list:
             # check file lengths to make sure there are no zero length files
-            for edi_fn in self.edi_fn:
+            for edi_fn in self.edi_fn_list:
                 fn_size = os.path.getsize(edi_fn)
                 if fn_size < 3000:
                     self.edi_fn.remove(edi_fn)
                 if len(self.edi_fn) == 0:
                     raise ValueError("No good .edi files where produced")
             resp_plot = plotnresponses.PlotMultipleResponses(
-                fn_list=self.edi_fn, plot_style="compare", plot_tipper="yri"
+                fn_list=self.edi_fn_list, plot_style="compare", plot_tipper="yri"
             )
         elif type(self.edi_fn) is str:
             if os.path.getsize(self.edi_fn) < 3000:
                 raise ValueError("No good .edi files where produced")
-            resp_plot = plotresponse.PlotResponse(fn=self.edi_fn, plot_tipper="yri")
+            resp_plot = plotresponse.PlotResponse(
+                fn=self.edi_fn_list, plot_tipper="yri"
+            )
         return resp_plot
 
     def process_data(
@@ -1131,7 +1148,7 @@ class Z3D2EDI(object):
         self.run_birrp(sfn_list)
 
         # combine edi files
-        comb_edi_fn = self.combine_edi_files(self.edi_fn, sr_dict)
+        comb_edi_fn = self.combine_edi_files(self.edi_fn_list, sr_dict)
 
         if comb_edi_fn is not None:
             self.edi_fn.append(comb_edi_fn)
@@ -1199,13 +1216,17 @@ class Z3D2EDI(object):
 
         count = 0
         for edi_fn in edi_fn_list:
-            if not isinstance(edi_fn, Path):
+            if isinstance(edi_fn, mtedi.EDI):
+                edi_obj = edi_fn
+                edi_fn = edi_obj.fn
+            if isinstance(edi_fn, (str, Path)):
                 edi_fn = Path(edi_fn)
+                edi_obj = edi_obj = mtedi.EDI(edi_fn)
             # get sampling rate from file name
             sr_key = int(edi_fn.parts[-2])
             if sr_key in list(sr_dict.keys()):
                 try:
-                    edi_obj = mtedi.EDI(edi_fn)
+
                     # locate frequency range
                     f_index = np.where(
                         (edi_obj.Z.freq >= sr_dict[sr_key][1])
@@ -1256,7 +1277,10 @@ class Z3D2EDI(object):
             )
         else:
             new_t = mtedi.MTz.Tipper()
-        edi_obj = mtedi.EDI(edi_fn_list[0])
+        if isinstance(edi_fn_list[0], mtedi.EDI):
+            edi_obj = edi_fn_list[0]
+        else:
+            edi_obj = mtedi.EDI(edi_fn_list[0])
         edi_obj.Z = new_z
         edi_obj.Tipper = new_t
         edi_obj.Data.nfreq = new_z.z.shape[0]
