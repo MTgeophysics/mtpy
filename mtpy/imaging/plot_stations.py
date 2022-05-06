@@ -45,6 +45,7 @@ class PlotStations(PlotBase):
 
         self.image_file = None
         self.image_extent = None
+        self.pad = 0.005
 
         super().__init__(**kwargs)
 
@@ -74,25 +75,25 @@ class PlotStations(PlotBase):
     def _get_xlimits(self, x):
         if np.sign(x.min()) == -1:
             self.xlimits = (
-                x.min() * 1.002,
-                x.max() * 0.998,
+                x.min() * (1 + self.pad),
+                x.max() * (1 - self.pad),
             )
         else:
             self.xlimits = (
-                x.min() * 0.998,
-                x.max() * 1.002,
+                x.min() * (1 - self.pad),
+                x.max() * (1 + self.pad),
             )
 
     def _get_ylimits(self, y):
         if np.sign(y.min()) == -1:
             self.xlimits = (
-                y.min() * 1.002,
-                y.max() * 0.998,
+                y.min() * (1 + self.pad),
+                y.max() * (1 - self.pad),
             )
         else:
             self.xlimits = (
-                y.min() * 0.998,
-                y.max() * 1.002,
+                y.min() * (1 - self.pad),
+                y.max() * (1 + self.pad),
             )
 
     def plot(self, cx_source=cx.providers.USGS.USTopo, cx_zoom=None):
