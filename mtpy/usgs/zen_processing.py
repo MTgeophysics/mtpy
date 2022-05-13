@@ -26,6 +26,8 @@ import mtpy.usgs.zen as zen
 import mtpy.core.io.edi as mtedi
 from mtpy.usgs import z3d_collection as zc
 
+# from mt_metadata.transfer_functions import Station, Survey
+
 # ==============================================================================
 datetime_fmt = "%Y-%m-%d,%H:%M:%S"
 datetime_sec = "%Y-%m-%d %H:%M:%S"
@@ -287,14 +289,14 @@ class Z3D2EDI(object):
         if sys.version_info[0] == 2:
             self._ts_fn_dtype = np.dtype(
                 [
-                    (u"station", "S6"),
-                    (u"npts", np.int),
-                    (u"df", np.int),
-                    (u"start_dt", "S22"),
-                    (u"end_dt", "S22"),
-                    (u"comp", "S2"),
-                    (u"fn", "S100"),
-                    (u"calibration_fn", "S100"),
+                    ("station", "S6"),
+                    ("npts", np.int),
+                    ("df", np.int),
+                    ("start_dt", "S22"),
+                    ("end_dt", "S22"),
+                    ("comp", "S2"),
+                    ("fn", "S100"),
+                    ("calibration_fn", "S100"),
                 ]
             )
 
@@ -543,6 +545,8 @@ class Z3D2EDI(object):
 
         self.station_ts_dir = Path(station_z3d_dir).joinpath("TS")
 
+        # need to make a survey and station metadata file
+
         # write configuration file for edi, this should be deprecated later
         self.survey_config.from_df(station_df)
         self.survey_config.save_path = self.station_ts_dir
@@ -751,13 +755,16 @@ class Z3D2EDI(object):
                 for rr_entry in rr_df.itertuples():
                     if rr_entry.start > stop:
                         print(f"{rr_entry.station} {rr_entry.start} > {stop}")
-                        print('INFO: Skipping {0} starts after station'.format(
-                              rr_entry.station))
+                        print(
+                            "INFO: Skipping {0} starts after station".format(
+                                rr_entry.station
+                            )
+                        )
                         continue
                     t_diff = abs((rr_entry.start - start).total_seconds()) * sr
                     print(t_diff)
                     # check to see if the difference is within given tolerance
-                    if t_diff <= self._tol_dict[sr]['s_diff']:
+                    if t_diff <= self._tol_dict[sr]["s_diff"]:
                         print(f"tdiff: {t_diff}")
                         # check number of samples
                         rr_samples = rr_entry.n_samples - t_diff
@@ -781,7 +788,6 @@ class Z3D2EDI(object):
                                     rr_stations[rr_entry.station],
                                 )
                             )
-
                 # check to make sure there are remote references
                 if len(rr_block_list) > 1:
                     rr_block_birrp_df = self.make_block_df(rr_block_list)
@@ -1032,7 +1038,7 @@ class Z3D2EDI(object):
             4: (0.125, 0.0001),
         },
         birrp_param_dict={},
-        **kwargs
+        **kwargs,
     ):
         """
         process_data is a convinience function that will process Z3D files
@@ -1141,7 +1147,6 @@ class Z3D2EDI(object):
             z3d_df, df_list=df_list, use_blocks_dict=use_blocks_dict
         )
 
-
         # write script files for birrp
         sfn_list = self.write_script_files(
             birrp_dict, birrp_params_dict=birrp_param_dict, **kwargs
@@ -1212,8 +1217,8 @@ class Z3D2EDI(object):
                 ("freq", np.float),
                 ("z", (np.complex, (2, 2))),
                 ("z_err", (np.float, (2, 2))),
-                ("tipper", (np.complex, (2, 2))),
-                ("tipper_err", (np.float, (2, 2))),
+                ("tipper", (np.complex, (1, 2))),
+                ("tipper_err", (np.float, (1, 2))),
             ],
         )
 

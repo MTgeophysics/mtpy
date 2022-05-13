@@ -876,3 +876,5 @@ class Z3DCollection(object):
             processing_list.append(station_entry)
 
         return pd.DataFrame(processing_list)
+    
+    ### Get channel metadata, run metadata, station metadata from df
