@@ -26,7 +26,7 @@ import mtpy.usgs.zen as zen
 import mtpy.core.io.edi as mtedi
 from mtpy.usgs import z3d_collection as zc
 
-# from mt_metadata.transfer_functions import Station, Survey
+from mt_metadata.transfer_functions.tf import Survey, Station, Run, Electric, Magnetic
 
 # ==============================================================================
 datetime_fmt = "%Y-%m-%d,%H:%M:%S"
@@ -80,6 +80,8 @@ class SurveyConfig(object):
     """
 
     def __init__(self, **kwargs):
+        
+        
         self.b_instrument_amplification = 1
         self.b_instrument_type = "induction coil"
         self.b_logger_gain = 1

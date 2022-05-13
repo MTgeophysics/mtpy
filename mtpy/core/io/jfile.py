@@ -304,7 +304,7 @@ class JFile(object):
             j_line for j_line in j_line_list if not ">" in j_line and not "#" in j_line
         ][:]
 
-        self.station = data_lines[0].strip()
+        self.station = Path(data_lines[0].strip()).name
 
         # sometimes birrp outputs some missing periods, so the best way to deal with
         # this that I could come up with was to get things into dictionaries with

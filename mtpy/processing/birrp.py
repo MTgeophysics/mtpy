@@ -876,9 +876,8 @@ class J2Edi(object):
                 "Could not find {0}, check path".format(survey_config_fn)
             )
         # read in survey information
-        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[
-            self.station
-        ]
+        self.survey_config_dict = mtcfg.read_survey_configfile(
+            self.survey_config_fn)[self.station]
 
     def get_birrp_config_fn(self):
         """
