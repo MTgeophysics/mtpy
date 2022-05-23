@@ -200,7 +200,7 @@ class SurveyConfig(object):
         None.
 
         """
-
+        print(station)
         survey_cfg_dict = mtcfg.read_survey_configfile(survey_cfg_fn)[station]
 
         for key, value in survey_cfg_dict.items():
@@ -338,9 +338,23 @@ class Z3D2EDI(object):
                     ("end_dt", "U22"),
                 ]
             )
-
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+
+    @property
+    def edi_fn_list(self):
+        if self.edi_fn:
+            if isinstance(self.edi_fn, list):
+                edi_list = []
+                for item in self.edi_fn:
+                    if isinstance(item, mtedi.EDI):
+                        edi_list.append(item.fn)
+                    else:
+                        edi_list.append(item)
+                return edi_list
+            if isinstance(self.edi_fn, mtedi.EDI):
+                return [self.edi_fn.fn]
+            return [self.edi_fn]
 
     @property
     def station_z3d_dir(self):
@@ -409,17 +423,14 @@ class Z3D2EDI(object):
         if self.calibration_path is None:
             print("ERROR: Calibration path is None")
             self.calibration_dict = {}
-
         if not isinstance(self.calibration_path, Path):
             self.calibration_path = Path(self.calibration_path)
-
         if not self.calibration_path.exists():
             print(
                 "WARNING: could not find calibration path: "
                 "{0}".format(self.calibration_path)
             )
             self.calibration_dict = {}
-
         self.calibration_dict = {}
         for cal_fn in self.calibration_path.glob("*.csv"):
             cal_num = cal_fn.stem
@@ -500,11 +511,9 @@ class Z3D2EDI(object):
         """
         if calibration_path is not None:
             self.calibration_path = calibration_path
-
         self.station_z3d_dir = Path(station_z3d_dir)
         if rr_station_z3d_dir is not None:
             self.rr_station_z3d_dir = rr_station_z3d_dir
-
         kw_dict = {
             "block_dict": use_blocks_dict,
             "notch_dict": notch_dict,
@@ -612,14 +621,12 @@ class Z3D2EDI(object):
         else:
             info_dict["nskip"] = self._header_len
             info_dict["nread"] = entry.nread
-
         # check the end times
         end_time_diff = sr * (entry.stop - stop).total_seconds()
         info_dict["end_diff"] = end_time_diff
         # if end diff is positive entry ends after station
         if end_time_diff > 0:
             info_dict["nread"] -= end_time_diff
-
         return info_dict
 
     def make_block_df(self, block_list):
@@ -663,7 +670,6 @@ class Z3D2EDI(object):
             diff_dict = self.compare_times(entry, b_start, b_stop)
             for key in ["nskip", "nread"]:
                 block_df.at[entry.Index, key] = diff_dict[key]
-
         block_df.nread = block_df.nread.min()
         return block_df
 
@@ -733,11 +739,9 @@ class Z3D2EDI(object):
                         + "\n\tReason: no end time"
                     )
                     continue
-
                 # get information for station block and align
                 for entry in block_df.itertuples():
                     block_list.append(self.make_block_entry(entry, 0, entry.n_samples))
-
                 # make the block into a dataframe
                 block_birrp_df = self.make_block_df(block_list)
 
@@ -746,15 +750,15 @@ class Z3D2EDI(object):
                 rr_block_list = []
                 for rr_entry in rr_df.itertuples():
                     if rr_entry.start > stop:
-                        print(
-                            "INFO: Skipping {0} starts after station".format(
-                                rr_entry.station
-                            )
-                        )
+                        print(f"{rr_entry.station} {rr_entry.start} > {stop}")
+                        print('INFO: Skipping {0} starts after station'.format(
+                              rr_entry.station))
                         continue
                     t_diff = abs((rr_entry.start - start).total_seconds()) * sr
+                    print(t_diff)
                     # check to see if the difference is within given tolerance
-                    if t_diff <= self._tol_dict[sr]["s_diff"]:
+                    if t_diff <= self._tol_dict[sr]['s_diff']:
+                        print(f"tdiff: {t_diff}")
                         # check number of samples
                         rr_samples = rr_entry.n_samples - t_diff
                         if rr_samples < self._tol_dict[sr]["min_points"]:
@@ -782,13 +786,12 @@ class Z3D2EDI(object):
                 if len(rr_block_list) > 1:
                     rr_block_birrp_df = self.make_block_df(rr_block_list)
                     block_birrp_df = block_birrp_df.append(rr_block_birrp_df)
-
                 # align block and append
                 sr_list.append(self.align_block(block_birrp_df.reset_index()))
                 block_count += 1
                 blocks_read_total += block_birrp_df.nread.mean()
                 if blocks_read_total > self._max_nread:
-                    dn = blocks_read_total - self.max_nread
+                    dn = blocks_read_total - self._max_nread
                     block_birrp_df.nread = block_birrp_df.nread.mean() - dn
                     print(
                         "WARNING: reached maximum points to read"
@@ -796,11 +799,9 @@ class Z3D2EDI(object):
                             self._max_nread, block_birrp_df.nread.mean()
                         )
                     )
-
             birrp_dict[sr] = np.array(
                 [a_df.to_records(index=False) for a_df in sr_list]
             )
-
         return birrp_dict
 
     def write_script_files(
@@ -844,7 +845,6 @@ class Z3D2EDI(object):
             save_path = Path(save_path)
         if not save_path.exists():
             save_path.mkdir()
-
         script_fn_list = []
         # loop through by keys, which should be sampling rates
         for df_key, fn_arr in birrp_arr_dict.items():
@@ -852,7 +852,6 @@ class Z3D2EDI(object):
             bf_path = save_path.joinpath("{0:.0f}".format(df_key))
             if not bf_path.exists():
                 bf_path.mkdir()
-
             # get the fn_array, and make sure that it is a ndarray type
             birrp_fn_arr = birrp_arr_dict[df_key]
 
@@ -863,7 +862,6 @@ class Z3D2EDI(object):
                 print("ERROR: {0}".format(error))
                 print("WARNING: Skipping script file for {0}".format(df_key))
                 continue
-
             # get station name
             remotes = np.where(fn_arr["rr"] == False)
             station = str(np.unique(fn_arr[remotes]["station"])[0])
@@ -880,7 +878,6 @@ class Z3D2EDI(object):
                 else:
                     birrp_params_dict["nfft"] = 2 ** 16
                     birrp_params_dict["nsctmax"] = 12
-
             birrp_script_obj.from_dict(birrp_params_dict)
 
             # write script file
@@ -890,11 +887,9 @@ class Z3D2EDI(object):
             except ValueError as error:
                 print(fn_arr["fn"])
                 raise ValueError(error)
-
             # write a birrp parameter configuration file
             birrp_script_obj.write_config_file(bf_path.joinpath(station))
             script_fn_list.append(birrp_script_obj.script_fn)
-
         return script_fn_list
 
     def run_birrp(self, script_fn_list=None, birrp_exe=None):
@@ -910,10 +905,8 @@ class Z3D2EDI(object):
 
         if script_fn_list is None:
             raise IOError("Need to input a script file or list of script files")
-
         if birrp_exe is not None:
             self.birrp_exe = birrp_exe
-
         if type(script_fn_list) is list:
             self.edi_fn = []
             for script_fn in script_fn_list:
@@ -932,7 +925,6 @@ class Z3D2EDI(object):
                 except Exception as error:
                     print("ERROR: {0} did not run properly".format(script_fn))
                     print("ERROR: {0}".format(error))
-
         elif type(script_fn_list) is str:
             out_str = birrp.run(self.birrp_exe, script_fn_list)
 
@@ -964,7 +956,6 @@ class Z3D2EDI(object):
         """
         if self.survey_config_fn is not None:
             self.survey_config_fn = survey_config_fn
-
         if self.survey_config_fn is None:
             ts_find = birrp_output_path.find("TS")
             if ts_find > 0:
@@ -975,7 +966,6 @@ class Z3D2EDI(object):
                         self.survey_config.read_survey_config_file(
                             self.survey_config_fn, self.station_z3d_dir.name
                         )
-
         j2edi_obj = birrp.J2Edi(
             station=self.survey_config.station,
             survey_config_fn=self.survey_config_fn,
@@ -1008,23 +998,23 @@ class Z3D2EDI(object):
         """
         if edi_fn_list is not None:
             self.edi_fn = edi_fn_list
-
         if type(self.edi_fn) is list:
             # check file lengths to make sure there are no zero length files
-            for edi_fn in self.edi_fn:
+            for edi_fn in self.edi_fn_list:
                 fn_size = os.path.getsize(edi_fn)
                 if fn_size < 3000:
                     self.edi_fn.remove(edi_fn)
                 if len(self.edi_fn) == 0:
                     raise ValueError("No good .edi files where produced")
             resp_plot = plotnresponses.PlotMultipleResponses(
-                fn_list=self.edi_fn, plot_style="compare", plot_tipper="yri"
+                fn_list=self.edi_fn_list, plot_style="compare", plot_tipper="yri"
             )
         elif type(self.edi_fn) is str:
             if os.path.getsize(self.edi_fn) < 3000:
                 raise ValueError("No good .edi files where produced")
-            resp_plot = plotresponse.PlotResponse(fn=self.edi_fn, plot_tipper="yri")
-
+            resp_plot = plotresponse.PlotResponse(
+                fn=self.edi_fn_list, plot_tipper="yri"
+            )
         return resp_plot
 
     def process_data(
@@ -1131,7 +1121,6 @@ class Z3D2EDI(object):
         """
         if df_list is not None:
             self.df_list = df_list
-
         # get start time
         st = datetime.datetime.now()
 
@@ -1147,9 +1136,11 @@ class Z3D2EDI(object):
                 self.station_z3d_dir, self.rr_station_z3d_dir, **kw_dict
             )
         # make birrp dictionary
+
         birrp_dict = self.get_birrp_dict(
             z3d_df, df_list=df_list, use_blocks_dict=use_blocks_dict
         )
+
 
         # write script files for birrp
         sfn_list = self.write_script_files(
@@ -1160,17 +1151,15 @@ class Z3D2EDI(object):
         self.run_birrp(sfn_list)
 
         # combine edi files
-        comb_edi_fn = self.combine_edi_files(self.edi_fn, sr_dict)
+        comb_edi_fn = self.combine_edi_files(self.edi_fn_list, sr_dict)
 
         if comb_edi_fn is not None:
             self.edi_fn.append(comb_edi_fn)
-
         # plot the output
         if plot:
             r_plot = self.plot_responses()
         else:
             r_plot = None
-
         et = datetime.datetime.now()
         t_diff = (et - st).total_seconds()
         print(
@@ -1214,11 +1203,9 @@ class Z3D2EDI(object):
         if isinstance(edi_fn_list, str):
             print("WARNING: Only one edi file, skipping combining")
             return edi_fn_list
-
         if len(edi_fn_list) == 1:
             print("WARNING: Only one edi file, skipping combining")
             return edi_fn_list[0]
-
         data_arr = np.zeros(
             100,
             dtype=[
@@ -1232,13 +1219,17 @@ class Z3D2EDI(object):
 
         count = 0
         for edi_fn in edi_fn_list:
-            if not isinstance(edi_fn, Path):
+            if isinstance(edi_fn, mtedi.EDI):
+                edi_obj = edi_fn
+                edi_fn = edi_obj.fn
+            if isinstance(edi_fn, (str, Path)):
                 edi_fn = Path(edi_fn)
+                edi_obj = edi_obj = mtedi.EDI(edi_fn)
             # get sampling rate from file name
             sr_key = int(edi_fn.parts[-2])
             if sr_key in list(sr_dict.keys()):
                 try:
-                    edi_obj = mtedi.EDI(edi_fn)
+
                     # locate frequency range
                     f_index = np.where(
                         (edi_obj.Z.freq >= sr_dict[sr_key][1])
@@ -1261,18 +1252,15 @@ class Z3D2EDI(object):
                         data_arr["tipper_err"][
                             count : count + len(f_index[0])
                         ] = edi_obj.Tipper.tipper_err[f_index]
-
                     count += len(f_index[0])
                 except IndexError:
                     pass
                     print(
                         "ERROR: Something went wrong with processing {0}".format(edi_fn)
                     )
-
             else:
                 pass
                 print("WARNING: {0} was not in combining dictionary".format(sr_key))
-
         # now replace
         data_arr = data_arr[np.nonzero(data_arr["freq"])]
         sort_index = np.argsort(data_arr["freq"])
@@ -1281,7 +1269,6 @@ class Z3D2EDI(object):
         # make sure that frequency is descending
         if data_arr["freq"][0] > data_arr["freq"][1]:
             sort_index = sort_index[::-1]
-
         data_arr = data_arr[sort_index]
         new_z = mtedi.MTz.Z(data_arr["z"], data_arr["z_err"], data_arr["freq"])
 
@@ -1291,11 +1278,12 @@ class Z3D2EDI(object):
             new_t = mtedi.MTz.Tipper(
                 data_arr["tipper"], data_arr["tipper_err"], data_arr["freq"]
             )
-
         else:
             new_t = mtedi.MTz.Tipper()
-
-        edi_obj = mtedi.EDI(edi_fn_list[0])
+        if isinstance(edi_fn_list[0], mtedi.EDI):
+            edi_obj = edi_fn_list[0]
+        else:
+            edi_obj = mtedi.EDI(edi_fn_list[0])
         edi_obj.Z = new_z
         edi_obj.Tipper = new_t
         edi_obj.Data.nfreq = new_z.z.shape[0]
@@ -1423,7 +1411,6 @@ def compute_mt_response(
         pass
         print("ERROR: No files copied from SD cards")
         print("INFO: Looking in  {0} for Z3D files".format(station_z3d_dir))
-
     # --> process data
 
     with Capturing() as output:
@@ -1439,7 +1426,6 @@ def compute_mt_response(
             et = datetime.datetime.now()
             print("--> took {0} seconds".format((et - st).total_seconds()))
             rp = None
-
     # --> write log file
     log_fid = open(os.path.join(station_z3d_dir, "Processing.log"), "w")
     log_fid.write("\n".join(output))

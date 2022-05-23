@@ -637,11 +637,11 @@ class EDI(object):
                            file as the input .edi with as:
                            r"/home/mt/mt01_1.edi"
         :type new_edi_fn: string
-        :param longitude_format:  whether to write longitude as LON or LONG. 
+        :param longitude_format:  whether to write longitude as LON or LONG.
                                   options are 'LON' or 'LONG', default 'LON'
         :type longitude_format:  string
         :param latlon_format:  format of latitude and longitude in output edi,
-                               degrees minutes seconds ('dms') or decimal 
+                               degrees minutes seconds ('dms') or decimal
                                degrees ('dd')
         :type latlon_format:  string
 
@@ -1041,9 +1041,9 @@ class EDI(object):
 
     def _get_magnetic_metadata(self, comp):
         """
-        
+
         get magnetic metadata from the various sources
-        
+
         :param comp: DESCRIPTION
         :type comp: TYPE
         :return: DESCRIPTION
@@ -1157,9 +1157,9 @@ class Header(object):
     ============== ======================================= ======== ===========
     acqby          Acquired by                             None     yes
     acqdate        Acquired date (YYYY-MM-DD)              None     yes
-    coordinate     [ geographic | geomagnetic ]            None     yes 
+    coordinate     [ geographic | geomagnetic ]            None     yes
     dataid         Station name, should be a string        None     yes
-    declination    geomagnetic declination                 None     yes 
+    declination    geomagnetic declination                 None     yes
     fn         Full path to .edi file                  None     no
     elev           Elevation of station (m)                None     yes
     empty          Value for missing data                  1e32     yes
@@ -1481,11 +1481,11 @@ class Header(object):
         :param header_list: should be read from an .edi file or input as
                             ['key_01=value_01', 'key_02=value_02']
         :type header_list: list
-        :param longitude_format:  whether to write longitude as LON or LONG. 
+        :param longitude_format:  whether to write longitude as LON or LONG.
                                   options are 'LON' or 'LONG', default 'LON'
         :type longitude_format:  string
         :param latlon_format:  format of latitude and longitude in output edi,
-                               degrees minutes seconds ('dms') or decimal 
+                               degrees minutes seconds ('dms') or decimal
                                degrees ('dd')
         :type latlon_format:  string
 
@@ -2075,7 +2075,7 @@ class DefineMeasurement(object):
     def from_metadata(self, channel):
         """
         create a measurement class from metadata
-        
+
         :param channel: DESCRIPTION
         :type channel: TYPE
         :return: DESCRIPTION
@@ -2116,7 +2116,7 @@ class DefineMeasurement(object):
 
     @property
     def channels_recorded(self):
-        """ Get the channels recorded """
+        """Get the channels recorded"""
 
         return [cc.lower() for cc in self.get_measurement_dict().keys()]
 
@@ -2487,7 +2487,7 @@ class DataSection(object):
 
     def match_channels(self, ch_ids):
         """
-        
+
 
         Parameters
         ----------
@@ -2574,9 +2574,9 @@ def _validate_edi_lines(edi_lines):
 # =============================================================================
 def read_edi(fn):
     """
-    
+
     Read an edi file and return a :class:`mtpy.core.mt.MT` object
-    
+
     :param fn: DESCRIPTION
     :type fn: TYPE
     :return: DESCRIPTION
@@ -2618,7 +2618,7 @@ def read_edi(fn):
 def write_edi(mt_object, fn=None):
     """
     Write an edi file from an :class:`mtpy.core.mt.MT` object
-    
+
     :param mt_object: DESCRIPTION
     :type mt_object: TYPE
     :return: DESCRIPTION
@@ -2699,6 +2699,7 @@ def write_edi(mt_object, fn=None):
                     write_dict[cc] = True
             except AttributeError:
                 pass
+
         r_dict = run.to_dict(single=True)
 
         for rk, rv in r_dict.items():

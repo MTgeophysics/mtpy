@@ -85,7 +85,7 @@ def calculate_leap_seconds(year, month, day):
         15: {"min": datetime.date(2009, 1, 1), "max": datetime.date(2012, 6, 30)},
         16: {"min": datetime.date(2012, 6, 30), "max": datetime.date(2015, 6, 30)},
         17: {"min": datetime.date(2015, 6, 30), "max": datetime.date(2016, 12, 31)},
-        18: {"min": datetime.date(2016, 12, 31), "max": datetime.date(2021, 12, 1)},
+        18: {"min": datetime.date(2016, 12, 31), "max": datetime.date(2022, 12, 1)},
     }
 
     year = int(year)

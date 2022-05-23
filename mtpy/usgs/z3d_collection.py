@@ -428,9 +428,10 @@ class Z3DCollection(object):
 
         return z3d_df
 
-    def combine_z3d_files(
-        self, z3d_df, new_sampling_rate=4, t_buffer=3600, remote=False
-    ):
+
+    def combine_z3d_files(self, z3d_df, new_sampling_rate=4, t_buffer=3600,
+                          comp_list=['ex', 'ey', 'hx', 'hy', 'hz'], remote=False):
+
         """
         Combine all z3d files for a given station and given component for
         processing to get long period estimations.
@@ -558,7 +559,8 @@ class Z3DCollection(object):
                         )
                     )
                 # decimate to the required sampling rate
-                t_obj.decimate(int(z_obj.df / new_sampling_rate))
+                t_obj.resample(new_sampling_rate)
+                # t_obj.decimate(int(z_obj.df/new_sampling_rate))
                 # fill the new time series with the data at appropriate times
                 new_ts.ts.data[
                     (new_ts.ts.index >= t_obj.ts.index[0])

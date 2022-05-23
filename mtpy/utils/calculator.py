@@ -42,10 +42,16 @@ def roundsf(number, sf):
     round a number to a specified number of significant figures (sf)
     """
     # can't have < 1 s.f.
-    sf = max(sf, 1.0)
-    rounding = int(np.ceil(-np.log10(number) + sf - 1.0))
-
-    return np.round(number, rounding)
+    sf = max(sf,1.)
+    
+    if np.iterable(number):
+        print("iterable")
+        rounding = (np.ceil(-np.log10(number) + sf - 1.)).astype(int)
+        return np.array([np.round(number[ii],rounding[ii]) for ii in range(len(rounding))])
+    else:
+        rounding = int(np.ceil(-np.log10(number) + sf - 1.))
+    
+        return np.round(number, rounding)
 
 
 def get_period_list(
