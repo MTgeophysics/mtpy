@@ -81,7 +81,10 @@ class MTCollection:
 
     @property
     def mth5_filename(self):
-        return self.working_directory.joinpath(f"{self._mth5_basename}.h5")
+        if self._mth5_basename.find(".h5") > 0:
+            return self.working_directory.joinpath(f"{self._mth5_basename}")
+        else:
+            return self.working_directory.joinpath(f"{self._mth5_basename}.h5")
 
     @property
     def dataframe(self):
@@ -245,6 +248,29 @@ class MTCollection:
         if mt_object.survey_metadata.id in [None, ""]:
             mt_object.survey_metadata.id = "unknown_survey"
         self.mth5_collection.add_transfer_function(mt_object)
+
+    def get_tf_list(self, bounding_box=None):
+        """
+        Get a list of transfer functions
+        
+        :param tf_ids: DESCRIPTION, defaults to None
+        :type tf_ids: TYPE, optional
+        :param bounding_box: DESCRIPTION, defaults to None
+        :type bounding_box: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if bounding_box is not None:
+            tf_df = self.apply_bbox(*bounding_box)
+        else:
+            tf_df = self.dataframe
+        tf_list = []
+        for row in tf_df.itertuples():
+            print(row.station)
+            tf_list.append(self.get_tf(row.station))
+        return tf_list
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
         """

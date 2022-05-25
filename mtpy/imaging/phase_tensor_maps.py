@@ -21,6 +21,8 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import matplotlib.tri as tri
 
+from mtpy.imaging.mtplot_tools import PlotBase
+
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplot_tools as mtpl
@@ -32,7 +34,7 @@ from mtpy.utils.mtpy_logger import get_mtpy_logger
 # ==============================================================================
 
 
-class PlotPhaseTensorMaps(mtpl.PlotSettings):
+class PlotPhaseTensorMaps(PlotBase):
     """
     Plots phase tensor ellipses in map view from a list of edi files
 
@@ -365,8 +367,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
         Initialise the object
         :param kwargs: keyword-value pairs
         """
-        super(PlotPhaseTensorMaps, self).__init__(**kwargs)
-        self.logger = get_mtpy_logger(self.__class__.__name__)
+        super().__init__(**kwargs)
 
         fn_list = kwargs.pop("fn_list", None)
         z_object_list = kwargs.pop("z_object_list", None)
