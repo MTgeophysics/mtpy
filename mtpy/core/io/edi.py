@@ -2694,8 +2694,12 @@ def write_edi(mt_object, fn=None):
             ]
         )
         for cc in write_dict.keys():
-            if run.get_channel(cc) is not None:
-                write_dict[cc] = True
+            try:
+                if getattr(run, cc).component is not None:
+                    write_dict[cc] = True
+            except AttributeError:
+                pass
+
         r_dict = run.to_dict(single=True)
 
         for rk, rv in r_dict.items():

@@ -17,7 +17,6 @@ try:
     from PyQt5 import QtCore, QtGui, QtWidgets
 except ImportError:
     raise ImportError("This version needs PyQt5")
-
 import numpy as np
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -693,7 +692,6 @@ class PlotWidget(QtWidgets.QWidget):
             )
             # print the static shift applied
             print("\n    - Static shift applied to edited data:")
-
         # print the static shift applied
         print(
             "        x = {0:<8.5g}, y = {1:<8.5g}".format(
@@ -761,14 +759,12 @@ class PlotWidget(QtWidgets.QWidget):
                 num_freq=self.num_freq
             )
             print("\n    - Removed distortion from original data")
-
         else:
             # remove distortion from edited data
             distortion, new_z_object = self.mt_obj.remove_distortion(
                 num_freq=self.num_freq
             )
             print("\n    - Removed distortion from edited data")
-
         self._edited_dist = True
         self.mt_obj.Z = new_z_object
 
@@ -824,10 +820,8 @@ class PlotWidget(QtWidgets.QWidget):
 
         if self._edited_ss == True:
             self.static_shift_apply()
-
         if self._edited_dist == True:
             self.remove_distortion_apply()
-
         self.redraw_plot()
 
         self._edited_rot = True
@@ -851,7 +845,6 @@ class PlotWidget(QtWidgets.QWidget):
             strike_plot.plot_tipper = "n"
         elif np.any(self.mt_obj.Tipper.tipper == 0) == False:
             strike_plot.plot_tipper = "y"
-
         strike_plot.fold = False
         strike_plot.plot_range = "data"
         strike_plot.plot()
@@ -909,7 +902,6 @@ class PlotWidget(QtWidgets.QWidget):
             # msg_box.setWindowTitle('Interpolation Bounds')
             # msg_box.exec_()
             print("\n".join(info))
-
         if (
             self._edited_dist == True
             or self._edited_mask == True
@@ -921,14 +913,12 @@ class PlotWidget(QtWidgets.QWidget):
             )
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
-
         else:
             new_z, new_tip = self._mt_obj.interpolate(
                 interp_freq, interp_type=self.interp_type
             )
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
-
         self.redraw_plot()
 
         # print('Interpolated data onto periods:')
@@ -1022,7 +1012,6 @@ class PlotWidget(QtWidgets.QWidget):
             self.plot_tipper = False
         else:
             self.plot_tipper = True
-
         # set x-axis limits from short period to long period
         self.plot_properties.xlimits = (
             10 ** (np.floor(np.log10(plot_period_o.min()))),
@@ -1179,7 +1168,6 @@ class PlotWidget(QtWidgets.QWidget):
                 self._mt_obj.Z.phase_err[nzyy_o, 1, 1],
                 **kw_yy_o
             )
-
         # plot manipulated data apparent resistivity
         erxx = mtplt.plot_errorbar(
             self.ax_res_d,
@@ -1221,8 +1209,8 @@ class PlotWidget(QtWidgets.QWidget):
                 ax.set_ylabel(
                     "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=font_dict
                 )
-            ax.set_yscale("log", nonposy="clip")
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_yscale("log", nonpositive="clip")
+            ax.set_xscale("log", nonpositive="clip")
             ax.set_xlim(self.plot_properties.xlimits)
 
             ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
@@ -1240,7 +1228,6 @@ class PlotWidget(QtWidgets.QWidget):
                 )
             ]
             ax.set_yticklabels(ylabels)
-
         self.ax_res_od.legend(
             (erxy[0], eryx[0]),
             ("$Z_{xy}$", "$Z_{yx}$"),
@@ -1302,18 +1289,16 @@ class PlotWidget(QtWidgets.QWidget):
             self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
         for aa, ax in enumerate([self.ax_phase_od, self.ax_phase_d]):
             ax.set_xlabel("Period (s)", font_dict)
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_xscale("log", nonpositive="clip")
             if aa == 0:
                 ax.set_ylabel("Phase (deg)", font_dict)
                 # ax.yaxis.set_major_locator(MultipleLocator(15))
                 # ax.yaxis.set_minor_locator(MultipleLocator(5))
             ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_phase_od, self.ax_phase_d]:
             for label in [ax.get_yticklabels()[0], ax.get_yticklabels()[-1]]:
                 label.set_visible(False)
-
         ## --> plot tipper
         # set th xaxis tick labels to invisible
         plt.setp(self.ax_phase_od.xaxis.get_ticklabels(), visible=False)
@@ -1351,7 +1336,6 @@ class PlotWidget(QtWidgets.QWidget):
                     self._mt_obj.Tipper.amplitude_err[nty_o, 0, 1],
                     **kw_yy_o
                 )
-
             # plot magnitude of edited induction vectors
             etx = mtplt.plot_errorbar(
                 self.ax_tip_x,
@@ -1387,7 +1371,6 @@ class PlotWidget(QtWidgets.QWidget):
                 handletextpad=0.2,
                 borderpad=0.05,
             )
-
         # --> set axes properties for magnitude and angle of induction vectors
         if self.plot_properties.tipper_x_limits != None:
             self.ax_tip_x.set_ylim(self.plot_properties.tipper_x_limits)
@@ -1400,15 +1383,12 @@ class PlotWidget(QtWidgets.QWidget):
         for aa, ax in enumerate([self.ax_tip_x, self.ax_tip_y]):
             if aa == 0:
                 ax.set_ylabel("Magnitude", fontdict=font_dict)
-
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_xscale("log", nonpositive="clip")
             ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_tip_x, self.ax_tip_y]:
             for label in [ax.get_yticklabels()[-1]]:
                 label.set_visible(False)
-
         # gs.tight_layout(self.figure, h_pad=0)
 
         ## --> make a rectangluar picker box
@@ -1488,7 +1468,6 @@ class PlotWidget(QtWidgets.QWidget):
                     d_index = (f_index, np.array([1]), np.array([0]))
                     print("***Picked Invalid Point***", d_index)
                     return
-
                 comp_jj = d_index[1][0]
                 comp_kk = d_index[2][0]
 
@@ -1525,7 +1504,6 @@ class PlotWidget(QtWidgets.QWidget):
                         )
                     except ValueError:
                         print(data_period, d_index)
-
             # mask phase points
             elif self._ax_index == 2 or self._ax_index == 3:
                 d_index = np.where(self.mt_obj.Z.phase == data_value)
@@ -1559,7 +1537,6 @@ class PlotWidget(QtWidgets.QWidget):
                         )
                     except ValueError:
                         print("***Picked Invalid Point***", d_index)
-
                 elif self._ax_index == 3:
                     try:
                         self.ax_res_d.plot(
@@ -1569,7 +1546,6 @@ class PlotWidget(QtWidgets.QWidget):
                         )
                     except ValueError:
                         print("***Picked Invalid Point***", d_index)
-
             # mask tipper Tx
             elif self._ax_index == 4 or self._ax_index == 5:
                 data_value = np.round(data_value, 8)
@@ -1582,13 +1558,11 @@ class PlotWidget(QtWidgets.QWidget):
                     self._ax.plot(data_period, data_value, **self.mask_kw)
                 except ValueError:
                     print("***Picked Invalid Point***", d_index)
-
                 # set tipper data to 0
                 self.mt_obj.Tipper.tipper[d_index] = 0.0 + 0.0j
                 self.mt_obj.Tipper.tipper_err[d_index] = 0.0
 
                 self.mt_obj.Tipper.compute_amp_phase()
-
             #            self._ax.figure.canvas.repaint()
             #            self._ax.figure.canvas.update()
             #            self._ax.figure.canvas.flush_events()
@@ -1631,7 +1605,6 @@ class PlotWidget(QtWidgets.QWidget):
                 )
                 self.mt_obj.Z.z[ff, 0, 1] = 0.0 + 0.0 * 1j
                 self.mt_obj.Z.z_err[ff, 0, 1] = 0.0
-
             if self.edits_mode == "Both" or self.edits_mode == "Y":
                 self.ax_res_od.plot(
                     data_period, self.mt_obj.Z.resistivity[ff, 1, 0], **self.mask_kw
@@ -1643,7 +1616,6 @@ class PlotWidget(QtWidgets.QWidget):
 
                 self.mt_obj.Z.z[ff, 1, 0] = 0.0 + 0.0 * 1j
                 self.mt_obj.Z.z_err[ff, 1, 0] = 0.0
-
         self.ax_res_od.figure.canvas.draw()
         self.ax_phase_od.figure.canvas.draw()
 
@@ -1664,7 +1636,6 @@ class PlotWidget(QtWidgets.QWidget):
                 )
                 self.mt_obj.Z.z[ff, 0, 0] = 0.0 + 0.0 * 1j
                 self.mt_obj.Z.z_err[ff, 0, 0] = 0.0
-
             if self.edits_mode == "Both" or self.edits_mode == "Y":
                 self.ax_res_d.plot(
                     data_period, self.mt_obj.Z.resistivity[ff, 1, 1], **self.mask_kw
@@ -1676,7 +1647,6 @@ class PlotWidget(QtWidgets.QWidget):
 
                 self.mt_obj.Z.z[ff, 1, 1] = 0.0 + 0.0 * 1j
                 self.mt_obj.Z.z_err[ff, 1, 1] = 0.0
-
         self.ax_res_od.figure.canvas.draw()
         self.ax_phase_od.figure.canvas.draw()
 
@@ -1689,7 +1659,6 @@ class PlotWidget(QtWidgets.QWidget):
         except ZeroDivisionError:
             print("***Picked Invalid Points***")
             return
-
         for ff in f_idx:
             data_period = 1.0 / self.mt_obj.Z.freq[ff]
             self.ax_tip_x.plot(
@@ -1698,7 +1667,6 @@ class PlotWidget(QtWidgets.QWidget):
 
             self.mt_obj.Tipper.tipper[ff, 0, 0] = 0.0 + 0.0 * 1j
             self.mt_obj.Tipper.tipper_err[ff, 0, 0] = 0.0
-
         self.mt_obj.Tipper.compute_amp_phase()
 
         self.ax_tip_x.figure.canvas.draw()
@@ -1717,7 +1685,6 @@ class PlotWidget(QtWidgets.QWidget):
 
             self.mt_obj.Tipper.tipper[ff, 0, 1] = 0.0 + 0.0 * 1j
             self.mt_obj.Tipper.tipper_err[ff, 0, 1] = 0.0
-
         self.mt_obj.Tipper.compute_amp_phase()
 
         self.ax_tip_y.figure.canvas.draw()
@@ -2138,12 +2105,10 @@ class PlotSettings(QtWidgets.QWidget):
             self.res_limits_od = (self._res_limits_od_min, self._res_limits_od_max)
         else:
             self.res_limits_od = None
-
         if self._res_limits_d_min != None and self._res_limits_d_max != None:
             self.res_limits_d = (self._res_limits_d_min, self._res_limits_d_max)
         else:
             self.res_limits_d = None
-
         if self._phase_limits_od_min != None and self._phase_limits_od_max != None:
             self.phase_limits_od = (
                 self._phase_limits_od_min,
@@ -2151,22 +2116,18 @@ class PlotSettings(QtWidgets.QWidget):
             )
         else:
             self.phase_limits_od = None
-
         if self._phase_limits_d_min != None and self._phase_limits_d_max != None:
             self.phase_limits_d = (self._phase_limits_d_min, self._phase_limits_d_max)
         else:
             self.phase_limits_d = None
-
         if self._tip_x_limits_min != None and self._tip_x_limits_max != None:
             self.tipper_x_limits = (self._tip_x_limits_min, self._tip_x_limits_max)
         else:
             self.tipper_x_limits = None
-
         if self._tip_y_limits_min != None and self._tip_y_limits_max != None:
             self.tipper_y_limits = (self._tip_y_limits_min, self._tip_y_limits_max)
         else:
             self.tipper_y_limits = None
-
         self.settings_updated.emit()
 
 
@@ -2218,7 +2179,6 @@ class EDITextEditor(QtWidgets.QWidget):
             self.header_elev_edit.setText("0.0")
         else:
             self.header_elev_edit.setText("{0:.1f}".format(self.edi_obj.elev))
-
         self.header_elev_edit.editingFinished.connect(self.header_set_elev)
 
         self.header_empty_label = QtWidgets.QLabel("Empty Value")
@@ -2796,7 +2756,6 @@ class EDITextEditor(QtWidgets.QWidget):
             )
             self.meas_h01_ct_combo.setCurrentIndex(0)
             self.meas_h01_acqchn_combo.setCurrentIndex(0)
-
         if hasattr(self.edi_obj.Define_measurement, "meas_hy"):
             self.meas_h02_id_edit.setText(
                 "{0}".format(self.edi_obj.Define_measurement.meas_hy.id)
@@ -2818,7 +2777,6 @@ class EDITextEditor(QtWidgets.QWidget):
             )
             self.meas_h02_ct_combo.setCurrentIndex(1)
             self.meas_h02_acqchn_combo.setCurrentIndex(1)
-
         if hasattr(self.edi_obj.Define_measurement, "meas_hz"):
             self.meas_h03_id_edit.setText(
                 "{0}".format(self.edi_obj.Define_measurement.meas_hz.id)
@@ -2840,7 +2798,6 @@ class EDITextEditor(QtWidgets.QWidget):
             )
             self.meas_h03_ct_combo.setCurrentIndex(2)
             self.meas_h03_acqchn_combo.setCurrentIndex(2)
-
         if hasattr(self.edi_obj.Define_measurement, "meas_rhx"):
             self.meas_hr1_id_edit.setText(
                 "{0}".format(self.edi_obj.Define_measurement.meas_rhx.id)
@@ -2862,7 +2819,6 @@ class EDITextEditor(QtWidgets.QWidget):
             )
             self.meas_hr1_ct_combo.setCurrentIndex(3)
             self.meas_hr1_acqchn_combo.setCurrentIndex(3)
-
         if hasattr(self.edi_obj.Define_measurement, "meas_rhy"):
             self.meas_hr2_id_edit.setText(
                 "{0}".format(self.edi_obj.Define_measurement.meas_rhy.id)
@@ -2884,7 +2840,6 @@ class EDITextEditor(QtWidgets.QWidget):
             )
             self.meas_hr2_ct_combo.setCurrentIndex(4)
             self.meas_hr2_acqchn_combo.setCurrentIndex(4)
-
         if hasattr(self.edi_obj.Define_measurement, "meas_ex"):
             self.meas_e01_id_edit.setText(
                 "{0}".format(self.edi_obj.Define_measurement.meas_ex.id)
@@ -2911,7 +2866,6 @@ class EDITextEditor(QtWidgets.QWidget):
             )
             self.meas_e01_ct_combo.setCurrentIndex(0)
             self.meas_e01_acqchn_combo.setCurrentIndex(0)
-
         if hasattr(self.edi_obj.Define_measurement, "meas_ey"):
             self.meas_e02_id_edit.setText(
                 "{0}".format(self.edi_obj.Define_measurement.meas_ey.id)
@@ -2944,7 +2898,6 @@ class EDITextEditor(QtWidgets.QWidget):
             return_num = float(value)
         except ValueError:
             return_num = 0.0
-
         return return_num
 
     def update_metadata(self):
