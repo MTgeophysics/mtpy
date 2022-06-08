@@ -80,8 +80,7 @@ class SurveyConfig(object):
     """
 
     def __init__(self, **kwargs):
-        
-        
+
         self.b_instrument_amplification = 1
         self.b_instrument_type = "induction coil"
         self.b_logger_gain = 1
@@ -1336,7 +1335,7 @@ def compute_mt_response(
     """
     This code will down load Z3D files from a Zen that is in SD Mode,
     convert the Z3D files to ascii format, then process them for each
-    sampling rate using Alan Chave's BIRRP code.  The outputs are then
+    sampling rate using Alan Chave"s BIRRP code.  The outputs are then
     converted to .edi files and plotted.
     You need 2 things to run this code:
         * mtpy --> a Python package for MT and can be found at
@@ -1344,7 +1343,7 @@ def compute_mt_response(
         * BIRRP executable --> you can get this from Alan Chave at WHOI
                                if you are using it for non-commercial projects.
     ..note:: This code is quite specific to my setup, so let me know what
-             doesn't work for you so I can generalize it.
+             doesn"t work for you so I can generalize it.
     Arguments
     ----------------
         **survey_dir** : string
@@ -1365,7 +1364,7 @@ def compute_mt_response(
                                full path to a folder that contains the coil
                                calibration data.  These must be in seperate
                                .csv files for each coil named by corresponding
-                               coil name. If you're coil is 2884, then you
+                               coil name. If you"re coil is 2884, then you
                                need a calibration file named Ant2884_cal.csv
                                in which the data is freq,real,imaginary
         **process_df_list** : list

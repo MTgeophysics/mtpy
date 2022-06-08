@@ -610,18 +610,20 @@ class Z3DMetadata(object):
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
                             break
-                        self.coil_cal.append(
-                            [float(tt.strip()) for tt in t_str.split(":")]
-                        )
+                        if t_str.find(":") > 0:
+                            self.coil_cal.append(
+                                [float(tt.replace("|", "").strip()) for tt in t_str.split(":") if tt not in [""]]
+                            )
                 elif cal_find and self.count > 3:
                     t_list = test_str.split(",")
                     for t_str in t_list:
                         if "\x00" in t_str:
                             break
                         else:
-                            self.coil_cal.append(
-                                [float(tt.strip()) for tt in t_str.strip().split(":")]
-                            )
+                            if t_str.find(":") > 0:
+                                self.coil_cal.append(
+                                    [float(tt.replace("|", "").strip()) for tt in t_str.strip().split(":") if tt not in [""]]
+                                )
 
             else:
                 self.find_metadata = False
@@ -631,9 +633,13 @@ class Z3DMetadata(object):
 
         # make coil calibration and board calibration structured arrays
         if len(self.coil_cal) > 0:
-            self.coil_cal = np.core.records.fromrecords(
-                self.coil_cal, names="frequency, amplitude, phase"
-            )
+            try:
+                self.coil_cal = np.core.records.fromrecords(
+                    self.coil_cal, names="frequency, amplitude, phase"
+                )
+            except ValueError as error:
+                print(error, self.coil_cal)
+                
         if len(self.board_cal) > 0:
             try:
                 self.board_cal = np.core.records.fromrecords(

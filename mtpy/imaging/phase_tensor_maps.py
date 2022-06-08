@@ -818,6 +818,9 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                     colorarray = pt.phimax[jj]
                 elif self.ellipse_colorby == "phidet":
                     colorarray = np.sqrt(abs(pt.det[jj])) * (180 / np.pi)
+                    
+                elif self.ellipse_colorby == "azimuth":
+                    colorarray = pt.azimuth[jj]
                 elif (
                     self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg"
                 ):
@@ -917,6 +920,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                 length_includes_head=False,
                                 head_width=self.arrow_head_width,
                                 head_length=self.arrow_head_length,
+                                zorder=1000,
                             )
                         else:
                             pass
@@ -945,6 +949,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
                                 length_includes_head=False,
                                 head_width=self.arrow_head_width,
                                 head_length=self.arrow_head_length,
+                                zorder=1000,
                             )
                 # ------------Plot station name------------------------------
                 try:
@@ -1108,6 +1113,7 @@ class PlotPhaseTensorMaps(mtpl.PlotSettings):
 
         # make a grid with color lines
         lpax.grid(True, alpha=0.3, which="both", color=(0.5, 0.5, 0.5))
+        lpax.set_axisbelow(True)
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
         # ==> make a colorbar with appropriate colors
