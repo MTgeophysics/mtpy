@@ -16,7 +16,12 @@ Created on Fri Jun 07 18:20:00 2013
 import matplotlib.pyplot as plt
 import numpy as np
 
-import contextily as cx
+try:
+    import contextily as cx
+
+    has_cx = True
+except ModuleNotFoundError:
+    has_cx = False
 from mtpy.imaging.mtplot_tools import PlotBase
 import mtpy.utils.exceptions as mtex
 
@@ -27,8 +32,8 @@ class PlotStations(PlotBase):
     """
     plot station locations in map view.
 
-    Uses contextily to get the basemap.  
-    See https://contextily.readthedocs.io/en/latest/index.html for more 
+    Uses contextily to get the basemap.
+    See https://contextily.readthedocs.io/en/latest/index.html for more
     information about options.
 
     """
@@ -52,6 +57,10 @@ class PlotStations(PlotBase):
         self._basename = "stations_map"
         self.gdf = geo_df
 
+        self.cx_source = None
+        self.cx_zoom = None
+        if has_cx:
+            self.cx_source = cx.providers.USGS.USTopo
         self._set_subplot_parameters()
 
         for key, value in kwargs.items():
@@ -96,9 +105,9 @@ class PlotStations(PlotBase):
                 y.max() * (1 + self.pad),
             )
 
-    def plot(self, cx_source=cx.providers.USGS.USTopo, cx_zoom=None):
+    def plot(self):
         """
-        
+
         :param cx_source: DESCRIPTION, defaults to cx.providers.USGS.USTopo
         :type cx_source: TYPE, optional
         :param cx_zoom: DESCRIPTION, defaults to None
@@ -139,15 +148,20 @@ class PlotStations(PlotBase):
                 color=self.text_color,
             )
         if self.image_file is None:
-            try:
-                cx_kwargs = {"crs": self.gdf.crs.to_string(), "source": cx_source}
-                if cx_zoom is not None:
-                    cx_kwargs["zoom"] = cx_zoom
-                cx.add_basemap(
-                    gax, **cx_kwargs,
-                )
-            except Exception as error:
-                self.logger.warning(f"Could not add base map because {error}")
+            if has_cx:
+                try:
+                    cx_kwargs = {
+                        "crs": self.gdf.crs.to_string(),
+                        "source": self.cx_source,
+                    }
+                    if self.cx_zoom is not None:
+                        cx_kwargs["zoom"] = self.cx_zoom
+                    cx.add_basemap(
+                        gax,
+                        **cx_kwargs,
+                    )
+                except Exception as error:
+                    self.logger.warning(f"Could not add base map because {error}")
         # set axis properties
         self.ax.set_xlabel("latitude", fontdict=self.font_dict)
         self.ax.set_ylabel("longitude", fontdict=self.font_dict)
