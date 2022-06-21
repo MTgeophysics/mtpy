@@ -23,7 +23,7 @@ class PlotPhaseTensor(PlotBase):
     azimuth, skew, and ellipticity as subplots on one plot.  It can plot
     the resistivity tensor along side the phase tensor for comparison.
 
-    
+
     """
 
     def __init__(self, pt_object, station=None, **kwargs):
@@ -46,9 +46,16 @@ class PlotPhaseTensor(PlotBase):
         if self.show_plot:
             self.plot()
 
+    def _set_subplot_parameters(self):
+        plt.rcParams["font.size"] = self.font_size
+        plt.rcParams["figure.subplot.left"] = self.subplot_left
+        plt.rcParams["figure.subplot.right"] = self.subplot_right
+        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
+        plt.rcParams["figure.subplot.top"] = self.subplot_top
+
     def _rotate_pt(self, rotation_angle):
         """
-        
+
         :param rotation_angle: DESCRIPTION
         :type rotation_angle: TYPE
         :return: DESCRIPTION
@@ -57,6 +64,10 @@ class PlotPhaseTensor(PlotBase):
         """
 
         self.pt.rotate(rotation_angle)
+
+    def _setup_subplots(self):
+        self.ax_pt = self.fig.add_subplot(3, 1, 1)
+        self.ax_strike = self.fig.add_subplot(3, 2, 3)
 
     def plot(self, rotation_angle=None):
         """
@@ -68,6 +79,7 @@ class PlotPhaseTensor(PlotBase):
         # --> create plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
+        self._setup_subplots()
 
         # get phase tensor instance
         if rotation_angle is not None:
@@ -75,33 +87,37 @@ class PlotPhaseTensor(PlotBase):
         color_array = self.get_pt_color_array(self.pt)
 
         # -------------plotPhaseTensor-----------------------------------
-        self.axpt = self.fig.add_subplot(3, 1, 1)
 
         self.cbax, self.cbpt, = plot_pt_lateral(
-            self.axpt, self.pt, color_array, self.ellipse_properties, self.fig,
+            self.ax_pt,
+            self.pt,
+            color_array,
+            self.ellipse_properties,
+            self.fig,
         )
 
         # ----set axes properties-----------------------------------------------
         # --> set tick labels and limits
-        self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+        self.ax_pt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
 
-        tklabels, xticks = get_log_tick_labels(self.axpt)
+        tklabels, xticks = get_log_tick_labels(self.ax_pt)
 
-        self.axpt.set_xticks(xticks)
-        self.axpt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
-        self.axpt.set_xlabel("Period (s)", fontdict=self.font_dict)
+        self.ax_pt.set_xticks(xticks)
+        self.ax_pt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
+        self.ax_pt.set_xlabel("Period (s)", fontdict=self.font_dict)
 
         # need to reset the x_limits caouse they get reset when calling
         # set_ticks for some reason
-        self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
-        self.axpt.grid(
+        self.ax_pt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+        self.ax_pt.grid(
             True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25
         )
 
-        plt.setp(self.axpt.get_yticklabels(), visible=False)
+        plt.setp(self.ax_pt.get_yticklabels(), visible=False)
 
         self.cbpt.set_label(
-            self.cb_label_dict[self.ellipse_colorby], fontdict={"size": self.font_size},
+            self.cb_label_dict[self.ellipse_colorby],
+            fontdict={"size": self.font_size},
         )
 
         # ---------------plotStrikeAngle-----------------------------------
@@ -110,7 +126,7 @@ class PlotPhaseTensor(PlotBase):
             np.floor(np.log10(1.0 / self.pt.freq[0])),
             np.ceil(np.log10(1.0 / self.pt.freq[-1])),
         )
-        self.ax2 = self.fig.add_subplot(3, 2, 3)
+
         az = self.pt.azimuth
         az_err = self.pt.azimuth_err
 
@@ -122,7 +138,7 @@ class PlotPhaseTensor(PlotBase):
         stlabel = []
 
         # plot phase tensor strike
-        ps2 = self.ax2.errorbar(
+        ps2 = self.ax_strike.errorbar(
             1.0 / self.pt.freq,
             az,
             marker=self.strike_pt_marker,
@@ -142,15 +158,17 @@ class PlotPhaseTensor(PlotBase):
 
         if self.strike_limits is None:
             self.strike_limits = (-89.99, 89.99)
-        self.ax2.set_yscale("linear")
-        self.ax2.set_xscale("log", nonpositive="clip")
-        self.ax2.set_xlim(xmax=10 ** xlimits[-1], xmin=10 ** xlimits[0])
-        self.ax2.set_ylim(self.strike_limits)
-        self.ax2.yaxis.set_major_locator(MultipleLocator(20))
-        self.ax2.yaxis.set_minor_locator(MultipleLocator(5))
-        self.ax2.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        self.ax2.set_ylabel("Angle (deg)", fontdict=self.font_dict)
-        self.ax2.set_title("Strike", fontdict=self.font_dict)
+        self.ax_strike.set_yscale("linear")
+        self.ax_strike.set_xscale("log", nonpositive="clip")
+        self.ax_strike.set_xlim(xmax=10 ** xlimits[-1], xmin=10 ** xlimits[0])
+        self.ax_strike.set_ylim(self.strike_limits)
+        self.ax_strike.yaxis.set_major_locator(MultipleLocator(20))
+        self.ax_strike.yaxis.set_minor_locator(MultipleLocator(5))
+        self.ax_strike.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+        )
+        self.ax_strike.set_ylabel("Angle (deg)", fontdict=self.font_dict)
+        self.ax_strike.set_title("Strike", fontdict=self.font_dict)
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin
@@ -158,7 +176,7 @@ class PlotPhaseTensor(PlotBase):
         maxphi = self.pt.phimax
         maxphierr = self.pt.phimax_err
 
-        self.ax3 = self.fig.add_subplot(3, 2, 4, sharex=self.ax2)
+        self.ax3 = self.fig.add_subplot(3, 2, 4, sharex=self.ax_strike)
 
         ermin = self.ax3.errorbar(
             1.0 / self.pt.freq,
@@ -232,7 +250,7 @@ class PlotPhaseTensor(PlotBase):
         skew = self.pt.beta
         skewerr = self.pt.beta_err
 
-        self.ax4 = self.fig.add_subplot(3, 2, 5, sharex=self.ax2)
+        self.ax4 = self.fig.add_subplot(3, 2, 5, sharex=self.ax_strike)
         erskew = self.ax4.errorbar(
             1.0 / self.pt.freq,
             skew,
@@ -281,7 +299,7 @@ class PlotPhaseTensor(PlotBase):
         ellipticity = self.pt.ellipticity
         ellipticityerr = self.pt.ellipticity_err
 
-        self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
+        self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax_strike)
         erskew = self.ax5.errorbar(
             1.0 / self.pt.freq,
             ellipticity,
@@ -330,124 +348,3 @@ class PlotPhaseTensor(PlotBase):
                 'Phase Tensor Elements for Station "unknown"',
                 fontdict={"size": self.font_size + 3, "weight": "bold"},
             )
-
-    def save_plot(
-        self,
-        save_fn,
-        file_format="pdf",
-        orientation="portrait",
-        fig_dpi=None,
-        close_plot="y",
-    ):
-        """
-        save_plot will save the figure to save_fn.
-
-        Arguments:
-        -----------
-
-            **save_fn** : string
-                          full path to save figure to, can be input as
-                          * directory path -> the directory path to save to
-                            in which the file will be saved as
-                            save_fn/station_name_PhaseTensor.file_format
-
-                          * full path -> file will be save to the given
-                            path.  If you use this option then the format
-                            will be assumed to be provided by the path
-
-            **file_format** : [ pdf | eps | jpg | png | svg ]
-                              file type of saved figure pdf,svg,eps...
-
-            **orientation** : [ landscape | portrait ]
-                              orientation in which the file will be saved
-                              *default* is portrait
-
-            **fig_dpi** : int
-                          The resolution in dots-per-inch the file will be
-                          saved.  If None then the dpi will be that at
-                          which the figure was made.  I don't think that
-                          it can be larger than dpi of the figure.
-
-            **close_plot** : [ y | n ]
-                             * 'y' will close the plot after saving.
-                             * 'n' will leave plot open
-
-        :Example: ::
-
-            >>> # to save plot as jpg
-            >>> import mtpy.imaging.mtpl.MTplottools as mtpl.MTplot
-            >>> p1 = mtpl.MTplot.PlotPhaseTensor(r'/home/MT/mt01.edi')
-            >>> p1.save_plot(r'/home/MT/figures', file_format='jpg')
-
-        """
-
-        if fig_dpi is None:
-            fig_dpi = self.fig_dpi
-        if os.path.isdir(save_fn) == False:
-            file_format = save_fn[-3:]
-            self.fig.savefig(
-                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
-            )
-            plt.clf()
-            plt.close(self.fig)
-        else:
-            station = self.station
-            if station is None:
-                station = "MT01"
-            save_fn = os.path.join(save_fn, station + "_PhaseTensor." + file_format)
-            self.fig.savefig(
-                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
-            )
-        if close_plot == "y":
-            plt.clf()
-            plt.close(self.fig)
-        else:
-            pass
-        self.fig_fn = save_fn
-        print("Saved figure to: " + self.fig_fn)
-
-    def update_plot(self):
-        """
-        update any parameters that where changed using the built-in draw from
-        canvas.
-
-        Use this if you change an of the .fig or axes properties
-
-        :Example: ::
-
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.imaging.mtpl.MTplottools as mtpl.MTplot
-            >>> p1 = mtpl.MTplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
-            >>> p1.update_plot()
-
-        """
-
-        self.fig.canvas.draw()
-
-    def redraw_plot(self):
-        """
-        use this function if you updated some attributes and want to re-plot.
-
-        :Example: ::
-
-            >>> # change the color and marker of the xy components
-            >>> import mtpy.imaging.mtpl.MTplottools as mtpl.MTplot
-            >>> p1 = mtpl.MTplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> p1.xy_color = (.5,.5,.9)
-            >>> p1.xy_marker = '*'
-            >>> p1.redraw_plot()
-        """
-
-        plt.close(self.fig)
-        self.plot()
-
-    def __str__(self):
-        """
-        rewrite the string builtin to give a useful message
-        """
-
-        return (
-            "Plots the phase tensor ellipses and other properties such\n"
-            + "strike angle, minimum and maximum phase, skew and ellipticity"
-        )
