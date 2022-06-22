@@ -2,18 +2,16 @@
 """
 Created on Thu May 30 17:07:50 2013
 
-@author: jpeacock-pr
+@author: jpeacock
 """
 
 # ==============================================================================
 
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 from matplotlib.ticker import MultipleLocator
 from mtpy.imaging.mtplot_tools import PlotBase, plot_pt_lateral, get_log_tick_labels
 
-# reload(mtpl)
 # ==============================================================================
 
 
