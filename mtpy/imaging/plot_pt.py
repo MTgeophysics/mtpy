@@ -27,6 +27,7 @@ class PlotPhaseTensor(PlotBase):
     """
 
     def __init__(self, pt_object, station=None, **kwargs):
+        kwargs["ellipse_size"] = 2
         super().__init__(**kwargs)
         self.pt = pt_object
         self.station = station
@@ -107,10 +108,19 @@ class PlotPhaseTensor(PlotBase):
         self.ax_pt.xaxis.set_major_locator(MultipleLocator(1 * self.ellipse_spacing))
 
         self.ax_pt.set_xlim(
-            np.log10(self.x_limits[0]),
+            np.log10(self.x_limits[0]) * self.ellipse_spacing,
             np.log10(self.x_limits[1]) * self.ellipse_spacing,
         )
-        print(self.ax_pt.get_xticks())
+
+        axpos = self.ax_pt.get_position()
+        self.cbax.set_position(
+            (
+                axpos.bounds[0] - 0.0575,
+                axpos.bounds[1] + 0.02,
+                0.01,
+                axpos.bounds[3] * 0.75,
+            )
+        )
 
         tklabels, xticks = get_log_tick_labels(self.ax_pt, spacing=self.ellipse_spacing)
 
@@ -121,7 +131,7 @@ class PlotPhaseTensor(PlotBase):
         # need to reset the x_limits caouse they get reset when calling
         # set_ticks for some reason
         self.ax_pt.set_xlim(
-            np.log10(self.x_limits[0]),
+            np.log10(self.x_limits[0]) * self.ellipse_spacing,
             np.log10(self.x_limits[1]) * self.ellipse_spacing,
         )
         self.ax_pt.grid(
@@ -179,7 +189,7 @@ class PlotPhaseTensor(PlotBase):
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
         self.ax_strike.set_ylabel("Strike (deg)", fontdict=self.font_dict)
-        # self.ax_strike.set_title("Strike", fontdict=self.font_dict)
+        self.ax_strike.set_xlabel("Period (s)", fontdict=self.font_dict)
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin
@@ -303,8 +313,10 @@ class PlotPhaseTensor(PlotBase):
         self.ax_skew.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
-        self.ax_skew.set_xlabel("Period (s)", fontdict=self.font_dict)
-        self.ax_skew.set_ylabel("Skew (deg)", fontdict=self.font_dict)
+        # self.ax_skew.set_xlabel("Period (s)", fontdict=self.font_dict)
+        skew_font_dict = self.font_dict.copy()
+        skew_font_dict["color"] = self.skew_color
+        self.ax_skew.set_ylabel("Skew (deg)", fontdict=skew_font_dict)
         # self.ax_skew.set_title("Skew Angle", fontdict=self.font_dict)
 
         # ----------------------plotEllipticity--------------------------------
@@ -349,7 +361,9 @@ class PlotPhaseTensor(PlotBase):
         #     "$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$",
         #     fontdict=self.font_dict,
         # )
-        self.ax_ellipticity.set_ylabel("Ellipticity", fontdict=self.font_dict)
+        ellip_font_dict = self.font_dict.copy()
+        ellip_font_dict["color"] = self.det_color
+        self.ax_ellipticity.set_ylabel("Ellipticity", fontdict=ellip_font_dict)
 
         try:
             self.fig.suptitle(

@@ -23,7 +23,7 @@ from shapely.geometry import Point
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging import PlotStations, PlotMultipleResponses
+from mtpy.imaging import PlotStations, PlotMultipleResponses, PlotPhaseTensor
 
 from mth5.mth5 import MTH5
 
@@ -35,7 +35,7 @@ from mth5.mth5 import MTH5
 class MTCollection:
     """
     Collection of transfer functions
-    
+
     """
 
     def __init__(self, working_directory=None):
@@ -88,7 +88,7 @@ class MTCollection:
 
     @property
     def dataframe(self):
-        """ return a summary of transfer functions """
+        """return a summary of transfer functions"""
 
         if self.mth5_collection.h5_is_read():
             return self.mth5_collection.tf_summary.to_dataframe()
@@ -146,7 +146,7 @@ class MTCollection:
     ):
         """
         Initialize an mth5
-        
+
         :param basename: DESCRIPTION, defaults to "mt_collection"
         :type basename: TYPE, optional
         :param working_directory: DESCRIPTION, defaults to None
@@ -163,7 +163,7 @@ class MTCollection:
     def close_collection(self):
         """
         close mth5
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -194,9 +194,9 @@ class MTCollection:
 
     def get_tf(self, tf_id):
         """
-        
+
         Get transfer function
-        
+
         :param tf_id: DESCRIPTION
         :type tf_id: TYPE
         :return: DESCRIPTION
@@ -219,7 +219,7 @@ class MTCollection:
     def _from_file(self, filename):
         """
         Add transfer functions for a list of file names
-        
+
         :param file_list: DESCRIPTION
         :type file_list: TYPE
         :return: DESCRIPTION
@@ -237,7 +237,7 @@ class MTCollection:
 
     def _from_mt_object(self, mt_object):
         """
-        
+
         :param mt_object: DESCRIPTION
         :type mt_object: TYPE
         :return: DESCRIPTION
@@ -252,7 +252,7 @@ class MTCollection:
     def get_tf_list(self, bounding_box=None):
         """
         Get a list of transfer functions
-        
+
         :param tf_ids: DESCRIPTION, defaults to None
         :type tf_ids: TYPE, optional
         :param bounding_box: DESCRIPTION, defaults to None
@@ -333,7 +333,7 @@ class MTCollection:
     def to_geo_df(self, epsg=4326):
         """
         Make a geopandas dataframe for easier GIS manipulation
-        
+
         """
         coordinate_system = f"epsg:{epsg}"
         gdf = gpd.GeoDataFrame(
@@ -354,7 +354,7 @@ class MTCollection:
 
     def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
-        
+
         :param filename: DESCRIPTION
         :type filename: TYPE
         :param bounding_box: DESCRIPTION, defaults to None
@@ -387,11 +387,16 @@ class MTCollection:
         return None
 
     def average_stations(
-        self, cell_size_m, bounding_box=None, count=1, n_periods=48, new_file=True,
+        self,
+        cell_size_m,
+        bounding_box=None,
+        count=1,
+        n_periods=48,
+        new_file=True,
     ):
         """
         Average nearby stations to make it easier to invert
-        
+
         :param cell_size_m: DESCRIPTION
         :type cell_size_m: TYPE
         :param bounding_box: DESCRIPTION, defaults to None
@@ -482,7 +487,7 @@ class MTCollection:
 
     def plot_mt_response(self, tf_id, **kwargs):
         """
-        
+
         :param tf_id: DESCRIPTION
         :type tf_id: TYPE
         :param **kwargs: DESCRIPTION
@@ -503,7 +508,7 @@ class MTCollection:
     def plot_stations(self, gdf=None, map_epsg=4326, **kwargs):
         """
         plot stations
-        
+
         :param **kwargs: DESCRIPTION
         :type **kwargs: TYPE
         :return: DESCRIPTION
@@ -513,3 +518,20 @@ class MTCollection:
         if gdf is None:
             gdf = self.to_geo_df(epsg=map_epsg)
         return PlotStations(gdf, **kwargs)
+
+    def plot_phase_tensor(self, tf_id, **kwargs):
+        """
+        plot phase tensor elements
+
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if isinstance(tf_id, str):
+            tf_obj = self.get_tf(tf_id)
+            return tf_obj.plot_phase_tensor(**kwargs)
