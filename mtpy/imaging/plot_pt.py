@@ -36,11 +36,13 @@ class PlotPhaseTensor(PlotBase):
         self.cb_position = (0.045, 0.78, 0.015, 0.12)
 
         self.subplot_left = 0.1
-        self.subplot_right = 0.98
+        self.subplot_right = 0.92
         self.subplot_bottom = 0.1
         self.subplot_top = 0.95
-        self.subplot_wspace = 0.21
-        self.subplot_hspace = 0.5
+        self.subplot_wspace = 0.1
+        self.subplot_hspace = 0.35
+
+        self.ellipse_spacing = 10
 
         self._set_subplot_params()
         if self.show_plot:
@@ -52,6 +54,8 @@ class PlotPhaseTensor(PlotBase):
         plt.rcParams["figure.subplot.right"] = self.subplot_right
         plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
         plt.rcParams["figure.subplot.top"] = self.subplot_top
+        plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
+        plt.rcParams["figure.subplot.hspace"] = self.subplot_hspace
 
     def _rotate_pt(self, rotation_angle):
         """
@@ -66,8 +70,11 @@ class PlotPhaseTensor(PlotBase):
         self.pt.rotate(rotation_angle)
 
     def _setup_subplots(self):
-        self.ax_pt = self.fig.add_subplot(3, 1, 1)
-        self.ax_strike = self.fig.add_subplot(3, 2, 3)
+        self.ax_pt = self.fig.add_subplot(4, 1, 1, aspect="equal")
+        self.ax_phase = self.fig.add_subplot(4, 1, 2)
+        self.ax_skew = self.fig.add_subplot(4, 1, 3, sharex=self.ax_phase)
+        self.ax_ellipticity = self.ax_skew.twinx()
+        self.ax_strike = self.fig.add_subplot(4, 1, 4, sharex=self.ax_phase)
 
     def plot(self, rotation_angle=None):
         """
@@ -87,28 +94,35 @@ class PlotPhaseTensor(PlotBase):
         color_array = self.get_pt_color_array(self.pt)
 
         # -------------plotPhaseTensor-----------------------------------
-
         self.cbax, self.cbpt, = plot_pt_lateral(
             self.ax_pt,
             self.pt,
             color_array,
             self.ellipse_properties,
-            self.fig,
+            fig=self.fig,
         )
 
         # ----set axes properties-----------------------------------------------
         # --> set tick labels and limits
-        self.ax_pt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+        self.ax_pt.set_xlim(
+            np.log10(self.x_limits[0]),
+            np.log10(self.x_limits[1]) * self.ellipse_spacing,
+        )
 
-        tklabels, xticks = get_log_tick_labels(self.ax_pt)
+        self.ax_pt.xaxis.set_major_locator(MultipleLocator(1 * self.ellipse_spacing))
+
+        tklabels, xticks = get_log_tick_labels(self.ax_pt, spacing=self.ellipse_spacing)
 
         self.ax_pt.set_xticks(xticks)
         self.ax_pt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
-        self.ax_pt.set_xlabel("Period (s)", fontdict=self.font_dict)
+        # self.ax_pt.set_xlabel("Period (s)", fontdict=self.font_dict)
 
         # need to reset the x_limits caouse they get reset when calling
         # set_ticks for some reason
-        self.ax_pt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+        self.ax_pt.set_xlim(
+            np.log10(self.x_limits[0]),
+            np.log10(self.x_limits[1]) * self.ellipse_spacing,
+        )
         self.ax_pt.grid(
             True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25
         )
@@ -122,10 +136,6 @@ class PlotPhaseTensor(PlotBase):
 
         # ---------------plotStrikeAngle-----------------------------------
         # --> set tick labels and limits
-        xlimits = (
-            np.floor(np.log10(1.0 / self.pt.freq[0])),
-            np.ceil(np.log10(1.0 / self.pt.freq[-1])),
-        )
 
         az = self.pt.azimuth
         az_err = self.pt.azimuth_err
@@ -160,15 +170,15 @@ class PlotPhaseTensor(PlotBase):
             self.strike_limits = (-89.99, 89.99)
         self.ax_strike.set_yscale("linear")
         self.ax_strike.set_xscale("log", nonpositive="clip")
-        self.ax_strike.set_xlim(xmax=10 ** xlimits[-1], xmin=10 ** xlimits[0])
+        self.ax_strike.set_xlim(xmax=self.x_limits[-1], xmin=self.x_limits[0])
         self.ax_strike.set_ylim(self.strike_limits)
         self.ax_strike.yaxis.set_major_locator(MultipleLocator(20))
         self.ax_strike.yaxis.set_minor_locator(MultipleLocator(5))
         self.ax_strike.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
-        self.ax_strike.set_ylabel("Angle (deg)", fontdict=self.font_dict)
-        self.ax_strike.set_title("Strike", fontdict=self.font_dict)
+        self.ax_strike.set_ylabel("Strike Angle (deg)", fontdict=self.font_dict)
+        # self.ax_strike.set_title("Strike", fontdict=self.font_dict)
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin
@@ -176,9 +186,7 @@ class PlotPhaseTensor(PlotBase):
         maxphi = self.pt.phimax
         maxphierr = self.pt.phimax_err
 
-        self.ax3 = self.fig.add_subplot(3, 2, 4, sharex=self.ax_strike)
-
-        ermin = self.ax3.errorbar(
+        ermin = self.ax_phase.errorbar(
             1.0 / self.pt.freq,
             minphi,
             marker=self.xy_marker,
@@ -193,7 +201,7 @@ class PlotPhaseTensor(PlotBase):
             elinewidth=self.marker_lw,
         )
 
-        ermax = self.ax3.errorbar(
+        ermax = self.ax_phase.errorbar(
             1.0 / self.pt.freq,
             maxphi,
             marker=self.yx_marker,
@@ -217,10 +225,10 @@ class PlotPhaseTensor(PlotBase):
                 self.pt_limits[0] = -9.9
             if self.pt_limits[1] > 100:
                 self.pt_limits[1] = 99.99
-        self.ax3.set_xscale("log", nonpositive="clip")
-        self.ax3.set_yscale("linear")
+        self.ax_phase.set_xscale("log", nonpositive="clip")
+        self.ax_phase.set_yscale("linear")
 
-        self.ax3.legend(
+        self.ax_phase.legend(
             (ermin[0], ermax[0]),
             ("$\phi_{min}$", "$\phi_{max}$"),
             loc="lower left",
@@ -233,25 +241,26 @@ class PlotPhaseTensor(PlotBase):
             columnspacing=0.01,
         )
 
-        leg = plt.gca().get_legend()
-        ltext = leg.get_texts()  # all the text.Text instance in the legend
-        plt.setp(ltext, fontsize=6.5)  # the legend text fontsize
+        # leg = plt.gca().get_legend()
+        # ltext = leg.get_texts()  # all the text.Text instance in the legend
+        # plt.setp(ltext, fontsize=6.5)  # the legend text fontsize
 
-        self.ax3.set_ylim(self.pt_limits)
-        self.ax3.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-
-        self.ax3.set_ylabel("Phase (deg)", fontdict=self.font_dict)
-        self.ax3.set_title(
-            "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$", fontdict=self.font_dict
+        self.ax_phase.set_ylim(self.pt_limits)
+        self.ax_phase.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
+
+        self.ax_phase.set_ylabel("Phase (deg)", fontdict=self.font_dict)
+        # self.ax_phase.set_title(
+        #     "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$", fontdict=self.font_dict
+        # )
 
         # -----------------------plotSkew---------------------------------------
 
         skew = self.pt.beta
         skewerr = self.pt.beta_err
 
-        self.ax4 = self.fig.add_subplot(3, 2, 5, sharex=self.ax_strike)
-        erskew = self.ax4.errorbar(
+        erskew = self.ax_skew.errorbar(
             1.0 / self.pt.freq,
             skew,
             marker=self.skew_marker,
@@ -267,40 +276,41 @@ class PlotPhaseTensor(PlotBase):
         )
 
         # plot lines indicating not 3d
-        self.ax4.plot(
-            [10 ** xlimits[0], 10 ** xlimits[-1]],
+        self.ax_skew.plot(
+            [self.x_limits[0], self.x_limits[-1]],
             [self.skew_cutoff, self.skew_cutoff],
             ls="--",
             color=self.skew_color,
             lw=1,
         )
 
-        self.ax4.plot(
-            [10 ** xlimits[0], 10 ** xlimits[-1]],
+        self.ax_skew.plot(
+            [self.x_limits[0], self.x_limits[-1]],
             [-self.skew_cutoff, -self.skew_cutoff],
             ls="--",
             color=self.skew_color,
             lw=1,
         )
 
-        self.ax4.set_xscale("log", nonpositive="clip")
-        self.ax4.set_yscale("linear")
-        self.ax4.yaxis.set_major_locator(MultipleLocator(self.ellipse_range[2]))
+        self.ax_skew.set_xscale("log", nonpositive="clip")
+        self.ax_skew.set_yscale("linear")
+        self.ax_skew.yaxis.set_major_locator(MultipleLocator(self.ellipse_range[2]))
 
         if self.skew_limits is None:
             self.skew_limits = (-10, 10)
-        self.ax4.set_ylim(self.skew_limits)
-        self.ax4.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        self.ax4.set_xlabel("Period (s)", fontdict=self.font_dict)
-        self.ax4.set_ylabel("Skew Angle (deg)", fontdict=self.font_dict)
-        self.ax4.set_title("Skew Angle", fontdict=self.font_dict)
+        self.ax_skew.set_ylim(self.skew_limits)
+        self.ax_skew.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+        )
+        self.ax_skew.set_xlabel("Period (s)", fontdict=self.font_dict)
+        self.ax_skew.set_ylabel("Skew Angle (deg)", fontdict=self.font_dict)
+        # self.ax_skew.set_title("Skew Angle", fontdict=self.font_dict)
 
         # ----------------------plotEllipticity--------------------------------
         ellipticity = self.pt.ellipticity
         ellipticityerr = self.pt.ellipticity_err
 
-        self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax_strike)
-        erskew = self.ax5.errorbar(
+        erskew = self.ax_ellipticity.errorbar(
             1.0 / self.pt.freq,
             ellipticity,
             marker=self.det_marker,
@@ -316,27 +326,29 @@ class PlotPhaseTensor(PlotBase):
         )
 
         # draw a line where the ellipticity is not 2d
-        self.ax5.plot(
-            [10 ** xlimits[0], 10 ** xlimits[-1]],
+        self.ax_ellipticity.plot(
+            [self.x_limits[0], self.x_limits[-1]],
             [self.ellip_cutoff, self.ellip_cutoff],
             ls="--",
             color=self.det_color,
             lw=1,
         )
 
-        self.ax5.set_xscale("log", nonpositive="clip")
-        self.ax5.set_yscale("linear")
+        self.ax_ellipticity.set_xscale("log", nonpositive="clip")
+        self.ax_ellipticity.set_yscale("linear")
 
-        self.ax5.yaxis.set_major_locator(MultipleLocator(0.1))
+        self.ax_ellipticity.yaxis.set_major_locator(MultipleLocator(0.1))
 
-        self.ax5.set_ylim(ymin=0, ymax=1)
-        self.ax5.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
-        self.ax5.set_xlabel("Period (s)", fontdict=self.font_dict)
-        self.ax5.set_ylabel(
-            "$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$",
-            fontdict=self.font_dict,
+        self.ax_ellipticity.set_ylim(ymin=0, ymax=1)
+        self.ax_ellipticity.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
-        self.ax5.set_title("Ellipticity", fontdict=self.font_dict)
+        self.ax_ellipticity.set_xlabel("Period (s)", fontdict=self.font_dict)
+        # self.ax_ellipticity.set_ylabel(
+        #     "$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$",
+        #     fontdict=self.font_dict,
+        # )
+        self.ax_ellipticity.set_ylabel("Ellipticity", fontdict=self.font_dict)
 
         try:
             self.fig.suptitle(

@@ -40,34 +40,34 @@ def get_period_limits(period):
 class MTArrows:
     """
     Helper class to read a dictionary of arrow properties
-    
+
     Arguments:
     -----------
     * 'size' : float
               multiplier to scale the arrow. *default* is 5
     * 'head_length' : float
-                     length of the arrow head *default* is 
+                     length of the arrow head *default* is
                      1.5
     * 'head_width' : float
-                    width of the arrow head *default* is 
+                    width of the arrow head *default* is
                     1.5
     * 'lw' : float
             line width of the arrow *default* is .5
-            
+
     * 'color' : tuple (real, imaginary)
                color of the arrows for real and imaginary
-               
+
     * 'threshold': float
                   threshold of which any arrow larger than
-                  this number will not be plotted, helps 
-                  clean up if the data is not good. 
-                  *default* is 1, note this is before 
+                  this number will not be plotted, helps
+                  clean up if the data is not good.
+                  *default* is 1, note this is before
                   scaling by 'size'
-                  
+
     * 'direction : [ 0 | 1 ]
                  - 0 for arrows to point toward a conductor
                  - 1 for arrow to point away from conductor
-                              
+
     """
 
     def __init__(self, **kwargs):
@@ -94,45 +94,45 @@ class MTArrows:
 class MTEllipse:
     """
     helper class for getting ellipse properties from an input dictionary
-    
+
     Arguments:
     -------------
-                              
-    * 'size' -> size of ellipse in points 
+
+    * 'size' -> size of ellipse in points
                *default* is .25
-    
-    * 'colorby' : [ 'phimin' | 'phimax' | 'beta' | 
+
+    * 'colorby' : [ 'phimin' | 'phimax' | 'beta' |
               'skew_seg' | 'phidet' | 'ellipticity' ]
-              
+
               - 'phimin' -> colors by minimum phase
               - 'phimax' -> colors by maximum phase
               - 'skew' -> colors by skew
-              - 'skew_seg' -> colors by skew in 
-                             discrete segments 
+              - 'skew_seg' -> colors by skew in
+                             discrete segments
                              defined by the range
-              - 'normalized_skew' -> colors by 
+              - 'normalized_skew' -> colors by
                               normalized_skew
                               see Booker, 2014
-              - 'normalized_skew_seg' -> colors by 
+              - 'normalized_skew_seg' -> colors by
                              normalized_skew
-                             discrete segments 
+                             discrete segments
                              defined by the range
               - 'phidet' -> colors by determinant of
                            the phase tensor
               - 'ellipticity' -> colors by ellipticity
               *default* is 'phimin'
-      
+
     * 'range' : tuple (min, max, step)
                Need to input at least the min and max
                and if using 'skew_seg' to plot
                discrete values input step as well
                *default* depends on 'colorby'
-               
-    * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
-                 'mt_wh2bl' | 'mt_rd2bl' | 
-                 'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' | 
+
+    * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' |
+                 'mt_wh2bl' | 'mt_rd2bl' |
+                 'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
                  'mt_rd2gr2bl']
-                
+
              - 'mt_yl2rd'       --> yellow to red
              - 'mt_bl2yl2rd'    --> blue to yellow to red
              - 'mt_wh2bl'       --> white to blue
@@ -140,9 +140,9 @@ class MTEllipse:
              - 'mt_bl2wh2rd'    --> blue to white to red
              - 'mt_bl2gr2rd'    --> blue to green to red
              - 'mt_rd2gr2bl'    --> red to green to blue
-             - 'mt_seg_bl2wh2rd' --> discrete blue to 
-                                     white to red                                                
-                                                           
+             - 'mt_seg_bl2wh2rd' --> discrete blue to
+                                     white to red
+
     """
 
     def __init__(self, **kwargs):
@@ -161,13 +161,13 @@ class MTEllipse:
 
     def get_color_map(self):
         """
-        get a color map 
+        get a color map
         """
         if self.ellipse_colorby in ["skew_seg", "normalized_skew_seg"]:
             self.ellipse_cmap = "mt_seg_bl2wh2rd"
 
     def get_range(self):
-        """ 
+        """
         get an appropriate range for the colorby
         """
         # set color ranges
@@ -335,7 +335,7 @@ class PlotSettings(MTArrows, MTEllipse):
     def set_period_limits(self, period):
         """
         set period limits
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -349,7 +349,7 @@ class PlotSettings(MTArrows, MTEllipse):
     def set_resistivity_limits(self, resistivity, mode="od", scale="log"):
         """
         set resistivity limits
-        
+
         :param resistivity: DESCRIPTION
         :type resistivity: TYPE
         :param mode: DESCRIPTION, defaults to "od"
@@ -555,7 +555,7 @@ class PlotSettings(MTArrows, MTEllipse):
 class PlotBase(PlotSettings):
     """
     base class for plotting objects
-    
+
     """
 
     def __init__(self, **kwargs):
@@ -610,15 +610,15 @@ class PlotBase(PlotSettings):
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
-                            in which the file will be saved as 
+                            in which the file will be saved as
                             save_fn/station_name_ResPhase.file_format
 
-                          * full path -> file will be save to the given 
+                          * full path -> file will be save to the given
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
 
             **file_format** : [ pdf | eps | jpg | png | svg ]
-                              file type of saved figure pdf,svg,eps... 
+                              file type of saved figure pdf,svg,eps...
 
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
@@ -626,8 +626,8 @@ class PlotBase(PlotSettings):
 
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
-                          saved.  If None then the fig_dpi will be that at 
-                          which the figure was made.  I don't think that 
+                          saved.  If None then the fig_dpi will be that at
+                          which the figure was made.  I don't think that
                           it can be larger than fig_dpi of the figure.
 
             **close_plot** : [ true | false ]
@@ -664,7 +664,7 @@ class PlotBase(PlotSettings):
     def update_plot(self):
         """
         update any parameters that where changed using the built-in draw from
-        canvas.  
+        canvas.
 
         Use this if you change an of the .fig or axes properties
 
@@ -704,7 +704,7 @@ class PlotBase(PlotSettings):
 def plot_resistivity(ax, period, resistivity, error, **properties):
     """
     plot apparent resistivity to the given axis with given properties
-    
+
     :param ax: DESCRIPTION
     :type ax: TYPE
     :param resistivity: DESCRIPTION
@@ -720,14 +720,18 @@ def plot_resistivity(ax, period, resistivity, error, **properties):
     nz = np.nonzero(resistivity)
 
     return plot_errorbar(
-        ax, period[nz], resistivity[nz], y_error=error[nz], **properties,
+        ax,
+        period[nz],
+        resistivity[nz],
+        y_error=error[nz],
+        **properties,
     )
 
 
 def plot_phase(ax, period, phase, error, yx=False, **properties):
     """
     plot apparent resistivity to the given axis with given properties
-    
+
     :param ax: DESCRIPTION
     :type ax: TYPE
     :param resistivity: DESCRIPTION
@@ -744,9 +748,19 @@ def plot_phase(ax, period, phase, error, yx=False, **properties):
     nz = np.nonzero(phase)
     if yx:
         return plot_errorbar(
-            ax, period[nz], phase[nz] + 180, y_error=error[nz], **properties,
+            ax,
+            period[nz],
+            phase[nz] + 180,
+            y_error=error[nz],
+            **properties,
         )
-    return plot_errorbar(ax, period[nz], phase[nz], y_error=error[nz], **properties,)
+    return plot_errorbar(
+        ax,
+        period[nz],
+        phase[nz],
+        y_error=error[nz],
+        **properties,
+    )
 
 
 # ==============================================================================
@@ -755,36 +769,36 @@ def plot_phase(ax, period, phase, error, yx=False, **properties):
 def grid_data(data_array, x, y, nx=None, ny=None):
     """
     Project data onto a regular grid for plotting.
-    
-    
+
+
     Arguments:
     -----------
         **data_array**: np.ndarray (len(x), len(y))
                         array of data values to be gridded
-                        
+
         **x**: np.ndarray(len(x))
-               array of values that coorespond  
-    
+               array of values that coorespond
+
         **nx**: int
-                number of cells in the x-direction.  If none, 2 times the 
+                number of cells in the x-direction.  If none, 2 times the
                 number of x components
-                
+
         **ny**: int
-                number of cells in the x-direction.  If none, 2 times the 
+                number of cells in the x-direction.  If none, 2 times the
                 number of y components
-                
+
     Returns:
     ---------
         **grid_array**: np.ndarray(nx, ny)
                         array of data set on a regular grid
-        
+
         **xg**: np.ndarray(nx, ny)
                 array of x-grid values
-                
+
         **yg**: np.ndarray(nx, ny)
                 array of y-grid values
-                
-        
+
+
     """
 
     if nx is None:
@@ -815,34 +829,34 @@ def make_value_str(
 ):
     """
     helper function for writing values to a file, takes in a value and either
-    appends or adds value to value_list according to the spacing and format of 
+    appends or adds value to value_list according to the spacing and format of
     the string.
-    
+
     Arguments:
     ----------
         **value** : float
-        
+
         **value_list** : list of values converted to strings
-        
+
         **spacing** : spacing of the string that the value will be converted
                       to.
-                      
-        **value_format** : format of the string that the value is being 
+
+        **value_format** : format of the string that the value is being
                             coverted to.
-        
+
         **append** : [ True | False]
                      if True then appends the value to value list
-        
+
         **add** : [ True | False ]
                   if True adds value string to the other value strings in
                   value_list
-    
+
     Returns:
     --------
-        **value_list** : the input value_list with the new value either 
+        **value_list** : the input value_list with the new value either
                         added or appended.
         or
-        
+
         **value_str** : value string if add and append are false
     """
 
@@ -865,56 +879,56 @@ def make_value_str(
 def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None, **kwargs):
     """
     convinience function to make an error bar instance
-    
+
     Arguments:
     ------------
-        **ax** : matplotlib.axes instance 
+        **ax** : matplotlib.axes instance
                  axes to put error bar plot on
-    
+
         **x_array** : np.ndarray(nx)
                       array of x values to plot
-                      
+
         **y_array** : np.ndarray(nx)
                       array of y values to plot
-                      
+
         **y_error** : np.ndarray(nx)
                       array of errors in y-direction to plot
-        
+
         **x_error** : np.ndarray(ns)
                       array of error in x-direction to plot
-                      
+
         **color** : string or (r, g, b)
                     color of marker, line and error bar
-                    
+
         **marker** : string
                      marker type to plot data as
-        
+
         **mew** : string
                      marker edgewidth
-                     
+
         **ms** : float
                  size of marker
-                 
+
         **ls** : string
                  line style between markers
-                 
+
         **lw** : float
                  width of line between markers
-        
+
         **e_capsize** : float
                         size of error bar cap
-        
+
         **e_capthick** : float
                          thickness of error bar cap
-        
+
         **picker** : float
-                     radius in points to be able to pick a point. 
-        
-        
+                     radius in points to be able to pick a point.
+
+
     Returns:
     ---------
-        **errorbar_object** : matplotlib.Axes.errorbar 
-                              error bar object containing line data, 
+        **errorbar_object** : matplotlib.Axes.errorbar
+                              error bar object containing line data,
                               errorbars, etc.
     """
     # this is to make sure error bars plot in full and not just a dashed line
@@ -975,7 +989,7 @@ def plot_pt_lateral(
     n_index=0,
 ):
     """
-    
+
     :param ax: DESCRIPTION
     :type ax: TYPE
     :param pt_obj: DESCRIPTION
@@ -1104,7 +1118,7 @@ def plot_tipper_lateral(
     zero_reference=False,
 ):
     """
-    
+
     :param axt: DESCRIPTION
     :type axt: TYPE
     :param t_obj: DESCRIPTION
@@ -1145,12 +1159,20 @@ def plot_tipper_lateral(
             # --> plot real arrows
             if plot_tipper.find("r") > 0:
                 axt.arrow(
-                    np.log10(period[aa]), 0, xlenr, tyr[aa], **real_properties,
+                    np.log10(period[aa]),
+                    0,
+                    xlenr,
+                    tyr[aa],
+                    **real_properties,
                 )
             # --> plot imaginary arrows
             if plot_tipper.find("i") > 0:
                 axt.arrow(
-                    np.log10(period[aa]), 0, xleni, tyi[aa], **imag_properties,
+                    np.log10(period[aa]),
+                    0,
+                    xleni,
+                    tyi[aa],
+                    **imag_properties,
                 )
         # make a line at 0 for reference
         if zero_reference:
@@ -1199,9 +1221,9 @@ def plot_tipper_lateral(
     return axt, tiplist, tiplabel
 
 
-def get_log_tick_labels(ax):
+def get_log_tick_labels(ax, spacing=1):
     """
-    
+
     :param ax: DESCRIPTION
     :type ax: TYPE
     :return: DESCRIPTION
@@ -1213,7 +1235,7 @@ def get_log_tick_labels(ax):
     xticks = []
     for tk in ax.get_xticks():
         try:
-            tklabels.append(period_label_dict[tk])
+            tklabels.append(period_label_dict[tk * spacing])
             xticks.append(tk)
         except KeyError:
             pass
@@ -1221,9 +1243,7 @@ def get_log_tick_labels(ax):
 
 
 def make_color_list(cbax, nseg, ckmin, ckmax, ckstep):
-    """
-    
-    """
+    """ """
 
     # make a color list
     clist = [(cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))] + [
