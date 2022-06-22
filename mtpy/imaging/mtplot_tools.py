@@ -1235,7 +1235,7 @@ def get_log_tick_labels(ax, spacing=1):
     xticks = []
     for tk in ax.get_xticks():
         try:
-            tklabels.append(period_label_dict[tk * spacing])
+            tklabels.append(period_label_dict[tk / spacing])
             xticks.append(tk)
         except KeyError:
             pass

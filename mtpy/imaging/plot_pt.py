@@ -104,12 +104,13 @@ class PlotPhaseTensor(PlotBase):
 
         # ----set axes properties-----------------------------------------------
         # --> set tick labels and limits
+        self.ax_pt.xaxis.set_major_locator(MultipleLocator(1 * self.ellipse_spacing))
+
         self.ax_pt.set_xlim(
             np.log10(self.x_limits[0]),
             np.log10(self.x_limits[1]) * self.ellipse_spacing,
         )
-
-        self.ax_pt.xaxis.set_major_locator(MultipleLocator(1 * self.ellipse_spacing))
+        print(self.ax_pt.get_xticks())
 
         tklabels, xticks = get_log_tick_labels(self.ax_pt, spacing=self.ellipse_spacing)
 
@@ -177,7 +178,7 @@ class PlotPhaseTensor(PlotBase):
         self.ax_strike.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
-        self.ax_strike.set_ylabel("Strike Angle (deg)", fontdict=self.font_dict)
+        self.ax_strike.set_ylabel("Strike (deg)", fontdict=self.font_dict)
         # self.ax_strike.set_title("Strike", fontdict=self.font_dict)
 
         # ---------plot Min & Max Phase-----------------------------------------
@@ -303,7 +304,7 @@ class PlotPhaseTensor(PlotBase):
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
         self.ax_skew.set_xlabel("Period (s)", fontdict=self.font_dict)
-        self.ax_skew.set_ylabel("Skew Angle (deg)", fontdict=self.font_dict)
+        self.ax_skew.set_ylabel("Skew (deg)", fontdict=self.font_dict)
         # self.ax_skew.set_title("Skew Angle", fontdict=self.font_dict)
 
         # ----------------------plotEllipticity--------------------------------
