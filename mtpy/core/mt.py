@@ -27,7 +27,7 @@ class MT(TF):
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
 
-    
+
     """
 
     def __init__(self, fn=None, **kwargs):
@@ -42,10 +42,10 @@ class MT(TF):
 
         self.project_to_utm()
 
-    def project_to_utm(self):
+    def project_to_utm(self, epsg=None, utm_zone=None):
         """
         project point to utm
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -53,14 +53,14 @@ class MT(TF):
 
         if self.latitude and self.longitude:
             east, north, zone = gis_tools.project_point_ll2utm(
-                self.latitude, self.longitude
+                self.latitude, self.longitude, utm_zone=utm_zone, epsg=epsg
             )
             self._utm_location = {"east": east, "north": north, "zone": zone}
 
-    def project_to_ll(self):
+    def project_to_ll(self, epsg=None):
         """
         project point to utm
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -68,37 +68,40 @@ class MT(TF):
 
         if self.east != 0 and self.north != 0 and self.utm_zone != None:
             self.latitude, self.longitude = gis_tools.project_point_utm2ll(
-                self.east, self.north, self.utm_zone
+                self.east,
+                self.north,
+                self.utm_zone,
+                epsg=epsg,
             )
 
     @property
     def east(self):
-        """ easting """
+        """easting"""
         return self._utm_location["east"]
 
     @east.setter
     def east(self, value):
-        """ set east """
+        """set east"""
         self._utm_location["east"] = value
 
     @property
     def north(self):
-        """ northing """
+        """northing"""
         return self._utm_location["north"]
 
     @north.setter
     def north(self, value):
-        """ set north"""
+        """set north"""
         self._utm_location["north"] = value
 
     @property
     def utm_zone(self):
-        """ utm zone """
+        """utm zone"""
         return self._utm_location["zone"]
 
     @utm_zone.setter
     def utm_zone(self, value):
-        """ set utm_zone """
+        """set utm_zone"""
         self._utm_location["utm_zone"] = value
 
     @property
@@ -113,7 +116,7 @@ class MT(TF):
         positive to East as 90.
 
         upon setting rotates Z and Tipper
-        
+
         TODO figure this out with xarray
         """
         self._rotation_angle = theta_r
@@ -188,62 +191,62 @@ class MT(TF):
 
     @property
     def ex_metadata(self):
-        """ EX metadata """
+        """EX metadata"""
         return self.station_metadata.runs[0].ex
 
     @ex_metadata.setter
     def ex_metadata(self, value):
-        """ set EX metadata """
+        """set EX metadata"""
         self.station_metadata.runs[0].ex = value
 
     @property
     def ey_metadata(self):
-        """ EY metadata """
+        """EY metadata"""
         return self.station_metadata.runs[0].ey
 
     @ey_metadata.setter
     def ey_metadata(self, value):
-        """ set EY metadata """
+        """set EY metadata"""
         self.station_metadata.runs[0].ey = value
 
     @property
     def hx_metadata(self):
-        """ HX metadata """
+        """HX metadata"""
         return self.station_metadata.runs[0].hx
 
     @hx_metadata.setter
     def hx_metadata(self, value):
-        """ set hx metadata """
+        """set hx metadata"""
         self.station_metadata.runs[0].hx = value
 
     @property
     def hy_metadata(self):
-        """ HY metadata """
+        """HY metadata"""
         return self.station_metadata.runs[0].hy
 
     @hy_metadata.setter
     def hy_metadata(self, value):
-        """ set hy metadata """
+        """set hy metadata"""
         self.station_metadata.runs[0].hy = value
 
     @property
     def hz_metadata(self):
-        """ HZ metadata """
+        """HZ metadata"""
         return self.station_metadata.runs[0].hz
 
     @hz_metadata.setter
     def hz_metadata(self, value):
-        """ set hz metadata """
+        """set hz metadata"""
         self.station_metadata.runs[0].hz = value
 
     @property
     def rrhx_metadata(self):
-        """ RRHX metadata """
+        """RRHX metadata"""
         return self.station_metadata.runs[0].rrhx
 
     @property
     def rrhy_metadata(self):
-        """ RRHY metadata """
+        """RRHY metadata"""
         return self.station_metadata.runs[0].rrhy
 
     def remove_distortion(self, num_freq=None):
@@ -458,7 +461,7 @@ class MT(TF):
         new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
-        if self.Tipper.tipper is None:
+        if self.Tipper is None:
             return new_Z, new_Tipper
         # interpolate the Tipper
         for jj in range(2):
@@ -522,7 +525,7 @@ class MT(TF):
 
     def plot_phase_tensor(self, **kwargs):
         """
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
