@@ -129,10 +129,12 @@ class SurveyConfig(object):
         :rtype: TYPE
 
         """
+
         z3d_df.remote = z3d_df.remote.astype(str)
-        s_df = z3d_df[z3d_df.remote == "False"]
+        s_df = z3d_df[z3d_df.remote == False]
         s_df.start = pd.to_datetime(s_df.start)
 
+        print(s_df)
         self.b_xaxis_azimuth = s_df[s_df.component == "hx"].azimuth.mode()[0]
         self.b_yaxis_azimuth = s_df[s_df.component == "hy"].azimuth.mode()[0]
         self.box = s_df.zen_num.mode()[0]
@@ -549,6 +551,7 @@ class Z3D2EDI(object):
         # need to make a survey and station metadata file
 
         # write configuration file for edi, this should be deprecated later
+        print(station_df)
         self.survey_config.from_df(station_df)
         self.survey_config.save_path = self.station_ts_dir
         self.survey_config_fn = self.survey_config.write_survey_config_file()
