@@ -156,7 +156,6 @@ class Z3DCollection(object):
             raise ValueError(
                 "Error: Directory {0} does not exist".format(self.z3d_path)
             )
-
         z3d_list = [
             fn_path
             for fn_path in self.z3d_path.rglob("*")
@@ -171,22 +170,18 @@ class Z3DCollection(object):
         if calibration_path is None:
             print("ERROR: Calibration path is None")
             return {}
-
         if not isinstance(calibration_path, Path):
             calibration_path = Path(calibration_path)
-
         if not calibration_path.exists():
             print(
                 "WARNING: could not find calibration path: "
                 "{0}".format(calibration_path)
             )
             return {}
-
         calibration_dict = {}
         for cal_fn in calibration_path.glob("*.csv"):
             cal_num = cal_fn.stem
             calibration_dict[cal_num] = cal_fn
-
         return calibration_dict
 
     def get_z3d_info(self, z3d_fn_list, calibration_path=None):
@@ -210,7 +205,6 @@ class Z3DCollection(object):
         """
         if len(z3d_fn_list) < 1:
             raise ValueError("No Z3D files found")
-
         cal_dict = self.get_calibrations(calibration_path)
         z3d_info_list = []
         for z3d_fn in z3d_fn_list:
@@ -236,7 +230,6 @@ class Z3DCollection(object):
                 ]
             )
             z3d_info_list.append(entry)
-
         # make pandas dataframe and set data types
         z3d_df = pd.DataFrame(z3d_info_list)
         z3d_df = z3d_df.astype(self._dtypes)
@@ -248,7 +241,6 @@ class Z3DCollection(object):
             starts = sorted(z3d_df[z3d_df.sampling_rate == sr].start.unique())
             for block_num, start in enumerate(starts):
                 z3d_df.loc[(z3d_df.start == start), "block"] = block_num
-
         return z3d_df
 
     def to_csv(self, z3d_df, fn_basename=None):
@@ -291,9 +283,7 @@ class Z3DCollection(object):
         return z3d_df
 
     def _validate_block_dict(self, z3d_df, block_dict):
-        """
-
-        """
+        """ """
         if block_dict is None:
             block_dict = {}
             for sr in z3d_df.sampling_rate.unique():
@@ -306,7 +296,6 @@ class Z3DCollection(object):
                         block_dict[key] = list(
                             z3d_df[z3d_df.sampling_rate == key].block.unique()
                         )
-
         return block_dict
 
     def from_df_to_mtts(
@@ -347,7 +336,6 @@ class Z3DCollection(object):
 
         if remote:
             z3d_df = z3d_df[z3d_df.component.isin(["hx", "hy"])]
-
         # loop over each entry in the data frame
         for entry in z3d_df.itertuples():
             # test for sampling rate in block dictionary
@@ -355,7 +343,6 @@ class Z3DCollection(object):
                 block_dict[entry.sampling_rate]
             except KeyError:
                 continue
-
             if entry.block in block_dict[entry.sampling_rate]:
                 # check to see if the file already exists
                 # need to skip looking for seconds because of GPS difference
@@ -383,7 +370,6 @@ class Z3DCollection(object):
                                 entry.component.upper(),
                             )
                         )
-
                 # if the file exists and no overwrite get information and skip
                 if Path(fn_ascii).exists() and overwrite is False:
                     print("INFO: Skipping {0}".format(fn_ascii))
@@ -397,7 +383,6 @@ class Z3DCollection(object):
                     z3d_df.at[entry.Index, "fn_ascii"] = ts_obj.fn
                     z3d_df.at[entry.Index, "remote"] = remote
                     continue
-
                 # make file if it does not exist
                 else:
                     z3d_obj = zen.Zen3D(entry.fn_z3d)
@@ -416,21 +401,24 @@ class Z3DCollection(object):
                     )
                     z3d_df.at[entry.Index, "fn_ascii"] = z3d_obj.fn_mt_ascii
                     z3d_df.at[entry.Index, "remote"] = remote
-
         if combine:
             csr = combine_sampling_rate
             z3d_df = self.combine_z3d_files(
                 z3d_df, new_sampling_rate=csr, remote=remote
             )
-
         z3d_df.start = pd.to_datetime(z3d_df.start)
         z3d_df.stop = pd.to_datetime(z3d_df.stop)
 
         return z3d_df
 
-
-    def combine_z3d_files(self, z3d_df, new_sampling_rate=4, t_buffer=3600,
-                          comp_list=['ex', 'ey', 'hx', 'hy', 'hz'], remote=False):
+    def combine_z3d_files(
+        self,
+        z3d_df,
+        new_sampling_rate=4,
+        t_buffer=3600,
+        comp_list=["ex", "ey", "hx", "hy", "hz"],
+        remote=False,
+    ):
 
         """
         Combine all z3d files for a given station and given component for
@@ -470,7 +458,6 @@ class Z3DCollection(object):
             fn_series = z3d_df.fn_z3d[z3d_df.fn_z3d != "None"]
             sv_path = Path(fn_series[fn_series.index[0]]).parent
             sv_path = Path(sv_path).joinpath("TS")
-
         combined_entries = []
         if remote:
             comp_list = ["hx", "hy"]
@@ -523,7 +510,6 @@ class Z3DCollection(object):
             if len(comp_df) == 0:
                 print("WARNING:  Skipping {0} because no Z3D files found.".format(comp))
                 continue
-
             # sort the data frame by date
             comp_df = comp_df.sort_values("start")
 
@@ -534,7 +520,6 @@ class Z3DCollection(object):
                 t_diff = int((end_dt - start_dt).total_seconds())
             except ValueError:
                 t_diff = 4 * 3600 * 48
-
             # make a new MTTS object that will have a length that is buffered
             # at the end to make sure there is room for the data, will trimmed
             new_ts = mtts.MTTS()
@@ -571,7 +556,6 @@ class Z3DCollection(object):
                 # fill attribute data frame
                 for attr in attr_list:
                     attr_dict[attr].append(getattr(t_obj, attr))
-
             # need to trim the data
             new_ts.ts = new_ts.ts.data[
                 (new_ts.ts.index >= start_dt) & (new_ts.ts.index <= end_date)
@@ -594,7 +578,6 @@ class Z3DCollection(object):
                         setattr(new_ts, attr, attr_series.mode()[0])
                 except ValueError:
                     print("WARNING: could not set {0}".format(attr))
-
             ascii_fn = "{0}_combined_{1}.{2}".format(
                 new_ts.station, int(new_ts.sampling_rate), new_ts.component.upper()
             )
@@ -624,7 +607,6 @@ class Z3DCollection(object):
             }
 
             combined_entries.append(entry)
-
         # make data frame of combined information and append to existing
         # data frame
         combined_df = pd.DataFrame(combined_entries)
@@ -681,6 +663,7 @@ class Z3DCollection(object):
         )
         z3d_df.to_csv(csv_fn)
 
+        print("z3d_collection from_dir_to_mtts: ", z3d_df)
         return z3d_df, csv_fn
 
     def summarize_survey(
@@ -735,7 +718,6 @@ class Z3DCollection(object):
         """
         if not isinstance(survey_path, Path):
             survey_path = Path(survey_path)
-
         df_list = []
 
         # loop over folders in the given directory
@@ -745,7 +727,6 @@ class Z3DCollection(object):
                 continue
             if not station_path.is_dir():
                 continue
-
             z3d_fn_list = self.get_z3d_fn_list(station_path)
             if len(z3d_fn_list) < 1:
                 print("WARNING: Skipping directory {0}".format(station_path))
@@ -754,7 +735,6 @@ class Z3DCollection(object):
             df_list.append(
                 self.get_z3d_info(z3d_fn_list, calibration_path=calibration_path)
             )
-
         survey_df = pd.concat(df_list)
 
         info_df = self.locate_remote_reference_blocks(survey_df)
@@ -774,7 +754,6 @@ class Z3DCollection(object):
         else:
             for name in names:
                 return_dict[name] = None
-
         return return_dict
 
     def locate_remote_reference_blocks(self, survey_df):
@@ -825,7 +804,6 @@ class Z3DCollection(object):
                     ]
                     s_dict["rr_station"] = rr_df.station.unique().tolist()
                     info_list.append(s_dict)
-
         return pd.DataFrame(info_list)
 
     def get_processing_loop_df(self, info_df):
@@ -872,9 +850,7 @@ class Z3DCollection(object):
                 station_entry[
                     "block_{0:.0f}".format(sr)
                 ] = sr_df.block.unique().tolist()
-
             processing_list.append(station_entry)
-
         return pd.DataFrame(processing_list)
-    
+
     ### Get channel metadata, run metadata, station metadata from df

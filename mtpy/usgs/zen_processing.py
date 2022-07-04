@@ -27,6 +27,7 @@ import mtpy.core.io.edi as mtedi
 from mtpy.usgs import z3d_collection as zc
 
 from mt_metadata.transfer_functions.tf import Survey, Station, Run, Electric, Magnetic
+from mt_metadata.transfer_functions.core import TF
 
 # ==============================================================================
 datetime_fmt = "%Y-%m-%d,%H:%M:%S"
@@ -131,25 +132,24 @@ class SurveyConfig(object):
         """
 
         z3d_df.remote = z3d_df.remote.astype(str)
-        s_df = z3d_df[z3d_df.remote == False]
+        s_df = z3d_df[z3d_df.remote == "False"]
         s_df.start = pd.to_datetime(s_df.start)
 
-        print(s_df)
-        self.b_xaxis_azimuth = s_df[s_df.component == "hx"].azimuth.mode()[0]
-        self.b_yaxis_azimuth = s_df[s_df.component == "hy"].azimuth.mode()[0]
-        self.box = s_df.zen_num.mode()[0]
+        self.b_xaxis_azimuth = s_df[s_df.component == "hx"].azimuth.mean()
+        self.b_yaxis_azimuth = s_df[s_df.component == "hy"].azimuth.mean()
+        self.box = s_df.zen_num.unique()[0]
         self.date = s_df.start.min().isoformat()
         self.e_instrument_type = "Ag-Agcl electrodes"
         self.e_logger_type = "zen"
-        self.e_xaxis_azimuth = s_df[s_df.component == "ex"].azimuth.mode()[0]
-        self.e_xaxis_length = s_df[s_df.component == "ex"].dipole_length.mode()[0]
-        self.e_yaxis_azimuth = s_df[s_df.component == "ey"].azimuth.mode()[0]
-        self.e_yaxis_length = s_df[s_df.component == "ey"].dipole_length.mode()[0]
+        self.e_xaxis_azimuth = s_df[s_df.component == "ex"].azimuth.mean()
+        self.e_xaxis_length = s_df[s_df.component == "ex"].dipole_length.mean()
+        self.e_yaxis_azimuth = s_df[s_df.component == "ey"].azimuth.mean()
+        self.e_yaxis_length = s_df[s_df.component == "ey"].dipole_length.mean()
         self.elevation = s_df.elevation.median()
-        self.hx = s_df[s_df.component == "hx"].coil_number.mode()[0]
-        self.hy = s_df[s_df.component == "hy"].coil_number.mode()[0]
+        self.hx = s_df[s_df.component == "hx"].coil_number.unique()[0]
+        self.hy = s_df[s_df.component == "hy"].coil_number.unique()[0]
         try:
-            self.hz = s_df[s_df.component == "hz"].coil_number.mode()[0]
+            self.hz = s_df[s_df.component == "hz"].coil_number.unique()[0]
         except (IndexError, KeyError):
             self.hz = ""
         self.lat = s_df.latitude.median()
@@ -270,6 +270,7 @@ class Z3D2EDI(object):
 
         self.station_z3d_dir = station_z3d_dir
 
+        self.station_df = None
         self.survey_config = SurveyConfig(save_path=self.station_z3d_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
@@ -529,34 +530,33 @@ class Z3D2EDI(object):
         }
 
         zc_obj = zc.Z3DCollection()
-        station_df, station_csv = zc_obj.from_dir_to_mtts(
+        self.station_df, station_csv = zc_obj.from_dir_to_mtts(
             self.station_z3d_dir, **kw_dict
         )
         if self.rr_station_z3d_dir is not None:
             kw_dict["remote"] = True
             if not isinstance(self.rr_station_z3d_dir, list):
-                rr_z3d_dir = [self.rr_station_z3d_dir]
+                self.rr_station_z3d_dir = [self.rr_station_z3d_dir]
             self.rr_station_ts_dir = []
             for rr_path in self.rr_station_z3d_dir:
                 rr_df, rr_csv = zc_obj.from_dir_to_mtts(rr_path, **kw_dict)
-                station_df = station_df.append(rr_df)
+                self.station_df = self.station_df.append(rr_df)
                 self.rr_station_ts_dir.append(Path(rr_path).joinpath("TS"))
         processing_csv = Path(station_z3d_dir).joinpath(
             "{0}_processing_df.csv".format(self.station_z3d_dir.name)
         )
-        station_df.to_csv(processing_csv)
+        self.station_df.to_csv(processing_csv)
 
         self.station_ts_dir = Path(station_z3d_dir).joinpath("TS")
 
         # need to make a survey and station metadata file
 
         # write configuration file for edi, this should be deprecated later
-        print(station_df)
-        self.survey_config.from_df(station_df)
+        self.survey_config.from_df(self.station_df)
         self.survey_config.save_path = self.station_ts_dir
         self.survey_config_fn = self.survey_config.write_survey_config_file()
 
-        return station_df, processing_csv
+        return self.station_df, processing_csv
 
     def make_block_entry(self, entry, nskip, nread, rr_num=0):
         """
@@ -928,7 +928,6 @@ class Z3D2EDI(object):
                     self.edi_fn.append(
                         self.write_edi_file(
                             output_path,
-                            survey_config_fn=self.survey_config_fn,
                             birrp_config_fn=self.birrp_config_fn,
                         )
                     )
@@ -941,12 +940,12 @@ class Z3D2EDI(object):
             output_path = os.path.dirname(script_fn_list)
             self.edi_fn = self.write_edi_file(
                 output_path,
-                survey_config_fn=self.survey_config_fn,
-                birrp_config_fn=self.birrp_config_fn,
             )
 
     def write_edi_file(
-        self, birrp_output_path, survey_config_fn=None, birrp_config_fn=None
+        self,
+        birrp_output_path,
+        birrp_config_fn=None,
     ):
         """
         Write an edi file from outputs of BIRRP
@@ -964,28 +963,80 @@ class Z3D2EDI(object):
         :rtype: string
 
         """
-        if self.survey_config_fn is not None:
-            self.survey_config_fn = survey_config_fn
-        if self.survey_config_fn is None:
-            ts_find = birrp_output_path.find("TS")
-            if ts_find > 0:
-                ts_dir = birrp_output_path[0 : ts_find + 2]
-                for fn in os.listdir(ts_dir):
-                    if fn[-4:] == ".cfg":
-                        self.survey_config_fn = os.path.join(ts_dir, fn)
-                        self.survey_config.read_survey_config_file(
-                            self.survey_config_fn, self.station_z3d_dir.name
-                        )
-        j2edi_obj = birrp.J2Edi(
-            station=self.survey_config.station,
-            survey_config_fn=self.survey_config_fn,
-            birrp_dir=birrp_output_path,
-            birrp_config_fn=self.birrp_config_fn,
-        )
 
-        edi_fn = j2edi_obj.write_edi_file()
+        j_file = list(Path(birrp_output_path).glob("*.j"))[0]
+        tf_obj = TF(j_file)
 
-        return edi_fn
+        tf_obj.station = birrp_output_path.parent.parent.parent.stem
+        tf_obj.latitude = self.station_df.latitude.mean()
+        tf_obj.longitude = self.station_df.longitude.mean()
+        tf_obj.elevation = self.station_df.elevation.mean()
+        tf_obj.station_metadata.time_period.start = self.station_df.start.min()
+        tf_obj.station_metadata.time_period.end = self.station_df.end.max()
+        tf_obj.station_metadata.runs[
+            0
+        ].data_logger.id = self.station_df.zen_num.unique()[0]
+
+        if "ex" in self.station_df.component.unique():
+            tf_obj.station_metadata.runs[0].ex.dipole_length = self.station_df[
+                self.station_df.component == "ex"
+            ].dipole_length.mean()
+            tf_obj.station_metadata.runs[0].ex.measurement_azimuth = self.station_df[
+                self.station_df.component == "ex"
+            ].azimuth.mean()
+        if "ey" in self.station_df.component.unique():
+            tf_obj.station_metadata.runs[0].ey.dipole_length = self.station_df[
+                self.station_df.component == "ey"
+            ].dipole_length.mean()
+            tf_obj.station_metadata.runs[0].ey.measurement_azimuth = self.station_df[
+                self.station_df.component == "ey"
+            ].azimuth.mean()
+        if "hx" in self.station_df.component.unique():
+            tf_obj.station_metadata.runs[0].hx.sensor.id = self.station_df[
+                self.station_df.component == "hx"
+            ].coil_number.unique()[0]
+            tf_obj.station_metadata.runs[0].hx.measurement_azimuth = self.station_df[
+                self.station_df.component == "hx"
+            ].azimuth.mean()
+        if "hy" in self.station_df.component.unique():
+            tf_obj.station_metadata.runs[0].hy.sensor.id = self.station_df[
+                self.station_df.component == "hy"
+            ].coil_number.unique()[0]
+            tf_obj.station_metadata.runs[0].hy.measurement_azimuth = self.station_df[
+                self.station_df.component == "hy"
+            ].azimuth.mean()
+        if "hz" in self.station_df.component.unique():
+            tf_obj.station_metadata.runs[0].hz.sensor.id = self.station_df[
+                self.station_df.component == "hz"
+            ].coil_number.unique()[0]
+            tf_obj.station_metadata.runs[0].hz.measurement_azimuth = self.station_df[
+                self.station_df.component == "hz"
+            ].azimuth.mean()
+        edi_obj = tf_obj.write_tf_file(save_dir=birrp_output_path)
+        return edi_obj.fn
+
+        # if self.survey_config_fn is not None:
+        #     self.survey_config_fn = survey_config_fn
+        # if self.survey_config_fn is None:
+        #     ts_find = birrp_output_path.find("TS")
+        #     if ts_find > 0:
+        #         ts_dir = birrp_output_path[0 : ts_find + 2]
+        #         for fn in os.listdir(ts_dir):
+        #             if fn[-4:] == ".cfg":
+        #                 self.survey_config_fn = os.path.join(ts_dir, fn)
+        #                 self.survey_config.read_survey_config_file(
+        #                     self.survey_config_fn, self.station_z3d_dir.name
+        #                 )
+        # j2edi_obj = birrp.J2Edi(
+        #     station=self.survey_config.station,
+        #     survey_config_fn=self.survey_config_fn,
+        #     birrp_dir=birrp_output_path,
+        #     birrp_config_fn=self.birrp_config_fn,
+        # )
+
+        # edi_fn = j2edi_obj.write_edi_file()
+
+        # return edi_fn
 
     def plot_responses(self, edi_fn_list=None):
         """
@@ -1137,18 +1188,18 @@ class Z3D2EDI(object):
         # make files into mtpy files
         if df_fn is not None:
             zc_obj = zc.Z3DCollection()
-            z3d_df = zc_obj.from_csv(df_fn)
+            self.station_df = zc_obj.from_csv(df_fn)
         else:
             # skip the block dict, want to look through all the files to get the
             # data frame.
             kw_dict = {"use_blocks_dict": None, "overwrite": overwrite}
-            z3d_df, cfn = self.convert_z3d_to_mtts(
+            self.station_df, cfn = self.convert_z3d_to_mtts(
                 self.station_z3d_dir, self.rr_station_z3d_dir, **kw_dict
             )
         # make birrp dictionary
 
         birrp_dict = self.get_birrp_dict(
-            z3d_df, df_list=df_list, use_blocks_dict=use_blocks_dict
+            self.station_df, df_list=df_list, use_blocks_dict=use_blocks_dict
         )
 
         # write script files for birrp
@@ -1177,7 +1228,7 @@ class Z3D2EDI(object):
             )
         )
 
-        return r_plot, comb_edi_fn, z3d_df
+        return r_plot, comb_edi_fn
 
     def combine_edi_files(
         self,

@@ -947,7 +947,7 @@ class J2Edi(object):
             )
             self.j_fn = None
 
-    def _fill_site(self):
+    def _fill_site_from_config(self):
         """
         fill header data
         """
@@ -962,6 +962,8 @@ class J2Edi(object):
         self.mt_obj.station_metadata.acquired_by.name = self.survey_config_dict[
             "network"
         ]
+        
+        
 
     def _fill_info(self):
         """
