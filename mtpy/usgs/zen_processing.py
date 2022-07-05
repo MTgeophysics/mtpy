@@ -23,11 +23,12 @@ import mtpy.utils.exceptions as mtex
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
-import mtpy.core.io.edi as mtedi
+
+# import mtpy.core.io.edi as mtedi
 from mtpy.usgs import z3d_collection as zc
 
-from mt_metadata.transfer_functions.tf import Survey, Station, Run, Electric, Magnetic
 from mt_metadata.transfer_functions.core import TF
+from mt_metadata.transfer_functions.io.edi import EDI
 
 # ==============================================================================
 datetime_fmt = "%Y-%m-%d,%H:%M:%S"
@@ -353,12 +354,12 @@ class Z3D2EDI(object):
             if isinstance(self.edi_fn, list):
                 edi_list = []
                 for item in self.edi_fn:
-                    if isinstance(item, mtedi.EDI):
+                    if isinstance(item, EDI):
                         edi_list.append(item.fn)
                     else:
                         edi_list.append(item)
                 return edi_list
-            if isinstance(self.edi_fn, mtedi.EDI):
+            if isinstance(self.edi_fn, EDI):
                 return [self.edi_fn.fn]
             return [self.edi_fn]
 
@@ -964,6 +965,7 @@ class Z3D2EDI(object):
 
         """
 
+        birrp_output_path = Path(birrp_output_path)
         j_file = list(Path(birrp_output_path).glob("*.j"))[0]
         tf_obj = TF(j_file)
 
@@ -972,20 +974,20 @@ class Z3D2EDI(object):
         tf_obj.longitude = self.station_df.longitude.mean()
         tf_obj.elevation = self.station_df.elevation.mean()
         tf_obj.station_metadata.time_period.start = self.station_df.start.min()
-        tf_obj.station_metadata.time_period.end = self.station_df.end.max()
+        tf_obj.station_metadata.time_period.end = self.station_df.stop.max()
         tf_obj.station_metadata.runs[
             0
         ].data_logger.id = self.station_df.zen_num.unique()[0]
 
         if "ex" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].ex.dipole_length = self.station_df[
+            tf_obj.station_metadata.runs[0].ex.positive.x2 = self.station_df[
                 self.station_df.component == "ex"
             ].dipole_length.mean()
             tf_obj.station_metadata.runs[0].ex.measurement_azimuth = self.station_df[
                 self.station_df.component == "ex"
             ].azimuth.mean()
         if "ey" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].ey.dipole_length = self.station_df[
+            tf_obj.station_metadata.runs[0].ey.positive.y2 = self.station_df[
                 self.station_df.component == "ey"
             ].dipole_length.mean()
             tf_obj.station_metadata.runs[0].ey.measurement_azimuth = self.station_df[
@@ -1279,12 +1281,12 @@ class Z3D2EDI(object):
 
         count = 0
         for edi_fn in edi_fn_list:
-            if isinstance(edi_fn, mtedi.EDI):
+            if isinstance(edi_fn, EDI):
                 edi_obj = edi_fn
                 edi_fn = edi_obj.fn
             if isinstance(edi_fn, (str, Path)):
                 edi_fn = Path(edi_fn)
-                edi_obj = edi_obj = mtedi.EDI(edi_fn)
+                edi_obj = edi_obj = EDI(edi_fn)
             # get sampling rate from file name
             sr_key = int(edi_fn.parts[-2])
             if sr_key in list(sr_dict.keys()):
@@ -1292,26 +1294,24 @@ class Z3D2EDI(object):
 
                     # locate frequency range
                     f_index = np.where(
-                        (edi_obj.Z.freq >= sr_dict[sr_key][1])
-                        & (edi_obj.Z.freq <= sr_dict[sr_key][0])
+                        (edi_obj.frequency >= sr_dict[sr_key][1])
+                        & (edi_obj.frequency <= sr_dict[sr_key][0])
                     )
 
-                    data_arr["freq"][count : count + len(f_index[0])] = edi_obj.Z.freq[
-                        f_index
-                    ]
-                    data_arr["z"][count : count + len(f_index[0])] = edi_obj.Z.z[
-                        f_index
-                    ]
-                    data_arr["z_err"][
+                    data_arr["freq"][
                         count : count + len(f_index[0])
-                    ] = edi_obj.Z.z_err[f_index]
-                    if edi_obj.Tipper.tipper is not None:
-                        data_arr["tipper"][
-                            count : count + len(f_index[0])
-                        ] = edi_obj.Tipper.tipper[f_index]
+                    ] = edi_obj.frequency[f_index]
+                    data_arr["z"][count : count + len(f_index[0])] = edi_obj.z[f_index]
+                    data_arr["z_err"][count : count + len(f_index[0])] = edi_obj.z_err[
+                        f_index
+                    ]
+                    if edi_obj.t is not None:
+                        data_arr["tipper"][count : count + len(f_index[0])] = edi_obj.t[
+                            f_index
+                        ]
                         data_arr["tipper_err"][
                             count : count + len(f_index[0])
-                        ] = edi_obj.Tipper.tipper_err[f_index]
+                        ] = edi_obj.t_err[f_index]
                     count += len(f_index[0])
                 except IndexError:
                     pass
@@ -1330,23 +1330,28 @@ class Z3D2EDI(object):
         if data_arr["freq"][0] > data_arr["freq"][1]:
             sort_index = sort_index[::-1]
         data_arr = data_arr[sort_index]
-        new_z = mtedi.MTz.Z(data_arr["z"], data_arr["z_err"], data_arr["freq"])
+        # new_z = mtedi.MTz.Z(data_arr["z"], data_arr["z_err"], data_arr["freq"])
 
         # check for all zeros in tipper, meaning there is only
         # one unique value
-        if np.unique(data_arr["tipper"]).size > 1:
-            new_t = mtedi.MTz.Tipper(
-                data_arr["tipper"], data_arr["tipper_err"], data_arr["freq"]
-            )
-        else:
-            new_t = mtedi.MTz.Tipper()
-        if isinstance(edi_fn_list[0], mtedi.EDI):
+        # if np.unique(data_arr["tipper"]).size > 1:
+        #     new_t = mtedi.MTz.Tipper(
+        #         data_arr["tipper"], data_arr["tipper_err"], data_arr["freq"]
+        #     )
+        # else:
+        #     new_t = mtedi.MTz.Tipper()
+
+        if isinstance(edi_fn_list[0], EDI):
             edi_obj = edi_fn_list[0]
         else:
-            edi_obj = mtedi.EDI(edi_fn_list[0])
-        edi_obj.Z = new_z
-        edi_obj.Tipper = new_t
-        edi_obj.Data.nfreq = new_z.z.shape[0]
+            edi_obj = EDI(edi_fn_list[0])
+        edi_obj.frequency = data_arr["freq"]
+        edi_obj.z = data_arr["z"]
+        edi_obj.z_err = data_arr["z_err"]
+        edi_obj.t = data_arr["tipper"]
+        edi_obj.t_err = data_arr["tipper_err"]
+        edi_obj.Data.nfreq = data_arr["freq"].size
+        edi_obj.rotation_angle = 0
 
         n_edi_fn = Path.joinpath(
             Path(self.station_ts_dir),
@@ -1354,7 +1359,7 @@ class Z3D2EDI(object):
         )
         # n_edi_fn = os.path.join(self.station_z3d_dir,
         #                         '{0}_comb.edi'.format(os.path.basename(self.station_z3d_dir)))
-        n_edi_fn = edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
+        n_edi_fn = edi_obj.write(new_edi_fn=n_edi_fn)
 
         return n_edi_fn
 

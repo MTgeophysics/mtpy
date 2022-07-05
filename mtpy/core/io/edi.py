@@ -933,7 +933,10 @@ class EDI(object):
             key = key.lower()
             if "transfer_function" in key:
                 key = key.split("transfer_function.")[1]
-                sm.transfer_function.set_attr_from_name(key, value)
+                if "processing_parameters" in key:
+                    sm.transfer_function.processing_parameters.append(f"{key}={value}")
+                else:
+                    sm.transfer_function.set_attr_from_name(key, value)
             if "processing." in key:
                 key = key.split("processing.")[1]
                 if key in ["software"]:
@@ -2699,7 +2702,6 @@ def write_edi(mt_object, fn=None):
                     write_dict[cc] = True
             except AttributeError:
                 pass
-
         r_dict = run.to_dict(single=True)
 
         for rk, rv in r_dict.items():
