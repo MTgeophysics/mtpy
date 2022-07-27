@@ -366,31 +366,32 @@ class PlotMTResponse(PlotBase):
         )
 
     def _plot_tipper(self):
-        self.axt, _, _ = plot_tipper_lateral(
-            self.axt,
-            self.Tipper,
-            self.plot_tipper,
-            self.arrow_real_properties,
-            self.arrow_imag_properties,
-            self.font_size,
-        )
-        if self.plot_tipper.find("y") >= 0:
-            self.axt.set_xlabel("Period (s)", fontdict=self.font_dict)
-            # need to reset the x_limits caouse they get reset when calling
-            # set_ticks for some reason
-            self.axt.set_xlim(
-                np.log10(self.x_limits[0]), np.log10(self.x_limits[1])
+        if self.Tipper is not None:
+            self.axt, _, _ = plot_tipper_lateral(
+                self.axt,
+                self.Tipper,
+                self.plot_tipper,
+                self.arrow_real_properties,
+                self.arrow_imag_properties,
+                self.font_size,
             )
+            if self.plot_tipper.find("y") >= 0:
+                self.axt.set_xlabel("Period (s)", fontdict=self.font_dict)
+                # need to reset the x_limits caouse they get reset when calling
+                # set_ticks for some reason
+                self.axt.set_xlim(
+                    np.log10(self.x_limits[0]), np.log10(self.x_limits[1])
+                )
 
-            self.axt.yaxis.set_major_locator(MultipleLocator(0.2))
-            self.axt.yaxis.set_minor_locator(MultipleLocator(0.1))
-            self.axt.set_xlabel("Period (s)", fontdict=self.font_dict)
-            self.axt.set_ylabel("Tipper", fontdict=self.font_dict)
+                self.axt.yaxis.set_major_locator(MultipleLocator(0.2))
+                self.axt.yaxis.set_minor_locator(MultipleLocator(0.1))
+                self.axt.set_xlabel("Period (s)", fontdict=self.font_dict)
+                self.axt.set_ylabel("Tipper", fontdict=self.font_dict)
 
-            # set th xaxis tick labels to invisible
-            if self.plot_pt:
-                plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
-                self.axt.set_xlabel("")
+                # set th xaxis tick labels to invisible
+                if self.plot_pt:
+                    plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
+                    self.axt.set_xlabel("")
 
     def _plot_pt(self):
         # ----plot phase tensor ellipse---------------------------------------
