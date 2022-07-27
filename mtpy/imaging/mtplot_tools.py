@@ -25,7 +25,9 @@ from mtpy.utils.mtpy_logger import get_mtpy_logger
 # Global Parameters
 # =============================================================================
 
-period_label_dict = dict([(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)])
+period_label_dict = dict(
+    [(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)]
+)
 
 
 def get_period_limits(period):
@@ -192,13 +194,22 @@ class MTEllipse:
         """
 
         # get the properties to color the ellipses by
-        if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
+        if (
+            self.ellipse_colorby == "phiminang"
+            or self.ellipse_colorby == "phimin"
+        ):
             color_array = pt_object.phimin
-        elif self.ellipse_colorby == "phimaxang" or self.ellipse_colorby == "phimax":
+        elif (
+            self.ellipse_colorby == "phimaxang"
+            or self.ellipse_colorby == "phimax"
+        ):
             color_array = pt_object.phimax
         elif self.ellipse_colorby == "phidet":
             color_array = np.sqrt(abs(pt_object.det)) * (180 / np.pi)
-        elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
+        elif (
+            self.ellipse_colorby == "skew"
+            or self.ellipse_colorby == "skew_seg"
+        ):
             color_array = pt_object.beta
         elif self.ellipse_colorby == "ellipticity":
             color_array = pt_object.ellipticity
@@ -433,13 +444,18 @@ class PlotSettings(MTArrows, MTEllipse):
             nz_yx = np.nonzero(phase[:, 1, 0])
 
             ph_min = min(
-                [np.nanmin(phase[nz_xy, 0, 1]), np.nanmin(phase[nz_yx, 1, 0] + 180)]
+                [
+                    np.nanmin(phase[nz_xy, 0, 1]),
+                    np.nanmin(phase[nz_yx, 1, 0] + 180),
+                ]
             )
             if ph_min > 0:
                 ph_min = 0
             else:
                 ph_min = round(ph_min / 5) * 5
-            ph_max = max([np.nanmax(phase[:, 0, 1]), np.nanmax(phase[:, 1, 0] + 180)])
+            ph_max = max(
+                [np.nanmax(phase[:, 0, 1]), np.nanmax(phase[:, 1, 0] + 180)]
+            )
             if ph_max < 91:
                 ph_max = 89.9
             else:
@@ -648,7 +664,7 @@ class PlotBase(PlotSettings):
             fig_dpi = self.fig_dpi
         save_fn = Path(save_fn)
         if not save_fn.is_dir():
-            file_format = save_fn.suffix
+            file_format = save_fn.suffix[1:]
         else:
             save_fn = save_fn.joinpath(f"{self._basename}.{file_format}")
         self.fig.savefig(
@@ -1025,8 +1041,12 @@ def plot_pt_lateral(
         # make sure the ellipses will be visable
         if pt_obj.phimax[ii] == 0:
             continue
-        eheight = pt_obj.phimin[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
-        ewidth = pt_obj.phimax[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
+        eheight = (
+            pt_obj.phimin[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
+        )
+        ewidth = (
+            pt_obj.phimax[ii] / pt_obj.phimax[ii] * ellipse_properties["size"]
+        )
 
         # create an ellipse scaled by phimin and phimax and oriented
         # along the azimuth which is calculated as clockwise but needs
@@ -1066,7 +1086,10 @@ def plot_pt_lateral(
         if ellipse_properties["cmap"] == "mt_seg_bl2wh2rd":
             # make the colorbar
             nseg = float(
-                (ellipse_properties["range"][1] - ellipse_properties["range"][0])
+                (
+                    ellipse_properties["range"][1]
+                    - ellipse_properties["range"][0]
+                )
                 / (2 * ellipse_properties["range"][2])
             )
             cbpt = make_color_list(
@@ -1089,7 +1112,11 @@ def plot_pt_lateral(
         cbpt.set_ticks(
             [
                 ellipse_properties["range"][0],
-                (ellipse_properties["range"][1] - ellipse_properties["range"][0]) / 2,
+                (
+                    ellipse_properties["range"][1]
+                    - ellipse_properties["range"][0]
+                )
+                / 2,
                 ellipse_properties["range"][1],
             ]
         )
@@ -1218,7 +1245,9 @@ def plot_tipper_lateral(
             tmin = -0.899
         tipper_limits = (tmin - 0.1, tmax + 0.1)
         axt.set_ylim(tipper_limits)
-        axt.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+        axt.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+        )
     return axt, tiplist, tiplabel
 
 
@@ -1247,9 +1276,9 @@ def make_color_list(cbax, nseg, ckmin, ckmax, ckstep):
     """ """
 
     # make a color list
-    clist = [(cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))] + [
-        (1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
-    ]
+    clist = [
+        (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
+    ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
 
     # make segmented colormap
     mt_seg_bl2wh2rd = colors.ListedColormap(clist)
