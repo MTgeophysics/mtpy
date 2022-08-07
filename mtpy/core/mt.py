@@ -141,8 +141,12 @@ class MT(object):
         lines = [f"Station: {self.station}", "-" * 50]
         lines.append(f"\tSurvey:        {self.survey_metadata.id}")
         lines.append(f"\tProject:       {self.survey_metadata.project}")
-        lines.append(f"\tAcquired by:   {self.station_metadata.acquired_by.author}")
-        lines.append(f"\tAcquired date: {self.station_metadata.time_period.start_date}")
+        lines.append(
+            f"\tAcquired by:   {self.station_metadata.acquired_by.author}"
+        )
+        lines.append(
+            f"\tAcquired date: {self.station_metadata.time_period.start_date}"
+        )
         lines.append(f"\tLatitude:      {self.latitude:.3f}")
         lines.append(f"\tLongitude:     {self.longitude:.3f}")
         lines.append(f"\tElevation:     {self.elevation:.3f}")
@@ -236,9 +240,16 @@ class MT(object):
 
         upon setting utm coordinates are recalculated
         """
+        if self.station_metadata.location.datum is None:
+            self.station_metadata.location.datum = "WGS84"
+
         self.station_metadata.location.latitude = latitude
         if self.longitude is not None or self.longitude != 0.0:
-            self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
+            (
+                self._east,
+                self._north,
+                self._utm_zone,
+            ) = gis_tools.project_point_ll2utm(
                 self.latitude,
                 self.longitude,
                 datum=self.station_metadata.location.datum,
@@ -256,9 +267,16 @@ class MT(object):
 
         upon setting utm coordinates are recalculated
         """
+        if self.station_metadata.location.datum is None:
+            self.station_metadata.location.datum = "WGS84"
+
         self.station_metadata.location.longitude = longitude
         if self.latitude is not None or self.latitude != 0.0:
-            self._east, self._north, self._utm_zone = gis_tools.project_point_ll2utm(
+            (
+                self._east,
+                self._north,
+                self._utm_zone,
+            ) = gis_tools.project_point_ll2utm(
                 self.latitude,
                 self.longitude,
                 datum=self.station_metadata.location.datum,
@@ -331,7 +349,11 @@ class MT(object):
         self._utm_zone = utm_zone
         if self.latitude is None and self.longitude is None:
             self.logger.debug("Calculating latitude and longitude from UTM")
-            self.east, self.north, self._utm_zone = gis_tools.project_point_ll2utm(
+            (
+                self.east,
+                self.north,
+                self._utm_zone,
+            ) = gis_tools.project_point_ll2utm(
                 self.latitude, self.longitude, utm_zone=self.utm_zone
             )
 
@@ -407,7 +429,8 @@ class MT(object):
     @periods.setter
     def periods(self, value):
         self.logger.warning(
-            "Cannot set MT.periods directly," + " set either Z.freq or Tipper.freq"
+            "Cannot set MT.periods directly,"
+            + " set either Z.freq or Tipper.freq"
         )
         return
 
@@ -422,7 +445,8 @@ class MT(object):
     @frequencies.setter
     def frequencies(self, value):
         self.logger.warning(
-            "Cannot set MT.frequencies directly," + " set either Z.freq or Tipper.freq"
+            "Cannot set MT.frequencies directly,"
+            + " set either Z.freq or Tipper.freq"
         )
         return
 
@@ -573,7 +597,9 @@ class MT(object):
         )
 
         new_z_obj = MTz.Z(
-            z_array=new_z, z_err_array=self.Z.z_err.copy(), freq=self.Z.freq.copy()
+            z_array=new_z,
+            z_err_array=self.Z.z_err.copy(),
+            freq=self.Z.freq.copy(),
         )
 
         return new_z_obj
@@ -635,7 +661,9 @@ class MT(object):
             # logger.debug("new freq array %s", new_freq_array)
             if self.Z.freq.min() > new_freq_array.min():
                 raise ValueError(
-                    "New frequency minimum of {0:.5g}".format(new_freq_array.min())
+                    "New frequency minimum of {0:.5g}".format(
+                        new_freq_array.min()
+                    )
                     + " is smaller than old frequency minimum of {0:.5g}".format(
                         self.Z.freq.min()
                     )
@@ -644,7 +672,9 @@ class MT(object):
                 )
             if self.Z.freq.max() < new_freq_array.max():
                 raise ValueError(
-                    "New frequency maximum of {0:.5g}".format(new_freq_array.max())
+                    "New frequency maximum of {0:.5g}".format(
+                        new_freq_array.max()
+                    )
                     + "is smaller than old frequency maximum of {0:.5g}".format(
                         self.Z.freq.max()
                     )
@@ -659,7 +689,9 @@ class MT(object):
         )
 
         new_Tipper = MTz.Tipper(
-            tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
+            tipper_array=np.zeros(
+                (new_freq_array.shape[0], 1, 2), dtype="complex"
+            ),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
             freq=new_freq_array,
         )
@@ -695,8 +727,13 @@ class MT(object):
                     for ifidx, ifreq in enumerate(new_f):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
-                        fidx = np.where(difference == np.amin(difference))[0][0]
-                        if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
+                        fidx = np.where(difference == np.amin(difference))[0][
+                            0
+                        ]
+                        if (
+                            max(f[fidx] / ifreq, ifreq / f[fidx])
+                            < period_buffer
+                        ):
                             new_f_update.append(ifreq)
                             new_nz_index_update.append(new_nz_index[ifidx])
                     new_f = np.array(new_f_update)
@@ -707,9 +744,9 @@ class MT(object):
                 z_func_err = spi.interp1d(f, z_err, kind=interp_type)
 
                 # interpolate onto new frequency range
-                new_Z.z[new_nz_index, ii, jj] = z_func_real(new_f) + 1j * z_func_imag(
+                new_Z.z[new_nz_index, ii, jj] = z_func_real(
                     new_f
-                )
+                ) + 1j * z_func_imag(new_f)
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()
@@ -871,6 +908,8 @@ class MT(object):
 
         mt_obj = read_file(fn, file_type=file_type)
         self.__dict__.update(mt_obj.__dict__)
+        if self.station_metadata.location.datum is None:
+            self.station_metadata.location.datum = "WGS84"
 
     def to_xarray(self):
         """
