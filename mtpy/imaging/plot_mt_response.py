@@ -39,27 +39,27 @@ class PlotMTResponse(PlotSettings):
     and .j format.
 
     The normal use is to input an .edi file, however it would seem that not
-    everyone uses this format, so you can input the data and put it into 
-    arrays or objects like class mtpy.core.z.Z.  Or if the data is in 
+    everyone uses this format, so you can input the data and put it into
+    arrays or objects like class mtpy.core.z.Z.  Or if the data is in
     resistivity and phase format they can be input as arrays or a class
     mtpy.imaging.mtplot.ResPhase.  Or you can put it into a class
     mtpy.imaging.mtplot.MTplot.
 
-    The plot places the apparent resistivity in log scale in the top panel(s), 
+    The plot places the apparent resistivity in log scale in the top panel(s),
     depending on the plot_num.  The phase is below this, note that 180 degrees
     has been added to the yx phase so the xy and yx phases plot in the same
     quadrant.  Both the resistivity and phase share the same x-axis which is in
     log period, short periods on the left to long periods on the right.  So
-    if you zoom in on the plot both plots will zoom in to the same 
+    if you zoom in on the plot both plots will zoom in to the same
     x-coordinates.  If there is tipper information, you can plot the tipper
     as a third panel at the bottom, and also shares the x-axis.  The arrows are
-    in the convention of pointing towards a conductor.  The xx and yy 
-    components can be plotted as well, this adds two panels on the right.  
-    Here the phase is left unwrapped.  Other parameters can be added as 
+    in the convention of pointing towards a conductor.  The xx and yy
+    components can be plotted as well, this adds two panels on the right.
+    Here the phase is left unwrapped.  Other parameters can be added as
     subplots such as strike, skew and phase tensor ellipses.
 
     To manipulate the plot you can change any of the attributes listed below
-    and call redraw_plot().  If you know more aout matplotlib and want to 
+    and call redraw_plot().  If you know more aout matplotlib and want to
     change axes parameters, that can be done by changing the parameters in the
     axes attributes and then call update_plot(), note the plot must be open.
 
@@ -67,7 +67,7 @@ class PlotMTResponse(PlotSettings):
     Arguments:
     ----------
         **fn**: string
-                       filename containing impedance (.edi) is the only 
+                       filename containing impedance (.edi) is the only
                        format supported at the moment
 
         **z_array**: np.ndarray((nf, 2, 2), dtype='complex')
@@ -83,15 +83,15 @@ class PlotMTResponse(PlotSettings):
                         *default* is None
 
         **res_err_array**: np.ndarray((nf, 2, 2))
-                            array of resistivity error estimates, same shape 
+                            array of resistivity error estimates, same shape
                             as res_array. *default* is None
 
         **phase_array**: np.ndarray((nf, 2, 2))
-                          array of phase values in degrees, same shape as 
+                          array of phase values in degrees, same shape as
                           res_array. *default* is None
 
         **phase_err_array**: np.ndarray((nf, 2, 2))
-                              array of phase error estimates, same shape as 
+                              array of phase error estimates, same shape as
                               phase_array. *default* is None
 
         **tipper_array**: np.ndarray((nf, 1, 2), dtype='complex')
@@ -107,8 +107,8 @@ class PlotMTResponse(PlotSettings):
 
         **tipper_object**: class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
-                            attribute z.freq is filled.  
-                            *default* is None 
+                            attribute z.freq is filled.
+                            *default* is None
 
         **mt_object** : class mtpy.imaging.mtplottools.MTplot
                         object of mtpy.imaging.mtplottools.MTplot
@@ -124,12 +124,12 @@ class PlotMTResponse(PlotSettings):
         *fig_size*: [width, height] in inches of actual figure size
 
         *ffactor*: float
-                      scaling factor for computing resistivity from 
+                      scaling factor for computing resistivity from
                       impedances.
                       *Default* is 1
 
         *rotation_angle*: float
-                   rotation angle of impedance tensor (deg or radians), 
+                   rotation angle of impedance tensor (deg or radians),
                    *Note* : rotaion is clockwise positive
                    *default* is 0
 
@@ -148,25 +148,25 @@ class PlotMTResponse(PlotSettings):
                           * 'yr'   --> plots just the real part
                           * 'yi'   --> plots just the imaginary part
 
-                          *Note:* the convention is to point towards a 
+                          *Note:* the convention is to point towards a
                           conductor.  Can change this by setting the
                           parameter arrow_direction = 1.
 
         *plot_strike*: [ 'y' | 1 | 2 | 3 | 'n' ]
                           Plots the strike angle from different parameters:
-                              * 'y'  --> plots strike angle determined from 
+                              * 'y'  --> plots strike angle determined from
                                          the invariants of Weaver et al. [2000]
                                          and the phase tensor of
-                                         Caldwell et al. [2004], if Tipper is 
+                                         Caldwell et al. [2004], if Tipper is
                                          plotted the strike of the tipper is
                                          also plotted.
 
-                               * 1  --> plots strike angle determined from 
+                               * 1  --> plots strike angle determined from
                                         the invariants of Weaver et al. [2000]
-                               * 2  --> plots strike angle determined from 
-                                        the phase tensor of 
+                               * 2  --> plots strike angle determined from
+                                        the phase tensor of
                                         Caldwell et al. [2004]
-                               * 3  --> plots strike angle determined from 
+                               * 3  --> plots strike angle determined from
                                         the tipper
                                * 'n' --> doesn't plot the strike, *default*
 
@@ -198,19 +198,19 @@ class PlotMTResponse(PlotSettings):
 
     Attributes:
     -----------
-        -fn              filename to be plotted (only supports .edi so far) 
+        -fn              filename to be plotted (only supports .edi so far)
         -fig_num         figure number for plotting
         -fig_size        size of figure in inches [width, height]
-        -plot_num        plot type, see arguments for details 
+        -plot_num        plot type, see arguments for details
         -plot_title      title of the plot, *default* is station name
         -fig_dpi         Dots-per-inch resolution of plot, *default* is 300
         -rotation_angle           Rotate impedance tensor by this angle (deg) assuming
                          that North is 0 and angle is positive clockwise
 
-        -plot_tipper    string to tell the program to plot tipper arrows or 
+        -plot_tipper    string to tell the program to plot tipper arrows or
                         not, see accepted values above in arguments
 
-        -plot_strike    string or integer telling the program to plot the 
+        -plot_strike    string or integer telling the program to plot the
                         strike angle, see values above in arguments  (YG: not implemented)
 
         -plot_skew      string to tell the program to plot skew angle.
@@ -219,38 +219,38 @@ class PlotMTResponse(PlotSettings):
 
 
         -period          period array cooresponding to the impedance tensor
-        -font_size       size of font for the axis ticklabels, note that the 
+        -font_size       size of font for the axis ticklabels, note that the
                          axis labels will be font_size+2
 
-        -axr             matplotlib.axes object for the xy,yx resistivity plot.  
+        -axr             matplotlib.axes object for the xy,yx resistivity plot.
         -axp             matplotlib.axes object for the xy,yx phase plot
         -axt             matplotlib.axes object for the tipper plot
         -ax2r            matplotlib.axes object for the xx,yy resistivity plot
         -ax2p            matplotlib.axes object for the xx,yy phase plot
         -axs             matplotlib.axes object for the strike plot
-        -axs2            matplotlib.axes object for the skew plot       
+        -axs2            matplotlib.axes object for the skew plot
         ..
 
              **Note:** that from these axes object you have control of the
-             plot.  You can do this by changing any parameter in the 
+             plot.  You can do this by changing any parameter in the
              axes object and then calling update_plot()
 
-        -erxyr          class matplotlib.container.ErrorbarContainer for 
+        -erxyr          class matplotlib.container.ErrorbarContainer for
                         xy apparent resistivity.
-        -erxyp          class matplotlib.container.ErrorbarContainer for 
+        -erxyp          class matplotlib.container.ErrorbarContainer for
                         xy.
-        -eryxr          class matplotlib.container.ErrorbarContainer for 
+        -eryxr          class matplotlib.container.ErrorbarContainer for
                         yx apparent resistivity.
-        -eryxp          class matplotlib.container.ErrorbarContainer for 
+        -eryxp          class matplotlib.container.ErrorbarContainer for
                         yx phase.
 
         ..
 
-            **Note:** that from these line objects you can manipulate the 
+            **Note:** that from these line objects you can manipulate the
             error bar properties and then call update_plot()
 
-        -xy_ls           line style for xy and xx components, *default* is None       
-        -yx_ls           line style for yx and yy components, *default* is None        
+        -xy_ls           line style for xy and xx components, *default* is None
+        -yx_ls           line style for yx and yy components, *default* is None
         -det_ls          line style for determinant, *default* is None
 
         -xy_marker       marker for xy and xx, *default* is squares
@@ -261,7 +261,7 @@ class PlotMTResponse(PlotSettings):
         -yx_color        marker color for yx and yy, *default* is red
         -det_color       marker color for determinant, *default* is green
 
-        -xy_mfc          marker face color for xy and xx, *default* is None 
+        -xy_mfc          marker face color for xy and xx, *default* is None
         -yx_mfc          marker face color for yx and yy, *default* is None
         -det_mfc         marker face color for determinant, *default* is None
 
@@ -270,9 +270,9 @@ class PlotMTResponse(PlotSettings):
 
         -strike_inv_marker  marker for strike angle determined by invariants
                             *default* is '^'
-        -strike_inv_color   color for strike angle determined by invaraiants 
+        -strike_inv_color   color for strike angle determined by invaraiants
                             *default* is (.2, .2, .7)
-        -strike_pt_marker  marker for strike angle determined by pt, 
+        -strike_pt_marker  marker for strike angle determined by pt,
                            *default* is'v'
         -strike_pt_color   color for strike angle determined by pt
                            *default* is (.7, .2, .2)
@@ -301,45 +301,45 @@ class PlotMTResponse(PlotSettings):
         -arrow_color_real  color of the real arrows, *default* is black
         -arrow_color_imag  color of the imaginary arrows, *default* is blue
 
-        -arrow_direction   0 for pointing towards a conductor and -1 for 
+        -arrow_direction   0 for pointing towards a conductor and -1 for
                            pointing away from a conductor.
 
 
         -x_limits        limits on the x-limits (period), *default* is None
-                        which will estimate the min and max from the data, 
+                        which will estimate the min and max from the data,
                         setting the min as the floor(min(period)) and the max
                         as ceil(max(period)).  Input in linear scale if you
                         want to change the period limits, ie. (.1,1000)
 
-        -res_limits     limits on the resistivity, *default* is None, which 
+        -res_limits     limits on the resistivity, *default* is None, which
                         will estimate the min and max from the data, rounding
                         to the lowest and highest increments to the power of 10
-                        Input in linear scale if you want to change them, 
-                        ie. (1,10000). Note this only sets the xy and yx 
+                        Input in linear scale if you want to change them,
+                        ie. (1,10000). Note this only sets the xy and yx
                         components, not the xx and yy.
 
-        -phase_limits   limits on the phase, *default* is (0,90) but will 
+        -phase_limits   limits on the phase, *default* is (0,90) but will
                         adapt to the data if there is phase above 90 or below
                         0.  Input in degrees.  Note this only changes the xy
                         and yx components.
 
-        -phase_quadrant [ 1 | 3 ] 
-                        * 1 for both phases to be in 0 to 90, 
-                        * 3 for xy to be in 0-90 and yx to be in -180 to 270  
+        -phase_quadrant [ 1 | 3 ]
+                        * 1 for both phases to be in 0 to 90,
+                        * 3 for xy to be in 0-90 and yx to be in -180 to 270
 
         -tipper_limits  limits of the y-axis, *default* is (-1,1)
 
         -skew_limits    limits for skew angle, *default* is (-9,9)
 
-        -strike_limits  limits for strike angle, *default* is (-90,90) 
+        -strike_limits  limits for strike angle, *default* is (-90,90)
 
 
     Methods:
     --------
         * *plot*: plots the pseudosection according to keywords
-        * *redraw_plot*: redraws the plot, use if you change some of the 
+        * *redraw_plot*: redraws the plot, use if you change some of the
                          attributes.
-        * *update_plot*: updates the plot, use if you change some of the 
+        * *update_plot*: updates the plot, use if you change some of the
                          axes attributes, figure needs to be open to update.
         * *save_plot*: saves the plot to given filepath.
 
@@ -347,7 +347,12 @@ class PlotMTResponse(PlotSettings):
     """
 
     def __init__(
-        self, z_object=None, t_object=None, pt_obj=None, station="MT Response", **kwargs
+        self,
+        z_object=None,
+        t_object=None,
+        pt_obj=None,
+        station="MT Response",
+        **kwargs
     ):
         super(PlotMTResponse, self).__init__()
         self._logger = get_mtpy_logger(
@@ -425,8 +430,8 @@ class PlotMTResponse(PlotSettings):
 
     def plot(self, show=True, overlay_mt_obj=None):
         """
-        plotResPhase(filename,fig_num) will plot the apparent resistivity and 
-        phase for a single station. 
+        plotResPhase(filename,fig_num) will plot the apparent resistivity and
+        phase for a single station.
 
         """
         if overlay_mt_obj is None:  # original case, no overlay edis
@@ -434,7 +439,9 @@ class PlotMTResponse(PlotSettings):
         else:
             Z2 = overlay_mt_obj.Z
 
-        label_dict = dict([(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)])
+        label_dict = dict(
+            [(ii, "$10^{" + str(ii) + "}$") for ii in range(-20, 21)]
+        )
         ckdict = {
             "phiminang": r"$\Phi_{min}$ (deg)",
             "phimin": r"$\Phi_{min}$ (deg)",
@@ -475,7 +482,12 @@ class PlotMTResponse(PlotSettings):
                 ** (
                     np.floor(
                         np.log10(
-                            min([np.nanmin(self.Z.res_xy), np.nanmin(self.Z.res_yx)])
+                            min(
+                                [
+                                    np.nanmin(self.Z.res_xy),
+                                    np.nanmin(self.Z.res_yx),
+                                ]
+                            )
                         )
                     )
                 ),
@@ -483,7 +495,12 @@ class PlotMTResponse(PlotSettings):
                 ** (
                     np.ceil(
                         np.log10(
-                            max([np.nanmax(self.Z.res_xy), np.nanmax(self.Z.res_yx)])
+                            max(
+                                [
+                                    np.nanmax(self.Z.res_xy),
+                                    np.nanmax(self.Z.res_yx),
+                                ]
+                            )
                         )
                     )
                 ),
@@ -564,7 +581,9 @@ class PlotMTResponse(PlotSettings):
 
         # --> plot tipper
         try:
-            self.axt = self.fig.add_subplot(gs[pdict["tip"], :],)
+            self.axt = self.fig.add_subplot(
+                gs[pdict["tip"], :],
+            )
             self.axt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         except KeyError:
             pass
@@ -572,7 +591,9 @@ class PlotMTResponse(PlotSettings):
         # --> plot phase tensors
         try:
             # can't share axis because not on the same scale
-            self.axpt = self.fig.add_subplot(gs[pdict["pt"], :], aspect="equal")
+            self.axpt = self.fig.add_subplot(
+                gs[pdict["pt"], :], aspect="equal"
+            )
             self.axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         except KeyError:
             pass
@@ -659,12 +680,16 @@ class PlotMTResponse(PlotSettings):
 
         # --> set axes properties
         plt.setp(self.axr.get_xticklabels(), visible=False)
-        self.axr.set_ylabel("App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=fontdict)
-        self.axr.set_yscale("log", nonposy="clip")
-        self.axr.set_xscale("log", nonposx="clip")
+        self.axr.set_ylabel(
+            "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=fontdict
+        )
+        self.axr.set_yscale("log", nonpositive="clip")
+        self.axr.set_xscale("log", nonpositive="clip")
         self.axr.set_xlim(self.x_limits)
         self.axr.set_ylim(self.res_limits)
-        self.axr.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+        self.axr.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+        )
 
         self.axr.legend(
             (self.ebxyr[0], self.ebyxr[0]),
@@ -744,11 +769,13 @@ class PlotMTResponse(PlotSettings):
         # --> set axes properties
         self.axp.set_xlabel("Period (s)", fontdict)
         self.axp.set_ylabel("Phase (deg)", fontdict)
-        self.axp.set_xscale("log", nonposx="clip")
+        self.axp.set_xscale("log", nonpositive="clip")
         self.axp.set_ylim(self.phase_limits)
         self.axp.yaxis.set_major_locator(MultipleLocator(15))
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
-        self.axp.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+        self.axp.grid(
+            True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+        )
         # set th xaxis tick labels to invisible
         if self.plot_tipper.find("y") >= 0 or self.plot_pt == "y":
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
@@ -757,11 +784,19 @@ class PlotMTResponse(PlotSettings):
         # -----plot tipper----------------------------------------------------
         if self.plot_tipper.find("y") == 0:
 
-            txr = self.Tipper.mag_real * np.cos(np.deg2rad(self.Tipper.angle_real))
-            tyr = self.Tipper.mag_real * np.sin(np.deg2rad(self.Tipper.angle_real))
+            txr = self.Tipper.mag_real * np.cos(
+                np.deg2rad(self.Tipper.angle_real)
+            )
+            tyr = self.Tipper.mag_real * np.sin(
+                np.deg2rad(self.Tipper.angle_real)
+            )
 
-            txi = self.Tipper.mag_imag * np.cos(np.deg2rad(self.Tipper.angle_imag))
-            tyi = self.Tipper.mag_imag * np.sin(np.deg2rad(self.Tipper.angle_imag))
+            txi = self.Tipper.mag_imag * np.cos(
+                np.deg2rad(self.Tipper.angle_imag)
+            )
+            tyi = self.Tipper.mag_imag * np.sin(
+                np.deg2rad(self.Tipper.angle_imag)
+            )
 
             nt = len(txr)
 
@@ -828,7 +863,9 @@ class PlotMTResponse(PlotSettings):
 
             # set axis properties
 
-            self.axt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+            self.axt.set_xlim(
+                np.log10(self.x_limits[0]), np.log10(self.x_limits[1])
+            )
 
             tklabels = []
             xticks = []
@@ -840,18 +877,22 @@ class PlotMTResponse(PlotSettings):
                 except KeyError:
                     pass
             self.axt.set_xticks(xticks)
-            self.axt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
+            self.axt.set_xticklabels(
+                tklabels, fontdict={"size": self.font_size}
+            )
             self.axt.set_xlabel("Period (s)", fontdict=fontdict)
             # need to reset the x_limits caouse they get reset when calling
             # set_ticks for some reason
-            self.axt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+            self.axt.set_xlim(
+                np.log10(self.x_limits[0]), np.log10(self.x_limits[1])
+            )
 
             self.axt.yaxis.set_major_locator(MultipleLocator(0.2))
             self.axt.yaxis.set_minor_locator(MultipleLocator(0.1))
             self.axt.set_xlabel("Period (s)", fontdict=fontdict)
             self.axt.set_ylabel("Tipper", fontdict=fontdict)
 
-            # self.axt.set_xscale('log', nonposx='clip')
+            # self.axt.set_xscale('log', nonpositive='clip')
             if self.tipper_limits is None:
                 tmax = max([np.nanmax(tyr), np.nanmax(tyi)])
                 if tmax > 1:
@@ -865,7 +906,11 @@ class PlotMTResponse(PlotSettings):
 
             self.axt.set_ylim(self.tipper_limits)
             self.axt.grid(
-                True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
             )
 
             # set th xaxis tick labels to invisible
@@ -889,18 +934,25 @@ class PlotMTResponse(PlotSettings):
                 nseg = float((ckmax - ckmin) / (2 * ckstep))
 
             # get the properties to color the ellipses by
-            if self.ellipse_colorby == "phiminang" or self.ellipse_colorby == "phimin":
+            if (
+                self.ellipse_colorby == "phiminang"
+                or self.ellipse_colorby == "phimin"
+            ):
                 color_array = self.pt.phimin
 
             elif (
-                self.ellipse_colorby == "phimaxang" or self.ellipse_colorby == "phimax"
+                self.ellipse_colorby == "phimaxang"
+                or self.ellipse_colorby == "phimax"
             ):
                 color_array = self.pt.phimax
 
             elif self.ellipse_colorby == "phidet":
                 color_array = np.sqrt(abs(self.pt.det)) * (180 / np.pi)
 
-            elif self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg":
+            elif (
+                self.ellipse_colorby == "skew"
+                or self.ellipse_colorby == "skew_seg"
+            ):
                 color_array = self.pt.beta
 
             elif self.ellipse_colorby == "ellipticity":
@@ -916,8 +968,12 @@ class PlotMTResponse(PlotSettings):
             # -------------plot ellipses-----------------------------------
             for ii, ff in enumerate(self.period):
                 # make sure the ellipses will be visable
-                eheight = self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
-                ewidth = self.pt.phimax[ii] / self.pt.phimax[ii] * self.ellipse_size
+                eheight = (
+                    self.pt.phimin[ii] / self.pt.phimax[ii] * self.ellipse_size
+                )
+                ewidth = (
+                    self.pt.phimax[ii] / self.pt.phimax[ii] * self.ellipse_size
+                )
 
                 # create an ellipse scaled by phimin and phimax and oriented
                 # along the azimuth which is calculated as clockwise but needs
@@ -946,13 +1002,19 @@ class PlotMTResponse(PlotSettings):
                 else:
                     ellipd.set_facecolor(
                         mtcl.get_plot_color(
-                            color_array[ii], self.ellipse_colorby, cmap, ckmin, ckmax
+                            color_array[ii],
+                            self.ellipse_colorby,
+                            cmap,
+                            ckmin,
+                            ckmax,
                         )
                     )
 
             # ----set axes properties-----------------------------------------------
             # --> set tick labels and limits
-            self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+            self.axpt.set_xlim(
+                np.log10(self.x_limits[0]), np.log10(self.x_limits[1])
+            )
 
             tklabels = []
             xticks = []
@@ -963,16 +1025,24 @@ class PlotMTResponse(PlotSettings):
                 except KeyError:
                     pass
             self.axpt.set_xticks(xticks)
-            self.axpt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
+            self.axpt.set_xticklabels(
+                tklabels, fontdict={"size": self.font_size}
+            )
             self.axpt.set_xlabel("Period (s)", fontdict=fontdict)
             self.axpt.set_ylim(
                 ymin=-1.5 * self.ellipse_size, ymax=1.5 * self.ellipse_size
             )
             # need to reset the x_limits caouse they get reset when calling
             # set_ticks for some reason
-            self.axpt.set_xlim(np.log10(self.x_limits[0]), np.log10(self.x_limits[1]))
+            self.axpt.set_xlim(
+                np.log10(self.x_limits[0]), np.log10(self.x_limits[1])
+            )
             self.axpt.grid(
-                True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25
+                True,
+                alpha=0.25,
+                which="major",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
             )
 
             plt.setp(self.axpt.get_yticklabels(), visible=False)
@@ -991,8 +1061,12 @@ class PlotMTResponse(PlotSettings):
             if cmap == "mt_seg_bl2wh2rd":
                 # make a color list
                 clist = [
-                    (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-                ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
+                    (cc, cc, 1)
+                    for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
+                ] + [
+                    (1, cc, cc)
+                    for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
+                ]
 
                 # make segmented colormap
                 mt_seg_bl2wh2rd = colors.ListedColormap(clist)
@@ -1110,11 +1184,15 @@ class PlotMTResponse(PlotSettings):
 
             # --> set axes properties
             plt.setp(self.axr2.get_xticklabels(), visible=False)
-            self.axr2.set_yscale("log", nonposy="clip")
-            self.axr2.set_xscale("log", nonposx="clip")
+            self.axr2.set_yscale("log", nonpositive="clip")
+            self.axr2.set_xscale("log", nonpositive="clip")
             self.axr2.set_xlim(self.x_limits)
             self.axr2.grid(
-                True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
             )
 
             if Z2 is None:
@@ -1131,7 +1209,12 @@ class PlotMTResponse(PlotSettings):
 
             else:
                 self.axr2.legend(
-                    (self.ebxxr[0], self.ebyyr[0], self.ebxxr2[0], self.ebyyr2[0]),
+                    (
+                        self.ebxxr[0],
+                        self.ebyyr[0],
+                        self.ebxxr2[0],
+                        self.ebyyr2[0],
+                    ),
                     ("$Z_{xx}$", "$Z_{yy}$", "$Z2_{xx}$", "$Z2_{yy}$"),
                     loc=3,
                     markerscale=1,
@@ -1182,12 +1265,16 @@ class PlotMTResponse(PlotSettings):
 
             # --> set axes properties
             self.axp2.set_xlabel("Period (s)", fontdict)
-            self.axp2.set_xscale("log", nonposx="clip")
+            self.axp2.set_xscale("log", nonpositive="clip")
             self.axp2.set_ylim(ymin=-179.9, ymax=179.9)
             self.axp2.yaxis.set_major_locator(MultipleLocator(30))
             self.axp2.yaxis.set_minor_locator(MultipleLocator(5))
             self.axp2.grid(
-                True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
             )
 
             if len(list(pdict.keys())) > 2:
@@ -1352,15 +1439,15 @@ class PlotMTResponse(PlotSettings):
             **save_fn** : string
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
-                            in which the file will be saved as 
+                            in which the file will be saved as
                             save_fn/station_name_ResPhase.file_format
 
-                          * full path -> file will be save to the given 
+                          * full path -> file will be save to the given
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
 
             **file_format** : [ pdf | eps | jpg | png | svg ]
-                              file type of saved figure pdf,svg,eps... 
+                              file type of saved figure pdf,svg,eps...
 
             **orientation** : [ landscape | portrait ]
                               orientation in which the file will be saved
@@ -1368,8 +1455,8 @@ class PlotMTResponse(PlotSettings):
 
             **fig_dpi** : int
                           The resolution in dots-per-inch the file will be
-                          saved.  If None then the fig_dpi will be that at 
-                          which the figure was made.  I don't think that 
+                          saved.  If None then the fig_dpi will be that at
+                          which the figure was made.  I don't think that
                           it can be larger than fig_dpi of the figure.
 
             **close_plot** : [ y | n ]
@@ -1392,7 +1479,9 @@ class PlotMTResponse(PlotSettings):
             file_format = save_fn[-3:]
 
         else:
-            save_fn = os.path.join(save_fn, self.station + "_ResPhase." + file_format)
+            save_fn = os.path.join(
+                save_fn, self.station + "_ResPhase." + file_format
+            )
 
         self.fig.savefig(
             save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
@@ -1411,7 +1500,7 @@ class PlotMTResponse(PlotSettings):
     def update_plot(self):
         """
         update any parameters that where changed using the built-in draw from
-        canvas.  
+        canvas.
 
         Use this if you change an of the .fig or axes properties
 
