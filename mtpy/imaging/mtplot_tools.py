@@ -711,7 +711,7 @@ class PlotBase(PlotSettings):
             >>> p1.redraw_plot()
         """
 
-        self.fig.clf()
+        plt.close(self.fig)
         self.plot()
 
 
