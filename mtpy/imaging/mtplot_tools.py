@@ -188,6 +188,24 @@ class MTEllipse:
             else:
                 self.ellipse_range = (0, 90, 5)
 
+    @property
+    def ellipse_cmap_n_segments(self):
+        return float(
+            (self.ellipse_range[1] - self.ellipse_range[1])
+            / (2 * self.ellipse_range[2])
+        )
+
+    @property
+    def ellipse_cmap_bounds(self):
+        try:
+            return np.arange(
+                self.ellipse_range[0],
+                self.ellipse_range[1] + self.ellipse_range[2],
+                self.ellipse_range[2],
+            )
+        except IndexError:
+            return None
+
     def get_pt_color_array(self, pt_object):
         """
         Get the appropriat color by array
@@ -322,6 +340,9 @@ class PlotSettings(MTArrows, MTEllipse):
         self.subplot_top = 0.98
         self.subplot_wspace = None
         self.subplot_hspace = None
+
+        self.cb_orientation = "vertical"
+        self.cb_position = None
 
         # Set class property values from kwargs and pop them
         for key, value in kwargs.items():
@@ -533,6 +554,49 @@ class PlotSettings(MTArrows, MTEllipse):
     @property
     def font_dict(self):
         return {"size": self.font_size + 2, "weight": "bold"}
+
+    def make_pt_cb(self, ax):
+
+        cmap = mtcl.cmapdict[self.ellipse_cmap]
+        if "seg" in self.ellipse_cmap:
+            # normalize the colors
+            norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap.N)
+
+            # make the colorbar
+            cb = mcb.Colorbar(
+                ax,
+                cmap=cmap,
+                norm=norms,
+                orientation=self.cb_orientation,
+                ticks=self.ellipse_cmap_bounds[1:-1],
+            )
+        else:
+            cb = mcb.Colorbar(
+                ax,
+                cmap=cmap,
+                norm=colors.Normalize(
+                    vmin=self.ellipse_range[0],
+                    vmax=self.ellipse_range[1],
+                ),
+                orientation=self.cb_orientation,
+            )
+        # label the color bar accordingly
+        cb.set_label(
+            self.cb_label_dict[self.ellipse_colorby],
+            fontdict=self.font_dict,
+        )
+
+        # place the label in the correct location
+        if self.cb_orientation == "horizontal":
+            cb.ax.xaxis.set_label_position("top")
+            cb.ax.xaxis.set_label_coords(0.5, 1.3)
+        elif self.cb_orientation == "vertical":
+            cb.ax.yaxis.set_label_position("right")
+            cb.ax.yaxis.set_label_coords(1.25, 0.5)
+            cb.ax.yaxis.tick_left()
+            cb.ax.tick_params(axis="y", direction="in")
+
+        return cb
 
     @property
     def arrow_real_properties(self):

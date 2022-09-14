@@ -22,7 +22,11 @@ import geopandas as gpd
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging import PlotStations, PlotMultipleResponses
+from mtpy.imaging import (
+    PlotStations,
+    PlotMultipleResponses,
+    PlotResidualPTMaps,
+)
 
 from mth5.mth5 import MTH5
 
@@ -256,29 +260,30 @@ class MTCollection:
 
         """
 
-        try:
-            find_df = self.master_dataframe.loc[
-                self.master_dataframe.tf_id == tf_id
-            ]
-            if find_df.shape[0] != 1:
-                if survey is None:
-                    find_df = find_df.iloc[0]
-                    self.logger.warning(
-                        f"Found multiple transfer functions with ID {tf_id}. "
-                        "Suggest setting survey, otherwise returning the "
-                        f"TF from survey {find_df.survey}."
-                    )
-                else:
-                    try:
-                        find_df = find_df[find_df.survey == survey]
-                        find_df.iloc[0]
-                    except IndexError:
-                        raise ValueError(
-                            f"Could not find {survey} in collection."
-                        )
-                ref = find_df.hdf5_reference.values[0]
-        except IndexError:
-            raise ValueError(f"Could not find {tf_id} in collection.")
+        if survey is None:
+            try:
+                find_df = self.master_dataframe.loc[
+                    self.master_dataframe.tf_id == tf_id
+                ]
+                find_df = find_df.iloc[0]
+                self.logger.warning(
+                    f"Found multiple transfer functions with ID {tf_id}. "
+                    "Suggest setting survey, otherwise returning the "
+                    f"TF from survey {find_df.survey}."
+                )
+            except IndexError:
+                raise ValueError(f"Could not find {tf_id} in collection.")
+        else:
+            try:
+                find_df = self.master_dataframe.loc[
+                    (self.master_dataframe.tf_id == tf_id)
+                    & (self.master_dataframe.survey == survey)
+                ]
+                find_df = find_df.iloc[0]
+            except IndexError:
+                raise ValueError(f"Could not find {survey} in collection.")
+
+        ref = find_df.hdf5_reference
 
         mt_object = MT()
         tf_object = self.mth5_collection.from_reference(ref)
@@ -341,7 +346,7 @@ class MTCollection:
             tf_df = self.dataframe
         tf_list = []
         for row in tf_df.itertuples():
-            tf_list.append(self.get_tf(row.station))
+            tf_list.append(self.get_tf(row.station, survey=row.survey))
         return tf_list
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
@@ -632,3 +637,24 @@ class MTCollection:
         if isinstance(tf_id, str):
             tf_obj = self.get_tf(tf_id)
             return tf_obj.plot_phase_tensor(**kwargs)
+
+    def plot_residual_phase_tensor(
+        self, tf_list_01, tf_list_02, plot_type="map", **kwargs
+    ):
+        """
+
+        :param tf_list_01: DESCRIPTION
+        :type tf_list_01: TYPE
+        :param tf_list_02: DESCRIPTION
+        :type tf_list_02: TYPE
+        :param plot_type: DESCRIPTION, defaults to "map"
+        :type plot_type: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if plot_type in ["map"]:
+            return PlotResidualPTMaps(tf_list_01, tf_list_02, **kwargs)
