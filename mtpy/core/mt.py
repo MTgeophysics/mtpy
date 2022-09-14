@@ -319,7 +319,9 @@ class MT(TF):
         )
 
         new_z_obj = Z(
-            z_array=new_z, z_err_array=self.Z.z_err.copy(), freq=self.Z.freq.copy()
+            z_array=new_z,
+            z_err_array=self.Z.z_err.copy(),
+            freq=self.Z.freq.copy(),
         )
 
         return new_z_obj
@@ -381,7 +383,9 @@ class MT(TF):
             # logger.debug("new freq array %s", new_freq_array)
             if self.frequency.min() > new_freq_array.min():
                 raise ValueError(
-                    "New frequency minimum of {0:.5g}".format(new_freq_array.min())
+                    "New frequency minimum of {0:.5g}".format(
+                        new_freq_array.min()
+                    )
                     + " is smaller than old frequency minimum of {0:.5g}".format(
                         self.frequency.min()
                     )
@@ -390,7 +394,9 @@ class MT(TF):
                 )
             if self.frequency.max() < new_freq_array.max():
                 raise ValueError(
-                    "New frequency maximum of {0:.5g}".format(new_freq_array.max())
+                    "New frequency maximum of {0:.5g}".format(
+                        new_freq_array.max()
+                    )
                     + "is smaller than old frequency maximum of {0:.5g}".format(
                         self.frequency.max()
                     )
@@ -405,7 +411,9 @@ class MT(TF):
         )
 
         new_Tipper = Tipper(
-            tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
+            tipper_array=np.zeros(
+                (new_freq_array.shape[0], 1, 2), dtype="complex"
+            ),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
             freq=new_freq_array,
         )
@@ -441,8 +449,13 @@ class MT(TF):
                     for ifidx, ifreq in enumerate(new_f):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
-                        fidx = np.where(difference == np.amin(difference))[0][0]
-                        if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
+                        fidx = np.where(difference == np.amin(difference))[0][
+                            0
+                        ]
+                        if (
+                            max(f[fidx] / ifreq, ifreq / f[fidx])
+                            < period_buffer
+                        ):
                             new_f_update.append(ifreq)
                             new_nz_index_update.append(new_nz_index[ifidx])
                     new_f = np.array(new_f_update)
@@ -453,9 +466,9 @@ class MT(TF):
                 z_func_err = spi.interp1d(f, z_err, kind=interp_type)
 
                 # interpolate onto new frequency range
-                new_Z.z[new_nz_index, ii, jj] = z_func_real(new_f) + 1j * z_func_imag(
+                new_Z.z[new_nz_index, ii, jj] = z_func_real(
                     new_f
-                )
+                ) + 1j * z_func_imag(new_f)
                 new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()

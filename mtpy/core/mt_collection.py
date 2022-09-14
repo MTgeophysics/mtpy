@@ -19,11 +19,10 @@ import numpy as np
 
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.imaging import PlotStations, PlotMultipleResponses, PlotPhaseTensor
+from mtpy.imaging import PlotStations, PlotMultipleResponses
 
 from mth5.mth5 import MTH5
 
@@ -36,13 +35,26 @@ class MTCollection:
     """
     Collection of transfer functions
 
+    The main working variable is `MTCollection.dataframe` which is a property
+    there returns either the `master dataframe` that contains all the TF's in
+    the MTH5 file, or the `working_dataframe` which is a dataframe that has
+    been queried in some way.  Therefore all the user has to do is set
+    the working directory as a subset of the master_dataframe
+
+    :Example:
+
+        >>> mc = MTCollection()
+        >>> mc.open_collection(filename="path/to/example/mth5.h5")
+        >>> mc.working_dataframe = mc.master_dataframe.iloc[0:5]
+
     """
 
     def __init__(self, working_directory=None):
 
         self._cwd = Path().cwd()
-        self._mth5_basename = "mt_collection"
+        self.mth5_basename = "mt_collection"
         self.working_directory = working_directory
+        self.working_dataframe = None
 
         self.mth5_collection = MTH5()
 
@@ -83,21 +95,47 @@ class MTCollection:
 
     @property
     def mth5_filename(self):
-        if self._mth5_basename.find(".h5") > 0:
-            return self.working_directory.joinpath(f"{self._mth5_basename}")
+        if self.mth5_basename.find(".h5") > 0:
+            return self.working_directory.joinpath(f"{self.mth5_basename}")
         else:
-            return self.working_directory.joinpath(f"{self._mth5_basename}.h5")
+            return self.working_directory.joinpath(f"{self.mth5_basename}.h5")
+
+    @mth5_filename.setter
+    def mth5_filename(self, value):
+        value = Path(value)
+        self.working_directory = value.parent
+        self.mth5_basename = value.stem
 
     @property
-    def dataframe(self):
-        """return a summary of transfer functions"""
+    def master_dataframe(self):
+        """
+        This is the full summary of all transfer functions in the MTH5
+        file.  It is a property because if a user adds TF's then the
+        master_df will be automatically updated.  the tranformation is quick
+        for now.
+
+        """
 
         if self.mth5_collection.h5_is_read():
             return self.mth5_collection.tf_summary.to_dataframe()
         return None
 
+    @property
+    def dataframe(self):
+        """
+        This property returns the working dataframe or master dataframe if
+        the working dataframe is None.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if self.working_dataframe is None:
+            return self.master_dataframe
+        return self.working_dataframe
+
     def has_data(self):
-        if self.dataframe is not None:
+        if self.master_dataframe is not None:
             return True
         return False
 
@@ -144,7 +182,11 @@ class MTCollection:
         return fn_list
 
     def open_collection(
-        self, basename="mt_collection", working_directory=None, mode="a"
+        self,
+        filename=None,
+        basename=None,
+        working_directory=None,
+        mode="a",
     ):
         """
         Initialize an mth5
@@ -157,8 +199,14 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        self._mth5_basename = basename
-        self.working_directory = working_directory
+        if filename is not None:
+            self.mth5_filename = filename
+
+        if basename is not None:
+            self.mth5_basename = basename
+
+        if working_directory is not None:
+            self.working_directory = working_directory
 
         self.mth5_collection.open_mth5(self.mth5_filename, mode)
 
@@ -196,7 +244,7 @@ class MTCollection:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
         self.mth5_collection.tf_summary.summarize()
 
-    def get_tf(self, tf_id):
+    def get_tf(self, tf_id, survey=None):
         """
 
         Get transfer function
@@ -207,14 +255,31 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        # if not isinstance(tf_id, (list, tuple, np.ndarray)):
-        #     tf_id = [tf_id]
+
         try:
-            ref = self.dataframe[
-                self.dataframe.tf_id == tf_id
-            ].hdf5_reference.values[0]
+            find_df = self.master_dataframe.loc[
+                self.master_dataframe.tf_id == tf_id
+            ]
+            if find_df.shape[0] != 1:
+                if survey is None:
+                    find_df = find_df.iloc[0]
+                    self.logger.warning(
+                        f"Found multiple transfer functions with ID {tf_id}. "
+                        "Suggest setting survey, otherwise returning the "
+                        f"TF from survey {find_df.survey}."
+                    )
+                else:
+                    try:
+                        find_df = find_df[find_df.survey == survey]
+                        find_df.iloc[0]
+                    except IndexError:
+                        raise ValueError(
+                            f"Could not find {survey} in collection."
+                        )
+                ref = find_df.hdf5_reference.values[0]
         except IndexError:
             raise ValueError(f"Could not find {tf_id} in collection.")
+
         mt_object = MT()
         tf_object = self.mth5_collection.from_reference(ref)
 
@@ -276,7 +341,6 @@ class MTCollection:
             tf_df = self.dataframe
         tf_list = []
         for row in tf_df.itertuples():
-            print(row.station)
             tf_list.append(self.get_tf(row.station))
         return tf_list
 
@@ -342,12 +406,13 @@ class MTCollection:
             ]
         return None
 
-    def to_geo_df(self, epsg=4326):
+    def to_geo_df(self, bounding_box=None, epsg=4326):
         """
         Make a geopandas dataframe for easier GIS manipulation
 
         """
         coordinate_system = f"epsg:{epsg}"
+
         gdf = gpd.GeoDataFrame(
             self.dataframe[
                 self.dataframe.columns[
@@ -377,22 +442,9 @@ class MTCollection:
         :rtype: TYPE
 
         """
+
         if self.has_data():
-            coordinate_system = {"init": f"epsg:{epsg}"}
-            # write shape file
-            geometry_list = []
-            for ii, row in self.dataframe.iterrows():
-                geometry_list.append(Point(row.longitude, row.latitude))
-            df_trim = self.dataframe[
-                self.dataframe.columns[
-                    ~self.dataframe.columns.isin(
-                        ["hdf5_reference", "station_hdf5_reference"]
-                    )
-                ]
-            ]
-            gdf = gpd.GeoDataFrame(
-                df_trim, crs=coordinate_system, geometry=geometry_list
-            )
+            gdf = self.to_geo_df(bounding_box=bounding_box, epsg=epsg)
             gdf.to_file(self.working_directory.joinpath(filename))
 
             return gdf
@@ -420,7 +472,7 @@ class MTCollection:
 
         """
 
-        # cell size in degrees
+        # cell size in degrees (bit of a hack for now)
         r = cell_size_m / 111000.0
 
         if bounding_box:
@@ -514,7 +566,7 @@ class MTCollection:
         #     self.make_dataframe_from_file_list(new_fn_list), self.mt_path
         # )
 
-    def plot_mt_response(self, tf_id, **kwargs):
+    def plot_mt_response(self, tf_id, survey=None, **kwargs):
         """
 
         :param tf_id: DESCRIPTION
@@ -524,17 +576,33 @@ class MTCollection:
         :return: DESCRIPTION
         :rtype: TYPE
 
+        if input as list, tuple, np.ndarray, pd.series assuming first column
+        is tf_id, and if needed the second column should be the survey id
+        for that tf.
+
         """
         if isinstance(tf_id, str):
-            mt_object = self.get_tf(tf_id)
+            mt_object = self.get_tf(tf_id, survey=survey)
             return mt_object.plot_mt_response(**kwargs)
         elif isinstance(tf_id, (list, tuple, np.ndarray, pd.Series)):
             tf_list = []
-            for tf_name in tf_id:
-                tf_list.append(self.get_tf(tf_name))
+            tf_request = np.array(tf_id)
+            if len(tf_request.shape) > 1:
+                for row in tf_request:
+                    tf_list.append(self.get_tf(row[0], survey=row[1]))
+
+            else:
+                for row in tf_request:
+                    tf_list.append(self.get_tf(row, survey=survey))
             return PlotMultipleResponses(tf_list, **kwargs)
 
-    def plot_stations(self, gdf=None, map_epsg=4326, **kwargs):
+        elif isinstance(tf_id, pd.DataFrame):
+            tf_list = []
+            for row in tf_id.itertuples():
+                tf_list.append(self.get_tf(row.tf_id, survey=row.survey))
+            return PlotMultipleResponses(tf_list, **kwargs)
+
+    def plot_stations(self, map_epsg=4326, **kwargs):
         """
         plot stations
 
@@ -544,9 +612,9 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        if gdf is None:
+        if self.has_data():
             gdf = self.to_geo_df(epsg=map_epsg)
-        return PlotStations(gdf, **kwargs)
+            return PlotStations(gdf, **kwargs)
 
     def plot_phase_tensor(self, tf_id, **kwargs):
         """

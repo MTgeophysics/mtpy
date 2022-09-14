@@ -1155,6 +1155,8 @@ def plot_tipper_lateral(
     :rtype: TYPE
 
     """
+    if t_obj is None:
+        return None, None, None
 
     if plot_tipper.find("y") == 0 or plot_tipper:
         txr = t_obj.mag_real * np.cos(np.deg2rad(-t_obj.angle_real))

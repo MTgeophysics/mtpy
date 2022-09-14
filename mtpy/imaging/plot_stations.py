@@ -68,7 +68,9 @@ class PlotStations(PlotBase):
         if self.image_file is not None:
             if self.image_extent is None:
                 raise mtex.MTpyError_inputarguments(
-                    "Need to input extents " + "of the image as" + "(x0, y0, x1, y1)"
+                    "Need to input extents "
+                    + "of the image as"
+                    + "(x0, y0, x1, y1)"
                 )
         # --> plot if desired
         if self.show_plot:
@@ -126,7 +128,9 @@ class PlotStations(PlotBase):
         # --> plot the background image if desired-----------------------
         if self.image_file is not None:
             im = plt.imread(self.image_file)
-            self.ax.imshow(im, origin="lower", extent=self.image_extent, aspect="auto")
+            self.ax.imshow(
+                im, origin="lower", extent=self.image_extent, aspect="auto"
+            )
         # plot stations
         gax = self.gdf.plot(
             ax=self.ax,
@@ -146,6 +150,8 @@ class PlotStations(PlotBase):
                 xytext=(x, y + self.text_y_pad),
                 rotation=self.text_angle,
                 color=self.text_color,
+                fontsize=self.text_size,
+                fontweight=self.text_weight,
             )
         if self.image_file is None:
             if has_cx:
@@ -161,7 +167,9 @@ class PlotStations(PlotBase):
                         **cx_kwargs,
                     )
                 except Exception as error:
-                    self.logger.warning(f"Could not add base map because {error}")
+                    self.logger.warning(
+                        f"Could not add base map because {error}"
+                    )
         # set axis properties
         self.ax.set_xlabel("latitude", fontdict=self.font_dict)
         self.ax.set_ylabel("longitude", fontdict=self.font_dict)

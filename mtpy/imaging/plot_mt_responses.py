@@ -81,7 +81,12 @@ class PlotMultipleResponses(PlotBase):
                 (kk, vv)
                 for kk, vv in zip(
                     ["tip", "pt", "strike", "skew"],
-                    [self.plot_tipper, self.plot_pt, self.plot_strike, self.plot_skew,],
+                    [
+                        self.plot_tipper,
+                        self.plot_pt,
+                        self.plot_strike,
+                        self.plot_skew,
+                    ],
                 )
             ]
         )
@@ -112,18 +117,26 @@ class PlotMultipleResponses(PlotBase):
             tf.rotation_angle = value
         self._rotation_angle = value
 
-    def _plot_resistivity(self, axr, period, z_obj, mode="od", index=0, axr2=None):
+    def _plot_resistivity(
+        self, axr, period, z_obj, mode="od", index=0, axr2=None
+    ):
 
         if mode == "od":
             comps = ["xy", "yx"]
-            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+            props = [
+                self.xy_error_bar_properties,
+                self.yx_error_bar_properties,
+            ]
             if axr2 is not None:
                 ax_list = [axr, axr2]
             else:
                 ax_list = [axr, axr]
         elif mode == "d":
             comps = ["xx", "yy"]
-            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+            props = [
+                self.xy_error_bar_properties,
+                self.yx_error_bar_properties,
+            ]
             if axr2 is not None:
                 ax_list = [axr, axr2]
             else:
@@ -165,10 +178,17 @@ class PlotMultipleResponses(PlotBase):
             ax.set_xscale("log", nonpositive="clip")
             ax.set_xlim(x_limits)
             ax.set_ylim(res_limits)
-            ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+            ax.grid(
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
+            )
         if index == 0:
             axr.set_ylabel(
-                "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=self.font_dict
+                "App. Res. ($\mathbf{\Omega \cdot m}$)",
+                fontdict=self.font_dict,
             )
         else:
             plt.setp(axr.get_yticklabels(), visible=False)
@@ -192,10 +212,16 @@ class PlotMultipleResponses(PlotBase):
                 ax_list = [axp, axp2]
             else:
                 ax_list = [axp, axp]
-            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+            props = [
+                self.xy_error_bar_properties,
+                self.yx_error_bar_properties,
+            ]
         elif mode == "d":
             comps = ["xx", "yy"]
-            props = [self.xy_error_bar_properties, self.yx_error_bar_properties]
+            props = [
+                self.xy_error_bar_properties,
+                self.yx_error_bar_properties,
+            ]
         elif mode == "det":
             comps = ["xy", "yx", "det"]
             props = [
@@ -239,7 +265,13 @@ class PlotMultipleResponses(PlotBase):
             else:
                 ax.yaxis.set_major_locator(MultipleLocator(15))
                 ax.yaxis.set_minor_locator(MultipleLocator(5))
-            ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+            ax.grid(
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
+            )
             ax.set_xscale("log", nonpositive="clip")
         # --> set axes properties
         if index == 0:
@@ -248,6 +280,9 @@ class PlotMultipleResponses(PlotBase):
     def _plot_tipper(
         self, axt, period, t_obj, index=0, legend=False, zero_reference=False
     ):
+        if t_obj is None:
+            return None, None
+
         axt, tip_list, tip_label = plot_tipper_lateral(
             axt,
             t_obj,
@@ -272,7 +307,9 @@ class PlotMultipleResponses(PlotBase):
             axt.set_xlabel("")
         return tip_list, tip_label
 
-    def _plot_pt(self, axpt, period, pt_obj, index=0, y_shift=0, edge_color=None):
+    def _plot_pt(
+        self, axpt, period, pt_obj, index=0, y_shift=0, edge_color=None
+    ):
         # ----plot phase tensor ellipse---------------------------------------
         if self.plot_pt:
 
@@ -305,7 +342,11 @@ class PlotMultipleResponses(PlotBase):
             # set_ticks for some reason
             axpt.set_xlim(np.log10(x_limits[0]), np.log10(x_limits[1]))
             axpt.grid(
-                True, alpha=0.25, which="major", color=(0.25, 0.25, 0.25), lw=0.25
+                True,
+                alpha=0.25,
+                which="major",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
             )
 
             plt.setp(axpt.get_yticklabels(), visible=False)
@@ -335,7 +376,13 @@ class PlotMultipleResponses(PlotBase):
         return nrows, index, hr, pdict
 
     def _setup_subplots(
-        self, gs_master, n_stations=1, n_index=0, plot_num=1, hspace=0.05, wspace=0.15
+        self,
+        gs_master,
+        n_stations=1,
+        n_index=0,
+        plot_num=1,
+        hspace=0.05,
+        wspace=0.15,
     ):
         # create a dictionary for the number of subplots needed
         pdict = {"res": 0, "phase": 1}
@@ -396,7 +443,9 @@ class PlotMultipleResponses(PlotBase):
 
         # --> plot tipper
         if self.plot_tipper.find("y") >= 0:
-            axt = self.fig.add_subplot(gs_aux[pdict["tip"], :],)
+            axt = self.fig.add_subplot(
+                gs_aux[pdict["tip"], :],
+            )
             axt.yaxis.set_label_coords(label_coords[0], label_coords[1])
         # --> plot phase tensors
         if self.plot_pt:
@@ -422,7 +471,15 @@ class PlotMultipleResponses(PlotBase):
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
         for ii, mt in enumerate(self.tf_list):
-            axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
+            (
+                axr,
+                axp,
+                axr2,
+                axp2,
+                axt,
+                axpt,
+                label_coords,
+            ) = self._setup_subplots(
                 gs_master,
                 n_stations=ns,
                 n_index=ii,
@@ -433,7 +490,9 @@ class PlotMultipleResponses(PlotBase):
 
             # plot apparent resistivity od
             if self.plot_num == 1:
-                self._plot_resistivity(axr, mt.period, mt.Z, mode="od", index=ii)
+                self._plot_resistivity(
+                    axr, mt.period, mt.Z, mode="od", index=ii
+                )
                 if self.res_limits is not None:
                     axr.set_ylim(self.res_limits)
                 # plot phase od
@@ -443,7 +502,9 @@ class PlotMultipleResponses(PlotBase):
             # Plot Determinant
             elif self.plot_num == 3:
                 # plot apparent resistivity od
-                self._plot_resistivity(axr, mt.period, mt.Z, mode="det", index=ii)
+                self._plot_resistivity(
+                    axr, mt.period, mt.Z, mode="det", index=ii
+                )
                 if self.res_limits is not None:
                     axr.set_ylim(self.res_limits)
                 # plot phase od
@@ -453,7 +514,9 @@ class PlotMultipleResponses(PlotBase):
             # plot diagonal components
             if self.plot_num == 2:
                 # plot apparent resistivity od
-                self._plot_resistivity(axr2, mt.period, mt.Z, mode="d", index=ii)
+                self._plot_resistivity(
+                    axr2, mt.period, mt.Z, mode="d", index=ii
+                )
 
                 # plot phase od
                 self._plot_phase(axp2, mt.period, mt.Z, mode="d", index=ii)
@@ -464,7 +527,9 @@ class PlotMultipleResponses(PlotBase):
             # plot phase tensor
             self._plot_pt(axpt, mt.period, mt.pt, index=ii)
 
-            axr.set_title(mt.station, fontsize=self.font_size, fontweight="bold")
+            axr.set_title(
+                mt.station, fontsize=self.font_size, fontweight="bold"
+            )
 
     def _plot_compare(self):
         # plot diagonal components
@@ -478,8 +543,13 @@ class PlotMultipleResponses(PlotBase):
         cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns) for cc in range(ns)]
         cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
         cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
-        ctipr = [(0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)]
-        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
+        ctipr = [
+            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns)
+            for cc in range(ns)
+        ]
+        ctipi = [
+            (float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)
+        ]
 
         # make marker lists for the different components
         mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
@@ -496,13 +566,25 @@ class PlotMultipleResponses(PlotBase):
         nrows, n_index, hr, pdict = self._get_nrows()
         gs_master = gridspec.GridSpec(nrows, 1, hspace=0.15, height_ratios=hr)
         if self.plot_num == 1:
-            axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
-                gs_master, plot_num=2
-            )
+            (
+                axr,
+                axp,
+                axr2,
+                axp2,
+                axt,
+                axpt,
+                label_coords,
+            ) = self._setup_subplots(gs_master, plot_num=2)
         elif self.plot_num == 3:
-            axr, axp, axr2, axp2, axt, axpt, label_coords = self._setup_subplots(
-                gs_master, plot_num=1
-            )
+            (
+                axr,
+                axp,
+                axr2,
+                axp2,
+                axt,
+                axpt,
+                label_coords,
+            ) = self._setup_subplots(gs_master, plot_num=1)
         for ii, mt in enumerate(self.tf_list):
             self.xy_color = cxy[ii]
             self.xy_marker = mxy[ii]
@@ -516,11 +598,17 @@ class PlotMultipleResponses(PlotBase):
             # plot apparent resistivity od
             if self.plot_num == 1:
                 eb_list, label_list = self._plot_resistivity(
-                    axr, mt.period, mt.Z, mode="od", axr2=axr2,
+                    axr,
+                    mt.period,
+                    mt.Z,
+                    mode="od",
+                    axr2=axr2,
                 )
 
                 # plot phase od
-                self._plot_phase(axp, mt.period, mt.Z, mode="od", index=ii, axp2=axp2)
+                self._plot_phase(
+                    axp, mt.period, mt.Z, mode="od", index=ii, axp2=axp2
+                )
             # Plot Determinant
             elif self.plot_num == 3:
                 # plot apparent resistivity od
