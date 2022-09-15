@@ -641,7 +641,7 @@ class PlotMultipleResponses(PlotBase):
             legend_list_xy += [eb_list[0]]
             if self.plot_num in [1, 2]:
                 legend_list_yx += [eb_list[1]]
-            station_list.append(mt.station)
+            station_list.append(f"{mt.station}_{mt.survey_metadata.id}")
         # set limits
         if self.res_limits is not None:
             axr.set_ylim(self.res_limits)
@@ -665,6 +665,7 @@ class PlotMultipleResponses(PlotBase):
                 labelspacing=0.07,
                 handletextpad=0.2,
                 borderpad=0.25,
+                prop={"size": self.font_size - 2},
             )
 
             axr2.legend(
@@ -677,6 +678,7 @@ class PlotMultipleResponses(PlotBase):
                 labelspacing=0.07,
                 handletextpad=0.2,
                 borderpad=0.25,
+                prop={"size": self.font_size - 2},
             )
         elif self.plot_num == 3:
             axr.legend(

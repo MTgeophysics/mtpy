@@ -393,67 +393,73 @@ class PlotSettings(MTArrows, MTEllipse):
         """
 
         if mode in ["od", "det", "det_only"]:
-            nz_xy = np.nonzero(resistivity[:, 0, 1])
-            nz_yx = np.nonzero(resistivity[:, 1, 0])
-            limits = [
-                10
-                ** (
-                    np.floor(
-                        np.log10(
-                            min(
-                                [
-                                    np.nanmin(resistivity[nz_xy, 0, 1]),
-                                    np.nanmin(resistivity[nz_yx, 1, 0]),
-                                ]
+            try:
+                nz_xy = np.nonzero(resistivity[:, 0, 1])
+                nz_yx = np.nonzero(resistivity[:, 1, 0])
+                limits = [
+                    10
+                    ** (
+                        np.floor(
+                            np.log10(
+                                min(
+                                    [
+                                        np.nanmin(resistivity[nz_xy, 0, 1]),
+                                        np.nanmin(resistivity[nz_yx, 1, 0]),
+                                    ]
+                                )
                             )
                         )
-                    )
-                ),
-                10
-                ** (
-                    np.ceil(
-                        np.log10(
-                            max(
-                                [
-                                    np.nanmax(resistivity[nz_xy, 0, 1]),
-                                    np.nanmax(resistivity[nz_yx, 1, 0]),
-                                ]
+                    ),
+                    10
+                    ** (
+                        np.ceil(
+                            np.log10(
+                                max(
+                                    [
+                                        np.nanmax(resistivity[nz_xy, 0, 1]),
+                                        np.nanmax(resistivity[nz_yx, 1, 0]),
+                                    ]
+                                )
                             )
                         )
-                    )
-                ),
-            ]
+                    ),
+                ]
+            except ValueError:
+                limits = [0.1, 10000]
         if mode == "d":
-            nz_xx = np.nonzero(resistivity[:, 0, 1])
-            nz_yy = np.nonzero(resistivity[:, 1, 0])
-            limits = [
-                10
-                ** (
-                    np.floor(
-                        np.log10(
-                            min(
-                                [
-                                    np.nanmin(resistivity[nz_xx, 0, 0]),
-                                    np.nanmin(resistivity[nz_yy, 1, 1]),
-                                ]
+            try:
+                nz_xx = np.nonzero(resistivity[:, 0, 1])
+                nz_yy = np.nonzero(resistivity[:, 1, 0])
+                limits = [
+                    10
+                    ** (
+                        np.floor(
+                            np.log10(
+                                min(
+                                    [
+                                        np.nanmin(resistivity[nz_xx, 0, 0]),
+                                        np.nanmin(resistivity[nz_yy, 1, 1]),
+                                    ]
+                                )
                             )
                         )
-                    )
-                ),
-                10
-                ** (
-                    np.ceil(
-                        np.log10(
-                            max(
-                                [
-                                    np.nanmax(resistivity[nz_xx, 0, 0]),
-                                    np.nanmax(resistivity[nz_yy, 1, 1]),
-                                ]
+                    ),
+                    10
+                    ** (
+                        np.ceil(
+                            np.log10(
+                                max(
+                                    [
+                                        np.nanmax(resistivity[nz_xx, 0, 0]),
+                                        np.nanmax(resistivity[nz_yy, 1, 1]),
+                                    ]
+                                )
                             )
                         )
-                    )
-                ),
-            ]
+                    ),
+                ]
+            except ValueError:
+                limits = [0.1, 10000]
         if scale == "log":
             if limits[0] == 0:
                 limits[0] = 0.1
@@ -461,27 +467,33 @@ class PlotSettings(MTArrows, MTEllipse):
 
     def set_phase_limits(self, phase, mode="od"):
         if mode in ["od", "det", "det_only"]:
-            nz_xy = np.nonzero(phase[:, 0, 1])
-            nz_yx = np.nonzero(phase[:, 1, 0])
+            try:
+                nz_xy = np.nonzero(phase[:, 0, 1])
+                nz_yx = np.nonzero(phase[:, 1, 0])
 
-            ph_min = min(
-                [
-                    np.nanmin(phase[nz_xy, 0, 1]),
-                    np.nanmin(phase[nz_yx, 1, 0] + 180),
-                ]
-            )
-            if ph_min > 0:
-                ph_min = 0
-            else:
-                ph_min = round(ph_min / 5) * 5
-            ph_max = max(
-                [np.nanmax(phase[:, 0, 1]), np.nanmax(phase[:, 1, 0] + 180)]
-            )
-            if ph_max < 91:
-                ph_max = 89.9
-            else:
-                ph_max = round(ph_max / 5) * 5
-            return (ph_min, ph_max)
+                ph_min = min(
+                    [
+                        np.nanmin(phase[nz_xy, 0, 1]),
+                        np.nanmin(phase[nz_yx, 1, 0] + 180),
+                    ]
+                )
+                if ph_min > 0:
+                    ph_min = 0
+                else:
+                    ph_min = round(ph_min / 5) * 5
+                ph_max = max(
+                    [
+                        np.nanmax(phase[:, 0, 1]),
+                        np.nanmax(phase[:, 1, 0] + 180),
+                    ]
+                )
+                if ph_max < 91:
+                    ph_max = 89.9
+                else:
+                    ph_max = round(ph_max / 5) * 5
+                return (ph_min, ph_max)
+            except ValueError:
+                return [0, 90]
         elif mode == "d":
             ph_min = -180
             ph_max = 180
