@@ -73,6 +73,7 @@ class PlotMultipleResponses(PlotBase):
         self.plot_num = 1
         self.plot_style = "1"
         self.tf_list = tf_list
+        self.include_survey = True
 
         super().__init__(**kwargs)
 
@@ -641,7 +642,11 @@ class PlotMultipleResponses(PlotBase):
             legend_list_xy += [eb_list[0]]
             if self.plot_num in [1, 2]:
                 legend_list_yx += [eb_list[1]]
-            station_list.append(f"{mt.station}_{mt.survey_metadata.id}")
+            if self.include_survey:
+                station_list.append(f"{mt.station}_{mt.survey_metadata.id}")
+            else:
+                station_list.append(f"{mt.station}")
+
         # set limits
         if self.res_limits is not None:
             axr.set_ylim(self.res_limits)
