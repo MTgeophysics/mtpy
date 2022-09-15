@@ -279,6 +279,7 @@ class PlotResidualPTMaps(PlotBase):
         for mm, match in enumerate(matches):
             mt1 = match[0]
             mt2 = match[1]
+
             new_z1, new_t1 = mt1.interpolate(
                 self.freq_list, bounds_error=False
             )
