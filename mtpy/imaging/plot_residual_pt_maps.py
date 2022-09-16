@@ -489,6 +489,8 @@ class PlotResidualPTMaps(PlotBase):
         """
         plot residual phase tensor
         """
+        self._set_subplot_params()
+
         # get residual phase tensor for plotting
         if self.rpt_array is None:
             self._compute_residual_pt()
