@@ -16,7 +16,6 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 from matplotlib.lines import Line2D
-import matplotlib.tri as tri
 
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.utils.mtpy_logger import get_mtpy_logger
@@ -1381,70 +1380,97 @@ def round_to_step(num, base=5):
     return base * round(num / base)
 
 
-def add_raster(
-    ax,
-    raster_dict={
-        "lons": [],
-        "lats": [],
-        "vals": [],
-        "levels": 50,
-        "cmap": "rainbow",
-        "cbar_title": "Arbitrary units",
-    },
-    refpoint=(0, 0),
-    add_colorbar=True,
-    cb_orientation="horizontal",
-):
-    lons = np.array(raster_dict["lons"])
-    lats = np.array(raster_dict["lats"])
+def add_raster(ax, raster_fn, add_colorbar=True, **kwargs):
+    """
+    Add a raster to an axis using rasterio
 
-    # retain masking if a masked array is passed in
-    if type(raster_dict["vals"]) == np.ma.core.MaskedArray:
-        vals = np.ma.masked_array(raster_dict["vals"])
-    else:
-        vals = np.array(raster_dict["vals"])
-    lons -= refpoint[0]
-    lats -= refpoint[1]
-    levels = raster_dict.pop("levels", 50)
-    cmap = raster_dict.pop("cmap", "rainbow")
-    cbar_title = raster_dict.pop("cbar_title", "Arbitrary Units")
+    :param raster_fn: DESCRIPTION
+    :type raster_fn: TYPE
+    :param **kwargs: DESCRIPTION
+    :type **kwargs: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
 
-    # if a 2D array provided, can use contourf and no need to triangulate
-    triangulate = True
-    if len(vals.shape) > 1:
-        if lons.shape == lats.shape == vals.shape:
-            triangulate = False
-        elif (lons.shape == vals.shape[1]) and (lats.shape == vals.shape[0]):
-            triangulate = False
-    if triangulate:
-        assert (
-            len(lons) == len(lats) == len(vals)
-        ), "Lons, Lats and Vals must all have the same length"
-        triangulation = tri.Triangulation(lons, lats)
-        ax.tricontourf(
-            triangulation,
-            vals,
-            levels=np.linspace(vals.min(), vals.max(), levels),
-            cmap=cmap,
-        )
-    else:
-        ax.contourf(
-            lons,
-            lats,
-            vals,
-            levels=np.linspace(vals.min(), vals.max(), levels),
-            cmap=cmap,
-        )
+    """
+
+    import rasterio
+    from rasterio.plot import show
+
+    tif = rasterio.open(raster_fn)
+    ax2 = show(tif, ax=ax, **kwargs)
+    cb = None
     if add_colorbar:
-        cbax, kw = mcb.make_axes(ax, orientation=cb_orientation, shrink=0.35)
+        im = ax2.get_images()[0]
+        fig = ax2.get_figure()
+        cb = fig.colorbar(im, ax=ax)
 
-        if cb_orientation == "horizontal":
-            cbax.ax.set_xlabel(cbar_title)
-            cbax.ax.xaxis.set_label_position("top")
-            cbax.ax.xaxis.set_label_coords(0.5, 1.3)
-        else:
-            cbax.ax.set_ylabel(cbar_title, fontweight="bold")
-            cbax.ax.yaxis.set_label_position("right")
-            cbax.ax.yaxis.set_label_coords(1.25, 0.5)
-            cbax.ax.yaxis.tick_left()
-            cbax.ax.tick_params(axis="y", direction="in")
+    return ax2, cb
+
+
+# def add_raster(
+#     ax,
+#     raster_dict={
+#         "lons": [],
+#         "lats": [],
+#         "vals": [],
+#         "levels": 50,
+#         "cmap": "rainbow",
+#         "cbar_title": "Arbitrary units",
+#     },
+#     refpoint=(0, 0),
+#     add_colorbar=True,
+#     cb_orientation="horizontal",
+# ):
+#     lons = np.array(raster_dict["lons"])
+#     lats = np.array(raster_dict["lats"])
+
+#     # retain masking if a masked array is passed in
+#     if type(raster_dict["vals"]) == np.ma.core.MaskedArray:
+#         vals = np.ma.masked_array(raster_dict["vals"])
+#     else:
+#         vals = np.array(raster_dict["vals"])
+#     lons -= refpoint[0]
+#     lats -= refpoint[1]
+#     levels = raster_dict.pop("levels", 50)
+#     cmap = raster_dict.pop("cmap", "rainbow")
+#     cbar_title = raster_dict.pop("cbar_title", "Arbitrary Units")
+
+#     # if a 2D array provided, can use contourf and no need to triangulate
+#     triangulate = True
+#     if len(vals.shape) > 1:
+#         if lons.shape == lats.shape == vals.shape:
+#             triangulate = False
+#         elif (lons.shape == vals.shape[1]) and (lats.shape == vals.shape[0]):
+#             triangulate = False
+#     if triangulate:
+#         assert (
+#             len(lons) == len(lats) == len(vals)
+#         ), "Lons, Lats and Vals must all have the same length"
+#         triangulation = tri.Triangulation(lons, lats)
+#         ax.tricontourf(
+#             triangulation,
+#             vals,
+#             levels=np.linspace(vals.min(), vals.max(), levels),
+#             cmap=cmap,
+#         )
+#     else:
+#         ax.contourf(
+#             lons,
+#             lats,
+#             vals,
+#             levels=np.linspace(vals.min(), vals.max(), levels),
+#             cmap=cmap,
+#         )
+#     if add_colorbar:
+#         cbax, kw = mcb.make_axes(ax, orientation=cb_orientation, shrink=0.35)
+
+#         if cb_orientation == "horizontal":
+#             cbax.ax.set_xlabel(cbar_title)
+#             cbax.ax.xaxis.set_label_position("top")
+#             cbax.ax.xaxis.set_label_coords(0.5, 1.3)
+#         else:
+#             cbax.ax.set_ylabel(cbar_title, fontweight="bold")
+#             cbax.ax.yaxis.set_label_position("right")
+#             cbax.ax.yaxis.set_label_coords(1.25, 0.5)
+#             cbax.ax.yaxis.tick_left()
+#             cbax.ax.tick_params(axis="y", direction="in")

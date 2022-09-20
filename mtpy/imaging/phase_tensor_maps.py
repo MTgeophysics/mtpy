@@ -9,27 +9,31 @@ Revision History:
 
     brenainn.moushall 26-03-2020 15:07:14 AEDT:
         Add plotting of geotiff as basemap background.
+        
+    Updated 2022 by J. Peacock to work with v2
+    
 """
-import os
-import glob
-
+# =============================================================================
+# Imports
+# =============================================================================
 import numpy as np
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
+import matplotlib.colors as colors
 
+try:
+    import contextily as cx
+
+    has_cx = True
+except ModuleNotFoundError:
+    has_cx = False
 
 from mtpy.imaging.mtplot_tools import PlotBase, add_raster
 
-import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplot_tools as mtpl
 import mtpy.analysis.pt as MTpt
-from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
-from mtpy.utils.mtpy_logger import get_mtpy_logger
-
 
 # ==============================================================================
 
@@ -45,6 +49,8 @@ class PlotPhaseTensorMaps(PlotBase):
         Initialise the object
         :param kwargs: keyword-value pairs
         """
+        super().__init__(**kwargs)
+
         self._rotation_angle = 0
         self.tf_list = tf_list
 
@@ -54,7 +60,7 @@ class PlotPhaseTensorMaps(PlotBase):
         self.ftol = 0.1
         self.interpolate = True
         # read in map scale
-        self.mapscale = "deg"
+        self.map_scale = "deg"
         self.map_utm_zone = None
         self.map_epsg = None
 
@@ -62,37 +68,70 @@ class PlotPhaseTensorMaps(PlotBase):
         self.x_pad = 0.01
         self.y_pad = 0.01
 
-        # map background image
-        self.background_image = None
-        self.bimg_band = None
-        self.bimg_cmap = "viridis"
-
-        # color bar properties
-        self.cb_orientation = "vertical"
-        self.cb_position = None
-
         # arrow legend
         self.arrow_legend_position = "lower right"
         self.arrow_legend_xborderpad = 0.2
         self.arrow_legend_yborderpad = 0.2
         self.arrow_legend_fontpad = 0.05
 
-        self.ref_ax_loc = kwargs.pop("ref_ax_loc", (0.85, 0.1, 0.1, 0.1))
+        self.ref_ax_loc = (0.85, 0.1, 0.1, 0.1)
 
         # set a central reference point
         self.reference_point = (0, 0)
+
+        self.cx_source = None
+        self.cx_zoom = None
+        if has_cx:
+            self.cx_source = cx.providers.USGS.USTopo
 
         # station labels
         self.station_id = (0, 2)
         self.station_pad = 0.0005
 
-        super().__init__(**kwargs)
         self.arrow_legend_fontdict = {"size": self.font_size, "weight": "bold"}
         self.station_font_dict = {"size": self.font_size, "weight": "bold"}
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         # --> plot if desired ------------------------
         if self.show_plot:
             self.plot()
+
+    @property
+    def map_scale(self):
+        return self._map_scale
+
+    @map_scale.setter
+    def map_scale(self, map_scale):
+        self._map_scale = map_scale
+
+        if self._map_scale == "deg":
+            self.xpad = 0.005
+            self.ypad = 0.005
+            self.ellipse_size = 0.005
+            self.tickstrfmt = "%.3f"
+            self.y_label = "Latitude (deg)"
+            self.x_label = "Longitude (deg)"
+
+        elif self._map_scale == "m":
+            self.xpad = 1000
+            self.ypad = 1000
+            self.ellipse_size = 500
+            self.tickstrfmt = "%.0f"
+            self.x_label = "Easting (m)"
+            self.y_label = "Northing (m)"
+
+        elif self._map_scale == "km":
+            self.xpad = 1
+            self.ypad = 1
+            self.ellipse_size = 0.500
+            self.tickstrfmt = "%.0f"
+            self.x_label = "Easting (km)"
+            self.y_label = "Northing (km)"
+
+        else:
+            raise ValueError(f"map scale {map_scale} is not supported.")
 
     # ---need to rotate data on setting rotz
     @property
@@ -117,33 +156,41 @@ class PlotPhaseTensorMaps(PlotBase):
         """
 
         # set tick parameters depending on the mapscale
-        if self.mapscale == "deg":
+        if self.map_scale == "deg":
             self.tickstrfmt = "%.2f"
-        elif self.mapscale == "m" or self.mapscale == "km":
+        elif self.map_scale == "m" or self.map_scale == "km":
             self.tickstrfmt = "%.0f"
 
     def _set_axis_labels(self):
         # --> set axes properties depending on map scale------------------------
-        if self.mapscale == "deg":
+        if self.map_scale == "deg":
             self.ax.set_xlabel(
                 "Longitude", fontsize=self.font_size, fontweight="bold"  # +2,
             )
             self.ax.set_ylabel(
                 "Latitude", fontsize=self.font_size, fontweight="bold"  # +2,
             )
-        elif self.mapscale == "m":
+        elif self.map_scale == "m":
             self.ax.set_xlabel(
-                "Easting (m)", fontsize=self.font_size, fontweight="bold"  # +2,
+                "Easting (m)",
+                fontsize=self.font_size,
+                fontweight="bold",  # +2,
             )
             self.ax.set_ylabel(
-                "Northing (m)", fontsize=self.font_size, fontweight="bold"  # +2,
+                "Northing (m)",
+                fontsize=self.font_size,
+                fontweight="bold",  # +2,
             )
-        elif self.mapscale == "km":
+        elif self.map_scale == "km":
             self.ax.set_xlabel(
-                "Easting (km)", fontsize=self.font_size, fontweight="bold"  # +2,
+                "Easting (km)",
+                fontsize=self.font_size,
+                fontweight="bold",  # +2,
             )
             self.ax.set_ylabel(
-                "Northing (km)", fontsize=self.font_size, fontweight="bold"  # +2,
+                "Northing (km)",
+                fontsize=self.font_size,
+                fontweight="bold",  # +2,
             )
 
     def _get_patch(self, tf):
@@ -157,17 +204,21 @@ class PlotPhaseTensorMaps(PlotBase):
 
         """
 
-        new_Z, new_Tipper = tf.interpolate([self.plot_freq], bounds_error=False)
+        new_Z, new_Tipper = tf.interpolate(
+            [self.plot_freq], bounds_error=False
+        )
         new_Z.compute_resistivity_phase()
         pt_obj = MTpt.PhaseTensor(z_object=new_Z)
 
         # if map scale is lat lon set parameters
-        if self.mapscale == "deg":
+        if self.map_scale == "deg":
             plotx = tf.longitude - self.reference_point[0]
             ploty = tf.latitude - self.reference_point[1]
         # if map scale is in meters easting and northing
-        elif self.mapscale in ["m", "km"]:
-            tf.project_point_ll2utm(epsg=self.map_epsg, utm_zone=self.map_utm_zone)
+        elif self.map_scale in ["m", "km"]:
+            tf.project_point_ll2utm(
+                epsg=self.map_epsg, utm_zone=self.map_utm_zone
+            )
 
             plotx = tf.east - self.reference_point[0]
             ploty = tf.north - self.reference_point[1]
@@ -287,6 +338,64 @@ class PlotPhaseTensorMaps(PlotBase):
                     )
         return ellipd, plotx, ploty
 
+    def _add_colorbar(self):
+        """
+        Add phase tensor color bar
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.cb_position is None:
+            self.ax2, kw = mcb.make_axes(
+                self.ax, orientation=self.cb_orientation, shrink=0.35
+            )
+
+        else:
+            self.ax2 = self.fig.add_axes(self.cb_position)
+
+        # make the colorbar
+        if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
+            cmap_input = mtcl.cmapdict[self.ellipse_cmap]
+        else:
+            cmap_input = mtcl.cm.get_cmap(self.ellipse_cmap)
+
+        if "seg" in self.ellipse_cmap:
+            norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
+            self.cb = mcb.ColorbarBase(
+                self.ax2,
+                cmap=cmap_input,
+                norm=norms,
+                orientation=self.cb_orientation,
+                ticks=self.ellipse_cmap_bounds,
+            )
+        else:
+            self.cb = mcb.ColorbarBase(
+                self.ax2,
+                cmap=cmap_input,
+                norm=colors.Normalize(
+                    vmin=self.ellipse_range[0], vmax=self.ellipse_range[1]
+                ),
+                orientation=self.cb_orientation,
+            )
+
+        # label the color bar accordingly
+        self.cb.set_label(
+            self.cb_label_dict[self.ellipse_colorby],
+            fontdict={"size": self.font_size, "weight": "bold"},
+        )
+
+        # place the label in the correct location
+        if self.cb_orientation == "horizontal":
+            self.cb.ax.xaxis.set_label_position("top")
+            self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
+        elif self.cb_orientation == "vertical":
+            self.cb.ax.yaxis.set_label_position("right")
+            self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
+            self.cb.ax.yaxis.tick_left()
+            self.cb.ax.tick_params(axis="y", direction="in")
+
     # -----------------------------------------------
     # The main plot method for this module
     # -----------------------------------------------
@@ -295,35 +404,30 @@ class PlotPhaseTensorMaps(PlotBase):
         fig=None,
         save_path=None,
         show=True,
-        raster_dict=None,
+        raster_file=None,
+        raster_kwargs={},
     ):
         """
         Plots the phase tensor map.
         :param fig: optional figure object
         :param save_path: path to folder for saving plots
         :param show: show plots if True
-        :param raster_dict: Plotting of raster data is currently only supported when mapscale='deg'.
-                            This parameter is a dictionary of parameters for plotting raster data,
-                            on top of which phase tensor data are plotted. 'lons', 'lats' and 'vals'
-                            are one dimensional lists (or numpy arrays) for longitudes, latitudes
-                            and corresponding values, respectively. 'levels', 'cmap' and 'cbar_title'
-                            are the number of levels to be used in the colormap, the colormap and its
-                            title, respectively.
+        :param raster_dict: dictionary containing information for a raster
+         to be plotted below the phase tensors.
+
         """
         self._set_subplot_params()
 
         # make figure instance
-        self.fig = plt.figure(self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi)
-        # self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
+        self.fig = plt.figure(
+            self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi
+        )
 
         # clear the figure if there is already one up
         plt.clf()
 
         self.ax = self.fig.add_subplot(1, 1, 1, aspect="equal")
 
-        # plot raster data if provided and if mapscale is 'deg'
-        if raster_dict is not None and self.mapscale == "deg":
-            add_raster(self.ax, raster_dict)
         self._get_tick_format()
 
         # make some empty arrays
@@ -347,6 +451,7 @@ class PlotPhaseTensorMaps(PlotBase):
                     verticalalignment="baseline",
                     fontdict=self.station_font_dict,
                 )
+
         self._set_axis_labels()
         # --> set plot limits
         #    need to exclude zero values from the calculation of min/max!!!!
@@ -359,22 +464,35 @@ class PlotPhaseTensorMaps(PlotBase):
             self.plot_yarr[self.plot_xarr != 0.0].max() + self.y_pad,
         )
 
-        # BM: Now that we have the bounds of the axis, we can plot a
-        # background image on the map.
-        # if self.background_image:
-        #     plot_geotiff_on_axes(
-        #         self.background_image,
-        #         self.ax,
-        #         epsg_code=4326,
-        #         band_number=self.bimg_band,
-        #         cmap=self.bimg_cmap,
-        #     )
         # --> set tick label format
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         #       self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
         #                                rotation=45)
         plt.setp(self.ax.get_xticklabels(), rotation=45)
+
+        # plot raster data if provided and if mapscale is 'deg'
+        ## Leaving this in for posterity, in the future we should use
+        ## rasterio for plotting geotiffs or other geophysical data.
+        if raster_file is not None:
+            self.raster_ax, self.raster_cb = add_raster(
+                self.ax, raster_file, **raster_kwargs
+            )
+
+        else:
+            if has_cx:
+                try:
+                    cx_kwargs = {"source": self.cx_source, "crs": "EPSG:4326"}
+                    if self.cx_zoom is not None:
+                        cx_kwargs["zoom"] = self.cx_zoom
+                    cx.add_basemap(
+                        self.ax,
+                        **cx_kwargs,
+                    )
+                except Exception as error:
+                    self.logger.warning(
+                        f"Could not add base map because {error}"
+                    )
 
         # --> set title in period or freq
         titlefreq = "{0:.5g} (s)".format(1.0 / self.plot_freq)
@@ -469,6 +587,9 @@ class PlotPhaseTensorMaps(PlotBase):
         self.ax.grid(True, alpha=0.3, which="both", color=(0.5, 0.5, 0.5))
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
+
+        self._add_colorbar()
+
         # ==> make a colorbar with appropriate colors
         # if self.cb_position is None:
         #     self.ax2, kw = mcb.make_axes(
