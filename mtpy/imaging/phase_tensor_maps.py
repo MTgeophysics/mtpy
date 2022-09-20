@@ -467,12 +467,8 @@ class PlotPhaseTensorMaps(PlotBase):
         # --> set tick label format
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        #       self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
-        #                                rotation=45)
         plt.setp(self.ax.get_xticklabels(), rotation=45)
 
-        # plot raster data if provided and if mapscale is 'deg'
-        ## Leaving this in for posterity, in the future we should use
         ## rasterio for plotting geotiffs or other geophysical data.
         if raster_file is not None:
             self.raster_ax, self.raster_cb = add_raster(
@@ -509,79 +505,6 @@ class PlotPhaseTensorMaps(PlotBase):
                 fontsize=self.font_size + 2,
                 fontweight="bold",
             )
-        # # --> plot induction arrow scale bar -----------------------------------
-        # if self.plot_tipper.find("y") == 0:
-        #     parrx = self.ax.get_xlim()
-        #     parry = self.ax.get_ylim()
-        #     try:
-        #         axpad = self.arrow_legend_xborderpad
-        #     except AttributeError:
-        #         axpad = self.xpad + self.arrow_size
-        #     try:
-        #         aypad = self.arrow_legend_yborderpad
-        #     except AttributeError:
-        #         aypad = self.ypad
-        #     try:
-        #         txtpad = self.arrow_legend_fontpad
-        #     except AttributeError:
-        #         txtpad = 0.25 * es
-        #     # make arrow legend postion and arrows coordinates
-        #     if self.arrow_legend_position == "lower right":
-        #         pax = parrx[1] - axpad
-        #         pay = parry[0] + aypad
-        #         # ptx = self.arrow_size
-        #         # pty = 0
-        #         txa = parrx[1] - axpad + self.arrow_size / 2.0
-        #         # txy = pay+txtpad
-        #     elif self.arrow_legend_position == "upper right":
-        #         pax = parrx[1] - axpad
-        #         pay = parry[1] - aypad
-        #         # ptx = self.arrow_size
-        #         # pty = 0
-        #         txa = parrx[1] - axpad + self.arrow_size / 2.0
-        #         # txy = pay+txtpad
-        #     elif self.arrow_legend_position == "lower left":
-        #         pax = parrx[0] + axpad
-        #         pay = parry[0] + aypad
-        #         # ptx = self.arrow_size
-        #         # pty = 0
-        #         txa = parrx[0] + axpad + self.arrow_size / 2.0
-        #         # txy = pay+txtpad
-        #     elif self.arrow_legend_position == "upper left":
-        #         pax = parrx[0] + axpad
-        #         pay = parry[1] - aypad
-        #         # ptx = self.arrow_size
-        #         # pty = 0
-        #         txa = parrx[0] + axpad + self.arrow_size / 2.0
-        #         # txy = pay+txtpad
-        #     else:
-        #         pass  # raise NameError('arrowlegend not supported.')
-        #     # FZ: Sudpip?
-        #     ptx = self.arrow_size
-        #     pty = 0
-        #     # txy = pay + txtpad
-
-        #     self.ax.arrow(
-        #         pax,
-        #         pay,
-        #         ptx,
-        #         pty,
-        #         width=self.arrow_lw,
-        #         facecolor=self.arrow_color_real,
-        #         edgecolor=self.arrow_color_real,
-        #         length_includes_head=False,
-        #         head_width=self.arrow_head_width,
-        #         head_length=self.arrow_head_length,
-        #     )
-
-        # FZ: what is this '|T|=1'? and the horizontal line?
-        # self.ax.text(txa,
-        #              txy,
-        #              '|T|=1',
-        #              horizontalalignment='center',
-        #              verticalalignment='baseline',
-        #              fontdict={'size':self.font_size,'weight':'bold'})
-        # END: if self.plot_tipper.find('yes') == 0 ---------------------------
 
         # make a grid with color lines
         self.ax.grid(True, alpha=0.3, which="both", color=(0.5, 0.5, 0.5))
@@ -589,97 +512,3 @@ class PlotPhaseTensorMaps(PlotBase):
             plt.minorticks_on()  # turn on minor ticks automatically
 
         self._add_colorbar()
-
-        # ==> make a colorbar with appropriate colors
-        # if self.cb_position is None:
-        #     self.ax2, kw = mcb.make_axes(
-        #         self.ax, orientation=self.cb_orientation, shrink=0.35
-        #     )
-        #     # FZ: try to fix colorbar h-position
-        #     # from mpl_toolkits.axes_grid1 import make_axes_locatable
-        #     #
-        #     # # create an axes on the right side of ax. The width of cax will be 5%
-        #     # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-        #     # divider = make_axes_locatable(self.ax)
-        #     # self.ax2 = divider.append_axes("right", size="5%", pad=0.05)
-        # else:
-        #     self.ax2 = self.fig.add_axes(self.cb_position)
-        # if cmap == "mt_seg_bl2wh2rd":
-        #     # make a color list
-        #     self.clist = [
-        #         (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-        #     ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
-
-        #     # make segmented colormap
-        #     mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
-
-        #     # make bounds so that the middle is white
-        #     bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
-
-        #     # normalize the colors
-        #     norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
-
-        #     # make the colorbar
-        #     self.cb = mcb.ColorbarBase(
-        #         self.ax2,
-        #         cmap=mt_seg_bl2wh2rd,
-        #         norm=norms,
-        #         orientation=self.cb_orientation,
-        #         ticks=bounds[1:-1],
-        #     )
-        # else:
-        #     if cmap in list(mtcl.cmapdict.keys()):
-        #         cmap_input = mtcl.cmapdict[cmap]
-        #     else:
-        #         cmap_input = mtcl.cm.get_cmap(cmap)
-        #     self.cb = mcb.ColorbarBase(
-        #         self.ax2,
-        #         cmap=cmap_input,  # mtcl.cmapdict[cmap],
-        #         norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
-        #         orientation=self.cb_orientation,
-        #     )
-        # # label the color bar accordingly
-        # self.cb.set_label(
-        #     mtpl.ckdict[ck], fontdict={"size": self.font_size, "weight": "bold"}
-        # )
-
-        # # place the label in the correct location
-        # if self.cb_orientation == "horizontal":
-        #     self.cb.ax.xaxis.set_label_position("top")
-        #     self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
-        # elif self.cb_orientation == "vertical":
-        #     self.cb.ax.yaxis.set_label_position("right")
-        #     self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
-        #     self.cb.ax.yaxis.tick_left()
-        #     self.cb.ax.tick_params(axis="y", direction="in")
-        # # --> add reference ellipse:  (legend of ellipse size=1)
-        # # FZ: remove the following section if no show of Phi
-        # show_phi = False  # JingMingDuan does not want to show the black circle - it's not useful
-        # if show_phi is True:
-        #     ref_ellip = patches.Ellipse((0, 0.0), width=es, height=es, angle=0)
-        #     ref_ellip.set_facecolor((0, 0, 0))
-        #     ref_ax_loc = list(self.ax2.get_position().bounds)
-        #     ref_ax_loc[0] *= 0.95
-        #     ref_ax_loc[1] -= 0.17
-        #     ref_ax_loc[2] = 0.1
-        #     ref_ax_loc[3] = 0.1
-        #     self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect="equal")
-        #     self.ref_ax.add_artist(ref_ellip)
-        #     self.ref_ax.set_xlim(-es / 2.0 * 1.05, es / 2.0 * 1.05)
-        #     self.ref_ax.set_ylim(-es / 2.0 * 1.05, es / 2.0 * 1.05)
-        #     plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
-        #     plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-        #     self.ref_ax.set_title(r"$\Phi$ = 1")
-        # if show:
-        #     # always show, and adjust the figure before saving it below. The
-        #     # figure size ratio are all different!!
-        #     plt.show()
-        # # the figure need to be closed (X) then the following code save it to a
-        # # file.
-        # if save_path is not None:
-        #     figfile = self.save_figure(save_path)  # , fig_dpi=300)
-        # else:
-        #     figfile = None
-        # # self.export_params_to_file('E:/tmp')
-
-        # return figfile
