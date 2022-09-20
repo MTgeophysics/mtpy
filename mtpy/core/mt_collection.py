@@ -347,7 +347,11 @@ class MTCollection:
             tf_df = self.dataframe
         tf_list = []
         for row in tf_df.itertuples():
-            tf_list.append(self.get_tf(row.station, survey=row.survey))
+            tf = self.get_tf(row.station, survey=row.survey)
+            tf.z_interp_dict = tf.get_interp1d_functions_z()
+            tf.t_interp_dict = tf.get_interp1d_functions_t()
+
+            tf_list.append(tf)
         return tf_list
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
@@ -638,6 +642,23 @@ class MTCollection:
         if isinstance(tf_id, str):
             tf_obj = self.get_tf(tf_id)
             return tf_obj.plot_phase_tensor(**kwargs)
+
+    def plot_phase_tensor_map(self, **kwargs):
+        """
+        Plot Phase tensor maps for transfer functions in the working_dataframe
+
+        .. seealso:: :class:`mtpy.imaging.PlotPhaseTensorMaps`
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = self.get_tf_list()
+
+        return PlotPhaseTensorMaps(tf_list=tf_list, **kwargs)
 
     def plot_residual_phase_tensor(
         self, tf_list_01, tf_list_02, plot_type="map", **kwargs

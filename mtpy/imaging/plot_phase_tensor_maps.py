@@ -58,7 +58,6 @@ class PlotPhaseTensorMaps(PlotBase):
 
         self._rotation_angle = 0
         self.tf_list = tf_list
-        self._assign_interpolate_functions()
 
         # set the freq to plot
         self.plot_station = False
@@ -152,15 +151,6 @@ class PlotPhaseTensorMaps(PlotBase):
         for tf in self.tf_list:
             tf.rotation_angle = value
         self._rotation_angle = value
-
-    def _assign_interpolate_functions(self):
-        """
-        make the interpolation dictionaries attributes of TF
-        """
-
-        for tf in self.tf_list:
-            tf.z_interp_dict = tf.get_interp1d_functions_z()
-            tf.t_interp_dict = tf.get_interp1d_functions_t()
 
     def _get_pt(self, tf):
         """
