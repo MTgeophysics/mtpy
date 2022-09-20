@@ -11,6 +11,10 @@ Revision History:
         Add plotting of geotiff as basemap background.
         
     Updated 2022 by J. Peacock to work with v2
+        
+        - Using rasterio to plot geotiffs
+        - factorized
+        - using interp function for faster plotting.
     
 """
 # =============================================================================
@@ -33,7 +37,8 @@ except ModuleNotFoundError:
 from mtpy.imaging.mtplot_tools import PlotBase, add_raster
 
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.analysis.pt as MTpt
+import mtpy.analysis.pt as mtpt
+import mtpy.core.z as mtz
 
 # ==============================================================================
 
@@ -53,6 +58,7 @@ class PlotPhaseTensorMaps(PlotBase):
 
         self._rotation_angle = 0
         self.tf_list = tf_list
+        self._assign_interpolate_functions()
 
         # set the freq to plot
         self.plot_station = False
@@ -147,6 +153,99 @@ class PlotPhaseTensorMaps(PlotBase):
             tf.rotation_angle = value
         self._rotation_angle = value
 
+    def _assign_interpolate_functions(self):
+        """
+        make the interpolation dictionaries attributes of TF
+        """
+
+        for tf in self.tf_list:
+            tf.z_interp_dict = tf.get_interp1d_functions_z()
+            tf.t_interp_dict = tf.get_interp1d_functions_t()
+
+    def _get_pt(self, tf):
+        """
+        Get phase tensor object from TF object
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        z = np.array(
+            [
+                [
+                    tf.z_interp_dict["zxx"]["real"](self.plot_freq)[0]
+                    + 1j * tf.z_interp_dict["zxx"]["imag"](self.plot_freq)[0],
+                    tf.z_interp_dict["zxy"]["real"](self.plot_freq)[0]
+                    + 1j * tf.z_interp_dict["zxy"]["imag"](self.plot_freq)[0],
+                ],
+                [
+                    tf.z_interp_dict["zyx"]["real"](self.plot_freq)[0]
+                    + 1j * tf.z_interp_dict["zyx"]["imag"](self.plot_freq)[0],
+                    tf.z_interp_dict["zyy"]["real"](self.plot_freq)[0]
+                    + 1j * tf.z_interp_dict["zyy"]["imag"](self.plot_freq)[0],
+                ],
+            ]
+        )
+
+        z_err = np.array(
+            [
+                [
+                    tf.z_interp_dict["zxx"]["err"](self.plot_freq)[0],
+                    tf.z_interp_dict["zxy"]["err"](self.plot_freq)[0],
+                ],
+                [
+                    tf.z_interp_dict["zyx"]["err"](self.plot_freq)[0],
+                    tf.z_interp_dict["zyy"]["err"](self.plot_freq)[0],
+                ],
+            ]
+        )
+
+        new_z_obj = mtz.Z(z, z_err, [self.plot_freq])
+        new_z_obj.compute_resistivity_phase()
+        pt_obj = mtpt.PhaseTensor(z_object=new_z_obj)
+
+        new_t_obj = None
+        if tf.t_interp_dict is not None:
+
+            t = np.array(
+                [
+                    [
+                        [
+                            tf.t_interp_dict["tzx"]["real"](self.plot_freq)[0]
+                            + 1j
+                            * tf.t_interp_dict["tzx"]["imag"](self.plot_freq)[
+                                0
+                            ],
+                        ],
+                        [
+                            tf.z_interp_dict["tzy"]["real"](self.plot_freq)[0]
+                            + 1j
+                            * tf.t_interp_dict["tzy"]["imag"](self.plot_freq)[
+                                0
+                            ],
+                        ],
+                    ]
+                ]
+            )
+
+            t_err = np.array(
+                [
+                    [
+                        [
+                            tf.t_interp_dict["tzx"]["err"](self.plot_freq)[0],
+                        ],
+                        [
+                            tf.t_interp_dict["tzy"]["err"](self.plot_freq)[0],
+                        ],
+                    ]
+                ]
+            )
+            new_t_obj = mtz.Tipper(t, t_err, [self.plot_freq])
+
+        return pt_obj, new_t_obj
+
     def _get_tick_format(self):
         """
 
@@ -204,11 +303,7 @@ class PlotPhaseTensorMaps(PlotBase):
 
         """
 
-        new_Z, new_Tipper = tf.interpolate(
-            [self.plot_freq], bounds_error=False
-        )
-        new_Z.compute_resistivity_phase()
-        pt_obj = MTpt.PhaseTensor(z_object=new_Z)
+        pt_obj, t_obj = self._get_pt(tf)
 
         # if map scale is lat lon set parameters
         if self.map_scale == "deg":
@@ -228,9 +323,9 @@ class PlotPhaseTensorMaps(PlotBase):
         else:
             raise NameError("mapscale not recognized")
         # --> set local variables
-        phimin = np.nan_to_num(pt_obj.phimin[0])
-        phimax = np.nan_to_num(pt_obj.phimax[0])
-        eangle = np.nan_to_num(pt_obj.azimuth[0])
+        phimin = np.nan_to_num(pt_obj.phimin)
+        phimax = np.nan_to_num(pt_obj.phimax)
+        eangle = np.nan_to_num(pt_obj.azimuth)
 
         color_array = self.get_pt_color_array(pt_obj)
         bounds = np.arange(
@@ -269,23 +364,23 @@ class PlotPhaseTensorMaps(PlotBase):
             )
         )
 
-        if new_Tipper is not None:
+        if t_obj is not None:
             if "r" in self.plot_tipper == "yri":
 
-                if new_Tipper.mag_real[0] <= self.arrow_threshold:
+                if t_obj.mag_real[0] <= self.arrow_threshold:
                     txr = (
-                        new_Tipper.mag_real[0]
+                        t_obj.mag_real[0]
                         * self.arrow_size
                         * np.sin(
-                            (new_Tipper.angle_real[0]) * np.pi / 180
+                            (t_obj.angle_real[0]) * np.pi / 180
                             + self.arrow_direction * np.pi
                         )
                     )
                     tyr = (
-                        new_Tipper.mag_real[0]
+                        t_obj.mag_real[0]
                         * self.arrow_size
                         * np.cos(
-                            (new_Tipper.angle_real[0]) * np.pi / 180
+                            (t_obj.angle_real[0]) * np.pi / 180
                             + self.arrow_direction * np.pi
                         )
                     )
@@ -306,20 +401,20 @@ class PlotPhaseTensorMaps(PlotBase):
                     pass
             # plot imaginary tipper
             if "i" in self.plot_tipper:
-                if new_Tipper.mag_imag[0] <= self.arrow_threshold:
+                if t_obj.mag_imag[0] <= self.arrow_threshold:
                     txi = (
-                        new_Tipper.mag_imag[0]
+                        t_obj.mag_imag[0]
                         * self.arrow_size
                         * np.sin(
-                            (new_Tipper.angle_imag[0]) * np.pi / 180
+                            (t_obj.angle_imag[0]) * np.pi / 180
                             + self.arrow_direction * np.pi
                         )
                     )
                     tyi = (
-                        new_Tipper.mag_imag[0]
+                        t_obj.mag_imag[0]
                         * self.arrow_size
                         * np.cos(
-                            (new_Tipper.angle_imag[0]) * np.pi / 180
+                            (t_obj.angle_imag[0]) * np.pi / 180
                             + self.arrow_direction * np.pi
                         )
                     )

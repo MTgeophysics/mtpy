@@ -26,6 +26,7 @@ from mtpy.imaging import (
     PlotStations,
     PlotMultipleResponses,
     PlotResidualPTMaps,
+    PlotPhaseTensorMaps,
 )
 
 from mth5.mth5 import MTH5
