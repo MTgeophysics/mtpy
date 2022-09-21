@@ -85,6 +85,9 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         self.station_id = [0, 4]
         self.y_step = 4
         self.x_step = 1
+        self.profile_vector = None
+        self.profile_angle = None
+        self.profile_line = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -120,23 +123,22 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         # use the one with the lower standard deviation
         profile1 = stats.linregress(east, north)
         profile2 = stats.linregress(north, east)
-        profile_line = profile1[:2]
         # if the profile is rather E=E(N), the parameters have to converted
         # into N=N(E) form:
         if profile2.stderr < profile1.stderr:
-            profile_line = (
+            self.profile_line = (
                 1.0 / profile2.slope,
                 -profile2.intercept / profile2.slope,
             )
         else:
-            profile_line = profile1[:2]
-        # profile_line = sp.polyfit(lo_easts, lo_norths, 1)
-        profile_angle = (90 - np.rad2deg(np.arctan(profile_line.slope))) % 180
+            self.profile_line = profile1[:2]
 
-        profile_vector = np.array([1, profile_line.slope])
-        profile_vector /= np.linalg.norm(profile_vector)
+        self.profile_angle = (
+            90 - np.rad2deg(np.arctan(self.profile_line.slope))
+        ) % 180
 
-        return profile_line, profile_vector, profile_angle
+        self.profile_vector = np.array([1, self.profile_line.slope])
+        self.profile_vector /= np.linalg.norm(self.profile_vector)
 
     def _get_patch(self, tf):
         """
@@ -153,29 +155,38 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         t_obj = tf.Tipper
 
         station_vector = np.array([tf.east, tf.north - self.profile_line[1]])
-        plot_x = np.linalg.norm(
-            np.dot(self.profile_vector, station_vector) * profile_vector
+        plot_x = (
+            np.linalg.norm(
+                np.dot(self.profile_vector, station_vector)
+                * self.profile_vector
+            )
+            * self.x_stretch
         )
         # --> set local variables
 
         color_array = self.get_pt_color_array(pt_obj)
-        for ff in pt.freq:
-
+        for index, ff in enumerate(pt_obj.freq):
+            plot_y = np.log10(ff) * self.y_stretch
             # --> get ellipse properties
             # if the ellipse size is not physically correct make it a dot
-            if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
+            if (
+                pt_obj.phimax[index] == 0
+                or pt_obj.phimax[index] > 100
+                or pt_obj.phimin[index] == 0
+                or pt_obj.phimin[index] > 100
+            ):
                 eheight = 0.0000001
                 ewidth = 0.0000001
             else:
-                scaling = self.ellipse_size / phimax
-                eheight = phimin * scaling
-                ewidth = phimax * scaling
+                scaling = self.ellipse_size / self.pt_obj.phimax.max()
+                eheight = self.pt_obj.phimin[index] * scaling
+                ewidth = self.pt_obj.phimax[index] * scaling
             # make an ellipse
             ellipd = patches.Ellipse(
-                (plotx, ploty),
+                (plot_x, plot_y),
                 width=ewidth,
                 height=eheight,
-                angle=90 - eangle,
+                angle=90 - self.pt_obj.azimuth[index],
                 lw=self.lw,
             )
 
@@ -187,9 +198,11 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                     self.ellipse_cmap,
                     self.ellipse_range[0],
                     self.ellipse_range[1],
-                    bounds=bounds,
+                    bounds=self.ellipse_cmap_bounds,
                 )
             )
+
+            self.ax.add_artist(ellipd)
 
             if t_obj is not None:
                 if "r" in self.plot_tipper == "yri":
@@ -213,8 +226,8 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                         )
 
                         self.ax.arrow(
-                            plotx,
-                            ploty,
+                            plot_x * self.x_stretch,
+                            plot_y * self.y_stretch,
                             txr,
                             tyr,
                             width=self.arrow_lw,
@@ -247,8 +260,8 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                         )
 
                         self.ax.arrow(
-                            plotx,
-                            ploty,
+                            plot_x,
+                            plot_y,
                             txi,
                             tyi,
                             width=self.arrow_lw,
@@ -258,7 +271,8 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                             head_width=self.arrow_head_width,
                             head_length=self.arrow_head_length,
                         )
-        return ellipd, plotx, ploty
+
+        return plot_x, tf.tf_id[self.station_id[0] : self.station_id[1]]
 
     def plot(self):
         """
@@ -273,240 +287,11 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         self.fig.clf()
         self.ax = self.fig.add_subplot(1, 1, 1, aspect="equal")
 
-        (
-            self.profile_line,
-            self.projection_vector,
-            self.projection_angle,
-        ) = self._get_profile_line()
+        self._get_profile_line()
 
-        # create empty lists to put things into
-        self.station_list = []
-        self.offset_list = []
-        minlist = []
-        maxlist = []
-        plot_period_list = None
+        for tf in self.tf_list:
+            station, offset = self._get_path(tf)
 
-        # set local parameters with shorter names
-        es = self.ellipse_size
-        ck = self.ellipse_colorby
-        cmap = self.ellipse_cmap
-        ckmin = float(self.ellipse_range[0])
-        ckmax = float(self.ellipse_range[1])
-        try:
-            ckstep = float(self.ellipse_range[2])
-        except IndexError:
-            ckstep = 3
-        nseg = float((ckmax - ckmin) / (2 * ckstep))
-
-        if cmap == "mt_seg_bl2wh2rd":
-            bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-        # plot phase tensor ellipses
-        for ii, mt in enumerate(self.tf_list):
-            self.station_list.append(
-                mt.station[self.station_id[0] : self.station_id[1]]
-            )
-
-            # set the an arbitrary origin to compare distance to all other
-            # stations.
-            if ii == 0:
-                east0 = mt.lon
-                north0 = mt.lat
-                offset = 0.0
-            else:
-                east = mt.lon
-                north = mt.lat
-                if self.linedir == "ew":
-                    if east0 < east:
-                        offset = np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    elif east0 > east:
-                        offset = -1 * np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    else:
-                        offset = 0
-                elif self.linedir == "ns":
-                    if north0 < north:
-                        offset = np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    elif north0 > north:
-                        offset = -1 * np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    else:
-                        offset = 0
-            self.offset_list.append(offset)
-
-            # get phase tensor elements and flip so the top is small
-            # periods/high frequency
-            pt = mt.pt
-
-            period_list = mt.period[::-1]
-            phimax = pt.phimax[::-1]
-            phimin = pt.phimin[::-1]
-            azimuth = pt.azimuth[::-1]
-
-            # if there are induction arrows, flip them as pt
-            if "y" in self.plot_tipper:
-                tip = mt.Tipper
-                if tip.mag_real is not None:
-                    tmr = tip.mag_real[::-1]
-                    tmi = tip.mag_imag[::-1]
-                    tar = tip.angle_real[::-1]
-                    tai = tip.angle_imag[::-1]
-                else:
-                    tmr = np.zeros(len(mt.period))
-                    tmi = np.zeros(len(mt.period))
-                    tar = np.zeros(len(mt.period))
-                    tai = np.zeros(len(mt.period))
-                aheight = self.arrow_head_length
-                awidth = self.arrow_head_width
-                alw = self.arrow_lw
-
-            color_array = self.get_pt_color_array(pt)[::-1]
-
-            # get the number of periods
-            n = len(period_list)
-
-            if ii == 0:
-                plot_period_list = period_list
-            else:
-                if n > len(plot_period_list):
-                    plot_period_list = period_list
-            # get min and max of the color array for scaling later
-            minlist.append(min(color_array))
-            maxlist.append(max(color_array))
-
-            for jj, ff in enumerate(period_list):
-
-                # make sure the ellipses will be visable
-                eheight = phimin[jj] / phimax[jj] * es
-                ewidth = phimax[jj] / phimax[jj] * es
-
-                # create an ellipse scaled by phimin and phimax and orient
-                # the ellipse so that north is up and east is right
-                # Ellipse patch assumes the angle measure counterclockwise
-                # therefore need to multiply the azimuth by -1 because
-                # it is measured clockwise positive and subtract 90 to put
-                # it in a coordinate system of N=0, E=90
-                ellipd = patches.Ellipse(
-                    (offset * self.xstretch, np.log10(ff) * self.ystretch),
-                    width=ewidth,
-                    height=eheight,
-                    edgecolor="k",
-                    lw=0.5,
-                    angle=90 - azimuth[jj],
-                )
-
-                # get ellipse color
-                if cmap.find("seg") > 0:
-                    ellipd.set_facecolor(
-                        mtcl.get_plot_color(
-                            color_array[jj],
-                            self.ellipse_colorby,
-                            cmap,
-                            ckmin,
-                            ckmax,
-                            bounds=bounds,
-                        )
-                    )
-                else:
-                    ellipd.set_facecolor(
-                        mtcl.get_plot_color(
-                            color_array[jj],
-                            self.ellipse_colorby,
-                            cmap,
-                            ckmin,
-                            ckmax,
-                        )
-                    )
-                # == =add the ellipse to the plot == ========
-                self.ax.add_artist(ellipd)
-
-                # --------- Add induction arrows if desired -------------------
-                if self.plot_tipper.find("y") == 0:
-
-                    # --> plot real tipper
-                    if self.plot_tipper == "yri" or self.plot_tipper == "yr":
-                        txr = (
-                            tmr[jj]
-                            * np.sin(
-                                tar[jj] * np.pi / 180
-                                + np.pi * self.arrow_direction
-                            )
-                            * self.arrow_size
-                        )
-                        tyr = (
-                            -tmr[jj]
-                            * np.cos(
-                                tar[jj] * np.pi / 180
-                                + np.pi * self.arrow_direction
-                            )
-                            * self.arrow_size
-                        )
-
-                        maxlength = np.sqrt(
-                            (txr / self.arrow_size) ** 2
-                            + (tyr / self.arrow_size) ** 2
-                        )
-
-                        if maxlength > self.arrow_threshold:
-                            pass
-                        elif (txr > 0) or (tyr > 0):
-                            #                        else:
-                            self.ax.arrow(
-                                offset * self.xstretch,
-                                np.log10(ff) * self.ystretch,
-                                txr,
-                                tyr,
-                                lw=alw,
-                                facecolor=self.arrow_color_real,
-                                edgecolor=self.arrow_color_real,
-                                length_includes_head=False,
-                                head_width=awidth,
-                                head_length=aheight,
-                            )
-                    # --> plot imaginary tipper
-                    if self.plot_tipper == "yri" or self.plot_tipper == "yi":
-                        txi = (
-                            tmi[jj]
-                            * np.sin(
-                                tai[jj] * np.pi / 180
-                                + np.pi * self.arrow_direction
-                            )
-                            * self.arrow_size
-                        )
-                        tyi = (
-                            -tmi[jj]
-                            * np.cos(
-                                tai[jj] * np.pi / 180
-                                + np.pi * self.arrow_direction
-                            )
-                            * self.arrow_size
-                        )
-
-                        maxlength = np.sqrt(
-                            (txi / self.arrow_size) ** 2
-                            + (tyi / self.arrow_size) ** 2
-                        )
-                        if maxlength > self.arrow_threshold:
-                            pass
-                        #                        else:
-                        elif (txr > 0) or (tyr > 0):
-                            self.ax.arrow(
-                                offset * self.xstretch,
-                                np.log10(ff) * self.ystretch,
-                                txi,
-                                tyi,
-                                lw=alw,
-                                facecolor=self.arrow_color_imag,
-                                edgecolor=self.arrow_color_imag,
-                                length_includes_head=False,
-                                head_width=awidth,
-                                head_length=aheight,
-                            )
         # --> Set plot parameters
         self._plot_period_list = plot_period_list
         n = len(plot_period_list)
