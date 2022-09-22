@@ -30,6 +30,7 @@ from mtpy.imaging import (
     PlotPhaseTensorPseudoSection,
     PlotStrike,
     PlotPenetrationDepth1D,
+    PlotPenetrationDepthMap,
 )
 
 from mth5.mth5 import MTH5
@@ -731,11 +732,19 @@ class MTCollection:
 
         """
 
-        if isinstance(tf_object, (list, tuple)):
-            return_list = []
-            for ii, tf in enumerate(tf_object, 1):
-                return_list.append(
-                    PlotPenetrationDepth1D(tf, fig_num=ii, **kwargs)
-                )
-        else:
-            return PlotPenetrationDepth1D(tf_object, **kwargs)
+        return PlotPenetrationDepth1D(tf_object, **kwargs)
+
+    def plot_penetration_depth_map(self, **kwargs):
+        """
+        Plot Penetration depth in map view for a single period
+
+        :param tf_list: DESCRIPTION
+        :type tf_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = self.get_tf_list()
+
+        return PlotPenetrationDepthMap(tf_list, **kwargs)

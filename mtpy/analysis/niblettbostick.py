@@ -178,22 +178,24 @@ def calculate_depth_of_investigation(z_object):
     if not isinstance(z_object, Z):
         raise TypeError("Input must be a mtpy.core.Z object")
 
-    dimensions = geometry.dimensionality(z_object=z_object)
-    angles = geometry.strike_angle(z_object=z_object)
+    if z_object.z.shape[0] > 1:
 
-    # reduce actual Z by the 3D layers:
-    angles_2d = np.nan_to_num(angles[np.where(dimensions != 3)][:, 0])
-    periods_2d = z_object.period[np.where(dimensions != 3)]
+        dimensions = geometry.dimensionality(z_object=z_object)
+        angles = geometry.strike_angle(z_object=z_object)
 
-    # interperpolate strike angle onto all periods
-    # make a function for strike using only 2d angles
-    strike_interp = spi.interp1d(
-        periods_2d, angles_2d, bounds_error=False, fill_value=0
-    )
-    strike_angles = strike_interp(z_object.period)
+        # reduce actual Z by the 3D layers:
+        angles_2d = np.nan_to_num(angles[np.where(dimensions != 3)][:, 0])
+        periods_2d = z_object.period[np.where(dimensions != 3)]
 
-    # rotate z to be along the interpolated strike angles
-    z_object.rotate(strike_angles)
+        # interperpolate strike angle onto all periods
+        # make a function for strike using only 2d angles
+        strike_interp = spi.interp1d(
+            periods_2d, angles_2d, bounds_error=False, fill_value=0
+        )
+        strike_angles = strike_interp(z_object.period)
+
+        # rotate z to be along the interpolated strike angles
+        z_object.rotate(strike_angles)
 
     depth_array = np.zeros(
         z_object.period.shape[0],
@@ -221,11 +223,17 @@ def calculate_depth_of_investigation(z_object):
             res, z_object.period
         )
 
-        depth_array[f"resistivity_{comp}"][
-            :
-        ] = calculate_niblett_bostick_resistivity_derivatives(
-            res, z_object.period
-        )
+        if z_object.z.shape[0] > 1:
+            depth_array[f"resistivity_{comp}"][
+                :
+            ] = calculate_niblett_bostick_resistivity_derivatives(
+                res, z_object.period
+            )
+        else:
+            phase = getattr(z_object, f"phase_{comp}")
+            depth_array[f"resistivity_{comp}"][
+                :
+            ] = calculate_niblett_bostick_resistivity_weidelt(res, phase)
 
     for x in ["depth", "resistivity"]:
 
