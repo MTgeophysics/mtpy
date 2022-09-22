@@ -22,8 +22,7 @@ Updated 2022-09 JP
 # =============================================================================
 # Imports
 # =============================================================================
-import copy
-
+import cmath
 import numpy as np
 import scipy.interpolate as spi
 
@@ -38,7 +37,7 @@ NB_SCALE_PARAMETER = 2.0 * np.pi * MU0
 
 def calculate_niblett_bostick_depth(resistivity, period):
     """
-    Use the Niblett-Bostick approximation for depth of penetration
+    Use the Niblett-Bostick approximation for depth of penetration in meters
 
     :param resistivity: DESCRIPTION
     :type resistivity: TYPE
@@ -114,7 +113,7 @@ def calculate_depth_sensitivity(depth, period, rho=100):
     # same as delta=sqrt(2/mu0*sigma*omega)
     p = 1 / np.real(k)  # It is the
 
-    zp = depth * p  # zp is normalized Z
+    zp = depth / 1000 * p  # zp is normalized Z
     sensitivity = np.abs(-k * zp * np.exp(-2 * k * zp))
 
     return sensitivity
@@ -149,11 +148,6 @@ def calculate_depth_of_investigation(z_object):
     -------------
         *z_object* : mtpy.core.z object
 
-        *z_array* : np.ndarray [num_periods, 2, 2]
-
-        *periods* : np.ndarray(num_periods)
-                   only input if input z_array, otherwise periods are extracted
-                   from z_object.freq
 
     Returns
     ------------------
@@ -208,12 +202,13 @@ def calculate_depth_of_investigation(z_object):
             ("depth_xy", float),
             ("depth_yx", float),
             ("depth_det", float),
-            ("depth_xy_sensitivity", float),
-            ("depth_yx_sensitivity", float),
-            ("depth_det_sensitivity", float),
+            ("depth_min", float),
+            ("depth_max", float),
             ("resistivity_xy", float),
             ("resistivity_yx", float),
             ("resistivity_det", float),
+            ("resistivity_min", float),
+            ("resistivity_max", float),
         ],
     )
 
@@ -232,10 +227,28 @@ def calculate_depth_of_investigation(z_object):
             res, z_object.period
         )
 
-        depth_array[f"depth_{comp}_sensitivity"][
-            :
-        ] = calculate_depth_sensitivity(
-            depth_array[f"depth_{comp}"], z_object.period
+    for x in ["depth", "resistivity"]:
+
+        depth_array[f"{x}_min"] = np.nanmin(
+            np.array(
+                [
+                    depth_array[f"{x}_det"],
+                    depth_array[f"{x}_xy"],
+                    depth_array[f"{x}_yx"],
+                ]
+            ),
+            axis=0,
+        )
+
+        depth_array[f"{x}_max"] = np.nanmax(
+            np.array(
+                [
+                    depth_array[f"{x}_det"],
+                    depth_array[f"{x}_xy"],
+                    depth_array[f"{x}_yx"],
+                ]
+            ),
+            axis=0,
         )
 
     return depth_array

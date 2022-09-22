@@ -10,7 +10,11 @@ Created on Thu May 30 17:07:50 2013
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
-from mtpy.imaging.mtplot_tools import PlotBase, plot_pt_lateral, get_log_tick_labels
+from mtpy.imaging.mtplot_tools import (
+    PlotBase,
+    plot_pt_lateral,
+    get_log_tick_labels,
+)
 
 # ==============================================================================
 
@@ -47,15 +51,6 @@ class PlotPhaseTensor(PlotBase):
         if self.show_plot:
             self.plot()
 
-    def _set_subplot_parameters(self):
-        plt.rcParams["font.size"] = self.font_size
-        plt.rcParams["figure.subplot.left"] = self.subplot_left
-        plt.rcParams["figure.subplot.right"] = self.subplot_right
-        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
-        plt.rcParams["figure.subplot.top"] = self.subplot_top
-        plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
-        plt.rcParams["figure.subplot.hspace"] = self.subplot_hspace
-
     def _rotate_pt(self, rotation_angle):
         """
 
@@ -85,6 +80,7 @@ class PlotPhaseTensor(PlotBase):
         # --> create plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
+        self._set_subplot_params()
         self._setup_subplots()
 
         # get phase tensor instance
@@ -103,7 +99,9 @@ class PlotPhaseTensor(PlotBase):
 
         # ----set axes properties-----------------------------------------------
         # --> set tick labels and limits
-        self.ax_pt.xaxis.set_major_locator(MultipleLocator(1 * self.ellipse_spacing))
+        self.ax_pt.xaxis.set_major_locator(
+            MultipleLocator(1 * self.ellipse_spacing)
+        )
 
         self.ax_pt.set_xlim(
             np.log10(self.x_limits[0]) * self.ellipse_spacing,
@@ -120,7 +118,9 @@ class PlotPhaseTensor(PlotBase):
             )
         )
 
-        tklabels, xticks = get_log_tick_labels(self.ax_pt, spacing=self.ellipse_spacing)
+        tklabels, xticks = get_log_tick_labels(
+            self.ax_pt, spacing=self.ellipse_spacing
+        )
 
         self.ax_pt.set_xticks(xticks)
         self.ax_pt.set_xticklabels(tklabels, fontdict={"size": self.font_size})
@@ -303,7 +303,9 @@ class PlotPhaseTensor(PlotBase):
 
         self.ax_skew.set_xscale("log", nonpositive="clip")
         self.ax_skew.set_yscale("linear")
-        self.ax_skew.yaxis.set_major_locator(MultipleLocator(self.ellipse_range[2]))
+        self.ax_skew.yaxis.set_major_locator(
+            MultipleLocator(self.ellipse_range[2])
+        )
 
         if self.skew_limits is None:
             self.skew_limits = (-10, 10)
