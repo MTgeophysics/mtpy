@@ -25,7 +25,7 @@ import mtpy.utils.exceptions as MTex
 # define uncertainty for differences between time steps
 epsilon = 1e-9
 # magnetic permeability in free space in H/m (=Vs/Am)
-mu0 = 4e-7 * math.pi
+mu0 = 4e-7 * np.pi
 
 # =================================================================
 
@@ -34,7 +34,9 @@ def centre_point(xarray, yarray):
     """
     get the centre point of arrays of x and y values
     """
-    return (xarray.max() + xarray.min()) / 2.0, (yarray.max() + yarray.min()) / 2.0
+    return (xarray.max() + xarray.min()) / 2.0, (
+        yarray.max() + yarray.min()
+    ) / 2.0
 
 
 def roundsf(number, sf):
@@ -52,12 +54,12 @@ def get_period_list(
     period_min, period_max, periods_per_decade, include_outside_range=True
 ):
     """
-    get a list of values (e.g. periods), evenly spaced in log space and 
+    get a list of values (e.g. periods), evenly spaced in log space and
     including values on multiples of 10
-    
+
     :returns:
         numpy array containing list of values
-    
+
     :inputs:
         period_min = minimum period
         period_max = maximum period
@@ -66,7 +68,7 @@ def get_period_list(
                                 list just inside or just outside the bounds
                                 specified by period_min and period_max
                                 default True
-    
+
     """
 
     log_period_min = np.log10(period_min)
@@ -77,7 +79,9 @@ def get_period_list(
         # list of periods, around the minimum period, that will be present in specified
         # periods per decade
         aligned_logperiods_min = np.linspace(
-            np.floor(log_period_min), np.ceil(log_period_min), periods_per_decade + 1
+            np.floor(log_period_min),
+            np.ceil(log_period_min),
+            periods_per_decade + 1,
         )
         lpmin_diff = log_period_min - aligned_logperiods_min
         # index of starting period, smallest value > 0
@@ -93,7 +97,9 @@ def get_period_list(
         # list of periods, around the maximum period, that will be present in specified
         # periods per decade
         aligned_logperiods_max = np.linspace(
-            np.floor(log_period_max), np.ceil(log_period_max), periods_per_decade + 1
+            np.floor(log_period_max),
+            np.ceil(log_period_max),
+            periods_per_decade + 1,
         )
         lpmax_diff = log_period_max - aligned_logperiods_max
         # index of starting period, smallest value > 0
@@ -117,9 +123,9 @@ def nearest_index(val, array):
     find the index of the nearest value in the array
     :param val: the value to search for
     :param array: the array to search in
-    
+
     :return: index: integer describing position of nearest value in array
-    
+
     """
     # absolute difference between value and array
     diff = np.abs(array - val)
@@ -127,7 +133,9 @@ def nearest_index(val, array):
     return np.where(diff == min(diff))[0][0]
 
 
-def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor=0.999):
+def make_log_increasing_array(
+    z1_layer, target_depth, n_layers, increment_factor=0.999
+):
     """
     create depth array with log increasing cells, down to target depth,
     inputs are z1_layer thickness, target depth, number of layers (n_layers)
@@ -136,7 +144,9 @@ def make_log_increasing_array(z1_layer, target_depth, n_layers, increment_factor
     # make initial guess for maximum cell thickness
     max_cell_thickness = target_depth
     # make initial guess for log_z
-    log_z = np.logspace(np.log10(z1_layer), np.log10(max_cell_thickness), num=n_layers)
+    log_z = np.logspace(
+        np.log10(z1_layer), np.log10(max_cell_thickness), num=n_layers
+    )
     counter = 0
 
     while np.sum(log_z) > target_depth:
@@ -201,7 +211,9 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
                         # each entry has 4 summands
 
                         err += np.abs(
-                            -inv_matrix[i, k] * inv_matrix[l, j] * inmatrix_err[k, l]
+                            -inv_matrix[i, k]
+                            * inv_matrix[l, j]
+                            * inmatrix_err[k, l]
                         )
 
                 inv_matrix_err[i, j] = err
@@ -211,22 +223,24 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
 
 def rhophi2z(rho, phi, freq):
     """
-        Convert impedance-style information given in Rho/Phi format into 
-        complex valued Z.
+    Convert impedance-style information given in Rho/Phi format into
+    complex valued Z.
 
-        Input:
-        rho - 2x2 array (real) - in Ohm m
-        phi - 2x2 array (real) - in degrees
-        freq - scalar - frequency in Hz
+    Input:
+    rho - 2x2 array (real) - in Ohm m
+    phi - 2x2 array (real) - in degrees
+    freq - scalar - frequency in Hz
 
-        Output:
-        Z - 2x2 array (complex)
+    Output:
+    Z - 2x2 array (complex)
     """
 
     try:
         if rho.shape != (2, 2) or phi.shape != (2, 2):
             raise
-        if not (rho.dtype in ["float", "int"] and phi.dtype in ["float", "int"]):
+        if not (
+            rho.dtype in ["float", "int"] and phi.dtype in ["float", "int"]
+        ):
             raise
 
     except:
@@ -243,7 +257,9 @@ def rhophi2z(rho, phi, freq):
     return z
 
 
-def compute_determinant_error(z_array, z_err_array, method="theoretical", repeats=1000):
+def compute_determinant_error(
+    z_array, z_err_array, method="theoretical", repeats=1000
+):
     """
     compute the error of the determinant of z using a stochastic method
     seed random z arrays with a normal distribution around the input array
@@ -252,18 +268,20 @@ def compute_determinant_error(z_array, z_err_array, method="theoretical", repeat
     :param z_err_array: impedance error array containing real values,
                         in MT we assume the real and imag errors are the same
     :param method: method to use, theoretical calculation or stochastic
-    
-    :return: error: array of real values with same shape as z_err_array 
+
+    :return: error: array of real values with same shape as z_err_array
                     representing the error in the determinant of Z
-    :return: error_sqrt: array of real values with same shape as z_err_array 
+    :return: error_sqrt: array of real values with same shape as z_err_array
                     representing the error in the (determinant of Z)**0.5
-    
+
     """
     if method == "stochatic":
         arraylist = []
 
         for r in range(repeats):
-            errmag = np.random.normal(loc=0, scale=z_err_array, size=z_array.shape)
+            errmag = np.random.normal(
+                loc=0, scale=z_err_array, size=z_array.shape
+            )
             arraylist = np.append(arraylist, z_array + errmag * (1.0 + 1j))
 
         arraylist = arraylist.reshape(repeats, z_array.shape[0], 2, 2)
@@ -283,17 +301,17 @@ def compute_determinant_error(z_array, z_err_array, method="theoretical", repeat
 
 def propagate_error_polar2rect(r, r_error, phi, phi_error):
     """
-        Find error estimations for the transformation from polar to cartesian
-        coordinates.
+    Find error estimations for the transformation from polar to cartesian
+    coordinates.
 
-        Uncertainties in polar representation define a section of an annulus.
-        Find the 4 corners of this section and additionally the outer boundary
-        point, which is defined by phi = phi0, rho = rho0 + sigma rho.
-        The cartesian "box" defining the uncertainties in x,y is the outer
-        bound around the annulus section, defined by the four outermost
-        points. So check the four corners as well as the outer boundary edge
-        of the section to find the extrema in x znd y. These give you the
-        sigma_x/y. 
+    Uncertainties in polar representation define a section of an annulus.
+    Find the 4 corners of this section and additionally the outer boundary
+    point, which is defined by phi = phi0, rho = rho0 + sigma rho.
+    The cartesian "box" defining the uncertainties in x,y is the outer
+    bound around the annulus section, defined by the four outermost
+    points. So check the four corners as well as the outer boundary edge
+    of the section to find the extrema in x znd y. These give you the
+    sigma_x/y.
 
     """
 
@@ -314,7 +332,10 @@ def propagate_error_polar2rect(r, r_error, phi, phi_error):
             np.real(cmath.rect(r - r_error, phi + phi_error)),
             np.imag(cmath.rect(r - r_error, phi + phi_error)),
         ),
-        (np.real(cmath.rect(r + r_error, phi)), np.imag(cmath.rect(r + r_error, phi))),
+        (
+            np.real(cmath.rect(r + r_error, phi)),
+            np.imag(cmath.rect(r + r_error, phi)),
+        ),
     ]
 
     lo_x = [i[0] for i in corners]
@@ -390,23 +411,23 @@ def propagate_error_rect2polar(x, x_error, y, y_error):
 def z_error2r_phi_error(z_real, z_imag, error):
     """
     Error estimation from rectangular to polar coordinates.
-    
-    By standard error propagation, relative error in resistivity is 
-    2*relative error in z amplitude. 
-    
-    Uncertainty in phase (in degrees) is computed by defining a circle around 
+
+    By standard error propagation, relative error in resistivity is
+    2*relative error in z amplitude.
+
+    Uncertainty in phase (in degrees) is computed by defining a circle around
     the z vector in the complex plane. The uncertainty is the absolute angle
     between the vector to (x,y) and the vector between the origin and the
     tangent to the circle.
-    
+
     :returns:
         tuple containing relative error in resistivity, absolute error in phase
-    
+
     :inputs:
         z_real = real component of z (real number or array)
         z_imag = imaginary component of z (real number or array)
         error = absolute error in z (real number or array)
-    
+
     """
 
     z_amp = np.abs(z_real + 1j * z_imag)
@@ -436,22 +457,22 @@ def z_error2r_phi_error(z_real, z_imag, error):
 
 def old_z_error2r_phi_error(x, x_error, y, y_error):
     """
-    Error estimation from rect to polar, but with small variation needed for 
+    Error estimation from rect to polar, but with small variation needed for
     MT: the so called 'relative phase error' is NOT the relative phase error,
     but the ABSOLUTE uncertainty in the angle that corresponds to the relative
-    error in the amplitude. 
+    error in the amplitude.
 
-    So, here we calculate the transformation from rect to polar coordinates, 
-    esp. the absolute/length of the value. Then we find the uncertainty in 
+    So, here we calculate the transformation from rect to polar coordinates,
+    esp. the absolute/length of the value. Then we find the uncertainty in
     this length and calculate the relative error of this. The relative error of
-    the resistivity will be double this value, because it's calculated by taking 
+    the resistivity will be double this value, because it's calculated by taking
     the square of this length.
-    
-    The relative uncertainty in length defines a circle around (x,y) 
-    (APPROXIMATION!). The uncertainty in phi is now the absolute of the 
+
+    The relative uncertainty in length defines a circle around (x,y)
+    (APPROXIMATION!). The uncertainty in phi is now the absolute of the
     angle beween the vector to (x,y) and the origin-vector tangential to the
     circle.
-    BUT....since the phase angle uncertainty is interpreted with regard to 
+    BUT....since the phase angle uncertainty is interpreted with regard to
     the resistivity and not the Z-amplitude, we have to look at the square of
     the length, i.e. the relative error in question has to be halfed to get
     the correct relationship between resistivity and phase errors!!.
@@ -518,25 +539,25 @@ def old_z_error2r_phi_error(x, x_error, y, y_error):
 
 def rotate_matrix_with_errors(in_matrix, angle, error=None):
     """
-    
+
     Rotate a matrix including errors clockwise given an angle in degrees.
-    
-    :param in_matrix: A n x 2 x 2  matrix to rotate 
+
+    :param in_matrix: A n x 2 x 2  matrix to rotate
     :type inmatrix: np.ndarray
-    
+
     :param angle: Angle to rotate by assuming clockwise positive from
                  0 = north
     :type angle: float
-    
+
     :param error: A n x 2 x 2 matrix of associated errors,
                         defaults to None
     :type error: np.ndarray, optional
-    
+
     :raises MTex: If input array is incorrect
-    
+
     :return: rotated matrix
     :rtype: np.ndarray
-    
+
     :return: rotated matrix errors
     :rtype: np.ndarray
 
@@ -570,28 +591,28 @@ def rotate_matrix_with_errors(in_matrix, angle, error=None):
 
         # standard propagation of errors:
         err_mat[0, 0] = np.sqrt(
-            (cphi ** 2 * err_orig[0, 0]) ** 2
+            (cphi**2 * err_orig[0, 0]) ** 2
             + (cphi * sphi * err_orig[0, 1]) ** 2
             + (cphi * sphi * err_orig[1, 0]) ** 2
-            + (sphi ** 2 * err_orig[1, 1]) ** 2
+            + (sphi**2 * err_orig[1, 1]) ** 2
         )
         err_mat[0, 1] = np.sqrt(
-            (cphi ** 2 * err_orig[0, 1]) ** 2
+            (cphi**2 * err_orig[0, 1]) ** 2
             + (cphi * sphi * err_orig[1, 1]) ** 2
             + (cphi * sphi * err_orig[0, 0]) ** 2
-            + (sphi ** 2 * err_orig[1, 0]) ** 2
+            + (sphi**2 * err_orig[1, 0]) ** 2
         )
         err_mat[1, 0] = np.sqrt(
-            (cphi ** 2 * err_orig[1, 0]) ** 2
+            (cphi**2 * err_orig[1, 0]) ** 2
             + (cphi * sphi * err_orig[1, 1]) ** 2
             + (cphi * sphi * err_orig[0, 0]) ** 2
-            + (sphi ** 2 * err_orig[0, 1]) ** 2
+            + (sphi**2 * err_orig[0, 1]) ** 2
         )
         err_mat[1, 1] = np.sqrt(
-            (cphi ** 2 * err_orig[1, 1]) ** 2
+            (cphi**2 * err_orig[1, 1]) ** 2
             + (cphi * sphi * err_orig[0, 1]) ** 2
             + (cphi * sphi * err_orig[1, 0]) ** 2
-            + (sphi ** 2 * err_orig[0, 0]) ** 2
+            + (sphi**2 * err_orig[0, 0]) ** 2
         )
 
     return rotated_matrix, err_mat
@@ -599,25 +620,25 @@ def rotate_matrix_with_errors(in_matrix, angle, error=None):
 
 def rotate_vector_with_errors(in_vector, angle, error=None):
     """
-    
+
     Rotate a vector including errors clockwise given an angle in degrees.
-    
-    :param in_matrix: A n x 1 x 2  vector to rotate 
+
+    :param in_matrix: A n x 1 x 2  vector to rotate
     :type invector: np.ndarray
-    
+
     :param angle: Angle to rotate by assuming clockwise positive from
                  0 = north
     :type angle: float
-    
+
     :param error: A n x 1 x 2 vector of associated errors,
                         defaults to None
     :type error: np.ndarray, optional
-    
+
     :raises MTex: If input array is incorrect
-    
+
     :return: rotated vector
     :rtype: np.ndarray
-    
+
     :return: rotated vector errors
     :rtype: np.ndarray
 
@@ -666,7 +687,9 @@ def multiplymatrices_incl_errors(
 ):
 
     if inmatrix1 is None or inmatrix2 is None:
-        raise MTex.MTpyError_input_arguments("ERROR - two 2x2 arrays needed as input")
+        raise MTex.MTpyError_input_arguments(
+            "ERROR - two 2x2 arrays needed as input"
+        )
 
     if inmatrix1.shape != inmatrix2.shape:
         raise MTex.MTpyError_input_arguments(
@@ -714,11 +737,11 @@ def reorient_data2D(x_values, y_values, x_sensor_angle=0, y_sensor_angle=90):
     Input:
     - x-values - Numpy array
     - y-values - Numpy array
-    Note: same length for both! - If not, the shorter length is taken 
+    Note: same length for both! - If not, the shorter length is taken
 
     Optional:
-    - Angle of the x-sensor - measured in degrees, clockwise from North (0) 
-    - Angle of the y-sensor - measured in degrees, clockwise from North (0) 
+    - Angle of the x-sensor - measured in degrees, clockwise from North (0)
+    - Angle of the y-sensor - measured in degrees, clockwise from North (0)
 
     Output:
     - corrected x-values (North)

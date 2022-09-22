@@ -4,6 +4,11 @@ from .mtpy_decorator import gdal_data_check
 import os, re
 import numpy as np
 
+### constants magnetic permeability
+MU0 = 4e-7 * np.pi
+
+EPSILON = epsilon = 1e-9
+
 HAS_GDAL = gdal_data_check(None)._gdal_data_found
 NEW_GDAL = False
 
