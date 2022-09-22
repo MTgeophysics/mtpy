@@ -835,7 +835,7 @@ class PlotStrike(PlotBase):
             )  # works in 2.0.2 not 2.1.0
 
             # place the correct label at the cardinal directions
-            axh.xaxis.set_ticklabels(
+            axh.set_xticklabels(
                 ["", "", "", "", "", "", "", "", "", "", "", "", ""]
             )
 

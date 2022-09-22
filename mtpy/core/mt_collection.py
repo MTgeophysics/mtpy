@@ -28,6 +28,7 @@ from mtpy.imaging import (
     PlotResidualPTMaps,
     PlotPhaseTensorMaps,
     PlotPhaseTensorPseudoSection,
+    PlotStrike,
 )
 
 from mth5.mth5 import MTH5
@@ -627,6 +628,15 @@ class MTCollection:
         if self.has_data():
             gdf = self.to_geo_df(epsg=map_epsg)
             return PlotStations(gdf, **kwargs)
+
+    def plot_strike(self, **kwargs):
+        """
+        Plot strike angle
+
+        .. seealso:: :class:`mtpy.imaging.PlotStrike`
+        """
+        tf_list = self.get_tf_list()
+        return PlotStrike(tf_list, **kwargs)
 
     def plot_phase_tensor(self, tf_id, **kwargs):
         """
