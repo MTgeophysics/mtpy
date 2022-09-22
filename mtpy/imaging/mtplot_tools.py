@@ -266,6 +266,7 @@ class PlotSettings(MTArrows, MTEllipse):
         self.show_plot = True
 
         self.font_size = 7
+        self.font_weight = "bold"
         self.marker_size = 2.5
         self.marker_lw = 0.75
         self.marker_color = "b"
@@ -564,7 +565,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
     @property
     def font_dict(self):
-        return {"size": self.font_size + 2, "weight": "bold"}
+        return {"size": self.font_size + 2, "weight": self.font_weight}
 
     def make_pt_cb(self, ax):
 

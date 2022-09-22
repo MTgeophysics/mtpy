@@ -11,6 +11,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -139,7 +140,7 @@ class PlotStrike(PlotBase):
 
         self.period_tolerance = 0.05
         self.pt_error_floor = None
-        self.fold = True
+        self.fold = False
         self.bin_width = 5
         self.color = True
         self.color_inv = (0.7, 0, 0.2)
@@ -173,7 +174,8 @@ class PlotStrike(PlotBase):
         self.strike_df = None
         self.subplot_hspace = 0.3
         self.subplot_wspace = 0.2
-        self.text_x_pad = 0.1
+        self.font_weight = "normal"
+        self.text_y_pad = 1.5
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -256,7 +258,7 @@ class PlotStrike(PlotBase):
                 tip.compute_components()
             # # subtract 90 because polar plot assumes 0 is on the x an 90 is
             # on the y
-            tipr = tip.angle_real - 90
+            tipr = 180 - tip.angle_real
 
             tipr[np.where(abs(tipr) == 180.0)] = np.nan
             tipr[np.where(abs(tipr) == 0)] = np.nan
@@ -269,7 +271,7 @@ class PlotStrike(PlotBase):
                     "estimate": "tipper",
                     "period": period,
                     "plot_strike": plot_strike,
-                    "measured_strike": strike,
+                    "measured_strike": strike + 90,
                 }
                 entries.append(entry)
 
@@ -297,7 +299,7 @@ class PlotStrike(PlotBase):
         """
         get mode from a historgram
         """
-        s_mode = estimate_df.measured_strike.mode().median()
+        s_mode = stats.mode(estimate_df.measured_strike).mode[0]
         s_mode %= 360
 
         return s_mode
@@ -330,7 +332,7 @@ class PlotStrike(PlotBase):
         if period_range is None:
             msg += "in all periods "
         else:
-            msg += f" period range {period_range[0]:.3g} to {period_range[1]:.3g} (s) "
+            msg += f"period range {period_range[0]:.3g} to {period_range[1]:.3g} (s) "
         msg += f"median={s_median:.1f} mode={s_mode:.1f} mean={s_mean:.1f}"
         self.logger.info(msg)
 
@@ -743,7 +745,7 @@ class PlotStrike(PlotBase):
                 ### place the estimated strike
                 axh.text(
                     -np.pi / 2,
-                    axh.get_ylim()[1] * self.text_x_pad,
+                    axh.get_ylim()[1] * self.text_y_pad,
                     f"{st_mode:.1f}$^o$",
                     horizontalalignment="center",
                     verticalalignment="baseline",
