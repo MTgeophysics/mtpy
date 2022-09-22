@@ -12,73 +12,73 @@ import numpy as np
 
 class Zinvariants:
     """
-    calculates invariants from Weaver et al. [2000, 2003].  At the moment it 
+    calculates invariants from Weaver et al. [2000, 2003].  At the moment it
     does not calculate the error for each invariant, only the strike.
-    
+
     Arguments
     ----------
         **z_object** : type mtpy.core.z
                        needs to have attributes:
                            *z --> np.array((nf, 2, 2), dtype='complex')
-                           
+
                            *z_err --> np.array((nf, 2, 2), dtype='real')
-                           
+
                            *freq --> np.array(nf)
-                           
+
         **z** : complex np.array(nf,2,2)
                 impedance tensor array
-                
+
         **z_err** : real np.array(nf,2,2)
                 impedance tensor error array
-                
+
         **freq** : np.array(nf)
-                          array of freq cooresponding to the impedance 
+                          array of freq cooresponding to the impedance
                           tensor elements.
-                          
+
     Attributes
     -----------
         **inv1**       : real off diaganol part normalizing factor
-        
+
         **inv2**       : imaginary off diaganol normalizing factor
-        
+
         **inv3**       : real anisotropy factor (range from [0,1])
-        
+
         **inv4**       : imaginary anisotropy factor (range from [0,1])
-        
+
         **inv5**       : suggests electric field twist
-        
+
         **inv6**       : suggests in phase small scale distortion
-        
+
         **inv7**       : suggests 3D structure
-        
+
         **strike**     : strike angle (deg) assuming positive clockwise 0=N
-        
+
         **strike_err** : strike angle error (deg)
-        
+
         **q**          : dependent variable suggesting dimensionality
-        
-        
+
+
     Further reading
     ----------------
         Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2000,
-           Characterization of the magnetotelluric tensor in terms of its 
+           Characterization of the magnetotelluric tensor in terms of its
            invariants, Geophysical Journal International, 141, 321--336.
-           
+
         Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2003,
-            The relationship between the magnetotelluric tensor invariants and 
-            the phase tensor of Caldwell, Bibby and Brown, 
+            The relationship between the magnetotelluric tensor invariants and
+            the phase tensor of Caldwell, Bibby and Brown,
             presented at 3D Electromagnetics III, ASEG, paper 43.
-           
+
         Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 1: Theory
             for a basic procedure, Geophysics, 63, 1885--1897.
-           
+
         Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 2: Examples
             of a basic procedure, Geophysics, 63, 1898--1907.
-           
-        Szarka, L. and Menvielle, M., 1997, Analysis of rotational invariants 
-            of the magnetotelluric impedance tensor, Geophysical Journal 
+
+        Szarka, L. and Menvielle, M., 1997, Analysis of rotational invariants
+            of the magnetotelluric impedance tensor, Geophysical Journal
             International, 129, 133--142.
-    
+
     """
 
     def __init__(
@@ -104,15 +104,21 @@ class Zinvariants:
         if z_array is not None:
             self.z = z_array.copy()
 
-            assert len(freq) == len(self.z), "length of freq is not the same as z"
+            assert len(freq) == len(
+                self.z
+            ), "length of freq is not the same as z"
         # --> if an array is input read it in and make it a z_object
         if z_err_array is not None:
             self.z_err = z_err_array.copy()
 
-            assert len(freq) == len(self.z), "length of freq is not the same as z"
+            assert len(freq) == len(
+                self.z
+            ), "length of freq is not the same as z"
 
         if self.freq is None:
-            raise AttributeError("z_object needs to have attrtibute" + "freq filled")
+            raise AttributeError(
+                "z_object needs to have attrtibute" + "freq filled"
+            )
 
         # --> rotate data if desired
         self.rotate(rot_z)
@@ -123,32 +129,32 @@ class Zinvariants:
     def compute_invariants(self):
         """
         Computes the invariants according to Weaver et al., [2000, 2003]
-        
+
         Mostly used to plot Mohr's circles
-        
+
         In a 1D case: rho = mu (inv1**2+inv2**2)/w & phi = arctan(inv2/inv1)
-        
+
         Sets the invariants as attributes:
             **inv1**       : real off diaganol part normalizing factor
-            
+
             **inv2**       : imaginary off diaganol normalizing factor
-            
+
             **inv3**       : real anisotropy factor (range from [0,1])
-            
+
             **inv4**       : imaginary anisotropy factor (range from [0,1])
-            
+
             **inv5**       : suggests electric field twist
-            
+
             **inv6**       : suggests in phase small scale distortion
-            
+
             **inv7**       : suggests 3D structure
-            
+
             **strike**     : strike angle (deg) assuming positive clockwise 0=N
-            
+
             **strike_err** : strike angle error (deg)
-            
+
             **q**          : dependent variable suggesting dimensionality
-            
+
         """
         # get the length of z to initialize some empty arrays
         nz = self.z.shape[0]
@@ -201,10 +207,10 @@ class Zinvariants:
                 d41 = (x4 * e1 - x1 * e4) / ex
                 d23 = (x2 * e3 - x3 * e2) / ex
 
-                inv1 = np.sqrt(x4 ** 2 + x1 ** 2)
-                inv2 = np.sqrt(e4 ** 2 + e1 ** 2)
-                inv3 = np.sqrt(x2 ** 2 + x3 ** 2) / inv1
-                inv4 = np.sqrt(e2 ** 2 + e3 ** 2) / inv2
+                inv1 = np.sqrt(x4**2 + x1**2)
+                inv2 = np.sqrt(e4**2 + e1**2)
+                inv3 = np.sqrt(x2**2 + x3**2) / inv1
+                inv4 = np.sqrt(e2**2 + e3**2) / inv2
 
                 s41 = (x4 * e1 + x1 * e4) / ex
 
@@ -217,8 +223,13 @@ class Zinvariants:
 
                 # if abs(inv7)>1.0:
                 #     print("debug value inv7=", inv7)
-                strikeang = 0.5 * np.arctan2(d12 - d34, d13 + d24) * (180 / np.pi)
-                strikeangerr = abs(0.5 * np.arcsin(inv7)) * (180 / np.pi)
+                strikeang = 0.5 * np.rad2deg(np.arctan2(d12 - d34, d13 + d24))
+                if np.isnan:
+                    strikeangerr = 90
+                elif np.isinv:
+                    strikeangerr = 90
+                else:
+                    strikeangerr = np.rad2deg(abs(0.5 * np.arcsin(inv7)))
 
                 self.inv1[ii] = inv1
                 self.inv2[ii] = inv2
@@ -235,7 +246,7 @@ class Zinvariants:
         """
         Rotates the impedance tensor by the angle rot_z clockwise positive
         assuming 0 is North
-        
+
         """
 
         self.rot_z = rot_z
@@ -250,8 +261,8 @@ class Zinvariants:
         """
         set the z array.
 
-        If the shape changes or the freq are changed need to input 
-        those as well.        
+        If the shape changes or the freq are changed need to input
+        those as well.
         """
 
         self.z = z_array
@@ -263,8 +274,8 @@ class Zinvariants:
         """
         set the z_err array.
 
-        If the shape changes or the freq are changed need to input 
-        those as well.        
+        If the shape changes or the freq are changed need to input
+        those as well.
         """
 
         self.z_err = z_err_array

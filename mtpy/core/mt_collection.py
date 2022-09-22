@@ -27,6 +27,7 @@ from mtpy.imaging import (
     PlotMultipleResponses,
     PlotResidualPTMaps,
     PlotPhaseTensorMaps,
+    PlotPhaseTensorPseudoSection,
 )
 
 from mth5.mth5 import MTH5
@@ -311,6 +312,7 @@ class MTCollection:
                 f"filename must be a string or Path not {type(filename)}"
             )
         mt_object = MT(filename)
+        mt_object.read_tf_file()
 
         self._from_mt_object(mt_object)
 
@@ -659,6 +661,24 @@ class MTCollection:
         tf_list = self.get_tf_list()
 
         return PlotPhaseTensorMaps(tf_list=tf_list, **kwargs)
+
+    def plot_phase_tensor_pseudo_section(self, **kwargs):
+        """
+        Plot a pseudo section of  phase tensor ellipses and induction vectors
+        if specified
+
+        .. seealso:: :class:`mtpy.imaging.PlotPhaseTensorPseudosection`
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = self.get_tf_list()
+
+        return PlotPhaseTensorPseudoSection(tf_list=tf_list, **kwargs)
 
     def plot_residual_phase_tensor(
         self, tf_list_01, tf_list_02, plot_type="map", **kwargs

@@ -6,7 +6,7 @@ from .plot_strike import PlotStrike
 from .plot_pseudosection import PlotResPhasePseudoSection
 from .plot_pt import PlotPhaseTensor
 from .plot_phase_tensor_maps import PlotPhaseTensorMaps
-from .phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
+from .plot_phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
 from .plot_residual_pt_maps import PlotResidualPTMaps
 from .plot_residual_pt_ps import PlotResidualPTps
 

@@ -15,7 +15,10 @@ import numpy as np
 from scipy import stats
 
 import mtpy.imaging.mtcolors as mtcl
-from mtpy.imaging.mtplot_tools import PlotBase
+from mtpy.imaging.mtplot_tools import (
+    PlotBase,
+    period_label_dict,
+)
 
 
 # ==============================================================================
@@ -77,17 +80,20 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         self._rotation_angle = 0
         self.tf_list = tf_list
 
-        self.x_stretch = 200
-        self.y_stretch = 10
+        self.x_stretch = 1
+        self.y_stretch = 1000
+        self.y_scale = "period"
         # --> set plot properties
 
-        self.linedir = "ew"
-        self.station_id = [0, 4]
-        self.y_step = 4
-        self.x_step = 1
+        self.station_id = [0, None]
         self.profile_vector = None
         self.profile_angle = None
         self.profile_line = None
+
+        self.ellipse_size = 250
+        self.arrow_size = 1000
+        self.arrow_head_width = 25
+        self.arrow_head_length = 40
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -115,8 +121,8 @@ class PlotPhaseTensorPseudoSection(PlotBase):
 
         for ii, tf in enumerate(self.tf_list):
             tf.project_to_utm()
-            east.append(tf.east)
-            north.append(tf.north)
+            east[ii] = tf.east
+            north[ii] = tf.north
 
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
@@ -130,14 +136,14 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                 1.0 / profile2.slope,
                 -profile2.intercept / profile2.slope,
             )
+            profile = profile2
         else:
             self.profile_line = profile1[:2]
+            profile = profile1
 
-        self.profile_angle = (
-            90 - np.rad2deg(np.arctan(self.profile_line.slope))
-        ) % 180
+        self.profile_angle = (90 - np.rad2deg(np.arctan(profile.slope))) % 180
 
-        self.profile_vector = np.array([1, self.profile_line.slope])
+        self.profile_vector = np.array([1, profile.slope])
         self.profile_vector /= np.linalg.norm(self.profile_vector)
 
     def _get_patch(self, tf):
@@ -166,7 +172,11 @@ class PlotPhaseTensorPseudoSection(PlotBase):
 
         color_array = self.get_pt_color_array(pt_obj)
         for index, ff in enumerate(pt_obj.freq):
-            plot_y = np.log10(ff) * self.y_stretch
+            if self.y_scale == "period":
+                plot_y = np.log10(1.0 / ff) * self.y_stretch
+            else:
+                plot_y = np.log10(ff) * self.y_stretch
+
             # --> get ellipse properties
             # if the ellipse size is not physically correct make it a dot
             if (
@@ -178,22 +188,25 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                 eheight = 0.0000001
                 ewidth = 0.0000001
             else:
-                scaling = self.ellipse_size / self.pt_obj.phimax.max()
-                eheight = self.pt_obj.phimin[index] * scaling
-                ewidth = self.pt_obj.phimax[index] * scaling
+                scaling = self.ellipse_size / pt_obj.phimax.max()
+                eheight = pt_obj.phimin[index] * scaling
+                ewidth = pt_obj.phimax[index] * scaling
+                azimuth = 90 - pt_obj.azimuth[index]
+                if self.y_scale == "period":
+                    azimuth = 90 + pt_obj.azimuth[index]
             # make an ellipse
             ellipd = patches.Ellipse(
                 (plot_x, plot_y),
                 width=ewidth,
                 height=eheight,
-                angle=90 - self.pt_obj.azimuth[index],
+                angle=azimuth,
                 lw=self.lw,
             )
 
             # get ellipse color
             ellipd.set_facecolor(
                 mtcl.get_plot_color(
-                    color_array[0],
+                    color_array[index],
                     self.ellipse_colorby,
                     self.ellipse_cmap,
                     self.ellipse_range[0],
@@ -205,29 +218,47 @@ class PlotPhaseTensorPseudoSection(PlotBase):
             self.ax.add_artist(ellipd)
 
             if t_obj is not None:
-                if "r" in self.plot_tipper == "yri":
+                if "r" in self.plot_tipper:
 
-                    if t_obj.mag_real[0] <= self.arrow_threshold:
-                        txr = (
-                            t_obj.mag_real[0]
-                            * self.arrow_size
-                            * np.sin(
-                                (t_obj.angle_real[0]) * np.pi / 180
-                                + self.arrow_direction * np.pi
+                    if t_obj.mag_real[index] <= self.arrow_threshold:
+                        if self.y_scale == "period":
+                            txr = (
+                                t_obj.mag_real[index]
+                                * self.arrow_size
+                                * np.sin(
+                                    np.deg2rad(-t_obj.angle_real[index] + 180)
+                                    + self.arrow_direction * np.pi
+                                )
                             )
-                        )
-                        tyr = (
-                            t_obj.mag_real[0]
-                            * self.arrow_size
-                            * np.cos(
-                                (t_obj.angle_real[0]) * np.pi / 180
-                                + self.arrow_direction * np.pi
+                            tyr = (
+                                t_obj.mag_real[index]
+                                * self.arrow_size
+                                * np.cos(
+                                    np.deg2rad(-t_obj.angle_real[index] + 180)
+                                    + self.arrow_direction * np.pi
+                                )
                             )
-                        )
+                        else:
+                            txr = (
+                                t_obj.mag_real[index]
+                                * self.arrow_size
+                                * np.sin(
+                                    np.deg2rad(t_obj.angle_real[index])
+                                    + self.arrow_direction * np.pi
+                                )
+                            )
+                            tyr = (
+                                t_obj.mag_real[index]
+                                * self.arrow_size
+                                * np.cos(
+                                    np.deg2rad(t_obj.angle_real[index])
+                                    + self.arrow_direction * np.pi
+                                )
+                            )
 
                         self.ax.arrow(
-                            plot_x * self.x_stretch,
-                            plot_y * self.y_stretch,
+                            plot_x,
+                            plot_y,
                             txr,
                             tyr,
                             width=self.arrow_lw,
@@ -241,23 +272,41 @@ class PlotPhaseTensorPseudoSection(PlotBase):
                         pass
                 # plot imaginary tipper
                 if "i" in self.plot_tipper:
-                    if t_obj.mag_imag[0] <= self.arrow_threshold:
-                        txi = (
-                            t_obj.mag_imag[0]
-                            * self.arrow_size
-                            * np.sin(
-                                (t_obj.angle_imag[0]) * np.pi / 180
-                                + self.arrow_direction * np.pi
+                    if t_obj.mag_imag[index] <= self.arrow_threshold:
+                        if self.y_scale == "period":
+                            txi = (
+                                t_obj.mag_imag[index]
+                                * self.arrow_size
+                                * np.sin(
+                                    np.deg2rad(-t_obj.angle_imag[index] + 180)
+                                    + self.arrow_direction * np.pi
+                                )
                             )
-                        )
-                        tyi = (
-                            t_obj.mag_imag[0]
-                            * self.arrow_size
-                            * np.cos(
-                                (t_obj.angle_imag[0]) * np.pi / 180
-                                + self.arrow_direction * np.pi
+                            tyi = (
+                                t_obj.mag_imag[index]
+                                * self.arrow_size
+                                * np.cos(
+                                    np.deg2rad(-t_obj.angle_imag[index] + 180)
+                                    + self.arrow_direction * np.pi
+                                )
                             )
-                        )
+                        else:
+                            txi = (
+                                t_obj.mag_imag[index]
+                                * self.arrow_size
+                                * np.sin(
+                                    np.deg2rad(t_obj.angle_imag[index])
+                                    + self.arrow_direction * np.pi
+                                )
+                            )
+                            tyi = (
+                                t_obj.mag_imag[index]
+                                * self.arrow_size
+                                * np.cos(
+                                    np.deg2rad(t_obj.angle_imag[index])
+                                    + self.arrow_direction * np.pi
+                                )
+                            )
 
                         self.ax.arrow(
                             plot_x,
@@ -274,6 +323,64 @@ class PlotPhaseTensorPseudoSection(PlotBase):
 
         return plot_x, tf.tf_id[self.station_id[0] : self.station_id[1]]
 
+    def _add_colorbar(self):
+        """
+        Add phase tensor color bar
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.cb_position is None:
+            self.ax2, kw = mcb.make_axes(
+                self.ax, orientation=self.cb_orientation, shrink=0.35
+            )
+
+        else:
+            self.ax2 = self.fig.add_axes(self.cb_position)
+
+        # make the colorbar
+        if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
+            cmap_input = mtcl.cmapdict[self.ellipse_cmap]
+        else:
+            cmap_input = mtcl.cm.get_cmap(self.ellipse_cmap)
+
+        if "seg" in self.ellipse_cmap:
+            norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
+            self.cb = mcb.ColorbarBase(
+                self.ax2,
+                cmap=cmap_input,
+                norm=norms,
+                orientation=self.cb_orientation,
+                ticks=self.ellipse_cmap_bounds,
+            )
+        else:
+            self.cb = mcb.ColorbarBase(
+                self.ax2,
+                cmap=cmap_input,
+                norm=colors.Normalize(
+                    vmin=self.ellipse_range[0], vmax=self.ellipse_range[1]
+                ),
+                orientation=self.cb_orientation,
+            )
+
+        # label the color bar accordingly
+        self.cb.set_label(
+            self.cb_label_dict[self.ellipse_colorby],
+            fontdict={"size": self.font_size, "weight": "bold"},
+        )
+
+        # place the label in the correct location
+        if self.cb_orientation == "horizontal":
+            self.cb.ax.xaxis.set_label_position("top")
+            self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
+        elif self.cb_orientation == "vertical":
+            self.cb.ax.yaxis.set_label_position("right")
+            self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
+            self.cb.ax.yaxis.tick_left()
+            self.cb.ax.tick_params(axis="y", direction="in")
+
     def plot(self):
         """
         plots the phase tensor pseudo section.  See class doc string for
@@ -289,266 +396,100 @@ class PlotPhaseTensorPseudoSection(PlotBase):
 
         self._get_profile_line()
 
-        for tf in self.tf_list:
-            station, offset = self._get_path(tf)
+        y_min = 1
+        y_max = 1
+        station_list = np.zeros(
+            len(self.tf_list), dtype=[("offset", np.float), ("station", "U10")]
+        )
+
+        for ii, tf in enumerate(self.tf_list):
+            offset, station = self._get_patch(tf)
+            station_list[ii]["station"] = station
+            station_list[ii]["offset"] = offset
+
+            if np.log10(tf.Z.freq.min()) < y_min:
+                y_min = np.log10(tf.Z.freq.min()) * self.y_stretch
+            if np.log10(tf.Z.freq.max()) > y_max:
+                y_max = np.log10(tf.Z.freq.max()) * self.y_stretch
+
+        y_min = np.floor(y_min / self.y_stretch) * self.y_stretch
+        y_max = np.ceil(y_max / self.y_stretch) * self.y_stretch
 
         # --> Set plot parameters
-        self._plot_period_list = plot_period_list
-        n = len(plot_period_list)
-
-        pmin = int(np.floor(np.log10(plot_period_list.min())))
-        pmax = int(np.ceil(np.log10(plot_period_list.max())))
-
-        # need to sort the offsets and station labels so they plot correctly
-        sdtype = [("offset", np.float), ("station", "U10")]
-        slist = np.array(
-            [(oo, ss) for oo, ss in zip(self.offset_list, self.station_list)],
-            dtype=sdtype,
-        )
-        offset_sort = np.sort(slist, order="offset")
-
-        self.offset_list = offset_sort["offset"]
-        self.station_list = offset_sort["station"]
+        self.station_list = np.sort(station_list, order="offset")
 
         # set y-ticklabels
-        if self.tscale == "period":
-            yticklabels = [
-                mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)
-            ]
+        if self.y_scale == "period":
+            y_label = "Period (s)"
+            p_min = float(y_min)
+            p_max = float(y_max)
+            y_min = -1 * p_min
+            y_max = -1 * p_max
 
-            self.ax.set_ylabel(
-                "Period (s)", fontsize=self.font_size + 2, fontweight="bold"
-            )
-        elif self.tscale == "frequency":
-            yticklabels = [
-                mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)
-            ]
-            self.ax.set_ylabel(
-                "Frequency (Hz)",
-                fontsize=self.font_size + 2,
-                fontweight="bold",
-            )
+        else:
+            y_label = "Frequency (Hz)"
+
+        self.ax.set_ylabel(y_label, fontdict=self.font_dict)
+
+        # set y-axis tick labels
+        self.ax.yaxis.set_ticks(
+            np.arange(y_min, (y_max + 1), self.y_stretch * np.sign(y_max))
+        )
+
+        y_tick_labels = []
+
+        for tk in self.ax.get_yticks():
+            try:
+                y_tick_labels.append(
+                    period_label_dict[int(tk / self.y_stretch)]
+                )
+            except KeyError:
+                y_tick_labels.append("")
+
+        self.ax.set_yticklabels(y_tick_labels)
+
+        # --> set tick locations and labels
+
+        # set x-axis ticks
+        self.ax.set_xticks(self.station_list["offset"])
+
+        # set x-axis tick labels as station names
+        self.ax.set_xticklabels(self.station_list["station"])
+
         # set x-axis label
         self.ax.set_xlabel(
             "Station", fontsize=self.font_size + 2, fontweight="bold"
         )
 
-        # --> set tick locations and labels
-        # set y-axis major ticks
-        self.ax.yaxis.set_ticks(
-            np.arange(
-                pmin * self.ystretch, (pmax + 1) * self.ystretch, self.ystretch
-            )
-        )
-
-        # set y-axis tick labels
-        self.ax.set_yticklabels(yticklabels)
-
-        # set x-axis ticks
-        self.ax.set_xticks(self.offset_list * self.xstretch)
-
-        # set x-axis tick labels as station names
-        xticklabels = self.station_list
-        if self.xstep != 1:
-            xticklabels = np.zeros(
-                len(self.station_list), dtype=self.station_list.dtype
-            )
-            for xx in range(0, len(self.station_list), self.xstep):
-                xticklabels[xx] = self.station_list[xx]
-        self.ax.set_xticklabels(xticklabels)
-
         # --> set x-limits
-        if self.xlimits is None:
+        if self.x_limits is None:
             self.ax.set_xlim(
-                self.offset_list.min() * self.xstretch - es * 2,
-                self.offset_list.max() * self.xstretch + es * 2,
+                np.floor(self.station_list["offset"].min())
+                - self.ellipse_size / 2,
+                np.ceil(self.station_list["offset"].max())
+                + self.ellipse_size / 2,
             )
         else:
-            self.ax.set_xlim(self.xlimits)
+            self.ax.set_xlim(self.x_limits)
         # --> set y-limits
-        if self.ylimits is None:
+        if self.y_limits is None:
             #            self.ax.set_ylim(pmax+es*2, pmin-es*2)
-            self.ax.set_ylim(pmax * self.ystretch, pmin * self.ystretch)
+            self.ax.set_ylim(y_min, y_max)
         else:
-            pmin = np.log10(self.ylimits[0]) * self.ystretch
-            pmax = np.log10(self.ylimits[1]) * self.ystretch
-            self.ax.set_ylim(pmax + es * 2, pmin - es * 2)
-        #            self.ax.set_ylim(pmax, pmin)
+            pmin = np.log10(self.y_limits[0]) * self.ystretch
+            pmax = np.log10(self.y_limits[1]) * self.ystretch
+            self.ax.set_ylim(np.floor(pmin), np.ceil(pmax))
 
         # --> set title of the plot
         if self.plot_title is None:
             pass
         else:
             self.ax.set_title(self.plot_title, fontsize=self.font_size + 2)
-        # make a legend for the induction arrows
-        if self.plot_tipper.find("y") == 0:
-            if self.plot_tipper == "yri":
-                treal = self.ax.plot(
-                    np.arange(10) * 0.000005,
-                    np.arange(10) * 0.00005,
-                    color=self.arrow_color_real,
-                )
-                timag = self.ax.plot(
-                    np.arange(10) * 0.000005,
-                    np.arange(10) * 0.00005,
-                    color=self.arrow_color_imag,
-                )
-                self.ax.legend(
-                    [treal[0], timag[0]],
-                    ["Tipper_real", "Tipper_imag"],
-                    loc="lower right",
-                    prop={"size": self.font_size - 1, "weight": "bold"},
-                    ncol=2,
-                    markerscale=0.5,
-                    borderaxespad=0.005,
-                    borderpad=0.25,
-                )
-            elif self.plot_tipper == "yr":
-                treal = self.ax.plot(
-                    np.arange(10) * 0.000005,
-                    np.arange(10) * 0.00005,
-                    color=self.arrow_color_real,
-                )
-                self.ax.legend(
-                    [treal[0]],
-                    ["Tipper_real"],
-                    loc="lower right",
-                    prop={"size": self.font_size - 1, "weight": "bold"},
-                    ncol=2,
-                    markerscale=0.5,
-                    borderaxespad=0.005,
-                    borderpad=0.25,
-                )
-            elif self.plot_tipper == "yi":
-                timag = self.ax.plot(
-                    np.arange(10) * 0.000005,
-                    np.arange(10) * 0.00005,
-                    color=self.arrow_color_imag,
-                )
-                self.ax.legend(
-                    [timag[0]],
-                    ["Tipper_imag"],
-                    loc="lower right",
-                    prop={"size": self.font_size - 1, "weight": "bold"},
-                    ncol=2,
-                    markerscale=0.5,
-                    borderaxespad=0.005,
-                    borderpad=0.25,
-                )
-            # make a scale arrow
-            if self.scale_arrow:
-                print(
-                    (
-                        np.log10(
-                            self.ylimits[1]
-                            - self.scale_arrow_dict["text_offset_y"]
-                        )
-                    )
-                    * self.ystretch
-                )
-                txrl = self.scale_arrow_dict["size"]
-                self.ax.arrow(
-                    min(self.offset_list) * self.xstretch,
-                    np.log10(self.ylimits[1]) * self.ystretch,
-                    txrl * self.arrow_size,
-                    0.0,
-                    lw=alw,
-                    facecolor=self.arrow_color_real,
-                    edgecolor=self.arrow_color_real,
-                    length_includes_head=False,
-                    head_width=awidth,
-                    head_length=aheight,
-                )
-                self.ax.text(
-                    min(self.offset_list) * self.xstretch,
-                    (
-                        np.log10(
-                            self.ylimits[1]
-                            - self.scale_arrow_dict["text_offset_y"]
-                        )
-                    )
-                    * self.ystretch,
-                    "|T| = %3.1f" % txrl,
-                )
+
         # put a grid on the plot
         self.ax.grid(alpha=0.25, which="both", color=(0.25, 0.25, 0.25))
 
-        # print out the min an max of the parameter plotted
-        print("-" * 25)
-        print(ck + " min = {0:.2f}".format(min(minlist)))
-        print(ck + " max = {0:.2f}".format(max(maxlist)))
-        print("-" * 25)
-
         # ==> make a colorbar with appropriate colors
-        if self.cb_position is None:
-            self.ax2, kw = mcb.make_axes(
-                self.ax, orientation=self.cb_orientation, shrink=0.35
-            )
-        else:
-            self.ax2 = self.fig.add_axes(self.cb_position)
-        if cmap == "mt_seg_bl2wh2rd":
-            # make a color list
-            self.clist = [
-                (cc, cc, 1)
-                for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-            ] + [
-                (1, cc, cc)
-                for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
-            ]
-
-            # make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
-
-            # make bounds so that the middle is white
-            bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
-
-            # normalize the colors
-            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
-
-            # make the colorbar
-            self.cb = mcb.ColorbarBase(
-                self.ax2,
-                cmap=mt_seg_bl2wh2rd,
-                norm=norms,
-                orientation=self.cb_orientation,
-                ticks=bounds[1:-1],
-            )
-        else:
-            self.cb = mcb.ColorbarBase(
-                self.ax2,
-                cmap=mtcl.cmapdict[cmap],
-                norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
-                orientation=self.cb_orientation,
-            )
-        # label the color bar accordingly
-        self.cb.set_label(
-            mtpl.ckdict[ck],
-            fontdict={"size": self.font_size, "weight": "bold"},
-        )
-
-        # place the label in the correct location
-        if self.cb_orientation == "horizontal":
-            self.cb.ax.xaxis.set_label_position("top")
-            self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
-        elif self.cb_orientation == "vertical":
-            self.cb.ax.yaxis.set_label_position("right")
-            self.cb.ax.yaxis.set_label_coords(1.5, 0.5)
-            self.cb.ax.yaxis.tick_left()
-            self.cb.ax.tick_params(axis="y", direction="in")
-        # --> add reference ellipse
-        ref_ellip = patches.Ellipse((0, 0.0), width=es, height=es, angle=0)
-        ref_ellip.set_facecolor((0, 0, 0))
-        ref_ax_loc = list(self.ax2.get_position().bounds)
-        ref_ax_loc[0] *= 0.95
-        ref_ax_loc[1] -= 0.17
-        ref_ax_loc[2] = 0.1
-        ref_ax_loc[3] = 0.1
-        self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect="equal")
-        self.ref_ax.add_artist(ref_ellip)
-        self.ref_ax.set_xlim(-es / 2.0 * 1.05, es / 2.0 * 1.05)
-        self.ref_ax.set_ylim(-es / 2.0 * 1.05, es / 2.0 * 1.05)
-        plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
-        plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-        self.ref_ax.set_title(r"$\Phi$ = 1")
+        self._add_colorbar()
 
         self.ax.set_axisbelow(True)
