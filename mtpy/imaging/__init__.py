@@ -9,6 +9,7 @@ from .plot_phase_tensor_maps import PlotPhaseTensorMaps
 from .plot_phase_tensor_pseudosection import PlotPhaseTensorPseudoSection
 from .plot_residual_pt_maps import PlotResidualPTMaps
 from .plot_residual_pt_ps import PlotResidualPTps
+from .plot_penetration_depth_1d import PlotPenetrationDepth1D
 
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "PlotPhaseTensorPseudoSection",
     "PlotResidualPTMaps",
     "PlotResidualPTps",
+    "PlotPenetrationDepth1D",
 ]

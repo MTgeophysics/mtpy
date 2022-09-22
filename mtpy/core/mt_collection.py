@@ -29,6 +29,7 @@ from mtpy.imaging import (
     PlotPhaseTensorMaps,
     PlotPhaseTensorPseudoSection,
     PlotStrike,
+    PlotPenetrationDepth1D,
 )
 
 from mth5.mth5 import MTH5
@@ -710,3 +711,31 @@ class MTCollection:
 
         if plot_type in ["map"]:
             return PlotResidualPTMaps(tf_list_01, tf_list_02, **kwargs)
+
+    def plot_penetration_depth_1d(self, tf_object, **kwargs):
+        """
+        Plot 1D penetration depth based on the Niblett-Bostick transformation
+
+        Note that data is rotated to estimated strike previous to estimation
+        and strike angles are interpreted for data points that are 3D.
+
+        .. seealso:: :class:`mtpy.analysis.niblettbostick.calculate_depth_of_investigation`
+
+
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if isinstance(tf_object, (list, tuple)):
+            return_list = []
+            for ii, tf in enumerate(tf_object, 1):
+                return_list.append(
+                    PlotPenetrationDepth1D(tf, fig_num=ii, **kwargs)
+                )
+        else:
+            return PlotPenetrationDepth1D(tf_object, **kwargs)
