@@ -223,7 +223,7 @@ class PlotStrike(PlotBase):
                     "estimate": "invariant",
                     "period": period,
                     "plot_strike": plot_strike,
-                    "strike": strike,
+                    "measured_strike": strike,
                 }
                 entries.append(entry)
 
@@ -297,9 +297,7 @@ class PlotStrike(PlotBase):
         """
         get mode from a historgram
         """
-        s_mode = estimate_df.measured_strike.mode().iloc[
-            int(estimate_df.shape[0] / 2)
-        ]
+        s_mode = estimate_df.measured_strike.mode().median()
         s_mode %= 360
 
         return s_mode
@@ -327,16 +325,14 @@ class PlotStrike(PlotBase):
         s_mean = self.get_mean(estimate_df)
         s_median = self.get_median(estimate_df)
         s_mode = self.get_mode(estimate_df)
-        m = "-" * 5
+
+        msg = f"Strike statistics for {estimate} "
         if period_range is None:
-            self.logger.info(f"{m}All Periods{m}")
+            msg += "in all periods "
         else:
-            self.logger.info(
-                "{m}Period Range {10**exponent:.3g} to {10 ** (exponent + 1):.3g} (s){m}"
-            )
-        self.logger.info(
-            "\t median={s_median:.1f} mode={s_mode:.1f} mean={s_mean:.1f}"
-        )
+            msg += f" period range {period_range[0]:.3g} to {period_range[1]:.3g} (s) "
+        msg += f"median={s_median:.1f} mode={s_mode:.1f} mean={s_mean:.1f}"
+        self.logger.info(msg)
 
         return s_median, s_mode, s_mean
 
