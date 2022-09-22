@@ -218,10 +218,11 @@ class PlotStrike(PlotBase):
             # on the y
             zs = 90 - zinv.strike
             # make a dictionary of strikes with keys as period
-            for period, strike in zip(mt.period, zs):
+            for period, plot_strike, strike in zip(mt.period, zs, zinv.strike):
                 entry = {
                     "estimate": "invariant",
                     "period": period,
+                    "plot_strike": plot_strike,
                     "strike": strike,
                 }
                 entries.append(entry)
@@ -239,8 +240,13 @@ class PlotStrike(PlotBase):
                 az[np.where(az_err > self.pt_error_floor)] = 0.0
 
             # make a dictionary of strikes with keys as period
-            for period, strike in zip(mt.period, az):
-                entry = {"estimate": "pt", "period": period, "strike": strike}
+            for period, plot_strike, strike in zip(mt.period, az, pt.azimuth):
+                entry = {
+                    "estimate": "pt",
+                    "period": period,
+                    "plot_strike": plot_strike,
+                    "measured_strike": strike,
+                }
                 entries.append(entry)
 
             # -----------get tipper strike------------------------------------
@@ -256,11 +262,14 @@ class PlotStrike(PlotBase):
             tipr[np.where(abs(tipr) == 0)] = np.nan
 
             # make a dictionary of strikes with keys as period
-            for period, strike in zip(mt.period, tipr):
+            for period, plot_strike, strike in zip(
+                mt.period, tipr, tip.angle_real
+            ):
                 entry = {
                     "estimate": "tipper",
                     "period": period,
-                    "strike": strike,
+                    "plot_strike": plot_strike,
+                    "measured_strike": strike,
                 }
                 entries.append(entry)
 
@@ -270,7 +279,7 @@ class PlotStrike(PlotBase):
         """
         get mean value
         """
-        s_mean = 90 - estimate_df.strike.mean()
+        s_mean = estimate_df.measured_strike.mean()
         s_mean %= 360
 
         return s_mean
@@ -279,7 +288,7 @@ class PlotStrike(PlotBase):
         """
         get median value
         """
-        s_median = 90 - estimate_df.strike.median()
+        s_median = estimate_df.measured_strike.median()
         s_median %= 360
 
         return s_median
@@ -288,9 +297,9 @@ class PlotStrike(PlotBase):
         """
         get mode from a historgram
         """
-        s_mode = (
-            90 - estimate_df.strike.mode().iloc[int(estimate_df.shape[0] / 2)]
-        )
+        s_mode = estimate_df.measured_strike.mode().iloc[
+            int(estimate_df.shape[0] / 2)
+        ]
         s_mode %= 360
 
         return s_mode
@@ -337,7 +346,7 @@ class PlotStrike(PlotBase):
         """
         estimate_df = self.get_estimate(estimate, period_range)
         # array goes from
-        st_array = estimate_df.strike.to_numpy().flatten()
+        st_array = estimate_df.plot_strike.to_numpy().flatten()
         st_array = st_array[np.isfinite(st_array)]
         plot_array = np.hstack([st_array, (st_array + 180) % 360])
 
