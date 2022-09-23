@@ -11,6 +11,7 @@ from .plot_residual_pt_maps import PlotResidualPTMaps
 from .plot_residual_pt_ps import PlotResidualPTps
 from .plot_penetration_depth_1d import PlotPenetrationDepth1D
 from .plot_penetration_depth_map import PlotPenetrationDepthMap
+from .plot_resphase_maps import PlotResPhaseMaps
 
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "PlotResidualPTps",
     "PlotPenetrationDepth1D",
     "PlotPenetrationDepthMap",
+    "PlotResPhaseMaps",
 ]

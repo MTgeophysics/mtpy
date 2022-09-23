@@ -93,7 +93,7 @@ class PlotResPhaseMaps(PlotBase):
         self.plot_period = 1
 
         self.cell_size = 0.002
-        self.n_padding_cells = 5
+        self.n_padding_cells = 10
 
         self.interpolation_method = "cubic"
 
@@ -241,7 +241,6 @@ class PlotResPhaseMaps(PlotBase):
             if self.plot_phase:
                 comp = f"phase_{cc}"
                 if getattr(self, f"plot_{cc}"):
-                    print()
                     ax_dict[comp] = self.fig.add_subplot(
                         *subplot_dict[comp], aspect="equal"
                     )
@@ -392,8 +391,8 @@ class PlotResPhaseMaps(PlotBase):
         # add padding to the locations
         ds = self.cell_size * self.n_padding_cells
 
-        ex = plot_array["longitude"]
-        ey = plot_array["latitude"]
+        ex = plot_array["longitude"].copy()
+        ey = plot_array["latitude"].copy()
 
         ex[np.argmin(ex)] -= ds
         ex[np.argmax(ex)] += ds
@@ -491,6 +490,7 @@ class PlotResPhaseMaps(PlotBase):
                     )
                 ),
                 shrink=0.6,
+                extend="both",
             )
             labels = [
                 period_label_dict[dd]
@@ -502,11 +502,7 @@ class PlotResPhaseMaps(PlotBase):
             cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
 
         elif "phase" in component:
-            cb = plt.colorbar(
-                im_mappable,
-                ax=ax,
-                shrink=0.6,
-            )
+            cb = plt.colorbar(im_mappable, ax=ax, shrink=0.6, extend="both")
 
         cb.ax.tick_params(
             axis="both", which="major", labelsize=self.font_size - 1

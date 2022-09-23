@@ -31,6 +31,7 @@ from mtpy.imaging import (
     PlotStrike,
     PlotPenetrationDepth1D,
     PlotPenetrationDepthMap,
+    PlotResPhaseMaps,
 )
 
 from mth5.mth5 import MTH5
@@ -738,6 +739,8 @@ class MTCollection:
         """
         Plot Penetration depth in map view for a single period
 
+        .. seealso:: :class:`mtpy.imaging.PlotPenetrationDepthMap`
+
         :param tf_list: DESCRIPTION
         :type tf_list: TYPE
         :return: DESCRIPTION
@@ -748,3 +751,20 @@ class MTCollection:
         tf_list = self.get_tf_list()
 
         return PlotPenetrationDepthMap(tf_list, **kwargs)
+
+    def plot_resistivity_phase_maps(self, **kwargs):
+        """
+        Plot apparent resistivity and/or impedance phase maps from the
+        working dataframe
+
+        .. seealso:: :class:`mtpy.imaging.PlotResPhaseMaps`
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = self.get_tf_list()
+
+        return PlotResPhaseMaps(tf_list, **kwargs)
