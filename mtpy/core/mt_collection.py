@@ -244,10 +244,10 @@ class MTCollection:
             transfer_function = [transfer_function]
         for item in transfer_function:
             if isinstance(item, MT):
-                print(item.station)
+                self.logger.debug("added %s " % item.station)
                 self._from_mt_object(item)
             elif isinstance(item, (str, Path)):
-                print(item.name)
+                self.logger.debug("added %s " % item.station)
                 self._from_file(item)
             else:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
