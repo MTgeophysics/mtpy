@@ -17,6 +17,8 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 from matplotlib.lines import Line2D
 
+from scipy.spatial import Delaunay
+
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
@@ -1406,6 +1408,41 @@ def add_raster(ax, raster_fn, add_colorbar=True, **kwargs):
         cb = fig.colorbar(im, ax=ax)
 
     return ax2, cb
+
+
+def in_hull(p, hull):
+    """
+    Test if points in p are within the convex hull
+    """
+
+    try:
+        if not isinstance(hull, Delaunay):
+            hull = Delaunay(hull)
+        return hull.find_simplex(p) >= 0
+    except:
+        from scipy.optimize import linprog
+
+        # Delaunay triangulation will fail if there are collinear points;
+        # in those instances use linear programming (much slower) to define
+        # a convex hull.
+        def in_hull_lp(points, x):
+            """
+            :param points:
+            :param x:
+            :return:
+            """
+            n_points = len(points)
+            c = np.zeros(n_points)
+            A = np.r_[points.T, np.ones((1, n_points))]
+            b = np.r_[x, np.ones(1)]
+            lp = linprog(c, A_eq=A, b_eq=b)
+            return not lp.success
+
+        result = []
+        for cp in p:
+            result.append(in_hull_lp(hull, cp))
+
+        return np.array(result)
 
 
 # def add_raster(
