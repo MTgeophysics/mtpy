@@ -10,29 +10,38 @@ Developer:      rakib.hassan@ga.gov.au
  
 Revision History:
     LastUpdate:     4/19/18   RH
+                    2022-09 JP
+    
 
 """
+# =============================================================================
+# Imports
+# =============================================================================
+
+import numpy as np
 
 import matplotlib.pyplot as plt
-import numpy as np
-import os, glob
-from matplotlib.ticker import FormatStrFormatter
-import mtpy.utils.gis_tools as gis_tools
+
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplot_tools as mtpl
-from mtpy.utils.mtpylog import MtPyLog
-import mtpy.analysis.pt as MTpt
-import matplotlib.tri as tri
-from scipy.spatial import cKDTree
-from scipy.spatial import Delaunay
 from matplotlib import ticker
 from matplotlib import colors
 
+import mtpy.imaging.mtcolors as mtcl
+import mtpy.utils.gis_tools as gis_tools
+from mtpy.imaging.mtplot_tools import PlotBase
+from mtpy.utils.mtpylog import MtPyLog
+import mtpy.analysis.pt as MTpt
+import matplotlib.tri as tri
 
-class PlotResPhaseMaps(mtpl.PlotSettings):
+from scipy.spatial import cKDTree
+from scipy.spatial import Delaunay
+
+# =============================================================================
+
+
+class PlotResPhaseMaps(PlotBase):
     """
     Plots apparent resistivity and phase in map view from a list of edi files
 
@@ -73,48 +82,35 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                         to this number for the axis labels.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, tf_list, **kwargs):
         """
         Initialise the object
         :param kwargs: keyword-value pairs
         """
-        super(PlotResPhaseMaps, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
-        self._logger = MtPyLog.get_mtpy_logger(self.__class__.__name__)
-
-        fn_list = kwargs.pop("fn_list", [])
-
-        if len(fn_list) == 0:
-            raise NameError("File list is empty.")
-        # ----set attributes for the class-------------------------
-        self.mt_list = mtpl.get_mtlist(fn_list=fn_list)
+        self.tf_list = tf_list
 
         # read in map scale
-        self.mapscale = kwargs.pop("mapscale", "deg")
-        if self.mapscale == "km":
-            self.dscale = 1000.0
-        elif self.mapscale == "m":
-            self.dscale = 1.0
-        # end if
+        self.map_units = "deg"
+        self.scale = 1
 
-        self.plot_title = kwargs.pop("plot_title", None)
-        self.fig_dpi = kwargs.pop("fig_dpi", 100)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-        self.fig_size = kwargs.pop("fig_size", [8, 6])
+    @property
+    def map_units(self):
+        return self._map_units
 
-        self.font_size = kwargs.pop("font_size", 7)
-
-        self.plot_yn = kwargs.pop("plot_yn", "y")
-        self.save_fn = kwargs.pop("save_fn", "/c/tmp")
-
-        # By this stage all keyword arguments meant to be set as class properties will have
-        # been processed. Popping all class properties that still exist in kwargs
-        self.kwargs = kwargs
-        for key in vars(self):
-            self.kwargs.pop(key, None)
-        self.axesList = []
-
-    # end func
+    @map_units.setter
+    def map_units(self, value):
+        self._map_units = value
+        if value in ["km"]:
+            self.scale = 1.0 / 1000
+        if value in ["m"]:
+            self.scale = 1
+        else:
+            self.scale = 1.0
 
     # -----------------------------------------------
     # The main plot method for this module
@@ -221,7 +217,9 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         # interpolate data
         res, phase, lat, lon = [], [], [], []
         for mt_obj in self.mt_list:
-            z_obj_i, tipper_obj_i = mt_obj.interpolate([freq], bounds_error=False)
+            z_obj_i, tipper_obj_i = mt_obj.interpolate(
+                [freq], bounds_error=False
+            )
             z_obj_i.compute_resistivity_phase()
             res.append(z_obj_i.resistivity[0])
             phase.append(z_obj_i.phase[0])
@@ -337,7 +335,9 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
 
                     # field values are directly assigned for coincident locations
                     coincidentValIndices = d[:, 0] == 0
-                    img[coincidentValIndices] = vals[l[coincidentValIndices, 0]]
+                    img[coincidentValIndices] = vals[
+                        l[coincidentValIndices, 0]
+                    ]
 
                     # perform idw interpolation for non-coincident locations
                     idwIndices = d[:, 0] != 0
@@ -388,14 +388,18 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                             int(np.round(np.log10(vmax[i, j]))) + 1,
                         )
                     ]
-                    cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
+                    cb.ax.yaxis.set_major_formatter(
+                        ticker.FixedFormatter(labels)
+                    )
                 elif type == "phase":
                     cbinfo = ax.tricontourf(
                         triangulation,
                         img,
                         mask=insideIndices,
                         levels=np.linspace(vmin[i, j], vmax[i, j], 50),
-                        norm=colors.Normalize(vmin=vmin[i, j], vmax=vmax[i, j]),
+                        norm=colors.Normalize(
+                            vmin=vmin[i, j], vmax=vmax[i, j]
+                        ),
                         extend="both",
                         cmap=cmap,
                     )
@@ -405,8 +409,12 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
                     )
                 # end if
 
-                ax.tick_params(axis="both", which="major", labelsize=self.font_size - 2)
-                ax.tick_params(axis="both", which="minor", labelsize=self.font_size - 2)
+                ax.tick_params(
+                    axis="both", which="major", labelsize=self.font_size - 2
+                )
+                ax.tick_params(
+                    axis="both", which="minor", labelsize=self.font_size - 2
+                )
 
                 cb.ax.tick_params(
                     axis="both", which="major", labelsize=self.font_size - 1
@@ -460,9 +468,13 @@ class PlotResPhaseMaps(mtpl.PlotSettings):
         # end for
 
         # Plot title
-        suffix = " %0.2f Hz" % (freq) if (freq >= 1) else " %0.2f s" % (1.0 / freq)
+        suffix = (
+            " %0.2f Hz" % (freq) if (freq >= 1) else " %0.2f s" % (1.0 / freq)
+        )
         if type == "res":
-            self.fig.suptitle("Apparent Resistivity Maps for" + suffix, y=0.985)
+            self.fig.suptitle(
+                "Apparent Resistivity Maps for" + suffix, y=0.985
+            )
         else:
             self.fig.suptitle("Phase Maps for" + suffix, y=0.985)
         plt.tight_layout(rect=[0, 0.025, 1, 0.975])
