@@ -15,7 +15,7 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import numpy as np
 from osgeo import gdal, osr, ogr
-from gdalconst import GA_ReadOnly
+from osgeo.gdalconst import GA_ReadOnly
 
 
 def plot_geotiff_on_axes(geotiff, axes, extents=None, epsg_code=None,
