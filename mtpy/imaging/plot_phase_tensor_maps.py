@@ -34,7 +34,7 @@ try:
 except ModuleNotFoundError:
     has_cx = False
 
-from mtpy.imaging.mtplot_tools import PlotBase, add_raster
+from mtpy.imaging.mtplot_tools import PlotBaseMaps, add_raster
 
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.analysis.pt as mtpt
@@ -43,7 +43,7 @@ import mtpy.core.z as mtz
 # ==============================================================================
 
 
-class PlotPhaseTensorMaps(PlotBase):
+class PlotPhaseTensorMaps(PlotBaseMaps):
     """
     Plots phase tensor ellipses in map view from a list of edi files
 
@@ -61,7 +61,7 @@ class PlotPhaseTensorMaps(PlotBase):
 
         # set the freq to plot
         self.plot_station = False
-        self.plot_freq = 1.0
+        self.plot_period = 1.0
         self.ftol = 0.1
         self.interpolate = True
         # read in map scale
@@ -162,77 +162,20 @@ class PlotPhaseTensorMaps(PlotBase):
         :rtype: TYPE
 
         """
-        z = np.array(
-            [
-                [
-                    tf.z_interp_dict["zxx"]["real"](self.plot_freq)[0]
-                    + 1j * tf.z_interp_dict["zxx"]["imag"](self.plot_freq)[0],
-                    tf.z_interp_dict["zxy"]["real"](self.plot_freq)[0]
-                    + 1j * tf.z_interp_dict["zxy"]["imag"](self.plot_freq)[0],
-                ],
-                [
-                    tf.z_interp_dict["zyx"]["real"](self.plot_freq)[0]
-                    + 1j * tf.z_interp_dict["zyx"]["imag"](self.plot_freq)[0],
-                    tf.z_interp_dict["zyy"]["real"](self.plot_freq)[0]
-                    + 1j * tf.z_interp_dict["zyy"]["imag"](self.plot_freq)[0],
-                ],
-            ]
-        )
+        z = self._get_interpolated_z(tf)
+        z_err = self._get_interpolated_z_err(tf)
 
-        z_err = np.array(
-            [
-                [
-                    tf.z_interp_dict["zxx"]["err"](self.plot_freq)[0],
-                    tf.z_interp_dict["zxy"]["err"](self.plot_freq)[0],
-                ],
-                [
-                    tf.z_interp_dict["zyx"]["err"](self.plot_freq)[0],
-                    tf.z_interp_dict["zyy"]["err"](self.plot_freq)[0],
-                ],
-            ]
-        )
-
-        new_z_obj = mtz.Z(z, z_err, [self.plot_freq])
+        new_z_obj = mtz.Z(z, z_err, freq=[1.0 / self.plot_period])
         new_z_obj.compute_resistivity_phase()
         pt_obj = mtpt.PhaseTensor(z_object=new_z_obj)
 
         new_t_obj = None
         if tf.t_interp_dict is not None:
 
-            t = np.array(
-                [
-                    [
-                        [
-                            tf.t_interp_dict["tzx"]["real"](self.plot_freq)[0]
-                            + 1j
-                            * tf.t_interp_dict["tzx"]["imag"](self.plot_freq)[
-                                0
-                            ],
-                        ],
-                        [
-                            tf.z_interp_dict["tzy"]["real"](self.plot_freq)[0]
-                            + 1j
-                            * tf.t_interp_dict["tzy"]["imag"](self.plot_freq)[
-                                0
-                            ],
-                        ],
-                    ]
-                ]
-            )
+            t = self._get_interpolated_t(tf)
+            t_err = self._get_interpolated_t_err(tf)
 
-            t_err = np.array(
-                [
-                    [
-                        [
-                            tf.t_interp_dict["tzx"]["err"](self.plot_freq)[0],
-                        ],
-                        [
-                            tf.t_interp_dict["tzy"]["err"](self.plot_freq)[0],
-                        ],
-                    ]
-                ]
-            )
-            new_t_obj = mtz.Tipper(t, t_err, [self.plot_freq])
+            new_t_obj = mtz.Tipper(t, t_err, [1.0 / self.plot_period])
 
         return pt_obj, new_t_obj
 
@@ -576,7 +519,7 @@ class PlotPhaseTensorMaps(PlotBase):
                     )
 
         # --> set title in period or freq
-        titlefreq = "{0:.5g} (s)".format(1.0 / self.plot_freq)
+        titlefreq = "{0:.5g} (s)".format(self.plot_period)
 
         if not self.plot_title:
             self.ax.set_title(

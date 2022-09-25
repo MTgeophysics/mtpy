@@ -46,7 +46,7 @@ class MTCollection:
     Collection of transfer functions
 
     The main working variable is `MTCollection.dataframe` which is a property
-    there returns either the `master dataframe` that contains all the TF's in
+    that returns either the `master dataframe` that contains all the TF's in
     the MTH5 file, or the `working_dataframe` which is a dataframe that has
     been queried in some way.  Therefore all the user has to do is set
     the working directory as a subset of the master_dataframe

@@ -22,20 +22,15 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-import matplotlib.colors as colors
 from matplotlib import ticker
-import matplotlib.tri as tri
 
 from mtpy.core.z import Z
-from mtpy.imaging.mtplot_tools import PlotBase, in_hull, period_label_dict
-
-from scipy.spatial import cKDTree
-from scipy import interpolate
+from mtpy.imaging.mtplot_tools import PlotBaseMaps
 
 # =============================================================================
 
 
-class PlotResPhaseMaps(PlotBase):
+class PlotResPhaseMaps(PlotBaseMaps):
     """
     Plots apparent resistivity and phase in map view from a list of edi files
 
@@ -254,36 +249,6 @@ class PlotResPhaseMaps(PlotBase):
 
         return ax_dict
 
-    def _get_interpolated_z(self, tf):
-        return np.array(
-            [
-                [
-                    tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zxx"]["imag"](1.0 / self.plot_period)[
-                        0
-                    ],
-                    tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zxy"]["imag"](1.0 / self.plot_period)[
-                        0
-                    ],
-                ],
-                [
-                    tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zyx"]["imag"](1.0 / self.plot_period)[
-                        0
-                    ],
-                    tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zyy"]["imag"](1.0 / self.plot_period)[
-                        0
-                    ],
-                ],
-            ]
-        )
-
     def _get_data_array(self):
         """
         make a data array to plot
@@ -333,120 +298,6 @@ class PlotResPhaseMaps(PlotBase):
 
         return plot_array
 
-    def _interpolate_to_map(self, plot_x, plot_y, plot_array, component):
-        """
-        Interpolate points onto a map
-
-
-        :param plot_array: DESCRIPTION
-        :type plot_array: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        points = np.array([plot_array["longitude"], plot_array["latitude"]]).T
-        values = plot_array[component]
-
-        grid_x, grid_y = np.meshgrid(plot_x, plot_y)
-        image = interpolate.griddata(
-            points,
-            values,
-            (grid_x, grid_y),
-            method=self.interpolation_method,
-        )
-
-        if "res" in component:
-            image = np.log10(image)
-
-        return grid_x, grid_y, image
-
-    def _fancy_interpolate_to_map(
-        self,
-        plot_x,
-        plot_y,
-        plot_array,
-        component,
-        nearest_neighbors=7,
-        interp_pow=4,
-    ):
-        """
-        Using some fancy triangulation and delauny interpolation
-
-        :param plot_x: DESCRIPTION
-        :type plot_x: TYPE
-        :param plot_y: DESCRIPTION
-        :type plot_y: TYPE
-        :param plot_array: DESCRIPTION
-        :type plot_array: TYPE
-        :param component: DESCRIPTION
-        :type component: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        x = plot_array["longitude"]
-        y = plot_array["latitude"]
-
-        # add padding to the locations
-        ds = self.cell_size * self.n_padding_cells
-
-        ex = plot_array["longitude"].copy()
-        ey = plot_array["latitude"].copy()
-
-        ex[np.argmin(ex)] -= ds
-        ex[np.argmax(ex)] += ds
-        ey[np.argmin(ey)] -= ds
-        ey[np.argmax(ey)] += ds
-
-        rx, ry = np.meshgrid(plot_x, plot_y)
-        rx = rx.flatten()
-        ry = ry.flatten()
-
-        triangulation = tri.Triangulation(rx, ry)
-
-        mx = rx[triangulation.triangles].mean(axis=1)
-        my = ry[triangulation.triangles].mean(axis=1)
-
-        mxmy = np.array([mx, my]).T
-        exey = np.array([ex, ey]).T
-
-        inside_indices = in_hull(mxmy, exey)
-        inside_indices = np.bool_(inside_indices)
-        triangulation.set_mask(~inside_indices)
-
-        tree = cKDTree(np.array([x, y]).T)
-
-        xy = np.array([rx, ry]).T
-        d, l = tree.query(xy, k=nearest_neighbors)
-
-        image = None
-        values = plot_array[component]
-
-        if nearest_neighbors == 1:
-            # extract nearest neighbour values
-            image = values[l]
-        else:
-            image = np.zeros((xy.shape[0]))
-
-            # field values are directly assigned for coincident locations
-            coincident_indices = d[:, 0] == 0
-            image[coincident_indices] = values[l[coincident_indices, 0]]
-
-            # perform idw interpolation for non-coincident locations
-            idw_indices = d[:, 0] != 0
-            w = np.zeros(d.shape)
-            w[idw_indices, :] = 1.0 / np.power(d[idw_indices, :], interp_pow)
-
-            image[idw_indices] = np.sum(
-                w[idw_indices, :] * values[l[idw_indices, :]], axis=1
-            ) / np.sum(w[idw_indices, :], axis=1)
-
-        if "res" in component:
-            image = np.log10(image)
-
-        return triangulation, image, inside_indices
-
     def _get_cmap(self, component):
         """
         get color map with proper limits
@@ -455,17 +306,6 @@ class PlotResPhaseMaps(PlotBase):
             cmap = self.res_cmap
         elif "phase" in component:
             cmap = self.phase_cmap
-
-        # if isinstance(cmap, str):
-        #     cmap = plt.get_cmap(cmap)
-
-        # # set cmap values for over and under
-        # norm = colors.Normalize(
-        #     vmin=self.cmap_limits[component][0],
-        #     vmax=self.cmap_limits[component][1],
-        # )
-        # cmap.set_over(cmap(norm(self.cmap_limits[component][1])))
-        # cmap.set_under(cmap(norm(self.cmap_limits[component][0])))
 
         return cmap
 
@@ -493,7 +333,7 @@ class PlotResPhaseMaps(PlotBase):
                 extend="both",
             )
             labels = [
-                period_label_dict[dd]
+                self.period_label_dict[dd]
                 for dd in np.arange(
                     int(np.round(self.cmap_limits[component][0])),
                     int(np.round(self.cmap_limits[component][1])) + 1,
@@ -512,46 +352,6 @@ class PlotResPhaseMaps(PlotBase):
         )
 
         return cb
-
-    def _get_plot_xy(self, plot_array):
-        """
-        Get the plot_x and plot_y along a regular grid
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        # create uniform x, y to plot on.
-        ds = self.cell_size * self.n_padding_cells
-        n_points = int(
-            abs(
-                plot_array["longitude"].max()
-                - plot_array["longitude"].min()
-                + 2 * ds
-            )
-            / self.cell_size
-        )
-        plot_x = np.linspace(
-            plot_array["longitude"].min() - ds,
-            plot_array["longitude"].max() + ds,
-            n_points,
-        )
-
-        n_points = int(
-            abs(
-                plot_array["latitude"].max()
-                - plot_array["latitude"].min()
-                + 2 * ds
-            )
-            / self.cell_size
-        )
-        plot_y = np.linspace(
-            plot_array["latitude"].min() - ds,
-            plot_array["latitude"].max() + ds,
-            n_points,
-        )
-
-        return plot_x, plot_y
 
     # -----------------------------------------------
     # The main plot method for this module
