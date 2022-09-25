@@ -252,12 +252,12 @@ class PlotBaseMaps(PlotBase):
         return np.array(
             [
                 [
-                    tf.z_interp_dict["zxx"]["err"](self.plot_freq)[0],
-                    tf.z_interp_dict["zxy"]["err"](self.plot_freq)[0],
+                    tf.z_interp_dict["zxx"]["err"](1.0 / self.plot_period)[0],
+                    tf.z_interp_dict["zxy"]["err"](1.0 / self.plot_period)[0],
                 ],
                 [
-                    tf.z_interp_dict["zyx"]["err"](self.plot_freq)[0],
-                    tf.z_interp_dict["zyy"]["err"](self.plot_freq)[0],
+                    tf.z_interp_dict["zyx"]["err"](1.0 / self.plot_period)[0],
+                    tf.z_interp_dict["zyy"]["err"](1.0 / self.plot_period)[0],
                 ],
             ]
         )
@@ -267,14 +267,22 @@ class PlotBaseMaps(PlotBase):
             [
                 [
                     [
-                        tf.t_interp_dict["tzx"]["real"](self.plot_freq)[0]
+                        tf.t_interp_dict["tzx"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
-                        * tf.t_interp_dict["tzx"]["imag"](self.plot_freq)[0],
+                        * tf.t_interp_dict["tzx"]["imag"](
+                            1.0 / self.plot_period
+                        )[0],
                     ],
                     [
-                        tf.z_interp_dict["tzy"]["real"](self.plot_freq)[0]
+                        tf.z_interp_dict["tzy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
-                        * tf.t_interp_dict["tzy"]["imag"](self.plot_freq)[0],
+                        * tf.t_interp_dict["tzy"]["imag"](
+                            1.0 / self.plot_period
+                        )[0],
                     ],
                 ]
             ]
@@ -285,10 +293,14 @@ class PlotBaseMaps(PlotBase):
             [
                 [
                     [
-                        tf.t_interp_dict["tzx"]["err"](self.plot_freq)[0],
+                        tf.t_interp_dict["tzx"]["err"](1.0 / self.plot_period)[
+                            0
+                        ],
                     ],
                     [
-                        tf.t_interp_dict["tzy"]["err"](self.plot_freq)[0],
+                        tf.t_interp_dict["tzy"]["err"](1.0 / self.plot_period)[
+                            0
+                        ],
                     ],
                 ]
             ]
