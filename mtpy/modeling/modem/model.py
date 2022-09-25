@@ -167,7 +167,7 @@ class Model(object):
     Methods              Description
     ==================== ======================================================
     add_topography_to_model2    if air_layers is non-zero, will add topo: read
-                                in topograph file, make a surface model.
+                                in topography file, make a surface model.
                                 Call project_stations_on_topography in the end,
                                 which will re-write the .dat file.
                                 If n_airlayers is zero, then cannot add topo
