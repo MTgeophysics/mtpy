@@ -7,8 +7,6 @@ Created on Thu May 30 18:28:24 2013
 
 # ==============================================================================
 
-import os
-
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -18,6 +16,7 @@ from matplotlib.ticker import MultipleLocator
 
 from mtpy.analysis.zinvariants import Zinvariants
 from mtpy.imaging.mtplot_tools import PlotBase
+from mtpy.core.z import Tipper
 
 # ==============================================================================
 
@@ -152,6 +151,7 @@ class PlotStrike(PlotBase):
         self.plot_pt = True
         self.plot_tipper = True
         self.plot_invariant = True
+        self.print_stats = False
 
         self.polar_limits = (np.deg2rad(-180), np.deg2rad(180))
 
@@ -253,12 +253,15 @@ class PlotStrike(PlotBase):
 
             # -----------get tipper strike------------------------------------
             tip = mt.Tipper
-            if tip.tipper is None:
-                tip.tipper = np.zeros((len(mt.period), 1, 2), dtype="complex")
-                tip.compute_components()
+            if tip == None:
+                tip = Tipper(
+                    np.zeros((len(mt.period), 1, 2), dtype="complex"), freq=[1]
+                )
+                tip.compute_mag_direction()
+                tip.compute_amp_phase()
             # # subtract 90 because polar plot assumes 0 is on the x an 90 is
             # on the y
-            tipr = 180 - tip.angle_real
+            tipr = 90 - tip.angle_real
 
             tipr[np.where(abs(tipr) == 180.0)] = np.nan
             tipr[np.where(abs(tipr) == 0)] = np.nan
@@ -271,7 +274,7 @@ class PlotStrike(PlotBase):
                     "estimate": "tipper",
                     "period": period,
                     "plot_strike": plot_strike,
-                    "measured_strike": strike + 90,
+                    "measured_strike": strike,
                 }
                 entries.append(entry)
 
@@ -281,7 +284,7 @@ class PlotStrike(PlotBase):
         """
         get mean value
         """
-        s_mean = estimate_df.measured_strike.mean()
+        s_mean = estimate_df.measured_strike.mean(skipna=True)
         s_mean %= 360
 
         return s_mean
@@ -290,7 +293,7 @@ class PlotStrike(PlotBase):
         """
         get median value
         """
-        s_median = estimate_df.measured_strike.median()
+        s_median = estimate_df.measured_strike.median(skipna=True)
         s_median %= 360
 
         return s_median
@@ -299,7 +302,9 @@ class PlotStrike(PlotBase):
         """
         get mode from a historgram
         """
-        s_mode = stats.mode(estimate_df.measured_strike).mode[0]
+        s_mode = stats.mode(
+            estimate_df.measured_strike[~np.isnan(estimate_df.measured_strike)]
+        ).mode[0]
         s_mode %= 360
 
         return s_mode
@@ -334,7 +339,9 @@ class PlotStrike(PlotBase):
         else:
             msg += f"period range {period_range[0]:.3g} to {period_range[1]:.3g} (s) "
         msg += f"median={s_median:.1f} mode={s_mode:.1f} mean={s_mean:.1f}"
-        self.logger.info(msg)
+        self.logger.debug(msg)
+        if self.print_stats:
+            print(msg)
 
         return s_median, s_mode, s_mean
 
@@ -746,7 +753,7 @@ class PlotStrike(PlotBase):
                 axh.text(
                     -np.pi / 2,
                     axh.get_ylim()[1] * self.text_y_pad,
-                    f"{st_mode:.1f}$^o$",
+                    f"{st_median:.1f}$^o$",
                     horizontalalignment="center",
                     verticalalignment="baseline",
                     fontdict={"size": self.text_size},
@@ -850,7 +857,7 @@ class PlotStrike(PlotBase):
             axh.text(
                 170 * np.pi / 180,
                 axh.get_ylim()[1] * 0.65,
-                f"{st_mode:.1f}$^o$",
+                f"{st_median:.1f}$^o$",
                 horizontalalignment="center",
                 verticalalignment="baseline",
                 fontdict={"size": self.font_size},

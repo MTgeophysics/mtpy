@@ -62,8 +62,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         # set the freq to plot
         self.plot_station = False
         self.plot_period = 1.0
-        self.ftol = 0.1
-        self.interpolate = True
+
         # read in map scale
         self.map_scale = "deg"
         self.map_utm_zone = None
