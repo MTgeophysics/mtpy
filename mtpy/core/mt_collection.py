@@ -632,16 +632,17 @@ class MTCollection:
             gdf = self.to_geo_df(epsg=map_epsg)
             return PlotStations(gdf, **kwargs)
 
-    def plot_strike(self, **kwargs):
+    def plot_strike(self, tf_list=None, **kwargs):
         """
         Plot strike angle
 
         .. seealso:: :class:`mtpy.imaging.PlotStrike`
         """
-        tf_list = self.get_tf_list()
+        if tf_list is None:
+            tf_list = self.get_tf_list()
         return PlotStrike(tf_list, **kwargs)
 
-    def plot_phase_tensor(self, tf_id, **kwargs):
+    def plot_phase_tensor(self, tf_id, survey=None, **kwargs):
         """
         plot phase tensor elements
 
@@ -654,11 +655,10 @@ class MTCollection:
 
         """
 
-        if isinstance(tf_id, str):
-            tf_obj = self.get_tf(tf_id)
-            return tf_obj.plot_phase_tensor(**kwargs)
+        tf_obj = self.get_tf(tf_id, survey=survey)
+        return tf_obj.plot_phase_tensor(**kwargs)
 
-    def plot_phase_tensor_map(self, **kwargs):
+    def plot_phase_tensor_map(self, tf_list=None, **kwargs):
         """
         Plot Phase tensor maps for transfer functions in the working_dataframe
 
@@ -671,11 +671,12 @@ class MTCollection:
 
         """
 
-        tf_list = self.get_tf_list()
+        if tf_list is None:
+            tf_list = self.get_tf_list()
 
         return PlotPhaseTensorMaps(tf_list=tf_list, **kwargs)
 
-    def plot_phase_tensor_pseudo_section(self, **kwargs):
+    def plot_phase_tensor_pseudo_section(self, tf_list=None, **kwargs):
         """
         Plot a pseudo section of  phase tensor ellipses and induction vectors
         if specified
@@ -689,7 +690,8 @@ class MTCollection:
 
         """
 
-        tf_list = self.get_tf_list()
+        if tf_list is None:
+            tf_list = self.get_tf_list()
 
         return PlotPhaseTensorPseudoSection(tf_list=tf_list, **kwargs)
 
@@ -714,7 +716,7 @@ class MTCollection:
         if plot_type in ["map"]:
             return PlotResidualPTMaps(tf_list_01, tf_list_02, **kwargs)
 
-    def plot_penetration_depth_1d(self, tf_object, **kwargs):
+    def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
         """
         Plot 1D penetration depth based on the Niblett-Bostick transformation
 
@@ -733,9 +735,11 @@ class MTCollection:
 
         """
 
+        tf_object = self.get_tf(tf_id, survey=survey)
+
         return PlotPenetrationDepth1D(tf_object, **kwargs)
 
-    def plot_penetration_depth_map(self, **kwargs):
+    def plot_penetration_depth_map(self, tf_list=None, **kwargs):
         """
         Plot Penetration depth in map view for a single period
 
@@ -748,11 +752,12 @@ class MTCollection:
 
         """
 
-        tf_list = self.get_tf_list()
+        if tf_list is None:
+            tf_list = self.get_tf_list()
 
         return PlotPenetrationDepthMap(tf_list, **kwargs)
 
-    def plot_resistivity_phase_maps(self, **kwargs):
+    def plot_resistivity_phase_maps(self, tf_list=None, **kwargs):
         """
         Plot apparent resistivity and/or impedance phase maps from the
         working dataframe
@@ -765,6 +770,7 @@ class MTCollection:
 
         """
 
-        tf_list = self.get_tf_list()
+        if tf_list is None:
+            tf_list = self.get_tf_list()
 
         return PlotResPhaseMaps(tf_list, **kwargs)

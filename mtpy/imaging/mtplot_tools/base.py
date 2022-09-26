@@ -10,16 +10,10 @@ Base classes for plotting classes
 from pathlib import Path
 import numpy as np
 
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.patches as patches
-import matplotlib.colorbar as mcb
-from matplotlib.lines import Line2D
-
-import mtpy.imaging.mtcolors as mtcl
 
 from .plot_settings import PlotSettings
+from .plotters import add_raster
 from .map_interpolation_tools import interpolate_to_map
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
@@ -48,7 +42,7 @@ class PlotBase(PlotSettings):
         rewrite the string builtin to give a useful message
         """
 
-        return f"Plotting {self._basename}"
+        return f"Plotting {self.__class__.__name__}"
 
     def __repr__(self):
         return self.__str__()
@@ -184,14 +178,14 @@ class PlotBaseMaps(PlotBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def interpolate_to_map(
-        self,
-        plot_array,
-        component,
-        cell_size=0.002,
-        n_padding_cells=10,
-        interpolation_method="delaunay",
-    ):
+        self.cell_size = 0.002
+        self.n_padding_cells = 10
+        self.interpolation_method = "delaunay"
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def interpolate_to_map(self, plot_array, component):
         """
         interpolate points onto a 2d map.
 
@@ -213,9 +207,9 @@ class PlotBaseMaps(PlotBase):
         return interpolate_to_map(
             plot_array,
             component,
-            cell_size=cell_size,
-            n_padding_cells=n_padding_cells,
-            interpolation_method=interpolation_method,
+            cell_size=self.cell_size,
+            n_padding_cells=self.n_padding_cells,
+            interpolation_method=self.interpolation_method,
         )
 
     def _get_interpolated_z(self, tf):
@@ -305,3 +299,22 @@ class PlotBaseMaps(PlotBase):
                 ]
             ]
         )
+
+    def add_raster(self, ax, raster_fn, add_colorbar=True, **kwargs):
+        """
+        Add a raster to an axis using rasterio
+
+        :param ax: DESCRIPTION
+        :type ax: TYPE
+        :param raster_fn: DESCRIPTION
+        :type raster_fn: TYPE
+        :param add_colorbar: DESCRIPTION, defaults to True
+        :type add_colorbar: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return add_raster(ax, raster_fn, add_colorbar=True, **kwargs)

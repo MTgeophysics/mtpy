@@ -10,18 +10,15 @@ Created on Thu Sep 22 10:58:58 2022
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import interpolate
 
-
-from mtpy.imaging.mtplot_tools import PlotBase
+from mtpy.imaging.mtplot_tools import PlotBaseMaps
 from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
 from mtpy.core.z import Z
-
 
 # =============================================================================
 
 
-class PlotPenetrationDepthMap(PlotBase):
+class PlotPenetrationDepthMap(PlotBaseMaps):
     """
     Plot the depth of penetration based on the Niblett-Bostick approximation.
 
@@ -39,9 +36,6 @@ class PlotPenetrationDepthMap(PlotBase):
         self.plot_det = True
         self.plot_te = True
         self.plot_tm = True
-        self.grid_element_size = 0.002
-        self.grid_pad = 2
-        self.interpolation_method = "cubic"
         self.plot_stations = True
         self.depth_cmap = "magma"
         self.marker_color = "k"
@@ -52,6 +46,10 @@ class PlotPenetrationDepthMap(PlotBase):
             "yx": "TM Mode",
         }
         self.depth_range = [None, None]
+
+        self.subplot_wspace = 0.2
+        self.subplot_hspace = 0.1
+        self.font_size = 8
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -155,50 +153,6 @@ class PlotPenetrationDepthMap(PlotBase):
 
         return depth_array
 
-    def _interpolate_to_map(self, depth_array, component):
-        """
-        Interpolate points onto a map
-
-
-        :param depth_array: DESCRIPTION
-        :type depth_array: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        points = np.array(
-            [depth_array["longitude"], depth_array["latitude"]]
-        ).T
-        values = depth_array[component]
-
-        x = np.linspace(
-            depth_array["longitude"].min()
-            - (self.grid_element_size * self.grid_pad),
-            depth_array["longitude"].max()
-            + (self.grid_element_size * self.grid_pad),
-        )
-
-        y = np.linspace(
-            depth_array["latitude"].min()
-            - (self.grid_element_size * self.grid_pad),
-            depth_array["latitude"].max()
-            + (self.grid_element_size * self.grid_pad),
-        )
-
-        grid_x, grid_y = np.meshgrid(x, y)
-
-        return (
-            grid_x,
-            grid_y,
-            interpolate.griddata(
-                points,
-                values,
-                (grid_x, grid_y),
-                method=self.interpolation_method,
-            ),
-        )
-
     def _get_n_subplots(self):
         """
         get the number of subplots
@@ -276,6 +230,8 @@ class PlotPenetrationDepthMap(PlotBase):
         :rtype: TYPE
 
         """
+        self._set_subplot_params()
+
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
@@ -284,17 +240,59 @@ class PlotPenetrationDepthMap(PlotBase):
         depth_array = self._get_depth_array()
 
         for comp, ax in plot_components.items():
-            plot_x, plot_y, plot_z = self._interpolate_to_map(
-                depth_array, comp
-            )
 
-            im = ax.pcolormesh(
-                plot_x,
-                plot_y,
-                plot_z,
-                cmap=self.depth_cmap,
-                vmin=self.depth_range[0],
-                vmax=self.depth_range[1],
+            if self.interpolation_method in ["nearest", "linear", "cubic"]:
+                plot_x, plot_y, image = self.interpolate_to_map(
+                    depth_array, comp
+                )
+
+                im = ax.pcolormesh(
+                    plot_x,
+                    plot_y,
+                    image,
+                    cmap=self.depth_cmap,
+                    vmin=self.depth_range[0],
+                    vmax=self.depth_range[1],
+                )
+            elif self.interpolation_method in [
+                "fancy",
+                "delaunay",
+                "triangulate",
+            ]:
+                triangulation, image, indices = self.interpolate_to_map(
+                    depth_array, comp
+                )
+                if self.depth_range[0] != None and self.depth_range[1] != None:
+                    levels = np.linspace(
+                        self.depth_range[0],
+                        self.depth_range[1],
+                        50,
+                    )
+                    im = ax.tricontourf(
+                        triangulation,
+                        image,
+                        mask=indices,
+                        levels=levels,
+                        extend="both",
+                        cmap=self.depth_cmap,
+                    )
+                else:
+                    im = ax.tricontourf(
+                        triangulation,
+                        image,
+                        levels=50,
+                        mask=indices,
+                        extend="both",
+                        cmap=self.depth_cmap,
+                    )
+
+            plt.colorbar(
+                im,
+                ax=ax,
+                label=f"Penetration Depth ({self.depth_units})",
+                shrink=0.35,
+                extend="both",
+                extendfrac="auto",
             )
 
             if self.plot_stations:
@@ -312,18 +310,9 @@ class PlotPenetrationDepthMap(PlotBase):
                 self.subplot_title_dict[comp], fontdict=self.font_dict
             )
 
-            plt.colorbar(
-                im,
-                ax=ax,
-                label=f"Penetration Depth ({self.depth_units})",
-                shrink=0.35,
-            )
-
-        self.fig.tight_layout()
-
         self.fig.suptitle(
             f"Depth of investigation for period {self.plot_period:5g} (s)",
             fontproperties=self.font_dict,
         )
 
-        plt.show()
+        plt.tight_layout()
