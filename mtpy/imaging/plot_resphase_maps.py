@@ -87,11 +87,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
         self.phase_cmap = "rainbow"
         self.plot_period = 1
 
-        self.cell_size = 0.002
-        self.n_padding_cells = 10
-
-        self.interpolation_method = "cubic"
-
         self.plot_xx = False
         self.plot_xy = True
         self.plot_yx = True
@@ -373,7 +368,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
         subplot_dict = self._get_subplots()
 
         plot_array = self._get_data_array()
-        plot_x, plot_y = self._get_plot_xy(plot_array)
 
         # plot results
         subplot_numbers = self._get_n_subplots()
@@ -381,9 +375,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
             cmap = self._get_cmap(comp)
 
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
-                x, y, image = self._interpolate_to_map(
-                    plot_x, plot_y, plot_array, comp
-                )
+                x, y, image = self.interpolate_to_map(plot_array, comp)
 
                 im = ax.pcolormesh(
                     x,
@@ -398,8 +390,8 @@ class PlotResPhaseMaps(PlotBaseMaps):
                 "delaunay",
                 "triangulate",
             ]:
-                triangulation, image, indices = self._fancy_interpolate_to_map(
-                    plot_x, plot_y, plot_array, comp
+                triangulation, image, indices = self.interpolate_to_map(
+                    plot_array, comp
                 )
                 im = ax.tricontourf(
                     triangulation,
@@ -414,7 +406,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
                     cmap=cmap,
                 )
 
-            cb = self._get_colorbar(ax, im, comp)
+            self._get_colorbar(ax, im, comp)
 
             # show stations
             if self.plot_stations:
