@@ -294,6 +294,8 @@ class PlotMultipleResponses(PlotBase):
             legend=legend,
             zero_reference=zero_reference,
         )
+        if axt is None:
+            return None, None
 
         axt.set_xlabel("Period (s)", fontdict=self.font_dict)
 
@@ -621,15 +623,16 @@ class PlotMultipleResponses(PlotBase):
                 self._plot_phase(axp, mt.period, mt.Z, mode="det_only")
             # plot tipper
             tip_list, tip_label = self._plot_tipper(axt, mt.period, mt.Tipper)
-            if self.plot_tipper.find("r") > 0:
-                legend_list_tip.append(tip_list[0])
-                station_list_t.append(f"{mt.station}_{tip_label[0]}")
-                if self.plot_tipper.find("i") > 0:
-                    legend_list_tip.append(tip_list[1])
-                    station_list_t.append(f"{mt.station}_{tip_label[1]}")
-            elif self.plot_tipper.find("i") > 0:
-                legend_list_tip.append(tip_list[0])
-                station_list_t.append(f"{mt.station}_{tip_label[0]}")
+            if tip_list is not None:
+                if self.plot_tipper.find("r") > 0:
+                    legend_list_tip.append(tip_list[0])
+                    station_list_t.append(f"{mt.station}_{tip_label[0]}")
+                    if self.plot_tipper.find("i") > 0:
+                        legend_list_tip.append(tip_list[1])
+                        station_list_t.append(f"{mt.station}_{tip_label[1]}")
+                elif self.plot_tipper.find("i") > 0:
+                    legend_list_tip.append(tip_list[0])
+                    station_list_t.append(f"{mt.station}_{tip_label[0]}")
             # plot phase tensor
             self._plot_pt(
                 axpt,
