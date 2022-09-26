@@ -14,8 +14,8 @@ with open("HISTORY.rst") as history_file:
 
 
 requirements = [
-    "numpy<=1.21",
-    "scipy>=0.14.0",
+    "numpy",
+    "scipy",
     "matplotlib",
     "pyyaml",
     "pyproj",
@@ -34,7 +34,6 @@ test_requirements = [
     "pytest>=3",
 ]
 
-#setup_kwargs["data_files"] = [("data", ["mtpy/utils/epsg.npy"])]
 
 setup(
     author="Jared Peacock,Alison Kirkby,Fei Zhang,,Rakib Hassan, Jinming Duan",
