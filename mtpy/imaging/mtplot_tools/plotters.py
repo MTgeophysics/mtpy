@@ -344,6 +344,9 @@ def plot_tipper_lateral(
     if t_obj is None:
         return None, None, None
 
+    if axt is None:
+        return None, None, None
+
     if plot_tipper.find("y") == 0 or plot_tipper:
         txr = t_obj.mag_real * np.cos(np.deg2rad(-t_obj.angle_real))
         tyr = t_obj.mag_real * np.sin(np.deg2rad(-t_obj.angle_real))

@@ -978,11 +978,6 @@ class Z(ResPhase):
                     )
         return distortion_tensor, z_corrected, z_corrected_err
 
-    def _compute_det_variance(self):
-        """
-        compute the variance of the determinant of Z,
-        """
-
     @property
     def only_1d(self):
         """
