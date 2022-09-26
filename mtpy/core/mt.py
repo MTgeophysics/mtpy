@@ -18,6 +18,7 @@ from mtpy.core.z import Z, Tipper
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 from mtpy.utils import gis_tools
+from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
 
 
 # =============================================================================
@@ -26,7 +27,7 @@ class MT(TF):
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
 
-    
+
     """
 
     def __init__(self, fn=None, **kwargs):
@@ -41,10 +42,10 @@ class MT(TF):
 
         self.project_to_utm()
 
-    def project_to_utm(self):
+    def project_to_utm(self, epsg=None, utm_zone=None):
         """
         project point to utm
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -52,14 +53,14 @@ class MT(TF):
 
         if self.latitude and self.longitude:
             east, north, zone = gis_tools.project_point_ll2utm(
-                self.latitude, self.longitude
+                self.latitude, self.longitude, utm_zone=utm_zone, epsg=epsg
             )
             self._utm_location = {"east": east, "north": north, "zone": zone}
 
-    def project_to_ll(self):
+    def project_to_ll(self, epsg=None):
         """
         project point to utm
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -67,37 +68,40 @@ class MT(TF):
 
         if self.east != 0 and self.north != 0 and self.utm_zone != None:
             self.latitude, self.longitude = gis_tools.project_point_utm2ll(
-                self.east, self.north, self.utm_zone
+                self.east,
+                self.north,
+                self.utm_zone,
+                epsg=epsg,
             )
 
     @property
     def east(self):
-        """ easting """
+        """easting"""
         return self._utm_location["east"]
 
     @east.setter
     def east(self, value):
-        """ set east """
+        """set east"""
         self._utm_location["east"] = value
 
     @property
     def north(self):
-        """ northing """
+        """northing"""
         return self._utm_location["north"]
 
     @north.setter
     def north(self, value):
-        """ set north"""
+        """set north"""
         self._utm_location["north"] = value
 
     @property
     def utm_zone(self):
-        """ utm zone """
+        """utm zone"""
         return self._utm_location["zone"]
 
     @utm_zone.setter
     def utm_zone(self, value):
-        """ set utm_zone """
+        """set utm_zone"""
         self._utm_location["utm_zone"] = value
 
     @property
@@ -112,20 +116,21 @@ class MT(TF):
         positive to East as 90.
 
         upon setting rotates Z and Tipper
-        
+
         TODO figure this out with xarray
         """
-
         self._rotation_angle = theta_r
-        self._Z.rotate(theta_r)
-        self._Tipper.rotate(theta_r)
-        self.pt.rotate(theta_r)
+        z_copy = self.Z.copy()
+        t_copy = self.Tipper.copy()
+
+        z_copy.rotate(theta_r)
+        self.Z = z_copy
+
+        t_copy.rotate(theta_r)
+        self.Tipper = t_copy
 
         self.logger.info(
-            (
-                "Rotated Z, Tipper, Phase Tensor and Zinvariants by"
-                "{0:.3f} degrees".format(self._rotation_angle)
-            )
+            f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
         )
 
     @property
@@ -186,62 +191,62 @@ class MT(TF):
 
     @property
     def ex_metadata(self):
-        """ EX metadata """
+        """EX metadata"""
         return self.station_metadata.runs[0].ex
 
     @ex_metadata.setter
     def ex_metadata(self, value):
-        """ set EX metadata """
+        """set EX metadata"""
         self.station_metadata.runs[0].ex = value
 
     @property
     def ey_metadata(self):
-        """ EY metadata """
+        """EY metadata"""
         return self.station_metadata.runs[0].ey
 
     @ey_metadata.setter
     def ey_metadata(self, value):
-        """ set EY metadata """
+        """set EY metadata"""
         self.station_metadata.runs[0].ey = value
 
     @property
     def hx_metadata(self):
-        """ HX metadata """
+        """HX metadata"""
         return self.station_metadata.runs[0].hx
 
     @hx_metadata.setter
     def hx_metadata(self, value):
-        """ set hx metadata """
+        """set hx metadata"""
         self.station_metadata.runs[0].hx = value
 
     @property
     def hy_metadata(self):
-        """ HY metadata """
+        """HY metadata"""
         return self.station_metadata.runs[0].hy
 
     @hy_metadata.setter
     def hy_metadata(self, value):
-        """ set hy metadata """
+        """set hy metadata"""
         self.station_metadata.runs[0].hy = value
 
     @property
     def hz_metadata(self):
-        """ HZ metadata """
+        """HZ metadata"""
         return self.station_metadata.runs[0].hz
 
     @hz_metadata.setter
     def hz_metadata(self, value):
-        """ set hz metadata """
+        """set hz metadata"""
         self.station_metadata.runs[0].hz = value
 
     @property
     def rrhx_metadata(self):
-        """ RRHX metadata """
+        """RRHX metadata"""
         return self.station_metadata.runs[0].rrhx
 
     @property
     def rrhy_metadata(self):
-        """ RRHY metadata """
+        """RRHY metadata"""
         return self.station_metadata.runs[0].rrhy
 
     def remove_distortion(self, num_freq=None):
@@ -314,17 +319,109 @@ class MT(TF):
         )
 
         new_z_obj = Z(
-            z_array=new_z, z_err_array=self.Z.z_err.copy(), freq=self.Z.freq.copy()
+            z_array=new_z,
+            z_err_array=self.Z.z_err.copy(),
+            freq=self.Z.freq.copy(),
         )
 
         return new_z_obj
+
+    def get_interp1d_functions_z(self, interp_type="slinear"):
+        """
+
+        :param interp_type: DESCRIPTION, defaults to "slinear"
+        :type interp_type: TYPE, optional
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if self.Z is None:
+            return None
+
+        # interpolate the impedance tensor
+        zmap = {0: "x", 1: "y"}
+        interp_dict = {}
+        for ii in range(2):
+            for jj in range(2):
+                comp = f"z{zmap[ii]}{zmap[jj]}"
+                interp_dict[comp] = {}
+                # need to look out for zeros in the impedance
+                # get the indicies of non-zero components
+                nz_index = np.nonzero(self.Z.z[:, ii, jj])
+
+                if len(nz_index[0]) == 0:
+                    continue
+                # get the non-zero components
+                z_real = self.Z.z[nz_index, ii, jj].real
+                z_imag = self.Z.z[nz_index, ii, jj].imag
+                z_err = self.Z.z_err[nz_index, ii, jj]
+
+                # get the frequencies of non-zero components
+                f = self.Z.freq[nz_index]
+
+                # create a function that does 1d interpolation
+                interp_dict[comp]["real"] = spi.interp1d(
+                    f, z_real, kind=interp_type
+                )
+                interp_dict[comp]["imag"] = spi.interp1d(
+                    f, z_imag, kind=interp_type
+                )
+                interp_dict[comp]["err"] = spi.interp1d(
+                    f, z_err, kind=interp_type
+                )
+
+        return interp_dict
+
+    def get_interp1d_functions_t(self, interp_type="slinear"):
+        """
+
+        :param interp_type: DESCRIPTION, defaults to "slinear"
+        :type interp_type: TYPE, optional
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if self.Tipper is None:
+            return None
+
+        # interpolate the impedance tensor
+        zmap = {0: "x", 1: "y"}
+        interp_dict = {}
+        for jj in range(2):
+            comp = f"tz{zmap[jj]}"
+            interp_dict[comp] = {}
+            # need to look out for zeros in the impedance
+            # get the indicies of non-zero components
+            nz_index = np.nonzero(self.Tipper.tipper[:, 0, jj])
+
+            if len(nz_index[0]) == 0:
+                continue
+            # get the non-zero components
+            t_real = self.Tipper.tipper[nz_index, 0, jj].real
+            t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
+            t_err = self.Tipper.tipper[nz_index, 0, jj]
+
+            # get the frequencies of non-zero components
+            f = self.Tipper.freq[nz_index]
+
+            # create a function that does 1d interpolation
+            interp_dict[comp]["real"] = spi.interp1d(
+                f, t_real, kind=interp_type
+            )
+            interp_dict[comp]["imag"] = spi.interp1d(
+                f, t_imag, kind=interp_type
+            )
+            interp_dict[comp]["err"] = spi.interp1d(f, t_err, kind=interp_type)
+
+        return interp_dict
 
     def interpolate(
         self,
         new_freq_array,
         interp_type="slinear",
         bounds_error=True,
-        period_buffer=None,
     ):
         """
         Interpolate the impedance tensor onto different frequencies
@@ -364,33 +461,24 @@ class MT(TF):
         # make sure the input is a numpy array
         if not isinstance(new_freq_array, np.ndarray):
             new_freq_array = np.array(new_freq_array)
-        if period_buffer is not None:
-            if 0.0 < period_buffer < 1.0:
-                period_buffer += 1.0
-                self.logger.warning(
-                    "Period buffer must be > 1. Updating to", period_buffer
-                )
+
         # check the bounds of the new frequency array
         if bounds_error:
 
             # logger.debug("new freq array %s", new_freq_array)
             if self.frequency.min() > new_freq_array.min():
                 raise ValueError(
-                    "New frequency minimum of {0:.5g}".format(new_freq_array.min())
-                    + " is smaller than old frequency minimum of {0:.5g}".format(
-                        self.frequency.min()
-                    )
-                    + ".  The new frequency range needs to be within the "
-                    + "bounds of the old one."
+                    f"New frequency minimum of {new_freq_array.min():.5g} "
+                    "is smaller than old frequency minimum of "
+                    f"{self.frequency.min():.5g}.  The new frequency range "
+                    "needs to be within the bounds of the old one."
                 )
             if self.frequency.max() < new_freq_array.max():
                 raise ValueError(
-                    "New frequency maximum of {0:.5g}".format(new_freq_array.max())
-                    + "is smaller than old frequency maximum of {0:.5g}".format(
-                        self.frequency.max()
-                    )
-                    + ".  The new frequency range needs to be within the "
-                    + "bounds of the old one."
+                    f"New frequency maximum of {new_freq_array.max():.5g} "
+                    "is smaller than old frequency maximum of "
+                    f"{self.frequency.max():.5g}.  The new frequency range "
+                    "needs to be within the bounds of the old one."
                 )
         # make a new Z object
         new_Z = Z(
@@ -400,97 +488,61 @@ class MT(TF):
         )
 
         new_Tipper = Tipper(
-            tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), dtype="complex"),
+            tipper_array=np.zeros(
+                (new_freq_array.shape[0], 1, 2), dtype="complex"
+            ),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
             freq=new_freq_array,
         )
 
+        z_dict = self.get_interp1d_functions_z(interp_type=interp_type)
+        t_dict = self.get_interp1d_functions_t(interp_type=interp_type)
+
         # interpolate the impedance tensor
+        zmap = {0: "x", 1: "y"}
         for ii in range(2):
             for jj in range(2):
-                # need to look out for zeros in the impedance
-                # get the indicies of non-zero components
-                nz_index = np.nonzero(self.Z.z[:, ii, jj])
-
-                if len(nz_index[0]) == 0:
-                    continue
-                # get the non-zero components
-                z_real = self.Z.z[nz_index, ii, jj].real
-                z_imag = self.Z.z[nz_index, ii, jj].imag
-                z_err = self.Z.z_err[nz_index, ii, jj]
-
-                # get the frequencies of non-zero components
-                f = self.Z.freq[nz_index]
-
+                comp = f"z{zmap[ii]}{zmap[jj]}"
                 # get frequencies to interpolate on to, making sure the
                 # bounds are with in non-zero components
                 new_nz_index = np.where(
-                    (new_freq_array >= f.min()) & (new_freq_array <= f.max())
+                    (new_freq_array >= self.Z.freq.min())
+                    & (new_freq_array <= self.Z.freq.max())
                 )[0]
                 new_f = new_freq_array[new_nz_index]
 
-                # apply period buffer
-                if type(period_buffer) in [float, int]:
-                    new_f_update = []
-                    new_nz_index_update = []
-                    for ifidx, ifreq in enumerate(new_f):
-                        # find nearest data period
-                        difference = np.abs(np.log10(ifreq) - np.log10(f))
-                        fidx = np.where(difference == np.amin(difference))[0][0]
-                        if max(f[fidx] / ifreq, ifreq / f[fidx]) < period_buffer:
-                            new_f_update.append(ifreq)
-                            new_nz_index_update.append(new_nz_index[ifidx])
-                    new_f = np.array(new_f_update)
-                    new_nz_index = np.array(new_nz_index_update)
-                # create a function that does 1d interpolation
-                z_func_real = spi.interp1d(f, z_real, kind=interp_type)
-                z_func_imag = spi.interp1d(f, z_imag, kind=interp_type)
-                z_func_err = spi.interp1d(f, z_err, kind=interp_type)
-
                 # interpolate onto new frequency range
-                new_Z.z[new_nz_index, ii, jj] = z_func_real(new_f) + 1j * z_func_imag(
+                new_Z.z[new_nz_index, ii, jj] = z_dict[comp]["real"](
                     new_f
-                )
-                new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
+                ) + 1j * z_dict[comp]["imag"](new_f)
+                new_Z.z_err[new_nz_index, ii, jj] = z_dict[comp]["err"](new_f)
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
-        if self.Tipper.tipper is None:
+        if self.Tipper is None:
             return new_Z, new_Tipper
+
         # interpolate the Tipper
         for jj in range(2):
-            # get indicies of non-zero components
-            nz_index = np.nonzero(self.Tipper.tipper[:, 0, jj])
-
-            if len(nz_index[0]) < 2:
-                continue
-            # get non-zero components
-            t_real = self.Tipper.tipper[nz_index, 0, jj].real
-            t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
-            t_err = self.Tipper.tipper_err[nz_index, 0, jj]
-
-            # get frequencies for non-zero components
-            f = self.Tipper.freq[nz_index]
-
-            # create interpolation functions
-            t_func_real = spi.interp1d(f, t_real, kind=interp_type)
-            t_func_imag = spi.interp1d(f, t_imag, kind=interp_type)
-            t_func_err = spi.interp1d(f, t_err, kind=interp_type)
+            comp = f"tz{zmap[jj]}"
 
             # get new frequency to interpolate over, making sure bounds are
             # for non-zero components
             new_nz_index = np.where(
-                (new_freq_array >= f.min()) & (new_freq_array <= f.max())
+                (new_freq_array >= self.Tipper.freq.min())
+                & (new_freq_array <= self.Tipper.freq.max())
             )
             new_f = new_freq_array[new_nz_index]
 
             # interpolate onto new frequency range
-            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(
+            new_Tipper.tipper[new_nz_index, 0, jj] = t_dict[comp]["real"](
                 new_f
-            ) + 1j * t_func_imag(new_f)
+            ) + 1j * t_dict[comp]["imag"](new_f)
 
-            new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
+            new_Tipper.tipper_err[new_nz_index, 0, jj] = t_dict[comp]["err"](
+                new_f
+            )
         new_Tipper.compute_mag_direction()
 
         return new_Z, new_Tipper
@@ -508,10 +560,7 @@ class MT(TF):
 
         """
 
-        from mtpy.imaging import plot_mt_response
-
-        # todo change this to the format of the new imaging API
-        plot_obj = plot_mt_response.PlotMTResponse(
+        plot_obj = PlotMTResponse(
             z_object=self.Z,
             t_object=self.Tipper,
             pt_obj=self.pt,
@@ -520,7 +569,16 @@ class MT(TF):
         )
 
         return plot_obj
-        # raise NotImplementedError
+
+    def plot_phase_tensor(self, **kwargs):
+        """
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        kwargs["ellipse_size"] = 0.5
+        return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
 
 
 # ==============================================================================

@@ -17,11 +17,22 @@ from pathlib import Path
 
 import numpy as np
 
+import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.imaging import (
+    PlotStations,
+    PlotMultipleResponses,
+    PlotResidualPTMaps,
+    PlotPhaseTensorMaps,
+    PlotPhaseTensorPseudoSection,
+    PlotStrike,
+    PlotPenetrationDepth1D,
+    PlotPenetrationDepthMap,
+    PlotResPhaseMaps,
+)
 
 from mth5.mth5 import MTH5
 
@@ -33,14 +44,27 @@ from mth5.mth5 import MTH5
 class MTCollection:
     """
     Collection of transfer functions
-    
+
+    The main working variable is `MTCollection.dataframe` which is a property
+    that returns either the `master dataframe` that contains all the TF's in
+    the MTH5 file, or the `working_dataframe` which is a dataframe that has
+    been queried in some way.  Therefore all the user has to do is set
+    the working directory as a subset of the master_dataframe
+
+    :Example:
+
+        >>> mc = MTCollection()
+        >>> mc.open_collection(filename="path/to/example/mth5.h5")
+        >>> mc.working_dataframe = mc.master_dataframe.iloc[0:5]
+
     """
 
     def __init__(self, working_directory=None):
 
         self._cwd = Path().cwd()
-        self._mth5_basename = "mt_collection"
+        self.mth5_basename = "mt_collection"
         self.working_directory = working_directory
+        self.working_dataframe = None
 
         self.mth5_collection = MTH5()
 
@@ -54,7 +78,9 @@ class MTCollection:
         lines = [f"Working Directory: {self.working_directory}"]
         lines.append(f"MTH5 file:         {self.mth5_filename}")
         if self.mth5_collection.h5_is_read():
-            lines.append(f"\tNumber of Transfer Functions: {len(self.dataframe)}")
+            lines.append(
+                f"\tNumber of Transfer Functions: {len(self.dataframe)}"
+            )
         return "\n".join(lines)
 
     def __repr__(self):
@@ -79,18 +105,47 @@ class MTCollection:
 
     @property
     def mth5_filename(self):
-        return self.working_directory.joinpath(f"{self._mth5_basename}.h5")
+        if self.mth5_basename.find(".h5") > 0:
+            return self.working_directory.joinpath(f"{self.mth5_basename}")
+        else:
+            return self.working_directory.joinpath(f"{self.mth5_basename}.h5")
+
+    @mth5_filename.setter
+    def mth5_filename(self, value):
+        value = Path(value)
+        self.working_directory = value.parent
+        self.mth5_basename = value.stem
 
     @property
-    def dataframe(self):
-        """ return a summary of transfer functions """
+    def master_dataframe(self):
+        """
+        This is the full summary of all transfer functions in the MTH5
+        file.  It is a property because if a user adds TF's then the
+        master_df will be automatically updated.  the tranformation is quick
+        for now.
+
+        """
 
         if self.mth5_collection.h5_is_read():
             return self.mth5_collection.tf_summary.to_dataframe()
         return None
 
+    @property
+    def dataframe(self):
+        """
+        This property returns the working dataframe or master dataframe if
+        the working dataframe is None.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if self.working_dataframe is None:
+            return self.master_dataframe
+        return self.working_dataframe
+
     def has_data(self):
-        if self.dataframe is not None:
+        if self.master_dataframe is not None:
             return True
         return False
 
@@ -136,12 +191,16 @@ class MTCollection:
                 fn_list += list(path.glob(f"*.{ext}"))
         return fn_list
 
-    def initialize_collection(
-        self, basename="mt_collection", working_directory=None, mode="a"
+    def open_collection(
+        self,
+        filename=None,
+        basename=None,
+        working_directory=None,
+        mode="a",
     ):
         """
         Initialize an mth5
-        
+
         :param basename: DESCRIPTION, defaults to "mt_collection"
         :type basename: TYPE, optional
         :param working_directory: DESCRIPTION, defaults to None
@@ -150,15 +209,21 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        self._mth5_basename = basename
-        self.working_directory = working_directory
+        if filename is not None:
+            self.mth5_filename = filename
+
+        if basename is not None:
+            self.mth5_basename = basename
+
+        if working_directory is not None:
+            self.working_directory = working_directory
 
         self.mth5_collection.open_mth5(self.mth5_filename, mode)
 
-    def close(self):
+    def close_collection(self):
         """
         close mth5
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -180,30 +245,52 @@ class MTCollection:
             transfer_function = [transfer_function]
         for item in transfer_function:
             if isinstance(item, MT):
+                self.logger.debug("added %s " % item.station)
                 self._from_mt_object(item)
             elif isinstance(item, (str, Path)):
+                self.logger.debug("added %s " % item.station)
                 self._from_file(item)
             else:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
         self.mth5_collection.tf_summary.summarize()
 
-    def get_tf(self, tf_id):
+    def get_tf(self, tf_id, survey=None):
         """
-        
+
         Get transfer function
-        
+
         :param tf_id: DESCRIPTION
         :type tf_id: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        # if not isinstance(tf_id, (list, tuple, np.ndarray)):
-        #     tf_id = [tf_id]
-        try:
-            ref = self.dataframe[self.dataframe.tf_id == tf_id].hdf5_reference.values[0]
-        except IndexError:
-            raise ValueError(f"Could not find {tf_id} in collection.")
+
+        if survey is None:
+            try:
+                find_df = self.master_dataframe.loc[
+                    self.master_dataframe.tf_id == tf_id
+                ]
+                find_df = find_df.iloc[0]
+                self.logger.warning(
+                    f"Found multiple transfer functions with ID {tf_id}. "
+                    "Suggest setting survey, otherwise returning the "
+                    f"TF from survey {find_df.survey}."
+                )
+            except IndexError:
+                raise ValueError(f"Could not find {tf_id} in collection.")
+        else:
+            try:
+                find_df = self.master_dataframe.loc[
+                    (self.master_dataframe.tf_id == tf_id)
+                    & (self.master_dataframe.survey == survey)
+                ]
+                find_df = find_df.iloc[0]
+            except IndexError:
+                raise ValueError(f"Could not find {survey} in collection.")
+
+        ref = find_df.hdf5_reference
+
         mt_object = MT()
         tf_object = self.mth5_collection.from_reference(ref)
 
@@ -214,7 +301,7 @@ class MTCollection:
     def _from_file(self, filename):
         """
         Add transfer functions for a list of file names
-        
+
         :param file_list: DESCRIPTION
         :type file_list: TYPE
         :return: DESCRIPTION
@@ -225,14 +312,17 @@ class MTCollection:
         if not self.mth5_collection.h5_is_write():
             raise ValueError("Must initiate an MTH5 file first.")
         if not isinstance(filename, (str, Path)):
-            raise TypeError(f"filename must be a string or Path not {type(filename)}")
+            raise TypeError(
+                f"filename must be a string or Path not {type(filename)}"
+            )
         mt_object = MT(filename)
+        mt_object.read_tf_file()
 
         self._from_mt_object(mt_object)
 
     def _from_mt_object(self, mt_object):
         """
-        
+
         :param mt_object: DESCRIPTION
         :type mt_object: TYPE
         :return: DESCRIPTION
@@ -243,6 +333,32 @@ class MTCollection:
         if mt_object.survey_metadata.id in [None, ""]:
             mt_object.survey_metadata.id = "unknown_survey"
         self.mth5_collection.add_transfer_function(mt_object)
+
+    def get_tf_list(self, bounding_box=None):
+        """
+        Get a list of transfer functions
+
+        :param tf_ids: DESCRIPTION, defaults to None
+        :type tf_ids: TYPE, optional
+        :param bounding_box: DESCRIPTION, defaults to None
+        :type bounding_box: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if bounding_box is not None:
+            tf_df = self.apply_bbox(*bounding_box)
+        else:
+            tf_df = self.dataframe
+        tf_list = []
+        for row in tf_df.itertuples():
+            tf = self.get_tf(row.station, survey=row.survey)
+            tf.z_interp_dict = tf.get_interp1d_functions_z()
+            tf.t_interp_dict = tf.get_interp1d_functions_t()
+
+            tf_list.append(tf)
+        return tf_list
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
         """
@@ -256,8 +372,12 @@ class MTCollection:
         """
         if self.has_data():
             if locate == "location":
-                self.dataframe.latitude = np.round(self.dataframe.latitude, sig_figs)
-                self.dataframe.longitude = np.round(self.dataframe.longitude, sig_figs)
+                self.dataframe.latitude = np.round(
+                    self.dataframe.latitude, sig_figs
+                )
+                self.dataframe.longitude = np.round(
+                    self.dataframe.longitude, sig_figs
+                )
 
                 query = ["latitude", "longitude"]
             elif locate not in self.dataframe.columns:
@@ -302,9 +422,32 @@ class MTCollection:
             ]
         return None
 
+    def to_geo_df(self, bounding_box=None, epsg=4326):
+        """
+        Make a geopandas dataframe for easier GIS manipulation
+
+        """
+        coordinate_system = f"epsg:{epsg}"
+
+        gdf = gpd.GeoDataFrame(
+            self.dataframe[
+                self.dataframe.columns[
+                    ~self.dataframe.columns.isin(
+                        ["hdf5_reference", "station_hdf5_reference"]
+                    )
+                ]
+            ],
+            geometry=gpd.points_from_xy(
+                self.dataframe.longitude, self.dataframe.latitude
+            ),
+            crs=coordinate_system,
+        )
+
+        return gdf
+
     def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
-        
+
         :param filename: DESCRIPTION
         :type filename: TYPE
         :param bounding_box: DESCRIPTION, defaults to None
@@ -315,48 +458,25 @@ class MTCollection:
         :rtype: TYPE
 
         """
+
         if self.has_data():
-            coordinate_system = {"init": f"epsg:{epsg}"}
-            # write shape file
-            geometry_list = []
-            for ii, row in self.dataframe.iterrows():
-                geometry_list.append(Point(row.longitude, row.latitude))
-            df_trim = self.dataframe[
-                self.dataframe.columns[
-                    ~self.dataframe.columns.isin(
-                        ["hdf5_reference", "station_hdf5_reference"]
-                    )
-                ]
-            ]
-            gdf = gpd.GeoDataFrame(
-                df_trim, crs=coordinate_system, geometry=geometry_list
-            )
+            gdf = self.to_geo_df(bounding_box=bounding_box, epsg=epsg)
             gdf.to_file(self.working_directory.joinpath(filename))
 
             return gdf
         return None
 
-    def plot_mt_response(self, tf_id, **kwargs):
-        """
-        
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :param **kwargs: DESCRIPTION
-        :type **kwargs: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        mt_object = self.get_tf(tf_id)
-        return mt_object.plot_mt_response(**kwargs)
-
     def average_stations(
-        self, cell_size_m, bounding_box=None, count=1, n_periods=48, new_file=True,
+        self,
+        cell_size_m,
+        bounding_box=None,
+        count=1,
+        n_periods=48,
+        new_file=True,
     ):
         """
         Average nearby stations to make it easier to invert
-        
+
         :param cell_size_m: DESCRIPTION
         :type cell_size_m: TYPE
         :param bounding_box: DESCRIPTION, defaults to None
@@ -368,7 +488,7 @@ class MTCollection:
 
         """
 
-        # cell size in degrees
+        # cell size in degrees (bit of a hack for now)
         r = cell_size_m / 111000.0
 
         if bounding_box:
@@ -376,8 +496,12 @@ class MTCollection:
         else:
             df = self.dataframe
         new_fn_list = []
-        for ee in np.arange(df.longitude.min() - r / 2, df.longitude.max() + r, r):
-            for nn in np.arange(df.latitude.min() - r / 2, df.latitude.max() + r, r):
+        for ee in np.arange(
+            df.longitude.min() - r / 2, df.longitude.max() + r, r
+        ):
+            for nn in np.arange(
+                df.latitude.min() - r / 2, df.latitude.max() + r, r
+            ):
                 bbox = (ee, ee + r, nn, nn + r)
                 avg_mc = self.apply_bbox(*bbox)
 
@@ -391,7 +515,9 @@ class MTCollection:
                     for m in m_list:
                         f_list += m.Z.freq.tolist()
                     f = np.unique(np.array(f_list))
-                    f = np.logspace(np.log10(f.min()), np.log10(f.max()), n_periods)
+                    f = np.logspace(
+                        np.log10(f.min()), np.log10(f.max()), n_periods
+                    )
                     for m in m_list:
                         m.Z, m.Tipper = m.interpolate(f, bounds_error=False)
                     avg_z = np.array([m.Z.z for m in m_list])
@@ -418,12 +544,19 @@ class MTCollection:
                     mt_avg.Tipper.tipper = avg_t
                     mt_avg.Tipper.tipper_err = avg_t_err
 
-                    mt_avg.latitude = np.mean(np.array([m.latitude for m in m_list]))
-                    mt_avg.longitude = np.mean(np.array([m.longitude for m in m_list]))
-                    mt_avg.elevation = np.mean(np.array([m.elevation for m in m_list]))
+                    mt_avg.latitude = np.mean(
+                        np.array([m.latitude for m in m_list])
+                    )
+                    mt_avg.longitude = np.mean(
+                        np.array([m.longitude for m in m_list])
+                    )
+                    mt_avg.elevation = np.mean(
+                        np.array([m.elevation for m in m_list])
+                    )
                     mt_avg.station = f"AVG{count:03}"
                     mt_avg.station_metadata.comments = (
-                        "avgeraged_stations = " + ",".join([m.station for m in m_list])
+                        "avgeraged_stations = "
+                        + ",".join([m.station for m in m_list])
                     )
                     mt_avg.survey_metadata.id = "averaged"
                     self.add_tf(mt_avg)
@@ -434,13 +567,210 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(f"wrote average file {edi_obj.fn}")
+                            self.logger.info(
+                                f"wrote average file {edi_obj.fn}"
+                            )
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:
-                        self.logger.exception("Failed to average files %s", error)
+                        self.logger.exception(
+                            "Failed to average files %s", error
+                        )
                 else:
                     continue
-        return MTCollection(
-            self.make_dataframe_from_file_list(new_fn_list), self.mt_path
-        )
+        # return MTCollection(
+        #     self.make_dataframe_from_file_list(new_fn_list), self.mt_path
+        # )
+
+    def plot_mt_response(self, tf_id, survey=None, **kwargs):
+        """
+
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        if input as list, tuple, np.ndarray, pd.series assuming first column
+        is tf_id, and if needed the second column should be the survey id
+        for that tf.
+
+        """
+        if isinstance(tf_id, str):
+            mt_object = self.get_tf(tf_id, survey=survey)
+            return mt_object.plot_mt_response(**kwargs)
+        elif isinstance(tf_id, (list, tuple, np.ndarray, pd.Series)):
+            tf_list = []
+            tf_request = np.array(tf_id)
+            if len(tf_request.shape) > 1:
+                for row in tf_request:
+                    tf_list.append(self.get_tf(row[0], survey=row[1]))
+
+            else:
+                for row in tf_request:
+                    tf_list.append(self.get_tf(row, survey=survey))
+            return PlotMultipleResponses(tf_list, **kwargs)
+
+        elif isinstance(tf_id, pd.DataFrame):
+            tf_list = []
+            for row in tf_id.itertuples():
+                tf_list.append(self.get_tf(row.tf_id, survey=row.survey))
+            return PlotMultipleResponses(tf_list, **kwargs)
+
+    def plot_stations(self, map_epsg=4326, **kwargs):
+        """
+        plot stations
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if self.has_data():
+            gdf = self.to_geo_df(epsg=map_epsg)
+            return PlotStations(gdf, **kwargs)
+
+    def plot_strike(self, tf_list=None, **kwargs):
+        """
+        Plot strike angle
+
+        .. seealso:: :class:`mtpy.imaging.PlotStrike`
+        """
+        if tf_list is None:
+            tf_list = self.get_tf_list()
+        return PlotStrike(tf_list, **kwargs)
+
+    def plot_phase_tensor(self, tf_id, survey=None, **kwargs):
+        """
+        plot phase tensor elements
+
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_obj = self.get_tf(tf_id, survey=survey)
+        return tf_obj.plot_phase_tensor(**kwargs)
+
+    def plot_phase_tensor_map(self, tf_list=None, **kwargs):
+        """
+        Plot Phase tensor maps for transfer functions in the working_dataframe
+
+        .. seealso:: :class:`mtpy.imaging.PlotPhaseTensorMaps`
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf_list is None:
+            tf_list = self.get_tf_list()
+
+        return PlotPhaseTensorMaps(tf_list=tf_list, **kwargs)
+
+    def plot_phase_tensor_pseudo_section(self, tf_list=None, **kwargs):
+        """
+        Plot a pseudo section of  phase tensor ellipses and induction vectors
+        if specified
+
+        .. seealso:: :class:`mtpy.imaging.PlotPhaseTensorPseudosection`
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf_list is None:
+            tf_list = self.get_tf_list()
+
+        return PlotPhaseTensorPseudoSection(tf_list=tf_list, **kwargs)
+
+    def plot_residual_phase_tensor(
+        self, tf_list_01, tf_list_02, plot_type="map", **kwargs
+    ):
+        """
+
+        :param tf_list_01: DESCRIPTION
+        :type tf_list_01: TYPE
+        :param tf_list_02: DESCRIPTION
+        :type tf_list_02: TYPE
+        :param plot_type: DESCRIPTION, defaults to "map"
+        :type plot_type: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if plot_type in ["map"]:
+            return PlotResidualPTMaps(tf_list_01, tf_list_02, **kwargs)
+
+    def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
+        """
+        Plot 1D penetration depth based on the Niblett-Bostick transformation
+
+        Note that data is rotated to estimated strike previous to estimation
+        and strike angles are interpreted for data points that are 3D.
+
+        .. seealso:: :class:`mtpy.analysis.niblettbostick.calculate_depth_of_investigation`
+
+
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_object = self.get_tf(tf_id, survey=survey)
+
+        return PlotPenetrationDepth1D(tf_object, **kwargs)
+
+    def plot_penetration_depth_map(self, tf_list=None, **kwargs):
+        """
+        Plot Penetration depth in map view for a single period
+
+        .. seealso:: :class:`mtpy.imaging.PlotPenetrationDepthMap`
+
+        :param tf_list: DESCRIPTION
+        :type tf_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf_list is None:
+            tf_list = self.get_tf_list()
+
+        return PlotPenetrationDepthMap(tf_list, **kwargs)
+
+    def plot_resistivity_phase_maps(self, tf_list=None, **kwargs):
+        """
+        Plot apparent resistivity and/or impedance phase maps from the
+        working dataframe
+
+        .. seealso:: :class:`mtpy.imaging.PlotResPhaseMaps`
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf_list is None:
+            tf_list = self.get_tf_list()
+
+        return PlotResPhaseMaps(tf_list, **kwargs)

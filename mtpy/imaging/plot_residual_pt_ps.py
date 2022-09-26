@@ -18,7 +18,7 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplottools as mtpl
+import mtpy.imaging.mtplot_tools as mtpl
 import mtpy.analysis.pt as mtpt
 import scipy.signal as sps
 
@@ -353,13 +353,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
             self.cb_orientation = cb_dict["orientation"]
         except KeyError:
             self.cb_orientation = "vertical"
-
         # set the position to middle outside the plot
         try:
             self.cb_position = cb_dict["position"]
         except KeyError:
             self.cb_position = None
-
         # --> set plot properties ------------------------------
         self.fig_num = kwargs.pop("fig_num", "residual_PT")
         self.plot_title = kwargs.pop("plot_title", None)
@@ -392,16 +390,13 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self._rot_z = kwargs.pop("rot_z", 0)
         if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
             self._rot_z = np.array([self._rot_z] * len(self.mt_list1))
-
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
         elif isinstance(self._rot_z, np.ndarray):
             if self._rot_z.shape[0] != len(self.mt_list1):
                 self._rot_z = np.repeat(self._rot_z, len(self.mt_list1))
-
         else:
             pass
-
         # --> set station name properties
         station_dict = kwargs.pop("station_dict", {})
         self.station_id = station_dict.pop("id", self.station_id)
@@ -425,16 +420,13 @@ class PlotResidualPTps(mtpl.MTEllipse):
         # mt_list for plotting purposes
         if isinstance(rot_z, float) or isinstance(rot_z, int):
             self._rot_z = np.array([rot_z] * len(self.mt_list))
-
         # if the rotation angle is an array for rotation of different
         # freq than repeat that rotation array to the len(mt_list)
         elif isinstance(rot_z, np.ndarray):
             if rot_z.shape[0] != len(self.mt_list):
                 self._rot_z = np.repeat(rot_z, len(self.mt_list))
-
         else:
             pass
-
         for ii, rpt in enumerate(self.residual_pt_list):
             rpt.rot_z = self._rot_z[ii]
 
@@ -455,7 +447,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
             freq_list.extend(mt1.frequency)
         for mt2 in self.mt_list2:
             freq_list.extend(mt2.frequency)
-
         flist = np.array(sorted(set(freq_list), reverse=True))
         self.freq_list = np.logspace(
             np.log10(flist.min()), np.log10(flist.max()), self.nfreq
@@ -662,7 +653,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     pass
             if station_find == False:
                 print("Did not find {0} from list 1 in list 2".format(mt1.station))
-
         # from the data get the relative offsets and sort the data by them
         self._get_offsets()
 
@@ -730,7 +720,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     else:
                         offset = 0
                     r_arr["offset"] = offset
-
         # be sure to order the structured array by offset, this will make
         # sure that the median filter is spatially correct
         self.rpt_array.sort(order="offset")
@@ -747,7 +736,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
         # filter data if desired
         if self.med_filt_kernel is not None:
             self._apply_median_filter(kernel=self.med_filt_kernel)
-
         # set position properties for the plot
         plt.rcParams["font.size"] = self.font_size
         plt.rcParams["figure.subplot.left"] = self.subplot_left
@@ -780,7 +768,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         if cmap == "mt_seg_bl2wh2rd":
             bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-
         # get largest ellipse
         emax = self.ellipse_scale
         # emax = self.rpt_array['phimax'].max()
@@ -797,7 +784,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 color_array = rpt[self.ellipse_colorby]
             except ValueError:
                 raise NameError("{0} is not supported".format(self.ellipse_colorby))
-
             for jj, ff in enumerate(rpt["freq"]):
                 if phimin[jj] == 0.0 or phimax[jj] == 0.0:
                     pass
@@ -829,7 +815,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
                             height=eheight,
                             angle=azimuth[jj],
                         )
-
                     # get ellipse color
                     if cmap.find("seg") > 0:
                         ellipd.set_facecolor(
@@ -852,10 +837,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                 ckmax,
                             )
                         )
-
                     # == =add the ellipse to the plot == ========
                     self.ax.add_artist(ellipd)
-
         # --> Set plot parameters
         # need to sort the offsets and station labels so they plot correctly
         sdtype = [("offset", np.float), ("station", "U10")]
@@ -887,7 +870,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
             self.ax.set_ylabel(
                 "Period (s)", fontsize=self.font_size + 2, fontweight="bold"
             )
-
         elif self.tscale == "frequency":
             yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)]
             self.ax.set_ylabel(
@@ -900,7 +882,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
             pmin = np.log10(self.ylimits[0]) * self.ystretch
             pmax = np.log10(self.ylimits[1]) * self.ystretch
             self.ax.set_ylim(pmin, pmax)
-
         # --> set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
 
@@ -928,13 +909,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
             )
         else:
             self.ax.set_xlim(self.xlimits)
-
         # --> set title of the plot
         if self.plot_title is None:
             pass
         else:
             self.ax.set_title(self.plot_title, fontsize=self.font_size + 2)
-
         # put a grid on the plot
         self.ax.grid(alpha=0.25, which="both", color=(0.25, 0.25, 0.25))
 
@@ -945,7 +924,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
             )
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
-
         if cmap == "mt_seg_bl2wh2rd":
             # make a color list
             self.clist = [
@@ -976,7 +954,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
                 orientation=self.cb_orientation,
             )
-
         # label the color bar accordingly
         self.cb.set_label(
             mtpl.ckdict[ck], fontdict={"size": self.font_size, "weight": "bold"}
@@ -986,13 +963,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
         if self.cb_orientation == "horizontal":
             self.cb.ax.xaxis.set_label_position("top")
             self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
-
         elif self.cb_orientation == "vertical":
             self.cb.ax.yaxis.set_label_position("right")
             self.cb.ax.yaxis.set_label_coords(1.5, 0.5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis="y", direction="in")
-
         # --> add reference ellipse
         ref_ellip = patches.Ellipse((0, 0.0), width=es, height=es, angle=0)
         ref_ellip.set_facecolor((0, 0, 0))
@@ -1065,7 +1040,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         if fig_dpi is None:
             fig_dpi = self.fig_dpi
-
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(
@@ -1077,14 +1051,12 @@ class PlotResidualPTps(mtpl.MTEllipse):
             )
             plt.clf()
             plt.close(self.fig)
-
         else:
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
             if not os.path.exists(os.path.join(save_fn, "RPT_PS")):
                 os.mkdir(os.path.join(save_fn, "RPT_PS"))
                 save_fn = os.path.join(save_fn, "RPT_PS")
-
             save_fn = os.path.join(
                 save_fn, "RPT_PS_{0}.{1}".format(self.ellipse_colorby, file_format)
             )
@@ -1095,14 +1067,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 orientation=orientation,
                 bbox_inches="tight",
             )
-
         if close_plot == "y":
             plt.clf()
             plt.close(self.fig)
-
         else:
             pass
-
         self.fig_fn = save_fn
         print("Saved figure to: " + self.fig_fn)
 
