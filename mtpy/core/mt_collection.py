@@ -428,18 +428,20 @@ class MTCollection:
 
         """
         coordinate_system = f"epsg:{epsg}"
+        if bounding_box is not None:
+            df = self.apply_bbox(*bounding_box)
+        else:
+            df = self.dataframe
 
         gdf = gpd.GeoDataFrame(
-            self.dataframe[
-                self.dataframe.columns[
-                    ~self.dataframe.columns.isin(
+            df[
+                df.columns[
+                    ~df.columns.isin(
                         ["hdf5_reference", "station_hdf5_reference"]
                     )
                 ]
             ],
-            geometry=gpd.points_from_xy(
-                self.dataframe.longitude, self.dataframe.latitude
-            ),
+            geometry=gpd.points_from_xy(df.longitude, df.latitude),
             crs=coordinate_system,
         )
 
@@ -618,7 +620,7 @@ class MTCollection:
                 tf_list.append(self.get_tf(row.tf_id, survey=row.survey))
             return PlotMultipleResponses(tf_list, **kwargs)
 
-    def plot_stations(self, map_epsg=4326, **kwargs):
+    def plot_stations(self, map_epsg=4326, bounding_box=None, **kwargs):
         """
         plot stations
 
@@ -629,7 +631,7 @@ class MTCollection:
 
         """
         if self.has_data():
-            gdf = self.to_geo_df(epsg=map_epsg)
+            gdf = self.to_geo_df(epsg=map_epsg, bounding_box=bounding_box)
             return PlotStations(gdf, **kwargs)
 
     def plot_strike(self, tf_list=None, **kwargs):
