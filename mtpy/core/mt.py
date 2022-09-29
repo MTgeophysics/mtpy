@@ -326,7 +326,9 @@ class MT(TF):
 
         return new_z_obj
 
-    def get_interp1d_functions_z(self, interp_type="slinear"):
+    def get_interp1d_functions_z(
+        self, interp_type="slinear", bounds_error=False, fill_value=None
+    ):
         """
 
         :param interp_type: DESCRIPTION, defaults to "slinear"
@@ -365,19 +367,19 @@ class MT(TF):
                     f,
                     z_real,
                     kind=interp_type,
-                    bounds_error=False,
+                    bounds_error=bounds_error,
                 )
                 interp_dict[comp]["imag"] = spi.interp1d(
                     f,
                     z_imag,
                     kind=interp_type,
-                    bounds_error=False,
+                    bounds_error=bounds_error,
                 )
                 interp_dict[comp]["err"] = spi.interp1d(
                     f,
                     z_err,
                     kind=interp_type,
-                    bounds_error=False,
+                    bounds_error=bounds_error,
                 )
 
         return interp_dict

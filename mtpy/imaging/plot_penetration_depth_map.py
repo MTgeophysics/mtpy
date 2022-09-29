@@ -77,46 +77,6 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         return calculate_depth_of_investigation(z_object)
 
-    def _get_interpolated_z(self, tf):
-        return np.nan_to_num(
-            np.array(
-                [
-                    [
-                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
-                            0
-                        ]
-                        + 1j
-                        * tf.z_interp_dict["zxx"]["imag"](
-                            1.0 / self.plot_period
-                        )[0],
-                        tf.z_interp_dict["zxy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
-                        + 1j
-                        * tf.z_interp_dict["zxy"]["imag"](
-                            1.0 / self.plot_period
-                        )[0],
-                    ],
-                    [
-                        tf.z_interp_dict["zyx"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
-                        + 1j
-                        * tf.z_interp_dict["zyx"]["imag"](
-                            1.0 / self.plot_period
-                        )[0],
-                        tf.z_interp_dict["zyy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
-                        + 1j
-                        * tf.z_interp_dict["zyy"]["imag"](
-                            1.0 / self.plot_period
-                        )[0],
-                    ],
-                ]
-            )
-        )
-
     def _get_depth_array(self):
         """
         get a depth array with xyz values
