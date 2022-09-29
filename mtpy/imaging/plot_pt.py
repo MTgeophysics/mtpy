@@ -30,6 +30,7 @@ class PlotPhaseTensor(PlotBase):
 
     def __init__(self, pt_object, station=None, **kwargs):
         kwargs["ellipse_size"] = 2
+        self.rotation_angle = 0
         super().__init__(**kwargs)
         self.pt = pt_object
         self.station = station
@@ -47,9 +48,25 @@ class PlotPhaseTensor(PlotBase):
 
         self.ellipse_spacing = 10
 
-        self._set_subplot_params()
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         if self.show_plot:
             self.plot()
+
+    # ---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+
+    @rotation_angle.setter
+    def rotation_angle(self, theta_r):
+        """
+        only a single value is allowed
+        """
+        self._rotation_angle = theta_r
+        if not theta_r == 0:
+
+            self.pt.rotate(theta_r)
 
     def _rotate_pt(self, rotation_angle):
         """

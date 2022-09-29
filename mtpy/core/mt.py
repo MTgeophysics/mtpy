@@ -362,13 +362,22 @@ class MT(TF):
 
                 # create a function that does 1d interpolation
                 interp_dict[comp]["real"] = spi.interp1d(
-                    f, z_real, kind=interp_type
+                    f,
+                    z_real,
+                    kind=interp_type,
+                    bounds_error=False,
                 )
                 interp_dict[comp]["imag"] = spi.interp1d(
-                    f, z_imag, kind=interp_type
+                    f,
+                    z_imag,
+                    kind=interp_type,
+                    bounds_error=False,
                 )
                 interp_dict[comp]["err"] = spi.interp1d(
-                    f, z_err, kind=interp_type
+                    f,
+                    z_err,
+                    kind=interp_type,
+                    bounds_error=False,
                 )
 
         return interp_dict

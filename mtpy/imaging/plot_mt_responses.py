@@ -588,7 +588,12 @@ class PlotMultipleResponses(PlotBase):
                 axpt,
                 label_coords,
             ) = self._setup_subplots(gs_master, plot_num=1)
+
+        period = []
+
         for ii, mt in enumerate(self.tf_list):
+            period.append(mt.period.min())
+            period.append(mt.period.max())
             self.xy_color = cxy[ii]
             self.xy_marker = mxy[ii]
             self.yx_color = cyx[ii]
@@ -661,6 +666,19 @@ class PlotMultipleResponses(PlotBase):
                 axp2.set_ylim(self.phase_limits)
         if self.tipper_limits is not None:
             axt.set_ylim(self.tipper_limits)
+
+        period_limits = [
+            10 ** np.floor(np.log10(min(period))),
+            10 ** np.ceil(np.log10(max(period))),
+        ]
+        for ax in [axr, axp, axt]:
+            if ax is not None:
+                ax.set_xlim(period_limits)
+        if axpt is not None:
+            ax.set_xlim(
+                [np.log10(period_limits[0]), np.log10(period_limits[1])]
+            )
+
         # make legend
         if self.plot_num == 1:
             axr.legend(

@@ -172,7 +172,7 @@ class PlotSettings(MTArrows, MTEllipse):
 
         """
 
-        if mode in ["od", "det", "det_only"]:
+        if mode in ["od"]:
             try:
                 nz_xy = np.nonzero(resistivity[:, 0, 1])
                 nz_yx = np.nonzero(resistivity[:, 1, 0])
@@ -206,7 +206,7 @@ class PlotSettings(MTArrows, MTEllipse):
                 ]
             except ValueError:
                 limits = [0.1, 10000]
-        if mode == "d":
+        elif mode == "d":
             try:
                 nz_xx = np.nonzero(resistivity[:, 0, 1])
                 nz_yy = np.nonzero(resistivity[:, 1, 0])
@@ -240,13 +240,23 @@ class PlotSettings(MTArrows, MTEllipse):
                 ]
             except ValueError:
                 limits = [0.1, 10000]
+        elif mode in ["det", "det_only"]:
+            try:
+                res_det = np.linalg.det(resistivity)
+                nz = np.nonzero(res_det)
+                limits = [
+                    10 ** (np.floor(np.log10(np.amin(res_det[nz])))),
+                    10 ** (np.ceil(np.log10(np.amax(res_det[nz])))),
+                ]
+            except ValueError:
+                limits = [0.1, 10000]
         if scale == "log":
             if limits[0] == 0:
                 limits[0] = 0.1
         return limits
 
     def set_phase_limits(self, phase, mode="od"):
-        if mode in ["od", "det", "det_only"]:
+        if mode in ["od"]:
             try:
                 nz_xy = np.nonzero(phase[:, 0, 1])
                 nz_yx = np.nonzero(phase[:, 1, 0])
@@ -274,11 +284,21 @@ class PlotSettings(MTArrows, MTEllipse):
                 return (ph_min, ph_max)
             except ValueError:
                 return [0, 90]
-        elif mode == "d":
-            ph_min = -180
-            ph_max = 180
 
-            return (ph_min, ph_max)
+        elif mode == "d":
+            return (-180, 180)
+
+        elif mode in ["det", "det_only"]:
+            try:
+                phase_det = np.linalg.det(phase)
+                nz = np.nonzero(phase_det)
+                return [
+                    np.amin(phase_det[nz]),
+                    np.amax(phase_det[nz]),
+                ]
+
+            except ValueError:
+                return [-180, 180]
 
     @property
     def xy_error_bar_properties(self):

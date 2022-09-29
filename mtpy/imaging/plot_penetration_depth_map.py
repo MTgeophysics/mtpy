@@ -78,33 +78,43 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         return calculate_depth_of_investigation(z_object)
 
     def _get_interpolated_z(self, tf):
-        return np.array(
-            [
+        return np.nan_to_num(
+            np.array(
                 [
-                    tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zxx"]["imag"](1.0 / self.plot_period)[
-                        0
+                    [
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
+                            0
+                        ]
+                        + 1j
+                        * tf.z_interp_dict["zxx"]["imag"](
+                            1.0 / self.plot_period
+                        )[0],
+                        tf.z_interp_dict["zxy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
+                        + 1j
+                        * tf.z_interp_dict["zxy"]["imag"](
+                            1.0 / self.plot_period
+                        )[0],
                     ],
-                    tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zxy"]["imag"](1.0 / self.plot_period)[
-                        0
+                    [
+                        tf.z_interp_dict["zyx"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
+                        + 1j
+                        * tf.z_interp_dict["zyx"]["imag"](
+                            1.0 / self.plot_period
+                        )[0],
+                        tf.z_interp_dict["zyy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
+                        + 1j
+                        * tf.z_interp_dict["zyy"]["imag"](
+                            1.0 / self.plot_period
+                        )[0],
                     ],
-                ],
-                [
-                    tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zyx"]["imag"](1.0 / self.plot_period)[
-                        0
-                    ],
-                    tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[0]
-                    + 1j
-                    * tf.z_interp_dict["zyy"]["imag"](1.0 / self.plot_period)[
-                        0
-                    ],
-                ],
-            ]
+                ]
+            )
         )
 
     def _get_depth_array(self):
@@ -131,6 +141,8 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         for ii, tf in enumerate(self.tf_list):
             z = self._get_interpolated_z(tf)
+            if (z == 0).all():
+                continue
             z_object = Z(z, freq=[1.0 / self.plot_period])
             d = self._get_nb_estimation(z_object)
 
@@ -151,7 +163,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                 d["depth_yx"][0] - elev
             ) * self.depth_scale
 
-        return depth_array
+        return depth_array[np.nonzero(depth_array)]
 
     def _get_n_subplots(self):
         """
@@ -232,12 +244,19 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         """
         self._set_subplot_params()
 
+        # get data array and make sure there is depth information, if not
+        # break
+        depth_array = self._get_depth_array()
+        if depth_array.size == 0:
+            self.logger.warning(
+                f"No stations have data for period {self.plot_period} "
+            )
+            return
+
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
 
         plot_components = self._get_plot_component_dict()
-
-        depth_array = self._get_depth_array()
 
         for comp, ax in plot_components.items():
 

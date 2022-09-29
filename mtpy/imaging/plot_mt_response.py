@@ -104,6 +104,9 @@ class PlotMTResponse(PlotBase):
         self.subplot_bottom = 0.1
         self.subplot_top = 0.93
 
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
         # plot on initializing
         if self.show_plot:
             self.plot()
@@ -361,6 +364,10 @@ class PlotMTResponse(PlotBase):
             labelspacing=0.07,
             handletextpad=0.2,
             borderpad=0.02,
+        )
+
+        self.axr.set_ylim(
+            self.set_resistivity_limits(self.Z.resistivity, mode="det")
         )
 
     def _plot_tipper(self):
