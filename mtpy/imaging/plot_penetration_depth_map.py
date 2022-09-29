@@ -46,6 +46,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             "yx": "TM Mode",
         }
         self.depth_range = [None, None]
+        self.depth_tolerance = 0.65
 
         self.subplot_wspace = 0.2
         self.subplot_hspace = 0.1
@@ -76,6 +77,27 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         """
 
         return calculate_depth_of_investigation(z_object)
+
+    def _filter_depth_array(self, depth_array, comp):
+        """
+        Filter out some bad data points
+
+        :param depth_array: DESCRIPTION
+        :type depth_array: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        depth_array = depth_array.copy()
+        depth_array = depth_array[np.nonzero(depth_array)]
+        d_comp = depth_array[comp]
+        d_median = np.median(d_comp)
+        d_min = d_median * (1 - self.depth_tolerance)
+        d_max = d_median * (1 + self.depth_tolerance)
+        good_index = np.where((d_comp >= d_min) & (d_comp <= d_max))
+
+        return depth_array[good_index]
 
     def _get_depth_array(self):
         """
@@ -123,7 +145,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                 d["depth_yx"][0] - elev
             ) * self.depth_scale
 
-        return depth_array[np.nonzero(depth_array)]
+        return depth_array
 
     def _get_n_subplots(self):
         """
@@ -219,10 +241,10 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         plot_components = self._get_plot_component_dict()
 
         for comp, ax in plot_components.items():
-
+            plot_depth_array = self._filter_depth_array(depth_array, comp)
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
                 plot_x, plot_y, image = self.interpolate_to_map(
-                    depth_array, comp
+                    plot_depth_array, comp
                 )
 
                 im = ax.pcolormesh(
@@ -239,7 +261,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                 "triangulate",
             ]:
                 triangulation, image, indices = self.interpolate_to_map(
-                    depth_array, comp
+                    plot_depth_array, comp
                 )
                 if self.depth_range[0] != None and self.depth_range[1] != None:
                     levels = np.linspace(
@@ -276,8 +298,8 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
             if self.plot_stations:
                 ax.scatter(
-                    depth_array["longitude"],
-                    depth_array["latitude"],
+                    plot_depth_array["longitude"],
+                    plot_depth_array["latitude"],
                     marker=self.marker,
                     s=self.marker_size,
                     c=self.marker_color,
