@@ -216,9 +216,7 @@ class PlotMTResponse(PlotBase):
             self.axt = self.fig.add_subplot(
                 gs_aux[pdict["tip"], :],
             )
-            self.axt.yaxis.set_label_coords(
-                label_coords[0] + 0.065, label_coords[1]
-            )
+            self.axt.yaxis.set_label_coords(label_coords[0], label_coords[1])
         # --> plot phase tensors
         if self.plot_pt:
             # can't share axis because not on the same scale

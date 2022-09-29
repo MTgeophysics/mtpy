@@ -173,8 +173,9 @@ class PlotStations(PlotBase):
         # set axis properties
         self.ax.set_xlabel("latitude", fontdict=self.font_dict)
         self.ax.set_ylabel("longitude", fontdict=self.font_dict)
-        self.ax.grid(alpha=0.35, color=(0.25, 0.25, 0.25))
+        self.ax.grid(alpha=0.35, color=(0.25, 0.25, 0.25), lw=0.75)
         self.ax.set_xlim(self._get_xlimits(self.gdf.geometry.x))
-        self.ax.set_ylim(self._get_ylimits(self.gdf.geometry.x))
+        self.ax.set_ylim(self._get_ylimits(self.gdf.geometry.y))
+        self.ax.set_axisbelow(True)
 
         plt.show()
