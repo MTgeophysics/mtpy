@@ -629,7 +629,7 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        if self.has_data():
+        if self.dataframe is not None:
             gdf = self.to_geo_df(epsg=map_epsg, bounding_box=bounding_box)
             return PlotStations(gdf, **kwargs)
 
