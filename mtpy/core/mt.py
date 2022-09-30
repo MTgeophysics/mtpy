@@ -327,7 +327,7 @@ class MT(TF):
         return new_z_obj
 
     def get_interp1d_functions_z(
-        self, interp_type="slinear", bounds_error=False, fill_value=None
+        self, interp_type="slinear", bounds_error=False, fill_value=np.nan
     ):
         """
 
@@ -374,17 +374,21 @@ class MT(TF):
                     z_imag,
                     kind=interp_type,
                     bounds_error=bounds_error,
+                    fill_value=fill_value,
                 )
                 interp_dict[comp]["err"] = spi.interp1d(
                     f,
                     z_err,
                     kind=interp_type,
                     bounds_error=bounds_error,
+                    fill_value=fill_value,
                 )
 
         return interp_dict
 
-    def get_interp1d_functions_t(self, interp_type="slinear"):
+    def get_interp1d_functions_t(
+        self, interp_type="slinear", bounds_error=False, fill_value=np.nan
+    ):
         """
 
         :param interp_type: DESCRIPTION, defaults to "slinear"
@@ -412,19 +416,33 @@ class MT(TF):
             # get the non-zero components
             t_real = self.Tipper.tipper[nz_index, 0, jj].real
             t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
-            t_err = self.Tipper.tipper[nz_index, 0, jj]
+            t_err = self.Tipper.tipper_err[nz_index, 0, jj]
 
             # get the frequencies of non-zero components
             f = self.Tipper.freq[nz_index]
 
             # create a function that does 1d interpolation
             interp_dict[comp]["real"] = spi.interp1d(
-                f, t_real, kind=interp_type
+                f,
+                t_real,
+                kind=interp_type,
+                bounds_error=bounds_error,
+                fill_value=fill_value,
             )
             interp_dict[comp]["imag"] = spi.interp1d(
-                f, t_imag, kind=interp_type
+                f,
+                t_imag,
+                kind=interp_type,
+                bounds_error=bounds_error,
+                fill_value=fill_value,
             )
-            interp_dict[comp]["err"] = spi.interp1d(f, t_err, kind=interp_type)
+            interp_dict[comp]["err"] = spi.interp1d(
+                f,
+                t_err,
+                kind=interp_type,
+                bounds_error=bounds_error,
+                fill_value=fill_value,
+            )
 
         return interp_dict
 

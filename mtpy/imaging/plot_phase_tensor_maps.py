@@ -114,6 +114,11 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.xpad = 0.005
             self.ypad = 0.005
             self.ellipse_size = 0.005
+            self.arrow_size = 0.005
+            self.arrow_head_length = 0.0025
+            self.arrow_head_length = 0.0035
+            self.arrow_lw = 0.00075
+
             self.tickstrfmt = "%.3f"
             self.y_label = "Latitude (deg)"
             self.x_label = "Longitude (deg)"
@@ -122,6 +127,10 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.xpad = 1000
             self.ypad = 1000
             self.ellipse_size = 500
+            self.arrow_size = 500
+            self.arrow_head_length = 250
+            self.arrow_head_length = 350
+            self.arrow_lw = 50
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (m)"
             self.y_label = "Northing (m)"
@@ -130,6 +139,10 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.xpad = 1
             self.ypad = 1
             self.ellipse_size = 0.500
+            self.arrow_size = 0.5
+            self.arrow_head_length = 0.25
+            self.arrow_head_length = 0.35
+            self.arrow_lw = 0.075
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (km)"
             self.y_label = "Northing (km)"
@@ -174,7 +187,8 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             t = self._get_interpolated_t(tf)
             t_err = self._get_interpolated_t_err(tf)
 
-            new_t_obj = mtz.Tipper(t, t_err, [1.0 / self.plot_period])
+            if (t != 0).all():
+                new_t_obj = mtz.Tipper(t, t_err, [1.0 / self.plot_period])
 
         return pt_obj, new_t_obj
 
@@ -266,40 +280,48 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_range[2],
         )
 
+        has_ellipse = True
         # --> get ellipse properties
         # if the ellipse size is not physically correct make it a dot
         if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
             eheight = 0.0000001
             ewidth = 0.0000001
+            has_ellipse = False
+
         else:
             scaling = self.ellipse_size / phimax
             eheight = phimin * scaling
             ewidth = phimax * scaling
-        # make an ellipse
-        ellipd = patches.Ellipse(
-            (plotx, ploty),
-            width=ewidth,
-            height=eheight,
-            angle=90 - eangle,
-            lw=self.lw,
-        )
-
-        # get ellipse color
-        ellipd.set_facecolor(
-            mtcl.get_plot_color(
-                color_array[0],
-                self.ellipse_colorby,
-                self.ellipse_cmap,
-                self.ellipse_range[0],
-                self.ellipse_range[1],
-                bounds=bounds,
+            # make an ellipse
+            ellipd = patches.Ellipse(
+                (plotx, ploty),
+                width=ewidth,
+                height=eheight,
+                angle=90 - eangle,
+                lw=self.lw,
             )
-        )
 
+            # get ellipse color
+            ellipd.set_facecolor(
+                mtcl.get_plot_color(
+                    color_array[0],
+                    self.ellipse_colorby,
+                    self.ellipse_cmap,
+                    self.ellipse_range[0],
+                    self.ellipse_range[1],
+                    bounds=bounds,
+                )
+            )
+
+            self.ax.add_artist(ellipd)
+
+        has_tipper = False
         if t_obj is not None:
+
             if "r" in self.plot_tipper == "yri":
 
                 if t_obj.mag_real[0] <= self.arrow_threshold:
+                    has_tipper = True
                     txr = (
                         t_obj.mag_real[0]
                         * self.arrow_size
@@ -363,7 +385,11 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         head_width=self.arrow_head_width,
                         head_length=self.arrow_head_length,
                     )
-        return ellipd, plotx, ploty
+
+        if has_ellipse or has_tipper:
+            return plotx, ploty
+        else:
+            return (0, 0)
 
     def _add_colorbar(self):
         """
@@ -461,12 +487,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self.plot_xarr = np.zeros(len(self.tf_list))
         self.plot_yarr = np.zeros(len(self.tf_list))
         for index, tf in enumerate(self.tf_list):
-            ellipse_patch, plot_x, plot_y = self._get_patch(tf)
+            plot_x, plot_y = self._get_patch(tf)
             self.plot_xarr[index] = plot_x
             self.plot_yarr[index] = plot_y
-
-            # ==> add ellipse to the plot
-            self.ax.add_artist(ellipse_patch)
 
             # ------------Plot station name------------------------------
             if self.plot_station:
@@ -483,12 +506,12 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         # --> set plot limits
         #    need to exclude zero values from the calculation of min/max!!!!
         self.ax.set_xlim(
-            self.plot_xarr[self.plot_xarr != 0.0].min() - self.x_pad,
-            self.plot_xarr[self.plot_xarr != 0.0].max() + self.x_pad,
+            self.plot_xarr[np.nonzero(self.plot_xarr)].min() - self.x_pad,
+            self.plot_xarr[np.nonzero(self.plot_xarr)].max() + self.x_pad,
         )
         self.ax.set_ylim(
-            self.plot_yarr[self.plot_yarr != 0.0].min() - self.y_pad,
-            self.plot_yarr[self.plot_xarr != 0.0].max() + self.y_pad,
+            self.plot_yarr[np.nonzero(self.plot_yarr)].min() - self.y_pad,
+            self.plot_yarr[np.nonzero(self.plot_xarr)].max() + self.y_pad,
         )
 
         # --> set tick label format
@@ -534,8 +557,20 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             )
 
         # make a grid with color lines
-        self.ax.grid(True, alpha=0.3, which="both", color=(0.5, 0.5, 0.5))
+        self.ax.grid(
+            True, alpha=0.3, which="major", color=(0.5, 0.5, 0.5), lw=0.75
+        )
+        self.ax.grid(
+            True,
+            alpha=0.3,
+            which="minor",
+            color=(0.5, 0.5, 0.5),
+            lw=0.5,
+            ls=":",
+        )
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
+
+        self.ax.set_axisbelow(True)
 
         self._add_colorbar()

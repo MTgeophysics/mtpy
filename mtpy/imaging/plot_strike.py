@@ -253,12 +253,22 @@ class PlotStrike(PlotBase):
 
             # -----------get tipper strike------------------------------------
             tip = mt.Tipper
-            if tip == None:
-                tip = Tipper(
-                    np.zeros((len(mt.period), 1, 2), dtype="complex"), freq=[1]
-                )
-                tip.compute_mag_direction()
-                tip.compute_amp_phase()
+            if isinstance(tip, Tipper):
+                if tip.tipper is None:
+                    tip = Tipper(
+                        np.zeros((len(mt.period), 1, 2), dtype="complex"),
+                        freq=[1],
+                    )
+                    tip.compute_mag_direction()
+                    tip.compute_amp_phase()
+            else:
+                if tip is None:
+                    tip = Tipper(
+                        np.zeros((len(mt.period), 1, 2), dtype="complex"),
+                        freq=[1],
+                    )
+                    tip.compute_mag_direction()
+                    tip.compute_amp_phase()
             # # subtract 90 because polar plot assumes 0 is on the x an 90 is
             # on the y
             tipr = 90 - tip.angle_real

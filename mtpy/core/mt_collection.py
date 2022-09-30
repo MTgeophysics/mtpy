@@ -414,13 +414,12 @@ class MTCollection:
             )
             self.logger.debug(msg)
 
-            return self.dataframe.loc[
-                (self.dataframe.longitude >= lon_min)
-                & (self.dataframe.longitude <= lon_max)
-                & (self.dataframe.latitude >= lat_min)
-                & (self.dataframe.latitude <= lat_max)
+            self.working_dataframe = self.master_dataframe.loc[
+                (self.master_dataframe.longitude >= lon_min)
+                & (self.master_dataframe.longitude <= lon_max)
+                & (self.master_dataframe.latitude >= lat_min)
+                & (self.master_dataframe.latitude <= lat_max)
             ]
-        return None
 
     def to_geo_df(self, bounding_box=None, epsg=4326):
         """

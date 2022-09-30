@@ -213,6 +213,14 @@ class PlotBaseMaps(PlotBase):
         )
 
     def _get_interpolated_z(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
         return np.nan_to_num(
             np.array(
                 [
@@ -253,6 +261,15 @@ class PlotBaseMaps(PlotBase):
         )
 
     def _get_interpolated_z_err(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
         return np.nan_to_num(
             np.array(
                 [
@@ -277,6 +294,17 @@ class PlotBaseMaps(PlotBase):
         )
 
     def _get_interpolated_t(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf.t_interp_dict == {}:
+            return np.zeros((1, 1, 2), dtype=complex)
         return np.nan_to_num(
             np.array(
                 [
@@ -289,22 +317,31 @@ class PlotBaseMaps(PlotBase):
                             * tf.t_interp_dict["tzx"]["imag"](
                                 1.0 / self.plot_period
                             )[0],
-                        ],
-                        [
-                            tf.z_interp_dict["tzy"]["real"](
+                            tf.t_interp_dict["tzy"]["real"](
                                 1.0 / self.plot_period
                             )[0]
                             + 1j
                             * tf.t_interp_dict["tzy"]["imag"](
                                 1.0 / self.plot_period
                             )[0],
-                        ],
+                        ]
                     ]
                 ]
             )
         )
 
     def _get_interpolated_t_err(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf.t_interp_dict == {}:
+            return np.array((1, 1, 2), dtype=float)
         return np.nan_to_num(
             np.array(
                 [
@@ -313,12 +350,10 @@ class PlotBaseMaps(PlotBase):
                             tf.t_interp_dict["tzx"]["err"](
                                 1.0 / self.plot_period
                             )[0],
-                        ],
-                        [
                             tf.t_interp_dict["tzy"]["err"](
                                 1.0 / self.plot_period
                             )[0],
-                        ],
+                        ]
                     ]
                 ]
             )
