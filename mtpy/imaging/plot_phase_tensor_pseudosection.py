@@ -80,7 +80,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         self._rotation_angle = 0
         self.tf_list = tf_list
 
-        self.x_stretch = 1
+        self.x_stretch = 5000
         self.y_stretch = 1000
         self.y_scale = "period"
         # --> set plot properties
@@ -89,6 +89,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         self.profile_vector = None
         self.profile_angle = None
         self.profile_line = None
+        self.profile_reverse = False
 
         self.ellipse_size = 250
         self.arrow_size = 1000
@@ -120,9 +121,8 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         north = np.zeros(len(self.tf_list))
 
         for ii, tf in enumerate(self.tf_list):
-            tf.project_to_utm()
-            east[ii] = tf.east
-            north[ii] = tf.north
+            east[ii] = tf.longitude
+            north[ii] = tf.latitude
 
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
@@ -160,8 +160,14 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         pt_obj = tf.pt
         t_obj = tf.Tipper
 
-        station_vector = np.array([tf.east, tf.north - self.profile_line[1]])
-        plot_x = (
+        station_vector = np.array(
+            [tf.longitude, tf.latitude - self.profile_line[1]]
+        )
+        direction = 1
+        if self.profile_reverse:
+            direction = -1
+
+        plot_x = direction * (
             np.linalg.norm(
                 np.dot(self.profile_vector, station_vector)
                 * self.profile_vector
@@ -433,7 +439,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
 
         # set y-axis tick labels
         self.ax.yaxis.set_ticks(
-            np.arange(y_min, (y_max + 1), self.y_stretch * np.sign(y_max))
+            np.arange(y_min, (y_max), self.y_stretch * np.sign(y_max))
         )
 
         y_tick_labels = []
@@ -473,11 +479,10 @@ class PlotPhaseTensorPseudoSection(PlotBase):
             self.ax.set_xlim(self.x_limits)
         # --> set y-limits
         if self.y_limits is None:
-            #            self.ax.set_ylim(pmax+es*2, pmin-es*2)
             self.ax.set_ylim(y_min, y_max)
         else:
-            pmin = np.log10(self.y_limits[0]) * self.ystretch
-            pmax = np.log10(self.y_limits[1]) * self.ystretch
+            pmin = np.log10(self.y_limits[0]) * self.y_stretch
+            pmax = np.log10(self.y_limits[1]) * self.y_stretch
             self.ax.set_ylim(np.floor(pmin), np.ceil(pmax))
 
         # --> set title of the plot
