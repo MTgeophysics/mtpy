@@ -728,9 +728,9 @@ class PlotStrike(PlotBase):
                 axh.xaxis.set_major_locator(MultipleLocator(30 * np.pi / 180))
 
                 ### set labels on the correct axis
-                axh.xaxis.set_ticklabels(
-                    ["", "", "", "", "", "", "", "", "", "", "", ""]
-                )
+                # axh.xaxis.set_ticklabels(
+                #     ["", "", "", "", "", "", "", "", "", "", "", ""]
+                # )
                 ### set y limits if asked for
                 if self.ring_limits is not None:
                     axh.set_ylim(self.ring_limits)
@@ -791,6 +791,7 @@ class PlotStrike(PlotBase):
                     axh.yaxis.set_label_position("right")
 
                 plt.setp(axh.yaxis.get_ticklabels(), visible=False)
+                plt.setp(axh.xaxis.get_ticklabels(), visible=False)
         self.logger.info(
             "Note: North is assumed to be 0 and the strike angle is measured"
             + "clockwise positive."
@@ -846,16 +847,6 @@ class PlotStrike(PlotBase):
             # set a light grid
             axh.grid(alpha=0.25)  # works in 2.0.2 not 2.1.0
 
-            # set tick labels to be invisible
-            plt.setp(
-                axh.yaxis.get_ticklabels(), visible=False
-            )  # works in 2.0.2 not 2.1.0
-
-            # place the correct label at the cardinal directions
-            axh.set_xticklabels(
-                ["", "", "", "", "", "", "", "", "", "", "", "", ""]
-            )
-
             st_median, st_mode, st_mean = self.get_stats(estimate)
             if estimate == "invariant":
                 box_color = self.color_inv
@@ -897,6 +888,8 @@ class PlotStrike(PlotBase):
                 )
             # move title up a little to make room for labels
             axh.titleOffsetTrans._t = (0, 0.15)
+            plt.setp(axh.yaxis.get_ticklabels(), visible=False)
+            plt.setp(axh.xaxis.get_ticklabels(), visible=False)
         # remind the user what the assumptions of the strike angle are
         self.logger.info(
             "Note: North is assumed to be 0 and the strike angle is "
