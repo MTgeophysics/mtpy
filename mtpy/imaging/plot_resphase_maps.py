@@ -287,7 +287,8 @@ class PlotResPhaseMaps(PlotBaseMaps):
 
             plot_array["phase_xx"][ii] = z_object.phase_xx[0]
             plot_array["phase_xy"][ii] = z_object.phase_xy[0]
-            plot_array["phase_yx"][ii] = z_object.phase_yx[0] + 180
+            if z_object.phase_yx[0] != 0:
+                plot_array["phase_yx"][ii] = z_object.phase_yx[0] + 180
             plot_array["phase_yy"][ii] = z_object.phase_yy[0]
             plot_array["phase_det"][ii] = z_object.phase_det[0]
 
@@ -367,13 +368,14 @@ class PlotResPhaseMaps(PlotBaseMaps):
 
         subplot_dict = self._get_subplots()
 
-        plot_array = self._get_data_array()
+        data_array = self._get_data_array()
 
         # plot results
         subplot_numbers = self._get_n_subplots()
         for comp, ax in subplot_dict.items():
             cmap = self._get_cmap(comp)
 
+            plot_array = data_array[np.nonzero(data_array[comp])]
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
                 x, y, image = self.interpolate_to_map(plot_array, comp)
 
