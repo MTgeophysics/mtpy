@@ -11,8 +11,12 @@ from .plotters import (
     plot_tipper_lateral,
     add_raster,
 )
-from .map_interpolation_tools import interpolate_to_map
-from .base import PlotBase, PlotBaseMaps
+from .map_interpolation_tools import (
+    interpolate_to_map,
+    griddata_interpolate,
+    triangulate_interpolation,
+)
+from .base import PlotBase, PlotBaseMaps, PlotBaseProfile
 
 
 __all__ = [
@@ -28,6 +32,9 @@ __all__ = [
     "plot_tipper_lateral",
     "add_raster",
     "interpolate_to_map",
+    "griddata_interpolate",
+    "triangulate_interpolation",
     "PlotBase",
     "PlotBaseMaps",
+    "PlotBaseProfile",
 ]

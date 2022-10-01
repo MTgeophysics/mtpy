@@ -103,6 +103,7 @@ class PlotSettings(MTArrows, MTEllipse):
         self.text_angle = 0
         self.text_x_pad = 0
         self.text_y_pad = 0
+        self.text_rotation = 0
 
         self.subplot_left = 0.09
         self.subplot_right = 0.9

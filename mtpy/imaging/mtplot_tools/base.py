@@ -9,6 +9,7 @@ Base classes for plotting classes
 # =============================================================================
 from pathlib import Path
 import numpy as np
+from scipy import stats
 
 import matplotlib.pyplot as plt
 
@@ -377,3 +378,228 @@ class PlotBaseMaps(PlotBase):
         """
 
         return add_raster(ax, raster_fn, add_colorbar=True, **kwargs)
+
+
+class PlotBaseProfile(PlotBase):
+    """
+    Base object for profile plots like pseudo sections.
+
+    """
+
+    def __init__(self, tf_list, **kwargs):
+        super().__init__(**kwargs)
+
+        self.profile_vector = None
+        self.profile_angle = None
+        self.profile_line = None
+        self.profile_reverse = False
+
+        self.x_stretch = 5000
+        self.y_stretch = 1000
+        self.y_scale = "period"
+
+        self._rotation_angle = 0
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    # ---need to rotate data on setting rotz
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+
+    @rotation_angle.setter
+    def rotation_angle(self, value):
+        """
+        only a single value is allowed
+        """
+        for tf in self.tf_list:
+            tf.rotation_angle = value
+        self._rotation_angle = value
+
+    def _get_profile_line(self):
+        x = np.zeros(len(self.tf_list))
+        y = np.zeros(len(self.tf_list))
+
+        for ii, tf in enumerate(self.tf_list):
+            x[ii] = tf.longitude
+            y[ii] = tf.latitude
+
+        # check regression for 2 profile orientations:
+        # horizontal (N=N(E)) or vertical(E=E(N))
+        # use the one with the lower standard deviation
+        profile1 = stats.linregress(x, y)
+        profile2 = stats.linregress(y, x)
+        # if the profile is rather E=E(N), the parameters have to converted
+        # into N=N(E) form:
+        if profile2.stderr < profile1.stderr:
+            self.profile_line = (
+                1.0 / profile2.slope,
+                -profile2.intercept / profile2.slope,
+            )
+            profile = profile2
+        else:
+            self.profile_line = profile1[:2]
+            profile = profile1
+
+        self.profile_angle = (90 - np.rad2deg(np.arctan(profile.slope))) % 180
+
+        self.profile_vector = np.array([1, profile.slope])
+        self.profile_vector /= np.linalg.norm(self.profile_vector)
+
+    def _get_offset(self, tf):
+        """
+        Get approximate offset distance for the station
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        station_vector = np.array(
+            [tf.longitude, tf.latitude - self.profile_line[1]]
+        )
+        direction = 1
+        if self.profile_reverse:
+            direction = -1
+
+        return direction * (
+            np.linalg.norm(
+                np.dot(self.profile_vector, station_vector)
+                * self.profile_vector
+            )
+            * self.x_stretch
+        )
+
+    def _get_interpolated_z(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        return np.nan_to_num(
+            np.array(
+                [
+                    [
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)
+                        + 1j
+                        * tf.z_interp_dict["zxx"]["imag"](
+                            1.0 / self.plot_period
+                        ),
+                        tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)
+                        + 1j
+                        * tf.z_interp_dict["zxy"]["imag"](
+                            1.0 / self.plot_period
+                        ),
+                    ],
+                    [
+                        tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)
+                        + 1j
+                        * tf.z_interp_dict["zyx"]["imag"](
+                            1.0 / self.plot_period
+                        ),
+                        tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)
+                        + 1j
+                        * tf.z_interp_dict["zyy"]["imag"](
+                            1.0 / self.plot_period
+                        ),
+                    ],
+                ]
+            )
+        )
+
+    def _get_interpolated_z_err(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return np.nan_to_num(
+            np.array(
+                [
+                    [
+                        tf.z_interp_dict["zxx"]["err"](1.0 / self.plot_period),
+                        tf.z_interp_dict["zxy"]["err"](1.0 / self.plot_period),
+                    ],
+                    [
+                        tf.z_interp_dict["zyx"]["err"](1.0 / self.plot_period),
+                        tf.z_interp_dict["zyy"]["err"](1.0 / self.plot_period),
+                    ],
+                ]
+            )
+        )
+
+    def _get_interpolated_t(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf.t_interp_dict == {}:
+            return np.zeros((1, 1, 2), dtype=complex)
+        return np.nan_to_num(
+            np.array(
+                [
+                    [
+                        [
+                            tf.t_interp_dict["tzx"]["real"](
+                                1.0 / self.plot_period
+                            )
+                            + 1j
+                            * tf.t_interp_dict["tzx"]["imag"](
+                                1.0 / self.plot_period
+                            ),
+                            tf.t_interp_dict["tzy"]["real"](
+                                1.0 / self.plot_period
+                            )
+                            + 1j
+                            * tf.t_interp_dict["tzy"]["imag"](
+                                1.0 / self.plot_period
+                            ),
+                        ]
+                    ]
+                ]
+            )
+        )
+
+    def _get_interpolated_t_err(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf.t_interp_dict == {}:
+            return np.array((1, 1, 2), dtype=float)
+        return np.nan_to_num(
+            np.array(
+                [
+                    [
+                        [
+                            tf.t_interp_dict["tzx"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                            tf.t_interp_dict["tzy"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                        ]
+                    ]
+                ]
+            )
+        )

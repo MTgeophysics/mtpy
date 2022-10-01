@@ -99,6 +99,42 @@ def get_plot_xy(plot_array, cell_size, n_padding_cells):
     return plot_x, plot_y
 
 
+def griddata_interpolate(
+    x, y, values, new_x, new_y, interpolation_method="cubic"
+):
+    """
+
+    :param x: DESCRIPTION
+    :type x: TYPE
+    :param y: DESCRIPTION
+    :type y: TYPE
+    :param value: DESCRIPTION
+    :type value: TYPE
+    :param new_x: DESCRIPTION
+    :type new_x: TYPE
+    :param new_y: DESCRIPTION
+    :type new_y: TYPE
+    :param interpolation_method: DESCRIPTION, defaults to "cubic"
+    :type interpolation_method: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    points = np.array([x, y]).T
+    grid_x, grid_y = np.meshgrid(new_x, new_y)
+
+    return (
+        grid_x,
+        grid_y,
+        interpolate.griddata(
+            points,
+            values,
+            (grid_x, grid_y),
+            method=interpolation_method,
+        ),
+    )
+
+
 def interpolate_to_map_griddata(
     plot_array,
     component,
@@ -122,23 +158,95 @@ def interpolate_to_map_griddata(
 
     """
 
-    points = np.array([plot_array["longitude"], plot_array["latitude"]]).T
-    values = plot_array[component]
-
     plot_x, plot_y = get_plot_xy(plot_array, cell_size, n_padding_cells)
 
-    grid_x, grid_y = np.meshgrid(plot_x, plot_y)
-    image = interpolate.griddata(
-        points,
-        values,
-        (grid_x, grid_y),
-        method=interpolation_method,
+    grid_x, grid_y, image = griddata_interpolate(
+        plot_array["longitude"],
+        plot_array["latitude"],
+        plot_array["component"],
+        plot_x,
+        plot_y,
     )
 
     if "res" in component:
         image = np.log10(image)
 
     return grid_x, grid_y, image
+
+
+def triangulate_interpolation(
+    x,
+    y,
+    values,
+    padded_x,
+    padded_y,
+    new_x,
+    new_y,
+    nearest_neighbors=7,
+    interp_pow=4,
+):
+    """
+
+    :param x: DESCRIPTION
+    :type x: TYPE
+    :param y: DESCRIPTION
+    :type y: TYPE
+    :param values: DESCRIPTION
+    :type values: TYPE
+    :param new_x: DESCRIPTION
+    :type new_x: TYPE
+    :param new_y: DESCRIPTION
+    :type new_y: TYPE
+    :param : DESCRIPTION
+    :type : TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    grid_x, grid_y = np.meshgrid(new_x, new_y)
+    grid_x = grid_x.flatten()
+    grid_y = grid_y.flatten()
+
+    triangulation = tri.Triangulation(grid_x, grid_y)
+
+    mean_x = grid_x[triangulation.triangles].mean(axis=1)
+    mean_y = grid_y[triangulation.triangles].mean(axis=1)
+
+    points_mean = np.array([mean_x, mean_y]).T
+    padded_points = np.array([padded_x, padded_y]).T
+
+    inside_indices = in_hull(points_mean, padded_points)
+    inside_indices = np.bool_(inside_indices)
+    triangulation.set_mask(~inside_indices)
+
+    tree = cKDTree(np.array([x, y]).T)
+
+    xy = np.array([grid_x, grid_y]).T
+    d, l = tree.query(xy, k=nearest_neighbors)
+
+    image = None
+
+    if nearest_neighbors == 1:
+        # extract nearest neighbour values
+        image = values[l]
+    else:
+        image = np.zeros((xy.shape[0]))
+
+        # field values are directly assigned for coincident locations
+        coincident_indices = d[:, 0] == 0
+        image[coincident_indices] = values[l[coincident_indices, 0]]
+
+        # perform idw interpolation for non-coincident locations
+        idw_indices = d[:, 0] != 0
+        w = np.zeros(d.shape)
+        w[idw_indices, :] = 1.0 / np.power(d[idw_indices, :], interp_pow)
+
+        image[idw_indices] = np.sum(
+            w[idw_indices, :] * values[l[idw_indices, :]], axis=1
+        ) / np.sum(w[idw_indices, :], axis=1)
+
+    return triangulation, image, inside_indices
 
 
 def interpolate_to_map_triangulate(
@@ -180,64 +288,30 @@ def interpolate_to_map_triangulate(
 
     """
 
-    x = plot_array["longitude"]
-    y = plot_array["latitude"]
-
     # add padding to the locations
     ds = cell_size * n_padding_cells
 
-    ex = plot_array["longitude"].copy()
-    ey = plot_array["latitude"].copy()
+    padded_x = plot_array["longitude"].copy()
+    padded_y = plot_array["latitude"].copy()
 
-    ex[np.argmin(ex)] -= ds
-    ex[np.argmax(ex)] += ds
-    ey[np.argmin(ey)] -= ds
-    ey[np.argmax(ey)] += ds
+    padded_x[np.argmin(padded_x)] -= ds
+    padded_x[np.argmax(padded_x)] += ds
+    padded_y[np.argmin(padded_y)] -= ds
+    padded_y[np.argmax(padded_y)] += ds
 
     plot_x, plot_y = get_plot_xy(plot_array, cell_size, n_padding_cells)
 
-    rx, ry = np.meshgrid(plot_x, plot_y)
-    rx = rx.flatten()
-    ry = ry.flatten()
-
-    triangulation = tri.Triangulation(rx, ry)
-
-    mx = rx[triangulation.triangles].mean(axis=1)
-    my = ry[triangulation.triangles].mean(axis=1)
-
-    mxmy = np.array([mx, my]).T
-    exey = np.array([ex, ey]).T
-
-    inside_indices = in_hull(mxmy, exey)
-    inside_indices = np.bool_(inside_indices)
-    triangulation.set_mask(~inside_indices)
-
-    tree = cKDTree(np.array([x, y]).T)
-
-    xy = np.array([rx, ry]).T
-    d, l = tree.query(xy, k=nearest_neighbors)
-
-    image = None
-    values = plot_array[component]
-
-    if nearest_neighbors == 1:
-        # extract nearest neighbour values
-        image = values[l]
-    else:
-        image = np.zeros((xy.shape[0]))
-
-        # field values are directly assigned for coincident locations
-        coincident_indices = d[:, 0] == 0
-        image[coincident_indices] = values[l[coincident_indices, 0]]
-
-        # perform idw interpolation for non-coincident locations
-        idw_indices = d[:, 0] != 0
-        w = np.zeros(d.shape)
-        w[idw_indices, :] = 1.0 / np.power(d[idw_indices, :], interp_pow)
-
-        image[idw_indices] = np.sum(
-            w[idw_indices, :] * values[l[idw_indices, :]], axis=1
-        ) / np.sum(w[idw_indices, :], axis=1)
+    triangulation, image, inside_indices = triangulate_interpolation(
+        plot_array["longitude"],
+        plot_array["latitude"],
+        plot_array[component],
+        padded_x,
+        padded_y,
+        plot_x,
+        plot_y,
+        nearest_neighbors=nearest_neighbors,
+        interp_pow=interp_pow,
+    )
 
     if "res" in component:
         image = np.log10(image)

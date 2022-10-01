@@ -5,21 +5,24 @@ Created on Thu May 30 18:39:58 2013
 @author: jpeacock-pr
 """
 
-# ==============================================================================
+# =============================================================================
+# Imports
+# =============================================================================
+import numpy as np
+import pandas as pd
 
 import matplotlib.pyplot as plt
-import numpy as np
-import os
+import matplotlib.gridspec as gridspec
 import matplotlib.colorbar as mcb
 import matplotlib.colors as colors
-import mtpy.imaging.mtplot_tools as mtpl
+
+from mtpy.imaging.mtplot_tools import PlotBaseProfile
 import mtpy.imaging.mtcolors as mtcl
-import matplotlib.gridspec as gridspec
 
 # ==============================================================================
 
 
-class PlotResPhasePseudoSection(object):
+class PlotResPhasePseudoSection(PlotBaseProfile):
     """
     plot a resistivity and phase pseudo section for different components
 
@@ -203,315 +206,208 @@ class PlotResPhasePseudoSection(object):
                       as the tick labels, in case they are closely spaced.
                       *default* is 1
 
-    ================ ==========================================================
-    Attributes        Description
-    ================ ==========================================================
-        ax_pxx       axes instance for phase_xx
-        ax_rxx       axes instance for res_xx
-        ax_pxy       axes instance for phase_xy
-        ax_rxy       axes instance for res_xy
-        ax_pyx       axes instance for phase_yx
-        ax_ryx       axes instance for res_yx
-        ax_pyy       axes instance for phase_yy
-        ax_ryy       axes instance for res_yx
-        cbaxp        axes instance for phase colorbar
-        cbaxr        axes instance for resistivity colorbar
-        cbp          colorbar instance for phase
-        cbr          colorbar instance for resistivity
-        fig          figure instance for the plot
-        mt_list       list of mtpy.mtplottools.MTplot instances
-        mt_list_sort  same as mt_list but sorted by location assuming linedir
-        offset_list   list of station offsetes assuming linedir
-        phasexx      np.ndarray of phase_xx values
-        phasexy      np.ndarray of phase_xy values
-        phaseyx      np.ndarray of phase_yx values
-        phaseyy      np.ndarray of phase_yy values
-
-        resxx        np.ndarray of res_xx values
-        resxy        np.ndarray of res_xy values
-        resyx        np.ndarray of res_yx values
-        resyy        np.ndarray of res_yy values
-        station_list  list of stations corresponding to offset_list
-        text         text instance for subplot label
-    ================ ==========================================================
-
-    Methods:
-    ---------
-        * *plot*: plots the pseudosection according to keywords
-        * *redraw_plot*: redraws the plot, use if you change some of the
-                         attributes.
-        * *update_plot*: updates the plot, use if you change some of the
-                         axes attributes, figure needs to be open to update.
-        * *save_plot*: saves the plot to given filepath.
-
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, tf_list, **kwargs):
         """
         Initialize parameters
         """
 
         # read in key word arguments and set defaults if none given
-        fn_list = kwargs.pop("fn_list", None)
-        res_object_list = kwargs.pop("res_object_list", None)
-        z_object_list = kwargs.pop("z_object_list", None)
-        mt_object_list = kwargs.pop("mt_object_list", None)
-
-        # --> get the inputs into a list of mt objects
-        self.mt_list = mtpl.get_mtlist(
-            fn_list=fn_list,
-            res_object_list=res_object_list,
-            z_object_list=z_object_list,
-            mt_object_list=mt_object_list,
-        )
+        self.tf_list = tf_list
 
         # --> set figure parameters
-        self.fig_num = kwargs.pop("fig_num", 1)
-        self.fig_size = kwargs.pop("fig_size", [8, 4])
-        self.fig_dpi = kwargs.pop("fig_dpi", 300)
-        self.font_size = kwargs.pop("font_size", 7)
         self.aspect = kwargs.pop("aspect", "auto")
 
         self.xtickspace = kwargs.pop("xtickspace", 1)
-        self.ftol = kwargs.pop("ftol", 0.1)
         self.stationid = kwargs.pop("stationid", [0, 4])
         self.linedir = kwargs.pop("linedir", "ew")
 
         # --> set plots to plot and how to plot them
-        self.plot_yn = kwargs.pop("plot_yn", "y")
-        self.plot_xx = kwargs.pop("plot_xx", "n")
-        self.plot_xy = kwargs.pop("plot_xy", "y")
-        self.plot_yx = kwargs.pop("plot_yx", "y")
-        self.plot_yy = kwargs.pop("plot_yy", "n")
-        self.plot_style = kwargs.pop("plot_style", "imshow")
-        self.imshow_interp = kwargs.pop("imshow_interp", "bicubic")
-        self.plot_period = kwargs.pop("plot_period", None)
-        self.shift_yx_phase = kwargs.pop("shift_yx_phase", False)
+        self.plot_xx = False
+        self.plot_xy = True
+        self.plot_yx = True
+        self.plot_yy = False
+        self.plot_det = False
+        self.plot_resistivity = True
+        self.plot_phase = True
 
         # --> set plot limits
-        self.res_limits = kwargs.pop("res_limits", (0, 3))
-        self.phase_limits = kwargs.pop("phase_limits", (0, 90))
-        self.period_limits = kwargs.pop("period_limits", None)
+        self.cmap_limits = {
+            "res_xx": (-1, 2),
+            "res_xy": (0, 3),
+            "res_yx": (0, 3),
+            "res_yy": (-1, 2),
+            "res_det": (0, 3),
+            "phase_xx": (-180, 180),
+            "phase_xy": (0, 100),
+            "phase_yx": (0, 100),
+            "phase_yy": (-180, 180),
+            "phase_det": (0, 100),
+        }
 
-        # --> set colorbar properties
-        self.cb_pad = kwargs.pop("cb_pad", 0.0375)
-        self.cb_orientation = kwargs.pop("cb_orientation", "vertical")
-        self.cb_shrink = kwargs.pop("cb_shrink", 0.75)
-        self.cb_position = kwargs.pop("cb_position", None)
-
-        # --> set text box parameters
-        self.text_location = kwargs.pop("text_location", None)
-        self.text_xpad = kwargs.pop("text_xpad", 0.95)
-        self.text_ypad = kwargs.pop("text_ypad", 0.95)
-        self.text_size = kwargs.pop("text_size", self.font_size)
-        self.text_weight = kwargs.pop("text_weight", "bold")
-        self.station_label_rotation = kwargs.pop("station_label_rotation", 0)
-        self.show_grid = kwargs.pop("show_grid", True)
+        self.label_dict = {
+            "res_xx": "$\\rho_{xx}  \\mathrm{[\Omega m]}$",
+            "res_xy": "$\\rho_{xy}  \\mathrm{[\Omega m]}$",
+            "res_yx": "$\\rho_{yx}  \\mathrm{[\Omega m]}$",
+            "res_yy": "$\\rho_{yy}  \\mathrm{[\Omega m]}$",
+            "res_det": "$\\rho_{det}  \\mathrm{[\Omega m]}$",
+            "phase_xx": "$\\phi_{xx}$",
+            "phase_xy": "$\\phi_{xy}$",
+            "phase_yx": "$\\phi_{yx}$",
+            "phase_yy": "$\\phi_{yy}$",
+            "phase_det": "$\\phi_{det}$",
+        }
 
         # --> set colormaps Note only mtcolors is supported
-        self.res_cmap = kwargs.pop("res_cmap", mtcl.cmapdict["mt_rd2gr2bl"])
-        self.phase_cmap = kwargs.pop("phase_cmap", mtcl.cmapdict["mt_bl2gr2rd"])
+        self.res_cmap = mtcl.cmapdict["mt_rd2gr2bl"]
+        self.phase_cmap = mtcl.cmapdict["mt_bl2gr2rd"]
 
-        # create empty lists to put things into
-        self.stationlist = []
-        self.offsetlist = []
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-        # make a list of periods from each station assuming the longest one
-        # is the most complete ==> largest range.
-        period_list = np.array([len(mt.period) for mt in self.mt_list])
-
-        # find index where the longest period is if multiple pick the first one
-        max_find = np.where(period_list == period_list.max())[0]
-        if len(max_find) > 0:
-            max_find = max_find[0]
-        if self.plot_period is None:
-            self.plot_period = self.mt_list[max_find].period
-        # create empty arrays to put data into
-        ns = len(self.mt_list)
-        nt = len(self.plot_period)
-
-        self.resxx = np.zeros((nt, ns))
-        self.resxy = np.zeros((nt, ns))
-        self.resyx = np.zeros((nt, ns))
-        self.resyy = np.zeros((nt, ns))
-
-        self.phasexx = np.zeros((nt, ns))
-        self.phasexy = np.zeros((nt, ns))
-        self.phaseyx = np.zeros((nt, ns))
-        self.phaseyy = np.zeros((nt, ns))
-
-        rot_z = kwargs.pop("rot_z", 0)
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            self.rot_z = np.array([rot_z] * len(self.mt_list))
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                self.rot_z = np.repeat(rot_z, len(self.mt_list))
-        else:
-            self.rot_z = rot_z
-        if self.plot_yn == "y":
-            self.plot()
-
-    # ---need to rotate data on setting rotz
-    def _set_rot_z(self, rot_z):
+    def _get_period_array(self):
         """
-        need to rotate data when setting z
+        Get the period array to interpolate on to
         """
 
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            rot_z = np.array([rot_z] * len(self.mt_list))
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                rot_z = np.repeat(rot_z, len(self.mt_list))
-        else:
-            pass
-        # rotate the data
-        for ii, mt in enumerate(self.mt_list):
-            mt.rot_z = rot_z[ii]
+        tf_periods = np.array([tf.period for tf in self.tf_list]).flatten()
 
-    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
+        p_min = np.log10(tf_periods.min())
+        p_max = np.log10(tf_periods.max())
 
-    def sort_by_offsets(self):
+        n_periods = (np.ceil(p_max) - np.floor(p_min)) * 10
+
+        return np.logspace(p_min, p_max, n_periods)
+
+    def _get_n_rows(self):
         """
-        get list of offsets to sort the mt list
+        Get the number of rows in the subplot
+
+        :return: DESCRIPTION
+        :rtype: TYPE
 
         """
+        n = 0
+        if self.plot_resistivity:
+            n += 1
+        if self.plot_phase:
+            n += 1
+        return n
 
-        dtype = [("station", "U10"), ("offset", float), ("spot", int)]
-        slist = []
-        # get offsets
-        for ii, mt in enumerate(self.mt_list):
-            # get offsets between stations
-            if ii == 0:
-                east0 = mt.lon
-                north0 = mt.lat
-                offset = 0.0
-            else:
-                east = mt.lon
-                north = mt.lat
-                # if line is predominantly e-w
-                if self.linedir == "ew":
-                    if east0 < east:
-                        offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
-                    elif east0 > east:
-                        offset = -1 * np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    else:
-                        offset = 0
-                # if line is predominantly n-s
-                elif self.linedir == "ns":
-                    if north0 < north:
-                        offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
-                    elif north0 > north:
-                        offset = -1 * np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    else:
-                        offset = 0
-            # append values to list for sorting
-            slist.append((mt.station, offset, ii))
-        # create a structured array according to the data type and values
-        v_array = np.array(slist, dtype=dtype)
+    def _get_n_columns(self):
+        """get the number of columns in the subplot"""
+        n = 0
 
-        # sort the structured array by offsets
-        sorted_array = np.sort(v_array, order=["offset"])
+        for cc in ["xx", "xy", "yx", "yy", "det"]:
+            if getattr(self, f"plot_{cc}"):
+                n += 1
 
-        # create an offset list as an attribute
-        self.offset_list = np.array([ss[1] for ss in sorted_array])
+        return n
 
-        # create a station list as an attribute
-        self.station_list = np.array(
-            [ss[0][self.stationid[0] : self.stationid[1]] for ss in sorted_array]
-        )
+    def _get_n_subplots(self):
+        """
+        Get the subplot indices
+        """
+        nr = self._get_n_rows()
+        nc = self._get_n_columns()
 
-        # create an index list of the sorted index values
-        index_list = [ss[2] for ss in sorted_array]
+        subplot_dict = {
+            "res_xx": None,
+            "res_xy": None,
+            "res_yx": None,
+            "res_yy": None,
+            "res_det": None,
+            "phase_xx": None,
+            "phase_xy": None,
+            "phase_yx": None,
+            "phase_yy": None,
+            "phase_det": None,
+        }
 
-        # create a new mt_list according to the offsets from the new index_list
-        new_mt_list = [self.mt_list[ii] for ii in index_list]
+        plot_num = 0
+        for cc in ["xx", "xy", "yx", "yy", "det"]:
+            if self.plot_resistivity:
+                if getattr(self, f"plot_{cc}"):
+                    plot_num += 1
+                    subplot_dict[f"res_{cc}"] = (nr, nc, plot_num)
 
-        # set the mt_list attribute as the new sorted mt_list
-        self.mt_list_sort = new_mt_list
+        for cc in ["xx", "xy", "yx", "yy", "det"]:
+            if self.plot_phase:
+                if getattr(self, f"plot_{cc}"):
+                    plot_num += 1
+                    subplot_dict[f"phase_{cc}"] = (nr, nc, plot_num)
 
-    def get_rp_arrays(self):
+        return subplot_dict
+
+    def _get_subplots(self):
+        """
+        get the subplots
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        subplot_dict = self._get_n_subplots()
+        ax_dict = {}
+
+        for cc in ["xx", "xy", "yx", "yy", "det"]:
+            if self.plot_resistivity:
+                comp = f"res_{cc}"
+                if getattr(self, f"plot_{cc}"):
+                    ax_dict[comp] = self.fig.add_subplot(
+                        *subplot_dict[comp], aspect="equal"
+                    )
+
+            if self.plot_phase:
+                comp = f"phase_{cc}"
+                if getattr(self, f"plot_{cc}"):
+                    ax_dict[comp] = self.fig.add_subplot(
+                        *subplot_dict[comp], aspect="equal"
+                    )
+
+        share = [ax for comp, ax in ax_dict.items() if ax is not None]
+
+        # share x and y across all subplots for easier zooming
+        for ax in share[1:]:
+            ax.sharex(share[0])
+            ax.sharey(share[0])
+
+        return ax_dict
+
+    def _get_data_array(self):
         """
         get resistivity and phase values in the correct order according to
         offsets and periods.
 
         """
 
-        self.sort_by_offsets()
+        self._get_profile_line()
 
-        # create empty arrays to put data into need to reset to zero in case
-        # something has changed
-        ns = len(self.mt_list)
-        nt = len(self.plot_period)
+        entries = []
 
-        self.resxx = np.zeros((nt, ns))
-        self.resxy = np.zeros((nt, ns))
-        self.resyx = np.zeros((nt, ns))
-        self.resyy = np.zeros((nt, ns))
+        for ii, tf in enumerate(self.tf_list):
+            offset = self._get_offset(tf)
+            rp = tf.Z
 
-        self.phasexx = np.zeros((nt, ns))
-        self.phasexy = np.zeros((nt, ns))
-        self.phaseyx = np.zeros((nt, ns))
-        self.phaseyy = np.zeros((nt, ns))
+            for ii, period in enumerate(tf.period):
+                entry = {
+                    "x": offset,
+                    "y": period,
+                    "res_xx": rp.res_xx[ii],
+                    "res_xy": rp.res_xy[ii],
+                    "res_yx": rp.res_yx[ii],
+                    "res_yy": rp.res_yy[ii],
+                    "res_det": rp.res_det[ii],
+                    "phase_xx": rp.phase_xx[ii],
+                    "phase_xy": rp.phase_xy[ii],
+                    "phase_yx": rp.phase_yx[ii] + 180,
+                    "phase_yy": rp.phase_yy[ii],
+                    "phase_det": rp.phase_det[ii],
+                }
+                entries.append(entry)
 
-        # make a dictionary of the periods to plot for a reference
-        period_dict = dict([(key, vv) for vv, key in enumerate(self.plot_period)])
-
-        for ii, mt in enumerate(self.mt_list_sort):
-            # get resisitivity and phase in a dictionary and append to a list
-            #            rp = mt.get_ResPhase()
-            rp = mt.Z
-
-            for rr, rper in enumerate(self.plot_period):
-                jj = None
-                for kk, iper in enumerate(mt.period):
-                    if iper == rper:
-                        jj = period_dict[rper]
-                        self.resxx[jj, ii] = np.log10(rp.res_xx[kk])
-                        self.resxy[jj, ii] = np.log10(rp.res_xy[kk])
-                        self.resyx[jj, ii] = np.log10(rp.res_yx[kk])
-                        self.resyy[jj, ii] = np.log10(rp.res_yy[kk])
-
-                        self.phasexx[jj, ii] = rp.phase_xx[kk]
-                        self.phasexy[jj, ii] = rp.phase_xy[kk]
-                        self.phaseyx[jj, ii] = rp.phase_yx[kk]
-                        self.phaseyy[jj, ii] = rp.phase_yy[kk]
-
-                        break
-                    elif rper * (1 - self.ftol) <= iper and iper <= rper * (
-                        1 + self.ftol
-                    ):
-                        jj = period_dict[rper]
-                        self.resxx[jj, ii] = np.log10(rp.res_xx[kk])
-                        self.resxy[jj, ii] = np.log10(rp.res_xy[kk])
-                        self.resyx[jj, ii] = np.log10(rp.res_yx[kk])
-                        self.resyy[jj, ii] = np.log10(rp.res_yy[kk])
-
-                        self.phasexx[jj, ii] = rp.phase_xx[kk]
-                        self.phasexy[jj, ii] = rp.phase_xy[kk]
-                        self.phaseyx[jj, ii] = rp.phase_yx[kk]
-                        self.phaseyy[jj, ii] = rp.phase_yy[kk]
-
-                        break
-                    else:
-                        pass
-                if jj is None:
-                    print(
-                        "did not find period {0:.6g} (s) for {1}".format(
-                            rper, self.station_list[ii]
-                        )
-                    )
+        return pd.DataFrame(entries)
 
     def plot(self, show=True, get_rp_arrays=True):
 
@@ -549,7 +445,10 @@ class PlotResPhasePseudoSection(object):
 
         # get ylimits for plot
         if self.period_limits is None:
-            self.period_limits = (self.plot_period.min(), self.plot_period.max())
+            self.period_limits = (
+                self.plot_period.min(),
+                self.plot_period.max(),
+            )
         font_dict = {"size": self.font_size + 2, "weight": "bold"}
         ns = len(self.station_list)
         # --> plot data
@@ -560,14 +459,21 @@ class PlotResPhasePseudoSection(object):
             # need to add another element at the end of the array so pcolor
             # will plot the full array
             # first, get median station spacing
-            mss = np.median(np.abs(self.offset_list[1:] - self.offset_list[:-1]))
-            xgrid_edges = np.mean([self.offset_list[1:], self.offset_list[:-1]], axis=0)
+            mss = np.median(
+                np.abs(self.offset_list[1:] - self.offset_list[:-1])
+            )
+            xgrid_edges = np.mean(
+                [self.offset_list[1:], self.offset_list[:-1]], axis=0
+            )
             xgrid = np.hstack(
                 [self.offset_list[:1], xgrid_edges, self.offset_list[-1:]]
             )
 
             ygrid_edges = 10 ** np.mean(
-                [np.log10(self.plot_period[1:]), np.log10(self.plot_period[:-1])],
+                [
+                    np.log10(self.plot_period[1:]),
+                    np.log10(self.plot_period[:-1]),
+                ],
                 axis=0,
             )
             ygrid = np.hstack(
@@ -597,14 +503,18 @@ class PlotResPhasePseudoSection(object):
                 axr.set_aspect(self.aspect)
                 axp.set_aspect(self.aspect)
 
-                axr.set_xticks(self.offset_list[list(range(0, ns, self.xtickspace))])
+                axr.set_xticks(
+                    self.offset_list[list(range(0, ns, self.xtickspace))]
+                )
                 if self.xtickspace != 1:
                     axr.set_xticks(self.offset_list)  # , minor=True)
                 plt.setp(axr.get_xticklabels(), visible=False)
                 if self.show_grid:
                     axr.grid(which="major", alpha=0.25)
                 axr.set_yscale("log", nonposy="clip")
-                axr.set_xlim(self.offset_list.min(), self.offset_list.max() * 1.1)
+                axr.set_xlim(
+                    self.offset_list.min(), self.offset_list.max() * 1.1
+                )
                 axr.set_ylim(self.period_limits)
 
                 # label the plot with a text box
@@ -618,7 +528,10 @@ class PlotResPhasePseudoSection(object):
                     txloc,
                     tyloc,
                     "$Z_{" + tt[0] + "}$",
-                    fontdict={"size": self.text_size, "weight": self.text_weight},
+                    fontdict={
+                        "size": self.text_size,
+                        "weight": self.text_weight,
+                    },
                     verticalalignment="top",
                     horizontalalignment="left",
                     bbox={"facecolor": "white", "alpha": 0.5},
@@ -635,16 +548,23 @@ class PlotResPhasePseudoSection(object):
                 )
                 if self.show_grid:
                     axp.grid(which="major", alpha=0.25)
-                axp.set_xticks(self.offset_list[list(range(0, ns, self.xtickspace))])
+                axp.set_xticks(
+                    self.offset_list[list(range(0, ns, self.xtickspace))]
+                )
                 axp.set_xticklabels(
-                    [self.station_list[st] for st in range(0, ns, self.xtickspace)],
+                    [
+                        self.station_list[st]
+                        for st in range(0, ns, self.xtickspace)
+                    ],
                     rotation=self.station_label_rotation,
                     fontsize=self.text_size,
                 )
                 if self.xtickspace != 1:
                     axp.set_xticks(self.offset_list, minor=True)
                 axp.set_yscale("log", nonposy="clip")
-                axp.set_xlim(self.offset_list.min(), self.offset_list.max() * 1.1)
+                axp.set_xlim(
+                    self.offset_list.min(), self.offset_list.max() * 1.1
+                )
                 axp.set_ylim(self.period_limits)
                 if ii == 0:
                     axp.set_ylabel("Period (s)", font_dict)
@@ -681,7 +601,8 @@ class PlotResPhasePseudoSection(object):
 
                     self.cbr.set_ticks(np.arange(tkrmin, tkrmax + 1))
                     cbr_ticklabels = [
-                        mtpl.labeldict[ll] for ll in np.arange(tkrmin, tkrmax + 1)
+                        mtpl.labeldict[ll]
+                        for ll in np.arange(tkrmin, tkrmax + 1)
                     ]
 
                     self.cbr.set_ticklabels(cbr_ticklabels)
@@ -690,7 +611,8 @@ class PlotResPhasePseudoSection(object):
                     self.cbr.ax.yaxis.tick_left()
                     self.cbr.ax.tick_params(axis="y", direction="in", pad=1)
                     self.cbr.set_label(
-                        "App. Res ($\Omega \cdot$m)", fontdict={"size": self.font_size}
+                        "App. Res ($\Omega \cdot$m)",
+                        fontdict={"size": self.font_size},
                     )
 
                     # --> add colorbar for phase
@@ -728,7 +650,9 @@ class PlotResPhasePseudoSection(object):
                     self.cbp.ax.yaxis.set_label_coords(1.35, 0.5)
                     self.cbp.ax.yaxis.tick_left()
                     self.cbp.ax.tick_params(axis="y", direction="in", pad=0.5)
-                    self.cbp.set_label("Phase (deg)", fontdict={"size": self.font_size})
+                    self.cbp.set_label(
+                        "Phase (deg)", fontdict={"size": self.font_size}
+                    )
                 # make axes attributes for user editing
                 if tt == "xx":
                     self.ax_rxx = axr
@@ -750,10 +674,14 @@ class PlotResPhasePseudoSection(object):
             # --> set major and minor ticks with appropriate labels
             major_yticks = np.arange(
                 np.ceil(
-                    np.log10(self.period_limits[0]) if self.period_limits[0] != 0 else 0
+                    np.log10(self.period_limits[0])
+                    if self.period_limits[0] != 0
+                    else 0
                 ),
                 np.floor(
-                    np.log10(self.period_limits[1]) if self.period_limits[0] != 0 else 0
+                    np.log10(self.period_limits[1])
+                    if self.period_limits[0] != 0
+                    else 0
                 )
                 + 1,
             )
@@ -761,7 +689,7 @@ class PlotResPhasePseudoSection(object):
             # make minor ticks look like they are on a log scale
             minor_yticks = []
             for ll in major_yticks:
-                minor_yticks += [np.arange(1, 10) * 10 ** ll]
+                minor_yticks += [np.arange(1, 10) * 10**ll]
             minor_yticks = np.array(minor_yticks)
             minor_yticks = np.log10(minor_yticks.flatten())
 
@@ -789,7 +717,9 @@ class PlotResPhasePseudoSection(object):
                 )
 
                 # set x ticks but remove labels
-                axr.set_xticks(self.offset_list[list(range(0, ns, self.xtickspace))])
+                axr.set_xticks(
+                    self.offset_list[list(range(0, ns, self.xtickspace))]
+                )
                 if self.xtickspace != 1:
                     axr.set_xticks(self.offset_list, minor=True)
                 plt.setp(axr.get_xticklabels(), visible=False)
@@ -825,7 +755,10 @@ class PlotResPhasePseudoSection(object):
                     txloc,
                     tyloc,
                     "$Z_{" + tt[0] + "}$",
-                    fontdict={"size": self.text_size, "weight": self.text_weight},
+                    fontdict={
+                        "size": self.text_size,
+                        "weight": self.text_weight,
+                    },
                     verticalalignment="top",
                     horizontalalignment="left",
                     bbox={"facecolor": "white", "alpha": 0.5},
@@ -850,9 +783,14 @@ class PlotResPhasePseudoSection(object):
                 )
 
                 axp.grid(which="major", alpha=0.25)
-                axp.set_xticks(self.offset_list[list(range(0, ns, self.xtickspace))])
+                axp.set_xticks(
+                    self.offset_list[list(range(0, ns, self.xtickspace))]
+                )
                 axp.set_xticklabels(
-                    [self.station_list[st] for st in range(0, ns, self.xtickspace)]
+                    [
+                        self.station_list[st]
+                        for st in range(0, ns, self.xtickspace)
+                    ]
                 )
                 if self.xtickspace != 1:
                     axp.set_xticks(self.offset_list, minor=True)
@@ -868,7 +806,9 @@ class PlotResPhasePseudoSection(object):
                 axp.set_xlim(self.offset_list.min(), self.offset_list.max())
                 axp.set_ylim(
                     np.log10(
-                        self.period_limits[0] if self.period_limits[0] != 0 else 0
+                        self.period_limits[0]
+                        if self.period_limits[0] != 0
+                        else 0
                     ),
                     np.log10(self.period_limits[1])
                     if self.period_limits[0] != 0
@@ -906,7 +846,8 @@ class PlotResPhasePseudoSection(object):
 
                     self.cbr.set_ticks(np.arange(tkrmin, tkrmax + 1))
                     cbr_ticklabels = [
-                        mtpl.labeldict[ll] for ll in np.arange(tkrmin, tkrmax + 1)
+                        mtpl.labeldict[ll]
+                        for ll in np.arange(tkrmin, tkrmax + 1)
                     ]
 
                     self.cbr.set_ticklabels(cbr_ticklabels)
@@ -915,7 +856,8 @@ class PlotResPhasePseudoSection(object):
                     self.cbr.ax.yaxis.tick_left()
                     self.cbr.ax.tick_params(axis="y", direction="in", pad=1)
                     self.cbr.set_label(
-                        "App. Res ($\Omega \cdot$m)", fontdict={"size": self.font_size}
+                        "App. Res ($\Omega \cdot$m)",
+                        fontdict={"size": self.font_size},
                     )
 
                     # --> add colorbar for phase
@@ -953,7 +895,9 @@ class PlotResPhasePseudoSection(object):
                     self.cbp.ax.yaxis.set_label_coords(1.35, 0.5)
                     self.cbp.ax.yaxis.tick_left()
                     self.cbp.ax.tick_params(axis="y", direction="in", pad=0.5)
-                    self.cbp.set_label("Phase (deg)", fontdict={"size": self.font_size})
+                    self.cbp.set_label(
+                        "Phase (deg)", fontdict={"size": self.font_size}
+                    )
                 if tt[0] == "xx":
                     self.ax_rxx = axr
                     self.ax_pxx = axp
@@ -1024,16 +968,23 @@ class PlotResPhasePseudoSection(object):
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(
-                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
             )
             # plt.clf()
             # plt.close(self.fig)
         else:
             save_fn = os.path.join(
-                save_fn, self._mt.station + "_ResPhasePseudoSection." + file_format
+                save_fn,
+                self._mt.station + "_ResPhasePseudoSection." + file_format,
             )
             self.fig.savefig(
-                save_fn, dpi=fig_dpi, format=file_format, orientation=orientation
+                save_fn,
+                dpi=fig_dpi,
+                format=file_format,
+                orientation=orientation,
             )
         if close_plot == "y":
             plt.clf()
@@ -1156,7 +1107,10 @@ class PlotResPhasePseudoSection(object):
                     )
                 fid.write("".join(line))
             fid.close()
-        print("Wrote files to: " + os.path.join(svpath, "PseudoSection.component"))
+        print(
+            "Wrote files to: "
+            + os.path.join(svpath, "PseudoSection.component")
+        )
 
     def __str__(self):
         """
