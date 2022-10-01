@@ -41,9 +41,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         Initialize parameters
         """
 
-        super().__init__(**kwargs)
-        # read in key word arguments and set defaults if none given
-        self.tf_list = tf_list
+        super().__init__(tf_list, **kwargs)
 
         # --> set figure parameters
         self.aspect = kwargs.pop("aspect", "auto")
@@ -63,6 +61,9 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         self.data_df = None
         self.n_periods = 60
         self.interpolation_method = "nearest"
+
+        self.x_stretch = 1
+        self.y_stretch = 1
 
         # --> set plot limits
         self.cmap_limits = {
@@ -106,10 +107,10 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         Get the period array to interpolate on to
         """
 
-        p_min = np.log10(df.period.min())
-        p_max = np.log10(df.period.max())
+        p_min = df.period.min()
+        p_max = df.period.max()
 
-        return np.logspace(p_min, p_max, self.n_periods)
+        return np.linspace(p_min, p_max, self.n_periods)
 
     def _get_n_rows(self):
         """
@@ -223,13 +224,13 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
 
             for ii, period in enumerate(tf.period):
                 entry = {
-                    "x": offset,
-                    "y": period,
-                    "res_xx": rp.res_xx[ii],
-                    "res_xy": rp.res_xy[ii],
-                    "res_yx": rp.res_yx[ii],
-                    "res_yy": rp.res_yy[ii],
-                    "res_det": rp.res_det[ii],
+                    "offset": offset,
+                    "period": np.log10(period),
+                    "res_xx": np.log10(rp.res_xx[ii]),
+                    "res_xy": np.log10(rp.res_xy[ii]),
+                    "res_yx": np.log10(rp.res_yx[ii]),
+                    "res_yy": np.log10(rp.res_yy[ii]),
+                    "res_det": np.log10(rp.res_det[ii]),
                     "phase_xx": rp.phase_xx[ii],
                     "phase_xy": rp.phase_xy[ii],
                     "phase_yx": rp.phase_yx[ii] + 180,
@@ -303,7 +304,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
 
         """
 
-        if self.data_df == None:
+        if self.data_df is None:
             self.data_df = self._get_data_df()
 
         plot_periods = self._get_period_array(self.data_df)
@@ -327,7 +328,10 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         for comp, ax in subplot_dict.items():
             cmap = self._get_cmap(comp)
 
-            comp_df = self.data_df.iloc[np.nonzero(self.data_df[comp])]
+            # get nonzero elements of the component
+            comp_df = self.data_df.iloc[
+                self.data_df.res_xx.to_numpy().nonzero()
+            ]
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
 
                 x, y, image = griddata_interpolate(
@@ -336,6 +340,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
                     comp_df[comp],
                     self.data_df.offset,
                     plot_periods,
+                    self.interpolation_method,
                 )
 
                 im = ax.pcolormesh(
@@ -376,8 +381,10 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
 
             self._get_colorbar(ax, im, comp)
 
+            ax.set_ylim((plot_periods.max(), plot_periods.min()))
+
             # Label plots
-            ax.title(
+            ax.set_title(
                 self.label_dict[comp],
                 fontdict={"size": self.font_size + 2},
             )

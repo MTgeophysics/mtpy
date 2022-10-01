@@ -389,6 +389,7 @@ class PlotBaseProfile(PlotBase):
     def __init__(self, tf_list, **kwargs):
         super().__init__(**kwargs)
 
+        self.tf_list = tf_list
         self.profile_vector = None
         self.profile_angle = None
         self.profile_line = None
