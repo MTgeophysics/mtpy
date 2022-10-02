@@ -182,6 +182,8 @@ class PlotBaseMaps(PlotBase):
         self.cell_size = 0.002
         self.n_padding_cells = 10
         self.interpolation_method = "delaunay"
+        self.interpolation_power = 5
+        self.nearest_neighbors = 7
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -211,6 +213,8 @@ class PlotBaseMaps(PlotBase):
             cell_size=self.cell_size,
             n_padding_cells=self.n_padding_cells,
             interpolation_method=self.interpolation_method,
+            interpolation_power=self.interpolation_power,
+            nearest_neighbors=self.nearest_neighbors,
         )
 
     def _get_interpolated_z(self, tf):

@@ -325,6 +325,8 @@ def interpolate_to_map(
     cell_size=0.002,
     n_padding_cells=10,
     interpolation_method="delaunay",
+    interpolation_power=5,
+    nearest_neighbors=7,
 ):
     """
 
@@ -362,4 +364,6 @@ def interpolate_to_map(
             component,
             cell_size=cell_size,
             n_padding_cells=n_padding_cells,
+            nearest_neighbors=nearest_neighbors,
+            interp_pow=interpolation_power,
         )

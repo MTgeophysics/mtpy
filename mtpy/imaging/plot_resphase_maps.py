@@ -393,7 +393,8 @@ class PlotResPhaseMaps(PlotBaseMaps):
                 "triangulate",
             ]:
                 triangulation, image, indices = self.interpolate_to_map(
-                    plot_array, comp
+                    plot_array,
+                    comp,
                 )
                 im = ax.tricontourf(
                     triangulation,

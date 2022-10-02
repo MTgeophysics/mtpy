@@ -32,6 +32,7 @@ from mtpy.imaging import (
     PlotPenetrationDepth1D,
     PlotPenetrationDepthMap,
     PlotResPhaseMaps,
+    PlotResPhasePseudoSection,
 )
 
 from mth5.mth5 import MTH5
@@ -677,7 +678,7 @@ class MTCollection:
 
         return PlotPhaseTensorMaps(tf_list=tf_list, **kwargs)
 
-    def plot_phase_tensor_pseudo_section(self, tf_list=None, **kwargs):
+    def plot_phase_tensor_pseudosection(self, tf_list=None, **kwargs):
         """
         Plot a pseudo section of  phase tensor ellipses and induction vectors
         if specified
@@ -775,3 +776,21 @@ class MTCollection:
             tf_list = self.get_tf_list()
 
         return PlotResPhaseMaps(tf_list, **kwargs)
+
+    def plot_resistivity_phase_pseudosections(self, tf_list=None, **kwargs):
+        """
+        Plot resistivity and phase in a pseudosection along a profile line
+
+        :param tf_list: DESCRIPTION, defaults to None
+        :type tf_list: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if tf_list is None:
+            tf_list = self.get_tf_list()
+
+        return PlotResPhasePseudoSection(tf_list, **kwargs)

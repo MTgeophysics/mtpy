@@ -12,10 +12,9 @@ import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.colorbar as mcb
-import matplotlib.colors as colors
 from matplotlib import ticker
+
+from scipy import signal
 
 from mtpy.imaging.mtplot_tools import (
     PlotBaseProfile,
@@ -61,9 +60,16 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         self.data_df = None
         self.n_periods = 60
         self.interpolation_method = "nearest"
+        self.nearest_neighbors = 7
+        self.interpolation_power = 4
+
+        self.median_filter_kernel = None
 
         self.x_stretch = 1
         self.y_stretch = 1
+
+        self.station_id = [0, None]
+        self.station_step = 1
 
         # --> set plot limits
         self.cmap_limits = {
@@ -107,8 +113,8 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         Get the period array to interpolate on to
         """
 
-        p_min = df.period.min()
-        p_max = df.period.max()
+        p_min = df.period.min() * self.y_stretch
+        p_max = df.period.max() * self.y_stretch
 
         return np.linspace(p_min, p_max, self.n_periods)
 
@@ -223,7 +229,11 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
             rp = tf.Z
 
             for ii, period in enumerate(tf.period):
+                if rp.phase_yx[ii] != 0:
+                    rp.phase_yx[ii] += 180
+
                 entry = {
+                    "station": tf.station,
                     "offset": offset,
                     "period": np.log10(period),
                     "res_xx": np.log10(rp.res_xx[ii]),
@@ -233,13 +243,42 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
                     "res_det": np.log10(rp.res_det[ii]),
                     "phase_xx": rp.phase_xx[ii],
                     "phase_xy": rp.phase_xy[ii],
-                    "phase_yx": rp.phase_yx[ii] + 180,
+                    "phase_yx": rp.phase_yx[ii],
                     "phase_yy": rp.phase_yy[ii],
                     "phase_det": rp.phase_det[ii],
                 }
                 entries.append(entry)
 
         return pd.DataFrame(entries)
+
+    def _get_offset_station(self, df):
+        """
+        get the plotting offset and station name for labels
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        plot_dict = {"station": [], "offset": []}
+        for station in df.station.unique():
+            plot_dict["station"].append(
+                station[self.station_id[0] : self.station_id[1]]
+            )
+            plot_dict["offset"].append(
+                df.loc[df.station == station, "offset"].unique()[0]
+                * self.x_stretch
+            )
+
+        plot_dict["station"] = np.array(plot_dict["station"])
+        plot_dict["offset"] = np.array(plot_dict["offset"])
+
+        if self.station_step > 1:
+            plot_dict["station"][
+                np.arange(1, len(plot_dict["station"]), self.station_step)
+            ] = ""
+
+        return plot_dict
 
     def _get_cmap(self, component):
         """
@@ -274,6 +313,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
                 ),
                 shrink=0.6,
                 extend="both",
+                label=self.label_dict[component],
             )
             labels = [
                 self.period_label_dict[dd]
@@ -285,7 +325,13 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
             cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
 
         elif "phase" in component:
-            cb = plt.colorbar(im_mappable, ax=ax, shrink=0.6, extend="both")
+            cb = plt.colorbar(
+                im_mappable,
+                ax=ax,
+                shrink=0.6,
+                extend="both",
+                label=self.label_dict[component],
+            )
 
         cb.ax.tick_params(
             axis="both", which="major", labelsize=self.font_size - 1
@@ -308,6 +354,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
             self.data_df = self._get_data_df()
 
         plot_periods = self._get_period_array(self.data_df)
+        plot_dict = self._get_offset_station(self.data_df)
 
         # set position properties for the plot
         self._set_subplot_params()
@@ -335,13 +382,16 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
 
                 x, y, image = griddata_interpolate(
-                    comp_df.offset,
-                    comp_df.period,
-                    comp_df[comp],
-                    self.data_df.offset,
+                    comp_df.offset * self.x_stretch,
+                    comp_df.period * self.y_stretch,
+                    comp_df[comp].to_numpy(),
+                    self.data_df.offset * self.x_stretch,
                     plot_periods,
                     self.interpolation_method,
                 )
+
+                if self.median_filter_kernel is not None:
+                    image = signal.medfilt2d(image, self.median_filter_kernel)
 
                 im = ax.pcolormesh(
                     x,
@@ -351,19 +401,22 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
                     vmin=self.cmap_limits[comp][0],
                     vmax=self.cmap_limits[comp][1],
                 )
+
             elif self.interpolation_method in [
                 "fancy",
                 "delaunay",
                 "triangulate",
             ]:
                 triangulation, image, indices = triangulate_interpolation(
-                    comp_df.offset,
-                    comp_df.period,
-                    comp_df[comp],
-                    comp_df.offset,
-                    comp_df.period,
-                    self.data_df.offset,
+                    comp_df.offset * self.x_stretch,
+                    comp_df.period * self.y_stretch,
+                    comp_df[comp].to_numpy(),
+                    comp_df.offset * self.x_stretch,
+                    comp_df.period * self.y_stretch,
+                    self.data_df.offset * self.x_stretch,
                     plot_periods,
+                    nearest_neighbors=self.nearest_neighbors,
+                    interp_pow=self.interpolation_power,
                 )
 
                 im = ax.tricontourf(
@@ -381,13 +434,39 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
 
             self._get_colorbar(ax, im, comp)
 
+            ## Y axis
+            y_tick_labels = []
             ax.set_ylim((plot_periods.max(), plot_periods.min()))
+            # set y-axis tick labels
+            ax.yaxis.set_ticks(
+                np.arange(
+                    plot_periods.max(),
+                    plot_periods.min(),
+                    -1 * self.y_stretch,
+                )
+            )
+            for tk in ax.get_yticks():
+                try:
+                    y_tick_labels.append(
+                        self.period_label_dict[int(tk / self.y_stretch)]
+                    )
+                except KeyError:
+                    y_tick_labels.append("")
+
+            ax.set_yticklabels(y_tick_labels)
+
+            ## X axis
+            # set x-axis ticks
+            ax.set_xticks(plot_dict["offset"])
+
+            # set x-axis tick labels as station names
+            ax.set_xticklabels(plot_dict["station"])
 
             # Label plots
-            ax.set_title(
-                self.label_dict[comp],
-                fontdict={"size": self.font_size + 2},
-            )
+            # ax.set_title(
+            #     self.label_dict[comp],
+            #     fontdict={"size": self.font_size + 2},
+            # )
 
             if (
                 subplot_numbers[comp][2] == 1
