@@ -10,7 +10,9 @@ Created on Sat Oct  1 17:47:19 2022
 # =============================================================================
 # Imports
 # =============================================================================
+import numpy as np
 import pandas as pd
+
 
 from mtpy import MT
 from mtpy.utils.mtpy_logger import get_mtpy_logger
@@ -81,36 +83,36 @@ class MTData:
         self.data_epsg = None
         self.data_utm_zone = None
 
-        self._data_columns = [
-            "station",
-            "latitude",
-            "longitude",
-            "elevation",
-            "utm_east",
-            "utm_north",
-            "utm_zone",
-            "model_east",
-            "model_north",
-            "model_elevation",
-            "period",
-            "zxx",
-            "zxx_error",
-            "zxx_model_error",
-            "zxy",
-            "zxy_error",
-            "zxy_model_error",
-            "zyx",
-            "zyx_error",
-            "zyx_model_error",
-            "zyy",
-            "zyy_error",
-            "zyy_model_error",
-            "tzx",
-            "tzx_error",
-            "zxx_model_error",
-            "tzy",
-            "tzy_error",
-            "tzy_model_error",
+        self._data_dtypes = [
+            ("station", "U25"),
+            ("latitude", float),
+            ("longitude", float),
+            ("elevation", float),
+            ("utm_east", float),
+            ("utm_north", float),
+            ("utm_zone", "U4"),
+            ("model_east", float),
+            ("model_north", float),
+            ("model_elevation", float),
+            ("period", float),
+            ("zxx", complex),
+            ("zxx_error", float),
+            ("zxx_model_error", float),
+            ("zxy", complex),
+            ("zxy_error", float),
+            ("zxy_model_error", float),
+            ("zyx", complex),
+            ("zyx_error", float),
+            ("zyx_model_error", float),
+            ("zyy", complex),
+            ("zyy_error", float),
+            ("zyy_model_error", float),
+            ("tzx", complex),
+            ("tzx_error", float),
+            ("tzx_model_error", float),
+            ("tzy", complex),
+            ("tzy_error", float),
+            ("tzy_model_error", float),
         ]
 
     @property
@@ -146,10 +148,15 @@ class MTData:
                 "Input must be a list or tuple of MT objects, or an MT object"
             )
 
-    def _make_empty_entry(self):
-        return dict([(col, None) for col in self._data_columns])
+    def _make_empty_entry(self, n_entries):
+        return dict(
+            [
+                (col, np.zeros(n_entries, dtype))
+                for col, dtype in self._data_dtypes
+            ]
+        )
 
-    def _fill_impedance(self, impedance, impedance_error, index):
+    def _fill_impedance(self, impedance, impedance_error, entry):
         """
         Fill impedance
         :param impedance: DESCRIPTION
@@ -168,16 +175,17 @@ class MTData:
             "zyy": {"ii": 1, "jj": 1},
         }
 
-        entry = {}
         for z_key, z_index in z_dict.items():
-            entry[z_key] = impedance[index, z_index["ii"], z_index[jj]]
-            entry[f"{z_key}_error"] = impedance_error[
-                index, z_index["ii"], z_index[jj]
-            ]
+            entry[z_key][:] = impedance[
+                :, z_index["ii"], z_index["jj"]
+            ].to_numpy()
+            entry[f"{z_key}_error"][:] = impedance_error[
+                :, z_index["ii"], z_index["jj"]
+            ].to_numpy()
 
         return entry
 
-    def _fill_tipper(self, tipper, tipper_error, index):
+    def _fill_tipper(self, tipper, tipper_error, entry):
         """
         Fill tipper
         :param tipper: DESCRIPTION
@@ -196,39 +204,36 @@ class MTData:
             "tzy": {"ii": 0, "jj": 1},
         }
 
-        entry = {}
         for t_key, t_index in t_dict.items():
-            entry[t_key] = tipper[index, t_index["ii"], t_index[jj]]
+            entry[t_key][:] = tipper[:, t_index["ii"], t_index["jj"]].to_numpy()
             entry[f"{t_key}_error"] = tipper_error[
-                index, t_index["ii"], t_index[jj]
-            ]
+                :, t_index["ii"], t_index["jj"]
+            ].to_numpy()
 
         return entry
 
     def _fill_entry(self, tf):
-        entry = self._make_empty_entry()
-        entry["station"] = tf.station
-        entry["latitude"] = tf.latitude
-        entry["longitude"] = tf.longitude
-        entry["elevation"] = tf.elevation
+        n_entries = tf.period.size
+        entry = self._make_empty_entry(n_entries)
+
+        entry["station"][:] = tf.station
+        entry["latitude"][:] = tf.latitude
+        entry["longitude"][:] = tf.longitude
+        entry["elevation"][:] = tf.elevation
 
         tf.project_to_utm(epsg=self.data_epsg, utm_zone=self.data_utm_zone)
-        entry["utm_east"] = tf.east
-        entry["utm_north"] = tf.north
-        entry["utm_zone"] = tf.utm_zone
-        for index, period in enumerate(tf.period):
-            if tf.has_impedance():
-                entry.update(
-                    self._fill_impedance(
-                        tf.impedance, tf.impedance_error, index
-                    )
-                )
-            if tf.has_tipper():
-                entry.update(
-                    self._fill_tipper(tf.tipper, tf.tipper_error, index)
-                )
+        entry["utm_east"][:] = tf.east
+        entry["utm_north"][:] = tf.north
+        entry["utm_zone"][:] = tf.utm_zone
+        entry["period"][:] = tf.period
+        if tf.has_impedance():
+            entry = self._fill_impedance(
+                tf.impedance, tf.impedance_error, entry
+            )
+        if tf.has_tipper():
+            entry = self._fill_tipper(tf.tipper, tf.tipper_error, entry)
 
-        return entry
+        return pd.DataFrame(entry)
 
     def _fill_dataframe(self, tf_list):
         """
@@ -241,10 +246,12 @@ class MTData:
 
         """
 
-        entries = []
+        df_list = []
 
         for tf in tf_list:
-            entries += self._fill_entry(tf)
+            df_list.append(self._fill_entry(tf))
+
+        return pd.concat(df_list)
 
     def data(self):
         pass
