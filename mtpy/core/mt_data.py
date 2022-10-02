@@ -39,7 +39,7 @@ class MTData:
      - zxx
      - zxx_error
      - zxx_model_error
-     - zxy     
+     - zxy
      - zxy_error
      - zxy_model_error
      - zyx
@@ -77,40 +77,41 @@ class MTData:
             f"{self.__class__}.{self.__class__.__name__}"
         )
         self.tf_list = tf_list
-        
+
         self.data_epsg = None
         self.data_utm_zone = None
-        
-        self._data_columns = [     
+
+        self._data_columns = [
             "station",
-             "latitude",
-             "longitude",
-             "elevation",
-             "utm_east",
-             "utm_north",
-             "utm_zone",
-             "model_east",
-             "model_north",
-             "model_elevation",
-             "period",
-             "zxx",
-             "zxx_error",
-             "zxx_model_error",
-             "zxy",     
-             "zxy_error",
-             "zxy_model_error",
-             "zyx",
-             "zyx_error",
-             "zyx_model_error",
-             "zyy",
-             "zyy_error",
-             "zyy_model_error",
-             "tzx",
-             "tzx_error",
-             "zxx_model_error",
-             "tzy",
-             "tzy_error",
-             "tzy_model_error",]
+            "latitude",
+            "longitude",
+            "elevation",
+            "utm_east",
+            "utm_north",
+            "utm_zone",
+            "model_east",
+            "model_north",
+            "model_elevation",
+            "period",
+            "zxx",
+            "zxx_error",
+            "zxx_model_error",
+            "zxy",
+            "zxy_error",
+            "zxy_model_error",
+            "zyx",
+            "zyx_error",
+            "zyx_model_error",
+            "zyy",
+            "zyy_error",
+            "zyy_model_error",
+            "tzx",
+            "tzx_error",
+            "zxx_model_error",
+            "tzy",
+            "tzy_error",
+            "tzy_model_error",
+        ]
 
     @property
     def tf_list(self):
@@ -144,13 +145,13 @@ class MTData:
             raise TypeError(
                 "Input must be a list or tuple of MT objects, or an MT object"
             )
-            
+
     def _make_empty_entry(self):
         return dict([(col, None) for col in self._data_columns])
-    
+
     def _fill_impedance(self, impedance, impedance_error, index):
         """
-        Fill impedance 
+        Fill impedance
         :param impedance: DESCRIPTION
         :type impedance: TYPE
         :param index: DESCRIPTION
@@ -159,22 +160,26 @@ class MTData:
         :rtype: TYPE
 
         """
-        
-        z_dict = {"zxx": {"ii": 0, "jj": 0},
-                  "zxy": {"ii": 0, "jj": 1},
-                  "zyx": {"ii": 1, "jj": 0},
-                  "zyy": {"ii": 1, "jj": 1}}
-        
+
+        z_dict = {
+            "zxx": {"ii": 0, "jj": 0},
+            "zxy": {"ii": 0, "jj": 1},
+            "zyx": {"ii": 1, "jj": 0},
+            "zyy": {"ii": 1, "jj": 1},
+        }
+
         entry = {}
         for z_key, z_index in z_dict.items():
             entry[z_key] = impedance[index, z_index["ii"], z_index[jj]]
-            entry[f"{z_key}_error"] = impedance_error[index, z_index["ii"], z_index[jj]]
+            entry[f"{z_key}_error"] = impedance_error[
+                index, z_index["ii"], z_index[jj]
+            ]
 
         return entry
-    
+
     def _fill_tipper(self, tipper, tipper_error, index):
         """
-        Fill tipper 
+        Fill tipper
         :param tipper: DESCRIPTION
         :type tipper: TYPE
         :param tipper_error: DESCRIPTION
@@ -186,58 +191,60 @@ class MTData:
 
         """
 
-        
-        t_dict = {"tzx": {"ii": 0, "jj": 0},
-                  "tzy": {"ii": 0, "jj": 1},}
-        
+        t_dict = {
+            "tzx": {"ii": 0, "jj": 0},
+            "tzy": {"ii": 0, "jj": 1},
+        }
+
         entry = {}
         for t_key, t_index in t_dict.items():
             entry[t_key] = tipper[index, t_index["ii"], t_index[jj]]
-            entry[f"{t_key}_error"] = tipper_error[index, t_index["ii"], t_index[jj]]
+            entry[f"{t_key}_error"] = tipper_error[
+                index, t_index["ii"], t_index[jj]
+            ]
 
         return entry
-        
-        
-    
+
     def _fill_entry(self, tf):
         entry = self._make_empty_entry()
         entry["station"] = tf.station
         entry["latitude"] = tf.latitude
-        entry["longitude"]
+        entry["longitude"] = tf.longitude
+        entry["elevation"] = tf.elevation
+
+        tf.project_to_utm(epsg=self.data_epsg, utm_zone=self.data_utm_zone)
+        entry["utm_east"] = tf.east
+        entry["utm_north"] = tf.north
+        entry["utm_zone"] = tf.utm_zone
         for index, period in enumerate(tf.period):
             if tf.has_impedance():
-                entry["zxx"] = tf.impedance[index, 0, 0]
-                
-                
+                entry.update(
+                    self._fill_impedance(
+                        tf.impedance, tf.impedance_error, index
+                    )
+                )
+            if tf.has_tipper():
+                entry.update(
+                    self._fill_tipper(tf.tipper, tf.tipper_error, index)
+                )
+
         return entry
-            
+
     def _fill_dataframe(self, tf_list):
         """
         Fill the data frame
-        
+
         :param tf_list: DESCRIPTION
         :type tf_list: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        
+
         entries = []
-        
+
         for tf in tf_list:
-            entry = self._make_empty_entry()
-            entry["station"] = tf.station
-            entry["latitude"] = tf.latitude
-            entry["longitude"]
-            for ff in tf.period:
-                if tf.has_impedance():
-                    entry["zxx"] = 
-                    
-                    
-                
-                
-            
+            entries += self._fill_entry(tf)
 
     def data(self):
         pass
-        
