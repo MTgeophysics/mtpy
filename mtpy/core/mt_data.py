@@ -78,42 +78,50 @@ class MTData:
         self.logger = get_mtpy_logger(
             f"{self.__class__}.{self.__class__.__name__}"
         )
-        self.tf_list = tf_list
+
+        self._data_dtypes = dict(
+            [
+                ("station", "U25"),
+                ("latitude", float),
+                ("longitude", float),
+                ("elevation", float),
+                ("utm_east", float),
+                ("utm_north", float),
+                ("utm_zone", "U4"),
+                ("model_east", float),
+                ("model_north", float),
+                ("model_elevation", float),
+                ("period", float),
+                ("zxx", complex),
+                ("zxx_error", float),
+                ("zxx_model_error", float),
+                ("zxy", complex),
+                ("zxy_error", float),
+                ("zxy_model_error", float),
+                ("zyx", complex),
+                ("zyx_error", float),
+                ("zyx_model_error", float),
+                ("zyy", complex),
+                ("zyy_error", float),
+                ("zyy_model_error", float),
+                ("tzx", complex),
+                ("tzx_error", float),
+                ("tzx_model_error", float),
+                ("tzy", complex),
+                ("tzy_error", float),
+                ("tzy_model_error", float),
+            ]
+        )
+
+        self._tf_dataframe = None
 
         self.data_epsg = None
         self.data_utm_zone = None
 
-        self._data_dtypes = [
-            ("station", "U25"),
-            ("latitude", float),
-            ("longitude", float),
-            ("elevation", float),
-            ("utm_east", float),
-            ("utm_north", float),
-            ("utm_zone", "U4"),
-            ("model_east", float),
-            ("model_north", float),
-            ("model_elevation", float),
-            ("period", float),
-            ("zxx", complex),
-            ("zxx_error", float),
-            ("zxx_model_error", float),
-            ("zxy", complex),
-            ("zxy_error", float),
-            ("zxy_model_error", float),
-            ("zyx", complex),
-            ("zyx_error", float),
-            ("zyx_model_error", float),
-            ("zyy", complex),
-            ("zyy_error", float),
-            ("zyy_model_error", float),
-            ("tzx", complex),
-            ("tzx_error", float),
-            ("tzx_model_error", float),
-            ("tzy", complex),
-            ("tzy_error", float),
-            ("tzy_model_error", float),
-        ]
+        self.tf_list = tf_list
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def tf_list(self):
@@ -148,11 +156,13 @@ class MTData:
                 "Input must be a list or tuple of MT objects, or an MT object"
             )
 
+        self._tf_dataframe = self._fill_dataframe(self._tf_list)
+
     def _make_empty_entry(self, n_entries):
         return dict(
             [
                 (col, np.zeros(n_entries, dtype))
-                for col, dtype in self._data_dtypes
+                for col, dtype in self._data_dtypes.items()
             ]
         )
 
@@ -253,5 +263,45 @@ class MTData:
 
         return pd.concat(df_list)
 
+    @property
     def data(self):
-        pass
+        """dataframe of data"""
+        return self._tf_dataframe
+
+    @data.setter
+    def data(self, value):
+        """
+        Check to make sure the input dataframe is of proper types
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(value, pd.DataFrame):
+            msg = (
+                f"Input data must be a valid pandas.DataFrame not {type(value)}"
+            )
+            self.logger.exception(msg)
+
+            raise TypeError(msg)
+
+        empty_df = pd.DataFrame(self._make_empty_entry(0))
+        test_dtypes = value.dtypes == empty_df.dtypes
+
+        if not test_dtypes.all():
+            for row in test_dtypes[test_dtypes == False].index:
+                try:
+                    value[row] = value[row].astype(self._data_dtypes[row])
+                except ValueError as error:
+                    self.logger.exception(
+                        f"{row} cannot be set to {self._data_dtypes[row]}"
+                    )
+
+                    raise ValueError(
+                        f"{row} cannot be set to {self._data_dtypes[row]}"
+                    )
+
+        self._tf_dataframe = value
