@@ -11,10 +11,12 @@ Created on Sun Oct  2 13:20:28 2022
 import pandas as pd
 import numpy as np
 
+from .z import Z, Tipper
+
 # =============================================================================
 
 
-class MTDataFrame:
+class StationDataFrame:
     """
     dataframe for MT data with some convenience properties
 
@@ -59,6 +61,42 @@ class MTDataFrame:
 
         self._mt_dataframe = pd.DataFrame(self._make_empty_entry(0))
         self.station = None
+
+        self._z_object = Z()
+        self._z_model_object = Z()
+        self._t_object = Tipper()
+        self._t_model_object = Tipper()
+
+    def __getattr__(self, name):
+        """
+        Overwrite getattr to get components
+
+        :param name: DESCRIPTION
+        :type name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.has_data():
+            if name in [
+                "station",
+                "latitude",
+                "longitude",
+                "elevation",
+                "utm_east",
+                "utm_north",
+                "utm_zone",
+                "model_east",
+                "model_north",
+                "model_elevation",
+            ]:
+                print(name)
+
+                return self._mt_dataframe[name].unique()[0]
+
+            else:
+                return super().__getattr__(name)
 
     def _make_empty_entry(self, n_entries):
         return dict(
@@ -124,7 +162,11 @@ class MTDataFrame:
 
         return entry
 
-    def _fill_entry(self, tf):
+    def from_tf(self, tf):
+        """
+        fill dataframe from a TF object
+
+        """
         n_entries = tf.period.size
         entry = self._make_empty_entry(n_entries)
 
@@ -145,25 +187,9 @@ class MTDataFrame:
         if tf.has_tipper():
             entry = self._fill_tipper(tf.tipper, tf.tipper_error, entry)
 
-        return pd.DataFrame(entry)
-
-    def _fill_dataframe(self, tf_list):
-        """
-        Fill the data frame
-
-        :param tf_list: DESCRIPTION
-        :type tf_list: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        df_list = []
-
-        for tf in tf_list:
-            df_list.append(self._fill_entry(tf))
-
-        return pd.concat(df_list)
+        self._mt_dataframe = pd.DataFrame(entry)
+        self._to_z_object()
+        self._to_t_object()
 
     def _set_component(self, component, value):
         """
@@ -177,3 +203,152 @@ class MTDataFrame:
         :rtype: TYPE
 
         """
+
+        pass
+
+    def has_data(self):
+        if self.mt_dataframe is not None:
+            return True
+        return False
+
+    @property
+    def mt_dataframe(self):
+        """dataframe of data"""
+        return self._mt_dataframe
+
+    @mt_dataframe.setter
+    def mt_dataframe(self, value):
+        """
+        Check to make sure the input dataframe is of proper types
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(value, pd.DataFrame):
+            msg = (
+                f"Input data must be a valid pandas.DataFrame not {type(value)}"
+            )
+            self.logger.exception(msg)
+
+            raise TypeError(msg)
+
+        empty_df = pd.DataFrame(self._make_empty_entry(0))
+        test_dtypes = value.dtypes == empty_df.dtypes
+
+        if not test_dtypes.all():
+            for row in test_dtypes[test_dtypes == False].index:
+                try:
+                    value[row] = value[row].astype(self._data_dtypes[row])
+                except ValueError:
+                    self.logger.exception(
+                        f"{row} cannot be set to {self._data_dtypes[row]}"
+                    )
+
+                    raise ValueError(
+                        f"{row} cannot be set to {self._data_dtypes[row]}"
+                    )
+
+        self._mt_dataframe = value
+
+    @property
+    def period(self):
+        if self.has_data():
+            return self.mt_dataframe.period
+
+    @property
+    def frequency(self):
+        return 1.0 / self.period
+
+    def _to_z_object(self):
+        """
+        fill z_object from dataframe
+
+        Need to have the components this way for transposing the elements so
+        that the shape is (nf, 2, 2)
+        """
+
+        if self.has_data():
+            z = np.array(
+                [
+                    [self.mt_dataframe.zxx, self.mt_dataframe.zyx],
+                    [self.mt_dataframe.zxy, self.mt_dataframe.zyy],
+                ],
+                dtype=complex,
+            ).T
+            z_err = np.array(
+                [
+                    [self.mt_dataframe.zxx_error, self.mt_dataframe.zyx_error],
+                    [self.mt_dataframe.zxy_error, self.mt_dataframe.zyy_error],
+                ],
+                dtype=float,
+            ).T
+            self._z_object = Z(z, z_err, self.frequency)
+
+            z_model_err = np.array(
+                [
+                    [
+                        self.mt_dataframe.zxx_model_error,
+                        self.mt_dataframe.zyx_model_error,
+                    ],
+                    [
+                        self.mt_dataframe.zxy_model_error,
+                        self.mt_dataframe.zyy_model_error,
+                    ],
+                ],
+                dtype=float,
+            ).T
+            self._z_model_object = Z(z, z_model_err, self.frequency)
+
+    def _to_t_object(self):
+        """
+        To a tipper object
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.has_data():
+            t = np.array(
+                [
+                    [self.mt_dataframe.tzx],
+                    [self.mt_dataframe.tzy],
+                ],
+                dtype=complex,
+            ).T
+            t_err = np.array(
+                [
+                    [self.mt_dataframe.tzx_error],
+                    [self.mt_dataframe.tzy_error],
+                ],
+                dtype=float,
+            ).T
+            self._t_object = Tipper(t, t_err, self.frequency)
+
+            t_model_err = np.array(
+                [
+                    [self.mt_dataframe.tzx_model_error],
+                    [self.mt_dataframe.tzy_model_error],
+                ],
+                dtype=float,
+            ).T
+            self._t_model_object = Tipper(t, t_model_err, self.frequency)
+
+    @property
+    def impedance(self):
+        if self.has_data():
+            return self._z_object.z
+
+    @property
+    def impedance_error(self):
+        if self.has_data():
+            return self._z_object.z_err
+
+    @property
+    def impedance_model_error(self):
+        if self.has_data():
+            return self._z_model_object.z_err
