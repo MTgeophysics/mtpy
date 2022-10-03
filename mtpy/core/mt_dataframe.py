@@ -60,43 +60,42 @@ class StationDataFrame:
         self.data_utm_zone = None
 
         self._mt_dataframe = pd.DataFrame(self._make_empty_entry(0))
-        self.station = None
 
         self._z_object = Z()
         self._z_model_object = Z()
         self._t_object = Tipper()
         self._t_model_object = Tipper()
 
-    def __getattr__(self, name):
-        """
-        Overwrite getattr to get components
+    # def __getattr__(self, name):
+    #     """
+    #     Overwrite getattr to get components
 
-        :param name: DESCRIPTION
-        :type name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+    #     :param name: DESCRIPTION
+    #     :type name: TYPE
+    #     :return: DESCRIPTION
+    #     :rtype: TYPE
 
-        """
+    #     """
 
-        if self.has_data():
-            if name in [
-                "station",
-                "latitude",
-                "longitude",
-                "elevation",
-                "utm_east",
-                "utm_north",
-                "utm_zone",
-                "model_east",
-                "model_north",
-                "model_elevation",
-            ]:
-                print(name)
+    #     if self.has_data():
+    #         if name in [
+    #             "station",
+    #             "latitude",
+    #             "longitude",
+    #             "elevation",
+    #             "utm_east",
+    #             "utm_north",
+    #             "utm_zone",
+    #             "model_east",
+    #             "model_north",
+    #             "model_elevation",
+    #         ]:
+    #             print(name)
 
-                return self._mt_dataframe[name].unique()[0]
+    #             return self._mt_dataframe[name].unique()[0]
 
-            else:
-                return super().__getattr__(name)
+    #         else:
+    #             return super().__getattr__(name)
 
     def _make_empty_entry(self, n_entries):
         return dict(
@@ -253,6 +252,11 @@ class StationDataFrame:
                     )
 
         self._mt_dataframe = value
+
+    @property
+    def station(self):
+        if self.has_data():
+            return self.mt_dataframe.station.unique()[0]
 
     @property
     def period(self):
