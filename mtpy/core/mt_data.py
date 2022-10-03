@@ -245,7 +245,7 @@ class MTData:
 
         return pd.DataFrame(entry)
 
-    def _fill_dataframe(self, tf_list):
+    def from_tf_list(self, tf_list):
         """
         Fill the data frame
 

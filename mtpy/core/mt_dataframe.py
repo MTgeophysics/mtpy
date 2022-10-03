@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 
 from .z import Z, Tipper
+from mt_metadata.timeseries import Location
 
 # =============================================================================
 
@@ -61,41 +62,7 @@ class StationDataFrame:
 
         self._mt_dataframe = pd.DataFrame(self._make_empty_entry(0))
 
-        self._z_object = Z()
-        self._z_model_object = Z()
-        self._t_object = Tipper()
-        self._t_model_object = Tipper()
-
-    # def __getattr__(self, name):
-    #     """
-    #     Overwrite getattr to get components
-
-    #     :param name: DESCRIPTION
-    #     :type name: TYPE
-    #     :return: DESCRIPTION
-    #     :rtype: TYPE
-
-    #     """
-
-    #     if self.has_data():
-    #         if name in [
-    #             "station",
-    #             "latitude",
-    #             "longitude",
-    #             "elevation",
-    #             "utm_east",
-    #             "utm_north",
-    #             "utm_zone",
-    #             "model_east",
-    #             "model_north",
-    #             "model_elevation",
-    #         ]:
-    #             print(name)
-
-    #             return self._mt_dataframe[name].unique()[0]
-
-    #         else:
-    #             return super().__getattr__(name)
+        self._location = Location()
 
     def _make_empty_entry(self, n_entries):
         return dict(
@@ -187,8 +154,6 @@ class StationDataFrame:
             entry = self._fill_tipper(tf.tipper, tf.tipper_error, entry)
 
         self._mt_dataframe = pd.DataFrame(entry)
-        self._to_z_object()
-        self._to_t_object()
 
     def _set_component(self, component, value):
         """
@@ -251,12 +216,25 @@ class StationDataFrame:
                         f"{row} cannot be set to {self._data_dtypes[row]}"
                     )
 
+        if len(value.station.unique()) > 1:
+            raise ValueError(
+                f"Input must contain only one station not {len(value.station.unique())}"
+            )
+
         self._mt_dataframe = value
 
     @property
     def station(self):
         if self.has_data():
             return self.mt_dataframe.station.unique()[0]
+
+    @station.setter
+    def station(self, value):
+        if not isinstance(value, str):
+            value = str(value)
+
+        if self.has_data():
+            self.mt_dataframe.station.iloc[:] = value
 
     @property
     def period(self):
@@ -267,7 +245,8 @@ class StationDataFrame:
     def frequency(self):
         return 1.0 / self.period
 
-    def _to_z_object(self):
+    @property
+    def _z_object(self):
         """
         fill z_object from dataframe
 
@@ -290,7 +269,20 @@ class StationDataFrame:
                 ],
                 dtype=float,
             ).T
-            self._z_object = Z(z, z_err, self.frequency)
+
+            return Z(z, z_err, self.frequency)
+
+    @property
+    def _z_model_object(self):
+
+        if self.has_data():
+            z = np.array(
+                [
+                    [self.mt_dataframe.zxx, self.mt_dataframe.zyx],
+                    [self.mt_dataframe.zxy, self.mt_dataframe.zyy],
+                ],
+                dtype=complex,
+            ).T
 
             z_model_err = np.array(
                 [
@@ -305,9 +297,11 @@ class StationDataFrame:
                 ],
                 dtype=float,
             ).T
-            self._z_model_object = Z(z, z_model_err, self.frequency)
 
-    def _to_t_object(self):
+            return Z(z, z_model_err, self.frequency)
+
+    @property
+    def _t_object(self):
         """
         To a tipper object
 
@@ -331,8 +325,18 @@ class StationDataFrame:
                 ],
                 dtype=float,
             ).T
-            self._t_object = Tipper(t, t_err, self.frequency)
+            return Tipper(t, t_err, self.frequency)
 
+    @property
+    def _t_model_object(self):
+        if self.has_data():
+            t = np.array(
+                [
+                    [self.mt_dataframe.tzx],
+                    [self.mt_dataframe.tzy],
+                ],
+                dtype=complex,
+            ).T
             t_model_err = np.array(
                 [
                     [self.mt_dataframe.tzx_model_error],
@@ -340,7 +344,7 @@ class StationDataFrame:
                 ],
                 dtype=float,
             ).T
-            self._t_model_object = Tipper(t, t_model_err, self.frequency)
+            return Tipper(t, t_model_err, self.frequency)
 
     @property
     def impedance(self):
