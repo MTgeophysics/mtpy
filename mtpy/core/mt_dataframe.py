@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 
 from .z import Z, Tipper
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mt_metadata.timeseries import Location
 
 # =============================================================================
@@ -24,51 +25,282 @@ class StationDataFrame:
     """
 
     def __init__(self, **kwargs):
+        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
-        self._data_dtypes = [
-            ("station", "U25"),
-            ("latitude", float),
-            ("longitude", float),
-            ("elevation", float),
-            ("utm_east", float),
-            ("utm_north", float),
-            ("utm_zone", "U4"),
-            ("model_east", float),
-            ("model_north", float),
-            ("model_elevation", float),
-            ("period", float),
-            ("zxx", complex),
-            ("zxx_error", float),
-            ("zxx_model_error", float),
-            ("zxy", complex),
-            ("zxy_error", float),
-            ("zxy_model_error", float),
-            ("zyx", complex),
-            ("zyx_error", float),
-            ("zyx_model_error", float),
-            ("zyy", complex),
-            ("zyy_error", float),
-            ("zyy_model_error", float),
-            ("tzx", complex),
-            ("tzx_error", float),
-            ("tzx_model_error", float),
-            ("tzy", complex),
-            ("tzy_error", float),
-            ("tzy_model_error", float),
-        ]
+        self._data_dtypes = dict(
+            [
+                ("station", "U25"),
+                ("latitude", float),
+                ("longitude", float),
+                ("elevation", float),
+                ("utm_east", float),
+                ("utm_north", float),
+                ("utm_zone", "U4"),
+                ("model_east", float),
+                ("model_north", float),
+                ("model_elevation", float),
+                ("period", float),
+                ("zxx", complex),
+                ("zxx_error", float),
+                ("zxx_model_error", float),
+                ("zxy", complex),
+                ("zxy_error", float),
+                ("zxy_model_error", float),
+                ("zyx", complex),
+                ("zyx_error", float),
+                ("zyx_model_error", float),
+                ("zyy", complex),
+                ("zyy_error", float),
+                ("zyy_model_error", float),
+                ("tzx", complex),
+                ("tzx_error", float),
+                ("tzx_model_error", float),
+                ("tzy", complex),
+                ("tzy_error", float),
+                ("tzy_model_error", float),
+            ]
+        )
 
         self.data_epsg = None
         self.data_utm_zone = None
 
         self._mt_dataframe = pd.DataFrame(self._make_empty_entry(0))
 
-        self._location = Location()
+    def __getattr__(self, name):
+        """
+        Over loat getattr to make the code more compact
+
+        :param name: DESCRIPTION
+        :type name: TYPE
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if name in [
+            "station",
+            "latitude",
+            "longitude",
+            "elevation",
+            "utm_east",
+            "utm_north",
+            "utm_zone",
+            "model_east",
+            "model_north",
+            "model_elevation",
+        ]:
+            if self.has_data():
+                return self.mt_dataframe[name].unique()[0]
+
+        elif name in ["period"]:
+            if self.has_data():
+                return self.mt_dataframe[name]
+
+        elif name in ["frequency"]:
+            if self.has_data():
+                return 1.0 / self.mt_dataframe["period"]
+
+        elif name in [
+            "zxx",
+            "zxy",
+            "zyx",
+            "zyy",
+            "tzx",
+            "tzy",
+            "zxx_error",
+            "zxy_error",
+            "zyx_error",
+            "zyy_error",
+            "tzx_error",
+            "tzy_error",
+            "zxx_model_error",
+            "zxy_model_error",
+            "zyx_model_error",
+            "zyy_model_error",
+            "tzx_model_error",
+            "tzy_model_error",
+        ]:
+            if self.has_data():
+                return self.mt_dataframe.loc[:, name]
+
+        elif name in [
+            "res_xx",
+            "res_xy",
+            "res_yx",
+            "res_yy",
+            "res_xx_error",
+            "res_xy_error",
+            "res_yx_error",
+            "res_yy_error",
+            "phase_xx",
+            "phase_xy",
+            "phase_yx",
+            "phase_yy",
+            "phase_xx_error",
+            "phase_xy_error",
+            "phase_yx_error",
+            "phase_yy_error",
+        ]:
+            if self.has_data():
+                return getattr(self._z_object, name.replace("error", "err"))
+
+        elif name in [
+            "res_xx_model_error",
+            "res_xy_model_error",
+            "res_yx_model_error",
+            "res_yy_model_error",
+            "phase_xx_model_error",
+            "phase_xy_model_error",
+            "phase_yx_model_error",
+            "phase_yy_model_error",
+        ]:
+            if self.has_data():
+                return getattr(
+                    self._z_model_object, name.replace("model_error", "err")
+                )
+
+        else:
+            return super().__getattr__(name)
+
+    def __setattr__(self, name, value):
+        """
+        Over loat setattr to make the code more compact
+
+        :param name: DESCRIPTION
+        :type name: TYPE
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if name in ["station", "utm_zone"]:
+            if self.has_data():
+                self.mt_dataframe.loc[:, name] = str(value)
+            else:
+                self.logger.warning(
+                    f"Cannot set {name} value of empty dataframe."
+                )
+
+        elif name in [
+            "latitude",
+            "longitude",
+            "elevation",
+        ]:
+            if self.has_data():
+                location = Location()
+                location.set_attr_from_name(name, value)
+                self.mt_dataframe.loc[:, name] = location.get_attr_from_name(
+                    name
+                )
+            else:
+                self.logger.warning(
+                    f"Cannot set {name} value of empty dataframe."
+                )
+
+        elif name in [
+            "utm_east",
+            "utm_north",
+            "utm_zone",
+            "model_east",
+            "model_north",
+            "model_elevation",
+        ]:
+            if self.has_data():
+                self.mt_dataframe.loc[:, name] = float(value)
+            else:
+                self.logger.warning(
+                    f"Cannot set {name} value of empty dataframe."
+                )
+
+        elif name in [
+            "period",
+            "zxx",
+            "zxy",
+            "zyx",
+            "zyy",
+            "tzx",
+            "tzy",
+            "zxx_error",
+            "zxy_error",
+            "zyx_error",
+            "zyy_error",
+            "tzx_error",
+            "tzy_error",
+            "zxx_model_error",
+            "zxy_model_error",
+            "zyx_model_error",
+            "zyy_model_error",
+            "tzx_model_error",
+            "tzy_model_error",
+        ]:
+            if self.has_data():
+                if isinstance(value, (pd.Series, np.ndarray)):
+                    if value.size != self.mt_dataframe.shape[0]:
+                        raise ValueError(
+                            f"Input must have same size as original {self.mt_dataframe.shape[0]} not {value.size}"
+                        )
+                    self.mt_dataframe.loc[:, name] = value.astype(
+                        self._data_dtypes[name]
+                    )
+                elif isinstance(value, (float, int, complex)):
+                    self.logger.warning(
+                        f"input is a number, setting all values in {name} to "
+                        f"{value} as type {self._data_dtypes[name]}"
+                    )
+                    self.mt_dataframe.loc[:, name] = self._data_dtypes[name](
+                        value
+                    )
+            else:
+                self.logger.warning(
+                    f"Cannot set {name} value of empty dataframe."
+                )
+
+        elif name in [
+            "res_xx",
+            "res_xy",
+            "res_yx",
+            "res_yy",
+            "res_xx_error",
+            "res_xy_error",
+            "res_yx_error",
+            "res_yy_error",
+            "phase_xx",
+            "phase_xy",
+            "phase_yx",
+            "phase_yy",
+            "phase_xx_error",
+            "phase_xy_error",
+            "phase_yx_error",
+            "phase_yy_error",
+        ]:
+            if self.has_data():
+                raise AttributeError(f"Cannot currently set {name}")
+
+        elif name in [
+            "res_xx_model_error",
+            "res_xy_model_error",
+            "res_yx_model_error",
+            "res_yy_model_error",
+            "phase_xx_model_error",
+            "phase_xy_model_error",
+            "phase_yx_model_error",
+            "phase_yy_model_error",
+        ]:
+            if self.has_data():
+                raise AttributeError(f"Cannot currently set {name}")
+
+        else:
+            super().__setattr__(name, value)
 
     def _make_empty_entry(self, n_entries):
         return dict(
             [
                 (col, np.zeros(n_entries, dtype))
-                for col, dtype in self._data_dtypes
+                for col, dtype in self._data_dtypes.items()
             ]
         )
 
@@ -171,7 +403,7 @@ class StationDataFrame:
         pass
 
     def has_data(self):
-        if self.mt_dataframe is not None:
+        if self.mt_dataframe.size > 0:
             return True
         return False
 
@@ -216,34 +448,139 @@ class StationDataFrame:
                         f"{row} cannot be set to {self._data_dtypes[row]}"
                     )
 
-        if len(value.station.unique()) > 1:
-            raise ValueError(
-                f"Input must contain only one station not {len(value.station.unique())}"
-            )
+        for key in [
+            "station",
+            "latitude",
+            "longitude",
+            "elevation",
+            "utm_east",
+            "utm_north",
+            "utm_zone",
+            "model_east",
+            "model_north",
+            "model_elevation",
+        ]:
+            if len(value[key].unique()) > 1:
+                raise ValueError(
+                    f"Input must contain only one {key} value not {len(value.station.unique())}"
+                )
 
         self._mt_dataframe = value
 
-    @property
-    def station(self):
-        if self.has_data():
-            return self.mt_dataframe.station.unique()[0]
+    # @property
+    # def station(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.station.unique()[0]
 
-    @station.setter
-    def station(self, value):
-        if not isinstance(value, str):
-            value = str(value)
+    # @station.setter
+    # def station(self, value):
+    #     if not isinstance(value, str):
+    #         value = str(value)
 
-        if self.has_data():
-            self.mt_dataframe.station.iloc[:] = value
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "station"] = value
 
-    @property
-    def period(self):
-        if self.has_data():
-            return self.mt_dataframe.period
+    # @property
+    # def period(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.period
 
-    @property
-    def frequency(self):
-        return 1.0 / self.period
+    # @property
+    # def frequency(self):
+    #     return 1.0 / self.period
+
+    # @property
+    # def latitude(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.latitude.unique()[0]
+
+    # @latitude.setter
+    # def latitude(self, value):
+    #     location = Location()
+    #     location.latitude = value
+    #     self.mt_dataframe.loc[:, "latitude"] = location.latitude
+
+    # @property
+    # def longitude(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.longitude.unique()[0]
+
+    # @longitude.setter
+    # def longitude(self, value):
+    #     location = Location()
+    #     location.longitude = value
+    #     self.mt_dataframe.loc[:, "longitude"] = location.longitude
+
+    # @property
+    # def elevation(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.elevation.unique()[0]
+
+    # @elevation.setter
+    # def elevation(self, value):
+    #     location = Location()
+    #     location.elevation = value
+    #     self.mt_dataframe.loc[:, "elevation"] = location.elevation
+
+    # @property
+    # def utm_east(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.utm_east.unique()[0]
+
+    # @utm_east.setter
+    # def utm_east(self, value):
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "utm_east"] = float(value)
+
+    # @property
+    # def utm_north(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.utm_north.unique()[0]
+
+    # @utm_north.setter
+    # def utm_north(self, value):
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "utm_north"] = float(value)
+
+    # @property
+    # def utm_elevation(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.utm_elevation.unique()[0]
+
+    # @utm_elevation.setter
+    # def utm_elevation(self, value):
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "utm_elevation"] = float(value)
+
+    # @property
+    # def model_east(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.model_east.unique()[0]
+
+    # @model_east.setter
+    # def model_east(self, value):
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "model_east"] = float(value)
+
+    # @property
+    # def model_north(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.model_north.unique()[0]
+
+    # @model_north.setter
+    # def model_north(self, value):
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "model_north"] = float(value)
+
+    # @property
+    # def model_elevation(self):
+    #     if self.has_data():
+    #         return self.mt_dataframe.model_elevation.unique()[0]
+
+    # @model_elevation.setter
+    # def model_elevation(self, value):
+    #     if self.has_data():
+    #         self.mt_dataframe.loc[:, "model_elevation"] = float(value)
 
     @property
     def _z_object(self):
