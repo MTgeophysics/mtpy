@@ -61,240 +61,244 @@ class StationDataFrame:
             ]
         )
 
-        self.data_epsg = None
-        self.data_utm_zone = None
+        self._z_object = Z()
+        self._z_model_object = Z()
+        self._t_object = Tipper()
+        self._t_model_object = Tipper()
+        self._location = Location()
 
-        self._mt_dataframe = pd.DataFrame(self._make_empty_entry(0))
+    # def __getattr__(self, name):
+    #     """
+    #     Over loat getattr to make the code more compact
 
-    def __getattr__(self, name):
-        """
-        Over loat getattr to make the code more compact
+    #     :param name: DESCRIPTION
+    #     :type name: TYPE
+    #     :param value: DESCRIPTION
+    #     :type value: TYPE
+    #     :return: DESCRIPTION
+    #     :rtype: TYPE
 
-        :param name: DESCRIPTION
-        :type name: TYPE
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+    #     """
 
-        """
+    #     if name in [
+    #         "station",
+    #         "latitude",
+    #         "longitude",
+    #         "elevation",
+    #         "utm_east",
+    #         "utm_north",
+    #         "utm_zone",
+    #         "model_east",
+    #         "model_north",
+    #         "model_elevation",
+    #     ]:
+    #         if self.has_data():
+    #             return self.mt_dataframe[name].unique()[0]
 
-        if name in [
-            "station",
-            "latitude",
-            "longitude",
-            "elevation",
-            "utm_east",
-            "utm_north",
-            "utm_zone",
-            "model_east",
-            "model_north",
-            "model_elevation",
-        ]:
-            if self.has_data():
-                return self.mt_dataframe[name].unique()[0]
+    #     elif name in ["period"]:
+    #         if self.has_data():
+    #             return self.mt_dataframe[name]
 
-        elif name in ["period"]:
-            if self.has_data():
-                return self.mt_dataframe[name]
+    #     elif name in ["frequency"]:
+    #         if self.has_data():
+    #             return 1.0 / self.mt_dataframe["period"]
 
-        elif name in ["frequency"]:
-            if self.has_data():
-                return 1.0 / self.mt_dataframe["period"]
+    #     elif name in [
+    #         "zxx",
+    #         "zxy",
+    #         "zyx",
+    #         "zyy",
+    #         "tzx",
+    #         "tzy",
+    #         "zxx_error",
+    #         "zxy_error",
+    #         "zyx_error",
+    #         "zyy_error",
+    #         "tzx_error",
+    #         "tzy_error",
+    #         "zxx_model_error",
+    #         "zxy_model_error",
+    #         "zyx_model_error",
+    #         "zyy_model_error",
+    #         "tzx_model_error",
+    #         "tzy_model_error",
+    #     ]:
+    #         if self.has_data():
+    #             return self.mt_dataframe.loc[:, name]
 
-        elif name in [
-            "zxx",
-            "zxy",
-            "zyx",
-            "zyy",
-            "tzx",
-            "tzy",
-            "zxx_error",
-            "zxy_error",
-            "zyx_error",
-            "zyy_error",
-            "tzx_error",
-            "tzy_error",
-            "zxx_model_error",
-            "zxy_model_error",
-            "zyx_model_error",
-            "zyy_model_error",
-            "tzx_model_error",
-            "tzy_model_error",
-        ]:
-            if self.has_data():
-                return self.mt_dataframe.loc[:, name]
+    #     elif name in [
+    #         "res_xx",
+    #         "res_xy",
+    #         "res_yx",
+    #         "res_yy",
+    #         "res_xx_error",
+    #         "res_xy_error",
+    #         "res_yx_error",
+    #         "res_yy_error",
+    #         "phase_xx",
+    #         "phase_xy",
+    #         "phase_yx",
+    #         "phase_yy",
+    #         "phase_xx_error",
+    #         "phase_xy_error",
+    #         "phase_yx_error",
+    #         "phase_yy_error",
+    #     ]:
+    #         if self.has_data():
+    #             return getattr(self._z_object, name.replace("error", "err"))
 
-        elif name in [
-            "res_xx",
-            "res_xy",
-            "res_yx",
-            "res_yy",
-            "res_xx_error",
-            "res_xy_error",
-            "res_yx_error",
-            "res_yy_error",
-            "phase_xx",
-            "phase_xy",
-            "phase_yx",
-            "phase_yy",
-            "phase_xx_error",
-            "phase_xy_error",
-            "phase_yx_error",
-            "phase_yy_error",
-        ]:
-            if self.has_data():
-                return getattr(self._z_object, name.replace("error", "err"))
+    #     elif name in [
+    #         "res_xx_model_error",
+    #         "res_xy_model_error",
+    #         "res_yx_model_error",
+    #         "res_yy_model_error",
+    #         "phase_xx_model_error",
+    #         "phase_xy_model_error",
+    #         "phase_yx_model_error",
+    #         "phase_yy_model_error",
+    #     ]:
+    #         if self.has_data():
+    #             return getattr(
+    #                 self._z_model_object, name.replace("model_error", "err")
+    #             )
 
-        elif name in [
-            "res_xx_model_error",
-            "res_xy_model_error",
-            "res_yx_model_error",
-            "res_yy_model_error",
-            "phase_xx_model_error",
-            "phase_xy_model_error",
-            "phase_yx_model_error",
-            "phase_yy_model_error",
-        ]:
-            if self.has_data():
-                return getattr(
-                    self._z_model_object, name.replace("model_error", "err")
-                )
+    #     else:
+    #         return super().__getattr__(name)
 
-        else:
-            return super().__getattr__(name)
+    # def __setattr__(self, name, value):
+    #     """
+    #     Over loat setattr to make the code more compact
 
-    def __setattr__(self, name, value):
-        """
-        Over loat setattr to make the code more compact
+    #     :param name: DESCRIPTION
+    #     :type name: TYPE
+    #     :param value: DESCRIPTION
+    #     :type value: TYPE
+    #     :return: DESCRIPTION
+    #     :rtype: TYPE
 
-        :param name: DESCRIPTION
-        :type name: TYPE
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+    #     """
 
-        """
+    #     if name in ["station", "utm_zone"]:
+    #         if self.has_data():
+    #             self.mt_dataframe.loc[:, name] = str(value)
+    #         else:
+    #             self.logger.warning(
+    #                 f"Cannot set {name} value of empty dataframe."
+    #             )
 
-        if name in ["station", "utm_zone"]:
-            if self.has_data():
-                self.mt_dataframe.loc[:, name] = str(value)
-            else:
-                self.logger.warning(
-                    f"Cannot set {name} value of empty dataframe."
-                )
+    #     elif name in [
+    #         "latitude",
+    #         "longitude",
+    #         "elevation",
+    #     ]:
+    #         if self.has_data():
+    #             location = Location()
+    #             location.set_attr_from_name(name, value)
+    #             self.mt_dataframe.loc[:, name] = location.get_attr_from_name(
+    #                 name
+    #             )
+    #         else:
+    #             self.logger.warning(
+    #                 f"Cannot set {name} value of empty dataframe."
+    #             )
 
-        elif name in [
-            "latitude",
-            "longitude",
-            "elevation",
-        ]:
-            if self.has_data():
-                location = Location()
-                location.set_attr_from_name(name, value)
-                self.mt_dataframe.loc[:, name] = location.get_attr_from_name(
-                    name
-                )
-            else:
-                self.logger.warning(
-                    f"Cannot set {name} value of empty dataframe."
-                )
+    #     elif name in [
+    #         "utm_east",
+    #         "utm_north",
+    #         "utm_zone",
+    #         "model_east",
+    #         "model_north",
+    #         "model_elevation",
+    #     ]:
+    #         if self.has_data():
+    #             self.mt_dataframe.loc[:, name] = float(value)
+    #         else:
+    #             self.logger.warning(
+    #                 f"Cannot set {name} value of empty dataframe."
+    #             )
 
-        elif name in [
-            "utm_east",
-            "utm_north",
-            "utm_zone",
-            "model_east",
-            "model_north",
-            "model_elevation",
-        ]:
-            if self.has_data():
-                self.mt_dataframe.loc[:, name] = float(value)
-            else:
-                self.logger.warning(
-                    f"Cannot set {name} value of empty dataframe."
-                )
+    #     elif name in [
+    #         "period",
+    #         "zxx",
+    #         "zxy",
+    #         "zyx",
+    #         "zyy",
+    #         "tzx",
+    #         "tzy",
+    #         "zxx_error",
+    #         "zxy_error",
+    #         "zyx_error",
+    #         "zyy_error",
+    #         "tzx_error",
+    #         "tzy_error",
+    #         "zxx_model_error",
+    #         "zxy_model_error",
+    #         "zyx_model_error",
+    #         "zyy_model_error",
+    #         "tzx_model_error",
+    #         "tzy_model_error",
+    #     ]:
+    #         if self.has_data():
+    #             if isinstance(value, (pd.Series, np.ndarray)):
+    #                 if value.size != self.mt_dataframe.shape[0]:
+    #                     raise ValueError(
+    #                         f"Input must have same size as original {self.mt_dataframe.shape[0]} not {value.size}"
+    #                     )
+    #                 self.mt_dataframe.loc[:, name] = value.astype(
+    #                     self._data_dtypes[name]
+    #                 )
 
-        elif name in [
-            "period",
-            "zxx",
-            "zxy",
-            "zyx",
-            "zyy",
-            "tzx",
-            "tzy",
-            "zxx_error",
-            "zxy_error",
-            "zyx_error",
-            "zyy_error",
-            "tzx_error",
-            "tzy_error",
-            "zxx_model_error",
-            "zxy_model_error",
-            "zyx_model_error",
-            "zyy_model_error",
-            "tzx_model_error",
-            "tzy_model_error",
-        ]:
-            if self.has_data():
-                if isinstance(value, (pd.Series, np.ndarray)):
-                    if value.size != self.mt_dataframe.shape[0]:
-                        raise ValueError(
-                            f"Input must have same size as original {self.mt_dataframe.shape[0]} not {value.size}"
-                        )
-                    self.mt_dataframe.loc[:, name] = value.astype(
-                        self._data_dtypes[name]
-                    )
-                elif isinstance(value, (float, int, complex)):
-                    self.logger.warning(
-                        f"input is a number, setting all values in {name} to "
-                        f"{value} as type {self._data_dtypes[name]}"
-                    )
-                    self.mt_dataframe.loc[:, name] = self._data_dtypes[name](
-                        value
-                    )
-            else:
-                self.logger.warning(
-                    f"Cannot set {name} value of empty dataframe."
-                )
+    #             elif isinstance(value, (float, int, complex)):
+    #                 self.logger.warning(
+    #                     f"input is a number, setting all values in {name} to "
+    #                     f"{value} as type {self._data_dtypes[name]}"
+    #                 )
+    #                 self.mt_dataframe.loc[:, name] = self._data_dtypes[name](
+    #                     value
+    #                 )
+    #             else:
+    #                 raise TypeError(f"Cannot set {name} with type {type(value)}")
+    #         else:
+    #             self.logger.warning(
+    #                 f"Cannot set {name} value of empty dataframe."
+    #             )
 
-        elif name in [
-            "res_xx",
-            "res_xy",
-            "res_yx",
-            "res_yy",
-            "res_xx_error",
-            "res_xy_error",
-            "res_yx_error",
-            "res_yy_error",
-            "phase_xx",
-            "phase_xy",
-            "phase_yx",
-            "phase_yy",
-            "phase_xx_error",
-            "phase_xy_error",
-            "phase_yx_error",
-            "phase_yy_error",
-        ]:
-            if self.has_data():
-                raise AttributeError(f"Cannot currently set {name}")
+    #     elif name in [
+    #         "res_xx",
+    #         "res_xy",
+    #         "res_yx",
+    #         "res_yy",
+    #         "res_xx_error",
+    #         "res_xy_error",
+    #         "res_yx_error",
+    #         "res_yy_error",
+    #         "phase_xx",
+    #         "phase_xy",
+    #         "phase_yx",
+    #         "phase_yy",
+    #         "phase_xx_error",
+    #         "phase_xy_error",
+    #         "phase_yx_error",
+    #         "phase_yy_error",
+    #     ]:
+    #         if self.has_data():
+    #             raise AttributeError(f"Cannot currently set {name}")
 
-        elif name in [
-            "res_xx_model_error",
-            "res_xy_model_error",
-            "res_yx_model_error",
-            "res_yy_model_error",
-            "phase_xx_model_error",
-            "phase_xy_model_error",
-            "phase_yx_model_error",
-            "phase_yy_model_error",
-        ]:
-            if self.has_data():
-                raise AttributeError(f"Cannot currently set {name}")
+    #     elif name in [
+    #         "res_xx_model_error",
+    #         "res_xy_model_error",
+    #         "res_yx_model_error",
+    #         "res_yy_model_error",
+    #         "phase_xx_model_error",
+    #         "phase_xy_model_error",
+    #         "phase_yx_model_error",
+    #         "phase_yy_model_error",
+    #     ]:
+    #         if self.has_data():
+    #             raise AttributeError(f"Cannot currently set {name}")
 
-        else:
-            super().__setattr__(name, value)
+    #     else:
+    #         super().__setattr__(name, value)
 
     def _make_empty_entry(self, n_entries):
         return dict(

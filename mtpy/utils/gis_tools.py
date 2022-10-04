@@ -39,9 +39,9 @@ if HAS_GDAL:
     from osgeo.ogr import OGRERR_NONE
 else:
     import pyproj
-_logger = get_mtpy_logger(__name__)
+logger = get_mtpy_logger(__name__)
 if NEW_GDAL:
-    _logger.info("INFO: GDAL version 3 detected")
+    logger.info("INFO: GDAL version 3 detected")
 # =============================================================================
 # GIS Error container
 # =============================================================================
@@ -56,18 +56,27 @@ class GISError(Exception):
 # ==============================================================================
 
 
-def _assert_minutes(minutes):
-    assert (
-        0 <= minutes < 60.0
-    ), "minutes needs to be <60 and >0, currently {0:.0f}".format(minutes)
+def assert_minutes(minutes):
+    if not 0 <= minutes < 60.0:
+        msg = (
+            "minutes should be 0 < > 60, currently {0:.0f}".format(minutes)
+            + " conversion will account for non-uniform"
+            + "timne. Be sure to check accuracy."
+        )
+        logger.warning(msg)
 
     return minutes
 
 
-def _assert_seconds(seconds):
-    assert (
-        0 <= seconds < 60.0
-    ), "seconds needs to be <60 and >0, currently {0:.3f}".format(seconds)
+def assert_seconds(seconds):
+    if not 0 <= seconds < 60.0:
+        msg = (
+            "seconds should be 0 < > 60, currently {0:.0f}".format(seconds)
+            + " conversion will account for non-uniform"
+            + "timne. Be sure to check accuracy."
+        )
+        logger.warning(msg)
+
     return seconds
 
 
@@ -75,127 +84,158 @@ def convert_position_str2float(position_str):
     """
     Convert a position string in the format of DD:MM:SS to decimal degrees
 
-    :type position_str: string [ 'DD:MM:SS.ms' | 'DD.degrees' ]
-    :param position_str: degrees of latitude or longitude
+    :param position: latitude or longitude om DD:MM:SS.ms
+    :type position: float
 
-    :rtype: float
-    :return: latitude or longitude in decimal degrees
-
-    :Example: ::
-
-        >>> from mtpy.utils import gis_tools
-        >>> gis_tools.convert_position_str2float('-118:34:56.3')
-        -118.58230555555555
-
+    :returns: latitude or longitude as a float
     """
 
     if position_str in [None, "None"]:
         return None
-    if ":" in position_str:
-        if position_str.count(":") != 2:
-            msg = (
-                "{0} not correct format.\n".format(position_str)
-                + "Position needs to be DD:MM:SS.ms"
-            )
-            raise GISError(msg)
-        p_list = position_str.split(":")
-        deg = float(p_list[0])
-        minutes = _assert_minutes(float(p_list[1]))
-        sec = _assert_seconds(float(p_list[2]))
-        sign = np.sign(deg)
 
-        position_value = sign * (abs(deg) + minutes / 60.0 + sec / 3600.0)
-    else:
-        try:
-            position_value = float(position_str)
-        except ValueError:
-            msg = (
-                "{0} not correct format.\n".format(position_str)
-                + "Position needs to be DD.decimal_degrees"
-            )
-            raise GISError(msg)
+    p_list = position_str.split(":")
+    if len(p_list) != 3:
+        msg = "{0} not correct format, should be DD:MM:SS".format(position_str)
+        logger.error(msg)
+        raise ValueError(msg)
+
+    deg = float(p_list[0])
+    minutes = assert_minutes(float(p_list[1]))
+    sec = assert_seconds(float(p_list[2]))
+
+    # get the sign of the position so that when all are added together the
+    # position is in the correct place
+    sign = 1
+    if deg < 0:
+        sign = -1
+
+    position_value = sign * (abs(deg) + minutes / 60.0 + sec / 3600.0)
+
+    logger.debug("Converted {0} to {1}".format(position_str, position_value))
+
     return position_value
 
 
 def assert_lat_value(latitude):
     """
-    make sure latitude is in decimal degrees
+    Make sure the latitude value is in decimal degrees, if not change it.
+    And that the latitude is within -90 < lat > 90.
+
+    :param latitude: latitude in decimal degrees or other format
+    :type latitude: float or string
     """
-    if latitude in [None, "None"]:
-        return None
+    if latitude in [None, "None", "none", "unknown"]:
+        logger.debug("Latitude is None, setting to 0")
+        return 0.0
     try:
         lat_value = float(latitude)
+
     except TypeError:
-        return None
+        logger.debug("Could not convert {0} setting to 0".format(latitude))
+        return 0.0
+
     except ValueError:
+        logger.debug("Latitude is a string {0}".format(latitude))
         lat_value = convert_position_str2float(latitude)
+
     if abs(lat_value) >= 90:
-        raise GISError("|Latitude = {0:.5f}| > 90, unacceptable!".format(lat_value))
+        msg = (
+            "latitude value = {0} is unacceptable!".format(lat_value)
+            + ".  Must be |Latitude| > 90"
+        )
+        logger.error(msg)
+        raise ValueError(msg)
+
     return lat_value
 
 
 def assert_lon_value(longitude):
     """
-    make sure longitude is in decimal degrees
+    Make sure the longitude value is in decimal degrees, if not change it.
+    And that the latitude is within -180 < lat > 180.
+
+    :param latitude: longitude in decimal degrees or other format
+    :type latitude: float or string
     """
-    if longitude in [None, "None"]:
-        return None
+    if longitude in [None, "None", "none", "unknown"]:
+        logger.debug("Longitude is None, setting to 0")
+        return 0.0
     try:
         lon_value = float(longitude)
+
     except TypeError:
-        return None
+        logger.debug("Could not convert {0} setting to 0".format(longitude))
+        return 0.0
+
     except ValueError:
+        logger.debug("Longitude is a string {0}".format(longitude))
         lon_value = convert_position_str2float(longitude)
+
     if abs(lon_value) >= 180:
-        raise GISError("|Longitude = {0:.5f}| > 180, unacceptable!".format(lon_value))
+        msg = (
+            "longitude value = {0} is unacceptable!".format(lon_value)
+            + ".  Must be |longitude| > 180"
+        )
+        logger.error(msg)
+        raise ValueError(msg)
+
     return lon_value
 
 
 def assert_elevation_value(elevation):
     """
     make sure elevation is a floating point number
+
+    :param elevation: elevation as a float or string that can convert
+    :type elevation: float or str
     """
 
     try:
         elev_value = float(elevation)
     except (ValueError, TypeError):
+        msg = "Could not convert {0} to a number setting to 0".format(elevation)
+        logger.debug(msg)
         elev_value = 0.0
-        _logger.warn("{0} is not a number, setting elevation to 0".format(elevation))
+
     return elev_value
 
 
 def convert_position_float2str(position):
     """
-    convert position float to a string in the format of DD:MM:SS
+    Convert position float to a string in the format of DD:MM:SS.
 
-    :type position: float
     :param position: decimal degrees of latitude or longitude
+    :type position: float
 
-    :rtype: float
-    :return: latitude or longitude in DD:MM.SS.ms 
-
-    :Example: ::
-        >>> import mtpy.utils.gis_tools as gis_tools
-        >>> gis_tools.convert_position_float2str(-118.34563)
-        '-118:34:56.30'
-
+    :returns: latitude or longitude in format of DD:MM:SS.ms
     """
 
-    if not isinstance(position, float):
-        raise GISError("Given value is not a float")
-    deg = int(position)
-    minutes = (abs(position) - abs(deg)) * 60.0
+    assert type(position) is float, "Given value is not a float"
 
+    deg = int(position)
+    sign = 1
+    if deg < 0:
+        sign = -1
+
+    deg = abs(deg)
+    minutes = (abs(position) - deg) * 60.0
     # need to round seconds to 4 decimal places otherwise machine precision
     # keeps the 60 second roll over and the string is incorrect.
     sec = np.round((minutes - int(minutes)) * 60.0, 4)
     if sec >= 60.0:
         minutes += 1
         sec = 0
+
     if int(minutes) == 60:
         deg += 1
         minutes = 0
-    return "{0:.0f}:{1:02.0f}:{2:05.2f}".format(deg, int(minutes), sec)
+
+    position_str = "{0}:{1:02.0f}:{2:05.2f}".format(
+        sign * int(deg), int(minutes), sec
+    )
+    logger.debug("Converted {0} to {1}".format(position, position_str))
+
+    return position_str
 
 
 # ==============================================================================
@@ -339,7 +379,9 @@ def utm_zone_to_epsg(zone_number, is_northern):
     """
     for key in list(EPSG_DICT.keys()):
         val = EPSG_DICT[key]
-        if ("+zone={:<2}".format(zone_number) in val) and ("+datum=WGS84" in val):
+        if ("+zone={:<2}".format(zone_number) in val) and (
+            "+datum=WGS84" in val
+        ):
             if is_northern:
                 if "+south" not in val:
                     return key
@@ -452,7 +494,7 @@ def validate_utm_zone(utm_zone):
 
 def validate_input_values(values, location_type=None):
     """
-    make sure the input values for lat, lon, easting, northing will be an 
+    make sure the input values for lat, lon, easting, northing will be an
     numpy array with a float data type
 
     can input a string as a comma separated list
@@ -486,14 +528,18 @@ def validate_input_values(values, location_type=None):
             try:
                 values[ii] = assert_lat_value(value)
             except GISError as error:
-                raise GISError("{0}\n Bad input value at index {1}".format(error, ii))
+                raise GISError(
+                    "{0}\n Bad input value at index {1}".format(error, ii)
+                )
         values = values.astype(float)
     if location_type in ["lon", "longitude"]:
         for ii, value in enumerate(values):
             try:
                 values[ii] = assert_lon_value(value)
             except GISError as error:
-                raise GISError("{0}\n Bad input value at index {1}".format(error, ii))
+                raise GISError(
+                    "{0}\n Bad input value at index {1}".format(error, ii)
+                )
         values = values.astype(float)
     return values
 
@@ -660,7 +706,9 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
 
     if utm_zone in [None, "none", "None"]:
         # get the UTM zone in the datum coordinate system, otherwise
-        zone_number, is_northern, utm_zone = get_utm_zone(lat.mean(), lon.mean())
+        zone_number, is_northern, utm_zone = get_utm_zone(
+            lat.mean(), lon.mean()
+        )
     epsg = validate_epsg(epsg)
     if HAS_GDAL:
         ll2utm = _get_gdal_projection_ll2utm(datum, utm_zone, epsg)
@@ -702,11 +750,11 @@ def project_point_ll2utm(lat, lon, datum="WGS84", utm_zone=None, epsg=None):
 
 def project_point_utm2ll(easting, northing, utm_zone, datum="WGS84", epsg=None):
     """
-    Project a point that is in UTM to the specified geographic coordinate 
+    Project a point that is in UTM to the specified geographic coordinate
     system.
 
     :param easting: easting in meters
-    :type easting: float 
+    :type easting: float
 
     :param northing: northing in meters
     :type northing: float
@@ -739,7 +787,7 @@ def project_point_utm2ll(easting, northing, utm_zone, datum="WGS84", epsg=None):
     :Multiple Points: ::
 
         >>> gis_tools.project_point_utm2ll([670804.18810336, 680200],
-        ...                                [4429474.30215206, 4330200], 
+        ...                                [4429474.30215206, 4330200],
         ...                                datum='WGS84', utm_zone='11T',
         ...                                epsg=26711)
         rec.array([(40.000087, -114.999128), (39.104208, -114.916058)],
@@ -799,7 +847,7 @@ def epsg_project(x, y, epsg_from, epsg_to, proj_str=None):
         to 0 and provide proj_str
     proj_str : str
         Proj4 string to provide to pyproj if using custom projection. This proj
-        string will be applied if epsg_from or epsg_to == 0. 
+        string will be applied if epsg_from or epsg_to == 0.
         The default is None.
 
     Returns
