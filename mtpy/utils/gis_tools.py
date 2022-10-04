@@ -316,7 +316,7 @@ def project_point(x, y, old_epsg, new_epsg):
     old_crs = CRS.from_user_input(old_epsg)
     new_crs = CRS.from_user_input(new_epsg)
 
-    transformer = Transformer.from_crs(old_crs, new_crs, always_xy=False)
+    transformer = Transformer.from_crs(old_crs, new_crs, always_xy=True)
 
     return transformer.transform(x, y)
 
