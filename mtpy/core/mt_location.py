@@ -198,7 +198,7 @@ class MTLocation:
         self._latitude = assert_lat_value(lat)
         if self.utm_epsg is not None and self.datum_epsg is not None:
             self._east, self._north = self.project_point(
-                self._latitude, self.longitude, self.datum_epsg, self.utm_epsg
+                self._longitude, self._latitude, self.datum_epsg, self.utm_epsg
             )
 
     @property
@@ -210,7 +210,7 @@ class MTLocation:
         self._longitude = assert_lon_value(lon)
         if self.utm_epsg is not None and self.datum_epsg is not None:
             self._east, self._north = self.project_point(
-                self._latitude, self.longitude, self.datum_epsg, self.utm_epsg
+                self._longitude, self._latitude, self.datum_epsg, self.utm_epsg
             )
 
     @property
