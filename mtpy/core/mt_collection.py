@@ -246,10 +246,8 @@ class MTCollection:
             transfer_function = [transfer_function]
         for item in transfer_function:
             if isinstance(item, MT):
-                self.logger.debug("added %s " % item.station)
                 self._from_mt_object(item)
             elif isinstance(item, (str, Path)):
-                self.logger.debug("added %s " % item.station)
                 self._from_file(item)
             else:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
@@ -334,6 +332,7 @@ class MTCollection:
         if mt_object.survey_metadata.id in [None, ""]:
             mt_object.survey_metadata.id = "unknown_survey"
         self.mth5_collection.add_transfer_function(mt_object)
+        self.logger.debug("added %s " % mt_object.station)
 
     def get_tf_list(self, bounding_box=None):
         """
