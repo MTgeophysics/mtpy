@@ -67,6 +67,17 @@ class StationDataFrame:
         self._t_model_object = Tipper()
         self._location = Location()
 
+        self.station = None
+        self.latitude = 0
+        self.longitude = 0
+        self.elevation = 0
+        self.utm_east = 0
+        self.utm_north = 0
+        self.utm_zone = None
+        self.model_east = 0
+        self.model_north = 0
+        self.model_elevation = 0
+
     # def __getattr__(self, name):
     #     """
     #     Over loat getattr to make the code more compact
