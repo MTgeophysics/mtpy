@@ -116,7 +116,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_size = 0.005
             self.arrow_size = 0.005
             self.arrow_head_length = 0.0025
-            self.arrow_head_length = 0.0035
+            self.arrow_head_width = 0.0035
             self.arrow_lw = 0.00075
 
             self.tickstrfmt = "%.3f"
@@ -129,7 +129,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_size = 500
             self.arrow_size = 500
             self.arrow_head_length = 250
-            self.arrow_head_length = 350
+            self.arrow_head_width = 350
             self.arrow_lw = 50
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (m)"
@@ -141,7 +141,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_size = 0.500
             self.arrow_size = 0.5
             self.arrow_head_length = 0.25
-            self.arrow_head_length = 0.35
+            self.arrow_head_width = 0.35
             self.arrow_lw = 0.075
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (km)"
