@@ -52,6 +52,7 @@ class ResPhase(object):
 
         self._z = z_array
         self._z_err = z_err_array
+        self._z_model_err = z_model_err
 
         self._resistivity = None
         self._phase = None
@@ -164,6 +165,21 @@ class ResPhase(object):
 
                         self._phase_err[idx_f, ii, jj] = phi_err
 
+        if self._z_model_err is not None:
+            for idx_f in range(self.freq.size):
+                for ii in range(2):
+                    for jj in range(2):
+                        r_err, phi_err = MTcc.z_error2r_phi_error(
+                            self._z[idx_f, ii, jj].real,
+                            self._z[idx_f, ii, jj].imag,
+                            self._z_model_err[idx_f, ii, jj],
+                        )
+                        self._resistivity_model_err[idx_f, ii, jj] = (
+                            self._resistivity[idx_f, ii, jj] * r_err
+                        )
+
+                        self._phase_model_err[idx_f, ii, jj] = phi_err
+
     def set_res_phase(
         self,
         res_array,
@@ -171,6 +187,8 @@ class ResPhase(object):
         freq,
         res_err_array=None,
         phase_err_array=None,
+        res_model_err=None,
+        phase_model_err=None,
     ):
         """
         Set values for resistivity (res - in Ohm m) and phase
@@ -202,6 +220,8 @@ class ResPhase(object):
         self.freq = freq
         self._resistivity_err = res_err_array
         self._phase_err = phase_err_array
+        self._resistivity_model_err = res_model_err
+        self._phase_model_err = phase_model_err
 
         # assert real array:
         if np.linalg.norm(np.imag(res_array)) != 0:
@@ -218,30 +238,59 @@ class ResPhase(object):
         self._z_err = np.zeros_like(self._z, dtype=np.float)
         # ---------------------------
         # error propagation:
-        if self._resistivity_err is None or self._phase_err is None:
-            return
-        for idx_f in range(self.freq.shape[0]):
-            for ii in range(2):
-                for jj in range(2):
-                    abs_z = np.sqrt(
-                        5 * self.freq[idx_f] * self.resistivity[idx_f, ii, jj]
-                    )
-                    rel_error_res = (
-                        self.resistivity_err[idx_f, ii, jj]
-                        / self.resistivity[idx_f, ii, jj]
-                    )
-                    # relative error varies by a factor of 0.5, which is the
-                    # exponent in the relation between them:
-                    abs_z_error = 0.5 * abs_z * rel_error_res
-
-                    self._z_err[idx_f, ii, jj] = max(
-                        MTcc.propagate_error_polar2rect(
-                            abs_z,
-                            abs_z_error,
-                            self.phase[idx_f, ii, jj],
-                            self.phase_err[idx_f, ii, jj],
+        if self._resistivity_err is not None or self._phase_err is not None:
+            for idx_f in range(self.freq.shape[0]):
+                for ii in range(2):
+                    for jj in range(2):
+                        abs_z = np.sqrt(
+                            5
+                            * self.freq[idx_f]
+                            * self.resistivity[idx_f, ii, jj]
                         )
-                    )
+                        rel_error_res = (
+                            self.resistivity_err[idx_f, ii, jj]
+                            / self.resistivity[idx_f, ii, jj]
+                        )
+                        # relative error varies by a factor of 0.5, which is the
+                        # exponent in the relation between them:
+                        abs_z_error = 0.5 * abs_z * rel_error_res
+
+                        self._z_err[idx_f, ii, jj] = max(
+                            MTcc.propagate_error_polar2rect(
+                                abs_z,
+                                abs_z_error,
+                                self.phase[idx_f, ii, jj],
+                                self.phase_err[idx_f, ii, jj],
+                            )
+                        )
+        if (
+            self._resistivity_model_err is not None
+            or self._phase_model_err is not None
+        ):
+            for idx_f in range(self.freq.shape[0]):
+                for ii in range(2):
+                    for jj in range(2):
+                        abs_z = np.sqrt(
+                            5
+                            * self.freq[idx_f]
+                            * self.resistivity[idx_f, ii, jj]
+                        )
+                        rel_error_res = (
+                            self.resistivity_model_err[idx_f, ii, jj]
+                            / self.resistivity[idx_f, ii, jj]
+                        )
+                        # relative error varies by a factor of 0.5, which is the
+                        # exponent in the relation between them:
+                        abs_z_error = 0.5 * abs_z * rel_error_res
+
+                        self._z_model_err[idx_f, ii, jj] = max(
+                            MTcc.propagate_error_polar2rect(
+                                abs_z,
+                                abs_z_error,
+                                self.phase[idx_f, ii, jj],
+                                self.phase_model_err[idx_f, ii, jj],
+                            )
+                        )
 
     @property
     def res_xx(self):

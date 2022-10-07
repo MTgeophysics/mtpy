@@ -587,7 +587,7 @@ class MT(TF, MTLocation):
 
         return pd.DataFrame(entry)
 
-    def from_dataframe(self, df):
+    def from_dataframe(self, df, model=False):
         """
         fill transfer function attributes from a dataframe for a single station
 
@@ -612,8 +612,9 @@ class MT(TF, MTLocation):
         ]:
             setattr(self, key, df[key].unique()[0])
 
-        self.Z = mt_dataframe.to_z_object(df)
-        self.Tipper = mt_dataframe.to_t_object(df)
+        if not model:
+            self.Z = mt_dataframe.to_z_object(df)
+            self.Tipper = mt_dataframe.to_t_object(df)
 
 
 # ==============================================================================
