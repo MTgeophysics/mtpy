@@ -80,7 +80,7 @@ class MT(TF, MTLocation):
             return Z(
                 z_array=self.impedance.to_numpy(),
                 z_err_array=self.impedance_error.to_numpy(),
-                freq=self.frequency,
+                frequency=self.frequency,
             )
         return Z()
 
@@ -92,9 +92,9 @@ class MT(TF, MTLocation):
         recalculate phase tensor and invariants, which shouldn't change except
         for strike angle
         """
-        if not isinstance(z_object.freq, type(None)):
-            if not (self.frequency == z_object.freq).all():
-                self.frequency = z_object.freq
+        if not isinstance(z_object.frequency, type(None)):
+            if not (self.frequency == z_object.frequency).all():
+                self.frequency = z_object.frequency
         self.impedance = z_object.z
         self.impedance_error = z_object.z_err
 
@@ -106,7 +106,7 @@ class MT(TF, MTLocation):
             return Tipper(
                 tipper_array=self.tipper.to_numpy(),
                 tipper_err_array=self.tipper_error.to_numpy(),
-                freq=self.frequency,
+                frequency=self.frequency,
             )
 
     @Tipper.setter
@@ -117,9 +117,9 @@ class MT(TF, MTLocation):
         recalculate tipper angle and magnitude
         """
 
-        if not isinstance(t_object.freq, type(None)):
-            if not (self.frequency == t_object.freq).all():
-                self.frequency = t_object.freq
+        if not isinstance(t_object.frequency, type(None)):
+            if not (self.frequency == t_object.frequency).all():
+                self.frequency = t_object.frequency
         self.tipper = t_object.tipper
         self.tipper_error = t_object.tipper_err
 
@@ -260,7 +260,7 @@ class MT(TF, MTLocation):
         new_z_obj = Z(
             z_array=new_z,
             z_err_array=self.Z.z_err.copy(),
-            freq=self.Z.freq.copy(),
+            frequency=self.Z.frequency.copy(),
         )
 
         return new_z_obj
@@ -299,7 +299,7 @@ class MT(TF, MTLocation):
                 z_err = self.Z.z_err[nz_index, ii, jj]
 
                 # get the frequencies of non-zero components
-                f = self.Z.freq[nz_index]
+                f = self.Z.frequency[nz_index]
 
                 # create a function that does 1d interpolation
                 interp_dict[comp]["real"] = spi.interp1d(
@@ -358,7 +358,7 @@ class MT(TF, MTLocation):
             t_err = self.Tipper.tipper_err[nz_index, 0, jj]
 
             # get the frequencies of non-zero components
-            f = self.Tipper.freq[nz_index]
+            f = self.Tipper.frequency[nz_index]
 
             # create a function that does 1d interpolation
             interp_dict[comp]["real"] = spi.interp1d(
@@ -433,7 +433,7 @@ class MT(TF, MTLocation):
         # check the bounds of the new frequency array
         if bounds_error:
 
-            # logger.debug("new freq array %s", new_freq_array)
+            # logger.debug("new frequency array %s", new_freq_array)
             if self.frequency.min() > new_freq_array.min():
                 raise ValueError(
                     f"New frequency minimum of {new_freq_array.min():.5g} "
@@ -452,7 +452,7 @@ class MT(TF, MTLocation):
         new_Z = Z(
             z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
             z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)),
-            freq=new_freq_array,
+            frequency=new_freq_array,
         )
 
         new_Tipper = Tipper(
@@ -460,7 +460,7 @@ class MT(TF, MTLocation):
                 (new_freq_array.shape[0], 1, 2), dtype="complex"
             ),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
-            freq=new_freq_array,
+            frequency=new_freq_array,
         )
 
         z_dict = self.get_interp1d_functions_z(interp_type=interp_type)
@@ -474,8 +474,8 @@ class MT(TF, MTLocation):
                 # get frequencies to interpolate on to, making sure the
                 # bounds are with in non-zero components
                 new_nz_index = np.where(
-                    (new_freq_array >= self.Z.freq.min())
-                    & (new_freq_array <= self.Z.freq.max())
+                    (new_freq_array >= self.Z.frequency.min())
+                    & (new_freq_array <= self.Z.frequency.max())
                 )[0]
                 new_f = new_freq_array[new_nz_index]
 
@@ -498,8 +498,8 @@ class MT(TF, MTLocation):
             # get new frequency to interpolate over, making sure bounds are
             # for non-zero components
             new_nz_index = np.where(
-                (new_freq_array >= self.Tipper.freq.min())
-                & (new_freq_array <= self.Tipper.freq.max())
+                (new_freq_array >= self.Tipper.frequency.min())
+                & (new_freq_array <= self.Tipper.frequency.max())
             )
             new_f = new_freq_array[new_nz_index]
 

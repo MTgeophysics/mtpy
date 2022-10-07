@@ -50,10 +50,6 @@ class ResPhase:
 
         self.frequency = frequency
 
-        self._z = z_array
-        self._z_err = z_err_array
-        self._z_model_err = z_model_err
-
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
@@ -144,8 +140,6 @@ class ResPhase:
             ii = index_dict[name[-2]]
             jj = index_dict[name[-1]]
             self.resistivity[:, ii, jj] = self._validate_input_component(value)
-            if value is not None:
-                self.set_res_phase()
 
         elif name in ["res_err_xx", "res_err_xy", "res_err_yx", "res_err_yy"]:
             ii = index_dict[name[-2]]
@@ -153,8 +147,6 @@ class ResPhase:
             self.resistivity_err[:, ii, jj] = self._validate_input_component(
                 value
             )
-            if value is not None:
-                self.set_res_phase()
 
         elif name in [
             "res_model_err_xx",
@@ -167,15 +159,11 @@ class ResPhase:
             self.resistivity_model_err[
                 :, ii, jj
             ] = self._validate_input_component(value)
-            if value is not None:
-                self.set_res_phase()
 
         elif name in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
             ii = index_dict[name[-2]]
             jj = index_dict[name[-1]]
             self.phase[:, ii, jj] = self._validate_input_component(value)
-            if value is not None:
-                self.set_res_phase()
 
         elif name in [
             "phase_err_xx",
@@ -186,8 +174,6 @@ class ResPhase:
             ii = index_dict[name[-2]]
             jj = index_dict[name[-1]]
             self.phase_err[:, ii, jj] = self._validate_input_component(value)
-            if value is not None:
-                self.set_res_phase()
 
         elif name in [
             "phase_model_err_xx",
@@ -200,8 +186,6 @@ class ResPhase:
             self.phase_model_err[:, ii, jj] = self._validate_input_component(
                 value
             )
-            if value is not None:
-                self.set_res_phase()
 
         elif name in [
             "resistivity",
@@ -215,14 +199,6 @@ class ResPhase:
                 self._validate_input_array(value)
             )
             super().__setattr__(name, value)
-            if value is not None:
-                self.set_res_phase()
-
-        elif name in ["_z", "_z_err", "_z_model_err"]:
-            value = self._validate_input_array(value)
-            super().__setattr__(name, value)
-            # if value is not None:
-            #     self.compute_resistivity_phase()
 
         else:
             return super().__setattr__(name, value)
@@ -346,71 +322,83 @@ class ResPhase:
     def period(self, value):
         self.frequency = 1.0 / value
 
-    def compute_resistivity_phase(
-        self, z_array=None, z_err_array=None, frequency=None
+    def from_impedance(
+        self, z_array, z_err_array, frequency, z_model_err_array
     ):
         """
-        compute resistivity and phase from z and z_err
+
+        :param z_array: DESCRIPTION
+        :type z_array: TYPE
+        :param z_err_array: DESCRIPTION
+        :type z_err_array: TYPE
+        :param frequency: DESCRIPTION
+        :type frequency: TYPE
+        :param z_model_err_array: DESCRIPTION
+        :type z_model_err_array: TYPE
+        :raises ValueError: DESCRIPTION
+        :return: DESCRIPTION
+        :rtype: TYPE
+
         """
 
-        if z_array is not None:
-            self._z = z_array
-        if z_err_array is not None:
-            self._z_err = z_err_array
-        if frequency is not None:
-            self.frequency = frequency
-        # The _z_err can be None!!!
-        if self._z is None or self.frequency is None:
-            if self._z is None:
-                msg = "z values are None, cannot compute parameters"
-            elif self._frequency is None:
-                msg = "frequency values are None, cannot compute parameters"
-            self._logger.error(msg)
-            raise MTpyError_Z(msg)
-        self.resistivity = np.apply_along_axis(
-            lambda x: np.abs(x) ** 2 / self.frequency * 0.2, 0, self._z
-        )
-        self.phase = np.rad2deg(np.angle(self._z))
+        self.frequency = self._validate_frequency(frequency)
 
+        # The _z_err can be None!!!
+        if z_array is None or frequency is None:
+            if z_array is None:
+                msg = "z values are None, cannot compute parameters"
+            elif frequency is None:
+                msg = "frequency values are None, cannot compute parameters"
+            self.logger.debug(msg)
+            raise ValueError(msg)
+
+        # if we set these to self., then we will be constantly updating, so
+        # compute first and then set.
+        self.resistivity = np.apply_along_axis(
+            lambda x: np.abs(x) ** 2 / frequency * 0.2, 0, z_array
+        )
+        self.phase = np.rad2deg(np.angle(z_array))
+
+        # Compute Errors
         self.resistivity_err = np.zeros_like(self.resistivity, dtype=np.float)
         self.phase_err = np.zeros_like(self.phase, dtype=np.float)
         self.resistivity_model_err = np.zeros_like(
             self.resistivity, dtype=np.float
         )
-        self.phase_model_err = np.zeros_like(self.phase, dtype=np.float)
+        self.phase_model_err = np.zeros_like(phase, dtype=np.float)
 
         # calculate resistivity and phase
-        if self._z_err is not None:
-            for idx_f in range(self.frequency.size):
+        if z_err_array is not None:
+            for idx_f in range(frequency.size):
                 for ii in range(2):
                     for jj in range(2):
                         r_err, phi_err = MTcc.z_error2r_phi_error(
-                            self._z[idx_f, ii, jj].real,
-                            self._z[idx_f, ii, jj].imag,
-                            self._z_err[idx_f, ii, jj],
+                            z_array[idx_f, ii, jj].real,
+                            z_array[idx_f, ii, jj].imag,
+                            z_err_array[idx_f, ii, jj],
                         )
                         self.resistivity_err[idx_f, ii, jj] = (
-                            self.resistivity[idx_f, ii, jj] * r_err
+                            resistivity[idx_f, ii, jj] * r_err
                         )
 
-                        self._phase_err[idx_f, ii, jj] = phi_err
+                        self.phase_err[idx_f, ii, jj] = phi_err
 
-        if self._z_model_err is not None:
-            for idx_f in range(self.frequency.size):
+        if z_model_err_array is not None:
+            for idx_f in range(frequency.size):
                 for ii in range(2):
                     for jj in range(2):
                         r_err, phi_err = MTcc.z_error2r_phi_error(
-                            self._z[idx_f, ii, jj].real,
-                            self._z[idx_f, ii, jj].imag,
-                            self._z_model_err[idx_f, ii, jj],
+                            z_array[idx_f, ii, jj].real,
+                            z_array[idx_f, ii, jj].imag,
+                            z_model_err_array[idx_f, ii, jj],
                         )
                         self.resistivity_model_err[idx_f, ii, jj] = (
-                            self._resistivity[idx_f, ii, jj] * r_err
+                            resistivity[idx_f, ii, jj] * r_err
                         )
 
                         self.phase_model_err[idx_f, ii, jj] = phi_err
 
-    def set_res_phase(
+    def compute_impedance(
         self,
         res_array=None,
         phase_array=None,
