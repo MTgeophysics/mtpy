@@ -344,7 +344,7 @@ class ResPhase:
 
     @period.setter
     def period(self, value):
-        self.frequency = value
+        self.frequency = 1.0 / value
 
     def compute_resistivity_phase(
         self, z_array=None, z_err_array=None, frequency=None
