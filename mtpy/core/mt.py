@@ -10,19 +10,22 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from scipy import interpolate as spi
 
 from mt_metadata.transfer_functions.core import TF
 
 from mtpy.core.z import Z, Tipper
+from mtpy.core.mt_location import MTLocation
+from mtpy.core.mt_dataframe import MTDataFrame
+
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
-from mtpy.utils import gis_tools
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
 
 
 # =============================================================================
-class MT(TF):
+class MT(TF, MTLocation):
     """
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
@@ -31,78 +34,14 @@ class MT(TF):
     """
 
     def __init__(self, fn=None, **kwargs):
-        super().__init__(fn=fn, **kwargs)
+        TF.__init__(self, fn=fn, **kwargs)
+        MTLocation.__init__(self, **kwargs)
 
         self._Z = Z()
         self._Tipper = Tipper()
         self._rotation_angle = 0
-        self._utm_location = {"east": 0, "north": 0, "zone": None}
 
         self.save_dir = Path.cwd()
-
-        self.project_to_utm()
-
-    def project_to_utm(self, epsg=None, utm_zone=None):
-        """
-        project point to utm
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if self.latitude and self.longitude:
-            east, north, zone = gis_tools.project_point_ll2utm(
-                self.latitude, self.longitude, utm_zone=utm_zone, epsg=epsg
-            )
-            self._utm_location = {"east": east, "north": north, "zone": zone}
-
-    def project_to_ll(self, epsg=None):
-        """
-        project point to utm
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if self.east != 0 and self.north != 0 and self.utm_zone != None:
-            self.latitude, self.longitude = gis_tools.project_point_utm2ll(
-                self.east,
-                self.north,
-                self.utm_zone,
-                epsg=epsg,
-            )
-
-    @property
-    def east(self):
-        """easting"""
-        return self._utm_location["east"]
-
-    @east.setter
-    def east(self, value):
-        """set east"""
-        self._utm_location["east"] = value
-
-    @property
-    def north(self):
-        """northing"""
-        return self._utm_location["north"]
-
-    @north.setter
-    def north(self, value):
-        """set north"""
-        self._utm_location["north"] = value
-
-    @property
-    def utm_zone(self):
-        """utm zone"""
-        return self._utm_location["zone"]
-
-    @utm_zone.setter
-    def utm_zone(self, value):
-        """set utm_zone"""
-        self._utm_location["utm_zone"] = value
 
     @property
     def rotation_angle(self):
@@ -608,6 +547,68 @@ class MT(TF):
         """
         kwargs["ellipse_size"] = 0.5
         return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
+
+    def to_dataframe(self, utm_crs=None):
+        """
+        Create a dataframe from the transfer function for use with plotting
+        and modeling.
+
+        :parameter utm_crs: the utm zone to project station to, could be a
+         name, pyproj.CRS, EPSG number, or anything that pyproj.CRS can intake.
+        :type utm_crs: string, int, :class:`pyproj.CRS`
+
+        """
+        if utm_crs is not None:
+            self.utm_crs = utm_crs
+
+        n_entries = self.period.size
+        entry = self._make_empty_entry(n_entries)
+
+        entry["station"][:] = self.station
+        entry["latitude"][:] = self.latitude
+        entry["longitude"][:] = self.longitude
+        entry["elevation"][:] = self.elevation
+        entry["utm_east"][:] = self.east
+        entry["utm_north"][:] = self.north
+        entry["utm_epsg"][:] = self.utm_epsg
+        entry["model_east"][:] = self.model_east
+        entry["model_north"][:] = self.model_north
+        entry["model_elevation"][:] = self.model_elevation
+
+        entry["period"][:] = self.period
+        if self.has_impedance():
+            entry = self._fill_impedance(
+                self.impedance, self.impedance_error, entry
+            )
+        if self.has_tipper():
+            entry = self._fill_tipper(self.tipper, self.tipper_error, entry)
+
+        return pd.DataFrame(entry)
+
+    def from_dataframe(self, df):
+        """
+        fill transfer function attributes from a dataframe for a single station
+
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for key in [
+            "station",
+            "latitude",
+            "longitude",
+            "elevation",
+            "east",
+            "north",
+            "utm_epsg",
+            "model_north",
+            "model_east",
+            "model_elevation",
+        ]:
+            setattr(self, key, df[key])
 
 
 # ==============================================================================
