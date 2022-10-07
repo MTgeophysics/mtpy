@@ -17,7 +17,7 @@ from mt_metadata.transfer_functions.core import TF
 
 from mtpy.core.z import Z, Tipper
 from mtpy.core.mt_location import MTLocation
-from mtpy.core.mt_dataframe import MTDataFrame
+from mtpy.core import mt_dataframe
 
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
@@ -562,14 +562,14 @@ class MT(TF, MTLocation):
             self.utm_crs = utm_crs
 
         n_entries = self.period.size
-        entry = self._make_empty_entry(n_entries)
+        entry = mt_dataframe.make_empty_entry(n_entries)
 
         entry["station"][:] = self.station
         entry["latitude"][:] = self.latitude
         entry["longitude"][:] = self.longitude
         entry["elevation"][:] = self.elevation
-        entry["utm_east"][:] = self.east
-        entry["utm_north"][:] = self.north
+        entry["east"][:] = self.east
+        entry["north"][:] = self.north
         entry["utm_epsg"][:] = self.utm_epsg
         entry["model_east"][:] = self.model_east
         entry["model_north"][:] = self.model_north
@@ -577,11 +577,13 @@ class MT(TF, MTLocation):
 
         entry["period"][:] = self.period
         if self.has_impedance():
-            entry = self._fill_impedance(
+            entry = mt_dataframe.fill_impedance(
                 self.impedance, self.impedance_error, entry
             )
         if self.has_tipper():
-            entry = self._fill_tipper(self.tipper, self.tipper_error, entry)
+            entry = mt_dataframe.fill_tipper(
+                self.tipper, self.tipper_error, entry
+            )
 
         return pd.DataFrame(entry)
 
@@ -608,7 +610,10 @@ class MT(TF, MTLocation):
             "model_east",
             "model_elevation",
         ]:
-            setattr(self, key, df[key])
+            setattr(self, key, df[key].unique()[0])
+
+        self.Z = mt_dataframe.to_z_object(df)
+        self.Tipper = mt_dataframe.to_t_object(df)
 
 
 # ==============================================================================
