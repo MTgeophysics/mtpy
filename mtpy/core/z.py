@@ -38,7 +38,14 @@ class ResPhase(object):
 
     """
 
-    def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
+    def __init__(
+        self,
+        z_array=None,
+        z_err_array=None,
+        freq=None,
+        z_model_err=None,
+        **kwargs,
+    ):
         self._logger = logging.getLogger(
             f"{__name__}.{self.__class__.__name__}"
         )
@@ -138,9 +145,7 @@ class ResPhase(object):
         )
         self._phase = np.rad2deg(np.angle(self._z))
 
-        self._resistivity_err = np.zeros_like(
-            self._resistivity, dtype=np.float
-        )
+        self._resistivity_err = np.zeros_like(self._resistivity, dtype=np.float)
         self._phase_err = np.zeros_like(self._phase, dtype=np.float)
 
         # calculate resistivity and phase
@@ -558,9 +563,7 @@ class Z(ResPhase):
             if z_array.shape[1:3] == (2, 2):
                 self._z = z_array
             else:
-                msg = (
-                    f"Input array must be shape (n, 2, 2) not {z_array.shape}"
-                )
+                msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
                 self._logger.error(msg)
                 raise MTpyError_Z(msg)
         elif len(z_array.shape) == 2:
@@ -570,9 +573,7 @@ class Z(ResPhase):
                     "setting input z with shape (2, 2) to (1, 2, 2)"
                 )
             else:
-                msg = (
-                    f"Input array must be shape (n, 2, 2) not {z_array.shape}"
-                )
+                msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
                 self._logger.error(msg)
                 raise MTpyError_Z(msg)
         else:
@@ -702,7 +703,9 @@ class Z(ResPhase):
                 try:
                     degreeangle = float(alpha % 360)
                 except ValueError:
-                    msg = f"Angle must be a valid number (in degrees) not {alpha}"
+                    msg = (
+                        f"Angle must be a valid number (in degrees) not {alpha}"
+                    )
                     self._logger.error(msg)
                     raise MTpyError_Z(msg)
                 # make an n long list of identical angles
@@ -711,7 +714,9 @@ class Z(ResPhase):
                 try:
                     lo_angles = [float(ii % 360) for ii in alpha]
                 except ValueError:
-                    msg = f"Angle must be a valid number (in degrees) not {alpha}"
+                    msg = (
+                        f"Angle must be a valid number (in degrees) not {alpha}"
+                    )
                     self._logger.error(msg)
                     raise MTpyError_Z(msg)
         self.rotation_angle = np.array(
