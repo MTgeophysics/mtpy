@@ -249,7 +249,7 @@ class ResPhase:
         if len(value.shape) != 3 and len(value.shape) == 2:
             value = value.reshape((1, 2, 2))
 
-        if value.shape[1] != 2 and value.shape[2] != 2:
+        if value.shape[1] != 2 or value.shape[2] != 2:
             raise ValueError(
                 f"Input array must have shape (nf, 2, 2) not {value.shape}"
             )
