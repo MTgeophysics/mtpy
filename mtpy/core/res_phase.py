@@ -39,14 +39,9 @@ class ResPhase:
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
-        self.resistivity = None
-        self.phase = None
-
-        self.resistivity_err = None
-        self.phase_err = None
-
-        self.resistivity_model_err = None
-        self.phase_model_err = None
+        self._z = z_array
+        self._z_err = z_err_array
+        self._z_model_err = z_model_err
 
         self.frequency = frequency
 
@@ -70,138 +65,19 @@ class ResPhase:
     def __repr__(self):
         return self.__str__()
 
-    def __getattr__(self, name):
-        """
-        overload get attribute for components
-        """
-
+    def _get_component(self, comp, array):
         index_dict = {"x": 0, "y": 1}
-        if name in ["res_xx", "res_xy", "res_yx", "res_yy"]:
-            if self.resistivity is not None:
-                ii = index_dict[name[-2]]
-                jj = index_dict[name[-1]]
-                return self.resistivity[:, ii, jj]
+        ii = index_dict[comp[-2]]
+        jj = index_dict[comp[-1]]
 
-        elif name in ["res_err_xx", "res_err_xy", "res_err_yx", "res_err_yy"]:
-            if self.resistivity_err is not None:
-                ii = index_dict[name[-2]]
-                jj = index_dict[name[-1]]
-                return self.resistivity_err[:, ii, jj]
+        return getattr(self, array)[:, ii, jj]
 
-        elif name in [
-            "res_model_err_xx",
-            "res_model_err_xy",
-            "res_model_err_yx",
-            "res_model_err_yy",
-        ]:
-            if self.resistivity_model_err is not None:
-                ii = index_dict[name[-2]]
-                jj = index_dict[name[-1]]
-                return self.resistivity_model_err[:, ii, jj]
-
-        elif name in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
-            if self.phase is not None:
-                ii = index_dict[name[-2]]
-                jj = index_dict[name[-1]]
-                return self.phase[:, ii, jj]
-
-        elif name in [
-            "phase_err_xx",
-            "phase_err_xy",
-            "phase_err_yx",
-            "phase_err_yy",
-        ]:
-            if self.phase_err is not None:
-                ii = index_dict[name[-2]]
-                jj = index_dict[name[-1]]
-                return self.phase_err[:, ii, jj]
-
-        elif name in [
-            "phase_model_err_xx",
-            "phase_model_err_xy",
-            "phase_model_err_yx",
-            "phase_model_err_yy",
-        ]:
-            if self.phase_model_err is not None:
-                ii = index_dict[name[-2]]
-                jj = index_dict[name[-1]]
-                return self.phase_model_err[:, ii, jj]
-
-        else:
-            return super().__getattribute__(name)
-
-    def __setattr__(self, name, value):
-        """
-        overload get attribute for components
-        """
-
-        index_dict = {"x": 0, "y": 1}
-        if name in ["res_xx", "res_xy", "res_yx", "res_yy"]:
-            ii = index_dict[name[-2]]
-            jj = index_dict[name[-1]]
-            self.resistivity[:, ii, jj] = self._validate_input_component(value)
-
-        elif name in ["res_err_xx", "res_err_xy", "res_err_yx", "res_err_yy"]:
-            ii = index_dict[name[-2]]
-            jj = index_dict[name[-1]]
-            self.resistivity_err[:, ii, jj] = self._validate_input_component(
-                value
+    @property
+    def resistivity(self):
+        if self._z is not None:
+            return np.apply_along_axis(
+                lambda x: np.abs(x) ** 2 / self.frequency * 0.2, 0, self._z
             )
-
-        elif name in [
-            "res_model_err_xx",
-            "res_model_err_xy",
-            "res_model_err_yx",
-            "res_model_err_yy",
-        ]:
-            ii = index_dict[name[-2]]
-            jj = index_dict[name[-1]]
-            self.resistivity_model_err[
-                :, ii, jj
-            ] = self._validate_input_component(value)
-
-        elif name in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
-            ii = index_dict[name[-2]]
-            jj = index_dict[name[-1]]
-            self.phase[:, ii, jj] = self._validate_input_component(value)
-
-        elif name in [
-            "phase_err_xx",
-            "phase_err_xy",
-            "phase_err_yx",
-            "phase_err_yy",
-        ]:
-            ii = index_dict[name[-2]]
-            jj = index_dict[name[-1]]
-            self.phase_err[:, ii, jj] = self._validate_input_component(value)
-
-        elif name in [
-            "phase_model_err_xx",
-            "phase_model_err_xy",
-            "phase_model_err_yx",
-            "phase_model_err_yy",
-        ]:
-            ii = index_dict[name[-2]]
-            jj = index_dict[name[-1]]
-            self.phase_model_err[:, ii, jj] = self._validate_input_component(
-                value
-            )
-
-        elif name in [
-            "resistivity",
-            "resistivity_err",
-            "resistivity_model_err",
-            "phase",
-            "phase_err",
-            "phase_model_err",
-        ]:
-            value = self._validate_real_valued(
-                self._validate_input_array(value)
-            )
-            super().__setattr__(name, value)
-
-        else:
-            return super().__setattr__(name, value)
 
     def _validate_frequency(self, value):
         if value is None:
@@ -398,7 +274,7 @@ class ResPhase:
 
                         self.phase_model_err[idx_f, ii, jj] = phi_err
 
-    def compute_impedance(
+    def to_impedance(
         self,
         res_array=None,
         phase_array=None,
@@ -431,8 +307,6 @@ class ResPhase:
 
         """
 
-        self.logger.debug("Resetting z, z_err, z_model_err")
-
         if res_array is not None:
             self.resistivity = res_array
         if phase_array is not None:
@@ -460,10 +334,10 @@ class ResPhase:
             return
 
         abs_z = np.sqrt(5.0 * self.frequency * (self.resistivity.T)).T
-        self._z = abs_z * np.exp(1j * np.radians(self.phase))
+        z = abs_z * np.exp(1j * np.radians(self.phase))
 
-        self._z_err = np.zeros_like(self._z, dtype=np.float)
-        self._z_model_err = np.zeros_like(self._z, dtype=np.float)
+        z_err = np.zeros_like(z, dtype=np.float)
+        z_model_err = np.zeros_like(z, dtype=np.float)
         # ---------------------------
         # error propagation:
         if self.resistivity_err is not None or self.phase_err is not None:
@@ -483,7 +357,7 @@ class ResPhase:
                         # exponent in the relation between them:
                         abs_z_error = 0.5 * abs_z * rel_error_res
 
-                        self._z_err[idx_f, ii, jj] = max(
+                        z_err[idx_f, ii, jj] = max(
                             MTcc.propagate_error_polar2rect(
                                 abs_z,
                                 abs_z_error,
@@ -511,7 +385,7 @@ class ResPhase:
                         # exponent in the relation between them:
                         abs_z_error = 0.5 * abs_z * rel_error_res
 
-                        self._z_model_err[idx_f, ii, jj] = max(
+                        z_model_err[idx_f, ii, jj] = max(
                             MTcc.propagate_error_polar2rect(
                                 abs_z,
                                 abs_z_error,
