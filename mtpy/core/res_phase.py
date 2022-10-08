@@ -365,7 +365,7 @@ class ResPhase:
         self.resistivity_model_err = np.zeros_like(
             self.resistivity, dtype=np.float
         )
-        self.phase_model_err = np.zeros_like(phase, dtype=np.float)
+        self.phase_model_err = np.zeros_like(self.phase, dtype=np.float)
 
         # calculate resistivity and phase
         if z_err_array is not None:
@@ -378,7 +378,7 @@ class ResPhase:
                             z_err_array[idx_f, ii, jj],
                         )
                         self.resistivity_err[idx_f, ii, jj] = (
-                            resistivity[idx_f, ii, jj] * r_err
+                            self.resistivity[idx_f, ii, jj] * r_err
                         )
 
                         self.phase_err[idx_f, ii, jj] = phi_err
@@ -393,7 +393,7 @@ class ResPhase:
                             z_model_err_array[idx_f, ii, jj],
                         )
                         self.resistivity_model_err[idx_f, ii, jj] = (
-                            resistivity[idx_f, ii, jj] * r_err
+                            self.resistivity[idx_f, ii, jj] * r_err
                         )
 
                         self.phase_model_err[idx_f, ii, jj] = phi_err

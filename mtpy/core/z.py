@@ -94,8 +94,12 @@ class Z(ResPhase):
 
         """
         self.rotation_angle = 0.0
+        self._z = None
+        self._z_err = None
+        self._z_model_err = None
 
         super().__init__()
+
         self.z = z_array
         self.z_err = z_err_array
         self.z_model_err = z_model_err_array
@@ -103,8 +107,6 @@ class Z(ResPhase):
 
         if self.z is not None:
             self.rotation_angle = np.zeros((len(self.z)))
-        if self.z is not None and self.frequency is not None:
-            self.compute_resistivity_phase()
 
     def __str__(self):
         lines = ["Impedance Tensor", "-" * 30]
@@ -199,7 +201,9 @@ class Z(ResPhase):
                 )
                 self._logger.error(msg)
                 raise MTpyError_Z(msg)
-            self.compute_resistivity_phase()
+            self.from_impedance(
+                self._z, self.z_err, self.frequency, self.z_model_err
+            )
 
     @property
     def period(self):
@@ -305,7 +309,9 @@ class Z(ResPhase):
 
         # for consistency recalculate resistivity and phase
         try:
-            self.compute_resistivity_phase()
+            self.from_impedance(
+                self._z, self.z_err, self.frequency, self.z_model_err
+            )
         except ValueError as error:
             self.logger.debug(error)
 
@@ -333,7 +339,9 @@ class Z(ResPhase):
 
         # for consistency recalculate resistivity and phase
         try:
-            self.compute_resistivity_phase()
+            self.from_impedance(
+                self._z, self.z_err, self.frequency, self.z_model_err
+            )
         except ValueError as error:
             self.logger.debug(error)
 
@@ -361,7 +369,9 @@ class Z(ResPhase):
 
         # for consistency recalculate resistivity and phase
         try:
-            self.compute_resistivity_phase()
+            self.from_impedance(
+                self._z, self.z_err, self.frequency, self.z_model_err
+            )
         except ValueError as error:
             self.logger.debug(error)
 
