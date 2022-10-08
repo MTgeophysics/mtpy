@@ -23,7 +23,7 @@ class Zinvariants:
 
                            *z_err --> np.array((nf, 2, 2), dtype='real')
 
-                           *freq --> np.array(nf)
+                           *frequency --> np.array(nf)
 
         **z** : complex np.array(nf,2,2)
                 impedance tensor array
@@ -31,8 +31,8 @@ class Zinvariants:
         **z_err** : real np.array(nf,2,2)
                 impedance tensor error array
 
-        **freq** : np.array(nf)
-                          array of freq cooresponding to the impedance
+        **frequency** : np.array(nf)
+                          array of frequency cooresponding to the impedance
                           tensor elements.
 
     Attributes
@@ -82,42 +82,47 @@ class Zinvariants:
     """
 
     def __init__(
-        self, z_object=None, z_array=None, z_err_array=None, freq=None, rot_z=0
+        self,
+        z_object=None,
+        z_array=None,
+        z_err_array=None,
+        frequency=None,
+        rot_z=0,
     ):
 
         # --> read in z_object
         if z_object is not None:
-            if z_object.freq is None:
+            if z_object.frequency is None:
                 raise AttributeError(
-                    "z_object needs to have attrtibute" + "freq filled"
+                    "z_object needs to have attrtibute" + "frequency filled"
                 )
 
             # --> make the z_object an attribute
             self.z = z_object.z
-            self.freq = z_object.freq
+            self.frequency = z_object.frequency
             self.z_err = z_object.z_err
 
-        if freq is not None:
-            self.freq = freq
+        if frequency is not None:
+            self.frequency = frequency
 
         # --> if an array is input read it in and make it a z_object
         if z_array is not None:
             self.z = z_array.copy()
 
-            assert len(freq) == len(
+            assert len(frequency) == len(
                 self.z
-            ), "length of freq is not the same as z"
+            ), "length of frequency is not the same as z"
         # --> if an array is input read it in and make it a z_object
         if z_err_array is not None:
             self.z_err = z_err_array.copy()
 
-            assert len(freq) == len(
+            assert len(frequency) == len(
                 self.z
-            ), "length of freq is not the same as z"
+            ), "length of frequency is not the same as z"
 
-        if self.freq is None:
+        if self.frequency is None:
             raise AttributeError(
-                "z_object needs to have attrtibute" + "freq filled"
+                "z_object needs to have attrtibute" + "frequency filled"
             )
 
         # --> rotate data if desired
@@ -174,7 +179,7 @@ class Zinvariants:
         c_tf = np.all(self.z == 0.0)
         if c_tf == True:
             return
-        # loop over each freq
+        # loop over each frequency
         for ii in range(nz):
             # compute the mathematical invariants
             x1 = 0.5 * (self.z[ii, 0, 0].real + self.z[ii, 1, 1].real)  # trace
@@ -261,7 +266,7 @@ class Zinvariants:
         """
         set the z array.
 
-        If the shape changes or the freq are changed need to input
+        If the shape changes or the frequency are changed need to input
         those as well.
         """
 
@@ -274,7 +279,7 @@ class Zinvariants:
         """
         set the z_err array.
 
-        If the shape changes or the freq are changed need to input
+        If the shape changes or the frequency are changed need to input
         those as well.
         """
 
@@ -283,12 +288,12 @@ class Zinvariants:
         # --> update the invariants
         self.compute_invariants()
 
-    def set_freq(self, freq):
+    def set_frequency(self, frequency):
         """
-        set the freq array, needs to be the same length at z
+        set the frequency array, needs to be the same length at z
         """
 
-        self.freq = freq
+        self.frequency = frequency
 
     def __str__(self):
         return (

@@ -177,7 +177,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         # --> set local variables
 
         color_array = self.get_pt_color_array(pt_obj)
-        for index, ff in enumerate(pt_obj.freq):
+        for index, ff in enumerate(pt_obj.frequency):
             if self.y_scale == "period":
                 plot_y = np.log10(1.0 / ff) * self.y_stretch
             else:
@@ -413,10 +413,10 @@ class PlotPhaseTensorPseudoSection(PlotBase):
             station_list[ii]["station"] = station
             station_list[ii]["offset"] = offset
 
-            if np.log10(tf.Z.freq.min()) < y_min:
-                y_min = np.log10(tf.Z.freq.min()) * self.y_stretch
-            if np.log10(tf.Z.freq.max()) > y_max:
-                y_max = np.log10(tf.Z.freq.max()) * self.y_stretch
+            if np.log10(tf.Z.frequency.min()) < y_min:
+                y_min = np.log10(tf.Z.frequency.min()) * self.y_stretch
+            if np.log10(tf.Z.frequency.max()) > y_max:
+                y_max = np.log10(tf.Z.frequency.max()) * self.y_stretch
 
         y_min = np.floor(y_min / self.y_stretch) * self.y_stretch
         y_max = np.ceil(y_max / self.y_stretch) * self.y_stretch

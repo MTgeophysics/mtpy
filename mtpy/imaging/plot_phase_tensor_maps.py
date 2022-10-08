@@ -59,7 +59,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self._rotation_angle = 0
         self.tf_list = tf_list
 
-        # set the freq to plot
+        # set the frequency to plot
         self.plot_station = False
         self.plot_period = 1.0
 
@@ -177,7 +177,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         z = self._get_interpolated_z(tf)
         z_err = self._get_interpolated_z_err(tf)
 
-        new_z_obj = mtz.Z(z, z_err, freq=[1.0 / self.plot_period])
+        new_z_obj = mtz.Z(z, z_err, frequency=[1.0 / self.plot_period])
         new_z_obj.compute_resistivity_phase()
         pt_obj = mtpt.PhaseTensor(z_object=new_z_obj)
 
@@ -540,7 +540,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         f"Could not add base map because {error}"
                     )
 
-        # --> set title in period or freq
+        # --> set title in period or frequency
         titlefreq = "{0:.5g} (s)".format(self.plot_period)
 
         if not self.plot_title:

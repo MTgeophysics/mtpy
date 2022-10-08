@@ -93,7 +93,7 @@ class PlotPhaseTensor(PlotBase):
         """
 
         if self.x_limits is None:
-            self.x_limits = self.set_period_limits(1.0 / self.pt.freq)
+            self.x_limits = self.set_period_limits(1.0 / self.pt.frequency)
         # --> create plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
@@ -175,7 +175,7 @@ class PlotPhaseTensor(PlotBase):
 
         # plot phase tensor strike
         ps2 = self.ax_strike.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             az,
             marker=self.strike_pt_marker,
             ms=self.marker_size,
@@ -213,7 +213,7 @@ class PlotPhaseTensor(PlotBase):
         maxphierr = self.pt.phimax_err
 
         ermin = self.ax_phase.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             minphi,
             marker=self.xy_marker,
             ms=self.marker_size,
@@ -228,7 +228,7 @@ class PlotPhaseTensor(PlotBase):
         )
 
         ermax = self.ax_phase.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             maxphi,
             marker=self.yx_marker,
             ms=self.marker_size,
@@ -287,7 +287,7 @@ class PlotPhaseTensor(PlotBase):
         skewerr = self.pt.beta_err
 
         erskew = self.ax_skew.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             skew,
             marker=self.skew_marker,
             ms=self.marker_size,
@@ -341,7 +341,7 @@ class PlotPhaseTensor(PlotBase):
         ellipticityerr = self.pt.ellipticity_err
 
         erskew = self.ax_ellipticity.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             ellipticity,
             marker=self.det_marker,
             ms=self.marker_size,

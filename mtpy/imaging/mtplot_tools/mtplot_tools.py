@@ -10,14 +10,7 @@ mtplot_tools contains helper functions and classes for plotting
 from pathlib import Path
 import numpy as np
 
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.patches as patches
-import matplotlib.colorbar as mcb
-from matplotlib.lines import Line2D
-
-import mtpy.imaging.mtcolors as mtcl
 
 from . import PlotSettings
 from mtpy.utils.mtpy_logger import get_mtpy_logger

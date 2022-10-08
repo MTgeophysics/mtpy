@@ -117,9 +117,9 @@ class PlotMTResponse(PlotBase):
         plot period
         """
         if self.Z is not None:
-            return 1.0 / self.Z.freq
+            return 1.0 / self.Z.frequency
         elif self.Tipper is not None:
-            return 1.0 / self.Tipper.freq
+            return 1.0 / self.Tipper.frequency
         else:
             return None
 

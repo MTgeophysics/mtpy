@@ -257,7 +257,7 @@ class PlotStrike(PlotBase):
                 if tip.tipper is None:
                     tip = Tipper(
                         np.zeros((len(mt.period), 1, 2), dtype="complex"),
-                        freq=[1],
+                        frequency=[1],
                     )
                     tip.compute_mag_direction()
                     tip.compute_amp_phase()
@@ -265,7 +265,7 @@ class PlotStrike(PlotBase):
                 if tip is None:
                     tip = Tipper(
                         np.zeros((len(mt.period), 1, 2), dtype="complex"),
-                        freq=[1],
+                        frequency=[1],
                     )
                     tip.compute_mag_direction()
                     tip.compute_amp_phase()
@@ -690,9 +690,7 @@ class PlotStrike(PlotBase):
                 # set plot labels
                 if jj == 1:
                     if "h" in self.plot_orientation:
-                        self._set_ax_label(
-                            ax_inv, "Strike (Z)", self.color_inv
-                        )
+                        self._set_ax_label(ax_inv, "Strike (Z)", self.color_inv)
                     elif "v" in self.plot_orientation:
                         self._set_ax_label(ax_inv, self.title_dict[bb], None)
 

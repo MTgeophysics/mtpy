@@ -271,7 +271,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
 
         for ii, tf in enumerate(self.tf_list):
             z = self._get_interpolated_z(tf)
-            z_object = Z(z, freq=[1.0 / self.plot_period])
+            z_object = Z(z, frequency=[1.0 / self.plot_period])
 
             plot_array["station"][ii] = tf.station
             plot_array["latitude"][ii] = tf.latitude

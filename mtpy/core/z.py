@@ -155,7 +155,7 @@ class Z(ResPhase):
     def __eq__(self, other):
         if not isinstance(other, Z):
             msg = f"Cannot compare {type(other)} with Z"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Z(msg)
         if (self.z != other.z).all():
             return False
@@ -199,11 +199,8 @@ class Z(ResPhase):
                     "New frequency array is not correct shape for existing z. "
                     + f"new: {self._frequency.size} != old: {self.z.shape[0]}"
                 )
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Z(msg)
-            self.from_impedance(
-                self._z, self.z_err, self.frequency, self.z_model_err
-            )
 
     @property
     def period(self):
@@ -249,7 +246,7 @@ class Z(ResPhase):
                 + f"old shape {self._z.shape}. "
                 + "Make a new Z instance to be safe."
             )
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Z(msg)
 
         if len(z_array.shape) == 3:
@@ -257,21 +254,21 @@ class Z(ResPhase):
                 return z_array
             else:
                 msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Z(msg)
         elif len(z_array.shape) == 2:
             if z_array.shape == (2, 2):
                 return z_array.reshape((1, 2, 2))
-                self._logger.debug(
+                self.logger.debug(
                     "setting input z with shape (2, 2) to (1, 2, 2)"
                 )
             else:
                 msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Z(msg)
         else:
             msg = f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Z(msg)
 
     @property
@@ -307,14 +304,6 @@ class Z(ResPhase):
                     self.rotation_angle, len(self._z)
                 )
 
-        # for consistency recalculate resistivity and phase
-        try:
-            self.from_impedance(
-                self._z, self.z_err, self.frequency, self.z_model_err
-            )
-        except ValueError as error:
-            self.logger.debug(error)
-
     # ----impedance error-----------------------------------------------------
     @property
     def z_err(self):
@@ -336,14 +325,6 @@ class Z(ResPhase):
         self._z_err = self._validate_impedance_input(
             z_err_array, "float", old_shape
         )
-
-        # for consistency recalculate resistivity and phase
-        try:
-            self.from_impedance(
-                self._z, self.z_err, self.frequency, self.z_model_err
-            )
-        except ValueError as error:
-            self.logger.debug(error)
 
     # ----impedance model error-----------------------------------------------------
     @property
@@ -367,14 +348,6 @@ class Z(ResPhase):
             z_model_err_array, "float", old_shape
         )
 
-        # for consistency recalculate resistivity and phase
-        try:
-            self.from_impedance(
-                self._z, self.z_err, self.frequency, self.z_model_err
-            )
-        except ValueError as error:
-            self.logger.debug(error)
-
     @property
     def inverse(self):
         """
@@ -385,7 +358,7 @@ class Z(ResPhase):
         """
 
         if self.z is None:
-            self._logger.warn('z array is "None" - I cannot invert that')
+            self.logger.warn('z array is "None" - I cannot invert that')
             return
         inverse = copy.copy(self.z)
         for idx_f in range(len(inverse)):
@@ -420,7 +393,7 @@ class Z(ResPhase):
         """
 
         if self.z is None:
-            self._logger.warning('Z array is "None" and cannot be rotated')
+            self.logger.warning('Z array is "None" and cannot be rotated')
             return
         # check for iterable list/set of angles - if so, it must have length
         # 1 or same as len(tipper):
@@ -429,7 +402,7 @@ class Z(ResPhase):
                 degreeangle = float(alpha % 360)
             except ValueError:
                 msg = f"Angle must be a valid number (in degrees) not {alpha}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Z(msg)
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.z]
@@ -441,7 +414,7 @@ class Z(ResPhase):
                     msg = (
                         f"Angle must be a valid number (in degrees) not {alpha}"
                     )
-                    self._logger.error(msg)
+                    self.logger.error(msg)
                     raise MTpyError_Z(msg)
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.z]
@@ -452,7 +425,7 @@ class Z(ResPhase):
                     msg = (
                         f"Angle must be a valid number (in degrees) not {alpha}"
                     )
-                    self._logger.error(msg)
+                    self.logger.error(msg)
                     raise MTpyError_Z(msg)
         self.rotation_angle = np.array(
             [
@@ -463,7 +436,7 @@ class Z(ResPhase):
 
         if len(lo_angles) != len(self.z):
             msg = f"Wrong number of angles, need {len(self.z)}"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Z(msg)
         z_rot = copy.copy(self.z)
         z_err_rot = copy.copy(self.z_err)
@@ -540,7 +513,7 @@ class Z(ResPhase):
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_x_factors = np.repeat(x_factor, len(self.z))
         elif len(reduce_res_factor_x) == 1:
@@ -548,7 +521,7 @@ class Z(ResPhase):
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_x_factors = np.repeat(x_factor, len(self.z))
         else:
@@ -556,14 +529,14 @@ class Z(ResPhase):
                 lo_x_factors = np.repeat(x_factor, len(reduce_res_factor_x))
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
         if len(lo_x_factors) != len(self.z):
             msg = (
                 f"Length of reduce_res_factor_x needs to be {len(self.z)}"
                 + f" not {len(lo_x_factors)}"
             )
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise ValueError(msg)
         # check for iterable list/set of reduce_res_factor_y - if so,
         # it must have length 1 or same as len(z):
@@ -572,7 +545,7 @@ class Z(ResPhase):
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
                 msg = "reduce_res_factor_y must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_y_factors = np.repeat(y_factor, len(self.z))
         elif len(reduce_res_factor_y) == 1:
@@ -580,7 +553,7 @@ class Z(ResPhase):
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
                 msg = "reduce_res_factor_y must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_y_factors = np.repeat(y_factor, len(self.z))
         else:
@@ -588,14 +561,14 @@ class Z(ResPhase):
                 lo_y_factors = np.repeat(y_factor, len(reduce_res_factor_y))
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
         if len(lo_y_factors) != len(self.z):
             msg = (
                 f"Length of reduce_res_factor_x needs to be {len(self.z)}"
                 + f" not {len(lo_x_factors)}"
             )
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise ValueError(msg)
         z_corrected = copy.copy(self.z)
         static_shift = np.zeros((len(self.z), 2, 2))
@@ -657,13 +630,13 @@ class Z(ResPhase):
                 len(distortion_err_tensor.shape) in [2, 3]
             ):
                 msg = "Distortion tensor and error are not correct shape"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             if (
                 len(distortion_tensor.shape) == 3
                 or len(distortion_err_tensor.shape) == 3
             ):
-                self._logger.info(
+                self.logger.info(
                     "Distortion is not time-dependent - taking only first"
                     + "of given distortion tensors"
                 )
@@ -672,13 +645,13 @@ class Z(ResPhase):
                     distortion_err_tensor = distortion_err_tensor[0]
                 except IndexError:
                     msg = "Distortion tensor and error are not correct shape"
-                    self._logger.error(msg)
+                    self.logger.error(msg)
                     raise ValueError(msg)
             if not (distortion_tensor.shape == (2, 2)) and (
                 distortion_err_tensor.shape == (2, 2)
             ):
                 msg = "Distortion tensor and error are not correct shape"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             distortion_tensor = np.matrix(np.real(distortion_tensor))
         except ValueError:
@@ -1011,7 +984,7 @@ class Tipper(object):
         """
         initialize
         """
-        self._logger = get_mtpy_logger(self.__class__.__name__)
+        self.logger = get_mtpy_logger(self.__class__.__name__)
         self._tipper = tipper_array
         self._tipper_err = tipper_err_array
         self._frequency = frequency
@@ -1082,7 +1055,7 @@ class Tipper(object):
     def __eq__(self, other):
         if not isinstance(other, Tipper):
             msg = f"Cannot compare {type(other)} with Tipper"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Tipper(msg)
         if (self.tipper != other.tipper).all():
             return False
@@ -1121,7 +1094,7 @@ class Tipper(object):
                     "New frequency array is not correct shape for existing z"
                     + "new: {self._frequency.size} != old: {self.tipper.shape[0]}"
                 )
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Tipper
         # for consistency recalculate amplitude and phase
         self.compute_amp_phase()
@@ -1173,28 +1146,28 @@ class Tipper(object):
                 + f"old shape {self._tipper.shape}. "
                 + "Make a new Tipper instance to be save."
             )
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Tipper(msg)
         if len(tipper_array.shape) == 3:
             if tipper_array.shape[1:3] == (1, 2):
                 self._tipper = tipper_array
             else:
                 msg = f"Input array must be shape (n, 1, 2) not {tipper_array.shape}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Tipper(msg)
         elif len(tipper_array.shape) == 2:
             if tipper_array.shape == (1, 2):
                 self._tipper = tipper_array.reshape((1, 1, 2))
-                self._logger.debug(
+                self.logger.debug(
                     "setting input tipper with shape (1, 2) to (1, 1, 2)"
                 )
             else:
                 msg = f"Input array must be shape (n, 1, 2) not {tipper_array.shape}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Tipper(msg)
         else:
             msg = f"{tipper_array.shape} are not the correct dimensions, must be (n, 1, 2)"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Tipper(msg)
         # neeed to set the rotation angle such that it is an array
         if self.rotation_angle is float:
@@ -1232,21 +1205,21 @@ class Tipper(object):
         if len(tipper_err_array.shape) == 3:
             if not tipper_err_array.shape[1:3] == (1, 2):
                 msg = f"Input array must be shape (n, 1, 2) not {tipper_err_array.shape}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Tipper(msg)
         elif len(tipper_err_array.shape) == 2:
             if tipper_err_array.shape == (1, 2):
                 tipper_err_array = tipper_err_array.reshape((1, 1, 2))
-                self._logger.debug(
+                self.logger.debug(
                     "setting input tipper with shape (1, 2) to (1, 1, 2)"
                 )
             else:
                 msg = f"Input array must be shape (n, 1, 2) not {tipper_err_array.shape}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Tipper(msg)
         else:
             msg = f"{tipper_err_array.shape} are not the correct dimensions, must be (n, 1, 2)"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Tipper(msg)
         # check to see if the new tipper array is the same shape as the old
         if (
@@ -1321,14 +1294,14 @@ class Tipper(object):
             tipper_new = copy.copy(self.tipper)
 
             if self.tipper.shape != r_array.shape:
-                self._logger.error(
+                self.logger.error(
                     'Error - shape of "r" array does not match shape of '
                     + "tipper array: %s ; %s"
                     % (str(r_array.shape), str(self.tipper.shape))
                 )
                 return
             if self.tipper.shape != phi_array.shape:
-                self._logger.error(
+                self.logger.error(
                     'Error - shape of "phi" array does not match shape of '
                     + "tipper array: %s ; %s"
                     % (str(phi_array.shape), str(self.tipper.shape))
@@ -1339,7 +1312,7 @@ class Tipper(object):
             tipper_new = np.zeros(r_array.shape, "complex")
 
             if r_array.shape != phi_array.shape:
-                self._logger.error(
+                self.logger.error(
                     'Error - shape of "phi" array does not match shape '
                     + 'of "r" array: %s ; %s'
                     % (str(phi_array.shape), str(r_array.shape))
@@ -1347,10 +1320,10 @@ class Tipper(object):
                 return
         # assert real array:
         if np.linalg.norm(np.imag(r_array)) != 0:
-            self._logger.error('Error - array "r" is not real valued !')
+            self.logger.error('Error - array "r" is not real valued !')
             return
         if np.linalg.norm(np.imag(phi_array)) != 0:
-            self._logger.error('Error - array "phi" is not real valued !')
+            self.logger.error('Error - array "phi" is not real valued !')
             return
         for idx_f in range(len(r_array)):
             for jj in range(2):
@@ -1499,7 +1472,7 @@ class Tipper(object):
         """
 
         if self.tipper is None:
-            self._logger.error('tipper array is "None" - I cannot rotate that')
+            self.logger.error('tipper array is "None" - I cannot rotate that')
             return
         # check for iterable list/set of angles - if so, it must have length 1
         # or same as len(tipper):
@@ -1507,9 +1480,7 @@ class Tipper(object):
             try:
                 degreeangle = float(alpha % 360)
             except ValueError:
-                self._logger.error(
-                    '"Angle" must be a valid number (in degrees)'
-                )
+                self.logger.error('"Angle" must be a valid number (in degrees)')
                 return
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.tipper]
@@ -1517,9 +1488,7 @@ class Tipper(object):
             try:
                 degreeangle = float(alpha % 360)
             except ValueError:
-                self._logger.error(
-                    '"Angle" must be a valid number (in degrees)'
-                )
+                self.logger.error('"Angle" must be a valid number (in degrees)')
                 return
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.tipper]
@@ -1527,9 +1496,7 @@ class Tipper(object):
             try:
                 lo_angles = [float(ii % 360) for ii in alpha]
             except ValueError:
-                self._logger.error(
-                    '"Angles" must be valid numbers (in degrees)'
-                )
+                self.logger.error('"Angles" must be valid numbers (in degrees)')
                 return
         self.rotation_angle = np.array(
             [
@@ -1539,7 +1506,7 @@ class Tipper(object):
         )
 
         if len(lo_angles) != len(self.tipper):
-            self._logger.error(
+            self.logger.error(
                 'Wrong number Number of "angles" - need %ii '
                 % (len(self.tipper))
             )

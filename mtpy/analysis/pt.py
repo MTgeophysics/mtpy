@@ -52,7 +52,7 @@ class PhaseTensor(object):
     ====================== ====================================================
     Attributes             Description
     ====================== ====================================================
-    freq                   array of frequencies associated with elements of
+    frequency              array of frequencies associated with elements of
                            impedance tensor.
     pt                     phase tensor array
     pt_err                 phase tensor error
@@ -70,7 +70,7 @@ class PhaseTensor(object):
         z_array=None,
         z_err_array=None,
         z_object=None,
-        freq=None,
+        frequency=None,
         pt_rot=0.0,
     ):
 
@@ -78,11 +78,9 @@ class PhaseTensor(object):
         self._pt_err = pt_err_array
         self._z = z_array
         self._z_err = z_err_array
-        self._freq = freq
+        self._freq = frequency
         self.rotation_angle = pt_rot
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # if a z object is input be sure to set the z and z_err so that the
         # pt will be calculated
@@ -111,8 +109,8 @@ class PhaseTensor(object):
                     pass
         if self._freq is None:
             self.logger.warning(
-                "Should input a freq array to know which index of the"
-                + " PT array corresponds to which freq."
+                "Should input a frequency array to know which index of the"
+                + " PT array corresponds to which frequency."
             )
 
     # ==========================================================================
@@ -141,14 +139,12 @@ class PhaseTensor(object):
             # --> large array
             if not len(pt_array.shape) in [2, 3]:
                 raise MTex.MTpyError_PT(
-                    "ERROR - I cannot set new pt array!"
-                    + " Invalid dimensions"
+                    "ERROR - I cannot set new pt array!" + " Invalid dimensions"
                 )
             # --> single matrix
             if not pt_array.shape[-2:] == (2, 2):
                 raise MTex.MTpyError_PT(
-                    "ERROR - I cannot set new pt array!"
-                    + " Invalid dimensions"
+                    "ERROR - I cannot set new pt array!" + " Invalid dimensions"
                 )
 
                 # --> make sure values are floats
@@ -181,14 +177,14 @@ class PhaseTensor(object):
                 )
                 self._pt_err = None
             try:
-                if len(self.pt) != len(self.freq):
+                if len(self.pt) != len(self.frequency):
                     raise MTex.MTpyError_input_arguments(
-                        "pt and freq are" + "not the same shape"
+                        "pt and frequency are" + "not the same shape"
                     )
             except:
                 self.logger.warning(
-                    'Shape of new PT array and existing "freq" do not'
-                    + 'match - setting freq to "None"'
+                    'Shape of new PT array and existing "frequency" do not'
+                    + 'match - setting frequency to "None"'
                 )
                 self._freq = None
             try:
@@ -257,18 +253,18 @@ class PhaseTensor(object):
         else:
             pass
 
-    # ---freq------------------------------------------------------------
+    # ---frequency------------------------------------------------------------
     @property
-    def freq(self):
+    def frequency(self):
         return self._freq
 
-    @freq.setter
-    def freq(self, lo_freq):
+    @frequency.setter
+    def frequency(self, lo_freq):
         """
-        Set array of freq.
+        Set array of frequency.
 
         Input:
-        list/array of freq (iterable)
+        list/array of frequency (iterable)
 
         No test for consistency!
         """
@@ -277,7 +273,7 @@ class PhaseTensor(object):
             if lo_freq is not None:
                 if len(lo_freq) is not len(self._pt):
                     self.logger.warning(
-                        "length of freq list not correct"
+                        "length of frequency list not correct"
                         + "(%i instead of %i)" % (len(lo_freq), len(self._pt))
                     )
                     return
@@ -296,7 +292,7 @@ class PhaseTensor(object):
 
         self._z = z_object.z
         self._z_err = z_object.z_err
-        self._freq = z_object.freq
+        self._freq = z_object.frequency
         self._pt = np.zeros_like(self._z, dtype=np.float)
         self._pt_err = np.zeros_like(self._z, dtype=np.float)
 
@@ -994,7 +990,7 @@ class ResidualPhaseTensor:
         self._pt2 = None
         self._pt1err = None
         self._pt2err = None
-        self.freq = None
+        self.frequency = None
         self.residualtype = residualtype
 
         if pt_object1 is not None or pt_object2 is not None:
@@ -1030,7 +1026,7 @@ class ResidualPhaseTensor:
             )
         pt1 = pt_o1.pt
         pt2 = pt_o2.pt
-        self.freq = pt_o1.freq
+        self.frequency = pt_o1.frequency
 
         # --> compute residual phase tensor
         if pt1 is not None and pt2 is not None:
@@ -1059,7 +1055,7 @@ class ResidualPhaseTensor:
                                 )
                             )
                         except np.linalg.LinAlgError:
-                            # print 'Singular matrix at index {0}, frequency {1:.5g}'.format(idx, self.freq[idx])
+                            # print 'Singular matrix at index {0}, frequency {1:.5g}'.format(idx, self.frequency[idx])
                             # print 'Setting residual PT to zeros. '
                             self.rpt[idx] = np.zeros((2, 2))
                     self._pt1 = pt1
@@ -1071,12 +1067,10 @@ class ResidualPhaseTensor:
                         #                                                             np.matrix(pt2))
                         self.rpt[idx] = np.eye(2) - 0.5 * (
                             np.dot(np.matrix(pt2[idx]).I, np.matrix(pt1[idx]))
-                            + np.dot(
-                                np.matrix(pt1[idx]), np.matrix(pt2[idx]).I
-                            )
+                            + np.dot(np.matrix(pt1[idx]), np.matrix(pt2[idx]).I)
                         )
                     except np.linalg.LinAlgError:
-                        # print 'Singular matrix at frequency {0:.5g}'.format(self.freq)
+                        # print 'Singular matrix at frequency {0:.5g}'.format(self.frequency)
                         # print 'Setting residual PT to zeros. '
                         pass
                     self._pt1 = np.zeros((1, 2, 2))
@@ -1201,7 +1195,9 @@ class ResidualPhaseTensor:
             )
         # --> make a pt object that is the residual phase tensor
         self.residual_pt = PhaseTensor(
-            pt_array=self.rpt, pt_err_array=self.rpt_err, freq=self.freq
+            pt_array=self.rpt,
+            pt_err_array=self.rpt_err,
+            frequency=self.frequency,
         )
 
     def read_pts(self, pt1, pt2, pt1err=None, pt2err=None):
@@ -1251,7 +1247,9 @@ class ResidualPhaseTensor:
 
         # --> make a pt object that is the residual phase tensor
         self.residual_pt = PhaseTensor(
-            pt_array=self.rpt, pt_err_array=self.rpt_err, freq=self.freq
+            pt_array=self.rpt,
+            pt_err_array=self.rpt_err,
+            frequency=self.frequency,
         )
 
     def set_rpt_err(self, rpt_err_array):
@@ -1276,7 +1274,9 @@ class ResidualPhaseTensor:
 
         # --> make a pt object that is the residual phase tensor
         self.residual_pt = PhaseTensor(
-            pt_array=self.rpt, pt_err_array=self.rpt_err, freq=self.freq
+            pt_array=self.rpt,
+            pt_err_array=self.rpt_err,
+            frequency=self.frequency,
         )
 
 
@@ -1370,9 +1370,7 @@ def z2pt(z_array, z_err_array=None):
                             -pt_array[0, 0] * realz[1, 1] * z_err_array[0, 0]
                         )
                         ** 2,
-                        np.abs(
-                            pt_array[0, 0] * realz[0, 1] * z_err_array[1, 0]
-                        )
+                        np.abs(pt_array[0, 0] * realz[0, 1] * z_err_array[1, 0])
                         ** 2,
                         np.abs(
                             (
@@ -1415,9 +1413,7 @@ def z2pt(z_array, z_err_array=None):
                             -pt_array[0, 1] * realz[1, 1] * z_err_array[0, 0]
                         )
                         ** 2,
-                        np.abs(
-                            pt_array[0, 1] * realz[0, 1] * z_err_array[1, 0]
-                        )
+                        np.abs(pt_array[0, 1] * realz[0, 1] * z_err_array[1, 0])
                         ** 2,
                         np.abs(
                             (
@@ -1456,9 +1452,7 @@ def z2pt(z_array, z_err_array=None):
             * np.sqrt(
                 np.sum(
                     [
-                        np.abs(
-                            pt_array[1, 0] * realz[1, 0] * z_err_array[0, 1]
-                        )
+                        np.abs(pt_array[1, 0] * realz[1, 0] * z_err_array[0, 1])
                         ** 2,
                         np.abs(
                             -pt_array[1, 0] * realz[0, 0] * z_err_array[1, 1]
@@ -1501,9 +1495,7 @@ def z2pt(z_array, z_err_array=None):
             * np.sqrt(
                 np.sum(
                     [
-                        np.abs(
-                            pt_array[1, 1] * realz[1, 0] * z_err_array[0, 1]
-                        )
+                        np.abs(pt_array[1, 1] * realz[1, 0] * z_err_array[0, 1])
                         ** 2,
                         np.abs(
                             -pt_array[1, 1] * realz[0, 0] * z_err_array[1, 1]
@@ -1577,9 +1569,7 @@ def z2pt(z_array, z_err_array=None):
             1
             / detreal
             * (
-                np.abs(
-                    -pt_array[idx_f, 0, 0] * realz[1, 1] * z_err_array[0, 0]
-                )
+                np.abs(-pt_array[idx_f, 0, 0] * realz[1, 1] * z_err_array[0, 0])
                 + np.abs(
                     pt_array[idx_f, 0, 0] * realz[0, 1] * z_err_array[1, 0]
                 )
@@ -1600,9 +1590,7 @@ def z2pt(z_array, z_err_array=None):
             1
             / detreal
             * (
-                np.abs(
-                    -pt_array[idx_f, 0, 1] * realz[1, 1] * z_err_array[0, 0]
-                )
+                np.abs(-pt_array[idx_f, 0, 1] * realz[1, 1] * z_err_array[0, 0])
                 + np.abs(
                     pt_array[idx_f, 0, 1] * realz[0, 1] * z_err_array[1, 0]
                 )
