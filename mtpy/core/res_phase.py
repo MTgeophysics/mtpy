@@ -335,10 +335,10 @@ class ResPhase:
         abs_z = np.sqrt(5.0 * self.frequency * (resistivity.T)).T
         self._z = abs_z * np.exp(1j * np.radians(phase))
 
-        self.z_err = self._compute_z_error(
+        self._z_err = self._compute_z_error(
             resistivity, res_err, phase, phase_err
         )
-        self.z_model_err = self._compute_z_error(
+        self._z_model_err = self._compute_z_error(
             resistivity, res_model_err, phase, phase_model_err
         )
 
