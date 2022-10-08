@@ -8,10 +8,9 @@ Created on Sun Oct  2 13:20:28 2022
 # =============================================================================
 # Imports
 # =============================================================================
-import pandas as pd
 import numpy as np
 
-from .z import Z, Tipper
+from . import Z, Tipper
 
 # =============================================================================
 
@@ -152,43 +151,15 @@ def to_z_object(df):
         ],
         dtype=float,
     ).T
-
-    return Z(z, z_err, get_frequency(df))
-
-
-def to_z_model_object(df):
-    """
-    fill model z object
-
-    :param df: DESCRIPTION
-    :type df: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
-
-    """
-    z = np.array(
-        [
-            [df.zxx, df.zyx],
-            [df.zxy, df.zyy],
-        ],
-        dtype=complex,
-    ).T
-
     z_model_err = np.array(
         [
-            [
-                df.zxx_model_error,
-                df.zyx_model_error,
-            ],
-            [
-                df.zxy_model_error,
-                df.zyy_model_error,
-            ],
+            [df.zxx_model_error, df.zyx_model_error],
+            [df.zxy_model_error, df.zyy_model_error],
         ],
         dtype=float,
     ).T
 
-    return Z(z, z_model_err, get_frequency(df))
+    return Z(z, z_err, get_frequency(df), z_model_err)
 
 
 def to_t_object(df):

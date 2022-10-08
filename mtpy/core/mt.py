@@ -15,7 +15,7 @@ from scipy import interpolate as spi
 
 from mt_metadata.transfer_functions.core import TF
 
-from mtpy.core.z import Z, Tipper
+from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
 from mtpy.core import mt_dataframe
 
@@ -81,6 +81,7 @@ class MT(TF, MTLocation):
                 z_array=self.impedance.to_numpy(),
                 z_err_array=self.impedance_error.to_numpy(),
                 frequency=self.frequency,
+                z_model_err_array=self.impedance_model_error.to_numpy(),
             )
         return Z()
 
@@ -97,6 +98,7 @@ class MT(TF, MTLocation):
                 self.frequency = z_object.frequency
         self.impedance = z_object.z
         self.impedance_error = z_object.z_err
+        self.impedance_model_error = z_object.z_model_err
 
     @property
     def Tipper(self):
@@ -587,7 +589,7 @@ class MT(TF, MTLocation):
 
         return pd.DataFrame(entry)
 
-    def from_dataframe(self, df, model=False):
+    def from_dataframe(self, df):
         """
         fill transfer function attributes from a dataframe for a single station
 
@@ -612,9 +614,8 @@ class MT(TF, MTLocation):
         ]:
             setattr(self, key, df[key].unique()[0])
 
-        if not model:
-            self.Z = mt_dataframe.to_z_object(df)
-            self.Tipper = mt_dataframe.to_t_object(df)
+        self.Z = mt_dataframe.to_z_object(df)
+        self.Tipper = mt_dataframe.to_t_object(df)
 
 
 # ==============================================================================
