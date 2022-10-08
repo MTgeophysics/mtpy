@@ -94,6 +94,9 @@ class MTLocation:
 
     @datum_crs.setter
     def datum_crs(self, value):
+        if value in [None, "None", "none", "null"]:
+            return
+
         new_crs = CRS.from_user_input(value)
 
         if new_crs != self._datum_crs:
@@ -151,14 +154,13 @@ class MTLocation:
 
     @utm_crs.setter
     def utm_crs(self, value):
+        if value in [None, "None", "none", "null"]:
+            return
+
         new_crs = CRS.from_user_input(value)
         if value != self._utm_crs:
             # reproject easting, northing to new zone
-            if (
-                self._utm_crs is not None
-                and self.east != 0
-                and self.north != 0
-            ):
+            if self._utm_crs is not None and self.east != 0 and self.north != 0:
                 self._east, self._north = project_point(
                     self.east, self.north, self._utm_crs, new_crs
                 )
