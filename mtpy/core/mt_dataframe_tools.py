@@ -14,13 +14,13 @@ from . import Z, Tipper
 
 # =============================================================================
 
-
 df_data_dtypes = dict(
     [
         ("station", "U25"),
         ("latitude", float),
         ("longitude", float),
         ("elevation", float),
+        ("datum_epsg", "U6"),
         ("east", float),
         ("north", float),
         ("utm_epsg", "U6"),
@@ -46,6 +46,30 @@ df_data_dtypes = dict(
         ("tzy", complex),
         ("tzy_error", float),
         ("tzy_model_error", float),
+        ("res_xx", complex),
+        ("res_xx_error", float),
+        ("res_xx_model_error", float),
+        ("res_xy", complex),
+        ("res_xy_error", float),
+        ("res_xy_model_error", float),
+        ("res_yx", complex),
+        ("res_yx_error", float),
+        ("res_yx_model_error", float),
+        ("res_yy", complex),
+        ("res_yy_error", float),
+        ("res_yy_model_error", float),
+        ("phase_xx", complex),
+        ("phase_xx_error", float),
+        ("phase_xx_model_error", float),
+        ("phase_xy", complex),
+        ("phase_xy_error", float),
+        ("phase_xy_model_error", float),
+        ("phase_yx", complex),
+        ("phase_yx_error", float),
+        ("phase_yx_model_error", float),
+        ("phase_yy", complex),
+        ("phase_yy_error", float),
+        ("phase_yy_model_error", float),
     ]
 )
 
