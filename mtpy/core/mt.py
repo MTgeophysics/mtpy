@@ -109,6 +109,7 @@ class MT(TF, MTLocation):
                 tipper_array=self.tipper.to_numpy(),
                 tipper_err_array=self.tipper_error.to_numpy(),
                 frequency=self.frequency,
+                tipper_model_err_array=self.tipper_model_error.to_numpy(),
             )
 
     @Tipper.setter
@@ -124,6 +125,7 @@ class MT(TF, MTLocation):
                 self.frequency = t_object.frequency
         self.tipper = t_object.tipper
         self.tipper_error = t_object.tipper_err
+        self.tipper_model_error = t_object.tipper_model_err
 
     @property
     def pt(self):

@@ -17,7 +17,6 @@ import numpy as np
 import mtpy.utils.calculator as MTcc
 from mtpy.utils.exceptions import (
     MTpyError_Tipper,
-    MTpyError_input_arguments,
 )
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
@@ -79,18 +78,23 @@ class Tipper:
         initialize
         """
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
-        self._tipper = tipper_array
-        self._tipper_err = tipper_err_array
-        self._frequency = frequency
-        self._tipper_model_err = tipper_model_err_array
-
         self.rotation_angle = 0.0
-        if self.tipper is not None:
-            self.rotation_angle = np.zeros((len(self.tipper)))
+        self._tipper = None
+        self._tipper_err = None
+        self._frequency = None
+        self._tipper_model_err = None
+
+        self.tipper = tipper_array
+        self.tipper_err = tipper_err_array
+        self.frequency = frequency
+        self.tipper_model_err = tipper_model_err_array
+
         self._amplitude = None
         self._amplitude_err = None
+        self._amplitude_model_err = None
         self._phase = None
         self._phase_err = None
+        self._phase_model_err = None
 
         self._mag_real = None
         self._mag_imag = None
@@ -98,8 +102,10 @@ class Tipper:
         self._angle_imag = None
         self._mag_err = None
         self._angle_err = None
+        self._mag_model_err = None
+        self._angle_model_err = None
 
-        if self._tipper is not None and self._frequency is not None:
+        if self.tipper is not None and self.frequency is not None:
             self.compute_amp_phase()
             self.compute_mag_direction()
 
@@ -157,6 +163,8 @@ class Tipper:
         if (self.frequency != other.frequency).all():
             return False
         if (self.tipper_err != other.tipper_err).all():
+            return False
+        if (self.tipper_model_err != other.tipper_model_err).all():
             return False
         return True
 
@@ -390,6 +398,10 @@ class Tipper:
         if self.tipper_err is not None:
             self._amplitude_err = np.zeros(self.tipper_err.shape)
             self._phase_err = np.zeros(self.tipper_err.shape)
+        if self.tipper_model_err is not None:
+            self._amplitude_model_err = np.zeros(self.tipper_model_err.shape)
+            self._phase_model_err = np.zeros(self.tipper_model_err.shape)
+
         self._amplitude = np.abs(self.tipper)
         self._phase = np.rad2deg(np.angle(self.tipper))
 
@@ -529,6 +541,8 @@ class Tipper:
 
         self._mag_err = None
         self._angle_err = None
+        self._mag_model_err = None
+        self._angle_model_err = None
         # get the angle, need to make both parts negative to get it into the
         # parkinson convention where the arrows point towards the conductor
 
@@ -694,6 +708,7 @@ class Tipper:
             return
         tipper_rot = copy.copy(self.tipper)
         tipper_err_rot = copy.copy(self.tipper_err)
+        tipper_model_err_rot = copy.copy(self.tipper_model_err)
 
         for idx_frequency in range(len(tipper_rot)):
             angle = lo_angles[idx_frequency]
@@ -714,8 +729,23 @@ class Tipper:
                 ) = MTcc.rotate_vector_with_errors(
                     self.tipper[idx_frequency, :, :], angle
                 )
+
+            if self.tipper_model_err is not None:
+                (
+                    _,
+                    tipper_model_err_rot[idx_frequency],
+                ) = MTcc.rotate_vector_with_errors(
+                    self.tipper[idx_frequency, :, :],
+                    angle,
+                    self.tipper_model_err[idx_frequency, :, :],
+                )
+            else:
+                (_, tipper_model_err_rot,) = MTcc.rotate_vector_with_errors(
+                    self.tipper[idx_frequency, :, :], angle
+                )
         self.tipper = tipper_rot
         self.tipper_err = tipper_err_rot
+        self.tipper_model_err = tipper_model_err_rot
 
         # for consistency recalculate mag and angle
         self.compute_mag_direction()

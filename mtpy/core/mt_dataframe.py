@@ -177,6 +177,7 @@ def to_t_object(df):
         ],
         dtype=complex,
     ).T
+
     t_err = np.array(
         [
             [df.tzx_error],
@@ -184,26 +185,7 @@ def to_t_object(df):
         ],
         dtype=float,
     ).T
-    return Tipper(t, t_err, get_frequency(df))
 
-
-def to_t_model_object(df):
-    """
-    to model tipper object
-
-    :param df: DESCRIPTION
-    :type df: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
-
-    """
-    t = np.array(
-        [
-            [df.tzx],
-            [df.tzy],
-        ],
-        dtype=complex,
-    ).T
     t_model_err = np.array(
         [
             [df.tzx_model_error],
@@ -211,4 +193,4 @@ def to_t_model_object(df):
         ],
         dtype=float,
     ).T
-    return Tipper(t, t_model_err, get_frequency(df))
+    return Tipper(t, t_err, get_frequency(df), t_model_err)
