@@ -17,7 +17,7 @@ from mt_metadata.transfer_functions.core import TF
 
 from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
-from mtpy.core import mt_dataframe_tools
+from mtpy.core.mt_dataframe import MTDataFrame
 
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
@@ -552,7 +552,7 @@ class MT(TF, MTLocation):
         kwargs["ellipse_size"] = 0.5
         return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
 
-    def to_dataframe(self, utm_crs=None):
+    def to_dataframe(self, utm_crs=None, cols=None):
         """
         Create a dataframe from the transfer function for use with plotting
         and modeling.
@@ -566,12 +566,17 @@ class MT(TF, MTLocation):
             self.utm_crs = utm_crs
 
         n_entries = self.period.size
-        entry = mt_dataframe_tools.make_empty_entry(n_entries)
+        mt_df = MTDataFrame()
+        if cols is not None:
+            mt_df.df_dtypes = mt_df._get_dtypes(cols)
+
+        entry = mt_df.make_empty_entry(n_entries)
 
         entry["station"][:] = self.station
         entry["latitude"][:] = self.latitude
         entry["longitude"][:] = self.longitude
         entry["elevation"][:] = self.elevation
+        entry["datum_epsg"][:] = self.datum_epsg
         entry["east"][:] = self.east
         entry["north"][:] = self.north
         entry["utm_epsg"][:] = self.utm_epsg
@@ -581,13 +586,9 @@ class MT(TF, MTLocation):
 
         entry["period"][:] = self.period
         if self.has_impedance():
-            entry = mt_dataframe_tools.fill_impedance(
-                self.impedance, self.impedance_error, entry
-            )
+            entry = mt_df.from_z_object(self.Z, entry)
         if self.has_tipper():
-            entry = mt_dataframe_tools.fill_tipper(
-                self.tipper, self.tipper_error, entry
-            )
+            entry = mt_df.from_t_object(self.Tipper, entry)
 
         return pd.DataFrame(entry)
 
@@ -602,6 +603,7 @@ class MT(TF, MTLocation):
 
         """
 
+        mt_df = MTDataFrame()
         for key in [
             "station",
             "latitude",
@@ -614,10 +616,13 @@ class MT(TF, MTLocation):
             "model_east",
             "model_elevation",
         ]:
-            setattr(self, key, df[key].unique()[0])
+            try:
+                setattr(self, key, df[key].unique()[0])
+            except KeyError:
+                continue
 
-        self.Z = mt_dataframe_tools.to_z_object(df)
-        self.Tipper = mt_dataframe_tools.to_t_object(df)
+        self.Z = mt_df.to_z_object(df)
+        self.Tipper = mt_df.to_t_object(df)
 
 
 # ==============================================================================
