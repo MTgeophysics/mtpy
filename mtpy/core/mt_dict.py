@@ -94,3 +94,5 @@ class MTDict(OrderedDict):
 
             mt_obj.Z = interp_z
             mt_obj.Tipper = interp_t
+
+    def compute_center_point(self)

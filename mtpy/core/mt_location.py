@@ -160,7 +160,11 @@ class MTLocation:
         new_crs = CRS.from_user_input(value)
         if value != self._utm_crs:
             # reproject easting, northing to new zone
-            if self._utm_crs is not None and self.east != 0 and self.north != 0:
+            if (
+                self._utm_crs is not None
+                and self.east != 0
+                and self.north != 0
+            ):
                 self._east, self._north = project_point(
                     self.east, self.north, self._utm_crs, new_crs
                 )
@@ -287,3 +291,24 @@ class MTLocation:
             self._model_elevation = float(value)
         except (TypeError, ValueError):
             raise ValueError(f"Input should be a float not type {type(value)}")
+
+    def compute_model_locations(
+        self, model_center_east, model_center_north, model_center_z, model_epsg
+    ):
+        """
+        compute model location based on model center and model epsg
+
+        :param model_center: DESCRIPTION
+        :type model_center: TYPE
+        :param model_epsg: DESCRIPTION
+        :type model_epsg: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        self.utm_epsg(model_epsg)
+
+        self.model_east = self.east - model_center_east
+        self.model_north = self.north - model_center_north
+        self.model_elevation = self.elevation - model_center_z
