@@ -31,15 +31,37 @@ class MTDict(OrderedDict):
             )
         return tf
 
-    def to_dataframe(self):
+    def to_dataframe(self, utm_crs=None, cols=None):
         """
-        create a dataframe from the tf_objects for modeling or plotting
 
+        :param utm_crs: DESCRIPTION, defaults to None
+        :type utm_crs: TYPE, optional
+        :param cols: DESCRIPTION, defaults to None
+        :type cols: TYPE, optional
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        df_list = [tf.to_dataframe() for tf in self.values()]
+        df_list = [
+            tf.to_dataframe(utm_crs=utm_crs, cols=cols) for tf in self.values()
+        ]
 
         return pd.concat(df_list)
+
+    def from_dataframe(self, df):
+        """
+        Create an dictionary of MT objects from a dataframe
+
+        :param df: dataframe of mt data
+        :type df: `pandas.DataFrame`
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for station in df.station.unique():
+            sdf = df.loc[df.station == station]
+            mt_object = MT()
+            mt_object.from_dataframe(sdf)
+            self.update(OrderedDict([(mt_object.station, mt_object)]))
