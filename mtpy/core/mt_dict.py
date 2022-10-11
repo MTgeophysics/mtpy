@@ -11,6 +11,7 @@ Created on Mon Oct 10 11:58:56 2022
 from collections import OrderedDict
 
 import pandas as pd
+import numpy as np
 
 from .mt import MT
 
@@ -19,6 +20,10 @@ from .mt import MT
 
 class MTDict(OrderedDict):
     def __init__(self, tf_list, **kwargs):
+
+        self._center_lat = None
+        self._center_lon = None
+        self._center_elev = 0.0
 
         for tf in tf_list:
             tf = self._validate_item(tf)
@@ -65,3 +70,27 @@ class MTDict(OrderedDict):
             mt_object = MT()
             mt_object.from_dataframe(sdf)
             self.update(OrderedDict([(mt_object.station, mt_object)]))
+
+    def interpolate(self, new_periods):
+        """
+        Interpolate onto common period range
+
+        :param new_periods: DESCRIPTION
+        :type new_periods: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for mt_obj in self.values():
+            interp_periods = new_periods[
+                np.where(
+                    (new_periods >= mt_obj.period.max())
+                    & (new_periods <= mt_obj.period.min())
+                )
+            ]
+
+            interp_z, interp_t = mt_obj.interpolate(1.0 / interp_periods)
+
+            mt_obj.Z = interp_z
+            mt_obj.Tipper = interp_t

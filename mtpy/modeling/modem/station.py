@@ -30,13 +30,6 @@ class Stations(object):
     """
     station locations class
 
-    ..note:: If the survey steps across multiple UTM zones, then a
-             distance will be added to the stations to place them in
-             the correct location.  This distance is
-             _utm_grid_size_north and _utm_grid_size_east.  You should
-             these parameters to place the locations in the proper spot
-             as grid distances and overlaps change over the globe.
-             **This is not implemented yet**
     """
 
     def __init__(self, **kwargs):
@@ -83,7 +76,10 @@ class Stations(object):
         )
         lines = [
             "".join(
-                [f"{n.capitalize():<10}" for n in self.station_locations.dtype.names]
+                [
+                    f"{n.capitalize():<10}"
+                    for n in self.station_locations.dtype.names
+                ]
             )
         ]
         lines.append("-" * 72)
@@ -158,13 +154,15 @@ class Stations(object):
     @model_epsg.setter
     def model_epsg(self, value):
         """
-        set the model epsg number an project east, north 
+        set the model epsg number an project east, north
         """
         self._model_epsg = value
         if self.station_locations.size < 2:
             for ss, ii in enumerate(self.station_locations):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
-                    ss["lat"], ss["lon"], epsg=self._model_epsg,
+                    ss["lat"],
+                    ss["lon"],
+                    epsg=self._model_epsg,
                 )
                 self.station_locations[ii]["east"] = east
                 self.station_locations[ii]["north"] = north
@@ -177,7 +175,7 @@ class Stations(object):
     @model_utm_zone.setter
     def model_utm_zone(self, value):
         """
-        set the model epsg number an project east, north 
+        set the model epsg number an project east, north
         """
         if value is None:
             return
@@ -188,7 +186,9 @@ class Stations(object):
         if self.station_locations.size > 1:
             for ii, ss in enumerate(self.station_locations):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
-                    ss["lat"], ss["lon"], utm_zone=self._model_utm_zone,
+                    ss["lat"],
+                    ss["lon"],
+                    utm_zone=self._model_utm_zone,
                 )
                 self.station_locations[ii]["east"] = east
                 self.station_locations[ii]["north"] = north
@@ -228,7 +228,8 @@ class Stations(object):
         # if station locations are not input read from the edi files
         if mt_obj_list is None:
             raise AttributeError(
-                "mt_obj_list is None, need to input a list of " "mt objects to read in."
+                "mt_obj_list is None, need to input a list of "
+                "mt objects to read in."
             )
 
         n_stations = len(mt_obj_list)
@@ -247,7 +248,9 @@ class Stations(object):
             self.station_locations[ii]["station"] = mt_obj.station
             self.station_locations[ii]["elev"] = mt_obj.elevation
 
-            if (self.model_epsg is not None) or (self.model_utm_zone is not None):
+            if (self.model_epsg is not None) or (
+                self.model_utm_zone is not None
+            ):
                 east, north, utm_zone = gis_tools.project_point_ll2utm(
                     mt_obj.latitude,
                     mt_obj.longitude,
@@ -280,8 +283,12 @@ class Stations(object):
 
         # self.station_locations["rel_east"] = self.east - east_center
         # self.station_locations["rel_north"] = self.north - north_center
-        self.station_locations["rel_east"] = self.east - self.center_point.east[0]
-        self.station_locations["rel_north"] = self.north - self.center_point.north[0]
+        self.station_locations["rel_east"] = (
+            self.east - self.center_point.east[0]
+        )
+        self.station_locations["rel_north"] = (
+            self.north - self.center_point.north[0]
+        )
 
         # BM: Before topograhy is applied to the model, the station
         #  elevation isn't relative to anything (according to
@@ -346,7 +353,9 @@ class Stations(object):
             center_location.lon[0] = (self.lon.max() + self.lon.min()) / 2.0
             # get the median utm zone
             if self.model_utm_zone is None:
-                self.logger.info("Getting median UTM zone of stations for center point")
+                self.logger.info(
+                    "Getting median UTM zone of stations for center point"
+                )
                 zone = self.utm_zone.copy()
                 zone.sort()
                 center_utm_zone = zone[int(zone.size / 2)]
@@ -372,7 +381,9 @@ class Stations(object):
         else:
             self.logger.debug("locating center from UTM grid")
             center_location.east[0] = (self.east.max() + self.east.min()) / 2
-            center_location.north[0] = (self.north.max() + self.north.min()) / 2
+            center_location.north[0] = (
+                self.north.max() + self.north.min()
+            ) / 2
 
             # get the median utm zone
             zone = self.utm_zone.copy()
@@ -425,7 +436,10 @@ class Stations(object):
         rot_matrix = np.array([[cos_ang, sin_ang], [-sin_ang, cos_ang]])
 
         coords = np.array(
-            [self.station_locations["rel_east"], self.station_locations["rel_north"]]
+            [
+                self.station_locations["rel_east"],
+                self.station_locations["rel_north"],
+            ]
         )
 
         # rotate the relative station locations
@@ -440,14 +454,14 @@ class Stations(object):
 
     def to_geopd(self, epsg=None, default_epsg=4326):
         """
-        create a geopandas dataframe 
-        
+        create a geopandas dataframe
+
         :param epsg: EPSG number to project to
         :type epsg: integer, defaults to None
         :param default_epsg: the default EPSG number that the stations are
         referenced to
         :type default_epsg: integer, defaults to 4326
-        
+
         """
 
         default_crs = {"init": f"epsg:{default_epsg}"}
@@ -468,7 +482,9 @@ class Stations(object):
             }
             geometry_list.append(Point(sarr["lon"], sarr["lat"]))
             station_list.append(entry)
-        sdf = gpd.GeoDataFrame(station_list, crs=default_crs, geometry=geometry_list)
+        sdf = gpd.GeoDataFrame(
+            station_list, crs=default_crs, geometry=geometry_list
+        )
         if epsg is not None:
             sdf = sdf.to_crs(epsg=epsg)
 
@@ -478,7 +494,7 @@ class Stations(object):
         """
         Write a shape file of the station locations using geopandas which only takes
         in epsg numbers
-        
+
         :param shp_fn: full path to new shapefile
         :type shp_fn: string
         :param epsg: EPSG number to project to
@@ -486,7 +502,7 @@ class Stations(object):
         :param default_epsg: the default EPSG number that the stations are
         referenced to
         :type default_epsg: integer, defaults to 4326
-        
+
         """
         sdf = self.to_geopd(epsg=epsg, default_epsg=default_epsg)
 
@@ -496,7 +512,7 @@ class Stations(object):
         """
         Write a shape file of the station locations using geopandas which only takes
         in epsg numbers
-        
+
         :param shp_fn: full path to new shapefile
         :type shp_fn: string
         :param epsg: EPSG number to project to
@@ -504,7 +520,7 @@ class Stations(object):
         :param default_epsg: the default EPSG number that the stations are
         referenced to
         :type default_epsg: integer, defaults to 4326
-        
+
         """
         sdf = self.to_geopd(epsg=epsg, default_epsg=default_epsg)
         use_columns = list(sdf.columns)
