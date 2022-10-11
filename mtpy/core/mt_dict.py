@@ -14,20 +14,19 @@ import pandas as pd
 import numpy as np
 
 from .mt import MT
+from .mt_stations import MTStations
 
 # =============================================================================
 
 
-class MTDict(OrderedDict):
+class MTDict(OrderedDict, MTStations):
     def __init__(self, tf_list, **kwargs):
-
-        self._center_lat = None
-        self._center_lon = None
-        self._center_elev = 0.0
 
         for tf in tf_list:
             tf = self._validate_item(tf)
             self.update(OrderedDict([(tf.station, tf)]))
+
+        MTStations.__init__(self, tf_list, None, **kwargs)
 
     def _validate_item(self, tf):
         if not isinstance(tf, MT):
@@ -94,5 +93,3 @@ class MTDict(OrderedDict):
 
             mt_obj.Z = interp_z
             mt_obj.Tipper = interp_t
-
-    def compute_center_point(self)

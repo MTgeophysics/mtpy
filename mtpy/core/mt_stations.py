@@ -14,9 +14,7 @@ ModEM
 # =============================================================================
 import numpy as np
 import pandas as pd
-
 import geopandas as gpd
-from shapely.geometry import Point
 
 from mtpy.core.mt_location import MTLocation
 from mtpy.utils.mtpy_logger import get_mtpy_logger
@@ -30,27 +28,29 @@ class MTStations:
 
     """
 
-    def __init__(self, mt_dict, **kwargs):
+    def __init__(self, mt_list, model_epsg, datum_epsg=None, **kwargs):
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
-        self.mt_dict = mt_dict
+        self.mt_list = mt_list
 
-        self.dtype = [
-            ("station", "|U50"),
-            ("lat", float),
-            ("lon", float),
-            ("elev", float),
-            ("datum_epsg", "U6"),
-            ("east", float),
-            ("north", float),
-            ("utm_epsg", "U6"),
-            ("model_east", float),
-            ("model_north", float),
-            ("model_elev", float),
-        ]
-        self.station_locations = np.zeros(0, dtype=self.dtype)
-        self._model_epsg = None
+        self.dtype = dict(
+            [
+                ("station", "U50"),
+                ("lat", float),
+                ("lon", float),
+                ("elev", float),
+                ("datum_epsg", "U6"),
+                ("east", float),
+                ("north", float),
+                ("utm_epsg", "U6"),
+                ("model_east", float),
+                ("model_north", float),
+                ("model_elev", float),
+            ]
+        )
+        self.model_epsg = model_epsg
+        self.datum_epsg = datum_epsg
         self._center_lat = None
         self._center_lon = None
         self._center_elev = 0.0
@@ -60,6 +60,8 @@ class MTStations:
         for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
+
+        self.calculate_rel_locations()
 
     def __str__(self):
         fmt_dict = dict(
@@ -118,9 +120,23 @@ class MTStations:
         set the model epsg number an project east, north
         """
         self._model_epsg = value
-        if self.station_locations.size < 2:
-            for mt_obj in self.mt_dict.values():
+        if self._model_epsg is not None:
+            for mt_obj in self.mt_list:
                 mt_obj.utm_epsg = value
+
+    @property
+    def datum_epsg(self):
+        return self._datum_epsg
+
+    @datum_epsg.setter
+    def datum_epsg(self, value):
+        """
+        set the model epsg number an project east, north
+        """
+        self._datum_epsg = value
+        if self._datum_epsg is not None:
+            for mt_obj in self.mt_list:
+                mt_obj.datum_epsg = value
 
     @property
     def station_locations(self):
@@ -140,31 +156,46 @@ class MTStations:
         """
 
         # make a structured array to put station location information into
-        entries = []
+        entries = dict(
+            [
+                (col, np.zeros(len(self.mt_list), dtype))
+                for col, dtype in self.dtype.items()
+            ]
+        )
         # get station locations in meters
-        for mt_obj in self.mt_dict:
-            mt_obj.utm_epsg = self.model_epsg
-            entry = {}
-            entry["station"] = mt_obj.station
-            entry["lat"] = mt_obj.latitude
-            entry["lon"] = mt_obj.longitude
-            entry["elev"] = mt_obj.elevation
-            entry["datum_epsg"] = mt_obj.datum_epsg
-            entry["east"] = mt_obj.east
-            entry["north"] = mt_obj.north
-            entry["utm_epsg"] = mt_obj.utm_epsg
-            entry["model_east"] = 0
-            entry["model_north"] = 0
-            entry["model_elev"] = 0
+        for ii, mt_obj in enumerate(self.mt_list):
+            entries["station"][ii] = mt_obj.station
+            entries["lat"][ii] = mt_obj.latitude
+            entries["lon"][ii] = mt_obj.longitude
+            entries["elev"][ii] = mt_obj.elevation
+            entries["datum_epsg"][ii] = mt_obj.datum_epsg
+            entries["east"][ii] = mt_obj.east
+            entries["north"][ii] = mt_obj.north
+            entries["utm_epsg"][ii] = mt_obj.utm_epsg
+            entries["model_east"][ii] = mt_obj.model_east
+            entries["model_north"][ii] = mt_obj.model_north
+            entries["model_elev"][ii] = mt_obj.model_elevation
 
-            entries.append(entry)
+        station_df = pd.DataFrame(entries)
+        self._validate_station_locations(station_df)
 
-        station_df = pd.DataFrame(entries, dtype=self.dtype)
+        return station_df
 
-        # get relative station locations
-        self.calculate_rel_locations(station_df)
+    def _validate_station_locations(self, df):
 
-    def calculate_rel_locations(self, station_df):
+        if len(df.datum_epsg.unique()) > 1:
+            self.datum_epsg = df.datum_epsg.median()
+        else:
+            if self.datum_epsg is None:
+                self.datum_epsg = df.datum_epsg.unique()[0]
+
+        if len(df.utm_epsg.unique()) > 1:
+            self.model_epsg = df.utm_epsg.median()
+        else:
+            if self.model_epsg is None:
+                self.model_epsg = df.utm_epsg.unique()[0]
+
+    def calculate_rel_locations(self, shift_east=0, shift_north=0):
         """
         put station in a coordinate system relative to
         (shift_east, shift_north)
@@ -173,28 +204,10 @@ class MTStations:
 
         """
 
-        # translate the stations so they are relative to 0,0
-        # east_center = (self.east.max() + self.east.min()) / 2.0
-        # north_center = (self.north.max() + self.north.min()) / 2.0
+        for mt_obj in self.mt_list:
+            mt_obj.compute_model_location(self.center_point)
 
-        # self.station_locations["rel_east"] = self.east - east_center
-        # self.station_locations["rel_north"] = self.north - north_center
-        self.station_locations["rel_east"] = (
-            self.east - self.center_point.east[0]
-        )
-        self.station_locations["rel_north"] = (
-            self.north - self.center_point.north[0]
-        )
-
-        # BM: Before topograhy is applied to the model, the station
-        #  elevation isn't relative to anything (according to
-        #  Data.project_stations_on_topography, station elevation is
-        #  relevant to topography). So rel_elev and elev are the same.
-        #  Once topography has been applied, rel_elev can be calcuated
-        #  by calling Data.project_stations_on_topography.
-        self.station_locations["rel_elev"] = self.elev
-
-    # make center point a get method, can't set it.
+    # make center point a get property, can't set it.
     @property
     def center_point(self):
         """
@@ -206,107 +219,36 @@ class MTStations:
                                   structured array of length 1
                                   dtype includes (east, north, zone, lat, lon)
         """
-        dtype = [
-            ("lat", float),
-            ("lon", float),
-            ("east", float),
-            ("north", float),
-            ("elev", float),
-            ("zone", "U4"),
-        ]
-        center_location = np.recarray(1, dtype=dtype)
+
+        center_location = MTLocation()
         if self._center_lat is not None and self._center_lon is not None:
             self.logger.debug("assigning center from user set values")
-            center_location.lat[0] = self._center_lat
-            center_location.lon[0] = self._center_lon
-            center_location.elev[0] = self._center_elev
+            center_location.latitude = self._center_lat
+            center_location.longitude = self._center_lon
+            center_location.elevation = self._center_elev
+            center_location.utm_epsg = self.model_epsg
+            center_location.model_east = center_location.east
+            center_location.model_north = center_location.north
+            center_location.model_elevation = self._center_elev
 
-            # get the median utm zone
-            if self.model_utm_zone is None:
-                zone = self.utm_zone.copy()
-                zone.sort()
-                # get the median zone
-                center_utm_zone = zone[int(zone.size / 2)]
-                center_location.zone[0] = center_utm_zone
-            else:
-                center_location.zone[0] = self.model_utm_zone
-
-            # project center
-            east, north, zone = gis_tools.project_point_ll2utm(
-                center_location.lat[0],
-                center_location.lon[0],
-                utm_zone=center_location.zone[0],
-            )
-
-            center_location.east[0] = east
-            center_location.north[0] = north
             return center_location
-
-        # safer to get center from lat and lon if not all zones are the same
-        if not np.all(self.utm_zone == self.utm_zone[0]):
-            self.logger.debug("Not all stations are in same UTM zone")
-            center_location.lat[0] = (self.lat.max() + self.lat.min()) / 2.0
-            center_location.lon[0] = (self.lon.max() + self.lon.min()) / 2.0
-            # get the median utm zone
-            if self.model_utm_zone is None:
-                self.logger.info(
-                    "Getting median UTM zone of stations for center point"
-                )
-                zone = self.utm_zone.copy()
-                zone.sort()
-                center_utm_zone = zone[int(zone.size / 2)]
-                center_location.zone[0] = center_utm_zone
-            else:
-                self.logger.info(
-                    f"Using user defined center point UTM zone {self.model_utm_zone}"
-                )
-                center_location.zone[0] = self.model_utm_zone
-
-            self.logger.info(
-                f"Projecting lat, lon to UTM zone {center_location.zone[0]}"
-            )
-            east, north, zone = gis_tools.project_point_ll2utm(
-                center_location.lat[0],
-                center_location.lon[0],
-                utm_zone=center_location.zone[0],
-            )
-
-            center_location.east[0] = east
-            center_location.north[0] = north
 
         else:
             self.logger.debug("locating center from UTM grid")
-            center_location.east[0] = (self.east.max() + self.east.min()) / 2
-            center_location.north[0] = (
-                self.north.max() + self.north.min()
+            center_location.east = (
+                self.station_locations.east.max()
+                + self.station_locations.east.min()
+            ) / 2
+            center_location.north = (
+                self.station_locations.north.max()
+                + self.station_locations.north.min()
             ) / 2
 
-            # get the median utm zone
-            zone = self.utm_zone.copy()
-            zone.sort()
-            center_utm_zone = zone[int(zone.size / 2)]
-            center_location.zone[0] = center_utm_zone
-
-            center_ll = gis_tools.project_point_utm2ll(
-                center_location.east[0],
-                center_location.north[0],
-                center_location.zone[0],
-                epsg=self.model_epsg,
-            )
-
-            center_location.lat[0] = center_ll[0]
-            center_location.lon[0] = center_ll[1]
-        # BM: Because we are now writing center_point.elev to ModEm
-        #  data file, we need to provide it.
-        #  The center point elevation is the highest point of the
-        #  model. Before topography is applied, this is the highest
-        #  station. After it's applied, it's the highest point
-        #  point of the surface model (this will be set by calling
-        #  Data.project_stations_on_topography).
-        if self._center_elev:
-            center_location.elev[0] = self._center_elev
-        else:
-            center_location.elev[0] = -self.elev.max()
+            center_location.datum_epsg = self.datum_epsg
+            center_location.utm_epsg = self.model_epsg
+            center_location.model_east = center_location.east
+            center_location.model_north = center_location.north
+            center_location.model_elevation = self._center_elev
 
         return center_location
 
@@ -331,94 +273,63 @@ class MTStations:
         sin_ang = np.sin(np.deg2rad(rotation_angle))
         rot_matrix = np.array([[cos_ang, sin_ang], [-sin_ang, cos_ang]])
 
-        coords = np.array(
-            [
-                self.station_locations["rel_east"],
-                self.station_locations["rel_north"],
-            ]
-        )
+        for mt_obj in self.mt_list:
+            coords = np.array(
+                [
+                    mt_obj.model_east,
+                    mt_obj.model_north,
+                ]
+            )
 
-        # rotate the relative station locations
-        new_coords = np.array(np.dot(rot_matrix, coords))
+            # rotate the relative station locations
+            new_coords = np.array(np.dot(rot_matrix, coords))
 
-        self.station_locations["rel_east"] = new_coords[0, :]
-        self.station_locations["rel_north"] = new_coords[1, :]
+            mt_obj.model_east = new_coords[0]
+            mt_obj.model_north = new_coords[1]
 
         self.logger.info(
             f"Rotated stations by {rotation_angle:.1f} deg clockwise from N"
         )
 
-    def to_geopd(self, epsg=None, default_epsg=4326):
+    def to_geopd(self):
         """
         create a geopandas dataframe
 
-        :param epsg: EPSG number to project to
-        :type epsg: integer, defaults to None
-        :param default_epsg: the default EPSG number that the stations are
-        referenced to
-        :type default_epsg: integer, defaults to 4326
-
         """
 
-        default_crs = {"init": f"epsg:{default_epsg}"}
-        station_list = []
-        geometry_list = []
-        for sarr in self.station_locations:
-            entry = {
-                "station": sarr["station"],
-                "latitude": sarr["lat"],
-                "longitude": sarr["lon"],
-                "elevation": sarr["elev"],
-                "easting": sarr["east"],
-                "northing": sarr["north"],
-                "utm_zone": sarr["zone"],
-                "model_east": sarr["rel_east"],
-                "model_north": sarr["rel_north"],
-                "model_elev": sarr["rel_elev"],
-            }
-            geometry_list.append(Point(sarr["lon"], sarr["lat"]))
-            station_list.append(entry)
-        sdf = gpd.GeoDataFrame(
-            station_list, crs=default_crs, geometry=geometry_list
+        gdf = gpd.GeoDataFrame(
+            self.station_locations,
+            geometry=gpd.points_from_xy(
+                self.station_locations.lon, self.station_locations.lat
+            ),
+            crs=self.center_point.datum_crs,
         )
-        if epsg is not None:
-            sdf = sdf.to_crs(epsg=epsg)
 
-        return sdf
+        return gdf
 
-    def to_shp(self, shp_fn, epsg=None, default_epsg=4326):
+    def to_shp(self, shp_fn):
         """
         Write a shape file of the station locations using geopandas which only takes
         in epsg numbers
 
         :param shp_fn: full path to new shapefile
         :type shp_fn: string
-        :param epsg: EPSG number to project to
-        :type epsg: integer, defaults to None
-        :param default_epsg: the default EPSG number that the stations are
-        referenced to
-        :type default_epsg: integer, defaults to 4326
 
         """
-        sdf = self.to_geopd(epsg=epsg, default_epsg=default_epsg)
+        sdf = self.to_geopd()
 
         sdf.to_file(shp_fn)
 
-    def to_csv(self, csv_fn, epsg=None, default_epsg=4326, geometry=False):
+    def to_csv(self, csv_fn, geometry=False):
         """
         Write a shape file of the station locations using geopandas which only takes
         in epsg numbers
 
-        :param shp_fn: full path to new shapefile
-        :type shp_fn: string
-        :param epsg: EPSG number to project to
-        :type epsg: integer, defaults to None
-        :param default_epsg: the default EPSG number that the stations are
-        referenced to
-        :type default_epsg: integer, defaults to 4326
+        :param csv_fn: full path to new shapefile
+        :type csv_fn: string
 
         """
-        sdf = self.to_geopd(epsg=epsg, default_epsg=default_epsg)
+        sdf = self.to_geopd()
         use_columns = list(sdf.columns)
         if not geometry:
             use_columns.remove("geometry")

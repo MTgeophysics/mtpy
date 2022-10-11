@@ -63,10 +63,11 @@ class MTLocation:
         lines.append(f"  Latitude (deg):   {self.latitude:.6f}")
         lines.append(f"  Longitude (deg):  {self.longitude:.6f}")
         lines.append(f"  Elevation (m):    {self.elevation:.4f}")
-        lines.append(f"  Datum crs:       {self.datum_crs.to_crs()}")
+        lines.append(f"  Datum crs:        {self.datum_crs}")
+        lines.append("")
         lines.append(f"  Easting (m):      {self.east:.3f}")
         lines.append(f"  Northing (m):     {self.north:.3f}")
-        lines.append(f"  UTM crs:         {self.utm_crs}")
+        lines.append(f"  UTM crs:          {self.utm_crs}")
 
         return "\n".join(lines)
 
@@ -292,23 +293,17 @@ class MTLocation:
         except (TypeError, ValueError):
             raise ValueError(f"Input should be a float not type {type(value)}")
 
-    def compute_model_locations(
-        self, model_center_east, model_center_north, model_center_z, model_epsg
-    ):
+    def compute_model_location(self, center_location):
         """
         compute model location based on model center and model epsg
 
         :param model_center: DESCRIPTION
         :type model_center: TYPE
-        :param model_epsg: DESCRIPTION
-        :type model_epsg: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        self.utm_epsg(model_epsg)
-
-        self.model_east = self.east - model_center_east
-        self.model_north = self.north - model_center_north
-        self.model_elevation = self.elevation - model_center_z
+        self.model_east = self.east - center_location.east
+        self.model_north = self.north - center_location.model_north
+        self.model_elevation = self.elevation - center_location.model_elevation
