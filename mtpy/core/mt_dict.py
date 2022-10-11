@@ -93,3 +93,18 @@ class MTDict(OrderedDict, MTStations):
 
             mt_obj.Z = interp_z
             mt_obj.Tipper = interp_t
+
+    def rotate(self, rotation_angle):
+        """
+        rotate the data by the given angle assuming positive clockwise with
+        north = 0, east = 90.
+
+        :param rotation_angle: DESCRIPTION
+        :type rotation_angle: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for mt_obj in self.values():
+            mt_obj.rotation_angle = rotation_angle
