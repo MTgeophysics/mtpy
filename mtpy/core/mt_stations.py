@@ -291,6 +291,116 @@ class MTStations:
             f"Rotated stations by {rotation_angle:.1f} deg clockwise from N"
         )
 
+    def center_stations(self, model_obj):
+        """
+        Center station locations to the middle of cells, is useful for
+        topography cause it reduces edge effects of stations close to cell edges.
+        Recalculates rel_east, rel_north to center of model cell.
+
+        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :type model_obj: :class:`mtpy.modeling.modem.Model`
+
+
+        """
+
+        for mt_obj in self.mt_list:
+            e_index = (
+                np.where(model_obj.grid_east >= mt_obj.model_east)[0][0] - 1
+            )
+            n_index = (
+                np.where(model_obj.grid_north >= mt_obj.model_north)[0][0] - 1
+            )
+
+            mt_obj.model_east = model_obj.grid_east[
+                e_index : e_index + 2
+            ].mean()
+            mt_obj.model_north = model_obj.grid_north[
+                n_index : n_index + 2
+            ].mean()
+
+    def project_stations_on_topography(
+        self,
+        model_object,
+        air_resistivity=1e12,
+        sea_resistivity=0.3,
+        ocean_bottom=False,
+    ):
+        """
+        Project stations on topography of a given model
+
+        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :type model_obj: :class:`mtpy.modeling.modem.Model`
+        :param air_resistivity: resistivity value of air cells in the model
+        :type air_resistivity:  float
+        :param sea_resistivity: resistivity of sea
+        :type sea_resistivity: float
+        :param ocean_bottom: If True places stations at bottom of sea cells
+        :type ocean_bottom: boolean
+
+        Recaluclates rel_elev
+        """
+
+        # find index of each station on grid
+        station_index_x = []
+        station_index_y = []
+        for mt_obj in self.mt_list:
+            # relative locations of stations
+            sx = mt_obj.model_east
+            sy = mt_obj.model_north
+
+            # indices of stations on model grid
+            sxi = np.where(
+                (sx <= model_object.grid_east[1:])
+                & (sx > model_object.grid_east[:-1])
+            )[0][0]
+
+            syi = np.where(
+                (sy <= model_object.grid_north[1:])
+                & (sy > model_object.grid_north[:-1])
+            )[0][0]
+
+            # first, check if there are any air cells
+            if np.any(
+                model_object.res_model[syi, sxi] > 0.95 * air_resistivity
+            ):
+                szi = np.amin(
+                    np.where(
+                        (
+                            model_object.res_model[syi, sxi]
+                            < 0.95 * air_resistivity
+                        )
+                    )[0]
+                )
+            # otherwise place station at the top of the model
+            else:
+                szi = 0
+
+            # JP: estimate ocean bottom stations if requested
+            if ocean_bottom:
+                if np.any(model_object.res_model[syi, sxi] <= sea_resistivity):
+                    szi = np.amax(
+                        np.where(
+                            (
+                                model_object.res_model[syi, sxi]
+                                <= sea_resistivity
+                            )
+                        )[0]
+                    )
+
+            # get relevant grid point elevation
+            topoval = model_object.grid_z[szi]
+
+            station_index_x.append(sxi)
+            station_index_y.append(syi)
+
+            # update elevation in station locations and data array, +1 m as
+            # data elevation needs to be below the topography (as advised by Naser)
+            mt_obj.model_elev = topoval + 0.001
+
+        # BM: After applying topography, center point of grid becomes
+        #  highest point of surface model.
+        self._center_elev = model_object.grid_z[0]
+
     def to_geopd(self):
         """
         create a geopandas dataframe

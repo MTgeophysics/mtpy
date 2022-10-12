@@ -23,8 +23,7 @@ class MTDict(OrderedDict, MTStations):
     def __init__(self, tf_list, **kwargs):
 
         for tf in tf_list:
-            tf = self._validate_item(tf)
-            self.update(OrderedDict([(tf.station, tf)]))
+            self.add_station(tf)
 
         MTStations.__init__(self, tf_list, None, **kwargs)
 
@@ -34,6 +33,33 @@ class MTDict(OrderedDict, MTStations):
                 f"entry must be a mtpy.core.MT object not type({type(tf)})"
             )
         return tf
+
+    def add_station(self, mt_object):
+        """
+        Add a new station's mt_object
+
+        :param mt_object: DESCRIPTION
+        :type mt_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        mt_object = self._validate_item(mt_object)
+        self.__setitem__(mt_object.station, mt_object)
+
+    def remove_station(self, station_id):
+        """
+        remove a station from the dictionary
+
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if station_id in self.keys():
+            del self[station_id]
 
     def to_dataframe(self, utm_crs=None, cols=None):
         """
@@ -108,3 +134,53 @@ class MTDict(OrderedDict, MTStations):
 
         for mt_obj in self.values():
             mt_obj.rotation_angle = rotation_angle
+
+    def compute_model_errors(
+        self,
+        z_error_value=5,
+        z_error_type="geometric_mean",
+        z_floor=True,
+        t_error_value=0.02,
+        t_error_type="absolute",
+        t_floor=True,
+    ):
+
+        """
+        Compute mode errors based on the error type
+
+        ========================== ===========================================
+        key                        definition
+        ========================== ===========================================
+        egbert                     error_value * sqrt(Zxy * Zyx)
+        geometric_mean             error_value * sqrt(Zxy * Zyx)
+        arithmetic_mean            error_value * (Zxy + Zyx) / 2
+        mean_od                    error_value * (Zxy + Zyx) / 2
+        off_diagonals              zxx_err == zxy_err, zyx_err == zyy_err
+        median                     error_value * median(z)
+        eigen                      error_value * mean(eigen(z))
+        percent                    error_value * z
+        absolute                   error_value
+        ========================== ===========================================
+
+        :param z_error_value: DESCRIPTION, defaults to 5
+        :type z_error_value: TYPE, optional
+        :param z_error_type: DESCRIPTION, defaults to "geometric_mean"
+        :type z_error_type: TYPE, optional
+        :param z_floor: DESCRIPTION, defaults to True
+        :type z_floor: TYPE, optional
+        :param t_error_value: DESCRIPTION, defaults to 0.02
+        :type t_error_value: TYPE, optional
+        :param t_error_type: DESCRIPTION, defaults to "absolute"
+        :type t_error_type: TYPE, optional
+        :param t_floor: DESCRIPTION, defaults to True
+        :type t_floor: TYPE, optional
+        :param : DESCRIPTION
+        :type : TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for mt_obj in self.values():
+            mt_obj.compute_model_z_errors(z_error_value, z_error_type, z_floor)
+            mt_obj.compute_model_z_errors(t_error_value, t_error_type, t_floor)
