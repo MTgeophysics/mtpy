@@ -10,32 +10,19 @@ ModEM
 # revised by JP 2021 adding functionality and updating.
 
 """
-from __future__ import print_function
-import csv
+# =============================================================================
+# Imports
+# =============================================================================
 import numpy as np
 from pathlib import Path
-from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
-import mtpy.analysis.pt as pt
 from mtpy.core import mt as mt
 from mtpy.core import z as mtz
-from mtpy.modeling import ws3dinv as ws
-from mtpy.utils import gis_tools as gis_tools
+
+# from mtpy.modeling import ws3dinv as ws
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-
-from mtpy.modeling.modem.exception import ModEMError, DataError
-from mtpy.modeling.modem.station import Stations
-
-
-try:
-    from pyevtk.hl import pointsToVTK
-except ImportError:
-    print(
-        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
-    )
-
 
 # =============================================================================
 class Data(object):
@@ -271,7 +258,7 @@ class Data(object):
 
     def __str__(self):
         lines = ["ModEM Data Object:"]
-        if self.data_array is not None:
+        if self.dataframe is not None:
             lines += [
                 f"\tNumber of stations: {len(self.dataframe.station.unique())}"
             ]
@@ -281,22 +268,22 @@ class Data(object):
             lines += ["\tPeriod range:  "]
             lines += [f"\t\tMin: {self.period_list.min()} s"]
             lines += [f"\t\tMax: {self.period_list.max()} s"]
-            lines += [f"\tRotation angle:     {self.rotation_angle}"]
-            lines += ["\tData center:        "]
-            lines += [f"\t\t latitude:  {self.center_point.lat[0]:.4f} deg"]
-            lines += [f"\t\t longitude: {self.center_point.lon[0]:.4f} deg"]
-            lines += [f"\t\t Elevation: {self.center_point.elev[0]:.1f} m"]
-            lines += [f"\t\t Easting:   {self.center_point.east[0]:.4f} m"]
-            lines += [f"\t\t Northing:  {self.center_point.north[0]:.4f} m"]
-            lines += [f"\t\t UTM zone:  {self.center_point.zone[0]}"]
-            lines += [f"\tModel EPSG:         {self.model_epsg}"]
-            lines += [f"\tModel UTM zone:     {self.model_utm_zone}"]
-            lines += [
-                f"\tImpedance data:     {self.data_array['z'].mean() != 0.0}"
-            ]
-            lines += [
-                f"\tTipper data:        {self.data_array['tip'].mean() != 0.0}"
-            ]
+            # lines += [f"\tRotation angle:     {self.rotation_angle}"]
+            # lines += ["\tData center:        "]
+            # lines += [f"\t\t latitude:  {self.center_point.lat[0]:.4f} deg"]
+            # lines += [f"\t\t longitude: {self.center_point.lon[0]:.4f} deg"]
+            # lines += [f"\t\t Elevation: {self.center_point.elev[0]:.1f} m"]
+            # lines += [f"\t\t Easting:   {self.center_point.east[0]:.4f} m"]
+            # lines += [f"\t\t Northing:  {self.center_point.north[0]:.4f} m"]
+            # lines += [f"\t\t UTM zone:  {self.center_point.zone[0]}"]
+            # lines += [f"\tModel EPSG:         {self.model_epsg}"]
+            # lines += [f"\tModel UTM zone:     {self.model_utm_zone}"]
+            # lines += [
+            #     f"\tImpedance data:     {self.data_array['z'].mean() != 0.0}"
+            # ]
+            # lines += [
+            #     f"\tTipper data:        {self.data_array['tip'].mean() != 0.0}"
+            # ]
         return "\n".join(lines)
 
     def __repr__(self):
@@ -401,7 +388,7 @@ class Data(object):
         d_lines.append(
             f"> {self.rotation_angle:.3g}\n"
         )  # orientation, need to add at some point
-        if self.elevation:
+        if self.topography:
             d_lines.append(
                 f"> {center_point.latitude:>10.6f} "
                 f"{center_point.longitude:>10.6f} "
@@ -445,7 +432,7 @@ class Data(object):
                 lon = f"{row.longitude:> 9.3f}"
                 eas = f"{row.model_east:> 12.3f}"
                 nor = f"{row.model_north:> 12.3f}"
-                if self.elevation:
+                if self.topography:
                     ele = f"{row.model_elevation:> 12.3f}"
                 else:
                     ele = f"{0:> 12.3f}"
@@ -457,7 +444,9 @@ class Data(object):
                     "[v/m]/[t]",
                     "[mv/km]/[nt]",
                 ):
-                    raise DataError('Unsupported unit "{}"'.format(self.units))
+                    raise ValueError(
+                        'Unsupported unit "{}"'.format(self.units)
+                    )
                 else:
                     rea = "{value.real:> 14.6e}"
                     ima = "{value.imag:> 14.6e}"
@@ -469,7 +458,7 @@ class Data(object):
                 lon = f"{row.longitude:> 14.6f}"
                 eas = f"{row.model_east:> 15.3f}"
                 nor = f"{row.model_north:> 15.3f}"
-                if self.elevation:
+                if self.topography:
                     ele = f"{row.model_elevation:> 10.3f}"
                 else:
                     ele = f"{0:> 10.3f}"
@@ -481,7 +470,9 @@ class Data(object):
                     "[v/m]/[t]",
                     "[mv/km]/[nt]",
                 ):
-                    raise DataError('Unsupported unit "{}"'.format(self.units))
+                    raise ValueError(
+                        'Unsupported unit "{}"'.format(self.units)
+                    )
                 else:
                     rea = "{value.real:> 17.6e}"
                     ima = "{value.imag:> 17.6e}"
@@ -532,7 +523,7 @@ class Data(object):
         :type elevation: boolean, optional
 
         :raises NotImplementedError: If the inversion mode is not supported
-        :raises DataError: :class:`mtpy.utils.exceptions.DataError` if a parameter
+        :raises ValueError: :class:`mtpy.utils.exceptions.ValueError` if a parameter
         is missing
         :return: full path to data file
         :rtype: Path
@@ -595,179 +586,179 @@ class Data(object):
         self.logger.info("Wrote ModEM data file to {0}".format(self.data_fn))
         return self.data_fn
 
-    def convert_ws3dinv_data_file(
-        self,
-        ws_data_fn,
-        station_fn=None,
-        save_path=None,
-        fn_basename="ws_data_file.dat",
-    ):
-        """
-        convert a ws3dinv data file into ModEM format
+    # def convert_ws3dinv_data_file(
+    #     self,
+    #     ws_data_fn,
+    #     station_fn=None,
+    #     save_path=None,
+    #     fn_basename="ws_data_file.dat",
+    # ):
+    #     """
+    #     convert a ws3dinv data file into ModEM format
 
-        Arguments:
-        ------------
-            **ws_data_fn** : string
-                             full path to WS data file
+    #     Arguments:
+    #     ------------
+    #         **ws_data_fn** : string
+    #                          full path to WS data file
 
-            **station_fn** : string
-                             full path to station info file output by
-                             mtpy.modeling.ws3dinv. Or you can create one using
-                             mtpy.modeling.ws3dinv.WSStation
+    #         **station_fn** : string
+    #                          full path to station info file output by
+    #                          mtpy.modeling.ws3dinv. Or you can create one using
+    #                          mtpy.modeling.ws3dinv.WSStation
 
-            **save_path** : string
-                            directory path to save data file to.
-                            *default* is cwd
+    #         **save_path** : string
+    #                         directory path to save data file to.
+    #                         *default* is cwd
 
-            **fn_basename** : string
-                              basename to save data file as
-                              *default* is 'ModEM_Data.dat'
+    #         **fn_basename** : string
+    #                           basename to save data file as
+    #                           *default* is 'ModEM_Data.dat'
 
-        Outputs:
-        -----------
-            **data_fn** : string
-                          full path to created data file
+    #     Outputs:
+    #     -----------
+    #         **data_fn** : string
+    #                       full path to created data file
 
-        :Example: ::
+    #     :Example: ::
 
-            >>> import mtpy.modeling.modem as modem
-            >>> mdr = modem.Data()
-            >>> mdr.convert_ws3dinv_data_file(r"/home/ws3dinv/inv1/WSData.dat",
-                    station_fn=r"/home/ws3dinv/inv1/WS_Station_Locations.txt")
-        """
+    #         >>> import mtpy.modeling.modem as modem
+    #         >>> mdr = modem.Data()
+    #         >>> mdr.convert_ws3dinv_data_file(r"/home/ws3dinv/inv1/WSData.dat",
+    #                 station_fn=r"/home/ws3dinv/inv1/WS_Station_Locations.txt")
+    #     """
 
-        if not Path(ws_data_fn).is_file():
-            raise ws.WSInputError(
-                "Did not find {0}, check path".format(ws_data_fn)
-            )
+    #     if not Path(ws_data_fn).is_file():
+    #         raise ValueError(
+    #             "Did not find {0}, check path".format(ws_data_fn)
+    #         )
 
-        if save_path is not None:
-            save_path = Path(save_path)
-        else:
-            save_path = self.save_path
+    #     if save_path is not None:
+    #         save_path = Path(save_path)
+    #     else:
+    #         save_path = self.save_path
 
-        # --> get data from data file
-        wsd = ws.WSData()
-        wsd.read_data_file(ws_data_fn, station_fn=station_fn)
+    #     # --> get data from data file
+    #     wsd = ws.WSData()
+    #     wsd.read_data_file(ws_data_fn, station_fn=station_fn)
 
-        ns = wsd.data["station"].shape[0]
-        nf = wsd.period_list.shape[0]
+    #     ns = wsd.data["station"].shape[0]
+    #     nf = wsd.period_list.shape[0]
 
-        self.period_list = wsd.period_list.copy()
-        self.data_array = np.zeros(
-            ns, dtype=self.make_dtype((nf, 2, 2), (nf, 1, 2))
-        )
+    #     self.period_list = wsd.period_list.copy()
+    #     self.data_array = np.zeros(
+    #         ns, dtype=self.make_dtype((nf, 2, 2), (nf, 1, 2))
+    #     )
 
-        # --> fill data array
-        for ii, d_arr in enumerate(wsd.data):
-            self.data_array[ii]["station"] = d_arr["station"]
-            self.data_array[ii]["rel_east"] = d_arr["east"]
-            self.data_array[ii]["rel_north"] = d_arr["north"]
-            self.data_array[ii]["z"][:] = d_arr["z_data"]
-            self.data_array[ii]["z_err"][:] = (
-                d_arr["z_data_err"].real * d_arr["z_err_map"].real
-            )
-            self.data_array[ii]["station"] = d_arr["station"]
-            self.data_array[ii]["lat"] = 0.0
-            self.data_array[ii]["lon"] = 0.0
-            self.data_array[ii]["rel_east"] = d_arr["east"]
-            self.data_array[ii]["rel_north"] = d_arr["north"]
-            self.data_array[ii]["elev"] = 0.0
+    #     # --> fill data array
+    #     for ii, d_arr in enumerate(wsd.data):
+    #         self.data_array[ii]["station"] = d_arr["station"]
+    #         self.data_array[ii]["rel_east"] = d_arr["east"]
+    #         self.data_array[ii]["rel_north"] = d_arr["north"]
+    #         self.data_array[ii]["z"][:] = d_arr["z_data"]
+    #         self.data_array[ii]["z_err"][:] = (
+    #             d_arr["z_data_err"].real * d_arr["z_err_map"].real
+    #         )
+    #         self.data_array[ii]["station"] = d_arr["station"]
+    #         self.data_array[ii]["lat"] = 0.0
+    #         self.data_array[ii]["lon"] = 0.0
+    #         self.data_array[ii]["rel_east"] = d_arr["east"]
+    #         self.data_array[ii]["rel_north"] = d_arr["north"]
+    #         self.data_array[ii]["elev"] = 0.0
 
-        # need to change the inversion mode to be the same as the ws_data file
-        if self.data_array["z"].all() == 0.0:
-            if self.data_array["tip"].all() == 0.0:
-                self.inv_mode = "4"
-            else:
-                self.inv_mode = "3"
-        else:
-            if self.data_array["tip"].all() == 0.0:
-                self.inv_mode = "2"
-            else:
-                self.inv_mode = "1"
+    #     # need to change the inversion mode to be the same as the ws_data file
+    #     if self.data_array["z"].all() == 0.0:
+    #         if self.data_array["tip"].all() == 0.0:
+    #             self.inv_mode = "4"
+    #         else:
+    #             self.inv_mode = "3"
+    #     else:
+    #         if self.data_array["tip"].all() == 0.0:
+    #             self.inv_mode = "2"
+    #         else:
+    #             self.inv_mode = "1"
 
-        # -->write file
-        self.write_data_file()
+    #     # -->write file
+    #     self.write_data_file()
 
-    def convert_modem_to_ws(
-        self, data_fn=None, ws_data_fn=None, error_map=[1, 1, 1, 1]
-    ):
-        """
-        convert a ModEM data file to WS format.
+    # def convert_modem_to_ws(
+    #     self, data_fn=None, ws_data_fn=None, error_map=[1, 1, 1, 1]
+    # ):
+    #     """
+    #     convert a ModEM data file to WS format.
 
-        Arguments
-        -------------
-            **data_fn** : string
-                         full path to modem data file to convert
+    #     Arguments
+    #     -------------
+    #         **data_fn** : string
+    #                      full path to modem data file to convert
 
-            **ws_data_fn** : string
-                             full path to write ws format data file
+    #         **ws_data_fn** : string
+    #                          full path to write ws format data file
 
-            **error_map** : [zxx, zxy, zyx, zyy] floats
-                            error map that ws uses, weights for each component
-                            *default* is [1, 1, 1, 1] for equal weighting
-        Returns
-        ------------
-            **ws_data_fn** : string
-                             full path of ws data file
+    #         **error_map** : [zxx, zxy, zyx, zyy] floats
+    #                         error map that ws uses, weights for each component
+    #                         *default* is [1, 1, 1, 1] for equal weighting
+    #     Returns
+    #     ------------
+    #         **ws_data_fn** : string
+    #                          full path of ws data file
 
-            **ws_station_fn** : string
-                                full path to ws station file
+    #         **ws_station_fn** : string
+    #                             full path to ws station file
 
-        Example
-        -----------
-            :Convert ModEM data file to WS: ::
-                >>> import mtpy.modeling.modem as modem
-                >>> md = modem.Data()
-                >>> md.convert_modem_to_ws(data_fn=r"/home/mt/modem/data.dat")
-        """
+    #     Example
+    #     -----------
+    #         :Convert ModEM data file to WS: ::
+    #             >>> import mtpy.modeling.modem as modem
+    #             >>> md = modem.Data()
+    #             >>> md.convert_modem_to_ws(data_fn=r"/home/mt/modem/data.dat")
+    #     """
 
-        if self.data_fn is not None:
-            self.read_data_file(data_fn)
+    #     if self.data_fn is not None:
+    #         self.read_data_file(data_fn)
 
-        if ws_data_fn is None:
-            save_path = self.save_path
-            ws_data_fn = Path(save_path, "WS_Data.dat")
+    #     if ws_data_fn is None:
+    #         save_path = self.save_path
+    #         ws_data_fn = Path(save_path, "WS_Data.dat")
 
-        else:
-            save_path = Path(ws_data_fn).parent
+    #     else:
+    #         save_path = Path(ws_data_fn).parent
 
-        station_info = ws.WSStation()
-        station_info.east = self.data_array["rel_east"]
-        station_info.north = self.data_array["rel_north"]
-        station_info.names = self.data_array["station"]
-        station_info.elev = self.data_array["elev"]
-        station_info.save_path = save_path
-        station_info.write_station_file()
+    #     station_info = ws.WSStation()
+    #     station_info.east = self.data_array["rel_east"]
+    #     station_info.north = self.data_array["rel_north"]
+    #     station_info.names = self.data_array["station"]
+    #     station_info.elev = self.data_array["elev"]
+    #     station_info.save_path = save_path
+    #     station_info.write_station_file()
 
-        ws_data = ws.WSData()
-        ws_data.period_list = self.period_list.copy()
-        ws_data.z_err_map = error_map
-        ws_data.z_err = "data"
-        z_shape = (self.period_list.size, 2, 2)
-        data_dtype = [
-            ("station", "|U50"),
-            ("east", np.float),
-            ("north", np.float),
-            ("z_data", (np.complex, z_shape)),
-            ("z_data_err", (np.complex, z_shape)),
-            ("z_err_map", (np.complex, z_shape)),
-        ]
-        ws_data.data = np.zeros(
-            self.data_array["station"].size, dtype=data_dtype
-        )
-        ws_data.data["station"][:] = self.data_array["station"]
-        ws_data.data["east"] = self.data_array["rel_east"]
-        ws_data.data["north"] = self.data_array["rel_north"]
-        ws_data.data["z_data"][:, :, :] = self.data_array["z"]
-        ws_data.data["z_data_err"][:, :, :] = self.data_array["z_err"] * (
-            1 + 1j
-        )
-        ws_data.data["z_err_map"][:, :, :] = np.array([[1, 1], [1, 1]])
+    #     ws_data = ws.WSData()
+    #     ws_data.period_list = self.period_list.copy()
+    #     ws_data.z_err_map = error_map
+    #     ws_data.z_err = "data"
+    #     z_shape = (self.period_list.size, 2, 2)
+    #     data_dtype = [
+    #         ("station", "|U50"),
+    #         ("east", np.float),
+    #         ("north", np.float),
+    #         ("z_data", (np.complex, z_shape)),
+    #         ("z_data_err", (np.complex, z_shape)),
+    #         ("z_err_map", (np.complex, z_shape)),
+    #     ]
+    #     ws_data.data = np.zeros(
+    #         self.data_array["station"].size, dtype=data_dtype
+    #     )
+    #     ws_data.data["station"][:] = self.data_array["station"]
+    #     ws_data.data["east"] = self.data_array["rel_east"]
+    #     ws_data.data["north"] = self.data_array["rel_north"]
+    #     ws_data.data["z_data"][:, :, :] = self.data_array["z"]
+    #     ws_data.data["z_data_err"][:, :, :] = self.data_array["z_err"] * (
+    #         1 + 1j
+    #     )
+    #     ws_data.data["z_err_map"][:, :, :] = np.array([[1, 1], [1, 1]])
 
-        ws_data.write_data_file(save_path=save_path, data_fn=ws_data_fn)
+    #     ws_data.write_data_file(save_path=save_path, data_fn=ws_data_fn)
 
-        return ws_data.data_fn, station_info.station_fn
+    #     return ws_data.data_fn, station_info.station_fn
 
     def read_data_file(self, data_fn, center_utm=None):
         """
@@ -778,7 +769,7 @@ class Data(object):
         the grid for putting the data and model back into utm/grid coordinates,
         format [east_0, north_0, z_0], defaults to None
         :type center_utm: list or tuple, optional
-        :raises DataError: If cannot compute component
+        :raises ValueError: If cannot compute component
 
         Fills attributes:
             * data_array
@@ -817,9 +808,9 @@ class Data(object):
         self.fn_basename = self.data_fn.name
 
         if self.data_fn is None:
-            raise DataError("data_fn is None, enter a data file to read.")
+            raise ValueError("data_fn is None, enter a data file to read.")
         elif not self.data_fn.is_file():
-            raise DataError(
+            raise ValueError(
                 "Could not find {0}, check path".format(self.data_fn)
             )
 
@@ -989,7 +980,7 @@ class Data(object):
                 elif self.wave_sign_impedance == "-":
                     z_value = dd[8] - 1j * dd[9]
                 else:
-                    raise DataError(
+                    raise ValueError(
                         'Incorrect wave sign "{}" (impedance)'.format(
                             self.wave_sign_impedance
                         )
@@ -999,7 +990,9 @@ class Data(object):
                     z_value *= 796.0
                     z_err *= 796.0
                 elif self.units.lower() not in ("[v/m]/[t]", "[mv/km]/[nt]"):
-                    raise DataError('Unsupported unit "{}"'.format(self.units))
+                    raise ValueError(
+                        'Unsupported unit "{}"'.format(self.units)
+                    )
 
                 data_dict[dd[1]].impedance[p_index, ii, jj] = z_value
                 data_dict[dd[1]].impedance_error[p_index, ii, jj] = z_err
@@ -1014,7 +1007,7 @@ class Data(object):
                         dd[8] - 1j * dd[9]
                     )
                 else:
-                    raise DataError(
+                    raise ValueError(
                         'Incorrect wave sign "{}" (tipper)'.format(
                             self.wave_sign_tipper
                         )

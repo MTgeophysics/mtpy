@@ -18,7 +18,8 @@ from matplotlib.widgets import Button, RadioButtons, SpanSelector
 
 from mtpy.modeling.modem import Data, Model
 from mtpy.utils import exceptions as mtex, basemap_tools
-from mtpy.utils.gis_tools import epsg_project
+
+# from mtpy.utils.gis_tools import epsg_project
 from mtpy.utils.calculator import nearest_index
 from mtpy.utils.mesh_tools import rotate_mesh
 
@@ -210,7 +211,9 @@ class PlotSlices(object):
         self.station_font_weight = kwargs.pop("station_font_weight", "bold")
         self.station_font_rotation = kwargs.pop("station_font_rotation", 60)
         self.station_font_color = kwargs.pop("station_font_color", "k")
-        self.station_marker = kwargs.pop("station_marker", r"$\blacktriangledown$")
+        self.station_marker = kwargs.pop(
+            "station_marker", r"$\blacktriangledown$"
+        )
         self.station_color = kwargs.pop("station_color", "k")
         self.ms = kwargs.pop("ms", 10)
 
@@ -223,7 +226,11 @@ class PlotSlices(object):
         self.save_path = kwargs.pop("save_path", os.getcwd())
         self.save_format = kwargs.pop("save_format", "png")
 
-        self.current_label_desc = {"N-E": "Depth", "N-Z": "Easting", "E-Z": "Northing"}
+        self.current_label_desc = {
+            "N-E": "Depth",
+            "N-Z": "Easting",
+            "E-Z": "Northing",
+        }
 
         # read data
         self.read_files()
@@ -247,7 +254,9 @@ class PlotSlices(object):
         self._mcz = (self._mz[1:] + self._mz[:-1]) / 2.0
 
         # Create mesh-grid based on cell-centre coordinates
-        self._mgx, self._mgy, self._mgz = np.meshgrid(self._mcx, self._mcy, self._mcz)
+        self._mgx, self._mgy, self._mgz = np.meshgrid(
+            self._mcx, self._mcy, self._mcz
+        )
 
         # List of xyz coodinates of mesh-grid
         self._mgxyz = np.vstack(
@@ -351,11 +360,15 @@ class PlotSlices(object):
                 exit(-1)
         elif option == "XY":
             assert (
-                type(coords) == np.ndarray and coords.ndim == 2 and coords.shape[1] == 2
+                type(coords) == np.ndarray
+                and coords.ndim == 2
+                and coords.shape[1] == 2
             ), "Shape of coords should be (np, 2); Aborting.."
         elif option == "XYZ":
             assert (
-                type(coords) == np.ndarray and coords.ndim == 2 and coords.shape[1] == 3
+                type(coords) == np.ndarray
+                and coords.ndim == 2
+                and coords.shape[1] == 3
             ), "Shape of coords should be (np, 3); Aborting.."
 
         xyz_list = []
@@ -395,7 +408,7 @@ class PlotSlices(object):
 
             dx = xx[:-1] - xx[1:]
             dy = yy[:-1] - yy[1:]
-            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2))
+            dst = np.cumsum(np.sqrt(dx**2 + dy**2))
             dst = np.insert(dst, 0, 0)
 
             xio = interp1d(dst, xx)
@@ -403,7 +416,9 @@ class PlotSlices(object):
             # ====
 
             if nsteps > -1:
-                d = np.linspace(dst.min(), dst.max(), nsteps)  # create regular grid
+                d = np.linspace(
+                    dst.min(), dst.max(), nsteps
+                )  # create regular grid
             for zi in self.grid_z:
                 for xi, yi in zip(xio(d), yio(d)):
                     xyz_list.append([xi + xmin, yi + ymin, zi])
@@ -428,7 +443,12 @@ class PlotSlices(object):
     # end func
 
     def _get_slice_helper(
-        self, _xyz_list, nn=1, p=4, absolute_query_locations=False, extrapolate=True
+        self,
+        _xyz_list,
+        nn=1,
+        p=4,
+        absolute_query_locations=False,
+        extrapolate=True,
     ):
         """
         Function to retrieve interpolated field values at arbitrary locations
@@ -490,9 +510,15 @@ class PlotSlices(object):
             minZ = np.min(self._mgxyz[:, 2])
             maxZ = np.max(self._mgxyz[:, 2])
 
-            xFilter = np.array(xyz_list[:, 0] < minX) + np.array(xyz_list[:, 0] > maxX)
-            yFilter = np.array(xyz_list[:, 1] < minY) + np.array(xyz_list[:, 1] > maxY)
-            zFilter = np.array(xyz_list[:, 2] < minZ) + np.array(xyz_list[:, 2] > maxZ)
+            xFilter = np.array(xyz_list[:, 0] < minX) + np.array(
+                xyz_list[:, 0] > maxX
+            )
+            yFilter = np.array(xyz_list[:, 1] < minY) + np.array(
+                xyz_list[:, 1] > maxY
+            )
+            zFilter = np.array(xyz_list[:, 2] < minZ) + np.array(
+                xyz_list[:, 2] > maxZ
+            )
 
             img[xFilter] = np.nan
             img[yFilter] = np.nan
@@ -532,10 +558,16 @@ class PlotSlices(object):
                 md_data = Data(model_epsg=self.model_epsg)
                 md_data.read_data_file(self.data_fn)
 
-                self.station_east = md_data.station_locations.rel_east / self.dscale
-                self.station_north = md_data.station_locations.rel_north / self.dscale
+                self.station_east = (
+                    md_data.station_locations.rel_east / self.dscale
+                )
+                self.station_north = (
+                    md_data.station_locations.rel_north / self.dscale
+                )
                 self.station_names = md_data.station_locations.station
-                self.station_elev = md_data.station_locations.elev / self.dscale
+                self.station_elev = (
+                    md_data.station_locations.elev / self.dscale
+                )
 
                 self.md_data = md_data
             else:
@@ -572,20 +604,20 @@ class PlotSlices(object):
     ):
         """
         plot model depth slice on a basemap using basemap modules in matplotlib
-        
+
         :param depth: depth in model to plot
-        :param tick_interval: tick interval on map in degrees, if None it is 
+        :param tick_interval: tick interval on map in degrees, if None it is
                               calculated from the data extent
         :param save: True/False, whether or not to save and close figure
-        :param savepath: full path of file to save to, if None, saves to 
+        :param savepath: full path of file to save to, if None, saves to
                          self.save_path
         :new_figure: True/False, whether or not to initiate a new figure for
                      the plot
-        :param mesh_rotation_angle: rotation angle of mesh, in degrees 
+        :param mesh_rotation_angle: rotation angle of mesh, in degrees
                                     clockwise from north
         :param **basemap_kwargs: provide any valid arguments to Basemap
                                  instance and these will be passed to the map.
-        
+
         """
 
         if self.model_epsg is None:
@@ -609,7 +641,10 @@ class PlotSlices(object):
 
         # get eastings/northings of mesh
         ge, gn = self.md_model.grid_east, self.md_model.grid_north
-        e0, n0 = self.md_data.center_point["east"], self.md_data.center_point["north"]
+        e0, n0 = (
+            self.md_data.center_point["east"],
+            self.md_data.center_point["north"],
+        )
 
         if mesh_rotation_angle != 0:
             if hasattr(self, "mesh_rotation_angle"):
@@ -627,7 +662,9 @@ class PlotSlices(object):
 
         # rotate stations if necessary
         if mesh_rotation_angle != 0:
-            self.md_data.station_locations.rotate_stations(angle_to_rotate_stations)
+            self.md_data.station_locations.rotate_stations(
+                angle_to_rotate_stations
+            )
 
             # get relative locations
             seast, snorth = (
@@ -649,7 +686,9 @@ class PlotSlices(object):
                 self.md_data.station_locations, **basemap_kwargs
             )
             # add frame to basemap and plot data
-            basemap_tools.add_basemap_frame(self.bm, tick_interval=tick_interval)
+            basemap_tools.add_basemap_frame(
+                self.bm, tick_interval=tick_interval
+            )
         else:
             self.bm = basemap
 
@@ -698,7 +737,8 @@ class PlotSlices(object):
             plt.savefig(
                 os.path.join(
                     self.save_path,
-                    "DepthSlice%1i%1s.png" % (depth / self.dscale, self.map_scale),
+                    "DepthSlice%1i%1s.png"
+                    % (depth / self.dscale, self.map_scale),
                 ),
                 dpi=self.fig_dpi,
             )
@@ -713,16 +753,24 @@ class PlotSlices(object):
 
 
         """
-        print("=============== ===============================================")
-        print("    Buttons                  Description                       ")
-        print("=============== ===============================================")
+        print(
+            "=============== ==============================================="
+        )
+        print(
+            "    Buttons                  Description                       "
+        )
+        print(
+            "=============== ==============================================="
+        )
         print("     'e'          moves n-s slice east by one model block")
         print("     'w'          moves n-s slice west by one model block")
         print("     'n'          moves e-w slice north by one model block")
         print("     'm'          moves e-w slice south by one model block")
         print("     'd'          moves depth slice down by one model block")
         print("     'u'          moves depth slice up by one model block")
-        print("=============== ===============================================")
+        print(
+            "=============== ==============================================="
+        )
 
         self.font_dict = {"size": self.font_size * 0.75, "weight": "bold"}
 
@@ -761,7 +809,10 @@ class PlotSlices(object):
             self.z_limits = (-5000 / self.dscale, depth_limit)
 
         self.fig = plt.figure(
-            self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi, frameon=False
+            self.fig_num,
+            figsize=self.fig_size,
+            dpi=self.fig_dpi,
+            frameon=False,
         )
         plt.clf()
 
@@ -830,10 +881,14 @@ class PlotSlices(object):
         cb.ax.tick_params(axis="y", direction="in")
 
         cb.set_label(
-            "Resistivity ($\Omega \cdot$m)", fontdict={"size": self.font_size}, x=2
+            "Resistivity ($\Omega \cdot$m)",
+            fontdict={"size": self.font_size},
+            x=2,
         )
 
-        cb.set_ticks(np.arange(np.ceil(self.climits[0]), np.floor(self.climits[1] + 1)))
+        cb.set_ticks(
+            np.arange(np.ceil(self.climits[0]), np.floor(self.climits[1] + 1))
+        )
         cblabeldict = {
             -2: "$10^{-3}$",
             -1: "$10^{-1}$",
@@ -1016,7 +1071,10 @@ class PlotSlices(object):
         )
 
         button = Button(
-            self.ax_button, "Export", color="lightgoldenrodyellow", hovercolor="orange"
+            self.ax_button,
+            "Export",
+            color="lightgoldenrodyellow",
+            hovercolor="orange",
         )
         button.on_clicked(buttonClicked)
         self.update_range_func = updateRange
@@ -1032,7 +1090,9 @@ class PlotSlices(object):
     #            plt.draw()
     # end func
 
-    def export_slices(self, plane="N-E", indexlist=[], station_buffer=200, save=True):
+    def export_slices(
+        self, plane="N-E", indexlist=[], station_buffer=200, save=True
+    ):
         """
         Plot Slices
 
@@ -1094,22 +1154,34 @@ class PlotSlices(object):
                 plot_res = np.log10(self.res_model[:, :, ii].T)
                 ax1.set_xlim(self.ew_limits)
                 ax1.set_ylim(self.ns_limits)
-                ax1.set_ylabel("Northing (" + self.map_scale + ")", fontdict=fdict)
-                ax1.set_xlabel("Easting (" + self.map_scale + ")", fontdict=fdict)
+                ax1.set_ylabel(
+                    "Northing (" + self.map_scale + ")", fontdict=fdict
+                )
+                ax1.set_xlabel(
+                    "Easting (" + self.map_scale + ")", fontdict=fdict
+                )
             elif plane == "N-Z":
                 plot_res = np.log10(self.res_model[:, ii, :])
                 ax1.set_xlim(self.ns_limits)
                 ax1.set_ylim(self.z_limits)
                 ax1.invert_yaxis()
-                ax1.set_ylabel("Depth (" + self.map_scale + ")", fontdict=fdict)
-                ax1.set_xlabel("Northing (" + self.map_scale + ")", fontdict=fdict)
+                ax1.set_ylabel(
+                    "Depth (" + self.map_scale + ")", fontdict=fdict
+                )
+                ax1.set_xlabel(
+                    "Northing (" + self.map_scale + ")", fontdict=fdict
+                )
             elif plane == "E-Z":
                 plot_res = np.log10(self.res_model[ii, :, :])
                 ax1.set_xlim(self.ew_limits)
                 ax1.set_ylim(self.z_limits)
                 ax1.invert_yaxis()
-                ax1.set_ylabel("Depth (" + self.map_scale + ")", fontdict=fdict)
-                ax1.set_xlabel("Easting (" + self.map_scale + ")", fontdict=fdict)
+                ax1.set_ylabel(
+                    "Depth (" + self.map_scale + ")", fontdict=fdict
+                )
+                ax1.set_xlabel(
+                    "Easting (" + self.map_scale + ")", fontdict=fdict
+                )
             # end if
 
             mesh_plot = ax1.pcolormesh(
@@ -1125,10 +1197,14 @@ class PlotSlices(object):
 
                 if plane == "N-E":
                     for ee, nn, slabel in zip(
-                        self.station_east, self.station_north, self.station_names
+                        self.station_east,
+                        self.station_north,
+                        self.station_names,
                     ):
                         if self.station_id is not None:
-                            slabel = slabel[self.station_id[0] : self.station_id[1]]
+                            slabel = slabel[
+                                self.station_id[0] : self.station_id[1]
+                            ]
                         # plot marker
                         #                        ax1.plot(ee, nn, 'k.')
                         ax1.text(
@@ -1151,7 +1227,8 @@ class PlotSlices(object):
                         )
                 elif plane == "N-Z":
                     sids = (
-                        np.fabs(self.grid_east[ii] - self.station_east) < station_buffer
+                        np.fabs(self.grid_east[ii] - self.station_east)
+                        < station_buffer
                     )
                     nvals = self.station_north[sids]
                     for x in nvals:
@@ -1161,7 +1238,10 @@ class PlotSlices(object):
                             self.station_marker,
                             horizontalalignment="center",
                             verticalalignment="baseline",
-                            fontdict={"size": self.ms, "color": self.station_color},
+                            fontdict={
+                                "size": self.ms,
+                                "color": self.station_color,
+                            },
                         )
                 elif plane == "E-Z":
                     sids = (
@@ -1176,7 +1256,10 @@ class PlotSlices(object):
                             self.station_marker,
                             horizontalalignment="center",
                             verticalalignment="baseline",
-                            fontdict={"size": self.ms, "color": self.station_color},
+                            fontdict={
+                                "size": self.ms,
+                                "color": self.station_color,
+                            },
                         )
                 # end if
 
@@ -1222,7 +1305,9 @@ class PlotSlices(object):
                 )
 
                 cb.set_ticks(
-                    np.arange(np.ceil(self.climits[0]), np.floor(self.climits[1] + 1))
+                    np.arange(
+                        np.ceil(self.climits[0]), np.floor(self.climits[1] + 1)
+                    )
                 )
                 cblabeldict = {
                     -2: "$10^{-3}$",
@@ -1241,7 +1326,8 @@ class PlotSlices(object):
                     [
                         cblabeldict[cc]
                         for cc in np.arange(
-                            np.ceil(self.climits[0]), np.floor(self.climits[1] + 1)
+                            np.ceil(self.climits[0]),
+                            np.floor(self.climits[1] + 1),
                         )
                     ]
                 )
@@ -1418,7 +1504,10 @@ class PlotSlices(object):
         # --> depth indication line
         self.ax_nz.plot(
             [self.grid_north.min(), self.grid_north.max()],
-            [self.grid_z[self.index_vertical], self.grid_z[self.index_vertical]],
+            [
+                self.grid_z[self.index_vertical],
+                self.grid_z[self.index_vertical],
+            ],
             lw=1,
             color="r",
         )
@@ -1482,7 +1571,11 @@ class PlotSlices(object):
                         "+",
                         verticalalignment="center",
                         horizontalalignment="center",
-                        fontdict={"size": 1, "weight": "bold", "color": (0.75, 0, 0)},
+                        fontdict={
+                            "size": 1,
+                            "weight": "bold",
+                            "color": (0.75, 0, 0),
+                        },
                     )
                     self.ax_en.text(
                         ee,
@@ -1490,7 +1583,11 @@ class PlotSlices(object):
                         name[2:],
                         verticalalignment="center",
                         horizontalalignment="center",
-                        fontdict={"size": 1, "weight": "bold", "color": (0.75, 0, 0)},
+                        fontdict={
+                            "size": 1,
+                            "weight": "bold",
+                            "color": (0.75, 0, 0),
+                        },
                     )
 
         self.fig.canvas.draw()
@@ -1503,14 +1600,20 @@ class PlotSlices(object):
         for xx in self.grid_east:
             self.east_line_xlist.extend([xx, xx])
             self.east_line_xlist.append(None)
-            self.east_line_ylist.extend([self.grid_north.min(), self.grid_north.max()])
+            self.east_line_ylist.extend(
+                [self.grid_north.min(), self.grid_north.max()]
+            )
             self.east_line_ylist.append(None)
-        self.ax_map.plot(self.east_line_xlist, self.east_line_ylist, lw=0.25, color="k")
+        self.ax_map.plot(
+            self.east_line_xlist, self.east_line_ylist, lw=0.25, color="k"
+        )
 
         self.north_line_xlist = []
         self.north_line_ylist = []
         for yy in self.grid_north:
-            self.north_line_xlist.extend([self.grid_east.min(), self.grid_east.max()])
+            self.north_line_xlist.extend(
+                [self.grid_east.min(), self.grid_east.max()]
+            )
             self.north_line_xlist.append(None)
             self.north_line_ylist.extend([yy, yy])
             self.north_line_ylist.append(None)
@@ -1520,7 +1623,10 @@ class PlotSlices(object):
         # --> e-w indication line
         self.ax_map.plot(
             [self.grid_east.min(), self.grid_east.max()],
-            [self.grid_north[self.index_north], self.grid_north[self.index_north]],
+            [
+                self.grid_north[self.index_north],
+                self.grid_north[self.index_north],
+            ],
             lw=1,
             color="g",
         )
@@ -1557,7 +1663,9 @@ class PlotSlices(object):
         self.ax_map.text(
             self.ew_limits[0] * 0.95,
             self.ns_limits[1] * 0.95,
-            "{0:.5g} ({1})".format(self.grid_z[self.index_vertical], self.map_scale),
+            "{0:.5g} ({1})".format(
+                self.grid_z[self.index_vertical], self.map_scale
+            ),
             horizontalalignment="left",
             verticalalignment="top",
             bbox={"facecolor": "white"},
@@ -1809,7 +1917,10 @@ class PlotSlices(object):
             save_fn = os.path.join(
                 save_fn,
                 "_E{0}_N{1}_Z{2}.{3}".format(
-                    self.index_east, self.index_north, self.index_vertical, file_format
+                    self.index_east,
+                    self.index_north,
+                    self.index_vertical,
+                    file_format,
                 ),
             )
             self.fig.savefig(
@@ -1843,7 +1954,11 @@ if __name__ == "__main__":
     mfn = os.path.join(ModEM_files, "Modular_MPI_NLCG_056_im2.rho")
     dfn = os.path.join(ModEM_files, "ModEM_Data_im2.dat")
     ps = PlotSlices(
-        model_fn=mfn, data_fn=dfn, save_path="/tmp", plot_stations=True, plot_yn="n"
+        model_fn=mfn,
+        data_fn=dfn,
+        save_path="/tmp",
+        plot_stations=True,
+        plot_yn="n",
     )
     figs, fpaths = ps.export_slices("E-Z", [20], station_buffer=2000)
 
@@ -1852,12 +1967,19 @@ if __name__ == "__main__":
     for f, fp in zip(figs, fpaths):
         cbax = f.axes[1]
         oldPos = cbax.get_position()  # get the original position
-        newPos = [oldPos.x0, oldPos.y0, oldPos.width / 2.0, oldPos.height / 2.0]
+        newPos = [
+            oldPos.x0,
+            oldPos.y0,
+            oldPos.width / 2.0,
+            oldPos.height / 2.0,
+        ]
         cbax.set_position(newPos)
         f.savefig(fp, dpi=ps.fig_dpi)
 
     # Exporting slices without saving
-    figs, fpaths = ps.export_slices("E-Z", [20], station_buffer=2000, save=False)
+    figs, fpaths = ps.export_slices(
+        "E-Z", [20], station_buffer=2000, save=False
+    )
     figs[0].savefig("/tmp/f.png", dpi=600)
 
     # Fetch a profile along station locations
