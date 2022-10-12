@@ -664,7 +664,11 @@ class MT(TF, MTLocation):
 
         if len(err.shape) == 1:
             z_err = np.zeros_like(self.impedance, dtype=float)
-            z_err[:] = err
+            z_err[:, 0, 0] = err
+            z_err[:, 0, 1] = err
+            z_err[:, 1, 0] = err
+            z_err[:, 1, 1] = err
+
         else:
             z_err = err
 
@@ -693,11 +697,23 @@ class MT(TF, MTLocation):
         :rtype: TYPE
 
         """
+        if self.tipper is None:
+            self.logger.warning("Tipper is None, cannot compute model errors")
+            return
+
         try:
             error_function = ERROR_DICT[error_type]
         except KeyError:
             raise KeyError(f"Error type {error_type} is not supported")
 
-        self.tipper_model_error = error_function(
-            self.tipper.data, error_value, floor=floor
-        )
+        err = error_function(self.tipper.data, error_value, floor=floor)
+
+        if len(err.shape) == 1:
+            t_err = np.zeros_like(self.impedance, dtype=float)
+            t_err[:, 0, 0] = err
+            t_err[:, 0, 1] = err
+
+        else:
+            t_err = err
+
+        self.tipper_model_error = t_err

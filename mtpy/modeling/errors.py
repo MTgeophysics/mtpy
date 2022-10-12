@@ -238,7 +238,7 @@ def compute_off_diagonals_error(array, error_value, floor=True):
     return err
 
 
-def compute_absolute_error(array, error_value):
+def compute_absolute_error(array, error_value, floor=False):
     """
 
     :param array: DESCRIPTION
