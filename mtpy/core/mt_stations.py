@@ -12,6 +12,7 @@ ModEM
 # =============================================================================
 # Imports
 # =============================================================================
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -19,6 +20,12 @@ import geopandas as gpd
 from mtpy.core.mt_location import MTLocation
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
+try:
+    from pyevtk.hl import pointsToVTK
+except ImportError:
+    print(
+        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
+    )
 # =============================================================================
 
 
@@ -70,9 +77,9 @@ class MTStations:
                 ("lat", "<10.4f"),
                 ("lon", "<10.4f"),
                 ("elev", "<8.2f"),
-                ("rel_east", "<13.2f"),
-                ("rel_north", "<13.2f"),
-                ("rel_elev", "<8.2f"),
+                ("model_east", "<13.2f"),
+                ("model_north", "<13.2f"),
+                ("model_elev", "<8.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
                 ("zone", "<6"),
@@ -444,3 +451,102 @@ class MTStations:
         if not geometry:
             use_columns.remove("geometry")
         sdf.to_csv(csv_fn, index=False, columns=use_columns)
+
+    def write_vtk_station_file(
+        self,
+        vtk_save_path=None,
+        vtk_fn_basename="ModEM_stations",
+        geographic=False,
+        shift_east=0,
+        shift_north=0,
+        shift_elev=0,
+        units="km",
+        coordinate_system="nez+",
+    ):
+        """
+
+        :param vtk_save_path: directory to save vtk file to, defaults to None
+        :type vtk_save_path: string or Path, optional
+        :param vtk_fn_basename: filename basename of vtk file, note that .vtr
+        extension is automatically added, defaults to "ModEM_stations"
+        :type vtk_fn_basename: string, optional
+        :param geographic: If true puts the grid on geographic coordinates based
+        on the model_utm_zone, defaults to False
+        :type geographic: boolean, optional
+        :param shift_east: shift in east directions in meters, defaults to 0
+        :type shift_east: float, optional
+        :param shift_north: shift in north direction in meters, defaults to 0
+        :type shift_north: float, optional
+        :param shift_elev: shift in elevation + down in meters, defaults to 0
+        :type shift_elev: float, optional
+        :param units: Units of the spatial grid [ km | m | ft ], defaults to "km"
+        :type units: string, optional
+        :type : string
+        :param coordinate_system: coordinate system for the station, either the
+        normal MT right-hand coordinate system with z+ down or the sinister
+        z- down [ nez+ | enz- ], defaults to nez+
+        :return: full path to VTK file
+        :rtype: Path
+
+        Write VTK file
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations")
+
+        Write VTK file in geographic coordinates
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
+        >>> ...                       geographic=True)
+
+        Write VTK file in geographic coordinates with z+ up
+        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
+        >>> ...                       geographic=True,
+        >>> ...                       coordinate_system='enz-')
+
+        """
+
+        if isinstance(units, str):
+            if units.lower() == "km":
+                scale = 1.0 / 1000.00
+            elif units.lower() == "m":
+                scale = 1.0
+            elif units.lower() == "ft":
+                scale = 3.2808
+        elif isinstance(units, (int, float)):
+            scale = units
+
+        if vtk_save_path is None:
+            vtk_fn = self.save_path.joinpath(vtk_fn_basename)
+        else:
+            vtk_fn = Path(vtk_save_path, vtk_fn_basename)
+
+        sdf = self.station_locations.copy()
+
+        if not geographic:
+            if coordinate_system == "nez+":
+                vtk_x = (sdf.model_north + shift_north) * scale
+                vtk_y = (sdf.model_east + shift_east) * scale
+                vtk_z = (sdf.model_elev + shift_elev) * scale
+                extra = (sdf.model_elev + shift_elev) * scale
+            elif coordinate_system == "enz-":
+                vtk_x = (sdf.model_north + shift_north) * scale
+                vtk_y = (sdf.model_east + shift_east) * scale
+                vtk_z = (sdf.model_elev + shift_elev) * scale
+                extra = (sdf.model_elev + shift_elev) * scale
+
+        else:
+            if coordinate_system == "nez+":
+                vtk_y = (sdf.north + shift_north) * scale
+                vtk_x = (sdf.east + shift_east) * scale
+                vtk_z = -1 * (sdf.elev + shift_elev) * scale
+                extra = -1 * (sdf.elev + shift_elev)
+            elif coordinate_system == "enz-":
+                vtk_y = (sdf.north + shift_north) * scale
+                vtk_x = (sdf.east + shift_east) * scale
+                vtk_z = -1 * (sdf.elev + shift_elev) * scale
+                extra = -1 * (sdf.elev + shift_elev)
+
+        # write file
+        pointsToVTK(
+            vtk_fn.as_posix(), vtk_x, vtk_y, vtk_z, data={"elevation": extra}
+        )
+
+        self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
+        return vtk_fn
