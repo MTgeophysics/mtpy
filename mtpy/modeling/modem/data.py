@@ -212,13 +212,13 @@ class Data(object):
         self.z_units = "[mV/km]/[nT]"
         self.t_units = ""
         self.inv_mode = "1"
-        self.formatting = 1
+        self.formatting = "1"
 
         self.error_type_z = "geometric_mean"
         self.error_value_z = 5
         self.rotation_angle = 0
-        self.error_type_t = "absolute"
-        self.error_value_t = 0.02
+        self.error_type_tipper = "absolute"
+        self.error_value_tipper = 0.02
 
         self.data_fn = "ModEM_Data.dat"
         self.save_path = Path.cwd()
@@ -252,22 +252,18 @@ class Data(object):
                 "Component",
                 "Real",
                 "Imag",
-                "Error\n",
+                "Error",
             ]
         )
 
     def __str__(self):
         lines = ["ModEM Data Object:"]
         if self.dataframe is not None:
-            lines += [
-                f"\tNumber of stations: {len(self.dataframe.station.unique())}"
-            ]
-            lines += [
-                f"\tNumber of periods:  {len(self.dataframe.period.unique())}"
-            ]
+            lines += [f"\tNumber of stations: {self.n_stations}"]
+            lines += [f"\tNumber of periods:  {self.n_periods}"]
             lines += ["\tPeriod range:  "]
-            lines += [f"\t\tMin: {self.period_list.min()} s"]
-            lines += [f"\t\tMax: {self.period_list.max()} s"]
+            lines += [f"\t\tMin: {self.period.min()} s"]
+            lines += [f"\t\tMax: {self.period.max()} s"]
             # lines += [f"\tRotation angle:     {self.rotation_angle}"]
             # lines += ["\tData center:        "]
             # lines += [f"\t\t latitude:  {self.center_point.lat[0]:.4f} deg"]
@@ -292,13 +288,14 @@ class Data(object):
     @property
     def period(self):
         if self.dataframe is not None:
-            return sorted(self.dataframe.period.unique())
+            return np.sort(self.dataframe.period.unique())
 
     @property
     def n_stations(self):
         if self.dataframe is not None:
-            return len(self.dataframe.station.unique())
+            return self.dataframe.station.unique().size
 
+    @property
     def n_periods(self):
         return self.period.size
 
@@ -309,7 +306,7 @@ class Data(object):
 
         comps = []
         for inv_modes in self.inv_mode_dict[self.inv_mode]:
-            comps.append(self.inv_comp_dict[inv_modes])
+            comps += self.inv_comp_dict[inv_modes]
 
         return comps
 
@@ -346,13 +343,13 @@ class Data(object):
                 f"{error_value[0, 1]:.0f}%, "
                 f"{error_value[1, 0]:.0f}%, "
                 f"{error_value[1, 1]:.0f}%, "
-                f"data rotated {rotation_angle:.1f}_deg clockwise from N\n"
+                f"data rotated {rotation_angle:.1f}_deg clockwise from N"
             )
 
         else:
             h_str += (
                 f"error of {error_value:.0f}% data rotated "
-                f"{rotation_angle:.1f}_deg clockwise from N\n"
+                f"{rotation_angle:.1f}_deg clockwise from N"
             )
 
         return h_str
@@ -360,7 +357,7 @@ class Data(object):
     def _write_header(self, mode, center_point):
         """ """
         d_lines = []
-        if "impedance" in mode:
+        if "impedance" in mode.lower():
             d_lines.append(
                 self.get_header_string(
                     self.error_type_z,
@@ -369,10 +366,10 @@ class Data(object):
                 )
             )
             d_lines.append(self.header_string)
-            d_lines.append(f"> {self.inv_mode}\n")
-            d_lines.append(f"> exp({self.wave_sign_impedance}i\omega t)\n")
-            d_lines.append(f"> {self.z_units}\n")
-        elif "vertical" in mode:
+            d_lines.append(f"> {mode}")
+            d_lines.append(f"> exp({self.wave_sign_impedance}i\omega t)")
+            d_lines.append(f"> {self.z_units}")
+        elif "vertical" in mode.lower():
             d_lines.append(
                 self.get_header_string(
                     self.error_type_tipper,
@@ -381,25 +378,25 @@ class Data(object):
                 )
             )
             d_lines.append(self.header_string)
-            d_lines.append(f"> {self.inv_mode}\n")
-            d_lines.append(f"> exp({self.wave_sign_tipper}i\omega t)\n")
-            d_lines.append(f"> [{self.t_units}]\n")
+            d_lines.append(f"> {mode}")
+            d_lines.append(f"> exp({self.wave_sign_tipper}i\omega t)")
+            d_lines.append(f"> [{self.t_units}]")
 
         d_lines.append(
-            f"> {self.rotation_angle:.3g}\n"
+            f"> {self.rotation_angle:.3g}"
         )  # orientation, need to add at some point
         if self.topography:
             d_lines.append(
                 f"> {center_point.latitude:>10.6f} "
                 f"{center_point.longitude:>10.6f} "
-                f"{center_point.model_elevation:>10.2f}\n"
+                f"{center_point.model_elevation:>10.2f}"
             )
         else:
             d_lines.append(
                 f"> {center_point.latitude:>10.6f} "
                 f"{center_point.longitude:>10.6f}"
             )
-        d_lines.append(f"> {self.n_periods} {self.n_stations}\n")
+        d_lines.append(f"> {self.n_periods} {self.n_stations}")
 
         return d_lines
 
@@ -438,18 +435,16 @@ class Data(object):
                     ele = f"{0:> 12.3f}"
                 com = f"{comp:>4}"
                 if self.z_units.lower() == "ohm":
-                    rea = "{value.real / 796.:> 14.6e}"
-                    ima = "{value.imag / 796.:> 14.6e}"
-                elif self.units.lower() not in (
+                    rea = f"{value.real / 796.:> 14.6e}"
+                    ima = f"{value.imag / 796.:> 14.6e}"
+                elif self.z_units.lower() not in (
                     "[v/m]/[t]",
                     "[mv/km]/[nt]",
                 ):
-                    raise ValueError(
-                        'Unsupported unit "{}"'.format(self.units)
-                    )
+                    raise ValueError(f"Unsupported unit '{self.z_units}'")
                 else:
-                    rea = "{value.real:> 14.6e}"
-                    ima = "{value.imag:> 14.6e}"
+                    rea = f"{value.real:> 14.6e}"
+                    ima = f"{value.imag:> 14.6e}"
 
             elif self.formatting == "2":
                 per = f"{row.period:<14.6e}"
@@ -464,24 +459,21 @@ class Data(object):
                     ele = f"{0:> 10.3f}"
                 com = f"{comp:>4}"
                 if self.z_units.lower() == "ohm":
-                    rea = "{value.real / 796.:> 17.6e}"
-                    ima = "{value.imag / 796.:> 17.6e}"
-                elif self.units.lower() not in (
+                    rea = f"{value.real / 796.:> 17.6e}"
+                    ima = f"{value.imag / 796.:> 17.6e}"
+                elif self.z_units.lower() not in (
                     "[v/m]/[t]",
                     "[mv/km]/[nt]",
                 ):
-                    raise ValueError(
-                        'Unsupported unit "{}"'.format(self.units)
-                    )
+                    raise ValueError(f"Unsupported unit '{self.z_units}'")
                 else:
-                    rea = "{value.real:> 17.6e}"
-                    ima = "{value.imag:> 17.6e}"
+                    rea = f"{value.real:> 17.6e}"
+                    ima = f"{value.imag:> 17.6e}"
 
             else:
                 raise NotImplementedError(
-                    "format {}({}) is not supported".format(
-                        self.formatting, type(self.formatting)
-                    )
+                    f"format {self.formatting} ({type(self.formatting)}) is "
+                    "not supported."
                 )
 
             if np.isinf(err) or np.isnan(err):
@@ -489,6 +481,7 @@ class Data(object):
                     np.floor(np.log10(abs(max([float(rea), float(ima)]))))
                 )
             abs_err = f"{err:> 14.6e}"
+
             return "".join(
                 [
                     per,
@@ -555,10 +548,10 @@ class Data(object):
 
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
             if "impedance" in inv_mode.lower():
-                z_lines = self._write_header("impedance", center_point)
+                z_lines = self._write_header(inv_mode, center_point)
 
             elif "vertical" in inv_mode.lower():
-                t_lines = self._write_header("vertical", center_point)
+                t_lines = self._write_header(inv_mode, center_point)
 
             else:
                 # maybe error here
@@ -990,9 +983,7 @@ class Data(object):
                     z_value *= 796.0
                     z_err *= 796.0
                 elif self.units.lower() not in ("[v/m]/[t]", "[mv/km]/[nt]"):
-                    raise ValueError(
-                        'Unsupported unit "{}"'.format(self.units)
-                    )
+                    raise ValueError('Unsupported unit "{}"'.format(self.units))
 
                 data_dict[dd[1]].impedance[p_index, ii, jj] = z_value
                 data_dict[dd[1]].impedance_error[p_index, ii, jj] = z_err
@@ -1199,9 +1190,7 @@ class Data(object):
             lines = fid.readlines()
 
         def fix_line(line_list):
-            return (
-                " ".join("".join(line_list).replace("\n", "").split()) + "\n"
-            )
+            return " ".join("".join(line_list).replace("\n", "").split()) + "\n"
 
         h1 = fix_line(lines[0:n])
         h2 = fix_line(lines[n : 2 * n])

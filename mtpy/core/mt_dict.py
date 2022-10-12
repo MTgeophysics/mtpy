@@ -184,4 +184,4 @@ class MTDict(OrderedDict, MTStations):
 
         for mt_obj in self.values():
             mt_obj.compute_model_z_errors(z_error_value, z_error_type, z_floor)
-            mt_obj.compute_model_z_errors(t_error_value, t_error_type, t_floor)
+            mt_obj.compute_model_t_errors(t_error_value, t_error_type, t_floor)
