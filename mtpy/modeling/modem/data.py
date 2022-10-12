@@ -17,10 +17,6 @@ import numpy as np
 from pathlib import Path
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
-from mtpy.core import mt as mt
-from mtpy.core import z as mtz
 from mtpy.core.mt_dataframe import MTDataFrame
 from mtpy.core.mt_location import MTLocation
 
@@ -959,78 +955,6 @@ class Data:
         )
         parameter_dict["data.center_point.utm_crs"] = self.center_point.utm_crs
         return parameter_dict
-
-    def estimate_starting_rho(self):
-        """
-        Estimate starting resistivity from the data.
-        Creates a plot of the mean and median apparent resistivity values.
-
-        :return: array of the median rho per period
-        :rtype: np.ndarray(n_periods)
-        :return: array of the mean rho per period
-        :rtype: np.ndarray(n_periods)
-
-        >>> d = Data()
-        >>> d.read_data_file(r"example/data.dat")
-        >>> rho_median, rho_mean = d.estimate_starting_rho()
-
-        """
-        rho = np.zeros((self.data_array.shape[0], self.period_list.shape[0]))
-
-        for ii, d_arr in enumerate(self.data_array):
-            z_obj = mtz.Z(d_arr["z"], freq=1.0 / self.period_list)
-            rho[ii, :] = z_obj.res_det
-
-        mean_rho = np.apply_along_axis(
-            lambda x: x[np.nonzero(x)].mean(), 0, rho
-        )
-        median_rho = np.apply_along_axis(
-            lambda x: np.median(x[np.nonzero(x)]), 0, rho
-        )
-
-        fig = plt.figure()
-
-        ax = fig.add_subplot(1, 1, 1)
-        (l1,) = ax.loglog(
-            self.period_list, mean_rho, lw=2, color=(0.75, 0.25, 0)
-        )
-        (l2,) = ax.loglog(
-            self.period_list, median_rho, lw=2, color=(0, 0.25, 0.75)
-        )
-
-        ax.loglog(
-            self.period_list,
-            np.repeat(mean_rho.mean(), self.period_list.size),
-            ls="--",
-            lw=2,
-            color=(0.75, 0.25, 0),
-        )
-        ax.loglog(
-            self.period_list,
-            np.repeat(np.median(median_rho), self.period_list.size),
-            ls="--",
-            lw=2,
-            color=(0, 0.25, 0.75),
-        )
-
-        ax.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
-        ax.set_ylabel(
-            "Resistivity (Ohm-m)", fontdict={"size": 12, "weight": "bold"}
-        )
-
-        ax.legend(
-            [l1, l2],
-            [
-                "Mean = {0:.1f}".format(mean_rho.mean()),
-                "Median = {0:.1f}".format(np.median(median_rho)),
-            ],
-            loc="upper left",
-        )
-        ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
-
-        plt.show()
-
-        return median_rho, mean_rho
 
     def fix_data_file(self, fn=None, n=3):
         """

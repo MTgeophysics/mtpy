@@ -1,307 +1,264 @@
 # -*- coding: utf-8 -*-
 """
-MT Data
+Created on Mon Oct 10 11:58:56 2022
 
-Created on Sat Oct  1 17:47:19 2022
-
-:author: jpeacock
+@author: jpeacock
 """
 
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
+
+from collections import OrderedDict
+
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
+from .mt import MT
+from .mt_stations import MTStations
 
-from mtpy import MT
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
 
 
-class MTData:
-    """
-    MTData will hold transfer function information for input into models
+class MTData(OrderedDict, MTStations):
+    def __init__(self, tf_list=None, **kwargs):
 
-    The underlying object will be a :class:`pandas.DataFrame` with columns
-    for the parameters
+        if tf_list is not None:
+            for tf in tf_list:
+                self.add_station(tf)
 
-     - station
-     - latitude
-     - longitude
-     - elevation
-     - utm_east
-     - utm_north
-     - utm_zone
-     - model_east
-     - model_north
-     - model_elevation
-     - period
-     - zxx
-     - zxx_error
-     - zxx_model_error
-     - zxy
-     - zxy_error
-     - zxy_model_error
-     - zyx
-     - zyx_error
-     - zyx_model_error
-     - zyy
-     - zyy_error
-     - zyy_model_error
-     - tzx
-     - tzx_error
-     - zxx_model_error
-     - tzy
-     - tzy_error
-     - tzy_model_error
+        MTStations.__init__(self, tf_list, None, **kwargs)
 
+    def _validate_item(self, tf):
+        if not isinstance(tf, MT):
+            raise TypeError(
+                f"entry must be a mtpy.core.MT object not type({type(tf)})"
+            )
+        return tf
 
-    properties that can be built from the impedance tensor should be
+    def add_station(self, mt_object):
+        """
+        Add a new station's mt_object
 
-     - res_xx
-     - res_xy
-     - res_yy
-     - res_yy
-     - res_det
-     - phase_xx
-     - phase_xy
-     - phase_yy
-     - phase_yy
-     - phase_det
-     - phase_tensor
+        :param mt_object: DESCRIPTION
+        :type mt_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-    """
+        """
 
-    def __init__(self, tf_list, **kwargs):
-        self.logger = get_mtpy_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
+        mt_object = self._validate_item(mt_object)
+        self.__setitem__(mt_object.station, mt_object)
 
-        self._data_dtypes = dict(
-            [
-                ("station", "U25"),
-                ("latitude", float),
-                ("longitude", float),
-                ("elevation", float),
-                ("utm_east", float),
-                ("utm_north", float),
-                ("utm_zone", "U4"),
-                ("model_east", float),
-                ("model_north", float),
-                ("model_elevation", float),
-                ("period", float),
-                ("zxx", complex),
-                ("zxx_error", float),
-                ("zxx_model_error", float),
-                ("zxy", complex),
-                ("zxy_error", float),
-                ("zxy_model_error", float),
-                ("zyx", complex),
-                ("zyx_error", float),
-                ("zyx_model_error", float),
-                ("zyy", complex),
-                ("zyy_error", float),
-                ("zyy_model_error", float),
-                ("tzx", complex),
-                ("tzx_error", float),
-                ("tzx_model_error", float),
-                ("tzy", complex),
-                ("tzy_error", float),
-                ("tzy_model_error", float),
-            ]
-        )
+    def remove_station(self, station_id):
+        """
+        remove a station from the dictionary
 
-        self._tf_dataframe = None
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-        self.data_epsg = None
-        self.data_utm_zone = None
-
-        self.tf_list = tf_list
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        """
+        if station_id in self.keys():
+            del self[station_id]
 
     @property
-    def tf_list(self):
-        """list of mtpy.core.MT transfer function objects"""
-        return self._tf_list
+    def n_stations(self):
+        if self.mt_list is not None:
+            return len(self.mt_list)
 
-    @tf_list.setter
-    def tf_list(self, value):
-        """set tf list making sure each element is of proper type"""
-
-        if isinstance(value, MT):
-            self._tf_list = [value]
-        elif isinstance(value, (list, tuple)):
-            tf_list = []
-            msg = []
-            for ii, tf in enumerate(value):
-                if not isinstance(tf, MT):
-                    self.logger.error(
-                        f"Entry {ii} must be a mtpy.core.MT object not {type(tf)}"
-                    )
-                else:
-                    tf_list.append(tf)
-
-            self._tf_list = tf_list
-            if msg != []:
-                raise TypeError(
-                    "One or more entries in the TF list is not of type mtpy.core.MT"
-                )
-
-        else:
-            raise TypeError(
-                "Input must be a list or tuple of MT objects, or an MT object"
-            )
-
-        self._tf_dataframe = self._fill_dataframe(self._tf_list)
-
-    def _make_empty_entry(self, n_entries):
-        return dict(
-            [
-                (col, np.zeros(n_entries, dtype))
-                for col, dtype in self._data_dtypes.items()
-            ]
-        )
-
-    def _fill_impedance(self, impedance, impedance_error, entry):
+    def to_dataframe(self, utm_crs=None, cols=None):
         """
-        Fill impedance
-        :param impedance: DESCRIPTION
-        :type impedance: TYPE
-        :param index: DESCRIPTION
-        :type index: TYPE
+
+        :param utm_crs: DESCRIPTION, defaults to None
+        :type utm_crs: TYPE, optional
+        :param cols: DESCRIPTION, defaults to None
+        :type cols: TYPE, optional
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        z_dict = {
-            "zxx": {"ii": 0, "jj": 0},
-            "zxy": {"ii": 0, "jj": 1},
-            "zyx": {"ii": 1, "jj": 0},
-            "zyy": {"ii": 1, "jj": 1},
-        }
-
-        for z_key, z_index in z_dict.items():
-            entry[z_key][:] = impedance[
-                :, z_index["ii"], z_index["jj"]
-            ].to_numpy()
-            entry[f"{z_key}_error"][:] = impedance_error[
-                :, z_index["ii"], z_index["jj"]
-            ].to_numpy()
-
-        return entry
-
-    def _fill_tipper(self, tipper, tipper_error, entry):
-        """
-        Fill tipper
-        :param tipper: DESCRIPTION
-        :type tipper: TYPE
-        :param tipper_error: DESCRIPTION
-        :type tipper_error: TYPE
-        :param index: DESCRIPTION
-        :type index: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        t_dict = {
-            "tzx": {"ii": 0, "jj": 0},
-            "tzy": {"ii": 0, "jj": 1},
-        }
-
-        for t_key, t_index in t_dict.items():
-            entry[t_key][:] = tipper[:, t_index["ii"], t_index["jj"]].to_numpy()
-            entry[f"{t_key}_error"] = tipper_error[
-                :, t_index["ii"], t_index["jj"]
-            ].to_numpy()
-
-        return entry
-
-    def _fill_entry(self, tf):
-        n_entries = tf.period.size
-        entry = self._make_empty_entry(n_entries)
-
-        entry["station"][:] = tf.station
-        entry["latitude"][:] = tf.latitude
-        entry["longitude"][:] = tf.longitude
-        entry["elevation"][:] = tf.elevation
-
-        tf.project_to_utm(epsg=self.data_epsg, utm_zone=self.data_utm_zone)
-        entry["utm_east"][:] = tf.east
-        entry["utm_north"][:] = tf.north
-        entry["utm_zone"][:] = tf.utm_zone
-        entry["period"][:] = tf.period
-        if tf.has_impedance():
-            entry = self._fill_impedance(
-                tf.impedance, tf.impedance_error, entry
-            )
-        if tf.has_tipper():
-            entry = self._fill_tipper(tf.tipper, tf.tipper_error, entry)
-
-        return pd.DataFrame(entry)
-
-    def from_tf_list(self, tf_list):
-        """
-        Fill the data frame
-
-        :param tf_list: DESCRIPTION
-        :type tf_list: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        df_list = []
-
-        for tf in tf_list:
-            df_list.append(self._fill_entry(tf))
+        df_list = [
+            tf.to_dataframe(utm_crs=utm_crs, cols=cols) for tf in self.values()
+        ]
 
         return pd.concat(df_list)
 
-    @property
-    def data(self):
-        """dataframe of data"""
-        return self._tf_dataframe
-
-    @data.setter
-    def data(self, value):
+    def from_dataframe(self, df):
         """
-        Check to make sure the input dataframe is of proper types
+        Create an dictionary of MT objects from a dataframe
 
-        :param value: DESCRIPTION
-        :type value: TYPE
+        :param df: dataframe of mt data
+        :type df: `pandas.DataFrame`
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        if not isinstance(value, pd.DataFrame):
-            msg = (
-                f"Input data must be a valid pandas.DataFrame not {type(value)}"
-            )
-            self.logger.exception(msg)
+        for station in df.station.unique():
+            sdf = df.loc[df.station == station]
+            mt_object = MT()
+            mt_object.from_dataframe(sdf)
+            self.update(OrderedDict([(mt_object.station, mt_object)]))
 
-            raise TypeError(msg)
+    def interpolate(self, new_periods):
+        """
+        Interpolate onto common period range
 
-        empty_df = pd.DataFrame(self._make_empty_entry(0))
-        test_dtypes = value.dtypes == empty_df.dtypes
+        :param new_periods: DESCRIPTION
+        :type new_periods: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-        if not test_dtypes.all():
-            for row in test_dtypes[test_dtypes == False].index:
-                try:
-                    value[row] = value[row].astype(self._data_dtypes[row])
-                except ValueError as error:
-                    self.logger.exception(
-                        f"{row} cannot be set to {self._data_dtypes[row]}"
-                    )
+        """
 
-                    raise ValueError(
-                        f"{row} cannot be set to {self._data_dtypes[row]}"
-                    )
+        for mt_obj in self.values():
+            interp_periods = new_periods[
+                np.where(
+                    (new_periods >= mt_obj.period.max())
+                    & (new_periods <= mt_obj.period.min())
+                )
+            ]
 
-        self._tf_dataframe = value
+            interp_z, interp_t = mt_obj.interpolate(1.0 / interp_periods)
+
+            mt_obj.Z = interp_z
+            mt_obj.Tipper = interp_t
+
+    def rotate(self, rotation_angle):
+        """
+        rotate the data by the given angle assuming positive clockwise with
+        north = 0, east = 90.
+
+        :param rotation_angle: DESCRIPTION
+        :type rotation_angle: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for mt_obj in self.values():
+            mt_obj.rotation_angle = rotation_angle
+
+    def compute_model_errors(
+        self,
+        z_error_value=5,
+        z_error_type="geometric_mean",
+        z_floor=True,
+        t_error_value=0.02,
+        t_error_type="absolute",
+        t_floor=True,
+    ):
+
+        """
+        Compute mode errors based on the error type
+
+        ========================== ===========================================
+        key                        definition
+        ========================== ===========================================
+        egbert                     error_value * sqrt(Zxy * Zyx)
+        geometric_mean             error_value * sqrt(Zxy * Zyx)
+        arithmetic_mean            error_value * (Zxy + Zyx) / 2
+        mean_od                    error_value * (Zxy + Zyx) / 2
+        off_diagonals              zxx_err == zxy_err, zyx_err == zyy_err
+        median                     error_value * median(z)
+        eigen                      error_value * mean(eigen(z))
+        percent                    error_value * z
+        absolute                   error_value
+        ========================== ===========================================
+
+        :param z_error_value: DESCRIPTION, defaults to 5
+        :type z_error_value: TYPE, optional
+        :param z_error_type: DESCRIPTION, defaults to "geometric_mean"
+        :type z_error_type: TYPE, optional
+        :param z_floor: DESCRIPTION, defaults to True
+        :type z_floor: TYPE, optional
+        :param t_error_value: DESCRIPTION, defaults to 0.02
+        :type t_error_value: TYPE, optional
+        :param t_error_type: DESCRIPTION, defaults to "absolute"
+        :type t_error_type: TYPE, optional
+        :param t_floor: DESCRIPTION, defaults to True
+        :type t_floor: TYPE, optional
+        :param : DESCRIPTION
+        :type : TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for mt_obj in self.values():
+            mt_obj.compute_model_z_errors(z_error_value, z_error_type, z_floor)
+            mt_obj.compute_model_t_errors(t_error_value, t_error_type, t_floor)
+
+    def estimate_starting_rho(self):
+        """
+        Estimate starting resistivity from the data.
+        Creates a plot of the mean and median apparent resistivity values.
+
+        :return: array of the median rho per period
+        :rtype: np.ndarray(n_periods)
+        :return: array of the mean rho per period
+        :rtype: np.ndarray(n_periods)
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> rho_median, rho_mean = d.estimate_starting_rho()
+
+        """
+
+        entries = []
+        for mt_obj in self.values():
+            for period, res_det in zip(mt_obj.period, mt_obj.Z.res_det):
+                entries.append({"period": period, "res_det": res_det})
+
+        res_df = pd.DataFrame(entries)
+
+        mean_rho = res_df.groupby("period").mean()
+        median_rho = res_df.groupby("period").median()
+
+        fig = plt.figure()
+
+        ax = fig.add_subplot(1, 1, 1)
+        (l1,) = ax.loglog(
+            mean_rho.index, mean_rho.res_det, lw=2, color=(0.75, 0.25, 0)
+        )
+        (l2,) = ax.loglog(
+            median_rho.index, median_rho.res_det, lw=2, color=(0, 0.25, 0.75)
+        )
+
+        ax.loglog(
+            mean_rho.index,
+            np.repeat(mean_rho.res_det.mean(), mean_rho.shape[0]),
+            ls="--",
+            lw=2,
+            color=(0.75, 0.25, 0),
+        )
+        ax.loglog(
+            median_rho.index,
+            np.repeat(median_rho.res_det.median(), median_rho.shape[0]),
+            ls="--",
+            lw=2,
+            color=(0, 0.25, 0.75),
+        )
+
+        ax.set_xlabel("Period (s)", fontdict={"size": 12, "weight": "bold"})
+        ax.set_ylabel(
+            "Resistivity (Ohm-m)", fontdict={"size": 12, "weight": "bold"}
+        )
+
+        ax.legend(
+            [l1, l2],
+            [
+                f"Mean = {mean_rho.res_det.mean():.1f}",
+                f"Median = {median_rho.res_det.median():.1f}",
+            ],
+            loc="upper left",
+        )
+        ax.grid(which="both", ls="--", color=(0.75, 0.75, 0.75))
+        ax.set_xlim((res_df.period.min(), res_df.period.max()))
+
+        plt.show()

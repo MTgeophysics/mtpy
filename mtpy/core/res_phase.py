@@ -346,23 +346,29 @@ class ResPhase:
     @property
     def _zdet(self):
         if self._z is not None:
-            return np.array([np.linalg.det(zz) ** 0.5 for zz in self._z])
+            with np.errstate(invalid="ignore"):
+                return np.array([np.linalg.det(zz) ** 0.5 for zz in self._z])
 
     @property
     def _zdet_var(self):
         if self._z_err is not None:
-            return np.array(
-                [abs(np.linalg.det(zzv)) ** 0.5 for zzv in self._z_err]
-            )
+            with np.errstate(invalid="ignore"):
+                return np.array(
+                    [abs(np.linalg.det(zzv)) ** 0.5 for zzv in self._z_err]
+                )
         else:
             return np.ones_like(self._zdet, dtype=np.float)
 
     @property
     def _zdet_model_var(self):
         if self._z_model_err is not None:
-            return np.array(
-                [abs(np.linalg.det(zzv)) ** 0.5 for zzv in self._z_model_err]
-            )
+            with np.errstate(invalid="ignore"):
+                return np.array(
+                    [
+                        abs(np.linalg.det(zzv)) ** 0.5
+                        for zzv in self._z_model_err
+                    ]
+                )
         else:
             return np.ones_like(self._zdet, dtype=np.float)
 
