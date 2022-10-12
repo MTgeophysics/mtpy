@@ -717,3 +717,194 @@ class MT(TF, MTLocation):
             t_err = err
 
         self.tipper_model_error = t_err
+
+    def add_model_error(self, comp=[], z_value=5, t_value=0.05, periods=None):
+        """
+
+        Add error to a station's components for given period range
+
+        :param station: name of station(s) to add error to
+        :type station: string or list of strings
+        :param comp: list of components to add data to, valid components are
+        zxx, zxy, zyx, zyy, tx, ty
+        :type comp: string or list of strings
+        :param periods: the period range to add to, if None all periods, otherwise
+        enter as a tuple as (minimum, maximum) period in seconds
+        :type periods: tuple (minimum, maxmum)
+        :return: data array with added errors
+        :rtype: np.ndarray
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array = d.add_error("mt01", comp=["zxx", "zxy", "tx"], z_value=7, t_value=.05)
+
+        """
+        c_dict = {
+            "zxx": (0, 0),
+            "zxy": (0, 1),
+            "zyx": (1, 0),
+            "zyy": (1, 1),
+            "tx": (0, 0),
+            "ty": (0, 1),
+        }
+
+        if isinstance(comp, str):
+            comp = [comp]
+        if periods is not None:
+            if len(periods) != 2:
+                msg = "Must enter a minimum and maximum period value"
+                self.logger.error(msg)
+                raise ValueError(msg)
+            p_min = np.where(self.period >= min(periods))[0][0]
+            p_max = np.where(self.period <= max(periods))[0][-1]
+        else:
+            p_min = 0
+            p_max = len(self.period) - 1
+
+        z_model_err = self.impedance_model_error.copy().data
+        t_model_err = self.tipper_model_error.copy().data
+        for cc in comp:
+            try:
+                ii, jj = c_dict[cc]
+            except KeyError:
+                msg = f"Component {cc} is not a valid component, skipping"
+                self.logger.warning(msg)
+                continue
+            if "z" in cc:
+                z_model_err[p_min:p_max, ii, jj] *= z_value
+
+            elif "t" in cc:
+                t_model_err[p_min:p_max, ii, jj] += t_value
+
+        self.impedance_model_error = z_model_err
+        self.tipper_model_error = t_model_err
+
+    def flip_phase(
+        self, zxx=False, zxy=False, zyx=False, zyy=False, tzx=False, tzy=False
+    ):
+        """
+        Flip the phase of a station in case its plotting in the wrong quadrant
+
+        :param station: name(s) of station to flip phase
+        :type station: string or list of strings
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
+        :type zxx: TYPE, optional
+        :param zxy: Z_xy, defaults to False
+        :type zxy: TYPE, optional
+        :param zyy: Z_yx, defaults to False
+        :type zyy: TYPE, optional
+        :param zyx: Z_yy, defaults to False
+        :type zyx: TYPE, optional
+        :param tx: T_zx, defaults to False
+        :type tx: TYPE, optional
+        :param ty: T_zy, defaults to False
+        :type ty: TYPE, optional
+        :return: new_data_array
+        :rtype: np.ndarray
+        :return: new mt_dict with components removed
+        :rtype: dictionary
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array, d.mt_dict = d.flip_phase("mt01", comp=["zx", "tx"])
+
+        """
+        c_dict = {
+            "zxx": {"index": (0, 0), "bool": zxx},
+            "zxy": {"index": (0, 1), "bool": zxy},
+            "zyx": {"index": (1, 0), "bool": zyx},
+            "zyy": {"index": (1, 1), "bool": zyy},
+            "tzx": {"index": (0, 0), "bool": tzx},
+            "tzy": {"index": (0, 1), "bool": tzy},
+        }
+
+        z_obj = self.Z.copy()
+        t_obj = self.Tipper.copy()
+
+        z_change = False
+        t_change = False
+        for ckey, dd in c_dict.items():
+            if dd["bool"]:
+                ii, jj = dd["index"]
+                if "z" in ckey:
+                    z_change = True
+                    z_obj.z[:, ii, jj] *= -1
+                    z_obj.z_err[:, ii, jj] *= -1
+                    z_obj.z_model_err[:, ii, jj] *= -1
+
+                elif "t" in ckey:
+                    t_change = True
+                    t_obj.tipper[:, ii, jj] *= -1
+                    t_obj.tipper_err[:, ii, jj] *= -1
+                    t_obj.tipper_model_err[:, ii, jj] *= -1
+
+        if z_change:
+            self.Z = z_obj
+        if t_change:
+            self.Tipper = t_obj
+
+    def remove_component(
+        self, zxx=False, zxy=False, zyy=False, zyx=False, tzx=False, tzy=False
+    ):
+        """
+        Remove a component for a given station(s)
+
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
+        :type zxx: TYPE, optional
+        :param zxy: Z_xy, defaults to False
+        :type zxy: TYPE, optional
+        :param zyy: Z_yx, defaults to False
+        :type zyy: TYPE, optional
+        :param zyx: Z_yy, defaults to False
+        :type zyx: TYPE, optional
+        :param tx: T_zx, defaults to False
+        :type tx: TYPE, optional
+        :param ty: T_zy, defaults to False
+        :type ty: TYPE, optional
+        :return: new data array with components removed
+        :rtype: np.ndarray
+        :return: new mt_dict with components removed
+        :rtype: dictionary
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array, d.mt_dict = d.remove_component("mt01", zxx=True, tx=True)
+
+        """
+        c_dict = {
+            "zxx": {"index": (0, 0), "bool": zxx},
+            "zxy": {"index": (0, 1), "bool": zxy},
+            "zyx": {"index": (1, 0), "bool": zyx},
+            "zyy": {"index": (1, 1), "bool": zyy},
+            "tzx": {"index": (0, 0), "bool": tzx},
+            "tzy": {"index": (0, 1), "bool": tzy},
+        }
+
+        z_obj = self.Z.copy()
+        t_obj = self.Tipper.copy()
+
+        z_change = False
+        t_change = False
+        for ckey, dd in c_dict.items():
+            if dd["bool"]:
+                ii, jj = dd["index"]
+                if "z" in ckey:
+                    z_change = True
+                    z_obj.z[:, ii, jj] = 0
+                    z_obj.z_err[:, ii, jj] = 0
+                    z_obj.z_model_err[:, ii, jj] = 0
+
+                elif "t" in ckey:
+                    t_change = True
+                    t_obj.tipper[:, ii, jj] = 0
+                    t_obj.tipper_err[:, ii, jj] = 0
+                    t_obj.tipper_model_err[:, ii, jj] = 0
+
+        if z_change:
+            self.Z = z_obj
+        if t_change:
+            self.Tipper = t_obj
