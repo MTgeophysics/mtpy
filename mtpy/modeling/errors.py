@@ -91,11 +91,11 @@ def set_floor(error_array, floor):
 
     floor = validate_percent(floor)
 
-    error_array[np.where(error_array) < floor] = floor
+    error_array[np.where(error_array < floor)] = floor
     return error_array
 
 
-def compute_off_diagonal_mean_error(z_array, error_value):
+def compute_off_diagonal_mean_error(z_array, error_value, floor=True):
     """
     error_value * (Zxy + Zyx) / 2
 
@@ -114,13 +114,16 @@ def compute_off_diagonal_mean_error(z_array, error_value):
     od = mask_zeros(np.array([z_array[:, 0, 1], z_array[:, 1, 0]]))
     err = error_value * np.ma.abs(np.ma.mean(od, axis=0))
 
+    if floor:
+        err = set_floor(err, error_value)
+
     if isinstance(err, np.ma.core.MaskedArray):
         return err.data
 
     return err
 
 
-def compute_median_error(array, error_value):
+def compute_median_error(array, error_value, floor=True):
     """
     median(array) * error_value
 
@@ -136,13 +139,16 @@ def compute_median_error(array, error_value):
     array = mask_zeros(validate_z_array_shape(array))
     err = np.abs(np.ma.median(array, axis=(1, 2))) * error_value
 
+    if floor:
+        err = set_floor(err, error_value)
+
     if isinstance(err, np.ma.core.MaskedArray):
         return err.data
 
     return err
 
 
-def compute_eigen_value_error(array, error_value):
+def compute_eigen_value_error(array, error_value, floor=True):
     """
     error_value * eigen(array).mean()
 
@@ -164,10 +170,13 @@ def compute_eigen_value_error(array, error_value):
 
     if np.atleast_1d(err).sum(axis=0) == 0:
         err = error_value * array[np.nonzero(array)].mean()
+
+    if floor:
+        err = set_floor(err, error_value)
     return err
 
 
-def compute_geometric_mean_error(array, error_value):
+def compute_geometric_mean_error(array, error_value, floor=True):
     """
     error_value * sqrt(Zxy * Zyx)
 
@@ -192,7 +201,72 @@ def compute_geometric_mean_error(array, error_value):
 
     err = error_value * np.ma.sqrt(np.ma.abs(array[:, 0, 1] * array[:, 1, 0]))
 
+    if floor:
+        err = set_floor(err, error_value)
+
     if isinstance(err, np.ma.core.MaskedArray):
         return err.data
 
     return err
+
+
+def compute_off_diagonals_error(array, error_value, floor=True):
+    """
+    set zxx and zxy the same error and zyy and zyx the same error
+
+    :param array: DESCRIPTION
+    :type array: TYPE
+    :param error_value: DESCRIPTION
+    :type error_value: TYPE
+    :param floor: DESCRIPTION, defaults to True
+    :type floor: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    error_value = validate_percent(error_value)
+    z_array = validate_z_array_shape(z_array)
+
+    err_xy = compute_percent_error(array[:, 0, 1], error_value, floor=floor)
+    err_yx = compute_percent_error(array[:, 1, 0], error_value, floor=floor)
+
+    err = np.zeros_like(array, dtype=float)
+    err[:, 0, :] = err_xy
+    err[:, 1, :] = err_yx
+
+    return err
+
+
+def compute_absolute_error(array, error_value):
+    """
+
+    :param array: DESCRIPTION
+    :type array: TYPE
+    :param error_value: DESCRIPTION
+    :type error_value: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    error_value = validate_percent(error_value)
+    err = np.zeros_like(array, dtype=float)
+    err[:] = error_value
+    return err
+
+
+# =============================================================================
+# Error dictionary
+# =============================================================================
+ERROR_DICT = {
+    "egbert": compute_geometric_mean_error,
+    "geometric_mean": compute_geometric_mean_error,
+    "arithmetic_mean": compute_off_diagonal_mean_error,
+    "off-diagonals": compute_off_diagonals_error,
+    "mean_od": compute_off_diagonal_mean_error,
+    "median": compute_median_error,
+    "eigen": compute_eigen_value_error,
+    "percent": compute_percent_error,
+    "absolute": compute_absolute_error,
+}

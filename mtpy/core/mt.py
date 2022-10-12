@@ -22,6 +22,7 @@ from mtpy.core.mt_dataframe import MTDataFrame
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
+from mtpy.modeling.errors import ERROR_DICT
 
 
 # =============================================================================
@@ -624,11 +625,79 @@ class MT(TF, MTLocation):
         self.Z = mt_df.to_z_object(df)
         self.Tipper = mt_df.to_t_object(df)
 
+    def compute_model_z_errors(
+        self, error_value=5, error_type="geometric_mean", floor=True
+    ):
+        """
+        Compute mode errors based on the error type
 
-# ==============================================================================
-#             Error
-# ==============================================================================
+        ========================== ===========================================
+        key                        definition
+        ========================== ===========================================
+        egbert                     error_value * sqrt(Zxy * Zyx)
+        geometric_mean             error_value * sqrt(Zxy * Zyx)
+        arithmetic_mean            error_value * (Zxy + Zyx) / 2
+        mean_od                    error_value * (Zxy + Zyx) / 2
+        off_diagonals              zxx_err == zxy_err, zyx_err == zyy_err
+        median                     error_value * median(z)
+        eigen                      error_value * mean(eigen(z))
+        percent                    error_value * z
+        absolute                   error_value
+        ========================== ===========================================
 
+        :param error_value: DESCRIPTION, defaults to 5
+        :type error_value: TYPE, optional
+        :param error_type: DESCRIPTION, defaults to "geometric_mean"
+        :type error_type: TYPE, optional
+        :param floor: DESCRIPTION, defaults to True
+        :type floor: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-class MTError(Exception):
-    pass
+        """
+        try:
+            error_function = ERROR_DICT[error_type]
+        except KeyError:
+            raise KeyError(f"Error type {error_type} is not supported")
+
+        err = error_function(self.impedance.data, error_value, floor=floor)
+
+        if len(err.shape) == 1:
+            z_err = np.zeros_like(self.impedance, dtype=float)
+            z_err[:] = err
+        else:
+            z_err = err
+
+        self.impedance_model_error = z_err
+
+    def compute_model_t_errors(
+        self, error_value=0.02, error_type="absolute", floor=False
+    ):
+        """
+        Compute mode errors based on the error type
+
+        ========================== ===========================================
+        key                        definition
+        ========================== ===========================================
+        percent                    error_value * t
+        absolute                   error_value
+        ========================== ===========================================
+
+        :param error_value: DESCRIPTION, defaults to .02
+        :type error_value: TYPE, optional
+        :param error_type: DESCRIPTION, defaults to "absolute"
+        :type error_type: TYPE, optional
+        :param floor: DESCRIPTION, defaults to True
+        :type floor: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        try:
+            error_function = ERROR_DICT[error_type]
+        except KeyError:
+            raise KeyError(f"Error type {error_type} is not supported")
+
+        self.tipper_model_error = error_function(
+            self.tipper.data, error_value, floor=floor
+        )
