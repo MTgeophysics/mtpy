@@ -15,6 +15,7 @@ ModEM
 # =============================================================================
 import numpy as np
 from pathlib import Path
+import pandas as pd
 
 import matplotlib.pyplot as plt
 
@@ -266,6 +267,10 @@ class Data:
             "model_north",
             "model_east",
             "model_elevation",
+            "comp",
+            "real",
+            "imag",
+            "error",
         ]
 
         for key, value in kwargs.items():
@@ -487,6 +492,8 @@ class Data:
                     ele = f"{row.model_elevation:> 10.3f}"
                 else:
                     ele = f"{0:> 10.3f}"
+                if comp[1].lower() == "z":
+                    comp = comp.replace("z", "")
                 com = f"{comp:>4}".upper()
                 if self.z_units.lower() == "ohm":
                     rea = f"{value.real / 796.:> 17.6e}"
@@ -623,6 +630,8 @@ class Data:
         inv_list = []
         header_list = []
         metadata_list = []
+        n_periods = 0
+        n_stations = 0
         self.center_point = MTLocation()
         for hline in header_lines:
             if hline.find("#") == 0:
@@ -648,37 +657,45 @@ class Data:
                     mode = "impedance"
                     inv_list.append("Full_Impedance")
                     continue
+
                 if hline.find("exp") > 0:
                     if mode in ["impedance"]:
                         self.wave_sign_impedance = hline[hline.find("(") + 1]
                     elif mode in ["vertical"]:
                         self.wave_sign_tipper = hline[hline.find("(") + 1]
-                elif len(hline[1:].strip().split()) >= 2:
-                    if hline.find(".") > 0:
-                        value_list = [
-                            float(value) for value in hline[1:].strip().split()
-                        ]
-                        if value_list[0] != 0.0:
-                            self.center_point.latitude = value_list[0]
-                        if value_list[1] != 0.0:
-                            self.center_point.longitude = value_list[1]
-                        try:
-                            self.center_point.elevation = value_list[2]
-                        except IndexError:
-                            self.center_point.elevation = 0.0
-                            self.logger.debug(
-                                "Did not find center elevation in data file"
-                            )
+
+                elif (
+                    len(hline[1:].strip().split()) >= 2 and hline.count(".") > 0
+                ):
+                    value_list = [
+                        float(value) for value in hline[1:].strip().split()
+                    ]
+                    if value_list[0] != 0.0:
+                        self.center_point.latitude = value_list[0]
+                    if value_list[1] != 0.0:
+                        self.center_point.longitude = value_list[1]
+                    try:
+                        self.center_point.elevation = value_list[2]
+                    except IndexError:
+                        self.center_point.elevation = 0.0
+                        self.logger.debug(
+                            "Did not find center elevation in data file"
+                        )
                 elif len(hline[1:].strip().split()) < 2:
                     try:
                         self.rotation_angle = float(hline[1:].strip())
                     except ValueError:
                         continue
+                elif len(hline[1:].strip().split()) == 2:
+                    n_periods = int(hline[1:].strip().split()[0])
+                    n_stations = int(hline[1:].strip().split()[1])
 
         for head_line, inv_mode in zip(header_list, inv_list):
             self._parse_header_line(head_line, inv_mode)
 
         self._get_inv_mode(inv_list)
+
+        return n_periods, n_stations
 
     def _parse_header_line(self, header_line, mode):
         """
@@ -771,6 +788,44 @@ class Data:
                     self.inv_mode = inv_key
                     break
 
+    def _read_line(self, line):
+        """
+        read a single line
+        :param line: DESCRIPTION
+        :type line: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        .. note:: Pandas Groupby does not play nice with complex numbers so
+         we will be keeping the real and imaginary part separate for now.
+
+        """
+
+        line_dict = dict(
+            [(key, value) for key, value in zip(self._df_keys, line.split())]
+        )
+        for key in [
+            "period",
+            "latitude",
+            "longitude",
+            "model_east",
+            "model_north",
+            "model_elevation",
+            "real",
+            "imag",
+            "error",
+        ]:
+            line_dict[key] = float(line_dict[key])
+
+        comp = line_dict.pop("comp").lower()
+        if comp.startswith("t"):
+            comp = comp.replace("t", "tz")
+        line_dict[f"{comp}_real"] = line_dict.pop("real")
+        line_dict[f"{comp}_imag"] = line_dict.pop("imag")
+        line_dict[f"{comp}_model_error"] = line_dict.pop("error")
+
+        return line_dict
+
     def read_data_file(self, data_fn, center_utm=None):
         """
 
@@ -825,186 +880,43 @@ class Data:
                 "Could not find {0}, check path".format(self.data_fn)
             )
 
-        df = MTDataFrame()
         self.center_point = MTLocation()
 
+        # open file get lines
         with open(self.data_fn, "r") as dfid:
             dlines = dfid.readlines()
 
-        data_list = []
-        period_list = []
-        station_list = []
-
-        self._read_header(
+        # read header information
+        n_periods, n_stations = self._read_header(
             [line for line in dlines if ">" in line or "#" in line]
         )
 
+        # create a list of dictionaries to make into a pandas dataframe
+        entries = []
         for dline in dlines:
             if "#" in dline or ">" in dline:
                 continue
 
-            else:
-                dline_list = dline.strip().split()
-                if len(dline_list) == 11:
-                    for ii, d_str in enumerate(dline_list):
-                        if ii != 1:
-                            try:
-                                dline_list[ii] = float(d_str.strip())
-                            except ValueError:
-                                pass
-                        # be sure the station name is a string
-                        else:
-                            dline_list[ii] = d_str.strip()
-                    period_list.append(dline_list[0])
-                    station_list.append(dline_list[1])
+            elif len(dline.split()) == len(self._df_keys):
+                line_dict = self._read_line(dline)
+                entries.append(line_dict)
 
-                    data_list.append(dline_list)
+        full_df = pd.DataFrame(entries)
 
-        self.period_list = np.array(sorted(set(period_list)))
-        station_list = sorted(set(station_list))
+        # group by period and station so that there is 1 row per period per station
+        combined_df = full_df.groupby(
+            ["station", "period"], as_index=False
+        ).first()
 
-        # make a period dictionary to with key as period and value as index
-        period_dict = dict(
-            [(per, ii) for ii, per in enumerate(self.period_list)]
-        )
-
-        data_dict = {}
-        z_dummy = np.ones((len(self.period_list), 2, 2), dtype="complex")
-        t_dummy = np.ones((len(self.period_list), 1, 2), dtype="complex")
-
-        index_dict = {
-            "zxx": (0, 0),
-            "zxy": (0, 1),
-            "zyx": (1, 0),
-            "zyy": (1, 1),
-            "tx": (0, 0),
-            "ty": (0, 1),
-        }
-
-        # dictionary for true false if station data (lat, lon, elev, etc)
-        # has been filled already so we don't rewrite it each time
-        tf_dict = {}
-        for station in station_list:
-            data_dict[station] = mt.MT()
-            data_dict[station].period = self.period_list
-            data_dict[station].impedance = z_dummy.copy()
-            data_dict[station].impedance_error = z_dummy.copy().real
-            data_dict[station].tipper = t_dummy.copy()
-            data_dict[station].tipper_error = t_dummy.copy().real
-
-            # make sure that the station data starts out with false to fill
-            # the data later
-            tf_dict[station] = False
-
-        # fill in the data for each station
-        for dd in data_list:
-            # get the period index from the data line
-            p_index = period_dict[dd[0]]
-            # get the component index from the data line
-            ii, jj = index_dict[dd[7].lower()]
-
-            # if the station data has not been filled yet, fill it
-            if not tf_dict[dd[1]]:
-                data_dict[dd[1]].latitude = dd[2]
-                data_dict[dd[1]].longitude = dd[3]
-                data_dict[dd[1]].grid_north = dd[4]
-                data_dict[dd[1]].grid_east = dd[5]
-                data_dict[dd[1]].grid_elev = dd[6]
-                data_dict[dd[1]].elevation = dd[6]
-                data_dict[dd[1]].station = dd[1]
-                tf_dict[dd[1]] = True
-            # fill in the impedance tensor with appropriate values
-            if dd[7].find("Z") == 0:
-                z_err = dd[10]
-                if self.wave_sign_impedance == "+":
-                    z_value = dd[8] + 1j * dd[9]
-                elif self.wave_sign_impedance == "-":
-                    z_value = dd[8] - 1j * dd[9]
-                else:
-                    raise ValueError(
-                        'Incorrect wave sign "{}" (impedance)'.format(
-                            self.wave_sign_impedance
-                        )
-                    )
-
-                if self.units.lower() == "ohm":
-                    z_value *= 796.0
-                    z_err *= 796.0
-                elif self.units.lower() not in ("[v/m]/[t]", "[mv/km]/[nt]"):
-                    raise ValueError('Unsupported unit "{}"'.format(self.units))
-
-                data_dict[dd[1]].impedance[p_index, ii, jj] = z_value
-                data_dict[dd[1]].impedance_error[p_index, ii, jj] = z_err
-            # fill in tipper with appropriate values
-            elif dd[7].find("T") == 0:
-                if self.wave_sign_tipper == "+":
-                    data_dict[dd[1]].tipper[p_index, ii, jj] = (
-                        dd[8] + 1j * dd[9]
-                    )
-                elif self.wave_sign_tipper == "-":
-                    data_dict[dd[1]].tipper[p_index, ii, jj] = (
-                        dd[8] - 1j * dd[9]
-                    )
-                else:
-                    raise ValueError(
-                        'Incorrect wave sign "{}" (tipper)'.format(
-                            self.wave_sign_tipper
-                        )
-                    )
-                data_dict[dd[1]].tipper_error[p_index, ii, jj] = dd[10]
-
-        # make mt_dict an attribute for easier manipulation later
-        self.mt_dict = data_dict
-
-        ns = len(list(self.mt_dict.keys()))
-        nf = len(self.period_list)
-        self.data_array = np.zeros(
-            ns, dtype=self.make_dtype((nf, 2, 2), (nf, 1, 2))
-        )
-
-        # Be sure to caclulate invariants and phase tensor for each station
-        for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
-            mt_obj = self.mt_dict[s_key]
-
-            # self.mt_dict[s_key].zinv.compute_invariants()
-            self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
-            self.mt_dict[s_key].Tipper.compute_amp_phase()
-            self.mt_dict[s_key].Tipper.compute_mag_direction()
-
-            self.data_array[ii]["station"] = mt_obj.station
-            self.data_array[ii]["lat"] = mt_obj.latitude
-            self.data_array[ii]["lon"] = mt_obj.longitude
-            self.data_array[ii]["east"] = mt_obj.east
-            self.data_array[ii]["north"] = mt_obj.north
-            self.data_array[ii]["zone"] = mt_obj.utm_zone
-            self.data_array[ii]["elev"] = mt_obj.elevation
-            self.data_array[ii]["rel_elev"] = mt_obj.grid_elev
-            self.data_array[ii]["rel_east"] = mt_obj.grid_east
-            self.data_array[ii]["rel_north"] = mt_obj.grid_north
-
-            self.data_array[ii]["z"][:] = mt_obj.Z.z
-            self.data_array[ii]["z_err"][:] = mt_obj.Z.z_err
-            self.data_array[ii]["z_inv_err"][:] = mt_obj.Z.z_err
-
-            self.data_array[ii]["tip"][:] = mt_obj.Tipper.tipper
-            self.data_array[ii]["tip_err"][:] = mt_obj.Tipper.tipper_err
-            self.data_array[ii]["tip_inv_err"][:] = mt_obj.Tipper.tipper_err
-
-        # option to provide real world coordinates in eastings/northings
-        # (ModEM data file contains real world center in lat/lon but projection
-        # is not provided so utm is assumed, causing errors when points cross
-        # utm zones. And lat/lon cut off to 3 d.p. causing errors in smaller
-        # areas)
-        if center_utm is not None:
-            self.data_array["east"] = (
-                self.data_array["rel_east"] + center_utm[0]
+        # combine real and imaginary
+        cols = [c.split("_")[0] for c in combined_df.columns if "real" in c]
+        for col in cols:
+            combined_df[col] = (
+                combined_df[f"{col}_real"] + 1j * combined_df[f"{col}_imag"]
             )
-            self.data_array["north"] = (
-                self.data_array["rel_north"] + center_utm[1]
-            )
+            combined_df.drop([f"{col}_real", f"{col}_imag"], 1, inplace=True)
 
-        if np.all(self.data_array["rel_elev"] == 0):
-            self.topography = False
+        return combined_df
 
     def get_parameters(self):
         """

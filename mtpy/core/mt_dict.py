@@ -21,10 +21,11 @@ from .mt_stations import MTStations
 
 
 class MTDict(OrderedDict, MTStations):
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, tf_list=None, **kwargs):
 
-        for tf in tf_list:
-            self.add_station(tf)
+        if tf_list is not None:
+            for tf in tf_list:
+                self.add_station(tf)
 
         MTStations.__init__(self, tf_list, None, **kwargs)
 

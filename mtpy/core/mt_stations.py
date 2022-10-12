@@ -68,7 +68,8 @@ class MTStations:
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
 
-        self.calculate_rel_locations()
+        if mt_list is not None:
+            self.calculate_rel_locations()
 
     def __str__(self):
         fmt_dict = dict(
