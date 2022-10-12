@@ -222,8 +222,10 @@ class Data(object):
 
         self.wave_sign_impedance = "+"
         self.wave_sign_tipper = "+"
-        self.units = "[mV/km]/[nT]"
+        self.z_units = "[mV/km]/[nT]"
+        self.t_units = ""
         self.inv_mode = "1"
+        self.formatting = 1
 
         self.error_type_z = "geometric_mean"
         self.error_value_z = 5
@@ -248,16 +250,7 @@ class Data(object):
         self.inv_comp_dict = {
             "Full_Impedance": ["zxx", "zxy", "zyx", "zyy"],
             "Off_Diagonal_Impedance": ["zxy", "zyx"],
-            "Full_Vertical_Components": ["tx", "ty"],
-        }
-
-        self.comp_index_dict = {
-            "zxx": (0, 0),
-            "zxy": (0, 1),
-            "zyx": (1, 0),
-            "zyy": (1, 1),
-            "tx": (0, 0),
-            "ty": (0, 1),
+            "Full_Vertical_Components": ["tzx", "tzy"],
         }
 
         self.header_string = " ".join(
@@ -322,6 +315,17 @@ class Data(object):
     def n_periods(self):
         return self.period.size
 
+    def _get_components(self):
+        """
+        get components to write out
+        """
+
+        comps = []
+        for inv_modes in self.inv_mode_dict[self.inv_mode]:
+            comps.append(self.inv_comp_dict[inv_modes])
+
+        return comps
+
     @staticmethod
     def get_header_string(error_type, error_value, rotation_angle):
         """
@@ -365,6 +369,150 @@ class Data(object):
             )
 
         return h_str
+
+    def _write_header(self, mode, center_point):
+        """ """
+        d_lines = []
+        if "impedance" in mode:
+            d_lines.append(
+                self.get_header_string(
+                    self.error_type_z,
+                    self.error_value_z,
+                    self.rotation_angle,
+                )
+            )
+            d_lines.append(self.header_string)
+            d_lines.append(f"> {self.inv_mode}\n")
+            d_lines.append(f"> exp({self.wave_sign_impedance}i\omega t)\n")
+            d_lines.append(f"> {self.z_units}\n")
+        elif "vertical" in mode:
+            d_lines.append(
+                self.get_header_string(
+                    self.error_type_tipper,
+                    self.error_value_tipper,
+                    self.rotation_angle,
+                )
+            )
+            d_lines.append(self.header_string)
+            d_lines.append(f"> {self.inv_mode}\n")
+            d_lines.append(f"> exp({self.wave_sign_tipper}i\omega t)\n")
+            d_lines.append(f"> [{self.t_units}]\n")
+
+        d_lines.append(
+            f"> {self.rotation_angle:.3g}\n"
+        )  # orientation, need to add at some point
+        if self.elevation:
+            d_lines.append(
+                f"> {center_point.latitude:>10.6f} "
+                f"{center_point.longitude:>10.6f} "
+                f"{center_point.model_elevation:>10.2f}\n"
+            )
+        else:
+            d_lines.append(
+                f"> {center_point.latitude:>10.6f} "
+                f"{center_point.longitude:>10.6f}"
+            )
+        d_lines.append(f"> {self.n_periods} {self.n_stations}\n")
+
+        return d_lines
+
+    def _write_comp(self, row, comp):
+        """
+        write a single row
+
+        :param row: DESCRIPTION
+        :type row: TYPE
+        :param comp: DESCRIPTION
+        :type comp: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        value = getattr(row, comp)
+        err = getattr(row, f"{comp}_model_error")
+
+        if (
+            value.real != 0.0
+            and value.imag != 0.0
+            and value.real != 1e32
+            and value.imag != 1e32
+        ):
+            if self.formatting == "1":
+                per = f"{row.period:<12.5e}"
+                sta = f"{row.station:>7}"
+                lat = f"{row.latitude:> 9.3f}"
+                lon = f"{row.longitude:> 9.3f}"
+                eas = f"{row.model_east:> 12.3f}"
+                nor = f"{row.model_north:> 12.3f}"
+                if self.elevation:
+                    ele = f"{row.model_elevation:> 12.3f}"
+                else:
+                    ele = f"{0:> 12.3f}"
+                com = f"{comp:>4}"
+                if self.z_units.lower() == "ohm":
+                    rea = "{value.real / 796.:> 14.6e}"
+                    ima = "{value.imag / 796.:> 14.6e}"
+                elif self.units.lower() not in (
+                    "[v/m]/[t]",
+                    "[mv/km]/[nt]",
+                ):
+                    raise DataError('Unsupported unit "{}"'.format(self.units))
+                else:
+                    rea = "{value.real:> 14.6e}"
+                    ima = "{value.imag:> 14.6e}"
+
+            elif self.formatting == "2":
+                per = f"{row.period:<14.6e}"
+                sta = f"{row.station:>10}"
+                lat = f"{row.latitude:> 14.6f}"
+                lon = f"{row.longitude:> 14.6f}"
+                eas = f"{row.model_east:> 15.3f}"
+                nor = f"{row.model_north:> 15.3f}"
+                if self.elevation:
+                    ele = f"{row.model_elevation:> 10.3f}"
+                else:
+                    ele = f"{0:> 10.3f}"
+                com = f"{comp:>4}"
+                if self.z_units.lower() == "ohm":
+                    rea = "{value.real / 796.:> 17.6e}"
+                    ima = "{value.imag / 796.:> 17.6e}"
+                elif self.units.lower() not in (
+                    "[v/m]/[t]",
+                    "[mv/km]/[nt]",
+                ):
+                    raise DataError('Unsupported unit "{}"'.format(self.units))
+                else:
+                    rea = "{value.real:> 17.6e}"
+                    ima = "{value.imag:> 17.6e}"
+
+            else:
+                raise NotImplementedError(
+                    "format {}({}) is not supported".format(
+                        self.formatting, type(self.formatting)
+                    )
+                )
+
+            if np.isinf(err) or np.isnan(err):
+                err = 10 ** (
+                    np.floor(np.log10(abs(max([float(rea), float(ima)]))))
+                )
+            abs_err = f"{err:> 14.6e}"
+            return "".join(
+                [
+                    per,
+                    sta,
+                    lat,
+                    lon,
+                    nor,
+                    eas,
+                    ele,
+                    com,
+                    rea,
+                    ima,
+                    abs_err,
+                ]
+            )
 
     def write_data_file(
         self,
@@ -414,36 +562,12 @@ class Data(object):
 
         self.data_fn = Path(self.save_path, self.data_fn)
 
-        if not elevation:
-            self.dataframe = 0.0
-
-        d_lines = []
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
             if "impedance" in inv_mode.lower():
-                d_lines.append(
-                    self.get_header_string(
-                        self.error_type_z,
-                        self.error_value_z,
-                        self.rotation_angle,
-                    )
-                )
-                d_lines.append(self.header_string)
-                d_lines.append(f"> {inv_mode}\n")
-                d_lines.append(f"> exp({self.wave_sign_impedance}i\omega t)\n")
-                d_lines.append(f"> {self.units}\n")
+                z_lines = self._write_header("impedance", center_point)
 
             elif "vertical" in inv_mode.lower():
-                d_lines.append(
-                    self.get_header_string(
-                        self.error_type_tipper,
-                        self.error_value_tipper,
-                        self.rotation_angle,
-                    )
-                )
-                d_lines.append(self.header_string)
-                d_lines.append(f"> {self.inv_mode}\n".format(inv_mode))
-                d_lines.append(f"> exp({self.wave_sign_tipper}i\omega t)\n")
-                d_lines.append("> []\n")
+                t_lines = self._write_header("vertical", center_point)
 
             else:
                 # maybe error here
@@ -451,131 +575,22 @@ class Data(object):
                     f"inv_mode {inv_mode} is not supported yet"
                 )
 
-            d_lines.append(
-                f"> {self.rotation_angle:.3g}\n"
-            )  # orientation, need to add at some point
-            if elevation:
-                d_lines.append(
-                    f"> {center_point.latitude:>10.6f} "
-                    f"{center_point.longitude:>10.6f} "
-                    f"{center_point.model_elevation:>10.2f}\n"
-                )
-            else:
-                d_lines.append(
-                    f"> {center_point.latitude:>10.6f} "
-                    f"{center_point.longitude:>10.6f}"
-                )
-            d_lines.append(f"> {self.n_periods} {self.n_stations}\n")
+        comps = self._get_components()
+        # Iterate over stations and sort by period
+        for station in self.dataframe.station.unique():
+            sdf = self.dataframe.loc[self.dataframe.station == station]
+            sdf.sort_values("period")
 
-            for row in self.dataframe.itertuples():
+            for row in sdf.itertuples():
+                for comp in comps:
+                    d_line = self._write_comp(row, comp)
 
-                # get the value for that competent at that frequency
-                zz = self.data_array[ss][c_key][ff, z_ii, z_jj]
-                if (
-                    zz.real != 0.0
-                    and zz.imag != 0.0
-                    and zz.real != 1e32
-                    and zz.imag != 1e32
-                ):
-                    if self.formatting == "1":
-                        per = "{0:<12.5e}".format(self.period_list[ff])
-                        sta = "{0:>7}".format(
-                            self.data_array[ss]["station"]
-                        )  # .decode('UTF-8'))
-                        lat = "{0:> 9.3f}".format(self.data_array[ss]["lat"])
-                        lon = "{0:> 9.3f}".format(self.data_array[ss]["lon"])
-                        eas = "{0:> 12.3f}".format(
-                            self.data_array[ss]["rel_east"]
-                        )
-                        nor = "{0:> 12.3f}".format(
-                            self.data_array[ss]["rel_north"]
-                        )
-                        ele = "{0:> 12.3f}".format(
-                            self.data_array[ss]["rel_elev"]
-                        )
-                        com = "{0:>4}".format(comp.upper())
-                        if self.units.lower() == "ohm":
-                            rea = "{0:> 14.6e}".format(zz.real / 796.0)
-                            ima = "{0:> 14.6e}".format(zz.imag / 796.0)
-                        elif self.units.lower() not in (
-                            "[v/m]/[t]",
-                            "[mv/km]/[nt]",
-                        ):
-                            raise DataError(
-                                'Unsupported unit "{}"'.format(self.units)
-                            )
-                        else:
-                            rea = "{0:> 14.6e}".format(zz.real)
-                            ima = "{0:> 14.6e}".format(zz.imag)
-
-                    elif self.formatting == "2":
-                        per = "{0:<14.6e}".format(self.period_list[ff])
-                        sta = "{0:<10}".format(self.data_array[ss]["station"])
-                        lat = "{0:> 14.6f}".format(self.data_array[ss]["lat"])
-                        lon = "{0:> 14.6f}".format(self.data_array[ss]["lon"])
-                        eas = "{0:> 12.3f}".format(
-                            self.data_array[ss]["rel_east"]
-                        )
-                        nor = "{0:> 15.3f}".format(
-                            self.data_array[ss]["rel_north"]
-                        )
-                        ele = "{0:> 10.3f}".format(
-                            self.data_array[ss]["rel_elev"]
-                        )
-                        com = "{0:>12}".format(comp.upper())
-                        if self.units.lower() == "ohm":
-                            rea = "{0:> 17.6e}".format(zz.real / 796.0)
-                            ima = "{0:> 17.6e}".format(zz.imag / 796.0)
-                        elif self.units.lower() not in (
-                            "[v/m]/[t]",
-                            "[mv/km]/[nt]",
-                        ):
-                            raise DataError(
-                                'Unsupported unit "{}"'.format(self.units)
-                            )
-                        else:
-                            rea = "{0:> 17.6e}".format(zz.real)
-                            ima = "{0:> 17.6e}".format(zz.imag)
-                    else:
-                        raise NotImplementedError(
-                            "format {}({}) is not supported".format(
-                                self.formatting, type(self.formatting)
-                            )
-                        )
-
-                    # get error from inversion error
-                    abs_err = self.data_array["{0}_inv_err".format(c_key)][
-                        ss, ff, z_ii, z_jj
-                    ]
-
-                    if np.isinf(abs_err) or np.isnan(abs_err):
-                        abs_err = 10 ** (
-                            np.floor(
-                                np.log10(abs(max([float(rea), float(ima)])))
-                            )
-                        )
-                    abs_err = "{0:> 14.6e}".format(abs(abs_err))
-                    # make sure that x==north, y==east, z==+down
-                    dline = "".join(
-                        [
-                            per,
-                            sta,
-                            lat,
-                            lon,
-                            nor,
-                            eas,
-                            ele,
-                            com,
-                            rea,
-                            ima,
-                            abs_err,
-                            "\n",
-                        ]
-                    )
-
-                    d_lines.append(dline)
+                    if comp.startswith("z"):
+                        z_lines.append(d_line)
+                    elif comp.startswith("t"):
+                        t_lines.append(d_line)
         with open(self.data_fn, "w") as dfid:
-            dfid.writelines(d_lines)
+            dfid.write("\n".join(z_lines + t_lines))
 
         self.logger.info("Wrote ModEM data file to {0}".format(self.data_fn))
         return self.data_fn
@@ -1059,107 +1074,6 @@ class Data(object):
         if np.all(self.data_array["rel_elev"] == 0):
             self.topography = False
 
-    def write_vtk_station_file(
-        self,
-        vtk_save_path=None,
-        vtk_fn_basename="ModEM_stations",
-        geographic=False,
-        shift_east=0,
-        shift_north=0,
-        shift_elev=0,
-        units="km",
-        coordinate_system="nez+",
-    ):
-        """
-
-        :param vtk_save_path: directory to save vtk file to, defaults to None
-        :type vtk_save_path: string or Path, optional
-        :param vtk_fn_basename: filename basename of vtk file, note that .vtr
-        extension is automatically added, defaults to "ModEM_stations"
-        :type vtk_fn_basename: string, optional
-        :param geographic: If true puts the grid on geographic coordinates based
-        on the model_utm_zone, defaults to False
-        :type geographic: boolean, optional
-        :param shift_east: shift in east directions in meters, defaults to 0
-        :type shift_east: float, optional
-        :param shift_north: shift in north direction in meters, defaults to 0
-        :type shift_north: float, optional
-        :param shift_elev: shift in elevation + down in meters, defaults to 0
-        :type shift_elev: float, optional
-        :param units: Units of the spatial grid [ km | m | ft ], defaults to "km"
-        :type units: string, optional
-        :type : string
-        :param coordinate_system: coordinate system for the station, either the
-        normal MT right-hand coordinate system with z+ down or the sinister
-        z- down [ nez+ | enz- ], defaults to nez+
-        :return: full path to VTK file
-        :rtype: Path
-
-        Write VTK file
-        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations")
-
-        Write VTK file in geographic coordinates
-        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
-        >>> ...                       geographic=True)
-
-        Write VTK file in geographic coordinates with z+ up
-        >>> md.write_vtk_station_file(vtk_fn_basename="modem_stations",
-        >>> ...                       geographic=True,
-        >>> ...                       coordinate_system='enz-')
-
-        """
-        if isinstance(units, str):
-            if units.lower() == "km":
-                scale = 1.0 / 1000.00
-            elif units.lower() == "m":
-                scale = 1.0
-            elif units.lower() == "ft":
-                scale = 3.2808
-        elif isinstance(units, (int, float)):
-            scale = units
-
-        if vtk_save_path is None:
-            vtk_fn = self.save_path.joinpath(vtk_fn_basename)
-        else:
-            vtk_fn = Path(vtk_save_path, vtk_fn_basename)
-
-        if not geographic:
-            if coordinate_system == "nez+":
-                vtk_x = (
-                    self.station_locations.rel_north + shift_north
-                ) * scale
-                vtk_y = (self.station_locations.rel_east + shift_east) * scale
-                vtk_z = (self.station_locations.rel_elev + shift_elev) * scale
-                extra = (self.station_locations.rel_elev + shift_elev) * scale
-            elif coordinate_system == "enz-":
-                vtk_x = (
-                    self.station_locations.rel_north + shift_north
-                ) * scale
-                vtk_y = (self.station_locations.rel_east + shift_east) * scale
-                vtk_z = (self.station_locations.rel_elev + shift_elev) * scale
-                extra = (self.station_locations.rel_elev + shift_elev) * scale
-
-        else:
-            self.station_locations.model_utm_zone = self.center_point.zone[0]
-            if coordinate_system == "nez+":
-                vtk_y = (self.station_locations.north + shift_north) * scale
-                vtk_x = (self.station_locations.east + shift_east) * scale
-                vtk_z = -1 * (self.station_locations.elev + shift_elev) * scale
-                extra = -1 * (self.station_locations.elev + shift_elev)
-            elif coordinate_system == "enz-":
-                vtk_y = (self.station_locations.north + shift_north) * scale
-                vtk_x = (self.station_locations.east + shift_east) * scale
-                vtk_z = -1 * (self.station_locations.elev + shift_elev) * scale
-                extra = -1 * (self.station_locations.elev + shift_elev)
-
-        # write file
-        pointsToVTK(
-            vtk_fn.as_posix(), vtk_x, vtk_y, vtk_z, data={"elevation": extra}
-        )
-
-        self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
-        return vtk_fn
-
     def get_parameters(self):
         """
         get important parameters for documentation
@@ -1200,672 +1114,6 @@ class Data(object):
             self.center_point.zone[0],
         )
         return parameter_dict
-
-    def center_stations(self, model_obj):
-        """
-        Center station locations to the middle of cells, is useful for
-        topography cause it reduces edge effects of stations close to cell edges.
-        Recalculates rel_east, rel_north to center of model cell.
-
-        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
-        :type model_obj: :class:`mtpy.modeling.modem.Model`
-
-
-        """
-
-        for s_arr in self.station_locations.station_locations:
-            e_index = (
-                np.where(model_obj.grid_east >= s_arr["rel_east"])[0][0] - 1
-            )
-            n_index = (
-                np.where(model_obj.grid_north >= s_arr["rel_north"])[0][0] - 1
-            )
-
-            mid_east = model_obj.grid_east[e_index : e_index + 2].mean()
-            mid_north = model_obj.grid_north[n_index : n_index + 2].mean()
-
-            s_index = np.where(self.data_array["station"] == s_arr["station"])[
-                0
-            ][0]
-
-            self.data_array[s_index]["rel_east"] = mid_east
-            self.data_array[s_index]["rel_north"] = mid_north
-
-    def project_stations_on_topography(
-        self,
-        model_object,
-        air_resistivity=1e12,
-        sea_resistivity=0.3,
-        ocean_bottom=False,
-    ):
-        """
-        Project stations on topography of a given model
-
-        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
-        :type model_obj: :class:`mtpy.modeling.modem.Model`
-        :param air_resistivity: resistivity value of air cells in the model
-        :type air_resistivity:  float
-        :param sea_resistivity: resistivity of sea
-        :type sea_resistivity: float
-        :param ocean_bottom: If True places stations at bottom of sea cells
-        :type ocean_bottom: boolean
-
-        Recaluclates rel_elev
-        """
-
-        # find index of each station on grid
-        station_index_x = []
-        station_index_y = []
-        for sname in self.station_locations.station_locations["station"]:
-            ss = np.where(
-                self.station_locations.station_locations["station"] == sname
-            )[0][0]
-            # relative locations of stations
-            sx, sy = (
-                self.station_locations.station_locations["rel_east"][ss],
-                self.station_locations.station_locations["rel_north"][ss],
-            )
-            # indices of stations on model grid
-            sxi = np.where(
-                (sx <= model_object.grid_east[1:])
-                & (sx > model_object.grid_east[:-1])
-            )[0][0]
-            syi = np.where(
-                (sy <= model_object.grid_north[1:])
-                & (sy > model_object.grid_north[:-1])
-            )[0][0]
-
-            # first, check if there are any air cells
-            if np.any(
-                model_object.res_model[syi, sxi] > 0.95 * air_resistivity
-            ):
-                szi = np.amin(
-                    np.where(
-                        (
-                            model_object.res_model[syi, sxi]
-                            < 0.95 * air_resistivity
-                        )
-                    )[0]
-                )
-            # otherwise place station at the top of the model
-            else:
-                szi = 0
-
-            # JP: estimate ocean bottom stations if requested
-            if ocean_bottom:
-                if np.any(model_object.res_model[syi, sxi] <= sea_resistivity):
-                    szi = np.amax(
-                        np.where(
-                            (
-                                model_object.res_model[syi, sxi]
-                                <= sea_resistivity
-                            )
-                        )[0]
-                    )
-                # if the stations are not in the ocean let the previous szi estimation
-                # be used
-
-            # get relevant grid point elevation
-            topoval = model_object.grid_z[szi]
-
-            station_index_x.append(sxi)
-            station_index_y.append(syi)
-
-            # update elevation in station locations and data array, +1 m as
-            # data elevation needs to be below the topography (as advised by Naser)
-            self.data_array["rel_elev"][ss] = topoval + 0.001
-
-        # BM: After applying topography, center point of grid becomes
-        #  highest point of surface model.
-        self._center_elev = model_object.grid_z[0]
-
-        self.logger.debug(
-            "Re-writing data file after adding topo to "
-            + self.data_fn.stem
-            + "_topo.dat"
-        )
-        self.write_data_file(
-            fn_basename=self.data_fn.stem + "_topo.dat",
-            fill=False,
-            elevation=True,
-        )
-
-    # FZ: moved from the modem_data_to_phase_tensor.py ref: AUSLAMP-112
-    def compute_phase_tensor(self, datfile, outdir):
-        """
-        Compute the phase tensors from a ModEM dat file
-        :param datfile: path2/file.dat
-        :return: path2csv  created by this method
-        """
-
-        # Data file
-        data_file = datfile
-        dest_dir = outdir
-
-        # Create a new ModEM data instance
-        md = Data()
-        # Read the datafile
-        md.read_data_file(data_fn=data_file)
-
-        num_sites = md.data_array.shape[0]
-        self.logger.debug("ModEM data file number of sites:", num_sites)
-
-        first_site_periods = md.data_array[0][9]  # (23L, 2L, 2L)
-        self.logger.debug(
-            "first_site_periods = %s" % str(first_site_periods.shape[0])
-        )
-
-        period_list = md.period_list
-        freq_list = 1.0 / period_list
-        num_periods = len(period_list)
-        self.logger.debug("ModEM data file number of periods:", num_periods)
-
-        csv_basename = "modem_data_to_phase_tensor"
-        csvfname = Path(dest_dir, f"{csv_basename}.csv")
-
-        csv_header = [
-            "Freq",
-            "Station",
-            "Lat",
-            "Long",
-            "Phimin",
-            "Phimax",
-            "Ellipticity",
-            "Azimuth",
-        ]
-
-        with open(csvfname, "wb") as csvf:
-            writer = csv.writer(csvf)
-            writer.writerow(csv_header)
-
-        for period_num in range(num_periods):
-            per = period_list[period_num]
-            freq = freq_list[period_num]
-            self.logger.debug("Working on period %s; frequency: %s", per, freq)
-            csvrows = []
-            for num_site in range(num_sites):
-                # Obtain the site for this number
-                this_site = md.data_array[num_site]
-
-                # Station Label is first record in data array for a site
-                site_label = this_site[0]
-                # Latitude is the second record in data array for a site
-                site_lat = this_site[1]
-                # Longitude is the third record in data array for a site
-                site_long = this_site[2]
-
-                # Actual data is a list of 2x2 matrices (ordered by period), 10th record in data array for a site
-                this_site_data = this_site[9]
-
-                # Now get the data for this period only, going off the period number we're looping through currently
-                this_period_data = this_site_data[period_num]
-                # Create a Z object based on this 2x2 array of data
-                this_period_data = mtz.Z(
-                    z_array=this_period_data, freq=freq_list
-                )
-
-                # Given the Z object we just created, give us a PhaseTensor object
-                this_phase_tensor = pt.PhaseTensor(z_object=this_period_data)
-
-                # Get the four parameters we care about
-                this_phimin = this_phase_tensor.phimin[0]
-                this_phimax = this_phase_tensor.phimax[0]
-                this_ellipticity = this_phase_tensor.ellipticity[0]
-                this_azimuth = this_phase_tensor.azimuth[0]
-
-                # Print out comma delimited version of the parameters: label, lat, long, phimin, phimax, ellipticity, azimuth
-                arow = [
-                    freq,
-                    site_label,
-                    site_lat,
-                    site_long,
-                    this_phimin,
-                    this_phimax,
-                    this_ellipticity,
-                    this_azimuth,
-                ]
-                # Done for this site
-
-                csvrows.append(arow)
-
-            with open(
-                csvfname, "ab"
-            ) as csvf:  # append to this summary csv file for all freqs
-                writer = csv.writer(csvf)
-                writer.writerows(csvrows)
-
-            csv_basename2 = f"{csv_basename}_{freq:.0f}Hz.csv"
-            csvfile2 = Path(dest_dir, csv_basename2)
-
-            with open(
-                csvfile2, "wb"
-            ) as csvf:  # csvfile  for eachindividual freq
-                writer = csv.writer(csvf)
-                writer.writerow(csv_header)
-                writer.writerows(csvrows)
-
-        # Done with all sites and periods
-        self.logger.info("CSV files created in %s", outdir)
-
-        return csvfname
-
-    def add_station(self, fn=None, mt_object=None, new_edi_dir=None):
-        """
-        Add a station to an existing data object.
-
-        :param fn: file name or list of files names to add, defaults to None
-        :type fn: str, Path, list of str or Path, optional
-        :param mt_object: MT objects or list of MT objects, defaults to None
-        :type mt_object: :class:`mtpy.core.mt.MT` or list of :class:`mtpy.core.mt.MT,
-        optional
-        :return: new data array
-        :rtype: np.ndarray
-        :return: new_mt_dict
-        :type: dictionary of :class:`mtpy.core.mt.MT` objects
-
-        .. note:: As long as the added station(s) are within the existing station
-        area the center point will remain the same, if they are not, then the center
-        will change and you will need to adjust your mesh.
-
-        Example
-
-        >>> dfn = "/home/mt/test.dat"
-        >>> d = modem.Data()
-        >>> d.read_data_file(dfn)
-        >>> d.data_array, d.mt_dict = d.add_station(fn=[r"/01.edi", r"/02.edi"])
-        >>> d.write_data_file(fn_basename="test_added.dat",
-        >>> ...               fill=False,
-        >>> ...               compute_error=False,
-        >>> ...               elevation=True)
-
-        """
-
-        if fn is not None:
-            if isinstance(fn, (list, tuple)):
-                mt_object = [mt.MT(f) for f in fn]
-            elif isinstance(fn, (str, Path)):
-                mt_object = [mt.MT(fn)]
-            else:
-                msg = f"Do not understand input type {type(fn)}"
-                self.logger.error(msg)
-                raise ValueError(msg)
-
-        if mt_object is None:
-            return None
-        elif isinstance(mt_object, mt.MT):
-            mt_object = [mt_object]
-        elif not isinstance(mt_object, (list, tuple)):
-            msg = f"Do not understand input type {type(fn)}"
-            self.logger.error(msg)
-            raise ValueError(msg)
-
-        add_mt_dict = {}
-        new_mt_dict = deepcopy(self.mt_dict)
-        for mt_obj in mt_object:
-            if mt_obj.station in self.mt_dict.keys():
-                self.logger.warning(
-                    f"Station {mt_obj.station} already exists, skipping"
-                )
-                continue
-            add_mt_dict[mt_obj.station] = mt_obj
-            new_mt_dict[mt_obj.station] = mt_obj
-
-        add_data_array, add_mt_dict = self.fill_data_array(
-            add_mt_dict, new_edi_dir=new_edi_dir
-        )
-        add_data_array = self.compute_inv_error(add_data_array)
-
-        new_data_array = np.append(self.data_array, add_data_array)
-        # need to sort stations because that is how things are calculated
-        # for station location
-        new_data_array.sort(kind="station")
-        new_data_array, new_mt_dict = self.get_relative_station_locations(
-            new_mt_dict, new_data_array
-        )
-        return new_data_array, new_mt_dict
-
-    def remove_station(self, name):
-        """
-        Remove a station or stations
-
-        :param name: name(s) of station(s) to remove
-        :type name: string or list of strings
-        :return: new data array with stations removed
-        :rtype: np.ndarray
-        :return: new dictionary of :class:`mtpy.core.mt` objects with stations removed
-        :rtype: dictionary
-
-        >>> d = Data()
-        >>> d.read_data_file(r"example/data.dat")
-        >>> d.data_array, d.mt_dict = d.remove_station(["mt666", "mt013"]
-
-        """
-        if isinstance(name, str):
-            name = [name]
-        new_data_array = self.data_array.copy()
-        new_mt_dict = dict(self.mt_dict)
-
-        for b_station in name:
-            try:
-                s_find = np.where(self.data_array["station"] == b_station)[0][
-                    0
-                ]
-            except IndexError:
-                msg = f"Could not find {b_station} in data file"
-                self.logger.warn(msg)
-                continue
-
-            new_data_array[s_find] = 0
-            new_mt_dict.pop(b_station)
-
-        return (
-            new_data_array[np.where(new_data_array["station"] != "0")],
-            new_mt_dict,
-        )
-
-    def add_error(
-        self, station, comp=[], z_value=5, t_value=0.05, periods=None
-    ):
-        """
-
-        Add error to a station's components for given period range
-
-        :param station: name of station(s) to add error to
-        :type station: string or list of strings
-        :param comp: list of components to add data to, valid components are
-        zxx, zxy, zyx, zyy, tx, ty
-        :type comp: string or list of strings
-        :param periods: the period range to add to, if None all periods, otherwise
-        enter as a tuple as (minimum, maximum) period in seconds
-        :type periods: tuple (minimum, maxmum)
-        :return: data array with added errors
-        :rtype: np.ndarray
-
-        >>> d = Data()
-        >>> d.read_data_file(r"example/data.dat")
-        >>> d.data_array = d.add_error("mt01", comp=["zxx", "zxy", "tx"], z_value=7, t_value=.05)
-
-        """
-        c_dict = {
-            "zxx": (0, 0),
-            "zxy": (0, 1),
-            "zyx": (1, 0),
-            "zyy": (1, 1),
-            "tx": (0, 0),
-            "ty": (0, 1),
-        }
-        if isinstance(station, str):
-            station = [station]
-        if isinstance(comp, str):
-            comp = [comp]
-        if periods is not None:
-            if len(periods) != 2:
-                msg = "Must enter a minimum and maximum period value"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            p_min = np.where(self.period_list >= min(periods))[0][0]
-            p_max = np.where(self.period_list <= max(periods))[0][-1]
-        else:
-            p_min = 0
-            p_max = len(self.period_list) - 1
-
-        new_data_array = self.data_array.copy()
-        new_mt_dict = deepcopy(self.mt_dict)
-        for ss in station:
-            try:
-                s_find = np.where(self.data_array["station"] == ss)[0][0]
-            except IndexError:
-                msg = f"Could not find {ss} in data file"
-                self.logger.warn(msg)
-                continue
-
-            for cc in comp:
-                try:
-                    ii, jj = c_dict[cc]
-                except KeyError:
-                    msg = f"Component {cc} is not a valid component, skipping"
-                    self.logger.warning(msg)
-                    continue
-                if "z" in cc:
-                    new_data_array[s_find]["z_err"][
-                        p_min:p_max, ii, jj
-                    ] *= z_value
-                    new_mt_dict[ss].Z.z_err[p_min:p_max, ii, jj] *= z_value
-                elif "t" in cc:
-                    new_data_array[s_find]["tip_err"][
-                        p_min:p_max, ii, jj
-                    ] += t_value
-                    new_mt_dict[ss].Tipper.tipper_err[
-                        p_min:p_max, ii, jj
-                    ] += t_value
-
-        return new_data_array, new_mt_dict
-
-    def flip_phase(
-        self,
-        station,
-        zxx=False,
-        zxy=False,
-        zyx=False,
-        zyy=False,
-        tx=False,
-        ty=False,
-    ):
-        """
-        Flip the phase of a station in case its plotting in the wrong quadrant
-
-        :param station: name(s) of station to flip phase
-        :type station: string or list of strings
-        :param station: station name or list of station names
-        :type station: string or list
-        :param zxx: Z_xx, defaults to False
-        :type zxx: TYPE, optional
-        :param zxy: Z_xy, defaults to False
-        :type zxy: TYPE, optional
-        :param zyy: Z_yx, defaults to False
-        :type zyy: TYPE, optional
-        :param zyx: Z_yy, defaults to False
-        :type zyx: TYPE, optional
-        :param tx: T_zx, defaults to False
-        :type tx: TYPE, optional
-        :param ty: T_zy, defaults to False
-        :type ty: TYPE, optional
-        :return: new_data_array
-        :rtype: np.ndarray
-        :return: new mt_dict with components removed
-        :rtype: dictionary
-
-        >>> d = Data()
-        >>> d.read_data_file(r"example/data.dat")
-        >>> d.data_array, d.mt_dict = d.flip_phase("mt01", comp=["zx", "tx"])
-
-        """
-        c_dict = {
-            "zxx": {"index": (0, 0), "bool": zxx},
-            "zxy": {"index": (0, 1), "bool": zxy},
-            "zyx": {"index": (1, 0), "bool": zyx},
-            "zyy": {"index": (1, 1), "bool": zyy},
-            "tx": {"index": (0, 0), "bool": tx},
-            "ty": {"index": (0, 1), "bool": ty},
-        }
-        if isinstance(station, str):
-            station = [station]
-
-        new_data_array = self.data_array.copy()
-        new_mt_dict = deepcopy(self.mt_dict)
-        for ss in station:
-            try:
-                s_find = np.where(self.data_array["station"] == ss)[0][0]
-            except IndexError:
-                msg = f"Could not find {ss} in data file"
-                self.logger.warn(msg)
-                continue
-            for ckey, dd in c_dict.items():
-                if dd["bool"]:
-                    if "z" in ckey:
-                        new_data_array[s_find]["z"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-                        new_data_array[s_find]["z_err"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-                        new_mt_dict[ss].Z.z[
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-                        new_mt_dict[ss].Z.z_err[
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= 1
-                    elif "t" in ckey:
-                        new_data_array[s_find]["tip"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-                        new_data_array[s_find]["tip_err"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-                        new_mt_dict[ss].Tipper.tipper[
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-                        new_mt_dict[ss].Tipper.tipper_err[
-                            :, dd["index"][0], dd["index"][1]
-                        ] *= -1
-        return new_data_array, new_mt_dict
-
-    def remove_static_shift(self, station, ss_x=1, ss_y=1):
-        """
-        Remove static shift from impedance components
-
-        The application is  Z  / ss_i
-
-        .. note:: The factors are in resistivity scale, so the
-                  entries of  the matrix "S" need to be given by their
-                  square-roots!
-
-        :param name: name(s) of station(s) to apply static shift
-        :type name: string or list of strings
-        :param ss_x: static correction in electric x components, defaults to 1
-        :type ss_x: float, optional
-        :param ss_y: static correction in electric y components, defaults to 1
-        :type ss_y: float, optional
-        :return: new data array
-        :rtype: np.ndarray
-        :return: new dictionary of :class:`mtpy.core.mt` objects
-        rtype: dictionary
-
-        >>> d = Data()
-        >>> d.read_data_file(r"example/data.dat")
-        >>> d.data_array, d.mt_dict = d.remove_static_shift("mt01", ss_x=1.5, ss_y=.4)
-
-        """
-
-        if isinstance(station, str):
-            station = [station]
-
-        new_data_array = self.data_array.copy()
-        new_mt_dict = deepcopy(self.mt_dict)
-        for ss in station:
-            try:
-                s_find = np.where(self.data_array["station"] == ss)[0][0]
-            except IndexError:
-                msg = f"Could not find {ss} in data file"
-                self.logger.warn(msg)
-                continue
-            new_data_array[s_find]["z"][:, 0, :] *= 1.0 / np.sqrt(ss_x)
-            new_data_array[s_find]["z"][:, 1, :] *= 1.0 / np.sqrt(ss_y)
-
-            new_mt_obj = new_mt_dict[ss].copy()
-            new_mt_obj.Z = new_mt_obj.remove_static_shift(ss_x=ss_x, ss_y=ss_y)
-            new_mt_dict[ss] = new_mt_obj
-
-        return new_data_array, new_mt_dict
-
-    def remove_component(
-        self,
-        station,
-        zxx=False,
-        zxy=False,
-        zyy=False,
-        zyx=False,
-        tx=False,
-        ty=False,
-    ):
-        """
-        Remove a component for a given station(s)
-
-        :param station: station name or list of station names
-        :type station: string or list
-        :param zxx: Z_xx, defaults to False
-        :type zxx: TYPE, optional
-        :param zxy: Z_xy, defaults to False
-        :type zxy: TYPE, optional
-        :param zyy: Z_yx, defaults to False
-        :type zyy: TYPE, optional
-        :param zyx: Z_yy, defaults to False
-        :type zyx: TYPE, optional
-        :param tx: T_zx, defaults to False
-        :type tx: TYPE, optional
-        :param ty: T_zy, defaults to False
-        :type ty: TYPE, optional
-        :return: new data array with components removed
-        :rtype: np.ndarray
-        :return: new mt_dict with components removed
-        :rtype: dictionary
-
-        >>> d = Data()
-        >>> d.read_data_file(r"example/data.dat")
-        >>> d.data_array, d.mt_dict = d.remove_component("mt01", zxx=True, tx=True)
-
-        """
-        c_dict = {
-            "zxx": {"index": (0, 0), "bool": zxx},
-            "zxy": {"index": (0, 1), "bool": zxy},
-            "zyx": {"index": (1, 0), "bool": zyx},
-            "zyy": {"index": (1, 1), "bool": zyy},
-            "tx": {"index": (0, 0), "bool": tx},
-            "ty": {"index": (0, 1), "bool": ty},
-        }
-        if not isinstance(station, (list, tuple)):
-            station = [station]
-
-        new_data_array = self.data_array.copy()
-        new_mt_dict = deepcopy(self.mt_dict)
-
-        for ss in station:
-            try:
-                s_find = np.where(self.data_array["station"] == ss)[0][0]
-            except IndexError:
-                msg = f"Could not find {ss} in data file"
-                self.logger.warn(msg)
-                continue
-            for ckey, dd in c_dict.items():
-                if dd["bool"]:
-                    if "z" in ckey:
-                        new_data_array[s_find]["z"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                        new_data_array[s_find]["z_err"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                        new_mt_dict[ss].Z.z[
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                        new_mt_dict[ss].Z.z_err[
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                    elif "t" in ckey:
-                        new_data_array[s_find]["tip"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                        new_data_array[s_find]["tip_err"][
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                        new_mt_dict[ss].Tipper.tipper[
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-                        new_mt_dict[ss].Tipper.tipper_err[
-                            :, dd["index"][0], dd["index"][1]
-                        ] = 0
-
-        return new_data_array, new_mt_dict
 
     def estimate_starting_rho(self):
         """
