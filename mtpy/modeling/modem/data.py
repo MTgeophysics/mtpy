@@ -202,12 +202,12 @@ class Data:
 
     """
 
-    def __init__(self, df, center_point, **kwargs):
+    def __init__(self, df=None, center_point=None, **kwargs):
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
-        self.dataframe = df
-        self.center_point = center_point
+        self.dataframe = MTDataFrame()
+        self.center_point = MTLocation()
 
         self.wave_sign_impedance = "+"
         self.wave_sign_tipper = "+"
@@ -257,6 +257,19 @@ class Data:
                 "Error",
             ]
         )
+
+        self._df_keys = [
+            "period",
+            "station",
+            "latitude",
+            "longitude",
+            "model_north",
+            "model_east",
+            "model_elevation",
+        ]
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __str__(self):
         lines = ["ModEM Data Object:"]
@@ -322,8 +335,7 @@ class Data:
 
         return comps
 
-    @staticmethod
-    def get_header_string(error_type, error_value, rotation_angle):
+    def _get_header_string(self, error_type, error_value):
         """
         Create the header strings
 
@@ -342,12 +354,12 @@ class Data:
         h_str = []
         if np.atleast_1d(error_type).ndim == 2:
             h_str = (
-                f"# Created using MTpy v2 calculated "
-                f"{error_type[0, 0]}, {error_type[0, 1]}, "
-                f"{error_type[1, 0]}, {error_type[1, 1]} "
+                f"# Creating_software: MTpy v2, "
+                f"error: [{error_type[0, 0]}, {error_type[0, 1]}, "
+                f"{error_type[1, 0]}, {error_type[1, 1]}], "
             )
         else:
-            h_str = f"# Created using MTpy v2 calculated {error_type} "
+            h_str = f"# Creating_software: MTpy v2, error: {error_type}, "
 
         if np.atleast_1d(error_value).ndim == 2:
             h_str += (
@@ -355,26 +367,33 @@ class Data:
                 f"{error_value[0, 1]:.0f}%, "
                 f"{error_value[1, 0]:.0f}%, "
                 f"{error_value[1, 1]:.0f}%, "
-                f"data rotated {rotation_angle:.1f}_deg clockwise from N"
+                f"data rotated {self.rotation_angle:.1f}_deg clockwise from N, "
+                f"{self.center_point.utm_crs}"
             )
 
         else:
+            if error_value > 1:
+                fmt = ".0f"
+                units = "%"
+            elif error_value < 1:
+                fmt = ".2f"
+                units = ""
             h_str += (
-                f"error of {error_value:.0f}% data rotated "
-                f"{rotation_angle:.1f}_deg clockwise from N"
+                f"error_value: {error_value:{fmt}}{units}, data_rotation: "
+                f"{self.rotation_angle:.1f} deg clockwise, "
+                f"model_{self.center_point.utm_crs}"
             )
 
         return h_str
 
-    def _write_header(self, mode, center_point):
+    def _write_header(self, mode):
         """ """
         d_lines = []
         if "impedance" in mode.lower():
             d_lines.append(
-                self.get_header_string(
+                self._get_header_string(
                     self.error_type_z,
                     self.error_value_z,
-                    self.rotation_angle,
                 )
             )
             d_lines.append(self.header_string)
@@ -383,10 +402,9 @@ class Data:
             d_lines.append(f"> {self.z_units}")
         elif "vertical" in mode.lower():
             d_lines.append(
-                self.get_header_string(
+                self._get_header_string(
                     self.error_type_tipper,
                     self.error_value_tipper,
-                    self.rotation_angle,
                 )
             )
             d_lines.append(self.header_string)
@@ -469,7 +487,7 @@ class Data:
                     ele = f"{row.model_elevation:> 10.3f}"
                 else:
                     ele = f"{0:> 10.3f}"
-                com = f"{comp:>4}"
+                com = f"{comp:>4}".upper()
                 if self.z_units.lower() == "ohm":
                     rea = f"{value.real / 796.:> 17.6e}"
                     ima = f"{value.imag / 796.:> 17.6e}"
@@ -600,14 +618,16 @@ class Data:
         :rtype: TYPE
 
         """
-        read_impedance = False
-        read_tipper = False
+
+        mode = None
         inv_list = []
         header_list = []
         metadata_list = []
+        self.center_point = MTLocation()
         for hline in header_lines:
             if hline.find("#") == 0:
-                header_list.append(hline.strip())
+                if "period" not in hline.lower():
+                    header_list.append(hline.strip())
             elif hline.find(">") == 0:
                 # modem outputs only 7 characters for the lat and lon
                 # if there is a negative they merge together, need to split
@@ -615,25 +635,23 @@ class Data:
                 hline = hline.replace("-", " -")
                 metadata_list.append(hline[1:].strip())
                 if hline.lower().find("ohm") > 0:
-                    self.units = "ohm"
+                    self.z_units = "ohm"
                     continue
                 elif hline.lower().find("mv") > 0:
-                    self.units = "[mV/km]/[nT]"
+                    self.z_units = "[mV/km]/[nT]"
                     continue
                 elif hline.lower().find("vertical") > 0:
-                    read_tipper = True
-                    read_impedance = False
+                    mode = "vertical"
                     inv_list.append("Full_Vertical_Components")
                     continue
                 elif hline.lower().find("impedance") > 0:
-                    read_impedance = True
-                    read_tipper = False
+                    mode = "impedance"
                     inv_list.append("Full_Impedance")
                     continue
                 if hline.find("exp") > 0:
-                    if read_impedance is True:
+                    if mode in ["impedance"]:
                         self.wave_sign_impedance = hline[hline.find("(") + 1]
-                    elif read_tipper is True:
+                    elif mode in ["vertical"]:
                         self.wave_sign_tipper = hline[hline.find("(") + 1]
                 elif len(hline[1:].strip().split()) >= 2:
                     if hline.find(".") > 0:
@@ -641,13 +659,13 @@ class Data:
                             float(value) for value in hline[1:].strip().split()
                         ]
                         if value_list[0] != 0.0:
-                            self._center_lat = value_list[0]
+                            self.center_point.latitude = value_list[0]
                         if value_list[1] != 0.0:
-                            self._center_lon = value_list[1]
+                            self.center_point.longitude = value_list[1]
                         try:
-                            self._center_elev = value_list[2]
+                            self.center_point.elevation = value_list[2]
                         except IndexError:
-                            self._center_elev = 0.0
+                            self.center_point.elevation = 0.0
                             self.logger.debug(
                                 "Did not find center elevation in data file"
                             )
@@ -656,6 +674,102 @@ class Data:
                         self.rotation_angle = float(hline[1:].strip())
                     except ValueError:
                         continue
+
+        for head_line, inv_mode in zip(header_list, inv_list):
+            self._parse_header_line(head_line, inv_mode)
+
+        self._get_inv_mode(inv_list)
+
+    def _parse_header_line(self, header_line, mode):
+        """
+        Parse header line
+
+        """
+
+        if header_line == self.header_string:
+            return
+        if "impedance" in mode.lower():
+            item_dict = {
+                "error": "error_type_z",
+                "error_value": "error_value_z",
+                "data_rotation": "rotation_angle",
+                "model_epsg": "center_point.utm_epsg",
+            }
+        elif "vertical" in mode.lower():
+            item_dict = {
+                "error": "error_type_tipper",
+                "error_value": "error_value_tipper",
+                "data_rotation": "rotation_angle",
+                "model_epsg": "center_point.utm_epsg",
+            }
+
+        if header_line.count(",") > 0:
+            header_list = header_line.split(",")
+        else:
+            header_list = header_line.split()
+
+        for ii, item in enumerate(header_list):
+            item = item.lower()
+            if item.count(":") > 0:
+                item_list = [k.strip() for k in item.split(":")]
+                if len(item_list) == 2:
+                    key = item_list[0]
+                    value = item_list[1].replace("%", "").split()[0]
+                    if key in ["error_value", "data_rotation"]:
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            pass
+                    try:
+                        if key in ["model_epsg"]:
+                            setattr(self.center_point, "utm_epsg", value)
+                        else:
+                            setattr(self, item_dict[key], value)
+                    except KeyError:
+                        continue
+
+            else:
+                if item in ["calculated"]:
+                    setattr(self, item_dict["error"], header_list[ii + 1])
+                if item in ["of"]:
+                    setattr(
+                        self,
+                        item_dict["error_value"],
+                        float(header_list[ii + 1].replace("%", "")),
+                    )
+                if "deg" in item:
+                    setattr(
+                        self,
+                        item_dict["data_rotation"],
+                        float(item.split("_")[0]),
+                    )
+
+    def _get_rotation_angle(self, header_line):
+        # try to find rotation angle
+        h_list = header_line.split()
+        for hh, h_str in enumerate(h_list):
+            if h_str.find("_deg") > 0:
+                try:
+                    self.rotation_angle = float(h_str[0 : h_str.find("_deg")])
+                except ValueError:
+                    pass
+
+    def _get_inv_mode(self, inv_list):
+        # find inversion mode
+        for inv_key in list(self.inv_mode_dict.keys()):
+            inv_mode_list = self.inv_mode_dict[inv_key]
+            if len(inv_mode_list) != inv_list:
+                continue
+            else:
+                tf_arr = np.zeros(len(inv_list), dtype=np.bool)
+
+                for tf, data_inv in enumerate(inv_list):
+                    if data_inv in self.inv_mode_dict[inv_key]:
+                        tf_arr[tf] = True
+
+                if np.alltrue(tf_arr):
+                    self.inv_mode = inv_key
+                    break
 
     def read_data_file(self, data_fn, center_utm=None):
         """
@@ -712,20 +826,18 @@ class Data:
             )
 
         df = MTDataFrame()
+        self.center_point = MTLocation()
 
         with open(self.data_fn, "r") as dfid:
             dlines = dfid.readlines()
 
-        header_list = []
-        metadata_list = []
         data_list = []
         period_list = []
         station_list = []
-        read_impedance = False
-        read_tipper = False
 
-        headers = [line for line in dlines if ">" in line or "#" in line]
-        self._read_header(headers)
+        self._read_header(
+            [line for line in dlines if ">" in line or "#" in line]
+        )
 
         for dline in dlines:
             if "#" in dline or ">" in dline:
@@ -747,31 +859,6 @@ class Data:
                     station_list.append(dline_list[1])
 
                     data_list.append(dline_list)
-
-        # try to find rotation angle
-        h_list = header_list[0].split()
-        for hh, h_str in enumerate(h_list):
-            if h_str.find("_deg") > 0:
-                try:
-                    self._rotation_angle = float(h_str[0 : h_str.find("_deg")])
-                except ValueError:
-                    pass
-
-        # find inversion mode
-        for inv_key in list(self.inv_mode_dict.keys()):
-            inv_mode_list = self.inv_mode_dict[inv_key]
-            if len(inv_mode_list) != inv_list:
-                continue
-            else:
-                tf_arr = np.zeros(len(inv_list), dtype=np.bool)
-
-                for tf, data_inv in enumerate(inv_list):
-                    if data_inv in self.inv_mode_dict[inv_key]:
-                        tf_arr[tf] = True
-
-                if np.alltrue(tf_arr):
-                    self.inv_mode = inv_key
-                    break
 
         self.period_list = np.array(sorted(set(period_list)))
         station_list = sorted(set(station_list))
