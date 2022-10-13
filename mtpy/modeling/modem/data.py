@@ -366,10 +366,13 @@ class Data:
         if self.dataframe is not None:
             return np.sort(self.dataframe.period.unique())
 
-    @property
-    def n_stations(self):
+    def get_n_stations(self, mode):
         if self.dataframe is not None:
-            return self.dataframe.station.unique().size
+            if "impedance" in mode.lower():
+                gb = ["zxx", "zxy", "zyx", "zyy"]
+            elif "vertical" in mode.lower():
+                gb = ["tzx", "tzy"]
+            return self.dataframe.groupby(gb).first().station.unique().size
 
     @property
     def n_periods(self):
@@ -443,19 +446,20 @@ class Data:
         if "impedance" in mode.lower():
             d_lines.append(
                 self._get_header_string(
-                    self.error_type_z,
-                    self.error_value_z,
+                    self.z_model_error.error_type,
+                    self.z_model_error.error_value,
                 )
             )
             d_lines.append(self.header_string)
             d_lines.append(f"> {mode}")
             d_lines.append(f"> exp({self.wave_sign_impedance}i\omega t)")
             d_lines.append(f"> {self.z_units}")
+
         elif "vertical" in mode.lower():
             d_lines.append(
                 self._get_header_string(
-                    self.error_type_tipper,
-                    self.error_value_tipper,
+                    self.t_model_error.error_type,
+                    self.t_model_error.error_value,
                 )
             )
             d_lines.append(self.header_string)
@@ -477,7 +481,9 @@ class Data:
                 f"> {self.center_point.latitude:>10.6f} "
                 f"{self.center_point.longitude:>10.6f}"
             )
-        d_lines.append(f"> {self.n_periods} {self.n_stations}")
+
+        n_stations = self.get_n_stations(mode)
+        d_lines.append(f"> {self.n_periods} {n_stations}")
 
         return d_lines
 
@@ -773,6 +779,12 @@ class Data:
         else:
             header_list = header_line.split()
 
+        if "impedance" in mode.lower():
+            obj = self.z_model_error
+
+        elif "vertical" in mode.lower():
+            obj = self.t_model_error
+
         for ii, item in enumerate(header_list):
             item = item.lower()
             if item.count(":") > 0:
@@ -789,33 +801,31 @@ class Data:
                         if key in ["model_epsg"]:
                             setattr(self.center_point, "utm_epsg", value)
                         elif "error" in key:
-                            if "impedance" in mode.lower():
-                                setattr(
-                                    self.z_model_error,
-                                    item_dict[key],
-                                    value,
-                                )
 
-                            if "vertical" in mode.lower():
-                                setattr(
-                                    self.t_model_error,
-                                    item_dict[key],
-                                    value,
-                                )
+                            setattr(
+                                obj,
+                                item_dict[key],
+                                value,
+                            )
                         else:
                             setattr(self, item_dict["key"], value)
                     except KeyError:
                         continue
 
+            ## Older files
             else:
                 if item in ["calculated"]:
-                    setattr(self, item_dict["error"], header_list[ii + 1])
+                    value = header_list[ii + 1]
+
+                    if "floor" in value:
+                        setattr(obj, "floor", True)
+                        value = value.replace("_floor", "")
+                    setattr(obj, "error_type", value)
+
                 if item in ["of"]:
-                    setattr(
-                        self,
-                        item_dict["error_value"],
-                        float(header_list[ii + 1].replace("%", "")),
-                    )
+                    value = float(header_list[ii + 1].replace("%", ""))
+                    setattr(obj, item_dict["error_value"], value)
+
                 if "deg" in item:
                     setattr(
                         self,

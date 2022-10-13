@@ -314,11 +314,17 @@ class MTData(OrderedDict, MTStations):
 
         """
 
+        modem_kwargs = dict(self.model_parameters)
+        modem_kwargs.update(kwargs)
+
         modem_data = Data(
             dataframe=self.to_dataframe(),
             center_point=self.center_point,
-            **kwargs,
+            **modem_kwargs,
         )
+        modem_data.z_model_error = self.z_model_error
+        modem_data.t_model_error = self.t_model_error
+
         return modem_data.write_data_file(file_name=data_filename)
 
     def from_modem_data(self, data_filename, **kwargs):
@@ -336,10 +342,10 @@ class MTData(OrderedDict, MTStations):
         modem_data = Data(**kwargs)
         self.from_dataframe(modem_data.read_data_file(data_filename))
         self.z_model_error = ModelErrors(
-            **modem_data.z_model_error.error_parameters
+            mode="impedance", **modem_data.z_model_error.error_parameters
         )
         self.t_model_error = ModelErrors(
-            **modem_data.t_model_error.error_parameters
+            mode="tipper", **modem_data.t_model_error.error_parameters
         )
         self.data_rotation_angle = modem_data.rotation_angle
         self._center_lat = modem_data.center_point.latitude

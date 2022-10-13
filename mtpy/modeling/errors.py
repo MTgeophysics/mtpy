@@ -25,6 +25,7 @@ class ModelErrors:
             "eigen": self.compute_eigen_value_error,
             "percent": self.compute_percent_error,
             "absolute": self.compute_absolute_error,
+            "abs": self.compute_absolute_error,
         }
 
         self._array_shapes = {
