@@ -47,6 +47,8 @@ class MTData(OrderedDict, MTStations):
         )
         self.data_rotation_angle = 0
 
+        self.model_parameters = {}
+
     def _validate_item(self, mt_obj):
         if not isinstance(mt_obj, MT):
             raise TypeError(
@@ -227,8 +229,8 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(**self.z_model_error.error_arguments)
-            mt_obj.compute_model_t_errors(**self.t_model_error.error_arguments)
+            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
+            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
 
     def estimate_starting_rho(self):
         """
@@ -333,9 +335,22 @@ class MTData(OrderedDict, MTStations):
         """
         modem_data = Data(**kwargs)
         self.from_dataframe(modem_data.read_data_file(data_filename))
-        self.z_model_error.error_value = modem_data.error_value_z
-        self.z_model_error.error_type = modem_data.error_type_z
-        self.t_model_error.error_value = modem_data.error_value_tipper
-        self.t_model_error.error_type = modem_data.error_type_tipper
+        self.z_model_error = ModelErrors(
+            **modem_data.z_model_error.error_parameters
+        )
+        self.t_model_error = ModelErrors(
+            **modem_data.t_model_error.error_parameters
+        )
         self.data_rotation_angle = modem_data.rotation_angle
-        self.utm_epsg = modem_data.model_epsg
+        self._center_lat = modem_data.center_point.latitude
+        self._center_lon = modem_data.center_point.longitude
+        self._center_elev = modem_data.center_point.elevation
+        self.utm_epsg = modem_data.center_point.utm_epsg
+
+        self.model_parameters = dict(
+            [
+                (key, value)
+                for key, value in modem_data.model_parameters.items()
+                if "." not in key
+            ]
+        )

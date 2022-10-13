@@ -326,7 +326,7 @@ class Data:
 
     @property
     def model_parameters(self):
-        return {
+        params = {
             "wave_sign_impedance": self.wave_sign_impedance,
             "wave_sign_tipper": self.wave_sign_tipper,
             "z_units": self.z_units,
@@ -342,6 +342,13 @@ class Data:
             "center_point.utm_epsg": self.center_point.utm_epsg,
             "center_point.datum_epsg": self.center_point.datum_epsg,
         }
+
+        for key, value in self.z_model_error.error_parameters.items():
+            params[f"z_model_error.{key}"] = value
+        for key, value in self.t_model_error.error_parameters.items():
+            params[f"t_model_error.{key}"] = value
+
+        return params
 
     @property
     def data_filename(self):
@@ -784,16 +791,19 @@ class Data:
                         elif "error" in key:
                             if "impedance" in mode.lower():
                                 setattr(
-                                    self,
-                                    getattr(self.z_model_error, item_dict[key]),
+                                    self.z_model_error,
+                                    item_dict[key],
                                     value,
                                 )
+
                             if "vertical" in mode.lower():
                                 setattr(
-                                    self,
-                                    getattr(self.t_model_error, item_dict[key]),
+                                    self.t_model_error,
+                                    item_dict[key],
                                     value,
                                 )
+                        else:
+                            setattr(self, item_dict["key"], value)
                     except KeyError:
                         continue
 

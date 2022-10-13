@@ -35,7 +35,7 @@ class MTStations:
 
     """
 
-    def __init__(self, model_epsg, datum_epsg=None, **kwargs):
+    def __init__(self, utm_epsg, datum_epsg=None, **kwargs):
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
@@ -54,7 +54,7 @@ class MTStations:
                 ("model_elev", float),
             ]
         )
-        self.model_epsg = model_epsg
+        self.utm_epsg = utm_epsg
         self.datum_epsg = datum_epsg
         self._center_lat = None
         self._center_lon = None
@@ -118,15 +118,23 @@ class MTStations:
 
     @property
     def model_epsg(self):
-        return self._model_epsg
+        return self.utm_epsg
 
     @model_epsg.setter
     def model_epsg(self, value):
+        self.utm_epsg = value
+
+    @property
+    def utm_epsg(self):
+        return self._utm_epsg
+
+    @utm_epsg.setter
+    def utm_epsg(self, value):
         """
         set the model epsg number an project east, north
         """
-        self._model_epsg = value
-        if self._model_epsg is not None:
+        self._utm_epsg = value
+        if self._utm_epsg is not None:
             for mt_obj in self.mt_list:
                 mt_obj.utm_epsg = value
 
@@ -196,10 +204,10 @@ class MTStations:
                 self.datum_epsg = df.datum_epsg.unique()[0]
 
         if len(df.utm_epsg.unique()) > 1:
-            self.model_epsg = df.utm_epsg.median()
+            self.utm_epsg = df.utm_epsg.median()
         else:
-            if self.model_epsg is None:
-                self.model_epsg = df.utm_epsg.unique()[0]
+            if self.utm_epsg is None:
+                self.utm_epsg = df.utm_epsg.unique()[0]
 
     def calculate_rel_locations(self, shift_east=0, shift_north=0):
         """
@@ -232,7 +240,7 @@ class MTStations:
             center_location.latitude = self._center_lat
             center_location.longitude = self._center_lon
             center_location.elevation = self._center_elev
-            center_location.utm_epsg = self.model_epsg
+            center_location.utm_epsg = self.utm_epsg
             center_location.model_east = center_location.east
             center_location.model_north = center_location.north
             center_location.model_elevation = self._center_elev
@@ -251,7 +259,7 @@ class MTStations:
             ) / 2
 
             center_location.datum_epsg = self.datum_epsg
-            center_location.utm_epsg = self.model_epsg
+            center_location.utm_epsg = self.utm_epsg
             center_location.model_east = center_location.east
             center_location.model_north = center_location.north
             center_location.model_elevation = self._center_elev

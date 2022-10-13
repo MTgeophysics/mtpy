@@ -73,7 +73,7 @@ class ModelErrors:
         return value
 
     @property
-    def error_arguments(self):
+    def error_parameters(self):
         return {
             "error_value": self.error_value,
             "error_type": self.error_type,
