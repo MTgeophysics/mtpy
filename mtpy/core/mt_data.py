@@ -60,7 +60,7 @@ class MTData(OrderedDict, MTStations):
     def mt_list(self):
         return self.values()
 
-    def add_station(self, mt_object):
+    def add_station(self, mt_object, survey=None):
         """
         Add a new station's mt_object
 
@@ -72,7 +72,9 @@ class MTData(OrderedDict, MTStations):
         """
 
         mt_object = self._validate_item(mt_object)
-        self.__setitem__(mt_object.station, mt_object)
+        if survey is None:
+            mt_object.survey = survey
+        self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
 
     def remove_station(self, station_id):
         """
