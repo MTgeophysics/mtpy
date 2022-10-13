@@ -45,6 +45,7 @@ class MTData(OrderedDict, MTStations):
             floor=True,
             mode="tipper",
         )
+        self.data_rotation_angle = 0
 
     def _validate_item(self, mt_obj):
         if not isinstance(mt_obj, MT):
@@ -160,6 +161,7 @@ class MTData(OrderedDict, MTStations):
         :rtype: TYPE
 
         """
+        self.data_rotation_angle = rotation_angle
 
         for mt_obj in self.values():
             mt_obj.rotation_angle = rotation_angle
@@ -331,3 +333,9 @@ class MTData(OrderedDict, MTStations):
         """
         modem_data = Data(**kwargs)
         self.from_dataframe(modem_data.read_data_file(data_filename))
+        self.z_model_error.error_value = modem_data.error_value_z
+        self.z_model_error.error_type = modem_data.error_type_z
+        self.t_model_error.error_value = modem_data.error_value_tipper
+        self.t_model_error.error_type = modem_data.error_type_tipper
+        self.data_rotation_angle = modem_data.rotation_angle
+        self.utm_epsg = modem_data.model_epsg

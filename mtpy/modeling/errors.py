@@ -15,12 +15,6 @@ import numpy as np
 class ModelErrors:
     def __init__(self, array=None, **kwargs):
 
-        self.error_value = 5
-        self.error_type = "percent"
-        self.floor = True
-        self.mode = "impedance"
-        self.array = array
-
         self._functions = {
             "egbert": self.compute_geometric_mean_error,
             "geometric_mean": self.compute_geometric_mean_error,
@@ -41,8 +35,26 @@ class ModelErrors:
             "t": (1, 2),
         }
 
+        self.error_value = 5
+        self.error_type = "percent"
+        self.floor = True
+        self.mode = "impedance"
+        self.array = array
+
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def __str__(self):
+        lines = ["Model Errors:", "-" * 20]
+        lines += [f"\terror_type:    {self.error_type}"]
+        lines += [f"\terror_value:   {self.error_value}"]
+        lines += [f"\tfloor:         {self.floor}"]
+        lines += [f"\tmode:          {self.mode}"]
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
 
     def validate_percent(self, value):
         """
@@ -102,7 +114,7 @@ class ModelErrors:
 
     @mode.setter
     def mode(self, value):
-        if value not in self._array_shape.keys():
+        if value not in self._array_shapes.keys():
             raise NotImplementedError(f"Mode {value} not supported.")
         self._mode = value
 

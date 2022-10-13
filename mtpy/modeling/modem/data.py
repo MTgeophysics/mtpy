@@ -19,8 +19,8 @@ import pandas as pd
 
 from mtpy.core.mt_dataframe import MTDataFrame
 from mtpy.core.mt_location import MTLocation
-
 from mtpy.utils.mtpy_logger import get_mtpy_logger
+from mtpy.modeling.errors import ModelErrors
 
 # =============================================================================
 class Data:
@@ -219,11 +219,18 @@ class Data:
         self.inv_mode = "1"
         self.formatting = "1"
 
-        self.error_type_z = "geometric_mean"
-        self.error_value_z = 5
-        self.rotation_angle = 0
-        self.error_type_tipper = "absolute"
-        self.error_value_tipper = 0.02
+        self.z_model_error = ModelErrors(
+            error_value=5,
+            error_type="geometric_mean",
+            floor=True,
+            mode="impedance",
+        )
+        self.t_model_error = ModelErrors(
+            error_value=0.02,
+            error_type="absolute",
+            floor=True,
+            mode="tipper",
+        )
 
         self.fn_basename = "ModEM_Data.dat"
         self.save_path = Path.cwd()
@@ -316,6 +323,25 @@ class Data:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def model_parameters(self):
+        return {
+            "wave_sign_impedance": self.wave_sign_impedance,
+            "wave_sign_tipper": self.wave_sign_tipper,
+            "z_units": self.z_units,
+            "t_units": self.t_units,
+            "inv_mode": self.inv_mode,
+            "formatting": self.formatting,
+            "data_filename": self.data_filename,
+            "topography": self.topography,
+            "rotation_angle": self.rotation_angle,
+            "center_point.latitude": self.center_point.latitude,
+            "center_point.longitue": self.center_point.longitude,
+            "center_point.elevation": self.center_point.elevation,
+            "center_point.utm_epsg": self.center_point.utm_epsg,
+            "center_point.datum_epsg": self.center_point.datum_epsg,
+        }
 
     @property
     def data_filename(self):
@@ -727,20 +753,13 @@ class Data:
 
         if header_line == self.header_string:
             return
-        if "impedance" in mode.lower():
-            item_dict = {
-                "error": "error_type_z",
-                "error_value": "error_value_z",
-                "data_rotation": "rotation_angle",
-                "model_epsg": "center_point.utm_epsg",
-            }
-        elif "vertical" in mode.lower():
-            item_dict = {
-                "error": "error_type_tipper",
-                "error_value": "error_value_tipper",
-                "data_rotation": "rotation_angle",
-                "model_epsg": "center_point.utm_epsg",
-            }
+
+        item_dict = {
+            "error": "error_type",
+            "error_value": "error_value",
+            "data_rotation": "rotation_angle",
+            "model_epsg": "center_point.utm_epsg",
+        }
 
         if header_line.count(",") > 0:
             header_list = header_line.split(",")
@@ -762,8 +781,19 @@ class Data:
                     try:
                         if key in ["model_epsg"]:
                             setattr(self.center_point, "utm_epsg", value)
-                        else:
-                            setattr(self, item_dict[key], value)
+                        elif "error" in key:
+                            if "impedance" in mode.lower():
+                                setattr(
+                                    self,
+                                    getattr(self.z_model_error, item_dict[key]),
+                                    value,
+                                )
+                            if "vertical" in mode.lower():
+                                setattr(
+                                    self,
+                                    getattr(self.t_model_error, item_dict[key]),
+                                    value,
+                                )
                     except KeyError:
                         continue
 
@@ -933,48 +963,6 @@ class Data:
             combined_df.drop([f"{col}_real", f"{col}_imag"], 1, inplace=True)
 
         return combined_df
-
-    def get_parameters(self):
-        """
-        get important parameters for documentation
-        """
-
-        parameter_list = [
-            "error_type_z",
-            "error_value_z",
-            "error_type_tipper",
-            "error_value_tipper",
-            "wave_sign_impedance",
-            "wave_sign_tipper",
-            "rotation_angle",
-            "save_path",
-        ]
-
-        parameter_dict = {}
-        for parameter in parameter_list:
-            key = "data.{0}".format(parameter)
-            parameter_dict[key] = getattr(self, parameter)
-
-        parameter_dict["data.period_min"] = self.period.min()
-        parameter_dict["data.period_max"] = self.period.max()
-        parameter_dict["data.period_num"] = self.n_periods
-
-        parameter_dict["data.inv_mode"] = self.inv_mode_dict[self.inv_mode]
-        parameter_dict["data.num_stations"] = self.n_stations
-        parameter_dict["data.center_point_ll"] = (
-            self.center_point.latitude,
-            self.center_point.longitude,
-        )
-        parameter_dict[
-            "data.center_point.datum_crs"
-        ] = self.center_point.datum_crs
-
-        parameter_dict["data.center_point_utm"] = (
-            self.center_point.north,
-            self.center_point.east,
-        )
-        parameter_dict["data.center_point.utm_crs"] = self.center_point.utm_crs
-        return parameter_dict
 
     def fix_data_file(self, fn=None, n=3):
         """
