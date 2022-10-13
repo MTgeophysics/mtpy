@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from .mt import MT
 from .mt_stations import MTStations
 
+from mtpy.modeling.errors import ModelErrors
 from mtpy.modeling.modem.data import Data
 
 # =============================================================================
@@ -32,12 +33,18 @@ class MTData(OrderedDict, MTStations):
 
         MTStations.__init__(self, None, None, **kwargs)
 
-        self.z_error_value = 5
-        self.z_error_type = "geometric_mean"
-        self.z_floor = True
-        self.t_error_value = 0.02
-        self.t_error_type = "absolute"
-        self.t_floor = True
+        self.z_model_error = ModelErrors(
+            error_value=5,
+            error_type="geometric_mean",
+            floor=True,
+            mode="impedance",
+        )
+        self.t_model_error = ModelErrors(
+            error_value=0.02,
+            error_type="absolute",
+            floor=True,
+            mode="tipper",
+        )
 
     def _validate_item(self, mt_obj):
         if not isinstance(mt_obj, MT):
@@ -159,12 +166,12 @@ class MTData(OrderedDict, MTStations):
 
     def compute_model_errors(
         self,
-        z_error_value=5,
-        z_error_type="geometric_mean",
-        z_floor=True,
-        t_error_value=0.02,
-        t_error_type="absolute",
-        t_floor=True,
+        z_error_value=None,
+        z_error_type=None,
+        z_floor=None,
+        t_error_value=None,
+        t_error_type=None,
+        t_floor=None,
     ):
 
         """
@@ -203,20 +210,23 @@ class MTData(OrderedDict, MTStations):
 
         """
 
-        self.z_error_value = z_error_value
-        self.z_error_type = z_error_type
-        self.z_floor = z_floor
-        self.t_error_value = t_error_value
-        self.t_error_type = t_error_type
-        self.t_floor = t_floor
+        if z_error_value is not None:
+            self.z_model_error.error_value = z_error_value
+        if z_error_type is not None:
+            self.z_model_error.error_type = z_error_type
+        if z_floor is not None:
+            self.z_model_error.floor = z_floor
+
+        if t_error_value is not None:
+            self.t_model_error.error_value = t_error_value
+        if t_error_type is not None:
+            self.t_model_error.error_type = t_error_type
+        if t_floor is not None:
+            self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(
-                self.z_error_value, self.z_error_type, self.z_floor
-            )
-            mt_obj.compute_model_t_errors(
-                self.t_error_value, self.t_error_type, self.t_floor
-            )
+            mt_obj.compute_model_z_errors(**self.z_model_error.error_arguments)
+            mt_obj.compute_model_t_errors(**self.t_model_error.error_arguments)
 
     def estimate_starting_rho(self):
         """

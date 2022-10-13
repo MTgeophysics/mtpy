@@ -22,7 +22,7 @@ from mtpy.core.mt_dataframe import MTDataFrame
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
-from mtpy.modeling.errors import ERROR_DICT
+from mtpy.modeling.errors import ModelErrors
 
 
 # =============================================================================
@@ -655,12 +655,21 @@ class MT(TF, MTLocation):
         :rtype: TYPE
 
         """
-        try:
-            error_function = ERROR_DICT[error_type]
-        except KeyError:
-            raise KeyError(f"Error type {error_type} is not supported")
 
-        err = error_function(self.impedance.data, error_value, floor=floor)
+        if not self.has_impedance():
+            self.logger.warning(
+                "MT Object contains no impedance data, cannot comput errors"
+            )
+            return
+
+        z_model_error = ModelErrors(
+            array=self.impedance_error,
+            error_value=error_value,
+            error_type=error_type,
+            floor=floor,
+        )
+
+        err = z_model_error.compute_error()
 
         if len(err.shape) == 1:
             z_err = np.zeros_like(self.impedance, dtype=float)
@@ -697,19 +706,23 @@ class MT(TF, MTLocation):
         :rtype: TYPE
 
         """
-        if self.tipper is None:
-            self.logger.warning("Tipper is None, cannot compute model errors")
+        if not self.has_tipper():
+            self.logger.warning(
+                "MT object containse no Tipper, cannot compute model errors"
+            )
             return
 
-        try:
-            error_function = ERROR_DICT[error_type]
-        except KeyError:
-            raise KeyError(f"Error type {error_type} is not supported")
+        t_model_error = ModelErrors(
+            array=self.tipper_error,
+            error_value=error_value,
+            error_type=error_type,
+            floor=floor,
+        )
 
-        err = error_function(self.tipper.data, error_value, floor=floor)
+        err = t_model_error.compute_error()
 
         if len(err.shape) == 1:
-            t_err = np.zeros_like(self.impedance, dtype=float)
+            t_err = np.zeros_like(self.tipper, dtype=float)
             t_err[:, 0, 0] = err
             t_err[:, 0, 1] = err
 
