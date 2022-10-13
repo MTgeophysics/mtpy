@@ -199,12 +199,18 @@ class Data:
 
     """
 
-    def __init__(self, df=None, center_point=None, **kwargs):
+    def __init__(self, dataframe=None, center_point=None, **kwargs):
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
-        self.dataframe = MTDataFrame()
-        self.center_point = MTLocation()
+        if dataframe is None:
+            self.dataframe = MTDataFrame()
+        else:
+            self.dataframe = dataframe
+        if center_point is None:
+            self.center_point = MTLocation()
+        else:
+            self.center_point = center_point
 
         self.wave_sign_impedance = "+"
         self.wave_sign_tipper = "+"
@@ -219,7 +225,7 @@ class Data:
         self.error_type_tipper = "absolute"
         self.error_value_tipper = 0.02
 
-        self.data_fn = "ModEM_Data.dat"
+        self.fn_basename = "ModEM_Data.dat"
         self.save_path = Path.cwd()
 
         self.topography = True
@@ -310,6 +316,17 @@ class Data:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def data_filename(self):
+        return self.save_path.joinpath(self.fn_basename)
+
+    @data_filename.setter
+    def data_filename(self, value):
+        if value is not None:
+            value = Path(value)
+            self.save_path = value.parent
+            self.fn_basename = value.name
 
     @property
     def period(self):
@@ -444,7 +461,7 @@ class Data:
 
         """
 
-        value = getattr(row, comp)
+        value = np.nan_to_num(getattr(row, comp))
         err = getattr(row, f"{comp}_model_error")
 
         if (
@@ -464,7 +481,9 @@ class Data:
                     ele = f"{row.model_elevation:> 12.3f}"
                 else:
                     ele = f"{0:> 12.3f}"
-                com = f"{comp:>4}"
+                if comp[1].lower() == "z":
+                    comp = comp.replace("z", "")
+                com = f"{comp:>4}".upper()
                 if self.z_units.lower() == "ohm":
                     rea = f"{value.real / 796.:> 14.6e}"
                     ima = f"{value.imag / 796.:> 14.6e}"
@@ -533,6 +552,7 @@ class Data:
 
     def write_data_file(
         self,
+        file_name=None,
         save_path=None,
         fn_basename=None,
         elevation=False,
@@ -571,12 +591,14 @@ class Data:
             raise ValueError(
                 "A DataFrame needs to be present to write a ModEM data file"
             )
+
+        if file_name is not None:
+            self.data_filename = file_name
+
         if save_path is not None:
             self.save_path = Path(save_path)
         if fn_basename is not None:
-            self.data_fn = fn_basename
-
-        self.data_fn = Path(self.save_path, self.data_fn)
+            self.data_filename = fn_basename
 
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
             if "impedance" in inv_mode.lower():
@@ -600,16 +622,20 @@ class Data:
             for row in sdf.itertuples():
                 for comp in comps:
                     d_line = self._write_comp(row, comp)
+                    if d_line is None:
+                        continue
 
                     if comp.startswith("z"):
                         z_lines.append(d_line)
                     elif comp.startswith("t"):
                         t_lines.append(d_line)
-        with open(self.data_fn, "w") as dfid:
+        with open(self.data_filename, "w") as dfid:
             dfid.write("\n".join(z_lines + t_lines))
 
-        self.logger.info("Wrote ModEM data file to {0}".format(self.data_fn))
-        return self.data_fn
+        self.logger.info(
+            "Wrote ModEM data file to {0}".format(self.data_filename)
+        )
+        return self.data_filename
 
     def _read_header(self, header_lines):
         """
@@ -822,15 +848,11 @@ class Data:
 
         return line_dict
 
-    def read_data_file(self, data_fn, center_utm=None):
+    def read_data_file(self, data_fn):
         """
 
         :param data_fn: full path to data file name
         :type data_fn: string or Path
-        :param center_utm: option to provide real world coordinates of the center of
-        the grid for putting the data and model back into utm/grid coordinates,
-        format [east_0, north_0, z_0], defaults to None
-        :type center_utm: list or tuple, optional
         :raises ValueError: If cannot compute component
 
         Fills attributes:
@@ -865,21 +887,19 @@ class Data:
 
         """
 
-        self.data_fn = Path(data_fn)
-        self.save_path = self.data_fn.parent
-        self.fn_basename = self.data_fn.name
+        self.data_filename = Path(data_fn)
 
-        if self.data_fn is None:
+        if self.data_filename is None:
             raise ValueError("data_fn is None, enter a data file to read.")
-        elif not self.data_fn.is_file():
+        elif not self.data_filename.is_file():
             raise ValueError(
-                "Could not find {0}, check path".format(self.data_fn)
+                "Could not find {0}, check path".format(self.data_filename)
             )
 
         self.center_point = MTLocation()
 
         # open file get lines
-        with open(self.data_fn, "r") as dfid:
+        with open(self.data_filename, "r") as dfid:
             dlines = dfid.readlines()
 
         # read header information
@@ -970,8 +990,8 @@ class Data:
 
         """
         if fn:
-            self.data_fn = Path(fn)
-        with self.data_fn.open() as fid:
+            self.data_filename = Path(fn)
+        with self.data_filename.open() as fid:
             lines = fid.readlines()
 
         def fix_line(line_list):
@@ -999,7 +1019,7 @@ class Data:
         else:
             new_lines = [h1, h2] + lines[2 * n :]
 
-        with self.data_fn.open("w") as fid:
+        with self.data_filename.open("w") as fid:
             fid.writelines(new_lines)
 
-        return self.data_fn
+        return self.data_filename

@@ -35,11 +35,9 @@ class MTStations:
 
     """
 
-    def __init__(self, mt_list, model_epsg, datum_epsg=None, **kwargs):
+    def __init__(self, model_epsg, datum_epsg=None, **kwargs):
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
-
-        self.mt_list = mt_list
 
         self.dtype = dict(
             [
@@ -68,7 +66,7 @@ class MTStations:
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
 
-        if mt_list is not None:
+        if self.mt_list is not None:
             self.calculate_rel_locations()
 
     def __str__(self):

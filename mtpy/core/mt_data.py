@@ -18,25 +18,30 @@ import matplotlib.pyplot as plt
 from .mt import MT
 from .mt_stations import MTStations
 
+from mtpy.modeling.modem.data import Data
 
 # =============================================================================
 
 
 class MTData(OrderedDict, MTStations):
-    def __init__(self, tf_list=None, **kwargs):
+    def __init__(self, mt_list=None, **kwargs):
 
-        if tf_list is not None:
-            for tf in tf_list:
-                self.add_station(tf)
+        if mt_list is not None:
+            for mt_obj in mt_list:
+                self.add_station(mt_obj)
 
-        MTStations.__init__(self, tf_list, None, **kwargs)
+        MTStations.__init__(self, None, None, **kwargs)
 
-    def _validate_item(self, tf):
-        if not isinstance(tf, MT):
+    def _validate_item(self, mt_obj):
+        if not isinstance(mt_obj, MT):
             raise TypeError(
-                f"entry must be a mtpy.core.MT object not type({type(tf)})"
+                f"entry must be a mtpy.core.MT object not type({type(mt_obj)})"
             )
-        return tf
+        return mt_obj
+
+    @property
+    def mt_list(self):
+        return self.values()
 
     def add_station(self, mt_object):
         """
@@ -83,7 +88,8 @@ class MTData(OrderedDict, MTStations):
         """
 
         df_list = [
-            tf.to_dataframe(utm_crs=utm_crs, cols=cols) for tf in self.values()
+            mt_obj.to_dataframe(utm_crs=utm_crs, cols=cols)
+            for mt_obj in self.values()
         ]
 
         return pd.concat(df_list)
@@ -103,7 +109,7 @@ class MTData(OrderedDict, MTStations):
             sdf = df.loc[df.station == station]
             mt_object = MT()
             mt_object.from_dataframe(sdf)
-            self.update(OrderedDict([(mt_object.station, mt_object)]))
+            self.add_station(mt_object)
 
     def interpolate(self, new_periods):
         """
@@ -262,3 +268,38 @@ class MTData(OrderedDict, MTStations):
         ax.set_xlim((res_df.period.min(), res_df.period.max()))
 
         plt.show()
+
+    def to_modem_data(self, data_filename, **kwargs):
+        """
+        Create a modem data file
+
+        :param data_filename: DESCRIPTION
+        :type data_filename: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        modem_data = Data(
+            dataframe=self.to_dataframe(),
+            center_point=self.center_point,
+            **kwargs,
+        )
+        return modem_data.write_data_file(file_name=data_filename)
+
+    def from_modem_data(self, data_filename, **kwargs):
+        """
+        read in a modem data file
+
+        :param data_filename: DESCRIPTION
+        :type data_filename: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        modem_data = Data(**kwargs)
+        self.from_dataframe(modem_data.read_data_file(data_filename))

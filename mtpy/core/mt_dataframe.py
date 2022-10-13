@@ -279,9 +279,7 @@ class MTDataFrame:
             if key in ["tzx", "tzy"]:
                 entry[key][:] = t_object.tipper[:, index["ii"], index["jj"]]
             elif key in ["tzx_error", "tzy_error"]:
-                entry[key][:] = t_object.tipper_err[
-                    :, index["ii"], index["jj"]
-                ]
+                entry[key][:] = t_object.tipper_err[:, index["ii"], index["jj"]]
             elif key in ["tzx_model_error", "tzy_model_error"]:
                 entry[key][:] = t_object.tipper_model_err[
                     :, index["ii"], index["jj"]
@@ -439,9 +437,9 @@ class MTDataFrame:
 
             if key in ["tzx", "tzy"]:
                 t[:, index["ii"], index["jj"]] = df[key][:]
-            elif key in ["tzx_err", "tzy_err"]:
+            elif key in ["tzx_error", "tzy_error"]:
                 t_err[:, index["ii"], index["jj"]] = df[key][:]
-            elif key in ["tzx_model_err", "tzy_model_err"]:
+            elif key in ["tzx_model_error", "tzy_model_error"]:
                 t_model_err[:, index["ii"], index["jj"]] = df[key][:]
 
         return Tipper(t, t_err, self.get_frequency(df), t_model_err)
