@@ -32,6 +32,13 @@ class MTData(OrderedDict, MTStations):
 
         MTStations.__init__(self, None, None, **kwargs)
 
+        self.z_error_value = 5
+        self.z_error_type = "geometric_mean"
+        self.z_floor = True
+        self.t_error_value = 0.02
+        self.t_error_type = "absolute"
+        self.t_floor = True
+
     def _validate_item(self, mt_obj):
         if not isinstance(mt_obj, MT):
             raise TypeError(
@@ -196,9 +203,20 @@ class MTData(OrderedDict, MTStations):
 
         """
 
+        self.z_error_value = z_error_value
+        self.z_error_type = z_error_type
+        self.z_floor = z_floor
+        self.t_error_value = t_error_value
+        self.t_error_type = t_error_type
+        self.t_floor = t_floor
+
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(z_error_value, z_error_type, z_floor)
-            mt_obj.compute_model_t_errors(t_error_value, t_error_type, t_floor)
+            mt_obj.compute_model_z_errors(
+                self.z_error_value, self.z_error_type, self.z_floor
+            )
+            mt_obj.compute_model_t_errors(
+                self.t_error_value, self.t_error_type, self.t_floor
+            )
 
     def estimate_starting_rho(self):
         """

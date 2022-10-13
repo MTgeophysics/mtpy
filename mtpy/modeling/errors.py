@@ -226,7 +226,7 @@ def compute_off_diagonals_error(array, error_value, floor=True):
     """
 
     error_value = validate_percent(error_value)
-    z_array = validate_z_array_shape(z_array)
+    array = validate_z_array_shape(array)
 
     err_xy = compute_percent_error(array[:, 0, 1], error_value, floor=floor)
     err_yx = compute_percent_error(array[:, 1, 0], error_value, floor=floor)
