@@ -9,11 +9,14 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
-import os
+# =============================================================================
+# Imports
+# =============================================================================
+from pathlib import Path
 
 from mtpy.utils import exceptions as mtex
 
-__all__ = ["ControlInv"]
+# =============================================================================
 
 
 class ControlInv(object):
@@ -24,19 +27,16 @@ class ControlInv(object):
 
     def __init__(self, **kwargs):
 
-        self.output_fn = kwargs.pop("output_fn", "MODULAR_NLCG")
-        self.lambda_initial = kwargs.pop("lambda_initial", 10)
-        self.lambda_step = kwargs.pop("lambda_step", 10)
-        self.model_search_step = kwargs.pop("model_search_step", 1)
-        self.rms_reset_search = kwargs.pop("rms_reset_search", 2.0e-3)
-        self.rms_target = kwargs.pop("rms_target", 1.05)
-        self.lambda_exit = kwargs.pop("lambda_exit", 1.0e-4)
-        self.max_iterations = kwargs.pop("max_iterations", 100)
-        self.save_path = kwargs.pop("save_path", os.getcwd())
-        self.fn_basename = kwargs.pop("fn_basename", "control.inv")
-        self.control_fn = kwargs.pop(
-            "control_fn", os.path.join(self.save_path, self.fn_basename)
-        )
+        self.output_fn = "MODULAR_NLCG"
+        self.lambda_initial = 10
+        self.lambda_step = 10
+        self.model_search_step = 1
+        self.rms_reset_search = 2.0e-3
+        self.rms_target = 1.05
+        self.lambda_exit = 1.0e-4
+        self.max_iterations = 100
+        self.save_path = Path().cwd()
+        self.fn_basename = "control.inv"
 
         self._control_keys = [
             "Model and data output file name",
@@ -72,12 +72,37 @@ class ControlInv(object):
                 (key, value)
                 for key, value in zip(
                     self._control_keys,
-                    ["<", "<.1f", "<.1f", "<.1f", "<.1e", "<.2f", "<.1e", "<.0f"],
+                    [
+                        "<",
+                        "<.1f",
+                        "<.1f",
+                        "<.1f",
+                        "<.1e",
+                        "<.2f",
+                        "<.1e",
+                        "<.0f",
+                    ],
                 )
             ]
         )
 
-    def write_control_file(self, control_fn=None, save_path=None, fn_basename=None):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    @property
+    def control_fn(self):
+        return self.save_path.joinpath(self.fn_basename)
+
+    @control_fn.setter
+    def control_fn(self, value):
+        if value is not None:
+            value = Path(value)
+            self.save_path = value.parent
+            self.fn_basename = value.name
+
+    def write_control_file(
+        self, control_fn=None, save_path=None, fn_basename=None
+    ):
         """
         write control file
 
@@ -98,16 +123,13 @@ class ControlInv(object):
         """
 
         if control_fn is not None:
-            self.save_path = os.path.dirname(control_fn)
-            self.fn_basename = os.path.basename(control_fn)
+            self.control_fn = control_fn
 
         if save_path is not None:
-            self.save_path = save_path
+            self.save_path = Path(save_path)
 
         if fn_basename is not None:
             self.fn_basename = fn_basename
-
-        self.control_fn = os.path.join(self.save_path, self.fn_basename)
 
         self._control_dict = dict(
             [
@@ -152,13 +174,10 @@ class ControlInv(object):
                 "control_fn is None, input " "control file"
             )
 
-        if os.path.isfile(self.control_fn) is False:
+        if not self.control_fn.is_file():
             raise mtex.MTpyError_file_handling(
                 "Could not find {0}".format(self.control_fn)
             )
-
-        self.save_path = os.path.dirname(self.control_fn)
-        self.fn_basename = os.path.basename(self.control_fn)
 
         with open(self.control_fn, "r") as cfid:
             clines = cfid.readlines()

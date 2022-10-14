@@ -160,7 +160,7 @@ class ControlFwd:
                 "control_fn is None, input " "control file"
             )
 
-        if self.control_fn.is_file() is False:
+        if not self.control_fn.is_file():
             raise mtex.MTpyError_file_handling(
                 "Could not find {0}".format(self.control_fn)
             )
