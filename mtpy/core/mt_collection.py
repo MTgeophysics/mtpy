@@ -21,6 +21,7 @@ import pandas as pd
 import geopandas as gpd
 
 from mtpy import MT
+from mtpy.core.mt_data import MTData
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.imaging import (
     PlotStations,
@@ -66,6 +67,7 @@ class MTCollection:
         self.mth5_basename = "mt_collection"
         self.working_directory = working_directory
         self.working_dataframe = None
+        self.mt_data = MTData()
 
         self.mth5_collection = MTH5()
 
@@ -88,7 +90,7 @@ class MTCollection:
         return self.__str__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self.close_collection()
         return False
 
     @property
@@ -568,9 +570,7 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(
-                                f"wrote average file {edi_obj.fn}"
-                            )
+                            self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:

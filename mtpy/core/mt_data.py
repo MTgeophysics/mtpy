@@ -19,7 +19,7 @@ from .mt import MT
 from .mt_stations import MTStations
 
 from mtpy.modeling.errors import ModelErrors
-from mtpy.modeling.modem.data import Data
+from mtpy.modeling.modem import Data
 
 # =============================================================================
 

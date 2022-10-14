@@ -10,7 +10,8 @@ from .control_fwd import ControlFwd
 
 from .convariance import Covariance
 
-# from .config import ModEMConfig
+from .config import ModEMConfig
+
 # from .model_manipulator import ModelManipulator
 # from .plot_response import PlotResponse
 
@@ -31,7 +32,7 @@ __all__ = [
     "ControlInv",
     "ControlFwd",
     "Covariance",
-    #     "ModEMConfig",
+    "ModEMConfig",
     #     "ModelManipulator",
     #     # "PlotResponse",
     #     # "PlotSlices",

@@ -981,7 +981,9 @@ class Data:
             combined_df[col] = (
                 combined_df[f"{col}_real"] + 1j * combined_df[f"{col}_imag"]
             )
-            combined_df.drop([f"{col}_real", f"{col}_imag"], 1, inplace=True)
+            combined_df.drop(
+                [f"{col}_real", f"{col}_imag"], axis=1, inplace=True
+            )
 
         return combined_df
 
