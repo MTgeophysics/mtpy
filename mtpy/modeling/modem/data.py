@@ -8,6 +8,7 @@ ModEM
 # revised by JP 2017
 # revised by AK 2017 to bring across functionality from ak branch
 # revised by JP 2021 adding functionality and updating.
+# revised by JP 2022 to work with new structure of a central object
 
 """
 # =============================================================================

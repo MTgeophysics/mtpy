@@ -25,6 +25,10 @@ from mtpy.modeling.modem.data import Data
 
 
 class MTData(OrderedDict, MTStations):
+    """
+    keys are formatted as survey_id.station_id
+    """
+
     def __init__(self, mt_list=None, **kwargs):
 
         if mt_list is not None:
@@ -76,7 +80,7 @@ class MTData(OrderedDict, MTStations):
             mt_object.survey = survey
         self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
 
-    def remove_station(self, station_id):
+    def remove_station(self, station_id, survey_id):
         """
         remove a station from the dictionary
 
@@ -86,8 +90,10 @@ class MTData(OrderedDict, MTStations):
         :rtype: TYPE
 
         """
-        if station_id in self.keys():
-            del self[station_id]
+
+        key = f"{survey_id}.{station_id}"
+        if key in self.keys():
+            del self[key]
 
     @property
     def n_stations(self):

@@ -310,8 +310,25 @@ def project_point(x, y, old_epsg, new_epsg):
         raise ValueError("Original EPSG must not be None")
     if new_epsg is None:
         raise ValueError("New EPSG must not be None")
-    if x == 0 or y == 0:
-        raise ValueError("Should not project with 0 value")
+    if isinstance(x, (np.ndarray, list, tuple)):
+        x = np.array(x)
+        if (x == 0).all():
+            print(x)
+            raise ValueError("Should not project with 0 value")
+    if isinstance(y, (np.ndarray, list, tuple)):
+        y = np.array(y)
+        if (y == 0).all():
+            raise ValueError("Should not project with 0 value")
+
+    if isinstance(x, (float, int)):
+        x = float(x)
+        if x == 0:
+            raise ValueError("Should not project with 0 value")
+
+    if isinstance(y, (float, int)):
+        y = float(y)
+        if y == 0:
+            raise ValueError("Should not project with 0 value")
 
     old_crs = CRS.from_user_input(old_epsg)
     new_crs = CRS.from_user_input(new_epsg)
