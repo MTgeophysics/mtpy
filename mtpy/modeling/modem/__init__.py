@@ -8,7 +8,8 @@ from .model import Model
 from .control_inv import ControlInv
 from .control_fwd import ControlFwd
 
-# from .convariance import Covariance
+from .convariance import Covariance
+
 # from .config import ModEMConfig
 # from .model_manipulator import ModelManipulator
 # from .plot_response import PlotResponse
@@ -29,7 +30,7 @@ __all__ = [
     #     "Residual",
     "ControlInv",
     "ControlFwd",
-    #     "Covariance",
+    "Covariance",
     #     "ModEMConfig",
     #     "ModelManipulator",
     #     # "PlotResponse",
