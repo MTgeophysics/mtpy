@@ -1,7 +1,9 @@
-# from .exception import ModEMError, DataError
+from .exception import ModEMError, DataError
+
 # from .station import Stations
-# from .data import Data
-# from .model import Model
+from .data import Data
+from .model import Model
+
 # from .residual import Residual
 # from .control_inv import ControlInv
 # from .control_fwd import ControlFwd
@@ -18,20 +20,19 @@
 # # from .plot_rms_maps import PlotRMSMaps
 # # from .phase_tensor_maps import PlotPTMaps
 
-# __all__ = [
-#     "ModEMError",
-#     "DataError",
-#     "Stations",
-#     "Data",
-#     "Model",
-#     "Residual",
-#     "ControlInv",
-#     "ControlFwd",
-#     "Covariance",
-#     "ModEMConfig",
-#     "ModelManipulator",
-#     # "PlotResponse",
-#     # "PlotSlices",
-#     # "PlotRMSMaps"
-#     # ,'PlotPTMaps', 'PlotDepthSlice'
-# ]
+__all__ = [
+    "ModEMError",
+    "DataError",
+    "Data",
+    "Model",
+    #     "Residual",
+    #     "ControlInv",
+    #     "ControlFwd",
+    #     "Covariance",
+    #     "ModEMConfig",
+    #     "ModelManipulator",
+    #     # "PlotResponse",
+    #     # "PlotSlices",
+    #     # "PlotRMSMaps"
+    #     # ,'PlotPTMaps', 'PlotDepthSlice'
+]
