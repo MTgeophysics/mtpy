@@ -109,18 +109,34 @@ class MTData(OrderedDict, MTStations):
         if key in self.keys():
             del self[key]
 
-    def get_station(self, station_id, survey_id):
+    def get_station(self, station_id=None, survey_id=None, station_key=None):
         """
 
-        :param station_id: DESCRIPTION
-        :type station_id: TYPE
-        :param survey_id: DESCRIPTION
-        :type survey_id: TYPE
+        :param station_key: DESCRIPTION, defaults to None
+        :type station_key: TYPE, optional
+        :param station_id: DESCRIPTION, defaults to None
+        :type station_id: TYPE, optional
+        :param survey_id: DESCRIPTION, defaults to None
+        :type survey_id: TYPE, optional
+        :raises KeyError: DESCRIPTION
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        station_key = f"{survey_id}/{station_id}"
+        if station_key is not None:
+            station_key = station_key
+        elif station_id is not None:
+            if survey_id is not None:
+                station_key = f"{survey_id}.{station_id}"
+            else:
+                for key in self.keys():
+                    if station_id in key:
+                        if key.split(".")[1] == station_id:
+                            station_key = key
+                            break
+
+        else:
+            raise ValueError("Must input either station_key or station_id")
 
         try:
             return self[station_key]
@@ -417,7 +433,9 @@ class MTData(OrderedDict, MTStations):
             ]
         )
 
-    def plot_mt_response(self, station_id, survey_id, **kwargs):
+    def plot_mt_response(
+        self, station_key=None, station_id=None, survey_id=None, **kwargs
+    ):
         """
 
         :param tf_id: DESCRIPTION
@@ -433,8 +451,25 @@ class MTData(OrderedDict, MTStations):
 
         """
 
-        mt_object = self.get_station(station_id, survey_id)
-        return mt_object.plot_mt_response(**kwargs)
+        if isinstance(station_key, (list, tuple)):
+            mt_data = MTData()
+            for sk in station_key:
+                mt_data.add_station(self.get_station(station_key=sk))
+            return PlotMultipleResponses(mt_data, **kwargs)
+
+        elif isinstance(station_id, (list, tuple)):
+            mt_data = MTData()
+            for sk in station_id:
+                mt_data.add_station(self.get_station(station_id=sk))
+            return PlotMultipleResponses(mt_data, **kwargs)
+
+        else:
+            mt_object = self.get_station(
+                station_id=station_id,
+                survey_id=survey_id,
+                station_key=station_key,
+            )
+            return mt_object.plot_mt_response(**kwargs)
 
     def plot_stations(self, map_epsg=4326, bounding_box=None, **kwargs):
         """
@@ -459,7 +494,9 @@ class MTData(OrderedDict, MTStations):
 
         return PlotStrike(self, **kwargs)
 
-    def plot_phase_tensor(self, station_id, survey_id, **kwargs):
+    def plot_phase_tensor(
+        self, station_key=None, station_id=None, survey_id=None, **kwargs
+    ):
         """
         plot phase tensor elements
 
@@ -472,8 +509,12 @@ class MTData(OrderedDict, MTStations):
 
         """
 
-        tf_obj = self.get_station(station_id, survey_id)
-        return tf_obj.plot_phase_tensor(**kwargs)
+        mt_object = self.get_station(
+            station_id=station_id,
+            survey_id=survey_id,
+            station_key=station_key,
+        )
+        return mt_object.plot_phase_tensor(**kwargs)
 
     def plot_phase_tensor_map(self, **kwargs):
         """

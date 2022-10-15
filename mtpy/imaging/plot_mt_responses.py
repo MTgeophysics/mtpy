@@ -460,7 +460,7 @@ class PlotMultipleResponses(PlotBase):
         return axr, axp, axr2, axp2, axt, axpt, label_coords
 
     def _plot_all(self):
-        ns = len(self.mt_data)
+        ns = self.mt_data.n_stations
 
         # set figure size according to what the plot will be.
         if self.fig_size is None:
@@ -473,7 +473,7 @@ class PlotMultipleResponses(PlotBase):
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
-        for ii, mt in enumerate(self.mt_data.values):
+        for ii, mt in enumerate(self.mt_data.values()):
             (
                 axr,
                 axp,
@@ -540,7 +540,7 @@ class PlotMultipleResponses(PlotBase):
             raise ValueError(
                 "Compare mode does not support plotting diagonal components yet"
             )
-        ns = len(self.mt_data)
+        ns = self.mt_data.n_stations
 
         # make color lists for the plots going light to dark
         cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns) for cc in range(ns)]
@@ -588,7 +588,7 @@ class PlotMultipleResponses(PlotBase):
 
         period = []
 
-        for ii, mt in enumerate(self.mt_data.values):
+        for ii, mt in enumerate(self.mt_data.values()):
             period.append(mt.period.min())
             period.append(mt.period.max())
             self.xy_color = cxy[ii]
@@ -736,7 +736,7 @@ class PlotMultipleResponses(PlotBase):
 
     def _plot_single(self):
         p_dict = {}
-        for ii, tf in enumerate(self.mt_data.values, 1):
+        for ii, tf in enumerate(self.mt_data.values(), 1):
             p = tf.plot_mt_response(
                 **{
                     "fig_num": ii,

@@ -243,10 +243,13 @@ class PlotPhaseTensor(PlotBase):
         )
 
         if self.pt_limits is None:
+            pt_min = np.nan_to_num(self.pt.phimin)
+            pt_max = np.nan_to_num(self.pt.phimax)
             self.pt_limits = [
-                min([self.pt.phimax.min(), self.pt.phimin.min()]) - 3,
-                max([self.pt.phimax.max(), self.pt.phimin.max()]) + 3,
+                min([pt_max.min(), pt_min.min()]) - 3,
+                max([pt_max.max(), pt_min.max()]) + 3,
             ]
+            print(self.pt_limits)
             if self.pt_limits[0] < -10:
                 self.pt_limits[0] = -9.9
             if self.pt_limits[1] > 100:

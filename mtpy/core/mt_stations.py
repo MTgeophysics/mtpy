@@ -162,7 +162,7 @@ class MTStations:
 
         self._utm_crs = CRS.from_user_input(value)
         for mt_obj in self.mt_list:
-            mt_obj.utm_epsg = self._utm_crs
+            mt_obj.utm_crs = value
 
     @property
     def datum_crs(self):
@@ -193,7 +193,7 @@ class MTStations:
 
         self._datum_crs = CRS.from_user_input(value)
         for mt_obj in self.mt_list:
-            mt_obj.datum_crs = self._datum_crs
+            mt_obj.datum_crs = value
 
     @property
     def station_locations(self):
