@@ -547,7 +547,9 @@ class MTData(OrderedDict, MTStations):
 
         return PlotPhaseTensorPseudoSection(mt_data=self, **kwargs)
 
-    def plot_penetration_depth_1d(self, station_id, survey_id, **kwargs):
+    def plot_penetration_depth_1d(
+        self, station_key=None, station_id=None, survey_id=None, **kwargs
+    ):
         """
         Plot 1D penetration depth based on the Niblett-Bostick transformation
 
@@ -566,9 +568,13 @@ class MTData(OrderedDict, MTStations):
 
         """
 
-        tf_object = self.get_station(station_id, survey_id)
+        mt_object = self.get_station(
+            station_id=station_id,
+            survey_id=survey_id,
+            station_key=station_key,
+        )
 
-        return PlotPenetrationDepth1D(tf_object, **kwargs)
+        return PlotPenetrationDepth1D(mt_object, **kwargs)
 
     def plot_penetration_depth_map(self, **kwargs):
         """

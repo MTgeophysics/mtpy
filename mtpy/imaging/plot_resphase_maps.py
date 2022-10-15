@@ -250,7 +250,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
         """
 
         plot_array = np.zeros(
-            len(self.mt_data),
+            self.mt_data.n_stations,
             dtype=[
                 ("station", "U20"),
                 ("latitude", float),
@@ -269,7 +269,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
             ],
         )
 
-        for ii, tf in enumerate(self.mt_data.values):
+        for ii, tf in enumerate(self.mt_data.values()):
             z = self._get_interpolated_z(tf)
             z_object = Z(z, frequency=[1.0 / self.plot_period])
 

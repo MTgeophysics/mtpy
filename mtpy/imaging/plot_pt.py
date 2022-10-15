@@ -249,7 +249,6 @@ class PlotPhaseTensor(PlotBase):
                 min([pt_max.min(), pt_min.min()]) - 3,
                 max([pt_max.max(), pt_min.max()]) + 3,
             ]
-            print(self.pt_limits)
             if self.pt_limits[0] < -10:
                 self.pt_limits[0] = -9.9
             if self.pt_limits[1] > 100:
@@ -270,19 +269,12 @@ class PlotPhaseTensor(PlotBase):
             columnspacing=0.01,
         )
 
-        # leg = plt.gca().get_legend()
-        # ltext = leg.get_texts()  # all the text.Text instance in the legend
-        # plt.setp(ltext, fontsize=6.5)  # the legend text fontsize
-
         self.ax_phase.set_ylim(self.pt_limits)
         self.ax_phase.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
 
         self.ax_phase.set_ylabel("Phase (deg)", fontdict=self.font_dict)
-        # self.ax_phase.set_title(
-        #     "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$", fontdict=self.font_dict
-        # )
 
         # -----------------------plotSkew---------------------------------------
 

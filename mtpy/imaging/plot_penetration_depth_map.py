@@ -121,7 +121,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             ],
         )
 
-        for ii, tf in enumerate(self.mt_data.values):
+        for ii, tf in enumerate(self.mt_data.values()):
             z = self._get_interpolated_z(tf)
             if (z == 0).all():
                 continue

@@ -462,8 +462,6 @@ class Z(ResPhase):
         self.z = z_rot
         if self.z_err is not None:
             self.z_err = z_err_rot
-        # for consistency recalculate resistivity and phase
-        self.compute_resistivity_phase()
 
     def remove_ss(self, reduce_res_factor_x=1.0, reduce_res_factor_y=1.0):
         """
