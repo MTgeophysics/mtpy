@@ -1496,8 +1496,8 @@ class Model:
             core_cells = mtmesh.get_station_buffer(
                 gcx,
                 gcy,
-                self.station_locations.station_locations["model_east"],
-                self.station_locations.station_locations["model_north"],
+                self.station_locations["model_east"],
+                self.station_locations["model_north"],
                 buf=topography_buffer,
             )
             topo_core = self.surface_dict["topography"][core_cells]

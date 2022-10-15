@@ -121,7 +121,8 @@ class PlotMesh(PlotBase):
         if self.plot_station_id:
             for row in self.model_obj.station_locations.itertuples():
                 self.ax1.annotate(
-                    row.station(row.model_east, row.model_north + 0.05),
+                    row.station,
+                    (row.model_east, row.model_north + 0.05),
                     ha="center",
                     va="baseline",
                     clip_on=True,
