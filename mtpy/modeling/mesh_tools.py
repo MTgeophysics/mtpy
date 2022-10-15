@@ -10,12 +10,14 @@ functions to assist with mesh generation
 # =============================================================================
 # Imports
 # =============================================================================
+from pathlib import Path
 import numpy as np
 import mtpy.utils.filehandling as mtfh
 from mtpy.utils.gis_tools import project_point
 import scipy.interpolate as spi
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+from rasterio.windows import from_bounds
 
 # =============================================================================
 
@@ -114,7 +116,10 @@ def interpolate_elevation_rasterio(
     method="linear",
     fast=True,
     buffer=1,
+    pad=5,
 ):
+
+    p = Path(surface_file)
     f = rasterio.open(surface_file)
 
     dst_crs = {"init": f"EPSG:{utm_epsg}"}
@@ -122,25 +127,57 @@ def interpolate_elevation_rasterio(
         f.crs, dst_crs, f.width, f.height, *f.bounds
     )
 
+    # make a window around the model
+    model_bounds = [
+        grid_east[pad:-pad].min(),
+        grid_north[pad:-pad].min(),
+        grid_east[pad:-pad].max(),
+        grid_north[pad:-pad].max(),
+    ]
     with rasterio.open(
-        "tmp.tif",
-        "w",
+        p.parent.joinpath("tmp_02.tif"),
+        "w+",
         crs=dst_crs,
         transform=transform,
         width=width,
         height=height,
         count=1,
         dtype=rasterio.float32,
-    ) as elev:
-        reproject(
+    ) as dst:
+        ra, affine = reproject(
             rasterio.band(f, 1),
-            rasterio.band(elev, 1),
+            rasterio.band(dst, 1),
             src_tranform=f.transform,
             src_crs=f.crs,
             dst_transform=transform,
             dst_crs=dst_crs,
             resampling=Resampling.nearest,
         )
+        model_bounds.append(dst.transform)
+        dst.write(ra[0].read(1), window=from_bounds(*model_bounds))
+
+    elev_ds = rasterio.open(p.parent.joinpath("tmp.tif"))
+    elev = elev_ds.read(1)
+    # model_bounds.append(elev_ds.transform)
+    # elev = elev_ds.read(1, window=from_bounds(*model_bounds))
+    # with rasterio.
+
+    east = np.linspace(elev_ds.bounds.left, elev_ds.bounds.right, elev_ds.width)
+    north = np.linspace(
+        elev_ds.bounds.bottom, elev_ds.bounds.top, elev_ds.height
+    )
+
+    points = np.vstack([arr.flatten() for arr in [east, north]]).T
+    values = elev.flatten()
+
+    if len(grid_east.shape) == 1:
+        grid_east, grid_north = np.meshgrid(grid_east, grid_north)
+    xi = np.vstack([arr.flatten() for arr in [grid_east, grid_north]]).T
+
+    # elevation on the centre of the grid nodes
+    return spi.griddata(points, values, xi, method=method).reshape(
+        grid_north.shape
+    )
 
 
 def interpolate_elevation_to_grid(
