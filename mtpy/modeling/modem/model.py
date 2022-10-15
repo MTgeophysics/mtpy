@@ -1399,9 +1399,9 @@ class Model:
             airlayer_type (str, optional): Same as
                 add_topography_to_model.
         """
-        lon = self.station_locations.lon.to_numpy()
-        lat = self.station_locations.lat.to_numpy()
-        elev = self.station_locations.elev.to_numpy()
+        lon = self.station_locations.longitude.to_numpy()
+        lat = self.station_locations.latitude.to_numpy()
+        elev = self.station_locations.elevation.to_numpy()
         surface = lon, lat, elev
         self.add_topography_to_model(
             surface=surface,
