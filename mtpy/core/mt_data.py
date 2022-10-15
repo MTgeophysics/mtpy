@@ -89,11 +89,11 @@ class MTData(OrderedDict, MTStations):
         """
 
         mt_object = self._validate_item(mt_object)
-        if survey is None:
+        if survey is not None:
             mt_object.survey = survey
         self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
 
-    def remove_station(self, station_id, survey_id):
+    def remove_station(self, station_id, survey_id=None):
         """
         remove a station from the dictionary
 
@@ -104,9 +104,34 @@ class MTData(OrderedDict, MTStations):
 
         """
 
-        key = f"{survey_id}.{station_id}"
+        key = self._get_station_key(station_id, survey_id)
         if key in self.keys():
             del self[key]
+
+    def _get_station_key(self, station_id, survey_id):
+        """
+        get station key from station id and survey id
+
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if station_id is not None:
+            if survey_id is not None:
+                return f"{survey_id}.{station_id}"
+            else:
+                for key in self.keys():
+                    if station_id in key:
+                        if key.split(".")[1] == station_id:
+                            return key
+        raise KeyError(
+            f"Could not find station_id = {station_id}, survey_id = {survey_id}"
+        )
 
     def get_station(self, station_id=None, survey_id=None, station_key=None):
         """
@@ -124,18 +149,8 @@ class MTData(OrderedDict, MTStations):
         """
         if station_key is not None:
             station_key = station_key
-        elif station_id is not None:
-            if survey_id is not None:
-                station_key = f"{survey_id}.{station_id}"
-            else:
-                for key in self.keys():
-                    if station_id in key:
-                        if key.split(".")[1] == station_id:
-                            station_key = key
-                            break
-
         else:
-            raise ValueError("Must input either station_key or station_id")
+            station_key = self._get_station_key(station_id, survey_id)
 
         try:
             return self[station_key]
@@ -219,7 +234,7 @@ class MTData(OrderedDict, MTStations):
 
         return gdf
 
-    def interpolate(self, new_periods):
+    def interpolate(self, new_periods, inplace=True):
         """
         Interpolate onto common period range
 
@@ -230,20 +245,39 @@ class MTData(OrderedDict, MTStations):
 
         """
 
+        if not inplace:
+            mt_data = MTData()
         for mt_obj in self.values():
             interp_periods = new_periods[
                 np.where(
-                    (new_periods >= mt_obj.period.max())
-                    & (new_periods <= mt_obj.period.min())
+                    (new_periods <= mt_obj.period.max())
+                    & (new_periods >= mt_obj.period.min())
                 )
             ]
 
             interp_z, interp_t = mt_obj.interpolate(1.0 / interp_periods)
 
-            mt_obj.Z = interp_z
-            mt_obj.Tipper = interp_t
+            new_mt_obj = mt_obj.copy()
+            new_mt_obj._transfer_function = (
+                new_mt_obj._initialize_transfer_function(interp_periods)
+            )
+            new_mt_obj.Z = interp_z
+            new_mt_obj.Tipper = interp_t
 
-    def rotate(self, rotation_angle):
+            if inplace:
+                self.update(
+                    {
+                        f"{new_mt_obj.survey_metadata.id}.{new_mt_obj.station}": new_mt_obj
+                    }
+                )
+
+            else:
+                mt_data.add_station(new_mt_obj)
+
+        if not inplace:
+            return mt_data
+
+    def rotate(self, rotation_angle, inplace=True):
         """
         rotate the data by the given angle assuming positive clockwise with
         north = 0, east = 90.
@@ -256,8 +290,18 @@ class MTData(OrderedDict, MTStations):
         """
         self.data_rotation_angle = rotation_angle
 
+        if not inplace:
+            mt_data = MTData()
         for mt_obj in self.values():
-            mt_obj.rotation_angle = rotation_angle
+            if not inplace:
+                rot_mt_obj = mt_obj.copy()
+                rot_mt_obj.rotation_angle = rotation_angle
+                mt_data.add_station(rot_mt_obj)
+            else:
+                mt_obj.rotation_angle = rotation_angle
+
+        if not inplace:
+            return mt_data
 
     def compute_model_errors(
         self,

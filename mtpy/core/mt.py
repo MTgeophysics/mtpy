@@ -95,7 +95,11 @@ class MT(TF, MTLocation):
         for strike angle
         """
         if not isinstance(z_object.frequency, type(None)):
-            if not (self.frequency == z_object.frequency).all():
+            if self.frequency.size != z_object.frequency.shape:
+
+                self.frequency = z_object.frequency
+
+            elif not (self.frequency == z_object.frequency).all():
                 self.frequency = z_object.frequency
         self.impedance = z_object.z
         self.impedance_error = z_object.z_err
@@ -438,7 +442,6 @@ class MT(TF, MTLocation):
         # check the bounds of the new frequency array
         if bounds_error:
 
-            # logger.debug("new frequency array %s", new_freq_array)
             if self.frequency.min() > new_freq_array.min():
                 raise ValueError(
                     f"New frequency minimum of {new_freq_array.min():.5g} "
@@ -489,8 +492,6 @@ class MT(TF, MTLocation):
                     new_f
                 ) + 1j * z_dict[comp]["imag"](new_f)
                 new_Z.z_err[new_nz_index, ii, jj] = z_dict[comp]["err"](new_f)
-        # compute resistivity and phase for new Z object
-        new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
         if self.Tipper is None:
