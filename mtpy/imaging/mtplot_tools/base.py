@@ -226,36 +226,36 @@ class PlotBaseMaps(PlotBase):
         :rtype: TYPE
 
         """
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = tf.get_interp1d_functions_z()
         return np.nan_to_num(
             np.array(
                 [
                     [
-                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
                         + 1j
                         * tf.z_interp_dict["zxx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zxy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zxy"]["imag"](
                             1.0 / self.plot_period
                         )[0],
                     ],
                     [
-                        tf.z_interp_dict["zyx"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zyx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zyy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zyy"]["imag"](
                             1.0 / self.plot_period
@@ -274,7 +274,8 @@ class PlotBaseMaps(PlotBase):
         :rtype: TYPE
 
         """
-
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = tf.get_interp1d_functions_z()
         return np.nan_to_num(
             np.array(
                 [
@@ -307,7 +308,8 @@ class PlotBaseMaps(PlotBase):
         :rtype: TYPE
 
         """
-
+        if not hasattr(tf, "t_interp_dict"):
+            tf.z_interp_dict = tf.get_interp1d_functions_t()
         if tf.t_interp_dict == {}:
             return np.zeros((1, 1, 2), dtype=complex)
         return np.nan_to_num(
@@ -344,6 +346,8 @@ class PlotBaseMaps(PlotBase):
         :rtype: TYPE
 
         """
+        if not hasattr(tf, "t_interp_dict"):
+            tf.z_interp_dict = tf.get_interp1d_functions_t()
 
         if tf.t_interp_dict == {}:
             return np.array((1, 1, 2), dtype=float)
@@ -393,7 +397,7 @@ class PlotBaseProfile(PlotBase):
     def __init__(self, tf_list, **kwargs):
         super().__init__(**kwargs)
 
-        self.tf_list = tf_list
+        self.mt_data = tf_list
         self.profile_vector = None
         self.profile_angle = None
         self.profile_line = None
@@ -418,15 +422,15 @@ class PlotBaseProfile(PlotBase):
         """
         only a single value is allowed
         """
-        for tf in self.tf_list:
+        for tf in self.mt_data:
             tf.rotation_angle = value
         self._rotation_angle = value
 
     def _get_profile_line(self):
-        x = np.zeros(len(self.tf_list))
-        y = np.zeros(len(self.tf_list))
+        x = np.zeros(self.mt_data.n_stations)
+        y = np.zeros(self.mt_data.n_stations)
 
-        for ii, tf in enumerate(self.tf_list):
+        for ii, tf in enumerate(self.mt_data.values()):
             x[ii] = tf.longitude
             y[ii] = tf.latitude
 

@@ -93,9 +93,8 @@ def read_surface_ascii(ascii_fn):
     ny = int(d_dict["nrows"])
     cs = d_dict["cellsize"]
 
-    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[
-        ::-1
-    ]  # ::-1 reverse an axis to put the southern line first
+    # ::-1 reverse an axis to put the southern line first
+    elevation = np.loadtxt(ascii_fn, skiprows=skiprows)[::-1]
 
     # create lat and lon arrays from the dem file
     lon = np.arange(x0, x0 + cs * (nx), cs)
@@ -115,18 +114,18 @@ def read1columntext(textfile):
 
 def read_stationdatafile(textfile, read_duplicates=True):
     """
-    read a space delimited file containing station info of any sort - 
+    read a space delimited file containing station info of any sort -
     3 columns: station x, y, ... - to a dictionary - station:[x,y,...]
     textfile = full path to text file
-    read_duplicates = True/False - if stations are listed more than once do you 
-                                   want to read all information or just the 
+    read_duplicates = True/False - if stations are listed more than once do you
+                                   want to read all information or just the
                                    first occurrence, default True
-    
+
     example:
     import mtpy.utils.filehandling as fh
     stationdict = fh.read_stationxyfile(textfile)
-    
-    
+
+
     """
     stationdict = {}
     for line in open(textfile).readlines():
@@ -188,15 +187,15 @@ def validate_save_file(
     """
     Return savepath, savefile and basename, ensuring they are internally
     consistent and populating missing fields from the others or using defaults.
-    
+
     Prioritises savepath and basename. I.e. if savepath, savefile and basename
     are all valid but inconsistent, savefile will be updated to reflect
     savepath and basename
-    
+
     :param savepath: directory to save to
     :param savefile: full file path to save to
     :param basename: base file name to save to
-    
+
     """
 
     if prioritise_savefile:
@@ -240,25 +239,29 @@ def validate_save_file(
 def sort_folder_list(wkdir, order_file, indices=[0, 9999], delimiter=""):
     """
     sort subfolders in wkdir according to order in order_file
-    
+
     wkdir = working directory containing subfolders
     order = full path to text file containing order.
             needs to contain a string to search on that is the same length
             for each item in the list
     indices = indices to search on; default take the whole string
-    
+
     returns a list of directories, in order.
-    
+
     """
     order = read1columntext(order_file)
 
     plst = []
-    flst = [i for i in os.listdir(wkdir) if os.path.exists(os.path.join(wkdir, i))]
+    flst = [
+        i for i in os.listdir(wkdir) if os.path.exists(os.path.join(wkdir, i))
+    ]
     #    print flst
     for o in order:
         for f in flst:
             if (
-                str.lower(f.strip().split(delimiter)[0][indices[0] : indices[1]])
+                str.lower(
+                    f.strip().split(delimiter)[0][indices[0] : indices[1]]
+                )
                 == str.lower(o)[indices[0] : indices[1]]
             ):
                 plst.append(os.path.join(wkdir, f))
@@ -275,15 +278,15 @@ def get_pathlist(
     folder=False,
 ):
     """
-    get a list of files or folders by searching on a string contained in 
+    get a list of files or folders by searching on a string contained in
     search_stringlist or alternatively search_stringfile
-    
+
     returns:
     dictionary containing search strings as keys and file/folder as values
-    
+
     masterdir - directory to search in
-    search_stringlist = list containing string identifiers for files or folders, 
-                        e.g. k0101 will work for edifile k0101.edi or 
+    search_stringlist = list containing string identifiers for files or folders,
+                        e.g. k0101 will work for edifile k0101.edi or
                         folder k0101.
     search_stringfile = alternative to search_stringlist (need to provide one)
                         will get search_stringlist from a file, full path
@@ -293,8 +296,8 @@ def get_pathlist(
             character, useful when matching up edi's to inversion directories
             that both contain additional characters
     extension = file extension, e.g. '.edi'
-    
-    
+
+
     """
 
     if search_stringfile is not None:
@@ -302,12 +305,16 @@ def get_pathlist(
             search_stringlist = read1columntext(search_stringfile)
 
     flist = [
-        i for i in os.listdir(masterdir) if i[len(i) - len(extension) :] == extension
+        i
+        for i in os.listdir(masterdir)
+        if i[len(i) - len(extension) :] == extension
     ]
 
     if folder:
         flist = [
-            op.join(masterdir, i) for i in flist if op.isdir(op.join(masterdir, i))
+            op.join(masterdir, i)
+            for i in flist
+            if op.isdir(op.join(masterdir, i))
         ]
 
     for s in search_stringlist:
@@ -329,13 +336,13 @@ def get_pathlist(
 
 
 def get_sampling_interval_fromdatafile(filename, length=3600):
-    """ 
+    """
     Find sampling interval from data file.
 
-    Provide data file (purely numerical content) and total 
-    data length in seconds (default 3600). Data are read in by 
+    Provide data file (purely numerical content) and total
+    data length in seconds (default 3600). Data are read in by
     the Numpy 'loadtxt'-function, the lentgh of the data array yields
-    the sampling interval.  
+    the sampling interval.
 
     Lines beginning with # are ignored.
 
@@ -348,16 +355,18 @@ def get_sampling_interval_fromdatafile(filename, length=3600):
     return sampling_interval
 
 
-def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdir=None):
+def EDL_make_Nhour_files(
+    n_hours, inputdir, sampling, stationname=None, outputdir=None
+):
 
     """
     See 'EDL_make_dayfiles' for description and syntax.
 
-    Only difference: output files are blocks of (max) N hours, starting to count 
+    Only difference: output files are blocks of (max) N hours, starting to count
     at midnight (00:00h) each day.
 
     Conditions:
-    
+
     1.   24%%N = 0
     2.   input data files start on the hour marks
 
@@ -430,11 +439,14 @@ def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdi
         if stationname is not None:
             raise MTex.MTpyError_inputarguments(
                 "Directory(ies) do(es) not contain"
-                " files to combine for station {0}:\n {1}".format(stationname, inputdir)
+                " files to combine for station {0}:\n {1}".format(
+                    stationname, inputdir
+                )
             )
 
         raise MTex.MTpyError_inputarguments(
-            "Directory does not contain files" " to combine:\n {0}".format(inputdir)
+            "Directory does not contain files"
+            " to combine:\n {0}".format(inputdir)
         )
 
     # define subfolder for storing dayfiles
@@ -475,7 +487,9 @@ def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdi
         )
 
         # make list of starting times for the respective files
-        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) for f in lo_files])
+        lo_starttimes = np.array(
+            [EDL_get_starttime_fromfilename(f) for f in lo_files]
+        )
 
         # sort the files by their starting times
         idx_chronologic = np.argsort(lo_starttimes)
@@ -497,7 +511,9 @@ def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdi
 
         # set stationname, either from arguments or from filename
         if stationname is None:
-            stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0]).upper()
+            stationname = EDL_get_stationname_fromfilename(
+                lo_sorted_files[0]
+            ).upper()
 
         # set counting variables - needed for handling of consecutive files
 
@@ -550,7 +566,9 @@ def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdi
             no_samples = len(data_in)
 
             # time axis of the file read in :
-            tmp_file_time_axis = np.arange(no_samples) * sampling + file_start_time
+            tmp_file_time_axis = (
+                np.arange(no_samples) * sampling + file_start_time
+            )
 
             # end: time of the last sample + 1x sampling-interval
             file_end_time = tmp_file_time_axis[-1] + sampling
@@ -636,14 +654,18 @@ def EDL_make_Nhour_files(n_hours, inputdir, sampling, stationname=None, outputdi
                     # outfile_data.extend(data_in.tolist())
                 # otherwise assuming that the first column is time, so just take the second one
                 else:
-                    block_data[arrayindex : arrayindex + len(data_in)] = data_in[:, 1]
+                    block_data[
+                        arrayindex : arrayindex + len(data_in)
+                    ] = data_in[:, 1]
                     # outfile_data.extend(data_in[:,1].tolist())
 
                 # update position in time
                 arrayindex += len(data_in)
 
                 # update (virtual) end of outfile data
-                outfile_endtime = (arrayindex + 1) * sampling + outfile_starttime
+                outfile_endtime = (
+                    arrayindex + 1
+                ) * sampling + outfile_starttime
 
             # -----------
             # current file has been read in, data in buffer have been updated
@@ -744,25 +766,25 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
 
     Concatenate ascii time series to dayfiles (calendar day, UTC reference).
 
-    Data can be within a single directory or a list of directories. 
-    However, the files in the directory(ies) 'inputdir' have to be for 
-    one station only, and named with a 2 character suffix, defining the channel! 
+    Data can be within a single directory or a list of directories.
+    However, the files in the directory(ies) 'inputdir' have to be for
+    one station only, and named with a 2 character suffix, defining the channel!
 
-    If the time series are interrupted/discontinuous at some point, a new file 
+    If the time series are interrupted/discontinuous at some point, a new file
     will be started after that point, where the file index 'idx' is increased by 1.
-    If no stationname is given, the leading non-datetime characters in the first 
+    If no stationname is given, the leading non-datetime characters in the first
     filename are used.
 
 
     Files are named as 'stationname_samplingrate_date_idx.channel'
     Stationname, channel, and sampling are written to a header line.
 
-    Output data consists of a single column float data array. The data are 
-    stored into one directory. If 'outputdir' is not specified, a subdirectory 
-    'dayfiles' will be created witihn the current working directory. 
+    Output data consists of a single column float data array. The data are
+    stored into one directory. If 'outputdir' is not specified, a subdirectory
+    'dayfiles' will be created witihn the current working directory.
 
-    Note: 
-    Midnight cannot be in the middle of a file, because only file starts are 
+    Note:
+    Midnight cannot be in the middle of a file, because only file starts are
     checked for a new day!!
 
     """
@@ -801,11 +823,14 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
         if stationname is not None:
             raise MTex.MTpyError_inputarguments(
                 "Directory(ies) do(es) not contain"
-                " files to combine for station {0}:\n {1}".format(stationname, inputdir)
+                " files to combine for station {0}:\n {1}".format(
+                    stationname, inputdir
+                )
             )
 
         raise MTex.MTpyError_inputarguments(
-            "Directory does not contain files" " to combine:\n {0}".format(inputdir)
+            "Directory does not contain files"
+            " to combine:\n {0}".format(inputdir)
         )
 
     # define subfolder for storing dayfiles
@@ -846,7 +871,9 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
         )
 
         # make list of starting times for the respective files
-        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) for f in lo_files])
+        lo_starttimes = np.array(
+            [EDL_get_starttime_fromfilename(f) for f in lo_files]
+        )
 
         # sort the files by their starting times
         idx_chronologic = np.argsort(lo_starttimes)
@@ -868,7 +895,9 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
 
         # set stationname, either from arguments or from filename
         if stationname is None:
-            stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0]).upper()
+            stationname = EDL_get_stationname_fromfilename(
+                lo_sorted_files[0]
+            ).upper()
 
         # set counting variables - needed for handling of consecutive files
 
@@ -915,7 +944,9 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
                 continue
             no_samples = len(data_in)
 
-            tmp_file_time_axis = np.arange(no_samples) * sampling + file_start_time
+            tmp_file_time_axis = (
+                np.arange(no_samples) * sampling + file_start_time
+            )
             # file_time_axis = (np.arange(no_samples)*sampling +
             #                 file_start_time).tolist()
 
@@ -938,7 +969,9 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
                     # outfile_data = data_in.tolist()
                 # otherwise assuming that the first column is time, so just take the second one
                 else:
-                    day_data[arrayindex : arrayindex + len(data_in)] = data_in[:, 1]
+                    day_data[arrayindex : arrayindex + len(data_in)] = data_in[
+                        :, 1
+                    ]
                     # outfile_data = data_in[:,1].tolist()
 
                 # jump with index to current point on time axis
@@ -1001,14 +1034,18 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
                     # outfile_data.extend(data_in.tolist())
                 # otherwise assuming that the first column is time, so just take the second one
                 else:
-                    day_data[arrayindex : arrayindex + len(data_in)] = data_in[:, 1]
+                    day_data[arrayindex : arrayindex + len(data_in)] = data_in[
+                        :, 1
+                    ]
                     # outfile_data.extend(data_in[:,1].tolist())
 
                 arrayindex += len(data_in)
                 print(len(data_in), arrayindex)
 
                 arrayindex += len(data_in)
-                outfile_endtime = (arrayindex + 1) * sampling + outfile_starttime
+                outfile_endtime = (
+                    arrayindex + 1
+                ) * sampling + outfile_starttime
 
             # -----------
 
@@ -1084,7 +1121,7 @@ def EDL_make_dayfiles(inputdir, sampling, stationname=None, outputdir=None):
 
 
 def EDL_get_starttime_fromfilename(filename):
-    """ 
+    """
     Return starttime of data file in epoch seconds.
 
     Starting time is determined by the filename. This has to be of the form
@@ -1136,7 +1173,7 @@ def EDL_get_stationname_fromfilename(filename):
 def read_data_header(fn_raw):
     """
     Deprecated!!!
-    USE 
+    USE
               read_ts_header
 
     INSTEAD
@@ -1151,7 +1188,7 @@ def read_data_header(fn_raw):
     output
     -------
     list of header elements:
-    stationname, channel, sampling rate, starttime first sample, 
+    stationname, channel, sampling rate, starttime first sample,
     starttime last sample, unit, lat, lon, elevation
 
     """
@@ -1197,8 +1234,8 @@ def read_data_header(fn_raw):
 
 def read_2c2_file(filename):
     """
-    Read in BIRRP 2c2 coherence files and return 4 lists 
-    containing [period],[freq],[coh],[zcoh]. Note if any of the coherences are 
+    Read in BIRRP 2c2 coherence files and return 4 lists
+    containing [period],[freq],[coh],[zcoh]. Note if any of the coherences are
     negative a value of 0 will be given to them.
 
     """
@@ -1244,8 +1281,8 @@ def read_2c2_file(filename):
 
 def validate_ts_file(tsfile):
     """
-        Validate MTpy timeseries (TS) data file
-        Return Boolean value True/False .
+    Validate MTpy timeseries (TS) data file
+    Return Boolean value True/False .
 
     """
     tsfile = op.abspath(tsfile)
@@ -1281,10 +1318,10 @@ def validate_ts_file(tsfile):
 
 
 def read_ts_header(tsfile):
-    """ Read in the header line from MTpy timeseries data files.
-        
-        Return header as dictionary. Return empty dict, 
-        if no header line was found.
+    """Read in the header line from MTpy timeseries data files.
+
+    Return header as dictionary. Return empty dict,
+    if no header line was found.
     """
 
     header_dict = {}
@@ -1348,14 +1385,16 @@ def read_ts_header(tsfile):
 
 def get_ts_header_string(header_dictionary):
     """
-        Return a MTpy time series data file header string from a dictionary.
+    Return a MTpy time series data file header string from a dictionary.
 
     """
 
     header_string = "# "
     for headerelement in lo_headerelements:
         if headerelement in header_dictionary:
-            header_string += "{0} ".format(str(header_dictionary[headerelement]))
+            header_string += "{0} ".format(
+                str(header_dictionary[headerelement])
+            )
         else:
             header_string += "\t "
 
@@ -1366,12 +1405,12 @@ def get_ts_header_string(header_dictionary):
 
 def write_ts_file_from_tuple(outfile, ts_tuple, fmt="%.8e"):
     """
-        Write an MTpy TS data file, where the content is provided as tuple:
+    Write an MTpy TS data file, where the content is provided as tuple:
 
-        (station, channel,samplingrate,t_min,nsamples,unit,lat,lon,elev, data)
+    (station, channel,samplingrate,t_min,nsamples,unit,lat,lon,elev, data)
 
-        todo:
-        needs tuple-validation
+    todo:
+    needs tuple-validation
 
     """
 
@@ -1401,10 +1440,10 @@ def write_ts_file_from_tuple(outfile, ts_tuple, fmt="%.8e"):
 
 def read_ts_file(mtdatafile):
     """
-        Read an MTpy TS data file and provide the content as tuple:
+    Read an MTpy TS data file and provide the content as tuple:
 
-        (station, channel,samplingrate,t_min,nsamples,unit,lat,lon,elev, data)
-        If header information is incomplete, the tuple is filled up with 'None'
+    (station, channel,samplingrate,t_min,nsamples,unit,lat,lon,elev, data)
+    If header information is incomplete, the tuple is filled up with 'None'
 
     """
 
@@ -1417,7 +1456,8 @@ def read_ts_file(mtdatafile):
     header = read_ts_header(infile)
     if len(header) == 0:
         raise MTex.MTpyError_inputarguments(
-            "ERROR - Data file not valid - " "header is missing : {0}".format(infile)
+            "ERROR - Data file not valid - "
+            "header is missing : {0}".format(infile)
         )
 
     data = np.loadtxt(infile)
@@ -1463,7 +1503,11 @@ def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
             raise MTex.MTpyError_inputarguments(
                 'ERROR - "lo_stations"' " argument must be iterable!"
             )
-    print("\t re-orienting data for collection of stations:\n{0}".format(lo_stations))
+    print(
+        "\t re-orienting data for collection of stations:\n{0}".format(
+            lo_stations
+        )
+    )
     # Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand -
     # collect header lines of files in list
     lo_headers = []
@@ -1558,7 +1602,9 @@ def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
                     if (
                         (header_y["station"].upper() == sta.upper())
                         and (header_y["channel"].lower()[0] == sensor)
-                        and (float(header_y["t_min"]) == float(header_x["t_min"]))
+                        and (
+                            float(header_y["t_min"]) == float(header_x["t_min"])
+                        )
                     ):
                         if header_y["channel"].lower()[1] == "y":
                             y_file = lo_files[idx_h_y]
@@ -1575,7 +1621,9 @@ def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
                 x_outfn = op.abspath(op.join(ori_outdir, op.basename(x_file)))
                 y_outfn = op.abspath(op.join(ori_outdir, op.basename(y_file)))
                 if z_file is not None:
-                    z_outfn = op.abspath(op.join(ori_outdir, op.basename(z_file)))
+                    z_outfn = op.abspath(
+                        op.join(ori_outdir, op.basename(z_file))
+                    )
 
                 xdata = np.loadtxt(x_file)
                 ydata = np.loadtxt(y_file)
@@ -1586,17 +1634,21 @@ def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
                 # -> thus the declination value is added to azimuths
                 if sensor == "e":
                     xangle = (
-                        float(stationconfig.get("e_xaxis_azimuth", 0.0)) + declination
+                        float(stationconfig.get("e_xaxis_azimuth", 0.0))
+                        + declination
                     )
                     yangle = (
-                        float(stationconfig.get("e_yaxis_azimuth", 90.0)) + declination
+                        float(stationconfig.get("e_yaxis_azimuth", 90.0))
+                        + declination
                     )
                 else:
                     xangle = (
-                        float(stationconfig.get("b_xaxis_azimuth", 0.0)) + declination
+                        float(stationconfig.get("b_xaxis_azimuth", 0.0))
+                        + declination
                     )
                     yangle = (
-                        float(stationconfig.get("b_yaxis_azimuth", 90.0)) + declination
+                        float(stationconfig.get("b_yaxis_azimuth", 90.0))
+                        + declination
                     )
 
                 newx, newy = MTcc.reorient_data2D(

@@ -21,7 +21,7 @@ from matplotlib import (
     widgets as widgets,
 )
 
-from mtpy.imaging import mtplottools as mtplottools
+# from mtpy.imaging import mtplottools as mtplottools
 from .data import Data
 from .model import Model
 
@@ -117,7 +117,9 @@ class ModelManipulator(Model):
         Model.__init__(self, model_fn=model_fn, **kwargs)
 
         self.data_fn = data_fn
-        self.model_fn_basename = kwargs.pop("model_fn_basename", "ModEM_Model_rw.ws")
+        self.model_fn_basename = kwargs.pop(
+            "model_fn_basename", "ModEM_Model_rw.ws"
+        )
 
         if self.model_fn is not None:
             self.save_path = os.path.dirname(self.model_fn)
@@ -160,7 +162,8 @@ class ModelManipulator(Model):
         if self.res_list is None:
             self.set_res_list(
                 np.array(
-                    [self._res_sea, 1, 10, 50, 100, 500, 1000, 5000], dtype=np.float
+                    [self._res_sea, 1, 10, 50, 100, 500, 1000, 5000],
+                    dtype=np.float,
                 )
             )
 
@@ -200,7 +203,9 @@ class ModelManipulator(Model):
         """
         self.res_list = res_list
         # make a dictionary of values to write to file.
-        self.res_dict = dict([(res, ii) for ii, res in enumerate(self.res_list, 1)])
+        self.res_dict = dict(
+            [(res, ii) for ii, res in enumerate(self.res_list, 1)]
+        )
         if self.fig is not None:
             plt.close()
             self.plot()
@@ -327,8 +332,12 @@ class ModelManipulator(Model):
         # self.ax1.xaxis.set_minor_locator(MultipleLocator(100*1./dscale))
         # self.ax1.yaxis.set_minor_locator(MultipleLocator(100*1./dscale))
 
-        self.ax1.set_ylabel("Northing (" + self.map_scale + ")", fontdict=self.fdict)
-        self.ax1.set_xlabel("Easting (" + self.map_scale + ")", fontdict=self.fdict)
+        self.ax1.set_ylabel(
+            "Northing (" + self.map_scale + ")", fontdict=self.fdict
+        )
+        self.ax1.set_xlabel(
+            "Easting (" + self.map_scale + ")", fontdict=self.fdict
+        )
 
         depth_title = self.grid_z[self.depth_index] / self.dscale
 
@@ -350,18 +359,25 @@ class ModelManipulator(Model):
                 ]
             )
             self.east_line_ylist.append(None)
-        self.ax1.plot(self.east_line_xlist, self.east_line_ylist, lw=0.25, color="k")
+        self.ax1.plot(
+            self.east_line_xlist, self.east_line_ylist, lw=0.25, color="k"
+        )
 
         self.north_line_xlist = []
         self.north_line_ylist = []
         for yy in self.grid_north:
             self.north_line_xlist.extend(
-                [self.grid_east.min() / self.dscale, self.grid_east.max() / self.dscale]
+                [
+                    self.grid_east.min() / self.dscale,
+                    self.grid_east.max() / self.dscale,
+                ]
             )
             self.north_line_xlist.append(None)
             self.north_line_ylist.extend([yy / self.dscale, yy / self.dscale])
             self.north_line_ylist.append(None)
-        self.ax1.plot(self.north_line_xlist, self.north_line_ylist, lw=0.25, color="k")
+        self.ax1.plot(
+            self.north_line_xlist, self.north_line_ylist, lw=0.25, color="k"
+        )
 
         # plot the colorbar
         #        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
@@ -380,7 +396,10 @@ class ModelManipulator(Model):
         )
         self.cb.set_ticks(np.arange(self.cmin, self.cmax + 1))
         self.cb.set_ticklabels(
-            [mtplottools.labeldict[cc] for cc in np.arange(self.cmin, self.cmax + 1)]
+            [
+                mtplottools.labeldict[cc]
+                for cc in np.arange(self.cmin, self.cmax + 1)
+            ]
         )
 
         # make a resistivity radio button
@@ -451,8 +470,12 @@ class ModelManipulator(Model):
         else:
             self.ax1.set_ylim(current_ylimits)
 
-        self.ax1.set_ylabel("Northing (" + self.map_scale + ")", fontdict=self.fdict)
-        self.ax1.set_xlabel("Easting (" + self.map_scale + ")", fontdict=self.fdict)
+        self.ax1.set_ylabel(
+            "Northing (" + self.map_scale + ")", fontdict=self.fdict
+        )
+        self.ax1.set_xlabel(
+            "Easting (" + self.map_scale + ")", fontdict=self.fdict
+        )
 
         depth_title = self.grid_z[self.depth_index] / self.dscale
 
@@ -462,9 +485,13 @@ class ModelManipulator(Model):
         )
 
         # plot finite element mesh
-        self.ax1.plot(self.east_line_xlist, self.east_line_ylist, lw=0.25, color="k")
+        self.ax1.plot(
+            self.east_line_xlist, self.east_line_ylist, lw=0.25, color="k"
+        )
 
-        self.ax1.plot(self.north_line_xlist, self.north_line_ylist, lw=0.25, color="k")
+        self.ax1.plot(
+            self.north_line_xlist, self.north_line_ylist, lw=0.25, color="k"
+        )
 
         # be sure to redraw the canvas
         self.fig.canvas.draw()
@@ -474,7 +501,7 @@ class ModelManipulator(Model):
     #        print 'set resistivity to ', label
     #        print self.res_value
     def set_res_value(self, val):
-        self.res_value = 10 ** val
+        self.res_value = 10**val
         print("set resistivity to ", self.res_value)
 
     def _on_key_callback(self, event):
@@ -561,9 +588,9 @@ class ModelManipulator(Model):
             else:
                 for xx in self.xchange:
                     for yy in self.ychange:
-                        self.res_model[yy, xx, self.depth_index] = self.res_copy[
+                        self.res_model[
                             yy, xx, self.depth_index
-                        ]
+                        ] = self.res_copy[yy, xx, self.depth_index]
 
             self.redraw_plot()
 
@@ -605,7 +632,9 @@ class ModelManipulator(Model):
                 & (self.grid_east / self.dscale <= x2)
             )[0]
             if len(xchange) == 0:
-                xchange = np.where(self.grid_east / self.dscale >= x1)[0][0] - 1
+                xchange = (
+                    np.where(self.grid_east / self.dscale >= x1)[0][0] - 1
+                )
                 return [xchange]
 
         if x1 > x2:
@@ -614,7 +643,9 @@ class ModelManipulator(Model):
                 & (self.grid_east / self.dscale >= x2)
             )[0]
             if len(xchange) == 0:
-                xchange = np.where(self.grid_east / self.dscale >= x2)[0][0] - 1
+                xchange = (
+                    np.where(self.grid_east / self.dscale >= x2)[0][0] - 1
+                )
                 return [xchange]
 
         # check the edges to see if the selection should include the square
@@ -637,7 +668,9 @@ class ModelManipulator(Model):
                 & (self.grid_north / self.dscale < y2)
             )[0]
             if len(ychange) == 0:
-                ychange = np.where(self.grid_north / self.dscale >= y1)[0][0] - 1
+                ychange = (
+                    np.where(self.grid_north / self.dscale >= y1)[0][0] - 1
+                )
                 return [ychange]
 
         elif y1 > y2:
@@ -646,7 +679,9 @@ class ModelManipulator(Model):
                 & (self.grid_north / self.dscale > y2)
             )[0]
             if len(ychange) == 0:
-                ychange = np.where(self.grid_north / self.dscale >= y2)[0][0] - 1
+                ychange = (
+                    np.where(self.grid_north / self.dscale >= y2)[0][0] - 1
+                )
                 return [ychange]
 
         ychange -= 1
@@ -654,7 +689,9 @@ class ModelManipulator(Model):
 
         return ychange
 
-    def rewrite_model_file(self, model_fn=None, save_path=None, model_fn_basename=None):
+    def rewrite_model_file(
+        self, model_fn=None, save_path=None, model_fn_basename=None
+    ):
         """
         write an initial file for wsinv3d from the model created.
         """

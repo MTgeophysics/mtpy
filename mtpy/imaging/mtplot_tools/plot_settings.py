@@ -243,11 +243,10 @@ class PlotSettings(MTArrows, MTEllipse):
                 limits = [0.1, 10000]
         elif mode in ["det", "det_only"]:
             try:
-                res_det = np.linalg.det(resistivity)
-                nz = np.nonzero(res_det)
+                nz = np.nonzero(resistivity)
                 limits = [
-                    10 ** (np.floor(np.log10(np.amin(res_det[nz])))),
-                    10 ** (np.ceil(np.log10(np.amax(res_det[nz])))),
+                    10 ** (np.floor(np.log10(np.nanmin(resistivity[nz])))),
+                    10 ** (np.ceil(np.log10(np.nanmax(resistivity[nz])))),
                 ]
             except ValueError:
                 limits = [0.1, 10000]

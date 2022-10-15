@@ -91,8 +91,8 @@ class PlotResidualPTMaps(PlotBase):
 
     def __init__(
         self,
-        tf_object_list_01,
-        tf_object_list_02,
+        mt_data_01,
+        mt_data_02,
         frequencies=np.logspace(-3, 3, 40),
         **kwargs,
     ):
@@ -100,8 +100,8 @@ class PlotResidualPTMaps(PlotBase):
         super().__init__(**kwargs)
 
         self.freq_list = frequencies
-        self.tf_list1 = tf_object_list_01
-        self.tf_list2 = tf_object_list_02
+        self.mt_data_01 = mt_data_01
+        self.mt_data_02 = mt_data_02
 
         self.ellipse_range = (0, 5)
         self.ellipse_cmap = "mt_yl2rd"
@@ -125,7 +125,7 @@ class PlotResidualPTMaps(PlotBase):
         self.map_utm_zone = None
         self.rot90 = True
 
-        # --> set the freq to plot
+        # --> set the frequency to plot
         self.plot_freq = kwargs.pop("plot_freq", 1.0)
         self.ftol = kwargs.pop("ftol", 0.05)
         self.plot_freq_index = None
@@ -207,7 +207,7 @@ class PlotResidualPTMaps(PlotBase):
         need to rotate data when setting z
         """
 
-        for tf_obj in self.tf_list1 + self.tf_list2:
+        for tf_obj in self.mt_data_01 + self.mt_data_02:
             tf_obj.rotation_angle = rot_z
 
     def _match_lists(self, one, two):
@@ -221,19 +221,25 @@ class PlotResidualPTMaps(PlotBase):
 
         matches = []
         two_found = []
-        for mm, mt1 in enumerate(one):
+        for key, mt1 in one.items():
             station_find = False
-            for mt2 in two:
-                if mt2.tf_id in two_found:
-                    continue
-                if mt1.tf_id == mt2.tf_id:
-                    if (
-                        abs(mt1.latitude - mt2.latitude) < 0.001
-                        and abs(mt1.longitude - mt2.longitude) < 0.001
-                    ):
-                        matches.append([mt1, mt2])
-                        station_find = True
-                        two_found.append(mt2.tf_id)
+            try:
+                mt2 = two[key]
+                matches.append([mt1, mt2])
+                station_find = True
+                two_found.append(mt2.tf_id)
+            except KeyError:
+                for mt2 in two.values:
+                    if mt2.tf_id in two_found:
+                        continue
+                    if mt1.tf_id == mt2.tf_id:
+                        if (
+                            abs(mt1.latitude - mt2.latitude) < 0.001
+                            and abs(mt1.longitude - mt2.longitude) < 0.001
+                        ):
+                            matches.append([mt1, mt2])
+                            station_find = True
+                            two_found.append(mt2.tf_id)
                         break
             if not station_find:
                 self.logger.warning(
@@ -249,7 +255,7 @@ class PlotResidualPTMaps(PlotBase):
         plot
         """
 
-        matches = self._match_lists(self.tf_list1, self.tf_list2)
+        matches = self._match_lists(self.mt_data_01, self.mt_data_02)
         num_freq = self.freq_list.shape[0]
         num_station = len(matches)
 
@@ -280,12 +286,8 @@ class PlotResidualPTMaps(PlotBase):
             mt1 = match[0]
             mt2 = match[1]
 
-            new_z1, new_t1 = mt1.interpolate(
-                self.freq_list, bounds_error=False
-            )
-            new_z2, new_t2 = mt2.interpolate(
-                self.freq_list, bounds_error=False
-            )
+            new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
+            new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
             # make new phase tensor objects
             pt1 = mtpt.PhaseTensor(z_object=new_z1)
@@ -314,14 +316,14 @@ class PlotResidualPTMaps(PlotBase):
             rpt_fdict = dict(
                 [
                     (np.round(key, 5), value)
-                    for value, key in enumerate(rpt.freq)
+                    for value, key in enumerate(rpt.frequency)
                 ]
             )
-            for f_index, freq in enumerate(rpt.freq):
-                aa = freq_dict[np.round(freq, 5)]
+            for f_index, frequency in enumerate(rpt.frequency):
+                aa = freq_dict[np.round(frequency, 5)]
                 try:
                     try:
-                        rr = rpt_fdict[np.round(freq, 5)]
+                        rr = rpt_fdict[np.round(frequency, 5)]
 
                         self.rpt_array[mm]["phimin"][aa] = abs(
                             rpt.residual_pt.phimin[rr]
@@ -345,16 +347,16 @@ class PlotResidualPTMaps(PlotBase):
                         self.logger.info("-" * 50)
                         self.logger.info(mt1.station)
                         self.logger.info(f"freq_index for 1:  {f_index}")
-                        self.logger.info(f"freq looking for:  {freq}")
+                        self.logger.info(f"frequency looking for:  {frequency}")
                         self.logger.info(f"index in big    :  {aa}")
                         self.logger.info(f"index in 1      :  {rr}")
                         self.logger.info(
-                            f"len_1 = {len(mt1.freq)}, len_2 = {len(mt2.freq)}"
+                            f"len_1 = {len(mt1.frequency)}, len_2 = {len(mt2.frequency)}"
                         )
-                        self.logger.info(f"len rpt_freq = {len(rpt.freq)}")
+                        self.logger.info(f"len rpt_freq = {len(rpt.frequency)}")
                 except KeyError:
                     self.logger.info(
-                        f"Station {mt1.station} does not have {freq:.5f}Hz"
+                        f"Station {mt1.station} does not have {frequency:.5f}Hz"
                     )
 
         # from the data get the relative offsets and sort the data by them
@@ -609,7 +611,7 @@ class PlotResidualPTMaps(PlotBase):
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
 
-        # --> set title in period or freq
+        # --> set title in period or frequency
         if not self.plot_title:
             self.ax.set_title(
                 f"Phase Tensor Map for {self._get_title()}",

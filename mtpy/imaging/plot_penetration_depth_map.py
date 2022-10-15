@@ -25,9 +25,9 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
 
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
         super().__init__(**kwargs)
 
@@ -109,7 +109,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         """
 
         depth_array = np.zeros(
-            len(self.tf_list),
+            len(self.mt_data),
             dtype=[
                 ("station", "U20"),
                 ("latitude", float),
@@ -121,11 +121,11 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             ],
         )
 
-        for ii, tf in enumerate(self.tf_list):
+        for ii, tf in enumerate(self.mt_data.values()):
             z = self._get_interpolated_z(tf)
             if (z == 0).all():
                 continue
-            z_object = Z(z, freq=[1.0 / self.plot_period])
+            z_object = Z(z, frequency=[1.0 / self.plot_period])
             d = self._get_nb_estimation(z_object)
 
             depth_array["station"][ii] = tf.station
@@ -138,12 +138,8 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             depth_array["det"][ii] = (
                 d["depth_det"][0] - elev
             ) * self.depth_scale
-            depth_array["xy"][ii] = (
-                d["depth_xy"][0] - elev
-            ) * self.depth_scale
-            depth_array["yx"][ii] = (
-                d["depth_yx"][0] - elev
-            ) * self.depth_scale
+            depth_array["xy"][ii] = (d["depth_xy"][0] - elev) * self.depth_scale
+            depth_array["yx"][ii] = (d["depth_yx"][0] - elev) * self.depth_scale
 
         return depth_array
 
@@ -307,9 +303,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
             ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
             ax.set_ylabel("Latitude (deg)", fontdict=self.font_dict)
-            ax.set_title(
-                self.subplot_title_dict[comp], fontdict=self.font_dict
-            )
+            ax.set_title(self.subplot_title_dict[comp], fontdict=self.font_dict)
 
         self.fig.suptitle(
             f"Depth of investigation for period {self.plot_period:5g} (s)",

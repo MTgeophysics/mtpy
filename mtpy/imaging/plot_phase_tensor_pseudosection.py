@@ -74,11 +74,11 @@ class PlotPhaseTensorPseudoSection(PlotBase):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
         super().__init__(**kwargs)
 
         self._rotation_angle = 0
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
         self.x_stretch = 5000
         self.y_stretch = 1000
@@ -112,15 +112,15 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         """
         only a single value is allowed
         """
-        for tf in self.tf_list:
+        for tf in self.mt_data:
             tf.rotation_angle = value
         self._rotation_angle = value
 
     def _get_profile_line(self):
-        east = np.zeros(len(self.tf_list))
-        north = np.zeros(len(self.tf_list))
+        east = np.zeros(self.mt_data.n_stations)
+        north = np.zeros(self.mt_data.n_stations)
 
-        for ii, tf in enumerate(self.tf_list):
+        for ii, tf in enumerate(self.mt_data.values()):
             east[ii] = tf.longitude
             north[ii] = tf.latitude
 
@@ -177,7 +177,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         # --> set local variables
 
         color_array = self.get_pt_color_array(pt_obj)
-        for index, ff in enumerate(pt_obj.freq):
+        for index, ff in enumerate(pt_obj.frequency):
             if self.y_scale == "period":
                 plot_y = np.log10(1.0 / ff) * self.y_stretch
             else:
@@ -405,18 +405,19 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         y_min = 1
         y_max = 1
         station_list = np.zeros(
-            len(self.tf_list), dtype=[("offset", np.float), ("station", "U10")]
+            self.mt_data.n_stations,
+            dtype=[("offset", np.float), ("station", "U10")],
         )
 
-        for ii, tf in enumerate(self.tf_list):
+        for ii, tf in enumerate(self.mt_data.values()):
             offset, station = self._get_patch(tf)
             station_list[ii]["station"] = station
             station_list[ii]["offset"] = offset
 
-            if np.log10(tf.Z.freq.min()) < y_min:
-                y_min = np.log10(tf.Z.freq.min()) * self.y_stretch
-            if np.log10(tf.Z.freq.max()) > y_max:
-                y_max = np.log10(tf.Z.freq.max()) * self.y_stretch
+            if np.log10(tf.Z.frequency.min()) < y_min:
+                y_min = np.log10(tf.Z.frequency.min()) * self.y_stretch
+            if np.log10(tf.Z.frequency.max()) > y_max:
+                y_max = np.log10(tf.Z.frequency.max()) * self.y_stretch
 
         y_min = np.floor(y_min / self.y_stretch) * self.y_stretch
         y_max = np.ceil(y_max / self.y_stretch) * self.y_stretch

@@ -223,7 +223,7 @@ def plot_pt_lateral(
             / (2 * ellipse_properties["range"][2])
         )
     # -------------plot ellipses-----------------------------------
-    for ii, ff in enumerate(1.0 / pt_obj.freq):
+    for ii, ff in enumerate(1.0 / pt_obj.frequency):
         # make sure the ellipses will be visable
         if pt_obj.phimax[ii] == 0:
             continue
@@ -355,7 +355,7 @@ def plot_tipper_lateral(
         tyi = t_obj.mag_imag * np.sin(np.deg2rad(-t_obj.angle_imag))
 
         nt = len(txr)
-        period = 1.0 / t_obj.freq
+        period = 1.0 / t_obj.frequency
         x_limits = get_period_limits(period)
 
         tiplist = []

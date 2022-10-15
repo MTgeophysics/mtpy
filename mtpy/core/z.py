@@ -11,330 +11,19 @@ Updated 11/2020 for logging and formating (J. Peacock).
     - ToDo: add functionality for covariance matrix
 """
 
-# =================================================================
-import cmath
+# =============================================================================
+# Imports
+# =============================================================================
 import copy
-import math
-import logging
 
 import numpy as np
 
 import mtpy.utils.calculator as MTcc
 from mtpy.utils.exceptions import (
     MTpyError_Z,
-    MTpyError_Tipper,
-    MTpyError_input_arguments,
 )
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
-
-# ==============================================================================
-# Resistivity and phase object
-# ==============================================================================
-class ResPhase(object):
-    """
-    resistivity and phase container with convenience property attributes to
-    access the different components.
-
-    """
-
-    def __init__(self, z_array=None, z_err_array=None, freq=None, **kwargs):
-        self._logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
-
-        self._z = z_array
-        self._z_err = z_err_array
-
-        self._resistivity = None
-        self._phase = None
-
-        self._resistivity_err = None
-        self._phase_err = None
-
-        self._freq = freq
-
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
-
-    def __str__(self):
-        lines = ["Resistivity and Phase", "-" * 30]
-        if self.freq is not None:
-            lines.append(f"\tNumber of frequencies:  {self.freq.size}")
-            lines.append(
-                f"\tFrequency range:        {self.freq.min():.5E} -- {self.freq.max():.5E} Hz"
-            )
-            lines.append(
-                f"\tPeriod range:           {1/self.freq.max():.5E} -- {1/self.freq.min():.5E} s"
-            )
-        return "\n".join(lines)
-
-    def __repr__(self):
-        return self.__str__()
-
-    @property
-    def freq(self):
-        return self._freq
-
-    @freq.setter
-    def freq(self, value):
-        self._freq = value
-
-    @property
-    def resistivity(self):
-        return self._resistivity
-
-    @resistivity.setter
-    def resistivity(self, res_array):
-        self._resistivity = res_array
-
-    @property
-    def resistivity_err(self):
-        return self._resistivity_err
-
-    @resistivity_err.setter
-    def resistivity_err(self, res_err_array):
-        self._resistivity_err = res_err_array
-
-    @property
-    def phase(self):
-        return self._phase
-
-    @phase.setter
-    def phase(self, phase_array):
-        self._phase = phase_array
-
-    @property
-    def phase_err(self):
-        return self._phase_err
-
-    @phase_err.setter
-    def phase_err(self, phase_err_array):
-        self._phase_err = phase_err_array
-
-    def compute_resistivity_phase(
-        self, z_array=None, z_err_array=None, freq=None
-    ):
-        """
-        compute resistivity and phase from z and z_err
-        """
-
-        if z_array is not None:
-            self._z = z_array
-        if z_err_array is not None:
-            self._z_err = z_err_array
-        if freq is not None:
-            self.freq = freq
-        # The _z_err can be None!!!
-        if self._z is None or self.freq is None:
-            if self._z is None:
-                msg = "z values are None, cannot compute parameters"
-            elif self._freq is None:
-                msg = "freq values are None, cannot compute parameters"
-            self._logger.error(msg)
-            raise MTpyError_Z(msg)
-        self._resistivity = np.apply_along_axis(
-            lambda x: np.abs(x) ** 2 / self.freq * 0.2, 0, self._z
-        )
-        self._phase = np.rad2deg(np.angle(self._z))
-
-        self._resistivity_err = np.zeros_like(
-            self._resistivity, dtype=np.float
-        )
-        self._phase_err = np.zeros_like(self._phase, dtype=np.float)
-
-        # calculate resistivity and phase
-        if self._z_err is not None:
-            for idx_f in range(self.freq.size):
-                for ii in range(2):
-                    for jj in range(2):
-                        r_err, phi_err = MTcc.z_error2r_phi_error(
-                            self._z[idx_f, ii, jj].real,
-                            self._z[idx_f, ii, jj].imag,
-                            self._z_err[idx_f, ii, jj],
-                        )
-                        self._resistivity_err[idx_f, ii, jj] = (
-                            self._resistivity[idx_f, ii, jj] * r_err
-                        )
-
-                        self._phase_err[idx_f, ii, jj] = phi_err
-
-    def set_res_phase(
-        self,
-        res_array,
-        phase_array,
-        freq,
-        res_err_array=None,
-        phase_err_array=None,
-    ):
-        """
-        Set values for resistivity (res - in Ohm m) and phase
-        (phase - in degrees), including error propagation.
-
-
-        :param res_array: resistivity array in Ohm-m
-        :type res_array: np.ndarray(num_freq, 2, 2)
-
-        :param phase_array: phase array in degrees
-        :type phase_array: np.ndarray(num_freq, 2, 2)
-
-        :param freq: frequency array in Hz
-        :type freq: np.ndarray(num_freq)
-
-        :param res_err_array: resistivity error array in Ohm-m
-        :type res_err_array: np.ndarray(num_freq, 2, 2)
-
-        :param phase_err_array: phase error array in degrees
-        :type phase_err_array: np.ndarray(num_freq, 2, 2)
-
-
-        """
-
-        self._logger.debug("Resetting z and z_err")
-
-        self._resistivity = res_array
-        self._phase = phase_array
-        self.freq = freq
-        self._resistivity_err = res_err_array
-        self._phase_err = phase_err_array
-
-        # assert real array:
-        if np.linalg.norm(np.imag(res_array)) != 0:
-            msg = "Resistivity is not real valued"
-            self._logger.error(msg)
-            raise MTpyError_input_arguments(msg)
-        if np.linalg.norm(np.imag(phase_array)) != 0:
-            msg = "Phase is not real valued"
-            self._logger.error(msg)
-            raise MTpyError_input_arguments(msg)
-        abs_z = np.sqrt(5.0 * self.freq * (self.resistivity.T)).T
-        self._z = abs_z * np.exp(1j * np.radians(self.phase))
-
-        self._z_err = np.zeros_like(self._z, dtype=np.float)
-        # ---------------------------
-        # error propagation:
-        if self._resistivity_err is None or self._phase_err is None:
-            return
-        for idx_f in range(self.freq.shape[0]):
-            for ii in range(2):
-                for jj in range(2):
-                    abs_z = np.sqrt(
-                        5 * self.freq[idx_f] * self.resistivity[idx_f, ii, jj]
-                    )
-                    rel_error_res = (
-                        self.resistivity_err[idx_f, ii, jj]
-                        / self.resistivity[idx_f, ii, jj]
-                    )
-                    # relative error varies by a factor of 0.5, which is the
-                    # exponent in the relation between them:
-                    abs_z_error = 0.5 * abs_z * rel_error_res
-
-                    self._z_err[idx_f, ii, jj] = max(
-                        MTcc.propagate_error_polar2rect(
-                            abs_z,
-                            abs_z_error,
-                            self.phase[idx_f, ii, jj],
-                            self.phase_err[idx_f, ii, jj],
-                        )
-                    )
-
-    @property
-    def res_xx(self):
-        return self._resistivity[:, 0, 0]
-
-    @property
-    def res_xy(self):
-        return self._resistivity[:, 0, 1]
-
-    @property
-    def res_yx(self):
-        return self._resistivity[:, 1, 0]
-
-    @property
-    def res_yy(self):
-        return self._resistivity[:, 1, 1]
-
-    @property
-    def phase_xx(self):
-        return self._phase[:, 0, 0]
-
-    @property
-    def phase_xy(self):
-        return self._phase[:, 0, 1]
-
-    @property
-    def phase_yx(self):
-        return self._phase[:, 1, 0]
-
-    @property
-    def phase_yy(self):
-        return self._phase[:, 1, 1]
-
-    @property
-    def res_err_xx(self):
-        return self._resistivity_err[:, 0, 0]
-
-    @property
-    def res_err_xy(self):
-        return self._resistivity_err[:, 0, 1]
-
-    @property
-    def res_err_yx(self):
-        return self._resistivity_err[:, 1, 0]
-
-    @property
-    def res_err_yy(self):
-        return self._resistivity_err[:, 1, 1]
-
-    @property
-    def phase_err_xx(self):
-        return self._phase_err[:, 0, 0]
-
-    @property
-    def phase_err_xy(self):
-        return self._phase_err[:, 0, 1]
-
-    @property
-    def phase_err_yx(self):
-        return self._phase_err[:, 1, 0]
-
-    @property
-    def phase_err_yy(self):
-        return self._phase_err[:, 1, 1]
-
-    # calculate determinant values
-    @property
-    def _zdet(self):
-        return np.array([np.linalg.det(zz) ** 0.5 for zz in self._z])
-
-    @property
-    def _zdet_var(self):
-        if self._z_err is not None:
-            return np.array(
-                [abs(np.linalg.det(zzv)) ** 0.5 for zzv in self._z_err]
-            )
-        else:
-            return np.ones_like(self._zdet, dtype=np.float)
-
-    @property
-    def phase_det(self):
-        return np.arctan2(self._zdet.imag, self._zdet.real) * (180 / np.pi)
-
-    @property
-    def phase_err_det(self):
-        return np.arcsin(self._zdet_var / abs(self._zdet)) * (180 / np.pi)
-
-    @property
-    def res_det(self):
-        return 0.2 * (1.0 / self.freq) * abs(self._zdet) ** 2
-
-    @property
-    def res_err_det(self):
-        return (
-            0.2 * (1.0 / self.freq) * np.abs(self._zdet + self._zdet_var) ** 2
-            - self.res_det
-        )
-
+from .res_phase import ResPhase
 
 # ==============================================================================
 # Impedance Tensor Class
@@ -343,7 +32,7 @@ class Z(ResPhase):
     """
     Z class - generates an impedance tensor (Z) object.
 
-    Z is a complex array of the form (n_freq, 2, 2),
+    Z is a complex array of the form (n_frequency, 2, 2),
     with indices in the following order:
 
         - Zxx: (0,0)
@@ -354,43 +43,49 @@ class Z(ResPhase):
     All errors are given as standard deviations (sqrt(VAR))
 
     :param z_array: array containing complex impedance values
-    :type z_array: numpy.ndarray(n_freq, 2, 2)
+    :type z_array: numpy.ndarray(n_frequency, 2, 2)
 
 
     :param z_err_array: array containing error values (standard deviation)
                         of impedance tensor elements
-    :type z_err_array: numpy.ndarray(n_freq, 2, 2)
+    :type z_err_array: numpy.ndarray(n_frequency, 2, 2)
 
-    :param freq: array of frequency values corresponding to impedance tensor
+    :param frequency: array of frequencyuency values corresponding to impedance tensor
                  elements.
-    :type freq: np.ndarray(n_freq)
+    :type frequency: np.ndarray(n_frequency)
 
     :Example: ::
 
         >>> import mtpy.core.z as mtz
         >>> import numpy as np
         >>> z_test = np.array([[0+0j, 1+1j], [-1-1j, 0+0j]])
-        >>> z_object = mtz.Z(z_array=z_test, freq=[1])
+        >>> z_object = mtz.Z(z_array=z_test, frequency=[1])
         >>> z_object.rotate(45)
         >>> z_object.resistivity
 
 
     """
 
-    def __init__(self, z_array=None, z_err_array=None, freq=None):
+    def __init__(
+        self,
+        z_array=None,
+        z_err_array=None,
+        frequency=None,
+        z_model_err_array=None,
+    ):
         """
         Initialise an instance of the Z class.
 
         :param z_array: array containing complex impedance values
-        :type z_array: numpy.ndarray(n_freq, 2, 2)
+        :type z_array: numpy.ndarray(n_frequency, 2, 2)
 
         :param z_err_array: array containing error values (standard deviation)
                             of impedance tensor elements
-        :type z_err_array: numpy.ndarray(n_freq, 2, 2)
+        :type z_err_array: numpy.ndarray(n_frequency, 2, 2)
 
-        :param freq: array of frequency values corresponding to impedance
+        :param frequency: array of frequencyuency values corresponding to impedance
                      tensor elements.
-        :type freq: np.ndarray(n_freq)
+        :type frequency: np.ndarray(n_frequency)
 
         Initialises the attributes with None
 
@@ -398,29 +93,31 @@ class Z(ResPhase):
         self.rotation_angle = 0.0
 
         super().__init__()
+
         self.z = z_array
         self.z_err = z_err_array
-        self.freq = freq
+        self.z_model_err = z_model_err_array
+        self.frequency = frequency
 
         if self.z is not None:
             self.rotation_angle = np.zeros((len(self.z)))
-        if self.z is not None and self.freq is not None:
-            self.compute_resistivity_phase()
 
     def __str__(self):
         lines = ["Impedance Tensor", "-" * 30]
-        if self.freq is not None:
-            lines.append(f"\tNumber of frequencies:  {self.freq.size}")
+        if self.frequency is not None:
             lines.append(
-                f"\tFrequency range:        {self.freq.min():.5E} -- {self.freq.max():.5E} Hz"
+                f"\tNumber of frequencyuencies:  {self.frequency.size}"
             )
             lines.append(
-                f"\tPeriod range:           {1/self.freq.max():.5E} -- {1/self.freq.min():.5E} s"
+                f"\tfrequencyuency range:        {self.frequency.min():.5E} -- {self.frequency.max():.5E} Hz"
+            )
+            lines.append(
+                f"\tPeriod range:           {1/self.frequency.max():.5E} -- {1/self.frequency.min():.5E} s"
             )
             lines.append("")
             lines.append("\tElements:")
-            for zz, ff in zip(self.z, self.freq):
-                lines.append(f"\tFrequency: {ff:5E} Hz -- Period {1/ff} s")
+            for zz, ff in zip(self.z, self.frequency):
+                lines.append(f"\tfrequencyuency: {ff:5E} Hz -- Period {1/ff} s")
                 lines.append(
                     "\t\t"
                     + np.array2string(
@@ -452,11 +149,11 @@ class Z(ResPhase):
     def __eq__(self, other):
         if not isinstance(other, Z):
             msg = f"Cannot compare {type(other)} with Z"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Z(msg)
         if (self.z != other.z).all():
             return False
-        if (self.freq != other.freq).all():
+        if (self.frequency != other.frequency).all():
             return False
         if (self.z_err != other.z_err).all():
             return False
@@ -465,38 +162,39 @@ class Z(ResPhase):
     def copy(self):
         return copy.deepcopy(self)
 
-    # ---frequency-------------------------------------------------------------
+    # ---frequencyuency-------------------------------------------------------------
     @property
-    def freq(self):
+    def frequency(self):
         """
-        Frequencies for each impedance tensor element
+        frequencyuencies for each impedance tensor element
 
         Units are Hz.
         """
-        return self._freq
+        return self._frequency
 
-    @freq.setter
-    def freq(self, freq_arr):
+    @frequency.setter
+    def frequency(self, frequency_arr):
         """
-        Set the array of freq.
+        Set the array of frequency.
 
-        :param freq_arr: array of frequnecies (Hz)
-        :type freq_arr: np.ndarray
+        :param frequency_arr: array of frequencyunecies (Hz)
+        :type frequency_arr: np.ndarray
         """
 
-        if freq_arr is None:
+        if frequency_arr is None:
+            self._frequency = None
             return
-        self._freq = np.array(freq_arr, dtype="float")
+
+        self._frequency = np.array(frequency_arr, dtype="float")
 
         if self.z is not None:
-            if self.z.shape[0] != len(self._freq):
+            if self.z.shape[0] != len(self._frequency):
                 msg = (
-                    "New freq array is not correct shape for existing z. "
-                    + f"new: {self._freq.size} != old: {self.z.shape[0]}"
+                    "New frequency array is not correct shape for existing z. "
+                    + f"new: {self._frequency.size} != old: {self.z.shape[0]}"
                 )
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Z(msg)
-            self.compute_resistivity_phase()
 
     @property
     def period(self):
@@ -504,23 +202,76 @@ class Z(ResPhase):
         periods in seconds
         """
 
-        return 1.0 / self.freq
+        return 1.0 / self.frequency
 
     @period.setter
     def period(self, value):
         """
-        setting periods will set the frequencies
+        setting periods will set the frequencyuencies
         """
 
-        self.freq = 1.0 / value
+        self.frequency = 1.0 / value
 
     # ----impedance tensor -----------------------------------------------------
+    def _validate_impedance_input(self, z_array, dtype, old_shape=None):
+        """
+        Validate an input impedance array
+
+        :param array: DESCRIPTION
+        :type array: TYPE
+        :param dtype: DESCRIPTION
+        :type dtype: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if z_array is None:
+            return
+        if not isinstance(z_array, np.ndarray):
+            z_array = np.array(z_array, dtype=dtype)
+        if z_array.dtype not in [dtype]:
+            z_array = z_array.astype(dtype)
+
+        if len(z_array.shape) == 3:
+            if z_array.shape[1:3] == (2, 2):
+                return z_array
+            else:
+                msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
+                self.logger.error(msg)
+                raise MTpyError_Z(msg)
+        elif len(z_array.shape) == 2:
+            if z_array.shape == (2, 2):
+                return z_array.reshape((1, 2, 2))
+                self.logger.debug(
+                    "setting input z with shape (2, 2) to (1, 2, 2)"
+                )
+            else:
+                msg = f"Input array must be shape (n, 2, 2) not {z_array.shape}"
+                self.logger.error(msg)
+                raise MTpyError_Z(msg)
+        else:
+            msg = f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
+            self.logger.error(msg)
+            raise MTpyError_Z(msg)
+
+        # check to see if the new z array is the same shape as the old
+        if old_shape is not None and old_shape != z_array.shape:
+            msg = (
+                "Shape of new array does not match old.  "
+                + f"new shape {z_array.shape} != "
+                + f"old shape {self._z.shape}. "
+                + "Make a new Z instance to be safe."
+            )
+            self.logger.error(msg)
+            raise MTpyError_Z(msg)
+
     @property
     def z(self):
         """
         Impedance tensor
 
-        np.ndarray(nfreq, 2, 2)
+        np.ndarray(nfrequency, 2, 2)
         """
         return self._z
 
@@ -531,59 +282,23 @@ class Z(ResPhase):
 
 
         :param z_array: complex impedance tensor array
-        :type z_array: np.ndarray(nfreq, 2, 2)
+        :type z_array: np.ndarray(nfrequency, 2, 2)
 
         Test for shape, but no test for consistency!
 
         Nulling the rotation_angle
         """
 
-        if z_array is None:
-            return
-        if not isinstance(z_array, np.ndarray):
-            z_array = np.array(z_array, dtype="complex")
-        if z_array.dtype not in ["complex"]:
-            z_array = z_array.astype("complex")
-        # check to see if the new z array is the same shape as the old
-        if self._z is not None and self._z.shape != z_array.shape:
-            msg = (
-                "Shape of new array does not match old.  "
-                + f"new shape {z_array.shape} != "
-                + f"old shape {self._z.shape}. "
-                + "Make a new Z instance to be safe."
-            )
-            self._logger.error(msg)
-            raise MTpyError_Z(msg)
-        if len(z_array.shape) == 3:
-            if z_array.shape[1:3] == (2, 2):
-                self._z = z_array
-            else:
-                msg = (
-                    f"Input array must be shape (n, 2, 2) not {z_array.shape}"
+        old_shape = None
+        if self._z is not None:
+            old_shape = self._z.shape
+        self._z = self._validate_impedance_input(z_array, "complex", old_shape)
+
+        if self._z is not None:
+            if isinstance(self.rotation_angle, float):
+                self.rotation_angle = np.repeat(
+                    self.rotation_angle, len(self._z)
                 )
-                self._logger.error(msg)
-                raise MTpyError_Z(msg)
-        elif len(z_array.shape) == 2:
-            if z_array.shape == (2, 2):
-                self._z = z_array.reshape((1, 2, 2))
-                self._logger.debug(
-                    "setting input z with shape (2, 2) to (1, 2, 2)"
-                )
-            else:
-                msg = (
-                    f"Input array must be shape (n, 2, 2) not {z_array.shape}"
-                )
-                self._logger.error(msg)
-                raise MTpyError_Z(msg)
-        else:
-            msg = f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
-            self._logger.error(msg)
-            raise MTpyError_Z(msg)
-        if isinstance(self.rotation_angle, float):
-            self.rotation_angle = np.repeat(self.rotation_angle, len(self._z))
-        # for consistency recalculate resistivity and phase
-        if self._z is not None and self._freq is not None:
-            self.compute_resistivity_phase()
 
     # ----impedance error-----------------------------------------------------
     @property
@@ -597,47 +312,39 @@ class Z(ResPhase):
 
         :param z_err_array: error of impedance tensor array as standard
                             deviation
-        :type z_err_array: np.ndarray(nfreq, 2, 2)
+        :type z_err_array: np.ndarray(nfrequency, 2, 2)
         """
-        if z_err_array is None:
-            return
-        if not isinstance(z_err_array, np.ndarray):
-            z_err_array = np.array(z_err_array, dtype="float")
-        if z_err_array.dtype not in ["float"]:
-            z_err_array = z_err_array.astype("float")
-        if len(z_err_array.shape) == 3:
-            if not z_err_array.shape[1:3] == (2, 2):
-                msg = f"Input array must be shape (n, 2, 2) not {z_err_array.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Z(msg)
-        elif len(z_err_array.shape) == 2:
-            if z_err_array.shape == (2, 2):
-                z_err_array = z_err_array.reshape((1, 2, 2))
-                self._logger.debug(
-                    "setting input z_err with shape (2, 2) to (1, 2, 2)"
-                )
-            else:
-                msg = f"Input array must be shape (n, 2, 2) not {z_err_array.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Z(msg)
-        else:
-            msg = f"{z_err_array.shape} are not the correct dimensions, must be (n, 2, 2)"
-            self._logger.error(msg)
-            raise MTpyError_Z(msg)
-        if self._z is not None:
-            if self._z.shape != z_err_array.shape:
-                msg = f"z_err {z_err_array.shape} is not the same shape as z {self._z.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Z(msg)
-        self._z_err = z_err_array
 
-        # for consistency recalculate resistivity and phase
-        if (
-            self._z_err is not None
-            and self._z is not None
-            and self._freq is not None
-        ):
-            self.compute_resistivity_phase()
+        old_shape = None
+        if self._z is not None:
+            old_shape = self._z.shape
+
+        self._z_err = self._validate_impedance_input(
+            z_err_array, "float", old_shape
+        )
+
+    # ----impedance model error-----------------------------------------------------
+    @property
+    def z_model_err(self):
+        return self._z_model_err
+
+    @z_model_err.setter
+    def z_model_err(self, z_model_err_array):
+        """
+        Set the attribute z_model_err
+
+        :param z_model_err_array: error of impedance tensor array as standard
+         deviation
+        :type z_model_err_array: np.ndarray(nfrequency, 2, 2)
+        """
+
+        old_shape = None
+        if self._z is not None:
+            old_shape = self._z.shape
+
+        self._z_model_err = self._validate_impedance_input(
+            z_model_err_array, "float", old_shape
+        )
 
     @property
     def inverse(self):
@@ -649,7 +356,7 @@ class Z(ResPhase):
         """
 
         if self.z is None:
-            self._logger.warn('z array is "None" - I cannot invert that')
+            self.logger.warn('z array is "None" - I cannot invert that')
             return
         inverse = copy.copy(self.z)
         for idx_f in range(len(inverse)):
@@ -684,7 +391,7 @@ class Z(ResPhase):
         """
 
         if self.z is None:
-            self._logger.warning('Z array is "None" and cannot be rotated')
+            self.logger.warning('Z array is "None" and cannot be rotated')
             return
         # check for iterable list/set of angles - if so, it must have length
         # 1 or same as len(tipper):
@@ -693,7 +400,7 @@ class Z(ResPhase):
                 degreeangle = float(alpha % 360)
             except ValueError:
                 msg = f"Angle must be a valid number (in degrees) not {alpha}"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise MTpyError_Z(msg)
             # make an n long list of identical angles
             lo_angles = [degreeangle for ii in self.z]
@@ -702,8 +409,10 @@ class Z(ResPhase):
                 try:
                     degreeangle = float(alpha % 360)
                 except ValueError:
-                    msg = f"Angle must be a valid number (in degrees) not {alpha}"
-                    self._logger.error(msg)
+                    msg = (
+                        f"Angle must be a valid number (in degrees) not {alpha}"
+                    )
+                    self.logger.error(msg)
                     raise MTpyError_Z(msg)
                 # make an n long list of identical angles
                 lo_angles = [degreeangle for ii in self.z]
@@ -711,8 +420,10 @@ class Z(ResPhase):
                 try:
                     lo_angles = [float(ii % 360) for ii in alpha]
                 except ValueError:
-                    msg = f"Angle must be a valid number (in degrees) not {alpha}"
-                    self._logger.error(msg)
+                    msg = (
+                        f"Angle must be a valid number (in degrees) not {alpha}"
+                    )
+                    self.logger.error(msg)
                     raise MTpyError_Z(msg)
         self.rotation_angle = np.array(
             [
@@ -723,32 +434,35 @@ class Z(ResPhase):
 
         if len(lo_angles) != len(self.z):
             msg = f"Wrong number of angles, need {len(self.z)}"
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise MTpyError_Z(msg)
         z_rot = copy.copy(self.z)
         z_err_rot = copy.copy(self.z_err)
 
-        for idx_freq in range(len(self.z)):
+        for idx_frequency in range(len(self.z)):
 
-            angle = lo_angles[idx_freq]
+            angle = lo_angles[idx_frequency]
             if np.isnan(angle):
                 angle = 0.0
             if self.z_err is not None:
                 (
-                    z_rot[idx_freq],
-                    z_err_rot[idx_freq],
+                    z_rot[idx_frequency],
+                    z_err_rot[idx_frequency],
                 ) = MTcc.rotate_matrix_with_errors(
-                    self.z[idx_freq, :, :], angle, self.z_err[idx_freq, :, :]
+                    self.z[idx_frequency, :, :],
+                    angle,
+                    self.z_err[idx_frequency, :, :],
                 )
             else:
-                z_rot[idx_freq], z_err_rot = MTcc.rotate_matrix_with_errors(
-                    self.z[idx_freq, :, :], angle
+                (
+                    z_rot[idx_frequency],
+                    z_err_rot,
+                ) = MTcc.rotate_matrix_with_errors(
+                    self.z[idx_frequency, :, :], angle
                 )
         self.z = z_rot
         if self.z_err is not None:
             self.z_err = z_err_rot
-        # for consistency recalculate resistivity and phase
-        self.compute_resistivity_phase()
 
     def remove_ss(self, reduce_res_factor_x=1.0, reduce_res_factor_y=1.0):
         """
@@ -795,7 +509,7 @@ class Z(ResPhase):
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_x_factors = np.repeat(x_factor, len(self.z))
         elif len(reduce_res_factor_x) == 1:
@@ -803,7 +517,7 @@ class Z(ResPhase):
                 x_factor = float(reduce_res_factor_x)
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_x_factors = np.repeat(x_factor, len(self.z))
         else:
@@ -811,14 +525,14 @@ class Z(ResPhase):
                 lo_x_factors = np.repeat(x_factor, len(reduce_res_factor_x))
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
         if len(lo_x_factors) != len(self.z):
             msg = (
                 f"Length of reduce_res_factor_x needs to be {len(self.z)}"
                 + f" not {len(lo_x_factors)}"
             )
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise ValueError(msg)
         # check for iterable list/set of reduce_res_factor_y - if so,
         # it must have length 1 or same as len(z):
@@ -827,7 +541,7 @@ class Z(ResPhase):
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
                 msg = "reduce_res_factor_y must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_y_factors = np.repeat(y_factor, len(self.z))
         elif len(reduce_res_factor_y) == 1:
@@ -835,7 +549,7 @@ class Z(ResPhase):
                 y_factor = float(reduce_res_factor_y)
             except ValueError:
                 msg = "reduce_res_factor_y must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             lo_y_factors = np.repeat(y_factor, len(self.z))
         else:
@@ -843,14 +557,14 @@ class Z(ResPhase):
                 lo_y_factors = np.repeat(y_factor, len(reduce_res_factor_y))
             except ValueError:
                 msg = "reduce_res_factor_x must be a valid number"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
         if len(lo_y_factors) != len(self.z):
             msg = (
                 f"Length of reduce_res_factor_x needs to be {len(self.z)}"
                 + f" not {len(lo_x_factors)}"
             )
-            self._logger.error(msg)
+            self.logger.error(msg)
             raise ValueError(msg)
         z_corrected = copy.copy(self.z)
         static_shift = np.zeros((len(self.z), 2, 2))
@@ -889,11 +603,11 @@ class Z(ResPhase):
         :rtype: np.ndarray(2, 2, dtype='real')
 
                 :returns: impedance tensor with distorion removed
-        :rtype: np.ndarray(num_freq, 2, 2, dtype='complex')
+        :rtype: np.ndarray(num_frequency, 2, 2, dtype='complex')
 
 
                 :returns: impedance tensor error after distortion is removed
-        :rtype: np.ndarray(num_freq, 2, 2, dtype='complex')
+        :rtype: np.ndarray(num_frequency, 2, 2, dtype='complex')
 
 
                 :Example: ::
@@ -906,19 +620,19 @@ class Z(ResPhase):
 
         if distortion_err_tensor is None:
             distortion_err_tensor = np.zeros_like(distortion_tensor)
-        # for all freq, calculate D.Inverse, then obtain Z0 = D.I * Z
+        # for all frequency, calculate D.Inverse, then obtain Z0 = D.I * Z
         try:
             if not (len(distortion_tensor.shape) in [2, 3]) and (
                 len(distortion_err_tensor.shape) in [2, 3]
             ):
                 msg = "Distortion tensor and error are not correct shape"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             if (
                 len(distortion_tensor.shape) == 3
                 or len(distortion_err_tensor.shape) == 3
             ):
-                self._logger.info(
+                self.logger.info(
                     "Distortion is not time-dependent - taking only first"
                     + "of given distortion tensors"
                 )
@@ -927,13 +641,13 @@ class Z(ResPhase):
                     distortion_err_tensor = distortion_err_tensor[0]
                 except IndexError:
                     msg = "Distortion tensor and error are not correct shape"
-                    self._logger.error(msg)
+                    self.logger.error(msg)
                     raise ValueError(msg)
             if not (distortion_tensor.shape == (2, 2)) and (
                 distortion_err_tensor.shape == (2, 2)
             ):
                 msg = "Distortion tensor and error are not correct shape"
-                self._logger.error(msg)
+                self.logger.error(msg)
                 raise ValueError(msg)
             distortion_tensor = np.matrix(np.real(distortion_tensor))
         except ValueError:
@@ -1007,13 +721,11 @@ class Z(ResPhase):
 
         If Z is not 2D per se, the diagonal elements are set to zero.
         """
-
-        z2d = copy.copy(self.z)
-
-        for ii in range(len(z2d)):
-            z2d[ii, 0, 0] = 0
-            z2d[ii, 1, 1] = 0
-        return z2d
+        if self.z is not None:
+            z2d = np.zeros_like(self.z, dtype=complex)
+            z2d[:, 0, 1] = self.z[:, 0, 1]
+            z2d[:, 1, 0] = self.z[:, 1, 0]
+            return z2d
 
     @property
     def trace(self):
@@ -1021,13 +733,14 @@ class Z(ResPhase):
         Return the trace of Z
 
         :returns: Trace(z)
-        :rtype: np.ndarray(nfreq, 2, 2)
+        :rtype: np.ndarray(nfrequency, 2, 2)
 
         """
 
-        tr = np.array([np.trace(ii) for ii in self.z])
+        if self.z is not None:
+            tr = np.array([np.trace(ii) for ii in self.z])
 
-        return tr
+            return tr
 
     @property
     def trace_err(self):
@@ -1035,7 +748,7 @@ class Z(ResPhase):
         Return the trace of Z
 
         :returns: Trace(z)
-        :rtype: np.ndarray(nfreq, 2, 2)
+        :rtype: np.ndarray(nfrequency, 2, 2)
 
         """
 
@@ -1054,12 +767,13 @@ class Z(ResPhase):
 
 
         :returns: skew
-        :rtype: np.ndarray(nfreq, 2, 2)
+        :rtype: np.ndarray(nfrequency, 2, 2)
         """
 
-        skew = np.array([ii[0, 1] - ii[1, 0] for ii in self.z])
+        if self.z is not None:
+            skew = np.array([ii[0, 1] - ii[1, 0] for ii in self.z])
 
-        return skew
+            return skew
 
     @property
     def skew_err(self):
@@ -1069,7 +783,7 @@ class Z(ResPhase):
         .. note:: This is not the MT skew, but simply the linear algebra skew
 
         :returns: skew_err
-        :rtype: np.ndarray(nfreq, 2, 2)
+        :rtype: np.ndarray(nfrequency, 2, 2)
         """
 
         skew_err = None
@@ -1084,12 +798,12 @@ class Z(ResPhase):
         Return the determinant of Z
 
         :returns: det_Z
-        :rtype: np.ndarray(nfreq)
+        :rtype: np.ndarray(nfrequency)
         """
+        if self.z is not None:
+            det_Z = np.array([np.linalg.det(ii) for ii in self.z])
 
-        det_Z = np.array([np.linalg.det(ii) for ii in self.z])
-
-        return det_Z
+            return det_Z
 
     @property
     def det_err(self):
@@ -1097,7 +811,7 @@ class Z(ResPhase):
         Return the determinant of Z error
 
         :returns: det_Z_err
-        :rtype: np.ndarray(nfreq)
+        :rtype: np.ndarray(nfrequency)
         """
         det_Z_err = None
         if self.z_err is not None:
@@ -1121,12 +835,13 @@ class Z(ResPhase):
         Return the 2-/Frobenius-norm of Z
 
         :returns: norm
-        :rtype: np.ndarray(nfreq)
+        :rtype: np.ndarray(nfrequency)
         """
 
-        norm = np.array([np.linalg.norm(ii) for ii in self.z])
+        if self.z is not None:
+            norm = np.array([np.linalg.norm(ii) for ii in self.z])
 
-        return norm
+            return norm
 
     @property
     def norm_err(self):
@@ -1134,7 +849,7 @@ class Z(ResPhase):
         Return the 2-/Frobenius-norm of Z  error
 
         :returns: norm_err
-        :rtype: np.ndarray(nfreq)
+        :rtype: np.ndarray(nfrequency)
         """
         norm_err = None
 
@@ -1175,777 +890,38 @@ class Z(ResPhase):
 
         invariants_dict = {}
 
-        z1 = (self.z[:, 0, 1] - self.z[:, 1, 0]) / 2.0
-        invariants_dict["z1"] = z1
+        if self.z is not None:
+            z1 = (self.z[:, 0, 1] - self.z[:, 1, 0]) / 2.0
+            invariants_dict["z1"] = z1
 
-        invariants_dict["det"] = self.det[0]
+            invariants_dict["det"] = self.det[0]
 
-        det_real = np.array([np.linalg.det(ii) for ii in np.real(self.z)])
-        invariants_dict["det_real"] = det_real
+            det_real = np.array([np.linalg.det(ii) for ii in np.real(self.z)])
+            invariants_dict["det_real"] = det_real
 
-        det_imag = np.array([np.linalg.det(ii) for ii in np.imag(self.z)])
-        invariants_dict["det_imag"] = det_imag
+            det_imag = np.array([np.linalg.det(ii) for ii in np.imag(self.z)])
+            invariants_dict["det_imag"] = det_imag
 
-        invariants_dict["trace"] = self.trace
+            invariants_dict["trace"] = self.trace
 
-        invariants_dict["skew"] = self.skew
+            invariants_dict["skew"] = self.skew
 
-        invariants_dict["norm"] = self.norm
+            invariants_dict["norm"] = self.norm
 
-        invariants_dict["lambda_plus"] = z1 + np.sqrt(z1 * z1 / self.det)
+            invariants_dict["lambda_plus"] = z1 + np.sqrt(z1 * z1 / self.det)
 
-        invariants_dict["lambda_minus"] = z1 - np.sqrt(z1 * z1 / self.det)
+            invariants_dict["lambda_minus"] = z1 - np.sqrt(z1 * z1 / self.det)
 
-        invariants_dict["sigma_plus"] = (
-            0.5 * self.norm**2
-            + np.sqrt(0.25 * self.norm**4)
-            + np.abs(self.det**2)
-        )
+            invariants_dict["sigma_plus"] = (
+                0.5 * self.norm**2
+                + np.sqrt(0.25 * self.norm**4)
+                + np.abs(self.det**2)
+            )
 
-        invariants_dict["sigma_minus"] = (
-            0.5 * self.norm**2
-            - np.sqrt(0.25 * self.norm**4)
-            + np.abs(self.det**2)
-        )
+            invariants_dict["sigma_minus"] = (
+                0.5 * self.norm**2
+                - np.sqrt(0.25 * self.norm**4)
+                + np.abs(self.det**2)
+            )
 
         return invariants_dict
-
-
-# ======================================================================
-#                               TIPPER
-# ======================================================================
-class Tipper(object):
-    """
-    Tipper class --> generates a Tipper-object.
-
-    Errors are given as standard deviations (sqrt(VAR))
-
-    :param tipper_array: tipper array in the shape of [Tx, Ty]
-                         *default* is None
-    :type tipper_array: np.ndarray((nf, 1, 2), dtype='complex')
-
-
-    :param tipper_err_array: array of estimated tipper errors
-                             in the shape of [Tx, Ty].
-                             Must be the same shape as tipper_array.
-                             *default* is None
-    :type tipper_err_array: np.ndarray((nf, 1, 2))
-
-
-    :param freq: array of frequencies corresponding to the tipper elements.
-                 Must be same length as tipper_array.
-                 *default* is None
-    :type freq: np.ndarray(nf)
-
-
-    =============== ===========================================================
-    Attributes      Description
-    =============== ===========================================================
-    freq            array of frequencies corresponding to elements of z
-    rotation_angle  angle of which data is rotated by
-
-    tipper          tipper array
-    tipper_err       tipper error array
-    =============== ===========================================================
-
-    =============== ===========================================================
-    Methods         Description
-    =============== ===========================================================
-    mag_direction   computes magnitude and direction of real and imaginary
-                    induction arrows.
-    amp_phase       computes amplitude and phase of Tx and Ty.
-    rotate          rotates the data by the given angle
-    =============== ===========================================================
-    """
-
-    def __init__(self, tipper_array=None, tipper_err_array=None, freq=None):
-        """
-        initialize
-        """
-        self._logger = get_mtpy_logger(self.__class__.__name__)
-        self._tipper = tipper_array
-        self._tipper_err = tipper_err_array
-        self._freq = freq
-
-        self.rotation_angle = 0.0
-        if self.tipper is not None:
-            self.rotation_angle = np.zeros((len(self.tipper)))
-        self._amplitude = None
-        self._amplitude_err = None
-        self._phase = None
-        self._phase_err = None
-
-        self._mag_real = None
-        self._mag_imag = None
-        self._angle_real = None
-        self._angle_imag = None
-        self._mag_err = None
-        self._angle_err = None
-
-        if self._tipper is not None and self._freq is not None:
-            self.compute_amp_phase()
-            self.compute_mag_direction()
-
-    def __str__(self):
-        lines = ["Induction Vector (Tippers)", "-" * 40]
-        if self.freq is not None:
-            lines.append(f"\tNumber of frequencies:  {self.freq.size}")
-            lines.append(
-                f"\tFrequency range:        {self.freq.min():.5E} -- {self.freq.max():.5E} Hz"
-            )
-            lines.append(
-                f"\tPeriod range:           {1/self.freq.max():.5E} -- {1/self.freq.min():.5E} s"
-            )
-            lines.append("")
-            lines.append("\tElements:")
-            for zz, ff in zip(self.tipper, self.freq):
-                lines.append(f"\tFrequency: {ff:5E} Hz -- Period {1/ff} s")
-                lines.append(
-                    "\t\t"
-                    + np.array2string(
-                        zz,
-                        formatter={
-                            "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
-                        },
-                    ).replace("\n", "\n\t\t")
-                )
-        else:
-            if self.tipper is not None:
-                lines.append("Elements:")
-                for ff, zz in enumerate(self.tipper):
-                    lines.append(f"\tIndex {ff}")
-                    lines.append(
-                        "\t\t"
-                        + np.array2string(
-                            zz,
-                            formatter={
-                                "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
-                            },
-                        ).replace("\n", "\n\t\t")
-                    )
-        return "\n".join(lines)
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __eq__(self, other):
-        if not isinstance(other, Tipper):
-            msg = f"Cannot compare {type(other)} with Tipper"
-            self._logger.error(msg)
-            raise MTpyError_Tipper(msg)
-        if (self.tipper != other.tipper).all():
-            return False
-        if (self.freq != other.freq).all():
-            return False
-        if (self.tipper_err != other.tipper_err).all():
-            return False
-        return True
-
-    def copy(self):
-        return copy.deepcopy(self)
-
-    # ==========================================================================
-    # Define get/set and properties
-    # ==========================================================================
-    # ----freq----------------------------------------------------------
-    @property
-    def freq(self):
-        return self._freq
-
-    @freq.setter
-    def freq(self, freq_arr):
-        """
-        Set the array of freq.
-
-        :param freq_arr: array of frequnecies (Hz)
-        :type freq_arr: np.ndarray(num_frequencies)
-        """
-        if freq_arr is None:
-            return
-        self._freq = np.array(freq_arr, dtype="float")
-
-        if self.tipper is not None:
-            if self.tipper.shape[0] != len(self._freq):
-                msg = (
-                    "New freq array is not correct shape for existing z"
-                    + "new: {self._freq.size} != old: {self.tipper.shape[0]}"
-                )
-                self._logger.error(msg)
-                raise MTpyError_Tipper
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-
-    @property
-    def period(self):
-        """
-        periods in seconds
-        """
-
-        return 1.0 / self.freq
-
-    @period.setter
-    def period(self, value):
-        """
-        setting periods will set the frequencies
-        """
-
-        self.freq = 1.0 / value
-
-    # ---tipper--------------------------------------------------------------
-    @property
-    def tipper(self):
-        return self._tipper
-
-    @tipper.setter
-    def tipper(self, tipper_array):
-        """
-        Set the attribute *tipper*
-
-        :param tipper_array: tipper array in the shape of [Tx, Ty]
-                             *default* is None
-        :type tipper_array: np.ndarray((nf, 1, 2), dtype='complex')
-        """
-        if tipper_array is None:
-            return
-        if not isinstance(tipper_array, np.ndarray):
-            tipper_array = np.array(tipper_array, dtype="complex")
-        if not tipper_array.dtype in ["complex"]:
-            tipper_array = tipper_array.astype("complex")
-        # check to see if the new tipper array is the same shape as the old
-        if (
-            self._tipper is not None
-            and self._tipper.shape != tipper_array.shape
-        ):
-            msg = (
-                "Shape of new array does not match old.  "
-                + f"new shape {tipper_array.shape} != "
-                + f"old shape {self._tipper.shape}. "
-                + "Make a new Tipper instance to be save."
-            )
-            self._logger.error(msg)
-            raise MTpyError_Tipper(msg)
-        if len(tipper_array.shape) == 3:
-            if tipper_array.shape[1:3] == (1, 2):
-                self._tipper = tipper_array
-            else:
-                msg = f"Input array must be shape (n, 1, 2) not {tipper_array.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Tipper(msg)
-        elif len(tipper_array.shape) == 2:
-            if tipper_array.shape == (1, 2):
-                self._tipper = tipper_array.reshape((1, 1, 2))
-                self._logger.debug(
-                    "setting input tipper with shape (1, 2) to (1, 1, 2)"
-                )
-            else:
-                msg = f"Input array must be shape (n, 1, 2) not {tipper_array.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Tipper(msg)
-        else:
-            msg = f"{tipper_array.shape} are not the correct dimensions, must be (n, 1, 2)"
-            self._logger.error(msg)
-            raise MTpyError_Tipper(msg)
-        # neeed to set the rotation angle such that it is an array
-        if self.rotation_angle is float:
-            self.rotation_angle = np.repeat(
-                self.rotation_angle, len(self._tipper)
-            )
-        # for consistency recalculate mag and angle
-        self.compute_mag_direction()
-
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-
-    # ----tipper error---------------------------------------------------------
-    @property
-    def tipper_err(self):
-        return self._tipper_err
-
-    @tipper_err.setter
-    def tipper_err(self, tipper_err_array):
-        """
-        Set the attribute *tipper_err*.
-
-        :param tipper_err_array: array of estimated tipper errors
-                                 in the shape of [Tx, Ty].
-                                 Must be the same shape as tipper_array.
-                                 *default* is None
-        :type tipper_err_array: np.ndarray((nf, 1, 2))
-        """
-        if tipper_err_array is None:
-            return
-        if not isinstance(tipper_err_array, np.ndarray):
-            tipper_err_array = np.array(tipper_err_array, dtype="float")
-        if not tipper_err_array.dtype in ["float"]:
-            tipper_err_array = tipper_err_array.astype("float")
-        if len(tipper_err_array.shape) == 3:
-            if not tipper_err_array.shape[1:3] == (1, 2):
-                msg = f"Input array must be shape (n, 1, 2) not {tipper_err_array.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Tipper(msg)
-        elif len(tipper_err_array.shape) == 2:
-            if tipper_err_array.shape == (1, 2):
-                tipper_err_array = tipper_err_array.reshape((1, 1, 2))
-                self._logger.debug(
-                    "setting input tipper with shape (1, 2) to (1, 1, 2)"
-                )
-            else:
-                msg = f"Input array must be shape (n, 1, 2) not {tipper_err_array.shape}"
-                self._logger.error(msg)
-                raise MTpyError_Tipper(msg)
-        else:
-            msg = f"{tipper_err_array.shape} are not the correct dimensions, must be (n, 1, 2)"
-            self._logger.error(msg)
-            raise MTpyError_Tipper(msg)
-        # check to see if the new tipper array is the same shape as the old
-        if (
-            self._tipper is not None
-            and self._tipper.shape != tipper_err_array.shape
-        ):
-            raise MTpyError_Tipper(
-                "Shape of new error array does not match old"
-                + f"new shape {tipper_err_array.shape} != old shape {self._tipper.shape}"
-            )
-        self._tipper_err = tipper_err_array
-
-        # for consistency recalculate mag and angle
-        self.compute_mag_direction()
-
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-
-    # ----amplitude and phase
-    def compute_amp_phase(self):
-        """
-        Sets attributes:
-                        * *amplitude*
-                        * *phase*
-                        * *amplitude_err*
-                        * *phase_err*
-
-        values for resistivity are in in Ohm m and phase in degrees.
-        """
-
-        if self.tipper is None:
-            # logging.error( 'tipper array is None - cannot calculate rho/phi')
-            # print 'tipper array is None - cannot calculate rho/phi'
-            return None
-        self._amplitude_err = None
-        self._phase_err = None
-        if self.tipper_err is not None:
-            self._amplitude_err = np.zeros(self.tipper_err.shape)
-            self._phase_err = np.zeros(self.tipper_err.shape)
-        self._amplitude = np.abs(self.tipper)
-        self._phase = np.rad2deg(np.angle(self.tipper))
-
-        if self.tipper_err is not None:
-            for idx_f in range(len(self.tipper)):
-                for jj in range(2):
-                    if self.tipper_err is not None:
-                        if type(self.tipper) == np.ma.core.MaskedArray:
-                            if self.tipper.mask[idx_f, 0, jj]:
-                                continue
-                        r_err, phi_err = MTcc.propagate_error_rect2polar(
-                            np.real(self.tipper[idx_f, 0, jj]),
-                            self.tipper_err[idx_f, 0, jj],
-                            np.imag(self.tipper[idx_f, 0, jj]),
-                            self.tipper_err[idx_f, 0, jj],
-                        )
-
-                        self.amplitude_err[idx_f, 0, jj] = r_err
-                        self._phase_err[idx_f, 0, jj] = phi_err
-
-    def set_amp_phase(self, r_array, phi_array):
-        """
-        Set values for amplitude(r) and argument (phi - in degrees).
-
-        Updates the attributes:
-                        * tipper
-                        * tipper_err
-
-        """
-
-        if self.tipper is not None:
-
-            tipper_new = copy.copy(self.tipper)
-
-            if self.tipper.shape != r_array.shape:
-                self._logger.error(
-                    'Error - shape of "r" array does not match shape of '
-                    + "tipper array: %s ; %s"
-                    % (str(r_array.shape), str(self.tipper.shape))
-                )
-                return
-            if self.tipper.shape != phi_array.shape:
-                self._logger.error(
-                    'Error - shape of "phi" array does not match shape of '
-                    + "tipper array: %s ; %s"
-                    % (str(phi_array.shape), str(self.tipper.shape))
-                )
-                return
-        else:
-
-            tipper_new = np.zeros(r_array.shape, "complex")
-
-            if r_array.shape != phi_array.shape:
-                self._logger.error(
-                    'Error - shape of "phi" array does not match shape '
-                    + 'of "r" array: %s ; %s'
-                    % (str(phi_array.shape), str(r_array.shape))
-                )
-                return
-        # assert real array:
-        if np.linalg.norm(np.imag(r_array)) != 0:
-            self._logger.error('Error - array "r" is not real valued !')
-            return
-        if np.linalg.norm(np.imag(phi_array)) != 0:
-            self._logger.error('Error - array "phi" is not real valued !')
-            return
-        for idx_f in range(len(r_array)):
-            for jj in range(2):
-                tipper_new[idx_f, 0, jj] = cmath.rect(
-                    r_array[idx_f, 0, jj],
-                    math.radians(phi_array[idx_f, 0, jj]),
-                )
-        self.tipper = tipper_new
-
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-        self.compute_mag_direction()
-
-    # ---------------------------------
-    # properties
-    @property
-    def amplitude(self):
-        return self._amplitude
-
-    @property
-    def phase(self):
-        return self._phase
-
-    @property
-    def amplitude_err(self):
-        return self._amplitude_err
-
-    @property
-    def phase_err(self):
-        return self._phase_err
-
-    # ----magnitude and direction----------------------------------------------
-    def compute_mag_direction(self):
-        """
-        computes the magnitude and direction of the real and imaginary
-        induction vectors.
-        """
-
-        if self.tipper is None:
-            return None
-        self._mag_real = np.sqrt(
-            self.tipper[:, 0, 0].real ** 2 + self.tipper[:, 0, 1].real ** 2
-        )
-        self._mag_imag = np.sqrt(
-            self.tipper[:, 0, 0].imag ** 2 + self.tipper[:, 0, 1].imag ** 2
-        )
-
-        self._mag_err = None
-        self._angle_err = None
-        # get the angle, need to make both parts negative to get it into the
-        # parkinson convention where the arrows point towards the conductor
-
-        self._angle_real = np.rad2deg(
-            np.arctan2(-self.tipper[:, 0, 1].real, -self.tipper[:, 0, 0].real)
-        )
-
-        self._angle_imag = np.rad2deg(
-            np.arctan2(-self.tipper[:, 0, 1].imag, -self.tipper[:, 0, 0].imag)
-        )
-
-        ## estimate error: THIS MAYBE A HACK
-        if self.tipper_err is not None:
-            self._mag_err = np.sqrt(
-                self.tipper_err[:, 0, 0] ** 2 + self.tipper_err[:, 0, 1] ** 2
-            )
-            self._angle_err = (
-                np.rad2deg(
-                    np.arctan2(
-                        self.tipper_err[:, 0, 0], self.tipper_err[:, 0, 1]
-                    )
-                )
-                % 45
-            )
-
-    def set_mag_direction(self, mag_real, ang_real, mag_imag, ang_imag):
-        """
-        computes the tipper from the magnitude and direction of the real
-        and imaginary components.
-
-        Updates tipper
-
-        No error propagation yet
-        """
-
-        self.tipper[:, 0, 0].real = np.sqrt(
-            (mag_real**2 * np.arctan(ang_real) ** 2)
-            / (1 - np.arctan(ang_real) ** 2)
-        )
-
-        self.tipper[:, 0, 1].real = np.sqrt(
-            mag_real**2 / (1 - np.arctan(ang_real) ** 2)
-        )
-
-        self.tipper[:, 0, 0].imag = np.sqrt(
-            (mag_imag**2 * np.arctan(ang_imag) ** 2)
-            / (1 - np.arctan(ang_imag) ** 2)
-        )
-
-        self.tipper[:, 0, 1].imag = np.sqrt(
-            mag_imag**2 / (1 - np.arctan(ang_imag) ** 2)
-        )
-        # for consistency recalculate mag and angle
-        self.compute_mag_direction()
-        self.compute_amp_phase()
-
-    @property
-    def mag_real(self):
-        return self._mag_real
-
-    @property
-    def mag_imag(self):
-        return self._mag_imag
-
-    @property
-    def angle_real(self):
-        return self._angle_real
-
-    @property
-    def angle_imag(self):
-        return self._angle_imag
-
-    @property
-    def mag_err(self):
-        return self._mag_err
-
-    @property
-    def angle_err(self):
-        return self._angle_err
-
-    # ----rotate---------------------------------------------------------------
-    def rotate(self, alpha):
-        """
-        Rotate  Tipper array.
-
-        Rotation angle must be given in degrees. All angles are referenced
-        to geographic North=0, positive in clockwise direction.
-        (Mathematically negative!)
-
-        In non-rotated state, 'X' refs to North and 'Y' to East direction.
-
-        Updates the attributes:
-                        * *tipper*
-                        * *tipper_err*
-                        * *rotation_angle*
-
-        """
-
-        if self.tipper is None:
-            self._logger.error('tipper array is "None" - I cannot rotate that')
-            return
-        # check for iterable list/set of angles - if so, it must have length 1
-        # or same as len(tipper):
-        if np.iterable(alpha) == 0:
-            try:
-                degreeangle = float(alpha % 360)
-            except ValueError:
-                self._logger.error(
-                    '"Angle" must be a valid number (in degrees)'
-                )
-                return
-            # make an n long list of identical angles
-            lo_angles = [degreeangle for ii in self.tipper]
-        elif len(alpha) == 1:
-            try:
-                degreeangle = float(alpha % 360)
-            except ValueError:
-                self._logger.error(
-                    '"Angle" must be a valid number (in degrees)'
-                )
-                return
-            # make an n long list of identical angles
-            lo_angles = [degreeangle for ii in self.tipper]
-        else:
-            try:
-                lo_angles = [float(ii % 360) for ii in alpha]
-            except ValueError:
-                self._logger.error(
-                    '"Angles" must be valid numbers (in degrees)'
-                )
-                return
-        self.rotation_angle = np.array(
-            [
-                (oldangle + lo_angles[ii]) % 360
-                for ii, oldangle in enumerate(self.rotation_angle)
-            ]
-        )
-
-        if len(lo_angles) != len(self.tipper):
-            self._logger.error(
-                'Wrong number Number of "angles" - need %ii '
-                % (len(self.tipper))
-            )
-            self.rotation_angle = 0.0
-            return
-        tipper_rot = copy.copy(self.tipper)
-        tipper_err_rot = copy.copy(self.tipper_err)
-
-        for idx_freq in range(len(tipper_rot)):
-            angle = lo_angles[idx_freq]
-
-            if self.tipper_err is not None:
-                (
-                    tipper_rot[idx_freq],
-                    tipper_err_rot[idx_freq],
-                ) = MTcc.rotate_vector_with_errors(
-                    self.tipper[idx_freq, :, :],
-                    angle,
-                    self.tipper_err[idx_freq, :, :],
-                )
-            else:
-                (
-                    tipper_rot[idx_freq],
-                    tipper_err_rot,
-                ) = MTcc.rotate_vector_with_errors(
-                    self.tipper[idx_freq, :, :], angle
-                )
-        self.tipper = tipper_rot
-        self.tipper_err = tipper_err_rot
-
-        # for consistency recalculate mag and angle
-        self.compute_mag_direction()
-
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-
-
-# ------------------------
-def correct4sensor_orientation(
-    Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error=None
-):
-    """
-    Correct a Z-array for wrong orientation of the sensors.
-
-    Assume, E' is measured by sensors orientated with the angles
-        E'x: a
-        E'y: b
-
-    Assume, B' is measured by sensors orientated with the angles
-        B'x: c
-        B'y: d
-
-    With those data, one obtained the impedance tensor Z':
-        E' = Z' * B'
-
-    Now we define change-of-basis matrices T,U so that
-        E = T * E'
-        B = U * B'
-
-    =>   T contains the expression of the E'-basis in terms of E
-    (the standard basis)
-    and  U contains the expression of the B'-basis in terms of B
-    (the standard basis)
-    The respective expressions for E'x-basis vector and E'y-basis
-    vector are the columns of T.
-    The respective expressions for B'x-basis vector and B'y-basis
-    vector are the columns of U.
-
-    We obtain the impedance tensor in default coordinates as:
-
-    E' = Z' * B' => T^(-1) * E = Z' * U^(-1) * B
-                 => E = T * Z' * U^(-1) * B
-                 => Z = T * Z' * U^(-1)
-
-    :param Z_prime: impedance tensor to be adjusted
-    :dtype Z_prime: np.ndarray(num_freq, 2, 2, dtype='complex')
-
-
-    :param Bx: orientation of Bx relative to geographic north (0)
-                                   *default* is 0
-    :type Bx: float (angle in degrees)
-
-    :param By:
-    :type By: float (angle in degrees)
-                         orientation of By relative to geographic north (0)
-                                 *default* is 90
-
-    :param Ex: orientation of Ex relative to geographic north (0)
-                                   *default* is 0
-    :type Ex: float (angle in degrees)
-
-    :param Ey: orientation of Ey relative to geographic north (0)
-                                  *default* is 90
-    :type Ey: float (angle in degrees)
-
-    :param Z_prime_error: impedance tensor error (std)
-                                                 *default* is None
-    :type Z_prime_error: np.ndarray(Z_prime.shape)
-
-    :returns: adjusted impedance tensor
-    :rtype: np.ndarray(Z_prime.shape, dtype='complex')
-
-    :returns: impedance tensor standard deviation in
-                                        default orientation
-    :rtype: np.ndarray(Z_prime.shape, dtype='real')
-    """
-    try:
-        if len(Z_prime.shape) != 2:
-            raise
-        if Z_prime.shape != (2, 2):
-            raise
-        if Z_prime.dtype not in ["complex", "float", "int"]:
-            raise
-        Z_prime = np.matrix(Z_prime)
-    except:
-        raise MTpyError_input_arguments(
-            "ERROR - Z array not valid!" + "Must be 2x2 complex array"
-        )
-    if Z_prime_error is not None:
-        try:
-            if len(Z_prime_error.shape) != 2:
-                raise
-            if Z_prime_error.shape != (2, 2):
-                raise
-            if Z_prime_error.dtype not in ["float", "int"]:
-                raise
-        except:
-            raise MTpyError_input_arguments(
-                "ERROR - Z-error array not" + "valid! Must be 2x2 real array"
-            )
-    T = np.matrix(np.zeros((2, 2)))
-    U = np.matrix(np.zeros((2, 2)))
-
-    dummy1 = cmath.rect(1, math.radians(Ex))
-
-    T[0, 0] = np.real(dummy1)
-    T[1, 0] = np.imag(dummy1)
-    dummy2 = cmath.rect(1, math.radians(Ey))
-    T[0, 1] = np.real(dummy2)
-    T[1, 1] = np.imag(dummy2)
-
-    dummy3 = cmath.rect(1, math.radians(Bx))
-    U[0, 0] = np.real(dummy3)
-    U[1, 0] = np.imag(dummy3)
-    dummy4 = cmath.rect(1, math.radians(By))
-    U[0, 1] = np.real(dummy4)
-    U[1, 1] = np.imag(dummy4)
-
-    try:
-        z_arr = np.array(np.dot(T, np.dot(Z_prime, U.I)))
-    except:
-        raise MTpyError_input_arguments(
-            "ERROR - Given angles do not"
-            + "define basis for 2 dimensions - cannot convert Z'"
-        )
-    z_err_arr = copy.copy(Z_prime_error)
-
-    # TODO: calculate error propagation
-
-    return z_arr, z_err_arr

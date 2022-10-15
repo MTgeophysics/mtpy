@@ -16,7 +16,7 @@ from matplotlib.ticker import MultipleLocator
 
 from mtpy.analysis.zinvariants import Zinvariants
 from mtpy.imaging.mtplot_tools import PlotBase
-from mtpy.core.z import Tipper
+from mtpy.core import Tipper
 
 # ==============================================================================
 
@@ -124,10 +124,10 @@ class PlotStrike(PlotBase):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
 
         self._rotation_angle = 0
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
         super().__init__(**kwargs)
 
@@ -193,7 +193,7 @@ class PlotStrike(PlotBase):
         """
         only a single value is allowed
         """
-        for ii, mt in enumerate(self.tf_list):
+        for mt in self.mt_data.values():
             mt.rotation_angle = value
         self._rotation_angle = value
 
@@ -212,7 +212,7 @@ class PlotStrike(PlotBase):
 
         entries = []
 
-        for dd, mt in enumerate(self.tf_list):
+        for mt in self.mt_data.values():
             # -----------get strike angle from invariants----------------------
             zinv = Zinvariants(mt.Z)
 
@@ -257,7 +257,7 @@ class PlotStrike(PlotBase):
                 if tip.tipper is None:
                     tip = Tipper(
                         np.zeros((len(mt.period), 1, 2), dtype="complex"),
-                        freq=[1],
+                        frequency=[1],
                     )
                     tip.compute_mag_direction()
                     tip.compute_amp_phase()
@@ -265,7 +265,7 @@ class PlotStrike(PlotBase):
                 if tip is None:
                     tip = Tipper(
                         np.zeros((len(mt.period), 1, 2), dtype="complex"),
-                        freq=[1],
+                        frequency=[1],
                     )
                     tip.compute_mag_direction()
                     tip.compute_amp_phase()
@@ -690,9 +690,7 @@ class PlotStrike(PlotBase):
                 # set plot labels
                 if jj == 1:
                     if "h" in self.plot_orientation:
-                        self._set_ax_label(
-                            ax_inv, "Strike (Z)", self.color_inv
-                        )
+                        self._set_ax_label(ax_inv, "Strike (Z)", self.color_inv)
                     elif "v" in self.plot_orientation:
                         self._set_ax_label(ax_inv, self.title_dict[bb], None)
 

@@ -35,10 +35,10 @@ except ModuleNotFoundError:
     has_cx = False
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps, add_raster
-
+from mtpy.core import Z, Tipper
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.analysis.pt as mtpt
-import mtpy.core.z as mtz
+
 
 # ==============================================================================
 
@@ -49,7 +49,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
         """
         Initialise the object
         :param kwargs: keyword-value pairs
@@ -57,9 +57,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         super().__init__(**kwargs)
 
         self._rotation_angle = 0
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
-        # set the freq to plot
+        # set the frequency to plot
         self.plot_station = False
         self.plot_period = 1.0
 
@@ -116,7 +116,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_size = 0.005
             self.arrow_size = 0.005
             self.arrow_head_length = 0.0025
-            self.arrow_head_length = 0.0035
+            self.arrow_head_width = 0.0035
             self.arrow_lw = 0.00075
 
             self.tickstrfmt = "%.3f"
@@ -129,7 +129,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_size = 500
             self.arrow_size = 500
             self.arrow_head_length = 250
-            self.arrow_head_length = 350
+            self.arrow_head_width = 350
             self.arrow_lw = 50
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (m)"
@@ -141,7 +141,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ellipse_size = 0.500
             self.arrow_size = 0.5
             self.arrow_head_length = 0.25
-            self.arrow_head_length = 0.35
+            self.arrow_head_width = 0.35
             self.arrow_lw = 0.075
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (km)"
@@ -160,7 +160,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         """
         only a single value is allowed
         """
-        for tf in self.tf_list:
+        for tf in self.mt_data:
             tf.rotation_angle = value
         self._rotation_angle = value
 
@@ -177,8 +177,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         z = self._get_interpolated_z(tf)
         z_err = self._get_interpolated_z_err(tf)
 
-        new_z_obj = mtz.Z(z, z_err, freq=[1.0 / self.plot_period])
-        new_z_obj.compute_resistivity_phase()
+        new_z_obj = Z(z, z_err, frequency=[1.0 / self.plot_period])
         pt_obj = mtpt.PhaseTensor(z_object=new_z_obj)
 
         new_t_obj = None
@@ -188,7 +187,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             t_err = self._get_interpolated_t_err(tf)
 
             if (t != 0).all():
-                new_t_obj = mtz.Tipper(t, t_err, [1.0 / self.plot_period])
+                new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
 
         return pt_obj, new_t_obj
 
@@ -484,9 +483,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self._get_tick_format()
 
         # make some empty arrays
-        self.plot_xarr = np.zeros(len(self.tf_list))
-        self.plot_yarr = np.zeros(len(self.tf_list))
-        for index, tf in enumerate(self.tf_list):
+        self.plot_xarr = np.zeros(len(self.mt_data))
+        self.plot_yarr = np.zeros(len(self.mt_data))
+        for index, tf in enumerate(self.mt_data.values()):
             plot_x, plot_y = self._get_patch(tf)
             self.plot_xarr[index] = plot_x
             self.plot_yarr[index] = plot_y
@@ -540,7 +539,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         f"Could not add base map because {error}"
                     )
 
-        # --> set title in period or freq
+        # --> set title in period or frequency
         titlefreq = "{0:.5g} (s)".format(self.plot_period)
 
         if not self.plot_title:

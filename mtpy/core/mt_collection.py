@@ -21,6 +21,7 @@ import pandas as pd
 import geopandas as gpd
 
 from mtpy import MT
+from mtpy.core.mt_data import MTData
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.imaging import (
     PlotStations,
@@ -88,7 +89,7 @@ class MTCollection:
         return self.__str__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self.close_collection()
         return False
 
     @property
@@ -246,10 +247,8 @@ class MTCollection:
             transfer_function = [transfer_function]
         for item in transfer_function:
             if isinstance(item, MT):
-                self.logger.debug("added %s " % item.station)
                 self._from_mt_object(item)
             elif isinstance(item, (str, Path)):
-                self.logger.debug("added %s " % item.station)
                 self._from_file(item)
             else:
                 raise TypeError(f"Not sure want to do with {type(item)}.")
@@ -334,8 +333,9 @@ class MTCollection:
         if mt_object.survey_metadata.id in [None, ""]:
             mt_object.survey_metadata.id = "unknown_survey"
         self.mth5_collection.add_transfer_function(mt_object)
+        self.logger.debug("added %s " % mt_object.station)
 
-    def get_tf_list(self, bounding_box=None):
+    def to_mt_data(self, bounding_box=None):
         """
         Get a list of transfer functions
 
@@ -352,14 +352,19 @@ class MTCollection:
             tf_df = self.apply_bbox(*bounding_box)
         else:
             tf_df = self.dataframe
-        tf_list = []
+
+        mt_data = MTData()
+
         for row in tf_df.itertuples():
             tf = self.get_tf(row.station, survey=row.survey)
-            tf.z_interp_dict = tf.get_interp1d_functions_z()
-            tf.t_interp_dict = tf.get_interp1d_functions_t()
+            if not hasattr(tf, "z_interp_dict"):
+                tf.z_interp_dict = tf.get_interp1d_functions_z()
+            if not hasattr(tf, "t_interp_dict"):
+                tf.t_interp_dict = tf.get_interp1d_functions_t()
 
-            tf_list.append(tf)
-        return tf_list
+            mt_data.add_station(tf)
+
+        return mt_data
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
         """
@@ -569,9 +574,7 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(
-                                f"wrote average file {edi_obj.fn}"
-                            )
+                            self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:
@@ -580,9 +583,6 @@ class MTCollection:
                         )
                 else:
                     continue
-        # return MTCollection(
-        #     self.make_dataframe_from_file_list(new_fn_list), self.mt_path
-        # )
 
     def plot_mt_response(self, tf_id, survey=None, **kwargs):
         """
@@ -599,26 +599,25 @@ class MTCollection:
         for that tf.
 
         """
+        mt_data = MTData()
         if isinstance(tf_id, str):
             mt_object = self.get_tf(tf_id, survey=survey)
             return mt_object.plot_mt_response(**kwargs)
         elif isinstance(tf_id, (list, tuple, np.ndarray, pd.Series)):
-            tf_list = []
             tf_request = np.array(tf_id)
             if len(tf_request.shape) > 1:
                 for row in tf_request:
-                    tf_list.append(self.get_tf(row[0], survey=row[1]))
+                    mt_data.add_station(self.get_tf(row[0], survey=row[1]))
 
             else:
                 for row in tf_request:
-                    tf_list.append(self.get_tf(row, survey=survey))
-            return PlotMultipleResponses(tf_list, **kwargs)
+                    mt_data.add_station(self.get_tf(row, survey=survey))
+            return PlotMultipleResponses(mt_data, **kwargs)
 
         elif isinstance(tf_id, pd.DataFrame):
-            tf_list = []
             for row in tf_id.itertuples():
-                tf_list.append(self.get_tf(row.tf_id, survey=row.survey))
-            return PlotMultipleResponses(tf_list, **kwargs)
+                mt_data.add_station(self.get_tf(row.tf_id, survey=row.survey))
+            return PlotMultipleResponses(mt_data, **kwargs)
 
     def plot_stations(self, map_epsg=4326, bounding_box=None, **kwargs):
         """
@@ -634,15 +633,15 @@ class MTCollection:
             gdf = self.to_geo_df(epsg=map_epsg, bounding_box=bounding_box)
             return PlotStations(gdf, **kwargs)
 
-    def plot_strike(self, tf_list=None, **kwargs):
+    def plot_strike(self, mt_data=None, **kwargs):
         """
         Plot strike angle
 
         .. seealso:: :class:`mtpy.imaging.PlotStrike`
         """
-        if tf_list is None:
-            tf_list = self.get_tf_list()
-        return PlotStrike(tf_list, **kwargs)
+        if mt_data is None:
+            mt_data = self.to_mt_data()
+        return PlotStrike(mt_data, **kwargs)
 
     def plot_phase_tensor(self, tf_id, survey=None, **kwargs):
         """
@@ -660,7 +659,7 @@ class MTCollection:
         tf_obj = self.get_tf(tf_id, survey=survey)
         return tf_obj.plot_phase_tensor(**kwargs)
 
-    def plot_phase_tensor_map(self, tf_list=None, **kwargs):
+    def plot_phase_tensor_map(self, mt_data=None, **kwargs):
         """
         Plot Phase tensor maps for transfer functions in the working_dataframe
 
@@ -673,12 +672,12 @@ class MTCollection:
 
         """
 
-        if tf_list is None:
-            tf_list = self.get_tf_list()
+        if mt_data is None:
+            mt_data = self.to_mt_data()
 
-        return PlotPhaseTensorMaps(tf_list=tf_list, **kwargs)
+        return PlotPhaseTensorMaps(mt_data=mt_data, **kwargs)
 
-    def plot_phase_tensor_pseudosection(self, tf_list=None, **kwargs):
+    def plot_phase_tensor_pseudosection(self, mt_data=None, **kwargs):
         """
         Plot a pseudo section of  phase tensor ellipses and induction vectors
         if specified
@@ -692,20 +691,20 @@ class MTCollection:
 
         """
 
-        if tf_list is None:
-            tf_list = self.get_tf_list()
+        if mt_data is None:
+            mt_data = self.to_mt_data()
 
-        return PlotPhaseTensorPseudoSection(tf_list=tf_list, **kwargs)
+        return PlotPhaseTensorPseudoSection(mt_data=mt_data, **kwargs)
 
     def plot_residual_phase_tensor(
-        self, tf_list_01, tf_list_02, plot_type="map", **kwargs
+        self, mt_data_01, mt_data_02, plot_type="map", **kwargs
     ):
         """
 
-        :param tf_list_01: DESCRIPTION
-        :type tf_list_01: TYPE
-        :param tf_list_02: DESCRIPTION
-        :type tf_list_02: TYPE
+        :param mt_data_01: DESCRIPTION
+        :type mt_data_01: TYPE
+        :param mt_data_02: DESCRIPTION
+        :type mt_data_02: TYPE
         :param plot_type: DESCRIPTION, defaults to "map"
         :type plot_type: TYPE, optional
         :param **kwargs: DESCRIPTION
@@ -716,7 +715,7 @@ class MTCollection:
         """
 
         if plot_type in ["map"]:
-            return PlotResidualPTMaps(tf_list_01, tf_list_02, **kwargs)
+            return PlotResidualPTMaps(mt_data_01, mt_data_02, **kwargs)
 
     def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
         """
@@ -741,25 +740,25 @@ class MTCollection:
 
         return PlotPenetrationDepth1D(tf_object, **kwargs)
 
-    def plot_penetration_depth_map(self, tf_list=None, **kwargs):
+    def plot_penetration_depth_map(self, mt_data=None, **kwargs):
         """
         Plot Penetration depth in map view for a single period
 
         .. seealso:: :class:`mtpy.imaging.PlotPenetrationDepthMap`
 
-        :param tf_list: DESCRIPTION
-        :type tf_list: TYPE
+        :param mt_data: DESCRIPTION
+        :type mt_data: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        if tf_list is None:
-            tf_list = self.get_tf_list()
+        if mt_data is None:
+            mt_data = self.to_mt_data()
 
-        return PlotPenetrationDepthMap(tf_list, **kwargs)
+        return PlotPenetrationDepthMap(mt_data, **kwargs)
 
-    def plot_resistivity_phase_maps(self, tf_list=None, **kwargs):
+    def plot_resistivity_phase_maps(self, mt_data=None, **kwargs):
         """
         Plot apparent resistivity and/or impedance phase maps from the
         working dataframe
@@ -772,17 +771,17 @@ class MTCollection:
 
         """
 
-        if tf_list is None:
-            tf_list = self.get_tf_list()
+        if mt_data is None:
+            mt_data = self.to_mt_data()
 
-        return PlotResPhaseMaps(tf_list, **kwargs)
+        return PlotResPhaseMaps(mt_data, **kwargs)
 
-    def plot_resistivity_phase_pseudosections(self, tf_list=None, **kwargs):
+    def plot_resistivity_phase_pseudosections(self, mt_data=None, **kwargs):
         """
         Plot resistivity and phase in a pseudosection along a profile line
 
-        :param tf_list: DESCRIPTION, defaults to None
-        :type tf_list: TYPE, optional
+        :param mt_data: DESCRIPTION, defaults to None
+        :type mt_data: TYPE, optional
         :param **kwargs: DESCRIPTION
         :type **kwargs: TYPE
         :return: DESCRIPTION
@@ -790,7 +789,7 @@ class MTCollection:
 
         """
 
-        if tf_list is None:
-            tf_list = self.get_tf_list()
+        if mt_data is None:
+            mt_data = self.to_mt_data()
 
-        return PlotResPhasePseudoSection(tf_list, **kwargs)
+        return PlotResPhasePseudoSection(mt_data, **kwargs)

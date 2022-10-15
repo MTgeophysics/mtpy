@@ -10,19 +10,23 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from scipy import interpolate as spi
 
 from mt_metadata.transfer_functions.core import TF
 
-from mtpy.core.z import Z, Tipper
+from mtpy.core import Z, Tipper
+from mtpy.core.mt_location import MTLocation
+from mtpy.core.mt_dataframe import MTDataFrame
+
 import mtpy.analysis.pt as MTpt
 import mtpy.analysis.distortion as MTdistortion
-from mtpy.utils import gis_tools
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
+from mtpy.modeling.errors import ModelErrors
 
 
 # =============================================================================
-class MT(TF):
+class MT(TF, MTLocation):
     """
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
@@ -31,78 +35,14 @@ class MT(TF):
     """
 
     def __init__(self, fn=None, **kwargs):
-        super().__init__(fn=fn, **kwargs)
+        TF.__init__(self, fn=fn, **kwargs)
+        MTLocation.__init__(self, **kwargs)
 
         self._Z = Z()
         self._Tipper = Tipper()
         self._rotation_angle = 0
-        self._utm_location = {"east": 0, "north": 0, "zone": None}
 
         self.save_dir = Path.cwd()
-
-        self.project_to_utm()
-
-    def project_to_utm(self, epsg=None, utm_zone=None):
-        """
-        project point to utm
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if self.latitude and self.longitude:
-            east, north, zone = gis_tools.project_point_ll2utm(
-                self.latitude, self.longitude, utm_zone=utm_zone, epsg=epsg
-            )
-            self._utm_location = {"east": east, "north": north, "zone": zone}
-
-    def project_to_ll(self, epsg=None):
-        """
-        project point to utm
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if self.east != 0 and self.north != 0 and self.utm_zone != None:
-            self.latitude, self.longitude = gis_tools.project_point_utm2ll(
-                self.east,
-                self.north,
-                self.utm_zone,
-                epsg=epsg,
-            )
-
-    @property
-    def east(self):
-        """easting"""
-        return self._utm_location["east"]
-
-    @east.setter
-    def east(self, value):
-        """set east"""
-        self._utm_location["east"] = value
-
-    @property
-    def north(self):
-        """northing"""
-        return self._utm_location["north"]
-
-    @north.setter
-    def north(self, value):
-        """set north"""
-        self._utm_location["north"] = value
-
-    @property
-    def utm_zone(self):
-        """utm zone"""
-        return self._utm_location["zone"]
-
-    @utm_zone.setter
-    def utm_zone(self, value):
-        """set utm_zone"""
-        self._utm_location["utm_zone"] = value
 
     @property
     def rotation_angle(self):
@@ -141,7 +81,8 @@ class MT(TF):
             return Z(
                 z_array=self.impedance.to_numpy(),
                 z_err_array=self.impedance_error.to_numpy(),
-                freq=self.frequency,
+                frequency=self.frequency,
+                z_model_err_array=self.impedance_model_error.to_numpy(),
             )
         return Z()
 
@@ -153,11 +94,16 @@ class MT(TF):
         recalculate phase tensor and invariants, which shouldn't change except
         for strike angle
         """
-        if not isinstance(z_object.freq, type(None)):
-            if not (self.frequency == z_object.freq).all():
-                self.frequency = z_object.freq
+        if not isinstance(z_object.frequency, type(None)):
+            if self.frequency.size != z_object.frequency.shape:
+
+                self.frequency = z_object.frequency
+
+            elif not (self.frequency == z_object.frequency).all():
+                self.frequency = z_object.frequency
         self.impedance = z_object.z
         self.impedance_error = z_object.z_err
+        self.impedance_model_error = z_object.z_model_err
 
     @property
     def Tipper(self):
@@ -167,7 +113,8 @@ class MT(TF):
             return Tipper(
                 tipper_array=self.tipper.to_numpy(),
                 tipper_err_array=self.tipper_error.to_numpy(),
-                freq=self.frequency,
+                frequency=self.frequency,
+                tipper_model_err_array=self.tipper_model_error.to_numpy(),
             )
 
     @Tipper.setter
@@ -178,11 +125,12 @@ class MT(TF):
         recalculate tipper angle and magnitude
         """
 
-        if not isinstance(t_object.freq, type(None)):
-            if not (self.frequency == t_object.freq).all():
-                self.frequency = t_object.freq
+        if not isinstance(t_object.frequency, type(None)):
+            if not (self.frequency == t_object.frequency).all():
+                self.frequency = t_object.frequency
         self.tipper = t_object.tipper
         self.tipper_error = t_object.tipper_err
+        self.tipper_model_error = t_object.tipper_model_err
 
     @property
     def pt(self):
@@ -321,7 +269,7 @@ class MT(TF):
         new_z_obj = Z(
             z_array=new_z,
             z_err_array=self.Z.z_err.copy(),
-            freq=self.Z.freq.copy(),
+            frequency=self.Z.frequency.copy(),
         )
 
         return new_z_obj
@@ -360,7 +308,7 @@ class MT(TF):
                 z_err = self.Z.z_err[nz_index, ii, jj]
 
                 # get the frequencies of non-zero components
-                f = self.Z.freq[nz_index]
+                f = self.Z.frequency[nz_index]
 
                 # create a function that does 1d interpolation
                 interp_dict[comp]["real"] = spi.interp1d(
@@ -419,7 +367,7 @@ class MT(TF):
             t_err = self.Tipper.tipper_err[nz_index, 0, jj]
 
             # get the frequencies of non-zero components
-            f = self.Tipper.freq[nz_index]
+            f = self.Tipper.frequency[nz_index]
 
             # create a function that does 1d interpolation
             interp_dict[comp]["real"] = spi.interp1d(
@@ -494,7 +442,6 @@ class MT(TF):
         # check the bounds of the new frequency array
         if bounds_error:
 
-            # logger.debug("new freq array %s", new_freq_array)
             if self.frequency.min() > new_freq_array.min():
                 raise ValueError(
                     f"New frequency minimum of {new_freq_array.min():.5g} "
@@ -513,7 +460,7 @@ class MT(TF):
         new_Z = Z(
             z_array=np.zeros((new_freq_array.shape[0], 2, 2), dtype="complex"),
             z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)),
-            freq=new_freq_array,
+            frequency=new_freq_array,
         )
 
         new_Tipper = Tipper(
@@ -521,7 +468,7 @@ class MT(TF):
                 (new_freq_array.shape[0], 1, 2), dtype="complex"
             ),
             tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)),
-            freq=new_freq_array,
+            frequency=new_freq_array,
         )
 
         z_dict = self.get_interp1d_functions_z(interp_type=interp_type)
@@ -535,8 +482,8 @@ class MT(TF):
                 # get frequencies to interpolate on to, making sure the
                 # bounds are with in non-zero components
                 new_nz_index = np.where(
-                    (new_freq_array >= self.Z.freq.min())
-                    & (new_freq_array <= self.Z.freq.max())
+                    (new_freq_array >= self.Z.frequency.min())
+                    & (new_freq_array <= self.Z.frequency.max())
                 )[0]
                 new_f = new_freq_array[new_nz_index]
 
@@ -545,8 +492,6 @@ class MT(TF):
                     new_f
                 ) + 1j * z_dict[comp]["imag"](new_f)
                 new_Z.z_err[new_nz_index, ii, jj] = z_dict[comp]["err"](new_f)
-        # compute resistivity and phase for new Z object
-        new_Z.compute_resistivity_phase()
 
         # if there is not tipper than skip
         if self.Tipper is None:
@@ -559,8 +504,8 @@ class MT(TF):
             # get new frequency to interpolate over, making sure bounds are
             # for non-zero components
             new_nz_index = np.where(
-                (new_freq_array >= self.Tipper.freq.min())
-                & (new_freq_array <= self.Tipper.freq.max())
+                (new_freq_array >= self.Tipper.frequency.min())
+                & (new_freq_array <= self.Tipper.frequency.max())
             )
             new_f = new_freq_array[new_nz_index]
 
@@ -609,11 +554,371 @@ class MT(TF):
         kwargs["ellipse_size"] = 0.5
         return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
 
+    def to_dataframe(self, utm_crs=None, cols=None):
+        """
+        Create a dataframe from the transfer function for use with plotting
+        and modeling.
 
-# ==============================================================================
-#             Error
-# ==============================================================================
+        :parameter utm_crs: the utm zone to project station to, could be a
+         name, pyproj.CRS, EPSG number, or anything that pyproj.CRS can intake.
+        :type utm_crs: string, int, :class:`pyproj.CRS`
 
+        """
+        if utm_crs is not None:
+            self.utm_crs = utm_crs
 
-class MTError(Exception):
-    pass
+        n_entries = self.period.size
+        mt_df = MTDataFrame()
+        if cols is not None:
+            mt_df.df_dtypes = mt_df._get_dtypes(cols)
+
+        entry = mt_df.make_empty_entry(n_entries)
+
+        entry["station"][:] = self.station
+        entry["latitude"][:] = self.latitude
+        entry["longitude"][:] = self.longitude
+        entry["elevation"][:] = self.elevation
+        entry["datum_epsg"][:] = self.datum_epsg
+        entry["east"][:] = self.east
+        entry["north"][:] = self.north
+        entry["utm_epsg"][:] = self.utm_epsg
+        entry["model_east"][:] = self.model_east
+        entry["model_north"][:] = self.model_north
+        entry["model_elevation"][:] = self.model_elevation
+
+        entry["period"][:] = self.period
+        if self.has_impedance():
+            entry = mt_df.from_z_object(self.Z, entry)
+        if self.has_tipper():
+            entry = mt_df.from_t_object(self.Tipper, entry)
+
+        return pd.DataFrame(entry)
+
+    def from_dataframe(self, df):
+        """
+        fill transfer function attributes from a dataframe for a single station
+
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        mt_df = MTDataFrame()
+        for key in [
+            "station",
+            "latitude",
+            "longitude",
+            "elevation",
+            "east",
+            "north",
+            "utm_epsg",
+            "model_north",
+            "model_east",
+            "model_elevation",
+        ]:
+            try:
+                setattr(self, key, df[key].unique()[0])
+            except KeyError:
+                continue
+
+        self.Z = mt_df.to_z_object(df)
+        self.Tipper = mt_df.to_t_object(df)
+
+    def compute_model_z_errors(
+        self, error_value=5, error_type="geometric_mean", floor=True
+    ):
+        """
+        Compute mode errors based on the error type
+
+        ========================== ===========================================
+        key                        definition
+        ========================== ===========================================
+        egbert                     error_value * sqrt(Zxy * Zyx)
+        geometric_mean             error_value * sqrt(Zxy * Zyx)
+        arithmetic_mean            error_value * (Zxy + Zyx) / 2
+        mean_od                    error_value * (Zxy + Zyx) / 2
+        off_diagonals              zxx_err == zxy_err, zyx_err == zyy_err
+        median                     error_value * median(z)
+        eigen                      error_value * mean(eigen(z))
+        percent                    error_value * z
+        absolute                   error_value
+        ========================== ===========================================
+
+        :param error_value: DESCRIPTION, defaults to 5
+        :type error_value: TYPE, optional
+        :param error_type: DESCRIPTION, defaults to "geometric_mean"
+        :type error_type: TYPE, optional
+        :param floor: DESCRIPTION, defaults to True
+        :type floor: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not self.has_impedance():
+            self.logger.warning(
+                "MT Object contains no impedance data, cannot comput errors"
+            )
+            return
+
+        z_model_error = ModelErrors(
+            array=self.impedance_error,
+            error_value=error_value,
+            error_type=error_type,
+            floor=floor,
+        )
+
+        err = z_model_error.compute_error()
+
+        if len(err.shape) == 1:
+            z_err = np.zeros_like(self.impedance, dtype=float)
+            z_err[:, 0, 0] = err
+            z_err[:, 0, 1] = err
+            z_err[:, 1, 0] = err
+            z_err[:, 1, 1] = err
+
+        else:
+            z_err = err
+
+        self.impedance_model_error = z_err
+
+    def compute_model_t_errors(
+        self, error_value=0.02, error_type="absolute", floor=False
+    ):
+        """
+        Compute mode errors based on the error type
+
+        ========================== ===========================================
+        key                        definition
+        ========================== ===========================================
+        percent                    error_value * t
+        absolute                   error_value
+        ========================== ===========================================
+
+        :param error_value: DESCRIPTION, defaults to .02
+        :type error_value: TYPE, optional
+        :param error_type: DESCRIPTION, defaults to "absolute"
+        :type error_type: TYPE, optional
+        :param floor: DESCRIPTION, defaults to True
+        :type floor: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not self.has_tipper():
+            self.logger.warning(
+                "MT object containse no Tipper, cannot compute model errors"
+            )
+            return
+
+        t_model_error = ModelErrors(
+            array=self.tipper_error,
+            error_value=error_value,
+            error_type=error_type,
+            floor=floor,
+        )
+
+        err = t_model_error.compute_error()
+
+        if len(err.shape) == 1:
+            t_err = np.zeros_like(self.tipper, dtype=float)
+            t_err[:, 0, 0] = err
+            t_err[:, 0, 1] = err
+
+        else:
+            t_err = err
+
+        self.tipper_model_error = t_err
+
+    def add_model_error(self, comp=[], z_value=5, t_value=0.05, periods=None):
+        """
+
+        Add error to a station's components for given period range
+
+        :param station: name of station(s) to add error to
+        :type station: string or list of strings
+        :param comp: list of components to add data to, valid components are
+        zxx, zxy, zyx, zyy, tx, ty
+        :type comp: string or list of strings
+        :param periods: the period range to add to, if None all periods, otherwise
+        enter as a tuple as (minimum, maximum) period in seconds
+        :type periods: tuple (minimum, maxmum)
+        :return: data array with added errors
+        :rtype: np.ndarray
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array = d.add_error("mt01", comp=["zxx", "zxy", "tx"], z_value=7, t_value=.05)
+
+        """
+        c_dict = {
+            "zxx": (0, 0),
+            "zxy": (0, 1),
+            "zyx": (1, 0),
+            "zyy": (1, 1),
+            "tx": (0, 0),
+            "ty": (0, 1),
+        }
+
+        if isinstance(comp, str):
+            comp = [comp]
+        if periods is not None:
+            if len(periods) != 2:
+                msg = "Must enter a minimum and maximum period value"
+                self.logger.error(msg)
+                raise ValueError(msg)
+            p_min = np.where(self.period >= min(periods))[0][0]
+            p_max = np.where(self.period <= max(periods))[0][-1]
+        else:
+            p_min = 0
+            p_max = len(self.period) - 1
+
+        z_model_err = self.impedance_model_error.copy().data
+        t_model_err = self.tipper_model_error.copy().data
+        for cc in comp:
+            try:
+                ii, jj = c_dict[cc]
+            except KeyError:
+                msg = f"Component {cc} is not a valid component, skipping"
+                self.logger.warning(msg)
+                continue
+            if "z" in cc:
+                z_model_err[p_min:p_max, ii, jj] *= z_value
+
+            elif "t" in cc:
+                t_model_err[p_min:p_max, ii, jj] += t_value
+
+        self.impedance_model_error = z_model_err
+        self.tipper_model_error = t_model_err
+
+    def flip_phase(
+        self, zxx=False, zxy=False, zyx=False, zyy=False, tzx=False, tzy=False
+    ):
+        """
+        Flip the phase of a station in case its plotting in the wrong quadrant
+
+        :param station: name(s) of station to flip phase
+        :type station: string or list of strings
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
+        :type zxx: TYPE, optional
+        :param zxy: Z_xy, defaults to False
+        :type zxy: TYPE, optional
+        :param zyy: Z_yx, defaults to False
+        :type zyy: TYPE, optional
+        :param zyx: Z_yy, defaults to False
+        :type zyx: TYPE, optional
+        :param tx: T_zx, defaults to False
+        :type tx: TYPE, optional
+        :param ty: T_zy, defaults to False
+        :type ty: TYPE, optional
+        :return: new_data_array
+        :rtype: np.ndarray
+        :return: new mt_dict with components removed
+        :rtype: dictionary
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array, d.mt_dict = d.flip_phase("mt01", comp=["zx", "tx"])
+
+        """
+        c_dict = {
+            "zxx": {"index": (0, 0), "bool": zxx},
+            "zxy": {"index": (0, 1), "bool": zxy},
+            "zyx": {"index": (1, 0), "bool": zyx},
+            "zyy": {"index": (1, 1), "bool": zyy},
+            "tzx": {"index": (0, 0), "bool": tzx},
+            "tzy": {"index": (0, 1), "bool": tzy},
+        }
+
+        z_obj = self.Z.copy()
+        t_obj = self.Tipper.copy()
+
+        z_change = False
+        t_change = False
+        for ckey, dd in c_dict.items():
+            if dd["bool"]:
+                ii, jj = dd["index"]
+                if "z" in ckey:
+                    z_change = True
+                    z_obj.z[:, ii, jj] *= -1
+                    z_obj.z_err[:, ii, jj] *= -1
+                    z_obj.z_model_err[:, ii, jj] *= -1
+
+                elif "t" in ckey:
+                    t_change = True
+                    t_obj.tipper[:, ii, jj] *= -1
+                    t_obj.tipper_err[:, ii, jj] *= -1
+                    t_obj.tipper_model_err[:, ii, jj] *= -1
+
+        if z_change:
+            self.Z = z_obj
+        if t_change:
+            self.Tipper = t_obj
+
+    def remove_component(
+        self, zxx=False, zxy=False, zyy=False, zyx=False, tzx=False, tzy=False
+    ):
+        """
+        Remove a component for a given station(s)
+
+        :param station: station name or list of station names
+        :type station: string or list
+        :param zxx: Z_xx, defaults to False
+        :type zxx: TYPE, optional
+        :param zxy: Z_xy, defaults to False
+        :type zxy: TYPE, optional
+        :param zyy: Z_yx, defaults to False
+        :type zyy: TYPE, optional
+        :param zyx: Z_yy, defaults to False
+        :type zyx: TYPE, optional
+        :param tx: T_zx, defaults to False
+        :type tx: TYPE, optional
+        :param ty: T_zy, defaults to False
+        :type ty: TYPE, optional
+        :return: new data array with components removed
+        :rtype: np.ndarray
+        :return: new mt_dict with components removed
+        :rtype: dictionary
+
+        >>> d = Data()
+        >>> d.read_data_file(r"example/data.dat")
+        >>> d.data_array, d.mt_dict = d.remove_component("mt01", zxx=True, tx=True)
+
+        """
+        c_dict = {
+            "zxx": {"index": (0, 0), "bool": zxx},
+            "zxy": {"index": (0, 1), "bool": zxy},
+            "zyx": {"index": (1, 0), "bool": zyx},
+            "zyy": {"index": (1, 1), "bool": zyy},
+            "tzx": {"index": (0, 0), "bool": tzx},
+            "tzy": {"index": (0, 1), "bool": tzy},
+        }
+
+        z_obj = self.Z.copy()
+        t_obj = self.Tipper.copy()
+
+        z_change = False
+        t_change = False
+        for ckey, dd in c_dict.items():
+            if dd["bool"]:
+                ii, jj = dd["index"]
+                if "z" in ckey:
+                    z_change = True
+                    z_obj.z[:, ii, jj] = 0
+                    z_obj.z_err[:, ii, jj] = 0
+                    z_obj.z_model_err[:, ii, jj] = 0
+
+                elif "t" in ckey:
+                    t_change = True
+                    t_obj.tipper[:, ii, jj] = 0
+                    t_obj.tipper_err[:, ii, jj] = 0
+                    t_obj.tipper_model_err[:, ii, jj] = 0
+
+        if z_change:
+            self.Z = z_obj
+        if t_change:
+            self.Tipper = t_obj

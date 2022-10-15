@@ -93,7 +93,7 @@ class PlotPhaseTensor(PlotBase):
         """
 
         if self.x_limits is None:
-            self.x_limits = self.set_period_limits(1.0 / self.pt.freq)
+            self.x_limits = self.set_period_limits(1.0 / self.pt.frequency)
         # --> create plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
@@ -175,7 +175,7 @@ class PlotPhaseTensor(PlotBase):
 
         # plot phase tensor strike
         ps2 = self.ax_strike.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             az,
             marker=self.strike_pt_marker,
             ms=self.marker_size,
@@ -213,7 +213,7 @@ class PlotPhaseTensor(PlotBase):
         maxphierr = self.pt.phimax_err
 
         ermin = self.ax_phase.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             minphi,
             marker=self.xy_marker,
             ms=self.marker_size,
@@ -228,7 +228,7 @@ class PlotPhaseTensor(PlotBase):
         )
 
         ermax = self.ax_phase.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             maxphi,
             marker=self.yx_marker,
             ms=self.marker_size,
@@ -243,9 +243,11 @@ class PlotPhaseTensor(PlotBase):
         )
 
         if self.pt_limits is None:
+            pt_min = np.nan_to_num(self.pt.phimin)
+            pt_max = np.nan_to_num(self.pt.phimax)
             self.pt_limits = [
-                min([self.pt.phimax.min(), self.pt.phimin.min()]) - 3,
-                max([self.pt.phimax.max(), self.pt.phimin.max()]) + 3,
+                min([pt_max.min(), pt_min.min()]) - 3,
+                max([pt_max.max(), pt_min.max()]) + 3,
             ]
             if self.pt_limits[0] < -10:
                 self.pt_limits[0] = -9.9
@@ -267,19 +269,12 @@ class PlotPhaseTensor(PlotBase):
             columnspacing=0.01,
         )
 
-        # leg = plt.gca().get_legend()
-        # ltext = leg.get_texts()  # all the text.Text instance in the legend
-        # plt.setp(ltext, fontsize=6.5)  # the legend text fontsize
-
         self.ax_phase.set_ylim(self.pt_limits)
         self.ax_phase.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
         )
 
         self.ax_phase.set_ylabel("Phase (deg)", fontdict=self.font_dict)
-        # self.ax_phase.set_title(
-        #     "$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$", fontdict=self.font_dict
-        # )
 
         # -----------------------plotSkew---------------------------------------
 
@@ -287,7 +282,7 @@ class PlotPhaseTensor(PlotBase):
         skewerr = self.pt.beta_err
 
         erskew = self.ax_skew.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             skew,
             marker=self.skew_marker,
             ms=self.marker_size,
@@ -341,7 +336,7 @@ class PlotPhaseTensor(PlotBase):
         ellipticityerr = self.pt.ellipticity_err
 
         erskew = self.ax_ellipticity.errorbar(
-            1.0 / self.pt.freq,
+            1.0 / self.pt.frequency,
             ellipticity,
             marker=self.det_marker,
             ms=self.marker_size,

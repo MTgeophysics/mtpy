@@ -9,15 +9,17 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
-
-import os
+# =============================================================================
+# Imports
+# =============================================================================
+from pathlib import Path
 
 from mtpy.utils import exceptions as mtex
 
-__all__ = ["ControlFwd"]
+# =============================================================================
 
 
-class ControlFwd(object):
+class ControlFwd:
     """
     read and write control file for
 
@@ -27,18 +29,15 @@ class ControlFwd(object):
 
     def __init__(self, **kwargs):
 
-        self.num_qmr_iter = kwargs.pop("num_qmr_iter", 40)
-        self.max_num_div_calls = kwargs.pop("max_num_div_calls", 20)
-        self.max_num_div_iters = kwargs.pop("max_num_div_iters", 100)
-        self.misfit_tol_fwd = kwargs.pop("misfit_tol_fwd", 1.0e-7)
-        self.misfit_tol_adj = kwargs.pop("misfit_tol_adj", 1.0e-7)
-        self.misfit_tol_div = kwargs.pop("misfit_tol_div", 1.0e-5)
+        self.num_qmr_iter = 40
+        self.max_num_div_calls = 20
+        self.max_num_div_iters = 100
+        self.misfit_tol_fwd = 1.0e-7
+        self.misfit_tol_adj = 1.0e-7
+        self.misfit_tol_div = 1.0e-5
 
-        self.save_path = kwargs.pop("save_path", os.getcwd())
-        self.fn_basename = kwargs.pop("fn_basename", "control.fwd")
-        self.control_fn = kwargs.pop(
-            "control_fn", os.path.join(self.save_path, self.fn_basename)
-        )
+        self.save_path = Path().cwd()
+        self.fn_basename = "control.fwd"
 
         self._control_keys = [
             "Number of QMR iters per divergence correction",
@@ -69,12 +68,29 @@ class ControlFwd(object):
             [
                 (key, value)
                 for key, value in zip(
-                    self._control_keys, ["<.0f", "<.0f", "<.0f", "<.1e", "<.1e", "<.1e"]
+                    self._control_keys,
+                    ["<.0f", "<.0f", "<.0f", "<.1e", "<.1e", "<.1e"],
                 )
             ]
         )
 
-    def write_control_file(self, control_fn=None, save_path=None, fn_basename=None):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    @property
+    def control_fn(self):
+        return self.save_path.joinpath(self.fn_basename)
+
+    @control_fn.setter
+    def control_fn(self, value):
+        if value is not None:
+            value = Path(value)
+            self.save_path = value.parent
+            self.fn_basename = value.name
+
+    def write_control_file(
+        self, control_fn=None, save_path=None, fn_basename=None
+    ):
         """
         write control file
 
@@ -95,16 +111,13 @@ class ControlFwd(object):
         """
 
         if control_fn is not None:
-            self.save_path = os.path.dirname(control_fn)
-            self.fn_basename = os.path.basename(control_fn)
+            self.control_fn = control_fn
 
         if save_path is not None:
-            self.save_path = save_path
+            self.save_path = Path(save_path)
 
         if fn_basename is not None:
             self.fn_basename = fn_basename
-
-        self.control_fn = os.path.join(self.save_path, self.fn_basename)
 
         self._control_dict = dict(
             [
@@ -147,13 +160,10 @@ class ControlFwd(object):
                 "control_fn is None, input " "control file"
             )
 
-        if os.path.isfile(self.control_fn) is False:
+        if not self.control_fn.is_file():
             raise mtex.MTpyError_file_handling(
                 "Could not find {0}".format(self.control_fn)
             )
-
-        self.save_path = os.path.dirname(self.control_fn)
-        self.fn_basename = os.path.basename(self.control_fn)
 
         with open(self.control_fn, "r") as cfid:
             clines = cfid.readlines()

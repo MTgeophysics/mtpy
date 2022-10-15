@@ -9,7 +9,11 @@ ModEM
 # revised by AK 2017 to bring across functionality from ak branch
 
 """
-import os
+
+# =============================================================================
+# Imports
+# =============================================================================
+from pathlib import Path
 
 import numpy as np
 
@@ -21,10 +25,11 @@ try:
     from pyevtk.hl import gridToVTK
 except ImportError:
     print(
-        "If you want to write a vtk file for 3d viewing, you need to " "install pyevtk"
+        "If you want to write a vtk file for 3d viewing, you need to "
+        "install pyevtk"
     )
 
-__all__ = ["Covariance"]
+# =============================================================================
 
 
 class Covariance(object):
@@ -45,10 +50,8 @@ class Covariance(object):
         self.exception_list = []
         self.mask_arr = None
 
-        self.save_path = os.getcwd()
-        self.cov_fn_basename = "covariance.cov"
-
-        self.cov_fn = None
+        self.save_path = Path().cwd()
+        self.fn_basename = "covariance.cov"
 
         self._header_str = "\n".join(
             [
@@ -81,11 +84,22 @@ class Covariance(object):
                     )
                 )
 
+    @property
+    def cov_fn(self):
+        return self.save_path.joinpath(self.fn_basename)
+
+    @cov_fn.setter
+    def cov_fn(self, value):
+        if value is not None:
+            value = Path(value)
+            self.save_path = value.parent
+            self.fn_basename = value.name
+
     def write_covariance_file(
         self,
         cov_fn=None,
         save_path=None,
-        cov_fn_basename=None,
+        fn_basename=None,
         model_fn=None,
         sea_water=0.3,
         air=1e12,
@@ -100,9 +114,8 @@ class Covariance(object):
 
             # update save_path from model path if not provided separately
             if save_path is None:
-                save_path = os.path.dirname(model_fn)
+                save_path = mod_obj.save_path
 
-            print("Reading {0}".format(model_fn))
             self.grid_dimensions = mod_obj.res_model.shape
             if self.mask_arr is None:
                 self.mask_arr = np.ones_like(mod_obj.res_model)
@@ -115,16 +128,17 @@ class Covariance(object):
             ] = 9
 
         if self.grid_dimensions is None:
-            raise CovarianceError("Grid dimensions are None, input as (Nx, Ny, Nz)")
+            raise CovarianceError(
+                "Grid dimensions are None, input as (Nx, Ny, Nz)"
+            )
 
         if cov_fn is not None:
             self.cov_fn = cov_fn
         else:
             if save_path is not None:
-                self.save_path = save_path
-            if cov_fn_basename is not None:
-                self.cov_fn_basename = cov_fn_basename
-            self.cov_fn = os.path.join(self.save_path, self.cov_fn_basename)
+                self.save_path = Path(save_path)
+            if fn_basename is not None:
+                self.fn_basename = fn_basename
 
         clines = [
             self._header_str,
@@ -204,14 +218,11 @@ class Covariance(object):
         """
         read a covariance file
         """
-        if not os.path.isfile(cov_fn):
-            raise CovarianceError("{0} not found, check path".format(cov_fn))
-
         self.cov_fn = cov_fn
-        self.save_path = os.path.dirname(self.cov_fn)
-        self.cov_fn_basename = os.path.basename(self.cov_fn)
+        if not self.cov_fn:
+            raise CovarianceError(f"{self.cov_fn} not found, check path")
 
-        with open(cov_fn, "r") as fid:
+        with open(self.cov_fn, "r") as fid:
             lines = fid.readlines()
 
         num_find = False
@@ -233,7 +244,11 @@ class Covariance(object):
                 ):
                     self.smoothing_num = int(line_list[0])
                     num_find = True
-                elif len(line_list) == 1 and num_find and line_list[0].find(".") == -1:
+                elif (
+                    len(line_list) == 1
+                    and num_find
+                    and line_list[0].find(".") == -1
+                ):
                     self.exceptions_num = int(line_list[0])
                 elif len(line_list) == 1 and line_list[0].find(".") >= 0:
                     self.smoothing_z = float(line_list[0])
@@ -277,7 +292,12 @@ class Covariance(object):
         return parameter_dict
 
     def write_cov_vtk_file(
-        self, cov_vtk_fn, model_fn=None, grid_east=None, grid_north=None, grid_z=None
+        self,
+        cov_vtk_fn,
+        model_fn=None,
+        grid_east=None,
+        grid_north=None,
+        grid_z=None,
     ):
         """
         write a vtk file of the covariance to match things up

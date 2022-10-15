@@ -433,7 +433,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
     def _get_rot_z(self):
         return self._rot_z
 
-    rot_z = property(fget=_get_rot_z, fset=_set_rot_z, doc="""rotation angle(s)""")
+    rot_z = property(
+        fget=_get_rot_z, fset=_set_rot_z, doc="""rotation angle(s)"""
+    )
     # -------------------------------------------------------------------
 
     def _get_freq_list(self):
@@ -488,50 +490,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.residual_pt_list = []
         for mm, mt1 in enumerate(self.mt_list1):
             station_find = False
-            mt1.Z, mt1.Tipper = mt1.interpolate(self.freq_list, bounds_error=False)
+            mt1.Z, mt1.Tipper = mt1.interpolate(
+                self.freq_list, bounds_error=False
+            )
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
                     mt2.Z, mt2.Tipper = mt2.interpolate(
                         self.freq_list, bounds_error=False
                     )
                     logfid.write("{0}{1}{0}\n".format("=" * 30, mt1.station))
-                    # fdict2 = dict(
-                    #     [(np.round(ff, 5), ii) for ii, ff in enumerate(mt2.frequency)]
-                    # )
-
-                    # # need to make sure only matched frequencies are compared
-                    # index_1 = []
-                    # index_2 = []
-                    # for key1 in sorted(fdict1.keys()):
-                    #     try:
-                    #         index_2.append(fdict2[key1])
-                    #         index_1.append(fdict1[key1])
-                    #         logfid.write("-" * 20 + "\n")
-                    #         logfid.write("found {0} in both\n".format(key1))
-                    #         logfid.write(
-                    #             "Index 1={0}, Index 2={1}\n".format(
-                    #                 fdict1[key1], fdict2[key1]
-                    #             )
-                    #         )
-                    #     except KeyError:
-                    #         "Did not find {0:.4e} Hz in {1}".format(key1, mt2.fn)
-
-                    # # need to sort the index list, otherwise weird things
-                    # # happen
-                    # index_1.sort()
-                    # index_2.sort()
-
-                    # # create new Z objects that have similar frequencies
-                    # new_z1 = mtpl.mtz.Z(
-                    #     z_array=mt1.Z.z[index_1],
-                    #     z_err_array=mt1.Z.z_err[index_1],
-                    #     freq=mt1.frequency[index_1],
-                    # )
-                    # new_z2 = mtpl.mtz.Z(
-                    #     z_array=mt2.Z.z[index_2],
-                    #     z_err_array=mt2.Z.z_err[index_2],
-                    #     freq=mt2.frequency[index_2],
-                    # )
 
                     # make new phase tensor objects
                     pt1 = mtpt.PhaseTensor(z_object=mt1.Z)
@@ -652,7 +619,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 else:
                     pass
             if station_find == False:
-                print("Did not find {0} from list 1 in list 2".format(mt1.station))
+                print(
+                    "Did not find {0} from list 1 in list 2".format(mt1.station)
+                )
         # from the data get the relative offsets and sort the data by them
         self._get_offsets()
 
@@ -668,10 +637,18 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         """
 
-        filt_phimin_arr = sps.medfilt2d(self.rpt_array["phimin"], kernel_size=kernel)
-        filt_phimax_arr = sps.medfilt2d(self.rpt_array["phimax"], kernel_size=kernel)
-        filt_skew_arr = sps.medfilt2d(self.rpt_array["skew"], kernel_size=kernel)
-        filt_azimuth_arr = sps.medfilt2d(self.rpt_array["azimuth"], kernel_size=kernel)
+        filt_phimin_arr = sps.medfilt2d(
+            self.rpt_array["phimin"], kernel_size=kernel
+        )
+        filt_phimax_arr = sps.medfilt2d(
+            self.rpt_array["phimax"], kernel_size=kernel
+        )
+        filt_skew_arr = sps.medfilt2d(
+            self.rpt_array["skew"], kernel_size=kernel
+        )
+        filt_azimuth_arr = sps.medfilt2d(
+            self.rpt_array["azimuth"], kernel_size=kernel
+        )
 
         self.rpt_array["phimin"] = filt_phimin_arr
         self.rpt_array["phimax"] = filt_phimax_arr
@@ -702,7 +679,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 north = r_arr["lat"]
                 if self.linedir == "ew":
                     if east0 < east:
-                        offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                        offset = np.sqrt(
+                            (east0 - east) ** 2 + (north0 - north) ** 2
+                        )
                     elif east0 > east:
                         offset = -1 * np.sqrt(
                             (east0 - east) ** 2 + (north0 - north) ** 2
@@ -712,7 +691,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     r_arr["offset"] = offset
                 elif self.linedir == "ns":
                     if north0 < north:
-                        offset = np.sqrt((east0 - east) ** 2 + (north0 - north) ** 2)
+                        offset = np.sqrt(
+                            (east0 - east) ** 2 + (north0 - north) ** 2
+                        )
                     elif north0 > north:
                         offset = -1 * np.sqrt(
                             (east0 - east) ** 2 + (north0 - north) ** 2
@@ -783,7 +764,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
             try:
                 color_array = rpt[self.ellipse_colorby]
             except ValueError:
-                raise NameError("{0} is not supported".format(self.ellipse_colorby))
+                raise NameError(
+                    "{0} is not supported".format(self.ellipse_colorby)
+                )
             for jj, ff in enumerate(rpt["freq"]):
                 if phimin[jj] == 0.0 or phimax[jj] == 0.0:
                     pass
@@ -845,7 +828,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
         slist = np.array(
             [
                 (oo, ss)
-                for oo, ss in zip(self.rpt_array["offset"], self.rpt_array["station"])
+                for oo, ss in zip(
+                    self.rpt_array["offset"], self.rpt_array["station"]
+                )
             ],
             dtype=sdtype,
         )
@@ -861,17 +846,23 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
         # set y-axis major ticks to be on each power of 10
         self.ax.yaxis.set_ticks(
-            np.arange(pmin * self.ystretch, (pmax + 1) * self.ystretch, self.ystretch)
+            np.arange(
+                pmin * self.ystretch, (pmax + 1) * self.ystretch, self.ystretch
+            )
         )
         # set y-ticklabels to coincide with the desired label
         if self.tscale == "period":
             # make tick labels that will represent period
-            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)]
+            yticklabels = [
+                mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)
+            ]
             self.ax.set_ylabel(
                 "Period (s)", fontsize=self.font_size + 2, fontweight="bold"
             )
         elif self.tscale == "frequency":
-            yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)]
+            yticklabels = [
+                mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)
+            ]
             self.ax.set_ylabel(
                 "Frequency (Hz)", fontsize=self.font_size + 2, fontweight="bold"
             )
@@ -886,7 +877,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.ax.set_yticklabels(yticklabels)
 
         # --> set x-axis label
-        self.ax.set_xlabel("Station", fontsize=self.font_size + 2, fontweight="bold")
+        self.ax.set_xlabel(
+            "Station", fontsize=self.font_size + 2, fontweight="bold"
+        )
 
         # set x-axis ticks
         self.ax.set_xticks(self.offset_list * self.xstretch)
@@ -927,8 +920,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
         if cmap == "mt_seg_bl2wh2rd":
             # make a color list
             self.clist = [
-                (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-            ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
+                (cc, cc, 1)
+                for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
+            ] + [
+                (1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
+            ]
 
             # make segmented colormap
             mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
@@ -1058,7 +1054,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 os.mkdir(os.path.join(save_fn, "RPT_PS"))
                 save_fn = os.path.join(save_fn, "RPT_PS")
             save_fn = os.path.join(
-                save_fn, "RPT_PS_{0}.{1}".format(self.ellipse_colorby, file_format)
+                save_fn,
+                "RPT_PS_{0}.{1}".format(self.ellipse_colorby, file_format),
             )
             self.fig.savefig(
                 save_fn,

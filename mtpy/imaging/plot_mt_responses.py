@@ -66,13 +66,13 @@ class PlotMultipleResponses(PlotBase):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
         """
         Initialize parameters
         """
         self.plot_num = 1
         self.plot_style = "1"
-        self.tf_list = tf_list
+        self.mt_data = mt_data
         self.include_survey = True
 
         super().__init__(**kwargs)
@@ -114,7 +114,7 @@ class PlotMultipleResponses(PlotBase):
         """
         only a single value is allowed
         """
-        for tf in self.tf_list:
+        for tf in self.mt_data:
             tf.rotation_angle = value
         self._rotation_angle = value
 
@@ -460,7 +460,7 @@ class PlotMultipleResponses(PlotBase):
         return axr, axp, axr2, axp2, axt, axpt, label_coords
 
     def _plot_all(self):
-        ns = len(self.tf_list)
+        ns = self.mt_data.n_stations
 
         # set figure size according to what the plot will be.
         if self.fig_size is None:
@@ -473,7 +473,7 @@ class PlotMultipleResponses(PlotBase):
         # make a figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
 
-        for ii, mt in enumerate(self.tf_list):
+        for ii, mt in enumerate(self.mt_data.values()):
             (
                 axr,
                 axp,
@@ -540,19 +540,16 @@ class PlotMultipleResponses(PlotBase):
             raise ValueError(
                 "Compare mode does not support plotting diagonal components yet"
             )
-        ns = len(self.tf_list)
+        ns = self.mt_data.n_stations
 
         # make color lists for the plots going light to dark
         cxy = [(0, 0 + float(cc) / ns, 1 - float(cc) / ns) for cc in range(ns)]
         cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
         cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
         ctipr = [
-            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns)
-            for cc in range(ns)
+            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)
         ]
-        ctipi = [
-            (float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)
-        ]
+        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
 
         # make marker lists for the different components
         mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
@@ -591,7 +588,7 @@ class PlotMultipleResponses(PlotBase):
 
         period = []
 
-        for ii, mt in enumerate(self.tf_list):
+        for ii, mt in enumerate(self.mt_data.values()):
             period.append(mt.period.min())
             period.append(mt.period.max())
             self.xy_color = cxy[ii]
@@ -739,7 +736,7 @@ class PlotMultipleResponses(PlotBase):
 
     def _plot_single(self):
         p_dict = {}
-        for ii, tf in enumerate(self.tf_list, 1):
+        for ii, tf in enumerate(self.mt_data.values(), 1):
             p = tf.plot_mt_response(
                 **{
                     "fig_num": ii,
