@@ -188,24 +188,23 @@ def interpolate_elevation_to_grid(
 
     if fast:
         # buffer = 1  # use a buffer of 1 degree around mesh-bounds
-        mlonmin, mlatmin = project_point(
+        m_lon_min, m_lat_min = project_point(
             grid_east.min(), grid_north.min(), utm_epsg, datum_epsg
         )
 
-        mlonmax, mlatmax = project_point(
+        m_lon_max, m_lat_max = project_point(
             grid_east.max(), grid_north.max(), utm_epsg, datum_epsg
         )
-        subsetIndices = (
-            (lon >= mlonmin - buffer)
-            & (lon <= mlonmax + buffer)
-            & (lat >= mlatmin - buffer)
-            & (lat <= mlatmax + buffer)
+        survey_index = (
+            (lon >= m_lon_min - buffer)
+            & (lon <= m_lon_max + buffer)
+            & (lat >= m_lat_min - buffer)
+            & (lat <= m_lat_max + buffer)
         )
-        lon = lon[subsetIndices]
-        lat = lat[subsetIndices]
-        elev = elev[subsetIndices]
+        lon = lon[survey_index]
+        lat = lat[survey_index]
+        elev = elev[survey_index]
 
-    # end if
     easting, northing = project_point(lon, lat, datum_epsg, utm_epsg)
 
     # elevation in model grid

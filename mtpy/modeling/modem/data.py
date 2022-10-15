@@ -219,6 +219,7 @@ class Data:
         self.t_units = ""
         self.inv_mode = "1"
         self.formatting = "1"
+        self.rotation_angle = 0
 
         self.z_model_error = ModelErrors(
             error_value=5,

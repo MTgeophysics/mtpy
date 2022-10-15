@@ -1415,7 +1415,7 @@ class Model:
         self,
         topography_file=None,
         surface=None,
-        topographyarray=None,
+        topography_array=None,
         interp_method="nearest",
         air_resistivity=1e12,
         topography_buffer=None,
@@ -1434,7 +1434,7 @@ class Model:
         If n_airlayers is zero, then cannot add topo data, only bathymetry is needed.
 
         :param topography_file: file containing topography (arcgis ascii grid)
-        :param topographyarray: alternative to topography_file - array of
+        :param topography_array: alternative to topography_file - array of
                                 elevation values on model grid
         :param interp_method: interpolation method for topography,
                               'nearest', 'linear', or 'cubic'
@@ -1462,12 +1462,12 @@ class Model:
                 shift_east=shift_east,
                 shift_north=shift_north,
             )
-        elif topographyarray:
-            self.surface_dict["topography"] = topographyarray
+        elif topography_array:
+            self.surface_dict["topography"] = topography_array
         else:
             raise ValueError(
                 "'topography_file', 'surface' or "
-                + "topographyarray must be provided"
+                + "topography_array must be provided"
             )
 
         if self.n_air_layers is None or self.n_air_layers == 0:
