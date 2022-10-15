@@ -243,6 +243,7 @@ class ResPhase:
         if z is not None and z_err is not None:
             res_err = np.zeros_like(self._z, dtype=np.float)
             phase_err = np.zeros_like(self._z, dtype=np.float)
+            res = self.resistivity.copy()
 
             for idx_f in range(self.frequency.size):
                 for ii in range(2):
@@ -252,7 +253,7 @@ class ResPhase:
                             z[idx_f, ii, jj].imag,
                             z_err[idx_f, ii, jj],
                         )
-                        res_err[idx_f, ii, jj] = r_err
+                        res_err[idx_f, ii, jj] = r_err * res[idx_f, ii, jj]
                         phase_err[idx_f, ii, jj] = phi_err
         return res_err, phase_err
 

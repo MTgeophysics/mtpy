@@ -604,7 +604,6 @@ class MTCollection:
             mt_object = self.get_tf(tf_id, survey=survey)
             return mt_object.plot_mt_response(**kwargs)
         elif isinstance(tf_id, (list, tuple, np.ndarray, pd.Series)):
-            mt_data = []
             tf_request = np.array(tf_id)
             if len(tf_request.shape) > 1:
                 for row in tf_request:
