@@ -108,6 +108,7 @@ class Tipper:
         if self.tipper is not None and self.frequency is not None:
             self.compute_amp_phase()
             self.compute_mag_direction()
+            self.rotation_angle = np.zeros((len(self.tipper)))
 
     def __str__(self):
         lines = ["Induction Vector (Tippers)", "-" * 40]
