@@ -84,9 +84,7 @@ def get_plot_xy(plot_array, cell_size, n_padding_cells):
 
     n_points = int(
         abs(
-            plot_array["latitude"].max()
-            - plot_array["latitude"].min()
-            + 2 * ds
+            plot_array["latitude"].max() - plot_array["latitude"].min() + 2 * ds
         )
         / cell_size
     )
@@ -163,7 +161,7 @@ def interpolate_to_map_griddata(
     grid_x, grid_y, image = griddata_interpolate(
         plot_array["longitude"],
         plot_array["latitude"],
-        plot_array["component"],
+        plot_array[component],
         plot_x,
         plot_y,
     )

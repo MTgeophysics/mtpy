@@ -238,16 +238,7 @@ class Tipper:
             t_array = np.array(t_array, dtype=dtype)
         if not t_array.dtype in [dtype]:
             t_array = t_array.astype(dtype)
-        # check to see if the new tipper array is the same shape as the old
-        if self._tipper is not None and self._tipper.shape != t_array.shape:
-            msg = (
-                "Shape of new array does not match old.  "
-                + f"new shape {t_array.shape} != "
-                + f"old shape {self._tipper.shape}. "
-                + "Make a new Tipper instance to be save."
-            )
-            self.logger.error(msg)
-            raise MTpyError_Tipper(msg)
+
         if len(t_array.shape) == 3:
             if t_array.shape[1:3] == (1, 2):
                 return t_array
@@ -268,6 +259,17 @@ class Tipper:
                 raise MTpyError_Tipper(msg)
         else:
             msg = f"{t_array.shape} are not the correct dimensions, must be (n, 1, 2)"
+            self.logger.error(msg)
+            raise MTpyError_Tipper(msg)
+
+        # check to see if the new tipper array is the same shape as the old
+        if self._tipper is not None and self._tipper.shape != t_array.shape:
+            msg = (
+                "Shape of new array does not match old.  "
+                + f"new shape {t_array.shape} != "
+                + f"old shape {self._tipper.shape}. "
+                + "Make a new Tipper instance to be save."
+            )
             self.logger.error(msg)
             raise MTpyError_Tipper(msg)
 

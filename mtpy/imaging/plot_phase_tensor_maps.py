@@ -35,10 +35,10 @@ except ModuleNotFoundError:
     has_cx = False
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps, add_raster
-
+from mtpy.core import Z, Tipper
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.analysis.pt as mtpt
-import mtpy.core.z as mtz
+
 
 # ==============================================================================
 
@@ -177,8 +177,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         z = self._get_interpolated_z(tf)
         z_err = self._get_interpolated_z_err(tf)
 
-        new_z_obj = mtz.Z(z, z_err, frequency=[1.0 / self.plot_period])
-        new_z_obj.compute_resistivity_phase()
+        new_z_obj = Z(z, z_err, frequency=[1.0 / self.plot_period])
         pt_obj = mtpt.PhaseTensor(z_object=new_z_obj)
 
         new_t_obj = None
@@ -188,7 +187,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             t_err = self._get_interpolated_t_err(tf)
 
             if (t != 0).all():
-                new_t_obj = mtz.Tipper(t, t_err, [1.0 / self.plot_period])
+                new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
 
         return pt_obj, new_t_obj
 
@@ -486,7 +485,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         # make some empty arrays
         self.plot_xarr = np.zeros(len(self.mt_data))
         self.plot_yarr = np.zeros(len(self.mt_data))
-        for index, tf in enumerate(self.mt_data.values):
+        for index, tf in enumerate(self.mt_data.values()):
             plot_x, plot_y = self._get_patch(tf)
             self.plot_xarr[index] = plot_x
             self.plot_yarr[index] = plot_y

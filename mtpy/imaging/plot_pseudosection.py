@@ -243,7 +243,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
                     "res_det": np.log10(rp.res_det[ii]),
                     "phase_xx": rp.phase_xx[ii],
                     "phase_xy": rp.phase_xy[ii],
-                    "phase_yx": rp.phase_yx[ii],
+                    "phase_yx": rp.phase_yx[ii] + 180,
                     "phase_yy": rp.phase_yy[ii],
                     "phase_det": rp.phase_det[ii],
                 }

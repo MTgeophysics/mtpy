@@ -232,16 +232,6 @@ class Z(ResPhase):
             z_array = np.array(z_array, dtype=dtype)
         if z_array.dtype not in [dtype]:
             z_array = z_array.astype(dtype)
-        # check to see if the new z array is the same shape as the old
-        if old_shape is not None and old_shape != z_array.shape:
-            msg = (
-                "Shape of new array does not match old.  "
-                + f"new shape {z_array.shape} != "
-                + f"old shape {self._z.shape}. "
-                + "Make a new Z instance to be safe."
-            )
-            self.logger.error(msg)
-            raise MTpyError_Z(msg)
 
         if len(z_array.shape) == 3:
             if z_array.shape[1:3] == (2, 2):
@@ -262,6 +252,17 @@ class Z(ResPhase):
                 raise MTpyError_Z(msg)
         else:
             msg = f"{z_array.shape} are not the correct dimensions, must be (n, 2, 2)"
+            self.logger.error(msg)
+            raise MTpyError_Z(msg)
+
+        # check to see if the new z array is the same shape as the old
+        if old_shape is not None and old_shape != z_array.shape:
+            msg = (
+                "Shape of new array does not match old.  "
+                + f"new shape {z_array.shape} != "
+                + f"old shape {self._z.shape}. "
+                + "Make a new Z instance to be safe."
+            )
             self.logger.error(msg)
             raise MTpyError_Z(msg)
 

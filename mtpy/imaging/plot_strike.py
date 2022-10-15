@@ -193,7 +193,7 @@ class PlotStrike(PlotBase):
         """
         only a single value is allowed
         """
-        for ii, mt in enumerate(self.mt_data):
+        for mt in self.mt_data.values():
             mt.rotation_angle = value
         self._rotation_angle = value
 
@@ -212,7 +212,7 @@ class PlotStrike(PlotBase):
 
         entries = []
 
-        for dd, mt in enumerate(self.mt_data.values):
+        for mt in self.mt_data.values():
             # -----------get strike angle from invariants----------------------
             zinv = Zinvariants(mt.Z)
 

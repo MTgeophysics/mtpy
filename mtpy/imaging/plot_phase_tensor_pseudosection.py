@@ -120,7 +120,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
         east = np.zeros(self.mt_data.n_stations)
         north = np.zeros(self.mt_data.n_stations)
 
-        for ii, tf in enumerate(self.mt_data.values):
+        for ii, tf in enumerate(self.mt_data.values()):
             east[ii] = tf.longitude
             north[ii] = tf.latitude
 
@@ -409,7 +409,7 @@ class PlotPhaseTensorPseudoSection(PlotBase):
             dtype=[("offset", np.float), ("station", "U10")],
         )
 
-        for ii, tf in enumerate(self.mt_data):
+        for ii, tf in enumerate(self.mt_data.values()):
             offset, station = self._get_patch(tf)
             station_list[ii]["station"] = station
             station_list[ii]["offset"] = offset

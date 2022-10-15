@@ -25,7 +25,6 @@ from mtpy.modeling.modem import Data
 from mtpy.imaging import (
     PlotStations,
     PlotMultipleResponses,
-    PlotResidualPTMaps,
     PlotPhaseTensorMaps,
     PlotPhaseTensorPseudoSection,
     PlotStrike,
@@ -142,6 +141,26 @@ class MTData(OrderedDict, MTStations):
             return self[station_key]
         except KeyError:
             raise KeyError(f"Could not find {station_key} in MTData.")
+
+    def get_subset(self, station_list):
+        """
+        get a subset of the data from a list of stations, could be station_id
+        or station_keys
+
+        :param station_list: DESCRIPTION
+        :type station_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        mt_data = MTData()
+        for station in station_list:
+            if station.count(".") > 0:
+                mt_data.add_station(self.get_station(station_key=station))
+            else:
+                mt_data.add_station(self.get_station(station_id=station))
+
+        return mt_data
 
     @property
     def n_stations(self):
