@@ -11,8 +11,10 @@ Created on Mon Oct 10 11:58:56 2022
 
 from collections import OrderedDict
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import geopandas as gpd
+
 import matplotlib.pyplot as plt
 
 from .mt import MT
@@ -20,6 +22,18 @@ from .mt_stations import MTStations
 
 from mtpy.modeling.errors import ModelErrors
 from mtpy.modeling.modem import Data
+from mtpy.imaging import (
+    PlotStations,
+    PlotMultipleResponses,
+    PlotResidualPTMaps,
+    PlotPhaseTensorMaps,
+    PlotPhaseTensorPseudoSection,
+    PlotStrike,
+    PlotPenetrationDepth1D,
+    PlotPenetrationDepthMap,
+    PlotResPhaseMaps,
+    PlotResPhasePseudoSection,
+)
 
 # =============================================================================
 
@@ -95,6 +109,24 @@ class MTData(OrderedDict, MTStations):
         if key in self.keys():
             del self[key]
 
+    def get_station(self, station_id, survey_id):
+        """
+
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        station_key = f"{survey_id}/{station_id}"
+
+        try:
+            return self[station_key]
+        except KeyError:
+            raise KeyError(f"Could not find {station_key} in MTData.")
+
     @property
     def n_stations(self):
         if self.mt_list is not None:
@@ -135,6 +167,22 @@ class MTData(OrderedDict, MTStations):
             mt_object = MT()
             mt_object.from_dataframe(sdf)
             self.add_station(mt_object)
+
+    def to_geo_df(self):
+        """
+        Make a geopandas dataframe for easier GIS manipulation
+
+        """
+
+        df = self.station_locations
+
+        gdf = gpd.GeoDataFrame(
+            df,
+            geometry=gpd.points_from_xy(df.longitude, df.latitude),
+            crs=self.datum_crs,
+        )
+
+        return gdf
 
     def interpolate(self, new_periods):
         """
@@ -368,3 +416,160 @@ class MTData(OrderedDict, MTStations):
                 if "." not in key
             ]
         )
+
+    def plot_mt_response(self, station_id, survey_id, **kwargs):
+        """
+
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        if input as list, tuple, np.ndarray, pd.series assuming first column
+        is tf_id, and if needed the second column should be the survey id
+        for that tf.
+
+        """
+
+        mt_object = self.get_station(station_id, survey_id)
+        return mt_object.plot_mt_response(**kwargs)
+
+    def plot_stations(self, map_epsg=4326, bounding_box=None, **kwargs):
+        """
+        plot stations
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        gdf = self.to_geo_df()
+        return PlotStations(gdf, **kwargs)
+
+    def plot_strike(self, **kwargs):
+        """
+        Plot strike angle
+
+        .. seealso:: :class:`mtpy.imaging.PlotStrike`
+        """
+
+        return PlotStrike(self, **kwargs)
+
+    def plot_phase_tensor(self, station_id, survey_id, **kwargs):
+        """
+        plot phase tensor elements
+
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_obj = self.get_station(station_id, survey_id)
+        return tf_obj.plot_phase_tensor(**kwargs)
+
+    def plot_phase_tensor_map(self, **kwargs):
+        """
+        Plot Phase tensor maps for transfer functions in the working_dataframe
+
+        .. seealso:: :class:`mtpy.imaging.PlotPhaseTensorMaps`
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotPhaseTensorMaps(mt_data=self, **kwargs)
+
+    def plot_phase_tensor_pseudosection(self, mt_data=None, **kwargs):
+        """
+        Plot a pseudo section of  phase tensor ellipses and induction vectors
+        if specified
+
+        .. seealso:: :class:`mtpy.imaging.PlotPhaseTensorPseudosection`
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotPhaseTensorPseudoSection(mt_data=self, **kwargs)
+
+    def plot_penetration_depth_1d(self, station_id, survey_id, **kwargs):
+        """
+        Plot 1D penetration depth based on the Niblett-Bostick transformation
+
+        Note that data is rotated to estimated strike previous to estimation
+        and strike angles are interpreted for data points that are 3D.
+
+        .. seealso:: :class:`mtpy.analysis.niblettbostick.calculate_depth_of_investigation`
+
+
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_object = self.get_station(station_id, survey_id)
+
+        return PlotPenetrationDepth1D(tf_object, **kwargs)
+
+    def plot_penetration_depth_map(self, **kwargs):
+        """
+        Plot Penetration depth in map view for a single period
+
+        .. seealso:: :class:`mtpy.imaging.PlotPenetrationDepthMap`
+
+        :param mt_data: DESCRIPTION
+        :type mt_data: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotPenetrationDepthMap(self, **kwargs)
+
+    def plot_resistivity_phase_maps(self, **kwargs):
+        """
+        Plot apparent resistivity and/or impedance phase maps from the
+        working dataframe
+
+        .. seealso:: :class:`mtpy.imaging.PlotResPhaseMaps`
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotResPhaseMaps(self, **kwargs)
+
+    def plot_resistivity_phase_pseudosections(self, **kwargs):
+        """
+        Plot resistivity and phase in a pseudosection along a profile line
+
+        :param mt_data: DESCRIPTION, defaults to None
+        :type mt_data: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotResPhasePseudoSection(self, **kwargs)

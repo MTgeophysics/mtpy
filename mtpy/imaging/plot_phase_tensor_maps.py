@@ -49,7 +49,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
         """
         Initialise the object
         :param kwargs: keyword-value pairs
@@ -57,7 +57,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         super().__init__(**kwargs)
 
         self._rotation_angle = 0
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
         # set the frequency to plot
         self.plot_station = False
@@ -160,7 +160,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         """
         only a single value is allowed
         """
-        for tf in self.tf_list:
+        for tf in self.mt_data:
             tf.rotation_angle = value
         self._rotation_angle = value
 
@@ -484,9 +484,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self._get_tick_format()
 
         # make some empty arrays
-        self.plot_xarr = np.zeros(len(self.tf_list))
-        self.plot_yarr = np.zeros(len(self.tf_list))
-        for index, tf in enumerate(self.tf_list):
+        self.plot_xarr = np.zeros(len(self.mt_data))
+        self.plot_yarr = np.zeros(len(self.mt_data))
+        for index, tf in enumerate(self.mt_data.values):
             plot_x, plot_y = self._get_patch(tf)
             self.plot_xarr[index] = plot_x
             self.plot_yarr[index] = plot_y

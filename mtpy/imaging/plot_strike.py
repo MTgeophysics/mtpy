@@ -124,10 +124,10 @@ class PlotStrike(PlotBase):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
 
         self._rotation_angle = 0
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
         super().__init__(**kwargs)
 
@@ -193,7 +193,7 @@ class PlotStrike(PlotBase):
         """
         only a single value is allowed
         """
-        for ii, mt in enumerate(self.tf_list):
+        for ii, mt in enumerate(self.mt_data):
             mt.rotation_angle = value
         self._rotation_angle = value
 
@@ -212,7 +212,7 @@ class PlotStrike(PlotBase):
 
         entries = []
 
-        for dd, mt in enumerate(self.tf_list):
+        for dd, mt in enumerate(self.mt_data.values):
             # -----------get strike angle from invariants----------------------
             zinv = Zinvariants(mt.Z)
 

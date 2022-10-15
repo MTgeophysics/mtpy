@@ -15,6 +15,7 @@ ModEM
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from pyproj import CRS
 import geopandas as gpd
 
 from mtpy.core.mt_location import MTLocation
@@ -42,9 +43,9 @@ class MTStations:
         self.dtype = dict(
             [
                 ("station", "U50"),
-                ("lat", float),
-                ("lon", float),
-                ("elev", float),
+                ("latitude", float),
+                ("longitude", float),
+                ("elevation", float),
                 ("datum_epsg", "U6"),
                 ("east", float),
                 ("north", float),
@@ -54,8 +55,8 @@ class MTStations:
                 ("model_elev", float),
             ]
         )
-        self.utm_epsg = utm_epsg
-        self.datum_epsg = datum_epsg
+        self._datum_crs = CRS.from_epsg(4326)
+        self._utm_crs = None
         self._center_lat = None
         self._center_lon = None
         self._center_elev = 0.0
@@ -73,15 +74,15 @@ class MTStations:
         fmt_dict = dict(
             [
                 ("station", "<8"),
-                ("lat", "<10.4f"),
-                ("lon", "<10.4f"),
-                ("elev", "<8.2f"),
+                ("latitude", "<10.4f"),
+                ("longitude", "<10.4f"),
+                ("elevation", "<8.2f"),
                 ("model_east", "<13.2f"),
                 ("model_north", "<13.2f"),
                 ("model_elev", "<8.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
-                ("zone", "<6"),
+                ("utm_epsg", "<6"),
             ]
         )
         lines = [
@@ -101,15 +102,21 @@ class MTStations:
 
         lines.append("\nModel Center:")
         l = []
-        for n in ["lat", "lon", "elev", "east", "north", "zone"]:
+        for n in [
+            "latitude",
+            "longitude",
+            "elevation",
+            "east",
+            "north",
+            "utm_epsg",
+        ]:
             l.append(f"{self.center_point[n][0]:{fmt_dict[n]}}")
         lines.append("".join(l))
 
         lines.append("\nMean Values:")
         l = []
-        for n in ["lat", "lon", "elev", "east", "north"]:
+        for n in ["latitude", "longitude", "elevation", "east", "north"]:
             l.append(f"{self.station_locations[n].mean():{fmt_dict[n]}}")
-        lines.append("".join(l) + f"{self.center_point.zone[0]:<6}")
 
         return "\n".join(lines)
 
@@ -125,32 +132,68 @@ class MTStations:
         self.utm_epsg = value
 
     @property
+    def utm_crs(self):
+        if self._utm_crs is not None:
+            return self._utm_crs
+
+    @property
+    def utm_name(self):
+        if self._utm_crs is not None:
+            return self._utm_crs.name
+
+    @property
     def utm_epsg(self):
-        return self._utm_epsg
+        if self._utm_crs is not None:
+            return self._utm_crs.to_epsg()
 
     @utm_epsg.setter
     def utm_epsg(self, value):
-        """
-        set the model epsg number an project east, north
-        """
-        self._utm_epsg = value
-        if self._utm_epsg is not None:
-            for mt_obj in self.mt_list:
-                mt_obj.utm_epsg = value
+        self.utm_crs = value
+
+    @property
+    def utm_zone(self):
+        if self._utm_crs is not None:
+            return self._utm_crs.utm_zone
+
+    @utm_crs.setter
+    def utm_crs(self, value):
+        if value in [None, "None", "none", "null"]:
+            return
+
+        self._utm_crs = CRS.from_user_input(value)
+        for mt_obj in self.mt_list:
+            mt_obj.utm_epsg = self._utm_crs
+
+    @property
+    def datum_crs(self):
+        if self._datum_crs is not None:
+            return self._datum_crs
+
+    @property
+    def datum_name(self):
+        if self._datum_crs is not None:
+            return self._datum_crs.name
 
     @property
     def datum_epsg(self):
-        return self._datum_epsg
+        if self._datum_crs is not None:
+            return self._datum_crs.to_epsg()
 
     @datum_epsg.setter
     def datum_epsg(self, value):
+        self.datum_crs = value
+
+    @datum_crs.setter
+    def datum_crs(self, value):
         """
         set the model epsg number an project east, north
         """
-        self._datum_epsg = value
-        if self._datum_epsg is not None:
-            for mt_obj in self.mt_list:
-                mt_obj.datum_epsg = value
+        if value in [None, "None", "none", "null"]:
+            return
+
+        self._datum_crs = CRS.from_user_input(value)
+        for mt_obj in self.mt_list:
+            mt_obj.datum_crs = self._datum_crs
 
     @property
     def station_locations(self):
@@ -179,9 +222,9 @@ class MTStations:
         # get station locations in meters
         for ii, mt_obj in enumerate(self.mt_list):
             entries["station"][ii] = mt_obj.station
-            entries["lat"][ii] = mt_obj.latitude
-            entries["lon"][ii] = mt_obj.longitude
-            entries["elev"][ii] = mt_obj.elevation
+            entries["latitude"][ii] = mt_obj.latitude
+            entries["longitude"][ii] = mt_obj.longitude
+            entries["elevation"][ii] = mt_obj.elevation
             entries["datum_epsg"][ii] = mt_obj.datum_epsg
             entries["east"][ii] = mt_obj.east
             entries["north"][ii] = mt_obj.north

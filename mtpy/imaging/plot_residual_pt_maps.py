@@ -91,8 +91,8 @@ class PlotResidualPTMaps(PlotBase):
 
     def __init__(
         self,
-        tf_object_list_01,
-        tf_object_list_02,
+        mt_data_01,
+        mt_data_02,
         frequencies=np.logspace(-3, 3, 40),
         **kwargs,
     ):
@@ -100,8 +100,8 @@ class PlotResidualPTMaps(PlotBase):
         super().__init__(**kwargs)
 
         self.freq_list = frequencies
-        self.tf_list1 = tf_object_list_01
-        self.tf_list2 = tf_object_list_02
+        self.mt_data_01 = mt_data_01
+        self.mt_data_02 = mt_data_02
 
         self.ellipse_range = (0, 5)
         self.ellipse_cmap = "mt_yl2rd"
@@ -207,7 +207,7 @@ class PlotResidualPTMaps(PlotBase):
         need to rotate data when setting z
         """
 
-        for tf_obj in self.tf_list1 + self.tf_list2:
+        for tf_obj in self.mt_data_01 + self.mt_data_02:
             tf_obj.rotation_angle = rot_z
 
     def _match_lists(self, one, two):
@@ -221,19 +221,25 @@ class PlotResidualPTMaps(PlotBase):
 
         matches = []
         two_found = []
-        for mm, mt1 in enumerate(one):
+        for key, mt1 in one.items():
             station_find = False
-            for mt2 in two:
-                if mt2.tf_id in two_found:
-                    continue
-                if mt1.tf_id == mt2.tf_id:
-                    if (
-                        abs(mt1.latitude - mt2.latitude) < 0.001
-                        and abs(mt1.longitude - mt2.longitude) < 0.001
-                    ):
-                        matches.append([mt1, mt2])
-                        station_find = True
-                        two_found.append(mt2.tf_id)
+            try:
+                mt2 = two[key]
+                matches.append([mt1, mt2])
+                station_find = True
+                two_found.append(mt2.tf_id)
+            except KeyError:
+                for mt2 in two.values:
+                    if mt2.tf_id in two_found:
+                        continue
+                    if mt1.tf_id == mt2.tf_id:
+                        if (
+                            abs(mt1.latitude - mt2.latitude) < 0.001
+                            and abs(mt1.longitude - mt2.longitude) < 0.001
+                        ):
+                            matches.append([mt1, mt2])
+                            station_find = True
+                            two_found.append(mt2.tf_id)
                         break
             if not station_find:
                 self.logger.warning(
@@ -249,7 +255,7 @@ class PlotResidualPTMaps(PlotBase):
         plot
         """
 
-        matches = self._match_lists(self.tf_list1, self.tf_list2)
+        matches = self._match_lists(self.mt_data_01, self.mt_data_02)
         num_freq = self.freq_list.shape[0]
         num_station = len(matches)
 

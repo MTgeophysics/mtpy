@@ -71,14 +71,14 @@ class PlotResPhaseMaps(PlotBaseMaps):
                         to this number for the axis labels.
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
         """
         Initialise the object
         :param kwargs: keyword-value pairs
         """
         super().__init__(**kwargs)
 
-        self.tf_list = tf_list
+        self.mt_data = mt_data
 
         # read in map scale
         self.map_units = "deg"
@@ -250,7 +250,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
         """
 
         plot_array = np.zeros(
-            len(self.tf_list),
+            len(self.mt_data),
             dtype=[
                 ("station", "U20"),
                 ("latitude", float),
@@ -269,7 +269,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
             ],
         )
 
-        for ii, tf in enumerate(self.tf_list):
+        for ii, tf in enumerate(self.mt_data.values):
             z = self._get_interpolated_z(tf)
             z_object = Z(z, frequency=[1.0 / self.plot_period])
 

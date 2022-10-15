@@ -35,12 +35,12 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
 
     """
 
-    def __init__(self, tf_list, **kwargs):
+    def __init__(self, mt_data, **kwargs):
         """
         Initialize parameters
         """
 
-        super().__init__(tf_list, **kwargs)
+        super().__init__(mt_data, **kwargs)
 
         # --> set figure parameters
         self.aspect = kwargs.pop("aspect", "auto")
@@ -224,7 +224,7 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
 
         entries = []
 
-        for ii, tf in enumerate(self.tf_list):
+        for ii, tf in enumerate(self.mt_data.values):
             offset = self._get_offset(tf)
             rp = tf.Z
 
