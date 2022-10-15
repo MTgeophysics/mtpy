@@ -7,11 +7,17 @@ Created on Wed Oct 25 09:35:31 2017
 functions to assist with mesh generation
 
 """
-
+# =============================================================================
+# Imports
+# =============================================================================
 import numpy as np
 import mtpy.utils.filehandling as mtfh
 from mtpy.utils.gis_tools import project_point
 import scipy.interpolate as spi
+import rasterio
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+
+# =============================================================================
 
 
 def grid_centre(grid_edges):
@@ -97,6 +103,44 @@ def rotate_mesh(
     yg = (new_coords[1] + y0).reshape(len(gcn), len(gce))
 
     return xg, yg
+
+
+def interpolate_elevation_rasterio(
+    grid_east,
+    grid_north,
+    surface_file,
+    utm_epsg,
+    datum_epsg=4326,
+    method="linear",
+    fast=True,
+    buffer=1,
+):
+    f = rasterio.open(surface_file)
+
+    dst_crs = {"init": f"EPSG:{utm_epsg}"}
+    transform, width, height = calculate_default_transform(
+        f.crs, dst_crs, f.width, f.height, *f.bounds
+    )
+
+    with rasterio.open(
+        "tmp.tif",
+        "w",
+        crs=dst_crs,
+        transform=transform,
+        width=width,
+        height=height,
+        count=1,
+        dtype=rasterio.float32,
+    ) as elev:
+        reproject(
+            rasterio.band(f, 1),
+            rasterio.band(elev, 1),
+            src_tranform=f.transform,
+            src_crs=f.crs,
+            dst_transform=transform,
+            dst_crs=dst_crs,
+            resampling=Resampling.nearest,
+        )
 
 
 def interpolate_elevation_to_grid(
