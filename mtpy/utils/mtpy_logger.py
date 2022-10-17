@@ -7,7 +7,6 @@ see also: http://www.cdotson.com/2015/11/python-logging-best-practices/
 """
 
 from pathlib import Path
-import yaml
 import logging
 import logging.config
 import queue
@@ -29,18 +28,12 @@ LOG_FORMAT = logging.Formatter(
 )
 # Get the configuration file path, should be in same directory as this file
 CONF_PATH = Path(__file__).parent
-CONF_FILE = Path.joinpath(CONF_PATH, "logging_config.yaml")
 
 # make a folder for the logs to go into.
 LOG_PATH = CONF_PATH.parent.parent.joinpath("logs")
 
 if not LOG_PATH.exists():
     LOG_PATH.mkdir()
-
-if not CONF_FILE.exists():
-    CONF_FILE = None
-    print("No Logging configuration file found, using defaults.")
-
 
 class EvictQueue(queue.Queue):
     def __init__(self, maxsize):
@@ -66,21 +59,6 @@ def speed_up_logs():
     queue_listener = logging.handlers.QueueListener(log_que, *rootLogger.handlers)
     queue_listener.start()
     rootLogger.handlers = [queue_handler]
-
-
-def load_configure(config_fn=CONF_FILE):
-    # def load_configure(path2configfile='logging.yml'):
-    """
-    configure/setup the logging according to the input configfile
-
-    :param configfile: .yml, .ini, .conf, .json, .yaml.
-    Its default is the logging.yml located in the same dir as this module.
-    It can be modofied to use env variables to search for a log config file.
-    """
-    config_file = Path(config_fn)
-    with open(config_file, "r") as fid:
-        config_dict = yaml.safe_load(fid)
-    logging.config.dictConfig(config_dict)
 
 
 def get_mtpy_logger(logger_name, fn=None, level="debug"):
