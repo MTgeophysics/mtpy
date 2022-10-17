@@ -24,6 +24,7 @@ requirements = [
     "mth5",
     "pandas",
     "geopandas",
+    "contextily",
 ]
 
 setup_requirements = [
