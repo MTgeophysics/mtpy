@@ -25,6 +25,7 @@ requirements = [
     "pandas",
     "geopandas",
     "contextily",
+    "pyevtk"
 ]
 
 setup_requirements = [
