@@ -11,9 +11,7 @@ MTpy
 __version__ = "1.1.5"
 
 # load mtpy default logging config
-from mtpy.utils.mtpy_logger import load_configure, get_mtpy_logger
-
-load_configure()
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 debug_logger = get_mtpy_logger(__name__, fn="mtpy_debug", level="debug")
 debug_logger.debug("Starting MTpy Debug Log File")
