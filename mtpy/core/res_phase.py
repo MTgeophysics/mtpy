@@ -78,6 +78,7 @@ class ResPhase:
 
         if len(value.shape) > 1:
             value = value.flatten()
+        return value
 
     def _validate_input(self, value):
         """
