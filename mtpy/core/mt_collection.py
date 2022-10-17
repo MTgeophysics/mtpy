@@ -434,9 +434,9 @@ class MTCollection:
         """
         coordinate_system = f"epsg:{epsg}"
         if bounding_box is not None:
-            df = self.apply_bbox(*bounding_box)
-        else:
-            df = self.dataframe
+            self.apply_bbox(*bounding_box)
+            
+        df = self.dataframe
 
         gdf = gpd.GeoDataFrame(
             df[
