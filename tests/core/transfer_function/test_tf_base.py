@@ -112,6 +112,29 @@ class TestTFBaseTFModelErrorInput(unittest.TestCase):
         self.assertEqual((self.tf.period == np.arange(1, 3, 1)).all(), True)
 
 
+class TestTFBaseFrequencyInput(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.tf = TFBase(frequency=[1, 2, 3])
+        self.expected_shape = (3, 1, 1)
+        self.expected = {
+            "transfer_function": {"dtype": complex, "empty": True},
+            "transfer_function_error": {"dtype": float, "empty": True},
+            "transfer_function_model_error": {"dtype": float, "empty": True},
+        }
+
+    def test_set_frequency(self):
+        self.tf.frequency = np.logspace(-1, 1, 3)
+        with self.subTest("freq"):
+            self.assertEqual(
+                (self.tf.frequency == np.logspace(-1, 1, 3)).all(), True
+            )
+        with self.subTest("period"):
+            self.assertEqual(
+                (self.tf.period == 1.0 / np.logspace(-1, 1, 3)).all(), True
+            )
+
+
 # =============================================================================
 # Run
 # =============================================================================

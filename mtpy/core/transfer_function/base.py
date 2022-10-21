@@ -41,18 +41,20 @@ class TFBase:
         self.inputs = ["x"]
         self.outputs = ["y"]
         self._expected_shape = (1, 1)
+        self._name = "base transfer function"
 
         self._dataset = self._initialize()
 
         tf = self._validate_array_input(tf, complex)
         tf_error = self._validate_array_input(tf_error, float)
         tf_model_error = self._validate_array_input(tf_model_error, float)
+        frequency = self._validate_frequency(frequency)
 
         if tf is not None:
             if frequency is not None:
                 self._validate_array_shape(frequency, tf.shape[0])
             else:
-                frequency = np.arange(1, tf.shape[0] + 1, 1)
+                frequency = 1.0 / np.arange(1, tf.shape[0] + 1, 1)
             self._dataset = self._initialize(
                 1.0 / frequency,
                 tf=tf,
@@ -72,7 +74,7 @@ class TFBase:
             if frequency is not None:
                 self._validate_array_shape(frequency, tf_error.shape[0])
             else:
-                frequency = np.arange(1, tf_error.shape[0] + 1, 1)
+                frequency = 1.0 / np.arange(1, tf_error.shape[0] + 1, 1)
             self._dataset = self._initialize(
                 1.0 / frequency,
                 tf=np.zeros_like(tf_error, dtype=complex),
@@ -90,7 +92,7 @@ class TFBase:
             if frequency is not None:
                 self._validate_array_shape(frequency, tf_model_error.shape[0])
             else:
-                frequency = np.arange(1, tf_model_error.shape[0] + 1, 1)
+                frequency = 1.0 / np.arange(1, tf_model_error.shape[0] + 1, 1)
 
             self._dataset = self._initialize(
                 1.0 / frequency,
@@ -99,48 +101,34 @@ class TFBase:
                 tf_model_error=tf_model_error,
             )
 
+        elif frequency is not None:
+            self._dataset = self._initialize(1.0 / frequency)
+        else:
+            self._dataset = self._initialize()
+
         if tf is not None:
             self.rotation_angle = np.zeros((len(tf)))
 
     def __str__(self):
-        lines = ["Transfer Function", "-" * 30]
+        lines = [f"Transfer Function {self._name}", "-" * 30]
         if self.frequency is not None:
+            lines.append(f"\tNumber of periods:  {self.frequency.size}")
             lines.append(
-                f"\tNumber of frequencyuencies:  {self.frequency.size}"
+                f"\tFrequency range:        {self.frequency.min():.5E} -- "
+                f"{self.frequency.max():.5E} Hz"
             )
             lines.append(
-                f"\tfrequencyuency range:        {self.frequency.min():.5E} -- {self.frequency.max():.5E} Hz"
-            )
-            lines.append(
-                f"\tPeriod range:           {1/self.frequency.max():.5E} -- {1/self.frequency.min():.5E} s"
+                f"\tPeriod range:           {1/self.frequency.max():.5E} -- "
+                f"{1/self.frequency.min():.5E} s"
             )
             lines.append("")
-            lines.append("\tElements:")
-            for zz, ff in zip(self.z, self.frequency):
-                lines.append(f"\tfrequencyuency: {ff:5E} Hz -- Period {1/ff} s")
-                lines.append(
-                    "\t\t"
-                    + np.array2string(
-                        zz,
-                        formatter={
-                            "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
-                        },
-                    ).replace("\n", "\n\t\t")
-                )
-        else:
-            if self.z is not None:
-                lines.append("Elements:")
-                for ff, zz in enumerate(self.z):
-                    lines.append(f"\tIndex {ff}")
-                    lines.append(
-                        "\t\t"
-                        + np.array2string(
-                            zz,
-                            formatter={
-                                "complex_kind": lambda x: f"{x.real:.4e}{x.imag:+.4E}"
-                            },
-                        ).replace("\n", "\n\t\t")
-                    )
+            lines.append(f"\tHas {self._name}:              {self._has_tf()}")
+            lines.append(
+                f"\tHas {self._name}_error:        {self._has_tf_error()}"
+            )
+            lines.append(
+                f"\tHas {self._name}_model_error:  {self._has_tf_model_error()}"
+            )
         return "\n".join(lines)
 
     def __repr__(self):
@@ -212,8 +200,29 @@ class TFBase:
 
         """
 
-        if (self._dataset.transfer_function.values == 0).all():
+        if (
+            (self._dataset.transfer_function.values == 0).all()
+            and (self._dataset.transfer_function_error.values == 0).all()
+            and (self._dataset.transfer_function_model_error.values == 0).all()
+        ):
             return True
+
+    def _has_tf(self):
+        if not self._is_empty():
+            return (self._dataset.transfer_function.values == 0).all()
+        return False
+
+    def _has_tf_error(self):
+        if not self._is_empty():
+            return (self._dataset.transfer_function_error.values == 0).all()
+        return False
+
+    def _has_tf_model_error(self):
+        if not self._is_empty():
+            return (
+                self._dataset.transfer_function_model_error.values == 0
+            ).all()
+        return False
 
     # ---frequencyuency-------------------------------------------------------------
     @property
@@ -223,7 +232,7 @@ class TFBase:
 
         Units are Hz.
         """
-        return self._dataset.period.values
+        return 1.0 / self._dataset.period.values
 
     @frequency.setter
     def frequency(self, frequency):
@@ -238,11 +247,13 @@ class TFBase:
             return
 
         if self._is_empty():
-            frequency = self._validate_array_input(frequency, float)
+            frequency = self._validate_frequency(frequency)
         else:
-            frequency = self._validate_array_input(
-                frequency, float, self._dataset.period.shape
+            frequency = self._validate_frequency(
+                frequency, n_frequencies=self._dataset.period.shape[0]
             )
+
+        self._dataset = self._dataset.assign_coords({"period": 1.0 / frequency})
 
     @property
     def period(self):
@@ -259,6 +270,27 @@ class TFBase:
         """
 
         self.frequency = 1.0 / value
+
+    def _validate_frequency(self, frequency, n_frequencies=None):
+        """
+        validate frequency
+        """
+
+        if frequency is None:
+            return
+
+        frequency = np.array(frequency, dtype=float)
+        if len(frequency) > 1:
+            frequency = frequency.flatten()
+
+        if n_frequencies is not None:
+            if frequency.size != n_frequencies:
+                raise ValueError(
+                    f"input frequencies must have shape {n_frequencies} not "
+                    f"{frequency.size}"
+                )
+
+        return frequency
 
     def _validate_array_input(self, tf_array, expected_dtype, old_shape=None):
         """
