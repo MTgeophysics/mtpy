@@ -72,7 +72,7 @@ class TFBase:
             if frequency is not None:
                 self._validate_array_shape(frequency, tf_error.shape[0])
             else:
-                frequency = np.arange(1, tf.shape[0] + 1, 1)
+                frequency = np.arange(1, tf_error.shape[0] + 1, 1)
             self._dataset = self._initialize(
                 1.0 / frequency,
                 tf=np.zeros_like(tf_error, dtype=complex),
@@ -90,7 +90,7 @@ class TFBase:
             if frequency is not None:
                 self._validate_array_shape(frequency, tf_model_error.shape[0])
             else:
-                frequency = np.arange(1, tf.shape[0] + 1, 1)
+                frequency = np.arange(1, tf_model_error.shape[0] + 1, 1)
 
             self._dataset = self._initialize(
                 1.0 / frequency,
