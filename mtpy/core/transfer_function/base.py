@@ -287,7 +287,9 @@ class TFBase:
             if frequency.size != n_frequencies:
                 raise ValueError(
                     f"input frequencies must have shape {n_frequencies} not "
-                    f"{frequency.size}"
+                    f"{frequency.size}. "
+                    "Use tf._dataset = TFBase._initialize(1./new_frequencies) "
+                    "or make a new transfer function object"
                 )
 
         return frequency
@@ -491,3 +493,15 @@ class TFBase:
         self.z = z_rot
         if self.z_err is not None:
             self.z_err = z_err_rot
+
+    def interpolate(self, new_periods):
+        """
+        interpolate onto a new period range
+
+        :param new_periods: DESCRIPTION
+        :type new_periods: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
