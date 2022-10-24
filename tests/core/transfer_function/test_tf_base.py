@@ -177,6 +177,9 @@ class TestTFBaseValidators(unittest.TestCase):
             True,
         )
 
+    def test_validate_frequency_shape(self):
+        self.assertEqual(self.tf._validate_frequency([1], 10).size, 10)
+
 
 # =============================================================================
 # Run
