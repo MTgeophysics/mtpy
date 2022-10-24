@@ -146,6 +146,38 @@ class TestTFBaseFrequencyInput(unittest.TestCase):
             )
 
 
+class TestTFBaseValidators(unittest.TestCase):
+    def setUp(self):
+        self.tf = TFBase()
+
+    def test_validate_array_input_float(self):
+        self.assertEqual(
+            (
+                np.zeros((1, 1, 1), dtype=float)
+                == self.tf._validate_array_input([[0]], float)
+            ).all(),
+            True,
+        )
+
+    def test_validate_array_input_complex(self):
+        self.assertEqual(
+            (
+                np.zeros((1, 1, 1), dtype=complex)
+                == self.tf._validate_array_input([[0]], complex)
+            ).all(),
+            True,
+        )
+
+    def test_validate_array_input_int(self):
+        self.assertEqual(
+            (
+                np.zeros((1, 1, 1), dtype=float)
+                == self.tf._validate_array_input([[0]], float)
+            ).all(),
+            True,
+        )
+
+
 # =============================================================================
 # Run
 # =============================================================================
