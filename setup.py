@@ -87,7 +87,7 @@ setup_kwargs['packages'] = [
      
 setup_kwargs['install_requires'] = ['numpy>=1.8.1',
                                      'scipy>=0.14.0',
-                                     'matplotlib<=3.4',
+                                     'matplotlib<=3.3',
                                      'pyyaml',
                                      'pyproj',
                                      'configparser']
