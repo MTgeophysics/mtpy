@@ -52,9 +52,6 @@ class TFBase:
             tf_model_error=tf_model_error,
         )
 
-        if tf is not None:
-            self.rotation_angle = np.zeros((len(tf)))
-
     def __str__(self):
         lines = [f"Transfer Function {self._name}", "-" * 30]
         if self.frequency is not None:
@@ -186,20 +183,21 @@ class TFBase:
             and (self._dataset.transfer_function_model_error.values == 0).all()
         ):
             return True
+        return False
 
     def _has_tf(self):
         if not self._is_empty():
-            return (self._dataset.transfer_function.values == 0).all()
+            return not (self._dataset.transfer_function.values == 0).all()
         return False
 
     def _has_tf_error(self):
         if not self._is_empty():
-            return (self._dataset.transfer_function_error.values == 0).all()
+            return not (self._dataset.transfer_function_error.values == 0).all()
         return False
 
     def _has_tf_model_error(self):
         if not self._is_empty():
-            return (
+            return not (
                 self._dataset.transfer_function_model_error.values == 0
             ).all()
         return False
@@ -250,6 +248,10 @@ class TFBase:
         """
 
         self.frequency = 1.0 / value
+
+    @property
+    def n_periods(self):
+        return self.period.size
 
     def _validate_frequency(self, frequency, n_frequencies=None):
         """
@@ -364,29 +366,30 @@ class TFBase:
     @property
     def inverse(self):
         """
-        Return the inverse of Z.
+        Return the inverse of transfer function.
 
         (no error propagtaion included yet)
 
         """
 
-        if self.z is None:
-            self.logger.warn('z array is "None" - I cannot invert that')
-            return
-        inverse = copy.copy(self.z)
-        for idx_f in range(len(inverse)):
-            try:
-                inverse[idx_f, :, :] = np.array(
-                    (np.matrix(self.z[idx_f, :, :])).I
-                )
-            except:
-                msg = f"The {idx_f + 1}ith impedance tensor cannot be inverted"
-                raise ValueError(msg)
-        return inverse
+        if self.has_tf():
+            inverse = self._dataset.copy()
 
-    def rotate(self, alpha):
+            try:
+                inverse.transfer_function = np.linalg.inv(
+                    inverse.transfer_function
+                )
+
+            except np.linalg.LinAlgError:
+                raise ValueError(
+                    "Transfer Function is a singular matrix cannot invert"
+                )
+
+            return inverse
+
+    def rotate(self, alpha, inplace=False):
         """
-        Rotate Z array by angle alpha.
+        Rotate transfer function array by angle alpha.
 
         Rotation angle must be given in degrees. All angles are referenced
         to geographic North, positive in clockwise direction.
@@ -394,90 +397,71 @@ class TFBase:
 
         In non-rotated state, X refs to North and Y to East direction.
 
-        Updates the attributes
-            - *z*
-            - *z_err*
-            - *zrot*
-            - *resistivity*
-            - *phase*
-            - *resistivity_err*
-            - *phase_err*
-
         """
 
-        if self.z is None:
-            self.logger.warning('Z array is "None" and cannot be rotated')
+        if not self._has_tf():
+            self.logger.warning(
+                "transfer function array is empty and cannot be rotated"
+            )
             return
-        # check for iterable list/set of angles - if so, it must have length
-        # 1 or same as len(tipper):
-        if np.iterable(alpha) == 0:
+
+        def _validate_angle(self, angle):
+            """validate angle to be a valid float"""
             try:
-                degreeangle = float(alpha % 360)
+                return float(angle % 360)
             except ValueError:
                 msg = f"Angle must be a valid number (in degrees) not {alpha}"
                 self.logger.error(msg)
                 raise ValueError(msg)
-            # make an n long list of identical angles
-            lo_angles = [degreeangle for ii in self.z]
-        else:
+
+        if isinstance(alpha, (float, int, str)):
+            degree_angle = _validate_angle(self, alpha)
+
+        elif isinstance(alpha, (list, tuple, np.ndarray)):
             if len(alpha) == 1:
-                try:
-                    degreeangle = float(alpha % 360)
-                except ValueError:
-                    msg = (
-                        f"Angle must be a valid number (in degrees) not {alpha}"
-                    )
-                    self.logger.error(msg)
-                    raise ValueError(msg)
-                # make an n long list of identical angles
-                lo_angles = [degreeangle for ii in self.z]
+                degree_angle = _validate_angle(self, alpha[0])
             else:
-                try:
-                    lo_angles = [float(ii % 360) for ii in alpha]
-                except ValueError:
-                    msg = (
-                        f"Angle must be a valid number (in degrees) not {alpha}"
+                degree_angle = np.array(alpha, dtype=float) % 360
+                if degree_angle.size != self.n_periods:
+                    raise ValueError(
+                        "angles must be the same size as periods "
+                        f"{self.n_periods} not {degree_angle.size}"
                     )
-                    self.logger.error(msg)
-                    raise ValueError(msg)
-        self.rotation_angle = np.array(
-            [
-                (oldangle + lo_angles[ii]) % 360
-                for ii, oldangle in enumerate(self.rotation_angle)
-            ]
-        )
 
-        if len(lo_angles) != len(self.z):
-            msg = f"Wrong number of angles, need {len(self.z)}"
-            self.logger.error(msg)
-            raise ValueError(msg)
-        z_rot = copy.copy(self.z)
-        z_err_rot = copy.copy(self.z_err)
+        def _rotation_matrix(angle):
+            phi = np.deg2rad(angle)
+            cphi = np.cos(phi)
+            sphi = np.sin(phi)
 
-        for idx_frequency in range(len(self.z)):
+            return np.array([[cphi, -sphi], [sphi, cphi]])
 
-            angle = lo_angles[idx_frequency]
-            if np.isnan(angle):
-                angle = 0.0
-            if self.z_err is not None:
-                (
-                    z_rot[idx_frequency],
-                    z_err_rot[idx_frequency],
-                ) = MTcc.rotate_matrix_with_errors(
-                    self.z[idx_frequency, :, :],
-                    angle,
-                    self.z_err[idx_frequency, :, :],
-                )
-            else:
-                (
-                    z_rot[idx_frequency],
-                    z_err_rot,
-                ) = MTcc.rotate_matrix_with_errors(
-                    self.z[idx_frequency, :, :], angle
-                )
-        self.z = z_rot
-        if self.z_err is not None:
-            self.z_err = z_err_rot
+        self.rotation_angle = self.rotation_angle + degree_angle
+
+        ds = self._dataset.copy()
+
+        if np.iterate(degree_angle):
+            for index, angle in enumerate(degree_angle):
+                r = _rotation_matrix(angle)
+                if self._has_tf():
+                    ds.transfer_function[index].values.dot(r)
+                if self._has_tf_error():
+                    ds.transfer_function_error[index].values.dot(r)
+                if self._has_tf():
+                    ds.transfer_function_model_error[index].values.dot(r)
+
+        else:
+            r = _rotation_matrix(degree_angle)
+            if self._has_tf():
+                ds.transfer_function.values.dot(r)
+            if self._has_tf_error():
+                ds.transfer_function_error.values.dot(r)
+            if self._has_tf():
+                ds.transfer_function_model_error.values.dot(r)
+
+        if inplace:
+            self._dataset = ds
+        else:
+            return ds
 
     def interpolate(self, new_periods):
         """

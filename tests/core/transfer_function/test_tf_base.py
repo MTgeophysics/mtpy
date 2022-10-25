@@ -180,6 +180,18 @@ class TestTFBaseValidators(unittest.TestCase):
     def test_validate_frequency_shape(self):
         self.assertEqual(self.tf._validate_frequency([1], 10).size, 10)
 
+    def test_is_empty(self):
+        self.assertEqual(self.tf._is_empty(), True)
+
+    def test_has_tf(self):
+        self.assertEqual(self.tf._has_tf, False)
+
+    def test_has_tf_error(self):
+        self.assertEqual(self.tf._has_tf_error, False)
+
+    def test_has_tf_model_error(self):
+        self.assertEqual(self.tf._has_tf_model_error, False)
+
 
 # =============================================================================
 # Run
