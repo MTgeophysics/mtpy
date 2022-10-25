@@ -18,6 +18,10 @@ import copy
 import numpy as np
 import xarray as xr
 
+from mtpy.utils.calculator import (
+    rotate_matrix_with_errors,
+    rotate_vector_with_errors,
+)
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # ==============================================================================
@@ -412,7 +416,13 @@ class TFBase:
             )
             return
 
-        def _validate_angle(self, angle):
+        def get_rotate_function(shape):
+            if shape[1] == 2:
+                return rotate_matrix_with_errors
+            elif shape[1] == 1:
+                return rotate_vector_with_errors
+
+        def validate_angle(self, angle):
             """validate angle to be a valid float"""
             try:
                 return float(angle % 360)
@@ -422,11 +432,15 @@ class TFBase:
                 raise ValueError(msg)
 
         if isinstance(alpha, (float, int, str)):
-            degree_angle = _validate_angle(self, alpha)
+            degree_angle = np.repeat(
+                validate_angle(self, alpha), self.n_periods
+            )
 
         elif isinstance(alpha, (list, tuple, np.ndarray)):
             if len(alpha) == 1:
-                degree_angle = _validate_angle(self, alpha[0])
+                degree_angle = np.repeat(
+                    validate_angle(self, alpha[0]), self.n_periods
+                )
             else:
                 degree_angle = np.array(alpha, dtype=float) % 360
                 if degree_angle.size != self.n_periods:
@@ -435,35 +449,51 @@ class TFBase:
                         f"{self.n_periods} not {degree_angle.size}"
                     )
 
-        def _rotation_matrix(angle):
-            phi = np.deg2rad(angle)
-            cphi = np.cos(phi)
-            sphi = np.sin(phi)
-
-            return np.array([[cphi, -sphi], [sphi, cphi]])
-
         self.rotation_angle = self.rotation_angle + degree_angle
 
         ds = self._dataset.copy()
+        rot_tf = np.zeros_like(
+            self._dataset.transfer_function.values, dtype=complex
+        )
+        rot_tf_error = np.zeros_like(
+            self._dataset.transfer_function.values, dtype=float
+        )
+        rot_tf_model_error = np.zeros_like(
+            self._dataset.transfer_function.values, dtype=float
+        )
 
-        if np.iterate(degree_angle):
-            for index, angle in enumerate(degree_angle):
-                r = _rotation_matrix(angle)
-                if self._has_tf():
-                    ds.transfer_function[index].values.dot(r)
+        rotate_func = get_rotate_function(self._expected_shape)
+
+        for index, angle in enumerate(degree_angle):
+
+            if self._has_tf():
+
                 if self._has_tf_error():
-                    ds.transfer_function_error[index].values.dot(r)
-                if self._has_tf():
-                    ds.transfer_function_model_error[index].values.dot(r)
-
-        else:
-            r = _rotation_matrix(degree_angle)
-            if self._has_tf():
-                ds.transfer_function.values.dot(r)
-            if self._has_tf_error():
-                ds.transfer_function_error.values.dot(r)
-            if self._has_tf():
-                ds.transfer_function_model_error.values.dot(r)
+                    (
+                        rot_tf[index, :, :],
+                        rot_tf_error[index, :, :],
+                    ) = rotate_func(
+                        ds.transfer_function[index].values,
+                        angle,
+                        ds.transfer_function_error[index].values,
+                    )
+                if self._has_tf_model_error():
+                    (
+                        rot_tf[index, :, :],
+                        rot_tf_error[index, :, :],
+                    ) = rotate_func(
+                        ds.transfer_function[index].values,
+                        angle,
+                        ds.transfer_function_model_error[index].values,
+                    )
+                if not self._has_tf_error() and not self._has_tf_model_error():
+                    (rot_tf[index, :, :], _) = rotate_func(
+                        ds.transfer_function[index].values,
+                        angle,
+                    )
+        ds.transfer_function.values = rot_tf
+        ds.transfer_function_error.values = rot_tf_error
+        ds.transfer_function_model_error.values = rot_tf_model_error
 
         if inplace:
             self._dataset = ds

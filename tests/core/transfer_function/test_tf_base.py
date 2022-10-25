@@ -12,6 +12,10 @@ import unittest
 import numpy as np
 
 from mtpy.core.transfer_function.base import TFBase
+from mtpy.utils.calculator import (
+    rotate_matrix_with_errors,
+    rotate_vector_with_errors,
+)
 
 # =============================================================================
 
@@ -201,6 +205,37 @@ class TestTFBaseValidators(unittest.TestCase):
 
     def test_has_tf_model_error(self):
         self.assertEqual(self.tf._has_tf_model_error(), False)
+
+
+class TestTFRotation(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.tf = TFBase(
+            tf=np.ones((3, 2, 2)),
+            tf_error=np.ones((3, 2, 2)) * 0.25,
+            tf_model_error=np.ones((3, 2, 2)) * 0.5,
+        )
+
+        self.rot_tf = self.tf.rotate(30)
+
+        self.true_rot_tf, self.true_tf_error = rotate_matrix_with_errors(
+            np.ones((3, 2, 2), dtype=complex), 30, np.ones((3, 2, 2)) * 0.25
+        )
+
+    def test_tf(self):
+        self.assertTrue(
+            (
+                self.tf._dataset.transfer_function.value
+                == np.ones((3, 2, 2), dtype=complex)
+            ).all(),
+            True,
+        )
+
+    def test_rot_tf(self):
+        self.assertTrue(
+            (self.rot_tf.transfer_function.value == self.true_rot_tf).all(),
+            True,
+        )
 
 
 # =============================================================================
