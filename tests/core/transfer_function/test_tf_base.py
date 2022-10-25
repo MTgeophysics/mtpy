@@ -19,8 +19,8 @@ from mtpy.core.transfer_function.base import TFBase
 class TestTFBaseTFInput(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.tf = TFBase(tf=np.array([[[0]], [[1]]]))
-        self.expected_shape = (2, 1, 1)
+        self.tf = TFBase(tf=np.array([[[0, 1], [1, 0]], [[1, 0], [0, 1]]]))
+        self.expected_shape = (2, 2, 2)
         self.expected = {
             "transfer_function": {"dtype": complex, "empty": False},
             "transfer_function_error": {"dtype": float, "empty": True},
@@ -51,8 +51,10 @@ class TestTFBaseTFInput(unittest.TestCase):
 class TestTFBaseTFErrorInput(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.tf = TFBase(tf_error=np.array([[[0]], [[1]]]))
-        self.expected_shape = (2, 1, 1)
+        self.tf = TFBase(
+            tf_error=np.array([[[0, 1], [1, 0]], [[1, 0], [0, 1]]])
+        )
+        self.expected_shape = (2, 2, 2)
         self.expected = {
             "transfer_function": {"dtype": complex, "empty": True},
             "transfer_function_error": {"dtype": float, "empty": False},
@@ -83,7 +85,9 @@ class TestTFBaseTFErrorInput(unittest.TestCase):
 class TestTFBaseTFModelErrorInput(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.tf = TFBase(tf_model_error=np.array([[[0]], [[1]]]))
+        self.tf = TFBase(
+            tf_model_error=np.array([[[0, 1], [1, 0]], [[1, 0], [0, 1]]])
+        )
         self.expected_shape = (2, 1, 1)
         self.expected = {
             "transfer_function": {"dtype": complex, "empty": True},
@@ -116,7 +120,7 @@ class TestTFBaseFrequencyInput(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.tf = TFBase(frequency=[1, 2, 3])
-        self.expected_shape = (3, 1, 1)
+        self.expected_shape = (3, 2, 2)
         self.expected = {
             "transfer_function": {"dtype": complex, "empty": True},
             "transfer_function_error": {"dtype": float, "empty": True},

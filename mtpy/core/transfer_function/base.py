@@ -18,7 +18,6 @@ import copy
 import numpy as np
 import xarray as xr
 
-import mtpy.utils.calculator as MTcc
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # ==============================================================================
@@ -38,9 +37,9 @@ class TFBase:
         """ """
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self.rotation_angle = 0.0
-        self.inputs = ["x"]
-        self.outputs = ["y"]
-        self._expected_shape = (1, 1)
+        self.inputs = ["x", "y"]
+        self.outputs = ["x", "y"]
+        self._expected_shape = (2, 2)
         self._name = "base transfer function"
 
         frequency = self._validate_frequency(frequency)
