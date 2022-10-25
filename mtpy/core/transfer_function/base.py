@@ -526,4 +526,6 @@ class TFBase:
         if inplace:
             self._dataset = ds
         else:
-            return ds
+            tb = self.copy()
+            tb._dataset = ds
+            return tb

@@ -10,7 +10,7 @@ Created on Fri Oct 21 13:46:49 2022
 # =============================================================================
 import unittest
 import numpy as np
-
+import scipy.signal as spi
 from mtpy.core.transfer_function.base import TFBase
 from mtpy.utils.calculator import (
     rotate_matrix_with_errors,
@@ -284,6 +284,121 @@ class TestTFRotation(unittest.TestCase):
             ).all(),
             True,
         )
+
+
+class TestTFInterpolation(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.period = np.logspace(-3, 3, 6)
+        self.t = np.linspace(0, 24, 24) * 0.1
+        self.tf = np.array(
+            [
+                np.cos(pp * np.pi * 2 * 10 * self.t)
+                + 1j * np.sin(pp * np.pi * 2 * 10 * self.t)
+                for pp in self.period
+            ]
+        ).sum(axis=0)
+
+        self.tf = self.tf.reshape((6, 2, 2))
+        self.tf_error = np.abs(self.tf) * 0.05
+        self.tf_model_error = np.abs(self.tf) * 0.10
+
+        self.tf_base = TFBase(
+            tf=self.tf,
+            tf_error=self.tf_error,
+            tf_model_error=self.tf_model_error,
+            frequency=1.0 / self.period,
+        )
+
+        self.new_periods = np.logspace(-3, 3, 12)
+
+    def interpolate(self, interp_type, bounds_error=False):
+        zmap = {0: "x", 1: "y"}
+        interp_dict = {}
+
+        interp_tf = np.zeros((self.new_periods.size, 2, 2), dtype=complex)
+        interp_tf_error = np.zeros((self.new_periods.size, 2, 2), dtype=float)
+        interp_tf_model_error = np.zeros(
+            (self.new_periods.size, 2, 2), dtype=float
+        )
+        for ii in range(2):
+            for jj in range(2):
+                comp = f"{zmap[ii]}{zmap[jj]}"
+                interp_dict[comp] = {}
+                # need to look out for zeros in the impedance
+                # get the indicies of non-zero components
+                nz_index = np.nonzero(self.Z.z[:, ii, jj])
+
+                if len(nz_index[0]) == 0:
+                    continue
+                # get the non-zero components
+                tf_real = self.tf[nz_index, ii, jj].real
+                tf_imag = self.tf[nz_index, ii, jj].imag
+                tf_err = self.tf_error[nz_index, ii, jj]
+                tf_model_err = self.tf_error[nz_index, ii, jj]
+
+                # get the frequencies of non-zero components
+                f = 1.0 / self.period
+
+                # create a function that does 1d interpolation
+                tr = spi.interp1d(
+                    f,
+                    tf_real,
+                    kind=interp_type,
+                    bounds_error=bounds_error,
+                )
+                ti = spi.interp1d(
+                    f,
+                    tf_imag,
+                    kind=interp_type,
+                    bounds_error=bounds_error,
+                )
+                te = spi.interp1d(
+                    f,
+                    tf_err,
+                    kind=interp_type,
+                    bounds_error=bounds_error,
+                )
+                tme = spi.interp1d(
+                    f,
+                    tf_model_err,
+                    kind=interp_type,
+                    bounds_error=bounds_error,
+                )
+
+                interp_tf[:, ii, jj] = tr(self.new_periods) + 1j * ti(
+                    self.new_periods
+                )
+                interp_tf_error[:, ii, jj] = te(self.new_periods)
+                interp_tf_model_error[:, ii, jj] = tme(self.new_periods)
+
+        interp_ds = TFBase(
+            tf=interp_tf,
+            tf_error=interp_tf_error,
+            tf_model_error=interp_tf_model_error,
+            period=self.new_periods,
+        )
+
+        return interp_ds
+
+    def test_nearest(self):
+        interp_ds = self.interpolate("nearest")
+        interp_tf = self.tf_base.interpolate(self.new_periods, method="nearest")
+
+        for key in [
+            "transfer_function",
+            "transfer_function_error",
+            "transfer_function_model_error",
+        ]:
+
+            with self.subTest(key):
+                self.assertEqual(
+                    np.isclose(
+                        interp_ds._dataset[key].values,
+                        interp_tf._dataset[key].values,
+                    ),
+                    True,
+                )
 
 
 # =============================================================================
