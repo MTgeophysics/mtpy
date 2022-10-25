@@ -220,12 +220,16 @@ class TestTFRotation(unittest.TestCase):
 
         self.true_rot_tf = np.zeros((3, 2, 2), dtype=complex)
         self.true_rot_tf_error = np.zeros((3, 2, 2), dtype=float)
+        self.true_rot_tf_model_error = np.zeros((3, 2, 2), dtype=float)
         for ii, angle in enumerate([30, 30, 30]):
             (
                 self.true_rot_tf[ii],
                 self.true_rot_tf_error[ii],
             ) = rotate_matrix_with_errors(
                 np.ones((2, 2), dtype=complex), 30, np.ones((2, 2)) * 0.25
+            )
+            (_, self.true_rot_tf_model_error[ii],) = rotate_matrix_with_errors(
+                np.ones((2, 2), dtype=complex), 30, np.ones((2, 2)) * 0.5
             )
 
     def test_tf(self):
@@ -241,6 +245,42 @@ class TestTFRotation(unittest.TestCase):
         self.assertEqual(
             np.isclose(
                 self.rot_tf.transfer_function.values, self.true_rot_tf
+            ).all(),
+            True,
+        )
+
+    def test_tf_error(self):
+        self.assertEqual(
+            (
+                self.tf._dataset.transfer_function_error.values
+                == np.ones((3, 2, 2), dtype=float) * 0.25
+            ).all(),
+            True,
+        )
+
+    def test_rot_tf_error(self):
+        self.assertEqual(
+            np.isclose(
+                self.rot_tf.transfer_function_error.values,
+                self.true_rot_tf_error,
+            ).all(),
+            True,
+        )
+
+    def test_tf_model_error(self):
+        self.assertEqual(
+            (
+                self.tf._dataset.transfer_function_model_error.values
+                == np.ones((3, 2, 2), dtype=float) * 0.5
+            ).all(),
+            True,
+        )
+
+    def test_rot_tf_model_error(self):
+        self.assertEqual(
+            np.isclose(
+                self.rot_tf.transfer_function_model_error.values,
+                self.true_rot_tf_model_error,
             ).all(),
             True,
         )
