@@ -157,8 +157,10 @@ class TestTFBaseValidators(unittest.TestCase):
     def test_validate_array_input_float(self):
         self.assertEqual(
             (
-                np.zeros((1, 1, 1), dtype=float)
-                == self.tf._validate_array_input([[0]], float)
+                np.zeros((1, 2, 2), dtype=float)
+                == self.tf._validate_array_input(
+                    [[[0, 0], [0, 0]], [[0, 0], [0, 0]]], float
+                )
             ).all(),
             True,
         )
@@ -166,8 +168,10 @@ class TestTFBaseValidators(unittest.TestCase):
     def test_validate_array_input_complex(self):
         self.assertEqual(
             (
-                np.zeros((1, 1, 1), dtype=complex)
-                == self.tf._validate_array_input([[0]], complex)
+                np.zeros((1, 2, 2), dtype=complex)
+                == self.tf._validate_array_input(
+                    [[[0, 0], [0, 0]], [[0, 0], [0, 0]]], complex
+                )
             ).all(),
             True,
         )
@@ -175,8 +179,10 @@ class TestTFBaseValidators(unittest.TestCase):
     def test_validate_array_input_int(self):
         self.assertEqual(
             (
-                np.zeros((1, 1, 1), dtype=float)
-                == self.tf._validate_array_input([[0]], float)
+                np.zeros((1, 2, 2), dtype=float)
+                == self.tf._validate_array_input(
+                    [[[0, 0], [0, 0]], [[0, 0], [0, 0]]], float
+                )
             ).all(),
             True,
         )
@@ -188,13 +194,13 @@ class TestTFBaseValidators(unittest.TestCase):
         self.assertEqual(self.tf._is_empty(), True)
 
     def test_has_tf(self):
-        self.assertEqual(self.tf._has_tf, False)
+        self.assertEqual(self.tf._has_tf(), False)
 
     def test_has_tf_error(self):
-        self.assertEqual(self.tf._has_tf_error, False)
+        self.assertEqual(self.tf._has_tf_error(), False)
 
     def test_has_tf_model_error(self):
-        self.assertEqual(self.tf._has_tf_model_error, False)
+        self.assertEqual(self.tf._has_tf_model_error(), False)
 
 
 # =============================================================================

@@ -127,6 +127,14 @@ class TFBase:
 
         else:
             periods = self._validate_frequency(periods)
+            tf_shape = (
+                periods.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
+            tf = np.zeros(tf_shape, dtype=complex)
+            tf_error = np.zeros(tf_shape, dtype=float)
+            tf_model_error = np.zeros(tf_shape, dtype=float)
 
         tf = xr.DataArray(
             data=tf,
