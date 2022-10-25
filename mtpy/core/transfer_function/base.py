@@ -37,6 +37,7 @@ class TFBase:
         frequency=None,
         tf_model_error=None,
         tf_dataset=None,
+        **kwargs,
     ):
         """ """
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
@@ -47,6 +48,9 @@ class TFBase:
         self._name = "base transfer function"
 
         frequency = self._validate_frequency(frequency)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         self._dataset = self._initialize(
             periods=1.0 / frequency,
@@ -500,7 +504,7 @@ class TFBase:
         else:
             return ds
 
-    def interpolate(self, new_periods):
+    def interpolate(self, new_periods, inplace=False, method="slinear"):
         """
         interpolate onto a new period range
 
@@ -510,4 +514,16 @@ class TFBase:
         :rtype: TYPE
 
         """
-        pass
+
+        da_dict = {}
+        for key in self._dataset.data_vars:
+            da_dict[key] = self._dataset[key].interp(
+                period=new_periods, method=method
+            )
+
+        ds = xr.Dataset(da_dict)
+
+        if inplace:
+            self._dataset = ds
+        else:
+            return ds
