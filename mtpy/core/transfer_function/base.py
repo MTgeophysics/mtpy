@@ -480,7 +480,7 @@ class TFBase:
                 if self._has_tf_model_error():
                     (
                         rot_tf[index, :, :],
-                        rot_tf_error[index, :, :],
+                        rot_tf_model_error[index, :, :],
                     ) = rotate_func(
                         ds.transfer_function[index].values,
                         angle,
