@@ -504,7 +504,9 @@ class TFBase:
         else:
             return ds
 
-    def interpolate(self, new_periods, inplace=False, method="slinear"):
+    def interpolate(
+        self, new_periods, inplace=False, method="slinear", **kwargs
+    ):
         """
         interpolate onto a new period range
 
@@ -518,7 +520,7 @@ class TFBase:
         da_dict = {}
         for key in self._dataset.data_vars:
             da_dict[key] = self._dataset[key].interp(
-                period=new_periods, method=method
+                period=new_periods, method=method, **kwargs
             )
 
         ds = xr.Dataset(da_dict)

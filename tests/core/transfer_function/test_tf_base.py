@@ -10,7 +10,7 @@ Created on Fri Oct 21 13:46:49 2022
 # =============================================================================
 import unittest
 import numpy as np
-import scipy.signal as spi
+import scipy.interpolate as spi
 from mtpy.core.transfer_function.base import TFBase
 from mtpy.utils.calculator import (
     rotate_matrix_with_errors,
@@ -313,70 +313,19 @@ class TestTFInterpolation(unittest.TestCase):
         self.new_periods = np.logspace(-3, 3, 12)
 
     def interpolate(self, interp_type, bounds_error=False):
-        zmap = {0: "x", 1: "y"}
-        interp_dict = {}
-
-        interp_tf = np.zeros((self.new_periods.size, 2, 2), dtype=complex)
-        interp_tf_error = np.zeros((self.new_periods.size, 2, 2), dtype=float)
-        interp_tf_model_error = np.zeros(
-            (self.new_periods.size, 2, 2), dtype=float
+        interp_tf = spi.interp1d(self.period, self.tf, axis=0, kind=interp_type)
+        interp_tf_error = spi.interp1d(
+            self.period, self.tf_error, axis=0, kind=interp_type
         )
-        for ii in range(2):
-            for jj in range(2):
-                comp = f"{zmap[ii]}{zmap[jj]}"
-                interp_dict[comp] = {}
-                # need to look out for zeros in the impedance
-                # get the indicies of non-zero components
-                nz_index = np.nonzero(self.Z.z[:, ii, jj])
-
-                if len(nz_index[0]) == 0:
-                    continue
-                # get the non-zero components
-                tf_real = self.tf[nz_index, ii, jj].real
-                tf_imag = self.tf[nz_index, ii, jj].imag
-                tf_err = self.tf_error[nz_index, ii, jj]
-                tf_model_err = self.tf_error[nz_index, ii, jj]
-
-                # get the frequencies of non-zero components
-                f = 1.0 / self.period
-
-                # create a function that does 1d interpolation
-                tr = spi.interp1d(
-                    f,
-                    tf_real,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                )
-                ti = spi.interp1d(
-                    f,
-                    tf_imag,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                )
-                te = spi.interp1d(
-                    f,
-                    tf_err,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                )
-                tme = spi.interp1d(
-                    f,
-                    tf_model_err,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                )
-
-                interp_tf[:, ii, jj] = tr(self.new_periods) + 1j * ti(
-                    self.new_periods
-                )
-                interp_tf_error[:, ii, jj] = te(self.new_periods)
-                interp_tf_model_error[:, ii, jj] = tme(self.new_periods)
+        interp_tf_model_error = spi.interp1d(
+            self.period, self.tf_model_error, axis=0, kind=interp_type
+        )
 
         interp_ds = TFBase(
-            tf=interp_tf,
-            tf_error=interp_tf_error,
-            tf_model_error=interp_tf_model_error,
-            period=self.new_periods,
+            tf=interp_tf(self.new_periods),
+            tf_error=interp_tf_error(self.new_periods),
+            tf_model_error=interp_tf_model_error(self.new_periods),
+            freqwuency=1.0 / self.new_periods,
         )
 
         return interp_ds
@@ -393,10 +342,55 @@ class TestTFInterpolation(unittest.TestCase):
 
             with self.subTest(key):
                 self.assertEqual(
-                    np.isclose(
-                        interp_ds._dataset[key].values,
-                        interp_tf._dataset[key].values,
-                    ),
+                    (interp_ds._dataset[key] == interp_tf._dataset[key]).all(),
+                    True,
+                )
+
+    def test_linear(self):
+        interp_ds = self.interpolate("linear")
+        interp_tf = self.tf_base.interpolate(self.new_periods, method="linear")
+
+        for key in [
+            "transfer_function",
+            "transfer_function_error",
+            "transfer_function_model_error",
+        ]:
+
+            with self.subTest(key):
+                self.assertEqual(
+                    (interp_ds._dataset[key] == interp_tf._dataset[key]).all(),
+                    True,
+                )
+
+    def test_cubic(self):
+        interp_ds = self.interpolate("cubic")
+        interp_tf = self.tf_base.interpolate(self.new_periods, method="cubic")
+
+        for key in [
+            "transfer_function",
+            "transfer_function_error",
+            "transfer_function_model_error",
+        ]:
+
+            with self.subTest(key):
+                self.assertEqual(
+                    (interp_ds._dataset[key] == interp_tf._dataset[key]).all(),
+                    True,
+                )
+
+    def test_slinear(self):
+        interp_ds = self.interpolate("slinear")
+        interp_tf = self.tf_base.interpolate(self.new_periods, method="slinear")
+
+        for key in [
+            "transfer_function",
+            "transfer_function_error",
+            "transfer_function_model_error",
+        ]:
+
+            with self.subTest(key):
+                self.assertEqual(
+                    (interp_ds._dataset[key] == interp_tf._dataset[key]).all(),
                     True,
                 )
 
