@@ -970,49 +970,48 @@ class Z3D2EDI(object):
         tf_obj = TF(j_file)
 
         tf_obj.station = birrp_output_path.parent.parent.parent.stem
-        tf_obj.latitude = self.station_df.latitude.mean()
-        tf_obj.longitude = self.station_df.longitude.mean()
-        tf_obj.elevation = self.station_df.elevation.mean()
-        tf_obj.station_metadata.time_period.start = self.station_df.start.min()
-        tf_obj.station_metadata.time_period.end = self.station_df.stop.max()
-        tf_obj.station_metadata.runs[
-            0
-        ].data_logger.id = self.station_df.zen_num.unique()[0]
+        df = self.station_df[self.station_df.station == self.station_df.station.iloc[0]]
+        tf_obj.latitude = df.latitude.median()
+        tf_obj.longitude = df.longitude.median()
+        tf_obj.elevation = df.elevation.median()
+        tf_obj.station_metadata.time_period.start = df.start.min()
+        tf_obj.station_metadata.time_period.end = df.stop.max()
+        tf_obj.station_metadata.runs[0].data_logger.id = df.zen_num.unique()[0]
 
-        if "ex" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].ex.positive.x2 = self.station_df[
-                self.station_df.component == "ex"
+        if "ex" in df.component.unique():
+            tf_obj.station_metadata.runs[0].ex.positive.x2 = df[
+                df.component == "ex"
             ].dipole_length.mean()
-            tf_obj.station_metadata.runs[0].ex.measurement_azimuth = self.station_df[
-                self.station_df.component == "ex"
+            tf_obj.station_metadata.runs[0].ex.measurement_azimuth = df[
+                df.component == "ex"
             ].azimuth.mean()
-        if "ey" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].ey.positive.y2 = self.station_df[
-                self.station_df.component == "ey"
+        if "ey" in df.component.unique():
+            tf_obj.station_metadata.runs[0].ey.positive.y2 = df[
+                df.component == "ey"
             ].dipole_length.mean()
-            tf_obj.station_metadata.runs[0].ey.measurement_azimuth = self.station_df[
-                self.station_df.component == "ey"
+            tf_obj.station_metadata.runs[0].ey.measurement_azimuth = df[
+                df.component == "ey"
             ].azimuth.mean()
-        if "hx" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].hx.sensor.id = self.station_df[
-                self.station_df.component == "hx"
+        if "hx" in df.component.unique():
+            tf_obj.station_metadata.runs[0].hx.sensor.id = df[
+                df.component == "hx"
             ].coil_number.unique()[0]
-            tf_obj.station_metadata.runs[0].hx.measurement_azimuth = self.station_df[
-                self.station_df.component == "hx"
+            tf_obj.station_metadata.runs[0].hx.measurement_azimuth = df[
+                df.component == "hx"
             ].azimuth.mean()
-        if "hy" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].hy.sensor.id = self.station_df[
-                self.station_df.component == "hy"
+        if "hy" in df.component.unique():
+            tf_obj.station_metadata.runs[0].hy.sensor.id = df[
+                df.component == "hy"
             ].coil_number.unique()[0]
-            tf_obj.station_metadata.runs[0].hy.measurement_azimuth = self.station_df[
-                self.station_df.component == "hy"
+            tf_obj.station_metadata.runs[0].hy.measurement_azimuth = df[
+                df.component == "hy"
             ].azimuth.mean()
-        if "hz" in self.station_df.component.unique():
-            tf_obj.station_metadata.runs[0].hz.sensor.id = self.station_df[
-                self.station_df.component == "hz"
+        if "hz" in df.component.unique():
+            tf_obj.station_metadata.runs[0].hz.sensor.id = df[
+                df.component == "hz"
             ].coil_number.unique()[0]
-            tf_obj.station_metadata.runs[0].hz.measurement_azimuth = self.station_df[
-                self.station_df.component == "hz"
+            tf_obj.station_metadata.runs[0].hz.measurement_azimuth = df[
+                df.component == "hz"
             ].azimuth.mean()
         edi_obj = tf_obj.write_tf_file(save_dir=birrp_output_path)
         return edi_obj.fn
