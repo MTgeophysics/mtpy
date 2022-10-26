@@ -36,7 +36,6 @@ class TFBase:
         tf_error=None,
         frequency=None,
         tf_model_error=None,
-        tf_dataset=None,
         **kwargs,
     ):
         """ """
@@ -46,6 +45,7 @@ class TFBase:
         self.outputs = ["x", "y"]
         self._expected_shape = (2, 2)
         self._name = "base transfer function"
+        self._dataset = None
 
         frequency = self._validate_frequency(frequency)
 
@@ -97,7 +97,7 @@ class TFBase:
         return copy.deepcopy(self)
 
     def _initialize(
-        self, periods=[1], tf=[0 + 0j], tf_error=[0], tf_model_error=[0]
+        self, periods=[1], tf=None, tf_error=None, tf_model_error=None
     ):
         """
         initialized based on input channels, output channels and period
@@ -191,6 +191,8 @@ class TFBase:
         :rtype: TYPE
 
         """
+        if self._dataset is None:
+            return True
 
         if (
             (self._dataset.transfer_function.values == 0).all()
@@ -318,6 +320,8 @@ class TFBase:
 
         if len(tf_array.shape) == 3:
             if tf_array.shape[1:3] == self._expected_shape:
+                if old_shape is not None:
+                    self._validate_array_shape(tf_array, old_shape)
                 return tf_array
             else:
                 msg = (
@@ -329,13 +333,16 @@ class TFBase:
                 raise ValueError(msg)
         elif len(tf_array.shape) == 2:
             if tf_array.shape == self._expected_shape:
-                return tf_array.reshape(
+                tf_array = tf_array.reshape(
                     (1, self._expected_shape[0], self._expected_shape[1])
                 )
                 self.logger.debug(
                     f"setting input tf with shape {self._expected_shape} "
                     f"to (1, self._expected_shape[0], self._expected_shape[1])"
                 )
+                if old_shape is not None:
+                    self._validate_array_shape(tf_array, old_shape)
+                return tf_array
             else:
                 msg = (
                     f"Input array must be shape (n, "
@@ -351,9 +358,6 @@ class TFBase:
             )
             self.logger.error(msg)
             raise ValueError(msg)
-
-        if old_shape is not None:
-            self._validate_array_shape(tf_array, old_shape)
 
     def _validate_array_shape(self, array, expected_shape):
         """
@@ -371,9 +375,10 @@ class TFBase:
         # check to see if the new z array is the same shape as the old
         if array.shape != expected_shape:
             msg = (
-                "Shape of array does not match expected.  "
-                f"array shape {array.shape} != "
-                f"expected shape {expected_shape}."
+                f"Input array shape {array.shape} does not match expected "
+                f"shape {expected_shape}. Suggest initiating new dataset "
+                f"using {self.__class__.__name__}._initialize() or "
+                f"making a new object {self.__class__.__name__}()."
             )
             self.logger.error(msg)
             raise ValueError(msg)
@@ -502,7 +507,9 @@ class TFBase:
         if inplace:
             self._dataset = ds
         else:
-            return ds
+            tb = self.copy()
+            tb._dataset = ds
+            return tb
 
     def interpolate(
         self, new_periods, inplace=False, method="slinear", **kwargs
