@@ -153,14 +153,6 @@ class ResPhase:
             raise ValueError(msg)
         return value
 
-    def _get_component(self, comp, array):
-        if array is not None:
-            index_dict = {"x": 0, "y": 1}
-            ii = index_dict[comp[-2]]
-            jj = index_dict[comp[-1]]
-
-            return array[:, ii, jj]
-
     @property
     def frequency(self):
         if self._frequency is not None:
@@ -387,7 +379,9 @@ class ResPhase:
     @property
     def phase_model_err_det(self):
         if self._zdet is not None:
-            return np.rad2deg(np.arcsin(self._zdet_model_var / abs(self._zdet)))
+            return np.rad2deg(
+                np.arcsin(self._zdet_model_var / abs(self._zdet))
+            )
 
     @property
     def res_det(self):

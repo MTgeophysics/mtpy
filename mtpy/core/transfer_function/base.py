@@ -28,7 +28,12 @@ from mtpy.utils.mtpy_logger import get_mtpy_logger
 # Impedance Tensor Class
 # ==============================================================================
 class TFBase:
-    """ """
+    """
+
+    Generic transfer function object that uses xarray as its base container
+    for the data.
+
+    """
 
     def __init__(
         self,
@@ -38,7 +43,7 @@ class TFBase:
         tf_model_error=None,
         **kwargs,
     ):
-        """ """
+
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
         self.rotation_angle = 0.0
         self.inputs = ["x", "y"]
@@ -131,7 +136,9 @@ class TFBase:
             tf_model_error = self._validate_array_input(tf_model_error, float)
             tf = np.zeros_like(tf_model_error, dtype=complex)
             tf_error = np.zeros_like(tf_model_error, dtype=float)
-            periods = self._validate_frequency(periods, tf_model_error.shape[0])
+            periods = self._validate_frequency(
+                periods, tf_model_error.shape[0]
+            )
 
         else:
             periods = self._validate_frequency(periods)
@@ -209,7 +216,9 @@ class TFBase:
 
     def _has_tf_error(self):
         if not self._is_empty():
-            return not (self._dataset.transfer_function_error.values == 0).all()
+            return not (
+                self._dataset.transfer_function_error.values == 0
+            ).all()
         return False
 
     def _has_tf_model_error(self):
@@ -218,6 +227,10 @@ class TFBase:
                 self._dataset.transfer_function_model_error.values == 0
             ).all()
         return False
+
+    @property
+    def comps(self):
+        return dict(input=self.inputs, output=self.outputs)
 
     # ---frequencyuency-------------------------------------------------------------
     @property
@@ -248,7 +261,9 @@ class TFBase:
                 frequency, n_frequencies=self._dataset.period.shape[0]
             )
 
-        self._dataset = self._dataset.assign_coords({"period": 1.0 / frequency})
+        self._dataset = self._dataset.assign_coords(
+            {"period": 1.0 / frequency}
+        )
 
     @property
     def period(self):
@@ -268,6 +283,9 @@ class TFBase:
 
     @property
     def n_periods(self):
+        if self._is_empty():
+            return 0
+
         return self.period.size
 
     def _validate_frequency(self, frequency, n_frequencies=None):
@@ -538,3 +556,53 @@ class TFBase:
             tb = self.copy()
             tb._dataset = ds
             return tb
+
+    def to_xarray(self):
+        """
+        To an xarray dataset
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self._dataset
+
+    def from_xarray(self, dataset):
+        """
+        fill from an xarray dataset
+
+        :param dataset: DESCRIPTION
+        :type dataset: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ## Probably need more validation than this
+        if isinstance(dataset, xr.Dataset):
+            self._dataset = dataset
+
+    def to_dataframe(self):
+        """
+        Return a pandas dataframe with the appropriate columns as a single
+        index, or multi-index?
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        pass
+
+    def from_dataframe(self, dataframe):
+        """
+        fill from a pandas dataframe with the appropriate columns
+
+        :param dataframe: DESCRIPTION
+        :type dataframe: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass

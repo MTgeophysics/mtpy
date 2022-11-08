@@ -12,10 +12,7 @@ import unittest
 import numpy as np
 import scipy.interpolate as spi
 from mtpy.core.transfer_function.base import TFBase
-from mtpy.utils.calculator import (
-    rotate_matrix_with_errors,
-    rotate_vector_with_errors,
-)
+from mtpy.utils.calculator import rotate_matrix_with_errors
 
 # =============================================================================
 
@@ -313,7 +310,9 @@ class TestTFInterpolation(unittest.TestCase):
         self.new_periods = np.logspace(-3, 3, 12)
 
     def interpolate(self, interp_type, bounds_error=False):
-        interp_tf = spi.interp1d(self.period, self.tf, axis=0, kind=interp_type)
+        interp_tf = spi.interp1d(
+            self.period, self.tf, axis=0, kind=interp_type
+        )
         interp_tf_error = spi.interp1d(
             self.period, self.tf_error, axis=0, kind=interp_type
         )
@@ -332,7 +331,9 @@ class TestTFInterpolation(unittest.TestCase):
 
     def test_nearest(self):
         interp_ds = self.interpolate("nearest")
-        interp_tf = self.tf_base.interpolate(self.new_periods, method="nearest")
+        interp_tf = self.tf_base.interpolate(
+            self.new_periods, method="nearest"
+        )
 
         for key in [
             "transfer_function",
@@ -380,7 +381,9 @@ class TestTFInterpolation(unittest.TestCase):
 
     def test_slinear(self):
         interp_ds = self.interpolate("slinear")
-        interp_tf = self.tf_base.interpolate(self.new_periods, method="slinear")
+        interp_tf = self.tf_base.interpolate(
+            self.new_periods, method="slinear"
+        )
 
         for key in [
             "transfer_function",
