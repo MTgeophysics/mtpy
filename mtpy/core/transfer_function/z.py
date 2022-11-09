@@ -542,7 +542,7 @@ class Z(TFBase):
         :rtype: np.ndarray(nfrequency)
         """
         if self.z is not None:
-            det_z = np.array([np.linalg.det(ii) for ii in self.z])
+            det_z = np.array([np.linalg.det(ii) ** 0.5 for ii in self.z])
 
             return det_z
 
@@ -568,7 +568,7 @@ class Z(TFBase):
                         - np.linalg.det(self.z - self.z_error)
                     )
                     / 2.0
-                )
+                ) ** 0.5
         return det_z_error
 
     @property
@@ -593,7 +593,7 @@ class Z(TFBase):
                         - np.linalg.det(self.z - self.z_model_error)
                     )
                     / 2.0
-                )
+                ) ** 0.5
         return det_z_error
 
     @property
@@ -618,7 +618,7 @@ class Z(TFBase):
 
     @property
     def res_error_det(self):
-        if self.det is not None:
+        if self.det_error is not None:
             return (
                 0.2
                 * (1.0 / self.frequency)
@@ -628,7 +628,7 @@ class Z(TFBase):
 
     @property
     def res_model_error_det(self):
-        if self.det is not None:
+        if self.det_model_error is not None:
             return (
                 0.2
                 * (1.0 / self.frequency)
@@ -739,100 +739,3 @@ class Z(TFBase):
     @property
     def phase_model_error_yy(self):
         return self._get_component("yy", self.phase_model_error)
-
-    # @property
-    # def norm(self):
-    #     """
-    #     Return the 2-/Frobenius-norm of Z
-
-    #     :returns: norm
-    #     :rtype: np.ndarray(nfrequency)
-    #     """
-
-    #     if self.z is not None:
-    #         norm = np.array([np.linalg.norm(ii) for ii in self.z])
-
-    #         return norm
-
-    # @property
-    # def norm_error(self):
-    #     """
-    #     Return the 2-/Frobenius-norm of Z  error
-
-    #     :returns: norm_error
-    #     :rtype: np.ndarray(nfrequency)
-    #     """
-    #     norm_error = None
-
-    #     if self.z_error is not None:
-    #         norm_error = np.zeros_like(self.norm, dtype=np.float)
-    #         for idx, z_tmp in enumerate(self.z):
-    #             value = self.norm[idx]
-    #             error_matrix = self.z_error[idx]
-    #             radicand = 0.0
-    #             for ii in range(2):
-    #                 for jj in range(2):
-    #                     radicand += (
-    #                         error_matrix[ii, jj] * np.real(z_tmp[ii, jj])
-    #                     ) ** 2
-    #                     radicand += (
-    #                         error_matrix[ii, jj] * np.imag(z_tmp[ii, jj])
-    #                     ) ** 2
-    #             norm_error[idx] = 1.0 / value * np.sqrt(radicand)
-    #     return norm_error
-
-    # @property
-    # def invariants(self):
-    #     """
-    #     Return a dictionary of Z-invariants.
-
-    #     Contains
-    #             -----------
-    #                     * z1
-    #                     * det
-    #                     * det_real
-    #                     * det_imag
-    #                     * trace
-    #                     * skew
-    #                     * norm
-    #                     * lambda_plus/minus,
-    #                     * sigma_plus/minus
-    #     """
-
-    #     invariants_dict = {}
-
-    #     if self.z is not None:
-    #         z1 = (self.z[:, 0, 1] - self.z[:, 1, 0]) / 2.0
-    #         invariants_dict["z1"] = z1
-
-    #         invariants_dict["det"] = self.det[0]
-
-    #         det_real = np.array([np.linalg.det(ii) for ii in np.real(self.z)])
-    #         invariants_dict["det_real"] = det_real
-
-    #         det_imag = np.array([np.linalg.det(ii) for ii in np.imag(self.z)])
-    #         invariants_dict["det_imag"] = det_imag
-
-    #         invariants_dict["trace"] = self.trace
-
-    #         invariants_dict["skew"] = self.skew
-
-    #         invariants_dict["norm"] = self.norm
-
-    #         invariants_dict["lambda_plus"] = z1 + np.sqrt(z1 * z1 / self.det)
-
-    #         invariants_dict["lambda_minus"] = z1 - np.sqrt(z1 * z1 / self.det)
-
-    #         invariants_dict["sigma_plus"] = (
-    #             0.5 * self.norm**2
-    #             + np.sqrt(0.25 * self.norm**4)
-    #             + np.abs(self.det**2)
-    #         )
-
-    #         invariants_dict["sigma_minus"] = (
-    #             0.5 * self.norm**2
-    #             - np.sqrt(0.25 * self.norm**4)
-    #             + np.abs(self.det**2)
-    #         )
-
-    #     return invariants_dict

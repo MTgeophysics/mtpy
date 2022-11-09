@@ -401,6 +401,23 @@ class TFBase:
             self.logger.error(msg)
             raise ValueError(msg)
 
+    def _validate_real_valued(self, array):
+        """
+        make sure resistivity is real valued
+
+        :param res: DESCRIPTION
+        :type res: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        # assert real array:
+        if np.linalg.norm(np.imag(array)) != 0:
+            msg = "Array is not real valued"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        return array
+
     @property
     def inverse(self):
         """
