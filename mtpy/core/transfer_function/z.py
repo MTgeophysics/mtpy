@@ -229,92 +229,49 @@ class Z(TFBase):
 
         """
 
-        # check for iterable list/set of reduce_res_factor_x - if so, it must
-        # have length 1 or same as len(z):
-        if np.iterable(reduce_res_factor_x) == 0:
+        def _validate_factor_single(self, factor):
             try:
-                x_factor = float(reduce_res_factor_x)
+                x_factor = float(factor)
             except ValueError:
-                msg = "reduce_res_factor_x must be a valid number"
+                msg = f"factor must be a valid number not {factor}"
                 self.logger.error(msg)
                 raise ValueError(msg)
-            lo_x_factors = np.repeat(x_factor, len(self.z))
-        elif len(reduce_res_factor_x) == 1:
-            try:
-                x_factor = float(reduce_res_factor_x)
-            except ValueError:
-                msg = "reduce_res_factor_x must be a valid number"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            lo_x_factors = np.repeat(x_factor, len(self.z))
-        else:
-            try:
-                lo_x_factors = np.repeat(x_factor, len(reduce_res_factor_x))
-            except ValueError:
-                msg = "reduce_res_factor_x must be a valid number"
-                self.logger.error(msg)
-                raise ValueError(msg)
-        if len(lo_x_factors) != len(self.z):
-            msg = (
-                f"Length of reduce_res_factor_x needs to be {len(self.z)} "
-                f" not {len(lo_x_factors)}"
-            )
-            self.logger.error(msg)
-            raise ValueError(msg)
-        # check for iterable list/set of reduce_res_factor_y - if so,
-        # it must have length 1 or same as len(z):
-        if np.iterable(reduce_res_factor_y) == 0:
-            try:
-                y_factor = float(reduce_res_factor_y)
-            except ValueError:
-                msg = "reduce_res_factor_y must be a valid number"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            lo_y_factors = np.repeat(y_factor, len(self.z))
-        elif len(reduce_res_factor_y) == 1:
-            try:
-                y_factor = float(reduce_res_factor_y)
-            except ValueError:
-                msg = "reduce_res_factor_y must be a valid number"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            lo_y_factors = np.repeat(y_factor, len(self.z))
-        else:
-            try:
-                lo_y_factors = np.repeat(y_factor, len(reduce_res_factor_y))
-            except ValueError:
-                msg = "reduce_res_factor_x must be a valid number"
-                self.logger.error(msg)
-                raise ValueError(msg)
-        if len(lo_y_factors) != len(self.z):
-            msg = (
-                f"Length of reduce_res_factor_x needs to be {len(self.z)} "
-                f" not {len(lo_x_factors)}"
-            )
-            self.logger.error(msg)
-            raise ValueError(msg)
-        z_corrected = copy.copy(self.z)
-        static_shift = np.zeros((len(self.z), 2, 2))
+            return np.repeat(x_factor, len(self.z))
 
-        for idx_f in range(len(self.z)):
-            # correct for x-direction
-            z_corrected[idx_f, 0, :] = self.z[idx_f, 0, :] / np.sqrt(
-                lo_x_factors[idx_f]
-            )
-            # correct for y-direction
-            z_corrected[idx_f, 1, :] = self.z[idx_f, 1, :] / np.sqrt(
-                lo_y_factors[idx_f]
-            )
-            # make static shift array
-            static_shift[idx_f, 0, 0] = np.sqrt(lo_x_factors[idx_f])
-            static_shift[idx_f, 1, 1] = np.sqrt(lo_y_factors[idx_f])
+        def _validate_ss_input(self, factor):
+            if not np.iterable(factor):
+                x_factor = _validate_factor_single(self, factor)
+
+            elif len(reduce_res_factor_x) == 1:
+                x_factor = _validate_factor_single(self, factor)
+            else:
+                x_factor = np.array(factor, dtype=float)
+
+            if len(x_factor) != len(self.z):
+                msg = (
+                    f"Length of reduce_res_factor_x needs to be {len(self.z)} "
+                    f" not {len(x_factor)}"
+                )
+                self.logger.error(msg)
+                raise ValueError(msg)
+
+        x_factors = _validate_ss_input(reduce_res_factor_x)
+        y_factors = _validate_ss_input(reduce_res_factor_y)
+
+        z_corrected = copy.copy(self.z)
+
+        z_corrected[:, 0, :] = self.z[:, 0, :] / np.sqrt(x_factors)
+        z_corrected[:, 1, :] = self.z[:, 1, :] / np.sqrt(y_factors)
 
         if inplace:
             self.z = z_corrected
-            return static_shift
         else:
-
-            return static_shift, z_corrected
+            return Z(
+                z=z_corrected,
+                z_error=self.z_error,
+                frequency=self.frequency,
+                z_model_error=self.z_model_error,
+            )
 
     def remove_distortion(
         self, distortion_tensor, distortion_error_tensor=None, inplace=False
@@ -419,7 +376,18 @@ class Z(TFBase):
                             )
                         )
                     )
-        return distortion_tensor, z_corrected, z_corrected_error
+
+        if inplace:
+            self.z = z_corrected
+            self.z_error = z_corrected_error
+            return distortion_tensor, None
+        else:
+            return distortion_tensor, Z(
+                z=z_corrected,
+                z_error=z_corrected_error,
+                frequency=self.frequency,
+                z_model_error=self.z_model_error,
+            )
 
     @property
     def resistivity(self):
