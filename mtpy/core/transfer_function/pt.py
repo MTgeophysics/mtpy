@@ -21,8 +21,6 @@ import copy
 import numpy as np
 
 from .base import TFBase
-import mtpy.utils.calculator as MTcc
-import mtpy.utils.exceptions as MTex
 
 # =============================================================================
 
@@ -395,7 +393,6 @@ class PhaseTensor(TFBase):
         else:
             self._dataset["transfer_function"].loc[self.comps] = pt
 
-    # ---phase tensor Error-----------------------------------------------------
     @property
     def pt_error(self):
         if self._has_tf_error():
@@ -425,6 +422,39 @@ class PhaseTensor(TFBase):
         else:
             self._dataset["transfer_function_error"].loc[self.comps] = pt_error
 
+    @property
+    def pt_model_error(self):
+        if self._has_tf_model_error():
+            return self._dataset.transfer_function_model_error.values
+
+    @pt_model_error.setter
+    def pt_model_error(self, pt_model_error):
+        """
+        Set the attribute 'pt_error'.
+
+        Input:
+        Phase-Tensor-error array
+
+        Test for shape, but no test for consistency!
+
+        """
+        old_shape = None
+        if not self._has_tf_error():
+            old_shape = self._dataset.transfer_function_model_error.shape
+
+        pt_model_error = self._validate_array_input(
+            pt_model_error, "float", old_shape
+        )
+        if pt_model_error is None:
+            return
+
+        if self._is_empty():
+            self._dataset = self._initialize(tf_model_error=pt_model_error)
+        else:
+            self._dataset["transfer_function_error"].loc[
+                self.comps
+            ] = pt_model_error
+
     # ==========================================================================
     #  define get methods for read only properties
     # ==========================================================================
@@ -446,11 +476,16 @@ class PhaseTensor(TFBase):
 
     @property
     def trace_error(self):
-        tr_error = None
-        if self.pt_error is not None:
-            tr_error = np.zeros_like(self.trace)
-            tr_error[:] = self.pt_error[:, 0, 0] + self.pt_error[:, 1, 1]
-        return tr_error
+
+        if self._has_tf_error():
+            tr_error = self.pt_error[:, 0, 0] + self.pt_error[:, 1, 1]
+            return tr_error
+
+    @property
+    def trace_model_error(self):
+        if self._has_tf_model_error():
+            tr_model_error = self.pt_error[:, 0, 0] + self.pt_error[:, 1, 1]
+            return tr_model_error
 
     # ---alpha-------------------------------------------------------------
     @property
@@ -476,9 +511,7 @@ class PhaseTensor(TFBase):
 
     @property
     def alpha_error(self):
-        alpha_error = None
-        if self.pt_error is not None:
-            alphaerr = np.zeros_like(self.alpha)
+        if self._has_tf_error():
             y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
             yerr = np.sqrt(
                 self.pt_error[:, 0, 1] ** 2 + self.pt_error[:, 1, 0] ** 2
@@ -488,12 +521,33 @@ class PhaseTensor(TFBase):
                 self.pt_error[:, 0, 0] ** 2 + self.pt_error[:, 1, 1] ** 2
             )
 
-            alphaerr[:] = (
+            alpha_error = (
                 0.5
                 / (x**2 + y**2)
                 * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
             )
-        return alpha_error
+            return alpha_error
+
+    @property
+    def alpha_model_error(self):
+        if self._has_tf_model_error():
+            y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
+            yerr = np.sqrt(
+                self.pt_model_error[:, 0, 1] ** 2
+                + self.pt_model_error[:, 1, 0] ** 2
+            )
+            x = self.pt[:, 0, 0] - self.pt[:, 1, 1]
+            xerr = np.sqrt(
+                self.pt_model_error[:, 0, 0] ** 2
+                + self.pt_model_error[:, 1, 1] ** 2
+            )
+
+            alpha_model_error = (
+                0.5
+                / (x**2 + y**2)
+                * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
+            )
+            return alpha_model_error
 
     # ---beta-------------------------------------------------------------
     @property
@@ -520,10 +574,8 @@ class PhaseTensor(TFBase):
 
     @property
     def beta_error(self):
-        beta_error = None
 
-        if self.pt_error is not None:
-            beta_error = np.zeros_like(self.beta)
+        if self._has_tf_error():
 
             y = self.pt[:, 0, 1] - self.pt[:, 1, 0]
             yerr = np.sqrt(
@@ -534,12 +586,35 @@ class PhaseTensor(TFBase):
                 self.pt_error[:, 0, 0] ** 2 + self.pt_error[:, 1, 1] ** 2
             )
 
-            beta_error[:] = (
+            beta_error = np.degrees(
                 0.5
                 / (x**2 + y**2)
                 * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
             )
-        return beta_error
+            return beta_error
+
+    @property
+    def beta_model_error(self):
+
+        if self._has_tf_error():
+
+            y = self.pt[:, 0, 1] - self.pt[:, 1, 0]
+            yerr = np.sqrt(
+                self.pt_model_error[:, 0, 1] ** 2
+                + self.pt_model_error[:, 1, 0] ** 2
+            )
+            x = self.pt[:, 0, 0] + self.pt[:, 1, 1]
+            xerr = np.sqrt(
+                self.pt_model_error[:, 0, 0] ** 2
+                + self.pt_model_error[:, 1, 1] ** 2
+            )
+
+            beta_model_error = np.degrees(
+                0.5
+                / (x**2 + y**2)
+                * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
+            )
+            return beta_model_error
 
     # ---skew-------------------------------------------------------------
     @property
@@ -552,17 +627,18 @@ class PhaseTensor(TFBase):
         - Error of Skew(PT) - Numpy array
 
         """
-        if self.pt is None:
-            return None
-        return np.array([i[0, 1] - i[1, 0] for i in self.pt])
+        if self._has_tf():
+            return self.pt[:, 0, 1] - self.pt[:, 1, 0]
 
     @property
     def skew_error(self):
-        skew_error = None
-        if self.pt_error is not None:
-            skew_error = np.zeros_like(self.skew)
-            skew_error[:] = self.pt_error[:, 0, 1] + self.pt_error[:, 1, 0]
-        return skew_error
+        if self._has_tf_error():
+            return self.pt_error[:, 0, 1] + self.pt_error[:, 1, 0]
+
+    @property
+    def skew_model_error(self):
+        if self._has_tf_model_error():
+            return self.pt_model_error[:, 0, 1] + self.pt_model_error[:, 1, 0]
 
     # ---azimuth (strike angle)-------------------------------------------------
     @property
@@ -584,15 +660,17 @@ class PhaseTensor(TFBase):
 
         if self.pt is None:
             return None
-        return self.alpha - self.beta
+        return (self.alpha - self.beta) % 360
 
     @property
     def azimuth_error(self):
-        if self.pt_error is not None:
-            az_error = np.sqrt(abs(self.alpha + self.beta))
-        else:
-            az_error = None
-        return az_error
+        if self._has_tf_error():
+            return np.sqrt(abs(self.alpha_error + self.beta_error))
+
+    @property
+    def azimuth_model_error(self):
+        if self._has_tf_model_error():
+            return np.sqrt(abs(self.alpha_model_error + self.beta_model_error))
 
     # ---ellipticity----------------------------------------------------
     @property
@@ -619,8 +697,8 @@ class PhaseTensor(TFBase):
 
     @property
     def ellipticity_error(self):
-        if self.pt_error is not None:
-            ellip_error = (
+        if self._has_tf_error():
+            return (
                 self.ellipticity
                 * np.sqrt(self.phimax_error + self.phimin_error)
                 * np.sqrt(
@@ -628,9 +706,18 @@ class PhaseTensor(TFBase):
                     + (1 / (self.phimax + self.phimin)) ** 2
                 )
             )
-        else:
-            ellip_error = None
-        return ellip_error
+
+    @property
+    def ellipticity_model_error(self):
+        if self._has_tf_model_error():
+            return (
+                self.ellipticity
+                * np.sqrt(self.phimax_model_error + self.phimin_model_error)
+                * np.sqrt(
+                    (1 / (self.phimax - self.phimin)) ** 2
+                    + (1 / (self.phimax + self.phimin)) ** 2
+                )
+            )
 
     # ---det-------------------------------------------------------------
     @property
@@ -649,18 +736,26 @@ class PhaseTensor(TFBase):
 
     @property
     def det_error(self):
-        det_phi_error = None
-        if self.pt_error is not None:
-            det_phi_error = np.zeros_like(self.det)
-            det_phi_error[:] = (
+        if self._has_tf_error():
+            return (
                 np.abs(self.pt[:, 1, 1] * self.pt_error[:, 0, 0])
                 + np.abs(self.pt[:, 0, 0] * self.pt_error[:, 1, 1])
                 + np.abs(self.pt[:, 0, 1] * self.pt_error[:, 1, 0])
                 + np.abs(self.pt[:, 1, 0] * self.pt_error[:, 0, 1])
             )
-        return det_phi_error
+
+    @property
+    def det_model_error(self):
+        if self._has_tf_model_error():
+            return (
+                np.abs(self.pt[:, 1, 1] * self.pt_model_error[:, 0, 0])
+                + np.abs(self.pt[:, 0, 0] * self.pt_model_error[:, 1, 1])
+                + np.abs(self.pt[:, 0, 1] * self.pt_model_error[:, 1, 0])
+                + np.abs(self.pt[:, 1, 0] * self.pt_model_error[:, 0, 1])
+            )
 
     # ---principle component 1----------------------------------------------
+    @property
     def _pi1(self):
         """
         Return Pi1 (incl. uncertainties).
@@ -675,17 +770,18 @@ class PhaseTensor(TFBase):
         """
         # after bibby et al. 2005
 
-        pi1 = 0.5 * np.sqrt(
+        return 0.5 * np.sqrt(
             (self.pt[:, 0, 0] - self.pt[:, 1, 1]) ** 2
             + (self.pt[:, 0, 1] + self.pt[:, 1, 0]) ** 2
         )
-        pi1err = None
 
-        if self.pt_error is not None:
+    @property
+    def _pi1_error(self):
+        if self._has_tf_error():
             with np.errstate(divide="ignore", invalid="ignore"):
-                pi1err = (
+                return (
                     1.0
-                    / pi1
+                    / self._pi1
                     * np.sqrt(
                         (self.pt[:, 0, 0] - self.pt[:, 1, 1]) ** 2
                         * (
@@ -699,9 +795,30 @@ class PhaseTensor(TFBase):
                         )
                     )
                 )
-        return pi1, pi1err
+
+    @property
+    def _pi1_model_error(self):
+        if self._has_tf_model_error():
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return (
+                    1.0
+                    / self._pi1
+                    * np.sqrt(
+                        (self.pt[:, 0, 0] - self.pt[:, 1, 1]) ** 2
+                        * (
+                            self.pt_error[:, 0, 0] ** 2
+                            + self.pt_error[:, 1, 1] ** 2
+                        )
+                        + (self.pt[:, 0, 1] + self.pt[:, 1, 0]) ** 2
+                        * (
+                            self.pt_model_error[:, 0, 1] ** 2
+                            + self.pt_model_error[:, 1, 0] ** 2
+                        )
+                    )
+                )
 
     # ---principle component 2----------------------------------------------
+    @property
     def _pi2(self):
         """
         Return Pi1 (incl. uncertainties).
@@ -716,17 +833,18 @@ class PhaseTensor(TFBase):
         """
         # after bibby et al. 2005
 
-        pi2 = 0.5 * np.sqrt(
+        return 0.5 * np.sqrt(
             (self.pt[:, 0, 0] + self.pt[:, 1, 1]) ** 2
             + (self.pt[:, 0, 1] - self.pt[:, 1, 0]) ** 2
         )
-        pi2err = None
 
-        if self.pt_error is not None:
+    @property
+    def _pi2_error(self):
+        if self._has_tf_error():
             with np.errstate(divide="ignore", invalid="ignore"):
-                pi2err = (
+                return (
                     1.0
-                    / pi2
+                    / self._pi2
                     * np.sqrt(
                         (self.pt[:, 0, 0] + self.pt[:, 1, 1]) ** 2
                         * (
@@ -740,7 +858,27 @@ class PhaseTensor(TFBase):
                         )
                     )
                 )
-        return pi2, pi2err
+
+    @property
+    def _pi2_model_error(self):
+        if self._has_tf_model_error():
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return (
+                    1.0
+                    / self._pi2
+                    * np.sqrt(
+                        (self.pt[:, 0, 0] + self.pt[:, 1, 1]) ** 2
+                        * (
+                            self.pt_model_error[:, 0, 0] ** 2
+                            + self.pt_model_error[:, 1, 1] ** 2
+                        )
+                        + (self.pt[:, 0, 1] - self.pt[:, 1, 0]) ** 2
+                        * (
+                            self.pt_model_error[:, 0, 1] ** 2
+                            + self.pt_model_error[:, 1, 0] ** 2
+                        )
+                    )
+                )
 
     # ---phimin----------------------------------------------
     @property
@@ -757,19 +895,26 @@ class PhaseTensor(TFBase):
 
         """
 
-        if self.pt is None:
-            return None
-        #        return self._pi2()[0] - self._pi1()[0]
-        return np.degrees(np.arctan(self._pi2()[0] - self._pi1()[0]))
+        if self._has_tf():
+            return np.degrees(np.arctan(self._pi2 - self._pi1))
 
     @property
     def phimin_error(self):
-        phiminerr = None
-        if self.pt_error is not None:
-            phiminerr = np.sqrt(self._pi2()[1] ** 2 + self._pi1()[1] ** 2)
-            return np.arctan(phiminerr)
-        else:
-            return None
+        if self._has_tf_error():
+            return np.degrees(
+                np.arctan(np.sqrt(self._pi2_error**2 + self._pi1_error**2))
+            )
+
+    @property
+    def phimin_model_error(self):
+        if self._has_tf_model_error():
+            return np.degrees(
+                np.arctan(
+                    np.sqrt(
+                        self._pi2_model_error**2 + self._pi1_model_error**2
+                    )
+                )
+            )
 
     # ---phimax----------------------------------------------
     @property
@@ -785,109 +930,30 @@ class PhaseTensor(TFBase):
 
         """
 
-        if self.pt is None:
-            return None
-        return np.degrees(np.arctan(self._pi2()[0] + self._pi1()[0]))
+        if self._has_tf():
+            return np.degrees(np.arctan(self._pi2 + self._pi1))
 
     @property
     def phimax_error(self):
-        phimaxerr = None
-        if self.pt_error is not None:
-            phimaxerr = np.sqrt(self._pi2()[1] ** 2 + self._pi1()[1] ** 2)
-
-            return np.arctan(phimaxerr)
-        else:
-            return None
-
-    def rotate(self, alpha):
-        """
-        Rotate PT array. Change the rotation angles attribute respectively.
-
-        Rotation angle must be given in degrees. All angles are referenced to
-        North, positive in clockwise direction. (Mathematically negative!)
-
-        In non-rotated state, X refs to North and Y to East direction.
-
-        """
-
-        if self._pt is None:
-            self.logger.warning('pt-array is "None" - I cannot rotate that')
-            return
-        if np.iterable(self.rotation_angle) == 0:
-            self.rotation_angle = np.array(
-                [self.rotation_angle for ii in self.pt]
+        if self._has_tf_error():
+            return np.degrees(
+                np.arctan(np.sqrt(self._pi2_error**2 + self._pi1_error**2))
             )
-        # check for iterable list/set of angles - if so, it must have length 1
-        # or same as len(pt):
-        if np.iterable(alpha) == 0:
-            try:
-                degreeangle = float(alpha % 360)
-            except:
-                self.logger.warning(
-                    '"Angle" must be a valid number (in degrees)'
-                )
-                return
-            # make an n long list of identical angles
-            lo_angles = [degreeangle for i in self.pt]
-        else:
-            if len(alpha) == 1:
-                try:
-                    degreeangle = float(alpha % 360)
-                except:
-                    self.logger.warning(
-                        '"Angle" must be a valid number (in degrees)'
-                    )
-                    return
-                # make an n long list of identical angles
-                lo_angles = [degreeangle for i in self.pt]
-            else:
-                try:
-                    lo_angles = [float(i % 360) for i in alpha]
-                except:
-                    self.logger.warning(
-                        '"Angles" must be valid numbers (in degrees)'
-                    )
-                    return
-        self.rotation_angle = list(
-            (np.array(lo_angles) + np.array(self.rotation_angle)) % 360
-        )
 
-        if len(lo_angles) != len(self._pt):
-            self.logger.warning(
-                'Wrong number Number of "angles" - need %i ' % (len(self._pt))
+    @property
+    def phimax_model_error(self):
+        if self._has_tf_model_error():
+            return np.degrees(
+                np.arctan(
+                    np.sqrt(
+                        self._pi2_model_error**2 + self._pi1_model_error**2
+                    )
+                )
             )
-            self.rotation_angle = 0.0
-            return
-        pt_rot = copy.copy(self._pt)
-        pt_error_rot = copy.copy(self._pt_error)
-
-        for idx_freq in range(len(self._pt)):
-
-            angle = lo_angles[idx_freq]
-            if np.isnan(angle):
-                angle = 0.0
-            if self.pt_error is not None:
-                (
-                    pt_rot[idx_freq],
-                    pt_error_rot[idx_freq],
-                ) = MTcc.rotate_matrix_with_errors(
-                    self.pt[idx_freq, :, :],
-                    angle,
-                    self.pt_error[idx_freq, :, :],
-                )
-            else:
-                (
-                    pt_rot[idx_freq],
-                    pt_error_rot,
-                ) = MTcc.rotate_matrix_with_errors(
-                    self.pt[idx_freq, :, :], angle
-                )
-        # --> set the rotated tensors as the current attributes
-        self._pt = pt_rot
-        self._pt_error = pt_error_rot
 
     # ---only 1d----------------------------------------------
-    def _get_only1d(self):
+    @property
+    def only1d(self):
         """
         Return PT in 1D form.
 
@@ -896,38 +962,30 @@ class PhaseTensor(TFBase):
         set to the mean of the original PT off-diagonal absolutes.
         """
 
-        if self._pt is None:
-            return None
-        pt1d = copy.copy(self._pt)
+        if self._has_tf():
+            pt_1d = copy.copy(self.pt)
+            pt_1d[:, 0, 1] = 0
+            pt_1d[:, 1, 0] = 0
 
-        for i in range(len(pt1d)):
-            pt1d[i, 0, 1] = 0
-            pt1d[i, 1, 0] = 0
-
-            mean1d = 0.5 * (pt1d[i, 0, 0] + pt1d[i, 1, 1])
-            pt1d[i, 0, 0] = mean1d
-            pt1d[i, 1, 1] = mean1d
-        return pt1d
-
-    only1d = property(_get_only1d, doc="")
+            mean_1d = 0.5 * (pt_1d[:, 0, 0] + pt_1d[:, 1, 1])
+            pt_1d[:, 0, 0] = mean_1d
+            pt_1d[:, 1, 1] = mean_1d
+            return pt_1d
 
     # ---only 2d----------------------------------------------
-    def _get_only2d(self):
+    @property
+    def only2d(self):
         """
         Return PT in 2D form.
 
         If PT is not 2D per se, the diagonal elements are set to zero.
         """
-        if self._pt is None:
-            return None
-        pt2d = copy.copy(self._pt)
+        if self._has_tf():
+            pt_2d = copy.copy(self.pt)
 
-        for i in range(len(pt2d)):
-            pt2d[i, 0, 1] = 0
-            pt2d[i, 1, 0] = 0
+            pt_2d[:, 0, 1] = 0
+            pt_2d[:, 1, 0] = 0
 
-            pt2d[i, 0, 0] = self.phimax[i]
-            pt2d[i, 1, 1] = self.phimin[i]
-        return pt2d
-
-    only2d = property(_get_only2d, doc="")
+            pt_2d[:, 0, 0] = self.phimax[:]
+            pt_2d[:, 1, 1] = self.phimin[:]
+            return pt_2d

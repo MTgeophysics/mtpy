@@ -19,6 +19,7 @@ import numpy as np
 
 import mtpy.utils.calculator as MTcc
 from .base import TFBase
+from .pt import PhaseTensor
 
 # ==============================================================================
 # Impedance Tensor Class
@@ -739,3 +740,12 @@ class Z(TFBase):
     @property
     def phase_model_error_yy(self):
         return self._get_component("yy", self.phase_model_error)
+
+    @property
+    def phase_tensor(self):
+        return PhaseTensor(
+            z=self.z,
+            z_error=self.z_error,
+            z_model_error=self.z_model_error,
+            frequency=self.frequency,
+        )

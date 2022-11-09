@@ -26,7 +26,7 @@ import numpy as np
 import scipy.interpolate as spi
 
 from mtpy.analysis import geometry
-from mtpy.core.z import Z
+from mtpy.core import Z
 from mtpy.utils import MU0
 
 # =============================================================================

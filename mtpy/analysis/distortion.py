@@ -37,14 +37,17 @@ Edited by JP, 2016
 
 """
 
-import copy
-
+# =============================================================================
+# Imports
+# =============================================================================
 import numpy as np
 
 import mtpy.analysis.geometry as MTge
-import mtpy.core.z as MTz
+from mtpy.core import Z
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
+
+# =============================================================================
 
 
 def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
@@ -53,31 +56,31 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
 
     automatically determine the dimensionality over all frequencies, then find
     the appropriate distortion tensor D
-    
+
     Parameters
     ----------
-    
+
         **z_object** : mtpy.core.z object
-                       
+
         **g** : [ 'det' | '01' | '10 ]
                 type of distortion correction
                 *default* is 'det'
-                
+
         **num_freq** : int
-                       number of frequencies to look for distortion from 
+                       number of frequencies to look for distortion from
                        the index 0
                        *default* is None, meaning all frequencies are used
-                       
+
         **lo_dims** : list
                       list of dimensions for each frequency
                       *default* is None, meaning calculated from data
-                      
+
     Returns
     -------
-    
+
         **distortion** : np.ndarray(2, 2)
                          distortion array all real values
-        
+
         **distortion_err** : np.ndarray(2, 2)
                              distortion error array
 
@@ -86,10 +89,10 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
     --------
 
         :Estimate Distortion: ::
-        
+
             >>> import mtpy.analysis.distortion as distortion
             >>> dis, dis_err = distortion.find_distortion(z_obj, num_freq=12)
-            
+
     """
 
     if num_freq is not None:
@@ -100,8 +103,10 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
     else:
         num_freq = z_object.freq.size
 
-    z_obj = MTz.Z(
-        z_object.z[0:num_freq], z_object.z_err[0:num_freq], z_object.freq[0:num_freq]
+    z_obj = Z(
+        z_object.z[0:num_freq],
+        z_object.z_err[0:num_freq],
+        z_object.freq[0:num_freq],
     )
 
     g = "det"
@@ -169,8 +174,12 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
 
             tetm_r = tetm_arr.real
             tetm_i = tetm_arr.imag
-            t_arr_r = -4 * P * tetm_r[0, 1] * tetm_r[1, 0] / np.linalg.det(tetm_r)
-            t_arr_i = -4 * P * tetm_i[0, 1] * tetm_i[1, 0] / np.linalg.det(tetm_i)
+            t_arr_r = (
+                -4 * P * tetm_r[0, 1] * tetm_r[1, 0] / np.linalg.det(tetm_r)
+            )
+            t_arr_i = (
+                -4 * P * tetm_i[0, 1] * tetm_i[1, 0] / np.linalg.det(tetm_i)
+            )
 
             try:
                 T = np.sqrt(max([t_arr_r, t_arr_i])) + 0.001
@@ -178,10 +187,12 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
                 T = 2
 
             sr = np.sqrt(
-                T ** 2 + 4 * P * tetm_r[0, 1] * tetm_r[1, 0] / np.linalg.det(tetm_r)
+                T**2
+                + 4 * P * tetm_r[0, 1] * tetm_r[1, 0] / np.linalg.det(tetm_r)
             )
             si = np.sqrt(
-                T ** 2 + 4 * P * tetm_i[0, 1] * tetm_i[1, 0] / np.linalg.det(tetm_i)
+                T**2
+                + 4 * P * tetm_i[0, 1] * tetm_i[1, 0] / np.linalg.det(tetm_i)
             )
 
             par_r = 2 * tetm_r[0, 1] / (T - sr)
@@ -193,7 +204,8 @@ def find_distortion(z_object, g="det", num_freq=None, lo_dims=None):
             mat2_i = np.matrix([[0, 1.0 / orth_i], [1.0 / par_i, 0]])
 
             avg_mat = np.mean(
-                np.array([np.dot(tetm_r, mat2_r), np.dot(tetm_i, mat2_i)]), axis=0
+                np.array([np.dot(tetm_r, mat2_r), np.dot(tetm_i, mat2_i)]),
+                axis=0,
             )
 
             dis[idx] = avg_mat
@@ -359,13 +371,13 @@ def find_1d_distortion(z_object, include_non1d=False):
     """
     find 1D distortion tensor from z object
 
-    ONly use the 1D part of the Z to determine D. 
+    ONly use the 1D part of the Z to determine D.
     Treat all frequencies as 1D, if  "include_non1d = True".
 
-    
+
     """
 
-    if not isinstance(z_object, MTz.Z):
+    if not isinstance(z_object, Z):
         raise MTex.MTpyError_inputarguments(
             "first argument must be an " "instance of the Z class"
         )
@@ -379,7 +391,8 @@ def find_1d_distortion(z_object, include_non1d=False):
 
     if len(list(np.where(np.array(lo_dims) == 1))) == 0:
         raise MTex.MTpyError_inputarguments(
-            "Z object does not have " "frequencies with spatial 1D characteristic"
+            "Z object does not have "
+            "frequencies with spatial 1D characteristic"
         )
 
     print(lo_dims)
@@ -391,12 +404,12 @@ def find_2d_distortion(z_object, include_non2d=False):
     """
     find 2D distortion tensor from z object
 
-    ONly use the 2D part of the Z to determine D. 
+    ONly use the 2D part of the Z to determine D.
     Treat all frequencies as 2D, if  "include_non2d = True".
-    
+
     """
 
-    if not isinstance(z_object, MTz.Z):
+    if not isinstance(z_object, Z):
         raise MTex.MTpyError_inputarguments(
             "first argument must be an " "instance of the Z class"
         )
@@ -413,7 +426,8 @@ def find_2d_distortion(z_object, include_non2d=False):
 
     if len(list(np.where(np.array(lo_dims) == 2))) == 0:
         raise MTex.MTpyError_inputarguments(
-            "Z object does not have" " frequencies with spatial 2D characteristic"
+            "Z object does not have"
+            " frequencies with spatial 2D characteristic"
         )
 
     return find_distortion(z_obj, lo_dims=lo_dims)
@@ -421,16 +435,16 @@ def find_2d_distortion(z_object, include_non2d=False):
 
 def remove_distortion(z_array=None, z_object=None, num_freq=None, g="det"):
     """
-    remove distortion from an impedance tensor using the method outlined by 
+    remove distortion from an impedance tensor using the method outlined by
     Bibby et al., [2005].
-    
+
     Parameters
     -----------
-    
+
         **z_array** : np.ndarray((nf, 2, 2))
                       numpy array of impedance tensor
                       *default* is None
-                      
+
         **z_object** : mtpy.core.z object
                        *default* is None
 
@@ -457,11 +471,11 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g="det"):
         :Remove Distortion: ::
 
             >>> import mtpy.analysis.distortion as distortion
-            >>> d, new_z = distortion.remove_distortion(z_object=z_obj)                         
+            >>> d, new_z = distortion.remove_distortion(z_object=z_obj)
     """
 
     if z_array is not None:
-        z_obj = MTz.Z(z_array=z_array)
+        z_obj = Z(z_array=z_array)
 
     elif z_object is not None:
         z_obj = z_object

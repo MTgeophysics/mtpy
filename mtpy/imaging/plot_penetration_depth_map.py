@@ -13,7 +13,7 @@ import numpy as np
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps
 from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
-from mtpy.core.z import Z
+from mtpy.core import Z
 
 # =============================================================================
 
@@ -138,8 +138,12 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             depth_array["det"][ii] = (
                 d["depth_det"][0] - elev
             ) * self.depth_scale
-            depth_array["xy"][ii] = (d["depth_xy"][0] - elev) * self.depth_scale
-            depth_array["yx"][ii] = (d["depth_yx"][0] - elev) * self.depth_scale
+            depth_array["xy"][ii] = (
+                d["depth_xy"][0] - elev
+            ) * self.depth_scale
+            depth_array["yx"][ii] = (
+                d["depth_yx"][0] - elev
+            ) * self.depth_scale
 
         return depth_array
 
@@ -303,7 +307,9 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
             ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
             ax.set_ylabel("Latitude (deg)", fontdict=self.font_dict)
-            ax.set_title(self.subplot_title_dict[comp], fontdict=self.font_dict)
+            ax.set_title(
+                self.subplot_title_dict[comp], fontdict=self.font_dict
+            )
 
         self.fig.suptitle(
             f"Depth of investigation for period {self.plot_period:5g} (s)",
