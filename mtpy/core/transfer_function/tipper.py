@@ -80,7 +80,29 @@ class Tipper(TFBase):
             tf_model_error=tipper_model_error,
             frequency=frequency,
             _name="tipper",
+            _expected_shape=(1, 2),
+            inputs=["x", "y"],
+            outputs=["z"],
         )
+
+        self._amplitude = None
+        self._amplitude_err = None
+        self._amplitude_model_err = None
+        self._phase = None
+        self._phase_err = None
+        self._phase_model_err = None
+
+        self._mag_real = None
+        self._mag_imag = None
+        self._angle_real = None
+        self._angle_imag = None
+        self._mag_err = None
+        self._angle_err = None
+        self._mag_model_err = None
+        self._angle_model_err = None
+
+        self.compute_amp_phase()
+        self.compute_mag_direction()
 
     # --- tipper ----
     @property
@@ -156,7 +178,8 @@ class Tipper(TFBase):
     # ----tipper model error---------------------------------------------------------
     @property
     def tipper_model_error(self):
-        return self._tipper_model_error
+        if self._has_tf_model_error():
+            return self._dataset.transfer_function_model_error.values
 
     @tipper_model_error.setter
     def tipper_model_error(self, tipper_model_error):
@@ -233,7 +256,7 @@ class Tipper(TFBase):
                             self.tipper_error[idx_f, 0, jj],
                         )
 
-                        self.amplitude_error[idx_f, 0, jj] = r_error
+                        self._amplitude_error[idx_f, 0, jj] = r_error
                         self._phase_error[idx_f, 0, jj] = phi_error
 
         if self.tipper_model_error is not None:
@@ -250,8 +273,8 @@ class Tipper(TFBase):
                             self.tipper_model_error[idx_f, 0, jj],
                         )
 
-                        self.amplitude_model_error[idx_f, 0, jj] = r_error
-                        self.phase_model_error[idx_f, 0, jj] = phi_error
+                        self._amplitude_model_error[idx_f, 0, jj] = r_error
+                        self._phase_model_error[idx_f, 0, jj] = phi_error
 
     def set_amp_phase(self, r, phi):
         """
