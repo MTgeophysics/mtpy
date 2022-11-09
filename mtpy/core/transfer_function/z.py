@@ -122,6 +122,8 @@ class Z(TFBase):
         if self._has_tf():
             old_shape = self._dataset.transfer_function.shape
         z = self._validate_array_input(z, "complex", old_shape)
+        if z is None:
+            return
 
         if self._is_empty():
             self._dataset = self._initialize(tf=z)
@@ -148,6 +150,8 @@ class Z(TFBase):
             old_shape = self._dataset.transfer_function_error.shape
 
         z_error = self._validate_array_input(z_error, "float", old_shape)
+        if z_error is None:
+            return
 
         if self._is_empty():
             self._dataset = self._initialize(tf_error=z_error)
@@ -177,6 +181,9 @@ class Z(TFBase):
         z_model_error = self._validate_array_input(
             z_model_error, "float", old_shape
         )
+
+        if z_model_error is None:
+            return
 
         if self._is_empty():
             self._dataset = self._initialize(tf_error=z_model_error)
