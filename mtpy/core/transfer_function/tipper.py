@@ -85,25 +85,6 @@ class Tipper(TFBase):
             outputs=["z"],
         )
 
-        self._amplitude = None
-        self._amplitude_err = None
-        self._amplitude_model_err = None
-        self._phase = None
-        self._phase_err = None
-        self._phase_model_err = None
-
-        self._mag_real = None
-        self._mag_imag = None
-        self._angle_real = None
-        self._angle_imag = None
-        self._mag_err = None
-        self._angle_err = None
-        self._mag_model_err = None
-        self._angle_model_err = None
-
-        self.compute_amp_phase()
-        self.compute_mag_direction()
-
     # --- tipper ----
     @property
     def tipper(self):
@@ -131,10 +112,6 @@ class Tipper(TFBase):
             self._dataset = self._initialize(tf=tipper)
         else:
             self._dataset["transfer_function"].loc[self.comps] = tipper
-
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-        self.compute_mag_direction()
 
     # ----tipper error---------------
     @property
@@ -171,10 +148,6 @@ class Tipper(TFBase):
                 self.comps
             ] = tipper_error
 
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-        self.compute_mag_direction()
-
     # ----tipper model error---------------------------------------------------------
     @property
     def tipper_model_error(self):
@@ -210,12 +183,8 @@ class Tipper(TFBase):
                 self.comps
             ] = tipper_model_error
 
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-        self.compute_mag_direction()
-
     # ----amplitude and phase
-    def compute_amp_phase(self):
+    def _compute_amp_phase_error(self, error):
         """
         Sets attributes:
                         * *amplitude*
@@ -225,56 +194,27 @@ class Tipper(TFBase):
 
         values for resistivity are in in Ohm m and phase in degrees.
         """
-
-        if self.tipper is None:
-            return None
-        self._amplitude_error = None
-        self._phase_error = None
-        if self.tipper_error is not None:
-            self._amplitude_error = np.zeros(self.tipper_error.shape)
-            self._phase_error = np.zeros(self.tipper_error.shape)
-        if self.tipper_model_error is not None:
-            self._amplitude_model_error = np.zeros(
-                self.tipper_model_error.shape
-            )
-            self._phase_model_error = np.zeros(self.tipper_model_error.shape)
-
-        self._amplitude = np.abs(self.tipper)
-        self._phase = np.rad2deg(np.angle(self.tipper))
-
-        if self.tipper_error is not None:
+        amplitude_error = None
+        phase_error = None
+        if error is not None:
+            amplitude_error = np.zeros(self.tipper_error.shape)
+            phase_error = np.zeros(self.tipper_error.shape)
             for idx_f in range(len(self.tipper)):
                 for jj in range(2):
-                    if self.tipper_error is not None:
-                        if type(self.tipper) == np.ma.core.MaskedArray:
-                            if self.tipper.mask[idx_f, 0, jj]:
-                                continue
-                        r_error, phi_error = MTcc.propagate_error_rect2polar(
-                            np.real(self.tipper[idx_f, 0, jj]),
-                            self.tipper_error[idx_f, 0, jj],
-                            np.imag(self.tipper[idx_f, 0, jj]),
-                            self.tipper_error[idx_f, 0, jj],
-                        )
+                    if type(self.tipper) == np.ma.core.MaskedArray:
+                        if self.tipper.mask[idx_f, 0, jj]:
+                            continue
+                    r_error, phi_error = MTcc.propagate_error_rect2polar(
+                        np.real(self.tipper[idx_f, 0, jj]),
+                        error[idx_f, 0, jj],
+                        np.imag(self.tipper[idx_f, 0, jj]),
+                        error[idx_f, 0, jj],
+                    )
 
-                        self._amplitude_error[idx_f, 0, jj] = r_error
-                        self._phase_error[idx_f, 0, jj] = phi_error
+                    amplitude_error[idx_f, 0, jj] = r_error
+                    phase_error[idx_f, 0, jj] = phi_error
 
-        if self.tipper_model_error is not None:
-            for idx_f in range(len(self.tipper)):
-                for jj in range(2):
-                    if self.tipper_model_error is not None:
-                        if type(self.tipper) == np.ma.core.MaskedArray:
-                            if self.tipper.mask[idx_f, 0, jj]:
-                                continue
-                        r_error, phi_error = MTcc.propagate_error_rect2polar(
-                            np.real(self.tipper[idx_f, 0, jj]),
-                            self.tipper_model_error[idx_f, 0, jj],
-                            np.imag(self.tipper[idx_f, 0, jj]),
-                            self.tipper_model_error[idx_f, 0, jj],
-                        )
-
-                        self._amplitude_model_error[idx_f, 0, jj] = r_error
-                        self._phase_model_error[idx_f, 0, jj] = phi_error
+        return amplitude_error, phase_error
 
     def set_amp_phase(self, r, phi):
         """
@@ -329,97 +269,39 @@ class Tipper(TFBase):
                 )
         self.tipper = tipper_new
 
-        # for consistency recalculate amplitude and phase
-        self.compute_amp_phase()
-        self.compute_mag_direction()
-
     # ---------------------------------
     # properties
     @property
     def amplitude(self):
-        return self._amplitude
+        if self._has_tf():
+            return np.abs(self.tipper)
 
     @property
     def phase(self):
-        return self._phase
+        if self._has_tf():
+            return np.rad2deg(np.angle(self.tipper))
 
     @property
     def amplitude_error(self):
-        return self._amplitude_error
+        if self._has_tf_error():
+            return self._compute_amp_phase_error(self.tipper_error)[0]
 
     @property
     def phase_error(self):
-        return self._phase_error
+        if self._has_tf_error():
+            return self._compute_amp_phase_error(self.tipper_error)[1]
 
     @property
     def amplitude_model_error(self):
-        return self._amplitude_model_error
+        if self._has_tf_model_error():
+            return self._compute_amp_phase_error(self.tipper_model_error)[0]
 
     @property
     def phase_model_error(self):
-        return self._phase_model_error
+        if self._has_tf_model_error():
+            return self._compute_amp_phase_error(self.tipper_model_error)[1]
 
     # ----magnitude and direction----------------------------------------------
-    def compute_mag_direction(self):
-        """
-        computes the magnitude and direction of the real and imaginary
-        induction vectors.
-        """
-
-        if self.tipper is None:
-            return None
-        self._mag_real = np.sqrt(
-            self.tipper[:, 0, 0].real ** 2 + self.tipper[:, 0, 1].real ** 2
-        )
-        self._mag_imag = np.sqrt(
-            self.tipper[:, 0, 0].imag ** 2 + self.tipper[:, 0, 1].imag ** 2
-        )
-
-        self._mag_error = None
-        self._angle_error = None
-        self._mag_model_error = None
-        self._angle_model_error = None
-        # get the angle, need to make both parts negative to get it into the
-        # parkinson convention where the arrows point towards the conductor
-
-        self._angle_real = np.rad2deg(
-            np.arctan2(-self.tipper[:, 0, 1].real, -self.tipper[:, 0, 0].real)
-        )
-
-        self._angle_imag = np.rad2deg(
-            np.arctan2(-self.tipper[:, 0, 1].imag, -self.tipper[:, 0, 0].imag)
-        )
-
-        ## estimate error: THIS MAYBE A HACK
-        if self.tipper_error is not None:
-            self._mag_error = np.sqrt(
-                self.tipper_error[:, 0, 0] ** 2
-                + self.tipper_error[:, 0, 1] ** 2
-            )
-            self._angle_error = (
-                np.rad2deg(
-                    np.arctan2(
-                        self.tipper_error[:, 0, 0], self.tipper_error[:, 0, 1]
-                    )
-                )
-                % 45
-            )
-
-        ## estimate error: THIS MAYBE A HACK
-        if self.tipper_model_error is not None:
-            self._mag_model_error = np.sqrt(
-                self.tipper_model_error[:, 0, 0] ** 2
-                + self.tipper_model_error[:, 0, 1] ** 2
-            )
-            self._angle_model_error = (
-                np.rad2deg(
-                    np.arctan2(
-                        self.tipper_model_error[:, 0, 0],
-                        self.tipper_model_error[:, 0, 1],
-                    )
-                )
-                % 45
-            )
 
     def set_mag_direction(self, mag_real, ang_real, mag_imag, ang_imag):
         """
@@ -454,32 +336,73 @@ class Tipper(TFBase):
 
     @property
     def mag_real(self):
-        return self._mag_real
+        if self._has_tf():
+            return np.sqrt(
+                self.tipper[:, 0, 0].real ** 2 + self.tipper[:, 0, 1].real ** 2
+            )
 
     @property
     def mag_imag(self):
-        return self._mag_imag
+        if self._has_tf():
+            return np.sqrt(
+                self.tipper[:, 0, 0].imag ** 2 + self.tipper[:, 0, 1].imag ** 2
+            )
 
     @property
     def angle_real(self):
-        return self._angle_real
+        if self._has_tf():
+            return np.rad2deg(
+                np.arctan2(
+                    -self.tipper[:, 0, 1].real, -self.tipper[:, 0, 0].real
+                )
+            )
 
     @property
     def angle_imag(self):
-        return self._angle_imag
+        if self._has_tf():
+            return np.rad2deg(
+                np.arctan2(
+                    -self.tipper[:, 0, 1].imag, -self.tipper[:, 0, 0].imag
+                )
+            )
 
     @property
     def mag_error(self):
-        return self._mag_error
+        if self._has_tf_error():
+            return np.sqrt(
+                self.tipper_error[:, 0, 0] ** 2
+                + self.tipper_error[:, 0, 1] ** 2
+            )
 
     @property
     def angle_error(self):
-        return self._angle_error
+        if self._has_tf_error():
+            return (
+                np.rad2deg(
+                    np.arctan2(
+                        self.tipper_error[:, 0, 0], self.tipper_error[:, 0, 1]
+                    )
+                )
+                % 45
+            )
 
     @property
     def mag_model_error(self):
-        return self._mag_model_error
+        if self._has_tf_model_error():
+            return np.sqrt(
+                self.tipper_model_error[:, 0, 0] ** 2
+                + self.tipper_model_error[:, 0, 1] ** 2
+            )
 
     @property
     def angle_model_error(self):
-        return self._angle_model_error
+        if self._has_tf_model_error():
+            return (
+                np.rad2deg(
+                    np.arctan2(
+                        self.tipper_model_error[:, 0, 0],
+                        self.tipper_model_error[:, 0, 1],
+                    )
+                )
+                % 45
+            )
