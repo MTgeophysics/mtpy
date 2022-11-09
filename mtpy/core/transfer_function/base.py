@@ -51,6 +51,11 @@ class TFBase:
         self._expected_shape = (2, 2)
         self._name = "base transfer function"
         self._dataset = None
+        self._tf_dtypes = {
+            "tf": complex,
+            "tf_error": float,
+            "tf_model_error": float,
+        }
 
         frequency = self._validate_frequency(frequency)
 
@@ -110,32 +115,42 @@ class TFBase:
         """
 
         if tf is not None:
-            tf = self._validate_array_input(tf, complex)
+            tf = self._validate_array_input(tf, self._tf_dtypes["tf"])
             periods = self._validate_frequency(periods, tf.shape[0])
             if tf_error is not None:
                 self._validate_array_shape(tf_error, tf.shape)
             else:
-                tf_error = np.zeros_like(tf, dtype=float)
+                tf_error = np.zeros_like(tf, dtype=self._tf_dtypes["tf_error"])
 
             if tf_model_error is not None:
                 self._validate_array_shape(tf_model_error, tf.shape)
             else:
-                tf_model_error = np.zeros_like(tf, dtype=float)
+                tf_model_error = np.zeros_like(
+                    tf, dtype=self._tf_dtypes["tf_model_error"]
+                )
 
         elif tf_error is not None:
-            tf_error = self._validate_array_input(tf_error, float)
+            tf_error = self._validate_array_input(
+                tf_error, self._tf_dtypes["tf_error"]
+            )
             periods = self._validate_frequency(periods, tf_error.shape[0])
-            tf = np.zeros_like(tf_error, dtype=complex)
+            tf = np.zeros_like(tf_error, dtype=self._tf_dtypes["tf"])
 
             if tf_model_error is not None:
                 self._validate_array_shape(tf_model_error, tf_error.shape)
             else:
-                tf_model_error = np.zeros_like(tf_error, dtype=float)
+                tf_model_error = np.zeros_like(
+                    tf_error, dtype=self._tf_dtypes["tf_model_error"]
+                )
 
         elif tf_model_error is not None:
-            tf_model_error = self._validate_array_input(tf_model_error, float)
-            tf = np.zeros_like(tf_model_error, dtype=complex)
-            tf_error = np.zeros_like(tf_model_error, dtype=float)
+            tf_model_error = self._validate_array_input(
+                tf_model_error, self._tf_dtypes["tf_model_error"]
+            )
+            tf = np.zeros_like(tf_model_error, dtype=self._tf_dtypes["tf"])
+            tf_error = np.zeros_like(
+                tf_model_error, dtype=self._tf_dtypes["tf_error"]
+            )
             periods = self._validate_frequency(
                 periods, tf_model_error.shape[0]
             )
@@ -147,9 +162,11 @@ class TFBase:
                 self._expected_shape[0],
                 self._expected_shape[1],
             )
-            tf = np.zeros(tf_shape, dtype=complex)
-            tf_error = np.zeros(tf_shape, dtype=float)
-            tf_model_error = np.zeros(tf_shape, dtype=float)
+            tf = np.zeros(tf_shape, dtype=self._tf_dtypes["tf"])
+            tf_error = np.zeros(tf_shape, dtype=self._tf_dtypes["tf_error"])
+            tf_model_error = np.zeros(
+                tf_shape, dtype=self._tf_dtypes["tf_model_error"]
+            )
 
         tf = xr.DataArray(
             data=tf,
