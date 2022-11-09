@@ -181,7 +181,7 @@ class Z(TFBase):
         if self._is_empty():
             self._dataset = self._initialize(tf_error=z_model_error)
         else:
-            self._dataset["transfer_function_error"].loc[
+            self._dataset["transfer_function_model_error"].loc[
                 self.comps
             ] = z_model_error
 
@@ -309,7 +309,7 @@ class Z(TFBase):
             return static_shift, z_corrected
 
     def remove_distortion(
-        self, distortion_tensor, distortion_err_tensor=None, inplace=False
+        self, distortion_tensor, distortion_error_tensor=None, inplace=False
     ):
         """
         Remove distortion D form an observed impedance tensor Z to obtain
@@ -321,8 +321,8 @@ class Z(TFBase):
 
         :param distortion_tensor: real distortion tensor as a 2x2
         :type distortion_tensor: np.ndarray(2, 2, dtype=real)
-        :param distortion_err_tensor: default is None
-        :type distortion_err_tensor: np.ndarray(2, 2, dtype=real),
+        :param distortion_error_tensor: default is None
+        :type distortion_error_tensor: np.ndarray(2, 2, dtype=real),
         :param inplace: Update the current object or return a new impedance
         :type inplace: boolean
         :returns: input distortion tensor
@@ -339,19 +339,19 @@ class Z(TFBase):
 
         """
 
-        if distortion_err_tensor is None:
-            distortion_err_tensor = np.zeros_like(distortion_tensor)
+        if distortion_error_tensor is None:
+            distortion_error_tensor = np.zeros_like(distortion_tensor)
         # for all frequency, calculate D.Inverse, then obtain Z0 = D.I * Z
         try:
             if not (len(distortion_tensor.shape) in [2, 3]) and (
-                len(distortion_err_tensor.shape) in [2, 3]
+                len(distortion_error_tensor.shape) in [2, 3]
             ):
                 msg = "Distortion tensor and error are not correct shape"
                 self.logger.error(msg)
                 raise ValueError(msg)
             if (
                 len(distortion_tensor.shape) == 3
-                or len(distortion_err_tensor.shape) == 3
+                or len(distortion_error_tensor.shape) == 3
             ):
                 self.logger.info(
                     "Distortion is not time-dependent - taking only first"
@@ -359,13 +359,13 @@ class Z(TFBase):
                 )
                 try:
                     distortion_tensor = distortion_tensor[0]
-                    distortion_err_tensor = distortion_err_tensor[0]
+                    distortion_error_tensor = distortion_error_tensor[0]
                 except IndexError:
                     msg = "Distortion tensor and error are not correct shape"
                     self.logger.error(msg)
                     raise ValueError(msg)
             if not (distortion_tensor.shape == (2, 2)) and (
-                distortion_err_tensor.shape == (2, 2)
+                distortion_error_tensor.shape == (2, 2)
             ):
                 msg = "Distortion tensor and error are not correct shape"
                 self.logger.error(msg)
@@ -381,37 +381,37 @@ class Z(TFBase):
                 "The provided distortion tensor is singular cannot be used."
             )
         # propagation of errors (using 1-norm) - step 1 - inversion of D:
-        DI_err = np.zeros_like(distortion_err_tensor)
+        DI_error = np.zeros_like(distortion_error_tensor)
 
         # todo :include error on  determinant!!
         # D_det = np.linalg.det(distortion_tensor)
 
-        dummy, DI_err = MTcc.invertmatrix_incl_errors(
-            distortion_tensor, distortion_err_tensor
+        dummy, DI_error = MTcc.invertmatrix_incl_errors(
+            distortion_tensor, distortion_error_tensor
         )
 
         # propagation of errors - step 2 - product of D.inverse and Z;
         # D.I * Z, making it 4 summands for each component:
         z_corrected = np.zeros_like(self.z)
-        z_corrected_err = np.zeros_like(self.z_error)
+        z_corrected_error = np.zeros_like(self.z_error)
 
         for idx_f in range(len(self.z)):
             z_corrected[idx_f] = np.array(np.dot(DI, np.matrix(self.z[idx_f])))
             for ii in range(2):
                 for jj in range(2):
-                    z_corrected_err[idx_f, ii, jj] = np.sum(
+                    z_corrected_error[idx_f, ii, jj] = np.sum(
                         np.abs(
                             np.array(
                                 [
-                                    DI_err[ii, 0] * self.z[idx_f, 0, jj],
+                                    DI_error[ii, 0] * self.z[idx_f, 0, jj],
                                     DI[ii, 0] * self.z_error[idx_f, 0, jj],
-                                    DI_err[ii, 1] * self.z[idx_f, 1, jj],
+                                    DI_error[ii, 1] * self.z[idx_f, 1, jj],
                                     DI[ii, 1] * self.z_error[idx_f, 1, jj],
                                 ]
                             )
                         )
                     )
-        return distortion_tensor, z_corrected, z_corrected_err
+        return distortion_tensor, z_corrected, z_corrected_error
 
     @property
     def resistivity(self):
@@ -426,89 +426,54 @@ class Z(TFBase):
             return np.rad2deg(np.angle(self.z))
 
     @property
-    def resistivity_err(self):
+    def resistivity_error(self):
         if self.z is not None and self.z_error is not None:
-            res_err, phi_err = self._compute_rp_error(self.z, self.z_error)
-            return res_err
+            return np.apply_along_axis(
+                lambda x: np.abs(x) ** 2 / self.frequency * 0.2,
+                0,
+                self.z_error,
+            )
 
     @property
-    def phase_err(self):
+    def phase_error(self):
         if self.z is not None and self.z_error is not None:
-            res_err, phi_err = self._compute_rp_error(self.z, self.z_error)
-            return phi_err
+            return np.degrees(
+                np.arctan(self.resistivity_error / self.resistivity)
+            )
 
     @property
-    def resistivity_model_err(self):
-        if self.z is not None and self.z_model_err is not None:
-            res_err, phi_err = self._compute_rp_error(self.z, self.z_model_err)
-            return res_err
+    def resistivity_model_error(self):
+        if self.z is not None and self.z_model_error is not None:
+            return np.apply_along_axis(
+                lambda x: np.abs(x) ** 2 / self.frequency * 0.2,
+                0,
+                self.z_model_error,
+            )
 
     @property
-    def phase_model_err(self):
-        if self.z is not None and self.z_error is not None:
-            res_err, phi_err = self._compute_rp_error(self.z, self.z_model_err)
-            return phi_err
+    def phase_model_error(self):
+        if self.z is not None and self.z_model_error is not None:
+            return np.degrees(
+                np.arctan(self.resistivity_model_error / self.resistivity)
+            )
 
-    def _compute_rp_error(self, z, z_error):
-        # calculate resistivity and phase
-        res_err = None
-        phase_err = None
-        if z is not None and z_error is not None:
-            res_err = np.zeros_like(self.z, dtype=np.float)
-            phase_err = np.zeros_like(self.z, dtype=np.float)
-            res = self.resistivity.copy()
-
-            for idx_f in range(self.frequency.size):
-                for ii in range(2):
-                    for jj in range(2):
-                        r_err, phi_err = MTcc.z_error2r_phi_error(
-                            z[idx_f, ii, jj].real,
-                            z[idx_f, ii, jj].imag,
-                            z_error[idx_f, ii, jj],
-                        )
-                        res_err[idx_f, ii, jj] = r_err * res[idx_f, ii, jj]
-                        phase_err[idx_f, ii, jj] = phi_err
-        return res_err, phase_err
-
-    def _compute_z_error(self, res, res_err, phase, phase_err):
-        # abs_z = np.sqrt(5.0 * self.frequency * (resistivity.T)).T
-        # self.z = abs_z * np.exp(1j * np.radians(phase))
-
-        z_error = None
-        if res_err is not None or phase_err is not None:
-            z_error = np.zeros_like(self.z, dtype=np.float)
-            for idx_f in range(self.frequency.shape[0]):
-                for ii in range(2):
-                    for jj in range(2):
-                        abs_z = np.sqrt(
-                            5 * self.frequency[idx_f] * res[idx_f, ii, jj]
-                        )
-                        rel_error_res = (
-                            res_err[idx_f, ii, jj] / res[idx_f, ii, jj]
-                        )
-                        # relative error varies by a factor of 0.5, which is the
-                        # exponent in the relation between them:
-                        abs_z_error = 0.5 * abs_z * rel_error_res
-
-                        z_error[idx_f, ii, jj] = max(
-                            MTcc.propagate_error_polar2rect(
-                                abs_z,
-                                abs_z_error,
-                                phase[idx_f, ii, jj],
-                                phase_err[idx_f, ii, jj],
-                            )
-                        ) / (2 * abs_z)
-        return z_error
+    def _compute_z_error(self, res, res_error, phase, phase_error):
+        if res_error is None:
+            return None
+        return abs(
+            np.sqrt(5.0 * self.frequency * (res_error.T)).T
+            * np.exp(1j * np.radians(phase_error))
+        )
 
     def set_resistivity_phase(
         self,
         resistivity,
         phase,
         frequency,
-        res_err=None,
-        phase_err=None,
-        res_model_err=None,
-        phase_model_err=None,
+        res_error=None,
+        phase_error=None,
+        res_model_error=None,
+        phase_model_error=None,
     ):
         """
         Set values for resistivity (res - in Ohm m) and phase
@@ -524,11 +489,11 @@ class Z(TFBase):
         :param frequency: frequency array in Hz
         :type frequency: np.ndarray(num_frequency)
 
-        :param res_err: resistivity error array in Ohm-m
-        :type res_err: np.ndarray(num_frequency, 2, 2)
+        :param res_error: resistivity error array in Ohm-m
+        :type res_error: np.ndarray(num_frequency, 2, 2)
 
-        :param phase_err: phase error array in degrees
-        :type phase_err: np.ndarray(num_frequency, 2, 2)
+        :param phase_error: phase error array in degrees
+        :type phase_error: np.ndarray(num_frequency, 2, 2)
 
 
         """
@@ -544,22 +509,22 @@ class Z(TFBase):
         resistivity = self._validate_array_input(resistivity, float)
         phase = self._validate_array_input(phase, float)
 
-        res_err = self._validate_array_input(res_err, float)
-        phase_err = self._validate_array_input(phase_err, float)
-        res_model_err = self._validate_array_input(res_model_err, float)
-        phase_model_err = self._validate_array_input(phase_model_err, float)
+        res_error = self._validate_array_input(res_error, float)
+        phase_error = self._validate_array_input(phase_error, float)
+        res_model_error = self._validate_array_input(res_model_error, float)
+        phase_model_error = self._validate_array_input(
+            phase_model_error, float
+        )
 
         abs_z = np.sqrt(5.0 * self.frequency * (resistivity.T)).T
         self.z = abs_z * np.exp(1j * np.radians(phase))
 
         self.z_error = self._compute_z_error(
-            resistivity, res_err, phase, phase_err
+            resistivity, res_error, phase, phase_error
         )
-        self.z_model_err = self._compute_z_error(
-            resistivity, res_model_err, phase, phase_model_err
+        self.z_model_error = self._compute_z_error(
+            resistivity, res_model_error, phase, phase_model_error
         )
-
-    # calculate determinant values
 
     @property
     def det(self):
@@ -630,12 +595,12 @@ class Z(TFBase):
             return np.rad2deg(np.arctan2(self.det.imag, self.det.real))
 
     @property
-    def phase_err_det(self):
+    def phase_error_det(self):
         if self.det is not None:
             return np.rad2deg(np.arcsin(self.det_error / abs(self.det)))
 
     @property
-    def phase_model_err_det(self):
+    def phase_model_error_det(self):
         if self.det is not None:
             return np.rad2deg(np.arcsin(self.det_model_error / abs(self.det)))
 
@@ -645,7 +610,7 @@ class Z(TFBase):
             return 0.2 * (1.0 / self.frequency) * abs(self.det) ** 2
 
     @property
-    def res_err_det(self):
+    def res_error_det(self):
         if self.det is not None:
             return (
                 0.2
@@ -655,7 +620,7 @@ class Z(TFBase):
             )
 
     @property
-    def res_model_err_det(self):
+    def res_model_error_det(self):
         if self.det is not None:
             return (
                 0.2
@@ -689,36 +654,36 @@ class Z(TFBase):
         return self._get_component("yy", self.resistivity)
 
     @property
-    def res_err_xx(self):
-        return self._get_component("xx", self.resistivity_err)
+    def res_error_xx(self):
+        return self._get_component("xx", self.resistivity_error)
 
     @property
-    def res_err_xy(self):
-        return self._get_component("xy", self.resistivity_err)
+    def res_error_xy(self):
+        return self._get_component("xy", self.resistivity_error)
 
     @property
-    def res_err_yx(self):
-        return self._get_component("yx", self.resistivity_err)
+    def res_error_yx(self):
+        return self._get_component("yx", self.resistivity_error)
 
     @property
-    def res_err_yy(self):
-        return self._get_component("yy", self.resistivity_err)
+    def res_error_yy(self):
+        return self._get_component("yy", self.resistivity_error)
 
     @property
-    def res_model_err_xx(self):
-        return self._get_component("xx", self.resistivity_model_err)
+    def res_model_error_xx(self):
+        return self._get_component("xx", self.resistivity_model_error)
 
     @property
-    def res_model_err_xy(self):
-        return self._get_component("xy", self.resistivity_model_err)
+    def res_model_error_xy(self):
+        return self._get_component("xy", self.resistivity_model_error)
 
     @property
-    def res_model_err_yx(self):
-        return self._get_component("yx", self.resistivity_model_err)
+    def res_model_error_yx(self):
+        return self._get_component("yx", self.resistivity_model_error)
 
     @property
-    def res_model_err_yy(self):
-        return self._get_component("yy", self.resistivity_model_err)
+    def res_model_error_yy(self):
+        return self._get_component("yy", self.resistivity_model_error)
 
     @property
     def phase_xx(self):
@@ -737,36 +702,36 @@ class Z(TFBase):
         return self._get_component("yy", self.phase)
 
     @property
-    def phase_err_xx(self):
-        return self._get_component("xx", self.phase_err)
+    def phase_error_xx(self):
+        return self._get_component("xx", self.phase_error)
 
     @property
-    def phase_err_xy(self):
-        return self._get_component("xy", self.phase_err)
+    def phase_error_xy(self):
+        return self._get_component("xy", self.phase_error)
 
     @property
-    def phase_err_yx(self):
-        return self._get_component("yx", self.phase_err)
+    def phase_error_yx(self):
+        return self._get_component("yx", self.phase_error)
 
     @property
-    def phase_err_yy(self):
-        return self._get_component("yy", self.phase_err)
+    def phase_error_yy(self):
+        return self._get_component("yy", self.phase_error)
 
     @property
-    def phase_model_err_xx(self):
-        return self._get_component("xx", self.phase_model_err)
+    def phase_model_error_xx(self):
+        return self._get_component("xx", self.phase_model_error)
 
     @property
-    def phase_model_err_xy(self):
-        return self._get_component("xy", self.phase_model_err)
+    def phase_model_error_xy(self):
+        return self._get_component("xy", self.phase_model_error)
 
     @property
-    def phase_model_err_yx(self):
-        return self._get_component("yx", self.phase_model_err)
+    def phase_model_error_yx(self):
+        return self._get_component("yx", self.phase_model_error)
 
     @property
-    def phase_model_err_yy(self):
-        return self._get_component("yy", self.phase_model_err)
+    def phase_model_error_yy(self):
+        return self._get_component("yy", self.phase_model_error)
 
     # @property
     # def norm(self):
@@ -787,13 +752,13 @@ class Z(TFBase):
     #     """
     #     Return the 2-/Frobenius-norm of Z  error
 
-    #     :returns: norm_err
+    #     :returns: norm_error
     #     :rtype: np.ndarray(nfrequency)
     #     """
-    #     norm_err = None
+    #     norm_error = None
 
     #     if self.z_error is not None:
-    #         norm_err = np.zeros_like(self.norm, dtype=np.float)
+    #         norm_error = np.zeros_like(self.norm, dtype=np.float)
     #         for idx, z_tmp in enumerate(self.z):
     #             value = self.norm[idx]
     #             error_matrix = self.z_error[idx]
@@ -806,8 +771,8 @@ class Z(TFBase):
     #                     radicand += (
     #                         error_matrix[ii, jj] * np.imag(z_tmp[ii, jj])
     #                     ) ** 2
-    #             norm_err[idx] = 1.0 / value * np.sqrt(radicand)
-    #     return norm_err
+    #             norm_error[idx] = 1.0 / value * np.sqrt(radicand)
+    #     return norm_error
 
     # @property
     # def invariants(self):
