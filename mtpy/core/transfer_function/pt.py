@@ -168,172 +168,202 @@ class PhaseTensor(TFBase):
 
         det_real = np.abs(np.linalg.det(z_real))
 
-        pt_error[:, 0, 0] = np.sqrt(
-            np.sum(
-                [
-                    np.abs(
-                        -pt_array[:, 0, 0] * z_real[:, 1, 1] * z_error[:, 0, 0]
-                    )
-                    ** 2,
-                    np.abs(
-                        pt_array[:, 0, 0] * z_real[:, 0, 1] * z_error[:, 1, 0]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 0, 0] * z_real[:, 1, 0]
-                                - z_real[:, 0, 0] * z_imag[:, 1, 0]
-                            )
-                            / det_real
-                            * z_real[:, 0, 0]
-                        )
-                        * z_error[:, 0, 1]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 1, 0] * z_real[:, 0, 0]
-                                - z_real[:, 1, 0] * z_imag[:, 1, 1]
-                            )
-                            / det_real
-                            * z_real[:, 0, 1]
-                        )
-                        * z_error[:, 1, 1]
-                    )
-                    ** 2,
-                    np.abs(z_real[:, 1, 1] * z_error[:, 0, 0]) ** 2,
-                    np.abs(z_real[:, 0, 1] * z_error[:, 1, 0]) ** 2,
-                ]
-            )
-        )
-        print(pt_error[0, 0, 0])
-
-        pt_error[:, 0, 1] = np.sqrt(
-            np.sum(
-                [
-                    np.abs(
-                        -pt_array[:, 0, 1] * z_real[:, 1, 1] * z_error[:, 0, 0]
-                    )
-                    ** 2,
-                    np.abs(
-                        pt_array[:, 0, 1] * z_real[:, 0, 1] * z_error[:, 1, 0]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 0, 1] * z_real[:, 1, 0]
-                                - z_real[:, 0, 0] * z_imag[:, 1, 1]
-                            )
-                            / det_real
+        pt_error[:, 0, 0] = (
+            np.sqrt(
+                np.sum(
+                    [
+                        np.abs(
+                            -pt_array[:, 0, 0]
                             * z_real[:, 1, 1]
+                            * z_error[:, 0, 0]
                         )
-                        * z_error[:, 0, 1]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 1, 1] * z_real[:, 0, 0]
-                                - z_real[:, 0, 1] * z_imag[:, 1, 0]
-                            )
-                            / det_real
+                        ** 2,
+                        np.abs(
+                            pt_array[:, 0, 0]
                             * z_real[:, 0, 1]
+                            * z_error[:, 1, 0]
                         )
-                        * z_error[:, 1, 1]
-                    )
-                    ** 2,
-                    np.abs(z_real[:, 1, 1] * z_error[:, 0, 1]) ** 2,
-                    np.abs(z_real[:, 0, 1] * z_error[:, 1, 1]) ** 2,
-                ]
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 0, 0] * z_real[:, 1, 0]
+                                    - z_real[:, 0, 0] * z_imag[:, 1, 0]
+                                )
+                                / det_real
+                                * z_real[:, 0, 0]
+                            )
+                            * z_error[:, 0, 1]
+                        )
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 1, 0] * z_real[:, 0, 0]
+                                    - z_real[:, 1, 0] * z_imag[:, 1, 1]
+                                )
+                                / det_real
+                                * z_real[:, 0, 1]
+                            )
+                            * z_error[:, 1, 1]
+                        )
+                        ** 2,
+                        np.abs(z_real[:, 1, 1] * z_error[:, 0, 0]) ** 2,
+                        np.abs(z_real[:, 0, 1] * z_error[:, 1, 0]) ** 2,
+                    ],
+                    axis=0,
+                )
             )
+            / det_real
         )
 
-        pt_error[:, 1, 0] = np.sqrt(
-            np.sum(
-                [
-                    np.abs(
-                        pt_array[:, 1, 0] * z_real[:, 1, 0] * z_error[:, 0, 1]
-                    )
-                    ** 2,
-                    np.abs(
-                        -pt_array[:, 1, 0] * z_real[:, 0, 0] * z_error[:, 1, 1]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
+        pt_error[:, 0, 1] = (
+            np.sqrt(
+                np.sum(
+                    [
+                        np.abs(
+                            -pt_array[:, 0, 1]
+                            * z_real[:, 1, 1]
+                            * z_error[:, 0, 0]
+                        )
+                        ** 2,
+                        np.abs(
+                            pt_array[:, 0, 1]
+                            * z_real[:, 0, 1]
+                            * z_error[:, 1, 0]
+                        )
+                        ** 2,
+                        np.abs(
                             (
-                                z_imag[:, 0, 0] * z_real[:, 1, 1]
-                                - z_real[:, 0, 1] * z_imag[:, 1, 1]
+                                (
+                                    z_imag[:, 0, 1] * z_real[:, 1, 0]
+                                    - z_real[:, 0, 0] * z_imag[:, 1, 1]
+                                )
+                                / det_real
+                                * z_real[:, 1, 1]
                             )
-                            / det_real
+                            * z_error[:, 0, 1]
+                        )
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 1, 1] * z_real[:, 0, 0]
+                                    - z_real[:, 0, 1] * z_imag[:, 1, 0]
+                                )
+                                / det_real
+                                * z_real[:, 0, 1]
+                            )
+                            * z_error[:, 1, 1]
+                        )
+                        ** 2,
+                        np.abs(z_real[:, 1, 1] * z_error[:, 0, 1]) ** 2,
+                        np.abs(z_real[:, 0, 1] * z_error[:, 1, 1]) ** 2,
+                    ],
+                    axis=0,
+                )
+            )
+            / det_real
+        )
+
+        pt_error[:, 1, 0] = (
+            np.sqrt(
+                np.sum(
+                    [
+                        np.abs(
+                            pt_array[:, 1, 0]
                             * z_real[:, 1, 0]
+                            * z_error[:, 0, 1]
                         )
-                        * z_error[:, 0, 0]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 1, 0] * z_real[:, 0, 1]
-                                - z_real[:, 1, 1] * z_imag[:, 0, 0]
-                            )
-                            / det_real
+                        ** 2,
+                        np.abs(
+                            -pt_array[:, 1, 0]
                             * z_real[:, 0, 0]
+                            * z_error[:, 1, 1]
                         )
-                        * z_error[:, 0, 1]
-                    )
-                    ** 2,
-                    np.abs(z_real[:, 1, 0] * z_error[:, 0, 0]) ** 2,
-                    np.abs(z_real[:, 0, 0] * z_error[:, 1, 0]) ** 2,
-                ]
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 0, 0] * z_real[:, 1, 1]
+                                    - z_real[:, 0, 1] * z_imag[:, 1, 1]
+                                )
+                                / det_real
+                                * z_real[:, 1, 0]
+                            )
+                            * z_error[:, 0, 0]
+                        )
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 1, 0] * z_real[:, 0, 1]
+                                    - z_real[:, 1, 1] * z_imag[:, 0, 0]
+                                )
+                                / det_real
+                                * z_real[:, 0, 0]
+                            )
+                            * z_error[:, 0, 1]
+                        )
+                        ** 2,
+                        np.abs(z_real[:, 1, 0] * z_error[:, 0, 0]) ** 2,
+                        np.abs(z_real[:, 0, 0] * z_error[:, 1, 0]) ** 2,
+                    ],
+                    axis=0,
+                )
             )
+            / det_real
         )
 
-        pt_error[:, 1, 1] = np.sqrt(
-            np.sum(
-                [
-                    np.abs(
-                        pt_array[:, 1, 1] * z_real[:, 1, 0] * z_error[:, 0, 1]
-                    )
-                    ** 2,
-                    np.abs(
-                        -pt_array[:, 1, 1] * z_real[:, 0, 0] * z_error[:, 1, 1]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 0, 1] * z_real[:, 1, 1]
-                                - z_real[:, 0, 1] * z_imag[:, 1, 1]
-                            )
-                            / det_real
+        pt_error[:, 1, 1] = (
+            np.sqrt(
+                np.sum(
+                    [
+                        np.abs(
+                            pt_array[:, 1, 1]
                             * z_real[:, 1, 0]
+                            * z_error[:, 0, 1]
                         )
-                        * z_error[:, 0, 0]
-                    )
-                    ** 2,
-                    np.abs(
-                        (
-                            (
-                                z_imag[:, 1, 1] * z_real[:, 0, 1]
-                                - z_real[:, 1, 1] * z_imag[:, 0, 1]
-                            )
-                            / det_real
+                        ** 2,
+                        np.abs(
+                            -pt_array[:, 1, 1]
                             * z_real[:, 0, 0]
+                            * z_error[:, 1, 1]
                         )
-                        * z_error[:, 0, 1]
-                    )
-                    ** 2,
-                    np.abs(-z_real[:, 1, 0] * z_error[:, 0, 1]) ** 2,
-                    np.abs(z_real[:, 0, 0] * z_error[:, 1, 1]) ** 2,
-                ]
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 0, 1] * z_real[:, 1, 1]
+                                    - z_real[:, 0, 1] * z_imag[:, 1, 1]
+                                )
+                                / det_real
+                                * z_real[:, 1, 0]
+                            )
+                            * z_error[:, 0, 0]
+                        )
+                        ** 2,
+                        np.abs(
+                            (
+                                (
+                                    z_imag[:, 1, 1] * z_real[:, 0, 1]
+                                    - z_real[:, 1, 1] * z_imag[:, 0, 1]
+                                )
+                                / det_real
+                                * z_real[:, 0, 0]
+                            )
+                            * z_error[:, 0, 1]
+                        )
+                        ** 2,
+                        np.abs(-z_real[:, 1, 0] * z_error[:, 0, 1]) ** 2,
+                        np.abs(z_real[:, 0, 0] * z_error[:, 1, 1]) ** 2,
+                    ],
+                    axis=0,
+                )
             )
+            / det_real
         )
 
-        pt_error = np.apply_along_axis(lambda x: x / det_real, 0, pt_error)
         return pt_error
 
     @property

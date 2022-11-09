@@ -1342,7 +1342,8 @@ def z2pt(z_array, z_err_array=None):
 
         realz = np.real(z_array)
         imagz = np.imag(z_array)
-        detreal = np.linalg.det(realz)
+        detreal = np.abs(np.linalg.det(realz))
+        print(detreal)
 
         if detreal == 0:
             if np.linalg.norm(realz) == 0 and np.linalg.norm(imagz) == 0:
@@ -1365,53 +1366,43 @@ def z2pt(z_array, z_err_array=None):
             return pt_array, None
         pt_err_array = np.zeros_like(pt_array)
 
-        print(detreal)
-
         # Z entries are independent -> use Gaussian error propagation (squared sums/2-norm)
-        pt_err_array[0, 0] = (
-            1
-            / np.abs(detreal)
-            * np.sqrt(
-                np.sum(
-                    [
-                        np.abs(
-                            -pt_array[0, 0] * realz[1, 1] * z_err_array[0, 0]
-                        )
-                        ** 2,
-                        np.abs(
-                            pt_array[0, 0] * realz[0, 1] * z_err_array[1, 0]
-                        )
-                        ** 2,
-                        np.abs(
+        pt_err_array[0, 0] = np.sqrt(
+            np.sum(
+                [
+                    np.abs(-pt_array[0, 0] * realz[1, 1] * z_err_array[0, 0])
+                    ** 2,
+                    np.abs(pt_array[0, 0] * realz[0, 1] * z_err_array[1, 0])
+                    ** 2,
+                    np.abs(
+                        (
                             (
-                                (
-                                    imagz[0, 0] * realz[1, 0]
-                                    - realz[0, 0] * imagz[1, 0]
-                                )
-                                / np.abs(detreal)
-                                * realz[0, 0]
+                                imagz[0, 0] * realz[1, 0]
+                                - realz[0, 0] * imagz[1, 0]
                             )
-                            * z_err_array[0, 1]
+                            / np.abs(detreal)
+                            * realz[0, 0]
                         )
-                        ** 2,
-                        np.abs(
+                        * z_err_array[0, 1]
+                    )
+                    ** 2,
+                    np.abs(
+                        (
                             (
-                                (
-                                    imagz[1, 0] * realz[0, 0]
-                                    - realz[1, 0] * imagz[1, 1]
-                                )
-                                / np.abs(detreal)
-                                * realz[0, 1]
+                                imagz[1, 0] * realz[0, 0]
+                                - realz[1, 0] * imagz[1, 1]
                             )
-                            * z_err_array[1, 1]
+                            / np.abs(detreal)
+                            * realz[0, 1]
                         )
-                        ** 2,
-                        np.abs(realz[1, 1] * z_err_array[0, 0]) ** 2,
-                        np.abs(realz[0, 1] * z_err_array[1, 0]) ** 2,
-                    ]
-                )
+                        * z_err_array[1, 1]
+                    )
+                    ** 2,
+                    np.abs(realz[1, 1] * z_err_array[0, 0]) ** 2,
+                    np.abs(realz[0, 1] * z_err_array[1, 0]) ** 2,
+                ]
             )
-        )
+        ) / np.abs(detreal)
 
         pt_err_array[0, 1] = (
             1
