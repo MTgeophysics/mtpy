@@ -35,11 +35,32 @@ class TestZInitialize(unittest.TestCase):
     def test_has_tf_model_error(self):
         self.assertFalse(self.z._has_tf_model_error())
 
+    def test_z(self):
+        self.assertEqual(None, self.z.z)
+
+    def test_z_error(self):
+        self.assertEqual(None, self.z.z_error)
+
+    def test_z_model_error(self):
+        self.assertEqual(None, self.z.z_model_error)
+
     def test_resistivity(self):
         self.assertEqual(None, self.z.resistivity)
 
     def test_phase(self):
         self.assertEqual(None, self.z.phase)
+
+    def test_resistivity_error(self):
+        self.assertEqual(None, self.z.resistivity_error)
+
+    def test_phase_error(self):
+        self.assertEqual(None, self.z.phase_error)
+
+    def test_resistivity_model_error(self):
+        self.assertEqual(None, self.z.resistivity_model_error)
+
+    def test_phase_model_error(self):
+        self.assertEqual(None, self.z.phase_model_error)
 
 
 class TestZSetResPhase(unittest.TestCase):

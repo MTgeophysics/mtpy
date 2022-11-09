@@ -377,13 +377,13 @@ class Tipper(TFBase):
     @property
     def angle_error(self):
         if self._has_tf_error():
-            return (
+            return np.abs(
                 np.rad2deg(
-                    np.arctan2(
-                        self.tipper_error[:, 0, 0], self.tipper_error[:, 0, 1]
+                    np.arctan(
+                        self.tipper_error[:, 0, 0] / self.tipper_error[:, 0, 1]
                     )
                 )
-                % 45
+                - 45
             )
 
     @property
@@ -397,12 +397,12 @@ class Tipper(TFBase):
     @property
     def angle_model_error(self):
         if self._has_tf_model_error():
-            return (
+            return np.abs(
                 np.rad2deg(
-                    np.arctan2(
-                        self.tipper_model_error[:, 0, 0],
-                        self.tipper_model_error[:, 0, 1],
+                    np.arctan(
+                        self.tipper_model_error[:, 0, 0]
+                        / self.tipper_model_error[:, 0, 1]
                     )
                 )
-                % 45
+                - 45
             )
