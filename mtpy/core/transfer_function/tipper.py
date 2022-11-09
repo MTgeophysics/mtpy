@@ -353,7 +353,7 @@ class Tipper(TFBase):
         if self._has_tf():
             return np.rad2deg(
                 np.arctan2(
-                    -self.tipper[:, 0, 1].real, -self.tipper[:, 0, 0].real
+                    self.tipper[:, 0, 1].real, self.tipper[:, 0, 0].real
                 )
             )
 
@@ -362,7 +362,7 @@ class Tipper(TFBase):
         if self._has_tf():
             return np.rad2deg(
                 np.arctan2(
-                    -self.tipper[:, 0, 1].imag, -self.tipper[:, 0, 0].imag
+                    self.tipper[:, 0, 1].imag, self.tipper[:, 0, 0].imag
                 )
             )
 

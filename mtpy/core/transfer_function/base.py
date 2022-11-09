@@ -461,9 +461,9 @@ class TFBase:
             return
 
         def get_rotate_function(shape):
-            if shape[1] == 2:
+            if shape[0] == 2:
                 return rotate_matrix_with_errors
-            elif shape[1] == 1:
+            elif shape[0] == 1:
                 return rotate_vector_with_errors
 
         def validate_angle(self, angle):
