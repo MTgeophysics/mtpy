@@ -361,9 +361,7 @@ class MT(TF, MTLocation):
                     "needs to be within the bounds of the old one."
                 )
 
-        new_z = self.Z.interpolate(
-            1.0 / new_frequency, method=method, **kwargs
-        )
+        new_z = self.Z.interpolate(1.0 / new_frequency, method=method, **kwargs)
         new_t = self.Tipper.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
@@ -517,7 +515,8 @@ class MT(TF, MTLocation):
             return
 
         z_model_error = ModelErrors(
-            array=self.impedance_error,
+            data=self.impedance,
+            measurement_error=self.impedance_error,
             error_value=error_value,
             error_type=error_type,
             floor=floor,
@@ -562,12 +561,14 @@ class MT(TF, MTLocation):
         """
         if not self.has_tipper():
             self.logger.warning(
-                "MT object containse no Tipper, cannot compute model errors"
+                f"MT object for {self.station} contains no Tipper, cannot "
+                "compute model errors"
             )
             return
 
         t_model_error = ModelErrors(
-            array=self.tipper_error,
+            data=self.tipper,
+            measurement_error=self.tipper_error,
             error_value=error_value,
             error_type=error_type,
             floor=floor,

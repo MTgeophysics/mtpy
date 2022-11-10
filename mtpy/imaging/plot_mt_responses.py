@@ -547,12 +547,9 @@ class PlotMultipleResponses(PlotBase):
         cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
         cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
         ctipr = [
-            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns)
-            for cc in range(ns)
+            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)
         ]
-        ctipi = [
-            (float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)
-        ]
+        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
 
         # make marker lists for the different components
         mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
