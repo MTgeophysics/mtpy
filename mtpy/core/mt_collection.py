@@ -358,10 +358,6 @@ class MTCollection:
 
         for row in tf_df.itertuples():
             tf = self.get_tf(row.station, survey=row.survey)
-            if not hasattr(tf, "z_interp_dict"):
-                tf.z_interp_dict = tf.get_interp1d_functions_z()
-            if not hasattr(tf, "t_interp_dict"):
-                tf.t_interp_dict = tf.get_interp1d_functions_t()
 
             mt_data.add_station(tf)
 
@@ -575,7 +571,9 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(f"wrote average file {edi_obj.fn}")
+                            self.logger.info(
+                                f"wrote average file {edi_obj.fn}"
+                            )
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:
