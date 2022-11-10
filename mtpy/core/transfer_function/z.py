@@ -451,9 +451,10 @@ class Z(TFBase):
     @property
     def phase_model_error(self):
         if self.z is not None and self.z_model_error is not None:
-            return np.degrees(
-                np.arctan(self.resistivity_model_error / self.resistivity)
-            )
+            with np.errstate(divide="ignore"):
+                return np.degrees(
+                    np.arctan(self.resistivity_model_error / self.resistivity)
+                )
 
     def _compute_z_error(self, res, res_error, phase, phase_error):
         if res_error is None:
@@ -510,9 +511,7 @@ class Z(TFBase):
         res_error = self._validate_array_input(res_error, float)
         phase_error = self._validate_array_input(phase_error, float)
         res_model_error = self._validate_array_input(res_model_error, float)
-        phase_model_error = self._validate_array_input(
-            phase_model_error, float
-        )
+        phase_model_error = self._validate_array_input(phase_model_error, float)
 
         abs_z = np.sqrt(5.0 * self.frequency * (resistivity.T)).T
         self.z = abs_z * np.exp(1j * np.radians(phase))
