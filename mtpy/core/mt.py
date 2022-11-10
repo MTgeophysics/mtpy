@@ -42,13 +42,24 @@ class MT(TF, MTLocation):
 
         self.save_dir = Path.cwd()
 
+    def clone_empty(self):
+        """
+        copy metadata but not the transfer function estimates
+        """
+
+        new_mt_obj = MT()
+        new_mt_obj.survey_metadata.update(self.survey_metadata)
+        new_mt_obj.staiton_metadata.update(self.station_metadata)
+
+        return new_mt_obj
+
     @property
     def rotation_angle(self):
         """rotation angle in degrees from north"""
         return self._rotation_angle
 
     @rotation_angle.setter
-    def rotation_angle(self, theta_r, inplace=True):
+    def rotation_angle(self, theta_r):
         """
         set rotation angle in degrees assuming North is 0 measuring clockwise
         positive to East as 90.
@@ -58,6 +69,22 @@ class MT(TF, MTLocation):
         TODO figure this out with xarray
         """
         self._rotation_angle = theta_r
+        self.rotate(self._rotation_angle)
+
+    def rotate(self, theta_r, inplace=True):
+        """
+        Rotate the data in degrees assuming North is 0 measuring clockwise
+        positive to East as 90.
+
+        :param theta_r: DESCRIPTION
+        :type theta_r: TYPE
+        :param inplace: DESCRIPTION, defaults to True
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
         if inplace:
             self.Z = self.Z.rotate(theta_r)
             self.Tipper = self.Tipper.rotate(theta_r)
@@ -66,9 +93,7 @@ class MT(TF, MTLocation):
                 f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
             )
         else:
-            new_m = MT()
-            new_m.survey_metadata.update(self.survey_metadata)
-            new_m.station_metadata.update(self.station_metadata)
+            new_m = self.clone_empty()
             new_m.Z = self.Z.rotate(theta_r)
             new_m.Tipper = self.Tipper.rotate(theta_r)
             return new_m
@@ -226,7 +251,11 @@ class MT(TF, MTLocation):
         if inplace:
             self.Z = new_z_object
             return distortion, None
-        return distortion, new_z_object
+        else:
+            new_mt = self.clone_empty()
+            new_mt.Z = new_z_object
+            new_mt.Tipper = self.Tipper
+            return distortion, new_mt
 
     def remove_static_shift(self, ss_x=1.0, ss_y=1.0, inplace=False):
         """
@@ -263,18 +292,21 @@ class MT(TF, MTLocation):
             >>> ...                   new_Z_obj=new_z_obj)
         """
 
-        if not inplace:
-            return self.Z.remove_ss(
-                reduce_res_factor_x=ss_x,
-                reduce_res_factor_y=ss_y,
-                inplace=inplace,
-            )
-        else:
+        if inplace:
             self.Z = self.Z.remove_ss(
                 reduce_res_factor_x=ss_x,
                 reduce_res_factor_y=ss_y,
                 inplace=inplace,
             )
+
+        else:
+            new_mt = self.clone_empty()
+            new_mt.Z = self.Z.remove_ss(
+                reduce_res_factor_x=ss_x,
+                reduce_res_factor_y=ss_y,
+                inplace=inplace,
+            )
+            new_mt.Tipper = self.Tipper
 
     def interpolate(
         self,
@@ -336,12 +368,10 @@ class MT(TF, MTLocation):
             1.0 / new_frequency, method=method, **kwargs
         )
 
-        new_m = MT()
-        new_m.survey_metadata.update(self.survey_metadata)
-        new_m.station_metadata.update(self.station_metadata)
-
+        new_m = self.clone_empty()
         new_m.Z = new_z
         new_m.Tipper = new_t
+
         return new_m
 
     def plot_mt_response(self, **kwargs):

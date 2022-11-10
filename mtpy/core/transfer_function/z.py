@@ -248,7 +248,7 @@ class Z(TFBase):
 
         """
 
-        def _validate_factor_single(self, factor):
+        def _validate_factor_single(factor):
             try:
                 x_factor = float(factor)
             except ValueError:
@@ -257,12 +257,12 @@ class Z(TFBase):
                 raise ValueError(msg)
             return np.repeat(x_factor, len(self.z))
 
-        def _validate_ss_input(self, factor):
+        def _validate_ss_input(factor):
             if not np.iterable(factor):
-                x_factor = _validate_factor_single(self, factor)
+                x_factor = _validate_factor_single(factor)
 
             elif len(reduce_res_factor_x) == 1:
-                x_factor = _validate_factor_single(self, factor)
+                x_factor = _validate_factor_single(factor)
             else:
                 x_factor = np.array(factor, dtype=float)
 
@@ -273,14 +273,17 @@ class Z(TFBase):
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)
+            return x_factor
 
-        x_factors = _validate_ss_input(reduce_res_factor_x)
-        y_factors = _validate_ss_input(reduce_res_factor_y)
+        x_factors = np.sqrt(_validate_ss_input(reduce_res_factor_x))
+        y_factors = np.sqrt(_validate_ss_input(reduce_res_factor_y))
 
         z_corrected = copy.copy(self.z)
 
-        z_corrected[:, 0, :] = self.z[:, 0, :] / np.sqrt(x_factors)
-        z_corrected[:, 1, :] = self.z[:, 1, :] / np.sqrt(y_factors)
+        z_corrected[:, 0, 0] = self.z[:, 0, 0] / np.sqrt(x_factors)
+        z_corrected[:, 0, 1] = self.z[:, 0, 1] / np.sqrt(x_factors)
+        z_corrected[:, 1, 0] = self.z[:, 1, 0] / np.sqrt(y_factors)
+        z_corrected[:, 1, 1] = self.z[:, 1, 1] / np.sqrt(y_factors)
 
         if inplace:
             self.z = z_corrected
