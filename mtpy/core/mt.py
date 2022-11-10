@@ -275,131 +275,13 @@ class MT(TF, MTLocation):
                 inplace=inplace,
             )
 
-    def get_interp1d_functions_z(
-        self, interp_type="slinear", bounds_error=False, fill_value=np.nan
-    ):
-        """
-
-        :param interp_type: DESCRIPTION, defaults to "slinear"
-        :type interp_type: TYPE, optional
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        if self.Z is None:
-            return None
-
-        # interpolate the impedance tensor
-        zmap = {0: "x", 1: "y"}
-        interp_dict = {}
-        for ii in range(2):
-            for jj in range(2):
-                comp = f"z{zmap[ii]}{zmap[jj]}"
-                interp_dict[comp] = {}
-                # need to look out for zeros in the impedance
-                # get the indicies of non-zero components
-                nz_index = np.nonzero(self.Z.z[:, ii, jj])
-
-                if len(nz_index[0]) == 0:
-                    continue
-                # get the non-zero components
-                z_real = self.Z.z[nz_index, ii, jj].real
-                z_imag = self.Z.z[nz_index, ii, jj].imag
-                z_error = self.Z.z_error[nz_index, ii, jj]
-
-                # get the frequencies of non-zero components
-                f = self.Z.frequency[nz_index]
-
-                # create a function that does 1d interpolation
-                interp_dict[comp]["real"] = spi.interp1d(
-                    f,
-                    z_real,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                )
-                interp_dict[comp]["imag"] = spi.interp1d(
-                    f,
-                    z_imag,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                    fill_value=fill_value,
-                )
-                interp_dict[comp]["err"] = spi.interp1d(
-                    f,
-                    z_error,
-                    kind=interp_type,
-                    bounds_error=bounds_error,
-                    fill_value=fill_value,
-                )
-
-        return interp_dict
-
-    def get_interp1d_functions_t(
-        self, interp_type="slinear", bounds_error=False, fill_value=np.nan
-    ):
-        """
-
-        :param interp_type: DESCRIPTION, defaults to "slinear"
-        :type interp_type: TYPE, optional
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        if self.Tipper is None:
-            return None
-
-        # interpolate the impedance tensor
-        zmap = {0: "x", 1: "y"}
-        interp_dict = {}
-        for jj in range(2):
-            comp = f"tz{zmap[jj]}"
-            interp_dict[comp] = {}
-            # need to look out for zeros in the impedance
-            # get the indicies of non-zero components
-            nz_index = np.nonzero(self.Tipper.tipper[:, 0, jj])
-
-            if len(nz_index[0]) == 0:
-                continue
-            # get the non-zero components
-            t_real = self.Tipper.tipper[nz_index, 0, jj].real
-            t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
-            t_error = self.Tipper.tipper_error[nz_index, 0, jj]
-
-            # get the frequencies of non-zero components
-            f = self.Tipper.frequency[nz_index]
-
-            # create a function that does 1d interpolation
-            interp_dict[comp]["real"] = spi.interp1d(
-                f,
-                t_real,
-                kind=interp_type,
-                bounds_error=bounds_error,
-                fill_value=fill_value,
-            )
-            interp_dict[comp]["imag"] = spi.interp1d(
-                f,
-                t_imag,
-                kind=interp_type,
-                bounds_error=bounds_error,
-                fill_value=fill_value,
-            )
-            interp_dict[comp]["err"] = spi.interp1d(
-                f,
-                t_error,
-                kind=interp_type,
-                bounds_error=bounds_error,
-                fill_value=fill_value,
-            )
-
-        return interp_dict
-
     def interpolate(
         self,
         new_freq,
-        interp_type="slinear",
+        method="slinear",
         bounds_error=True,
+        inplace=False,
+        **kwargs,
     ):
         """
         Interpolate the impedance tensor onto different frequencies
@@ -457,70 +339,20 @@ class MT(TF, MTLocation):
                     f"{self.frequency.max():.5g}.  The new frequency range "
                     "needs to be within the bounds of the old one."
                 )
-        # make a new Z object
-        new_Z = Z(
-            z=np.zeros((new_freq.shape[0], 2, 2), dtype="complex"),
-            z_error=np.zeros((new_freq.shape[0], 2, 2)),
-            frequency=new_freq,
+
+        new_z = self.Z.interpolate(1.0 / new_freq, method=method, **kwargs)
+        new_t = self.Tipper.interpolate(
+            1.0 / new_freq, method=method, **kwargs
         )
 
-        new_Tipper = Tipper(
-            tipper=np.zeros((new_freq.shape[0], 1, 2), dtype="complex"),
-            tipper_error=np.zeros((new_freq.shape[0], 1, 2)),
-            frequency=new_freq,
-        )
-
-        z_dict = self.get_interp1d_functions_z(interp_type=interp_type)
-        t_dict = self.get_interp1d_functions_t(interp_type=interp_type)
-
-        # interpolate the impedance tensor
-        zmap = {0: "x", 1: "y"}
-        for ii in range(2):
-            for jj in range(2):
-                comp = f"z{zmap[ii]}{zmap[jj]}"
-                # get frequencies to interpolate on to, making sure the
-                # bounds are with in non-zero components
-                new_nz_index = np.where(
-                    (new_freq >= self.Z.frequency.min())
-                    & (new_freq <= self.Z.frequency.max())
-                )[0]
-                new_f = new_freq[new_nz_index]
-
-                # interpolate onto new frequency range
-                new_Z.z[new_nz_index, ii, jj] = z_dict[comp]["real"](
-                    new_f
-                ) + 1j * z_dict[comp]["imag"](new_f)
-                new_Z.z_error[new_nz_index, ii, jj] = z_dict[comp]["err"](
-                    new_f
-                )
-
-        # if there is not tipper than skip
-        if self.Tipper is None:
-            return new_Z, new_Tipper
-
-        # interpolate the Tipper
-        for jj in range(2):
-            comp = f"tz{zmap[jj]}"
-
-            # get new frequency to interpolate over, making sure bounds are
-            # for non-zero components
-            new_nz_index = np.where(
-                (new_freq >= self.Tipper.frequency.min())
-                & (new_freq <= self.Tipper.frequency.max())
-            )
-            new_f = new_freq[new_nz_index]
-
-            # interpolate onto new frequency range
-            new_Tipper.tipper[new_nz_index, 0, jj] = t_dict[comp]["real"](
-                new_f
-            ) + 1j * t_dict[comp]["imag"](new_f)
-
-            new_Tipper.tipper_error[new_nz_index, 0, jj] = t_dict[comp]["err"](
-                new_f
-            )
-        new_Tipper.compute_mag_direction()
-
-        return new_Z, new_Tipper
+        if inplace:
+            self.Z = new_z
+            self.Tipper = new_t
+        else:
+            new_m = MT()
+            new_m.Z = new_z
+            new_m.Tipper = new_t
+            return new_m
 
     def plot_mt_response(self, **kwargs):
         """
