@@ -13,7 +13,6 @@ import numpy as np
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps
 from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
-from mtpy.core import Z
 
 # =============================================================================
 
@@ -33,6 +32,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         self.depth_units = "km"
         self.plot_period = 1
+        self._old_plot_period = None
         self.plot_det = True
         self.plot_te = True
         self.plot_tm = True
@@ -46,7 +46,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             "yx": "TM Mode",
         }
         self.depth_range = [None, None]
-        self.depth_tolerance = 2
+        self.depth_tolerance = 1
 
         self.subplot_wspace = 0.2
         self.subplot_hspace = 0.1
@@ -89,13 +89,13 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         """
 
-        depth_array = depth_array.copy()
         depth_array = depth_array[np.nonzero(depth_array)]
-        d_comp = depth_array[comp]
-        d_median = np.median(d_comp)
-        d_min = d_median * (self.depth_tolerance)
-        d_max = d_median * (self.depth_tolerance)
-        good_index = np.where((d_comp >= d_min) & (d_comp <= d_max))
+        d_median = np.median(depth_array[comp])
+        d_min = d_median - (depth_array[comp].std() * self.depth_tolerance)
+        d_max = d_median + (depth_array[comp].std() * self.depth_tolerance)
+        good_index = np.where(
+            (depth_array[comp] >= d_min) & (depth_array[comp] <= d_max)
+        )
 
         return depth_array[good_index]
 
@@ -138,14 +138,8 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             depth_array["det"][ii] = (
                 d["depth_det"][0] - elev
             ) * self.depth_scale
-            depth_array["xy"][ii] = (
-                d["depth_xy"][0] - elev
-            ) * self.depth_scale
-            depth_array["yx"][ii] = (
-                d["depth_yx"][0] - elev
-            ) * self.depth_scale
-
-        depth_array = depth_array[np.nonzero(depth_array)]
+            depth_array["xy"][ii] = (d["depth_xy"][0] - elev) * self.depth_scale
+            depth_array["yx"][ii] = (d["depth_yx"][0] - elev) * self.depth_scale
 
         return depth_array
 
@@ -230,12 +224,13 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         # get data array and make sure there is depth information, if not
         # break
-        depth_array = self._get_depth_array()
-        if depth_array.size == 0:
-            self.logger.warning(
-                f"No stations have data for period {self.plot_period} "
-            )
-            return
+        if self._old_plot_period != self.plot_period:
+            depth_array = self._get_depth_array()
+            if depth_array.size == 0:
+                self.logger.warning(
+                    f"No stations have data for period {self.plot_period} "
+                )
+                return
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
@@ -245,12 +240,9 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         for comp, ax in plot_components.items():
             plot_depth_array = self._filter_depth_array(depth_array, comp)
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
-                print(plot_depth_array)
                 plot_x, plot_y, image = self.interpolate_to_map(
                     plot_depth_array, comp
                 )
-                print(plot_x)
-                print(plot_y)
 
                 im = ax.pcolormesh(
                     plot_x,
@@ -312,9 +304,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
             ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
             ax.set_ylabel("Latitude (deg)", fontdict=self.font_dict)
-            ax.set_title(
-                self.subplot_title_dict[comp], fontdict=self.font_dict
-            )
+            ax.set_title(self.subplot_title_dict[comp], fontdict=self.font_dict)
 
         self.fig.suptitle(
             f"Depth of investigation for period {self.plot_period:5g} (s)",
