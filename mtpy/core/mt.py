@@ -48,7 +48,7 @@ class MT(TF, MTLocation):
         return self._rotation_angle
 
     @rotation_angle.setter
-    def rotation_angle(self, theta_r):
+    def rotation_angle(self, theta_r, inplace=True):
         """
         set rotation angle in degrees assuming North is 0 measuring clockwise
         positive to East as 90.
@@ -58,18 +58,20 @@ class MT(TF, MTLocation):
         TODO figure this out with xarray
         """
         self._rotation_angle = theta_r
-        z_copy = self.Z.copy()
-        t_copy = self.Tipper.copy()
+        if inplace:
+            self.Z = self.Z.rotate(theta_r)
+            self.Tipper = self.Tipper.rotate(theta_r)
 
-        z_copy.rotate(theta_r)
-        self.Z = z_copy
-
-        t_copy.rotate(theta_r)
-        self.Tipper = t_copy
-
-        self.logger.info(
-            f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
-        )
+            self.logger.info(
+                f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
+            )
+        else:
+            new_m = MT()
+            new_m.survey_metadata.update(self.survey_metadata)
+            new_m.station_metadata.update(self.station_metadata)
+            new_m.Z = self.Z.rotate(theta_r)
+            new_m.Tipper = self.Tipper.rotate(theta_r)
+            return new_m
 
     @property
     def Z(self):

@@ -86,16 +86,12 @@ class PhaseTensor(TFBase):
             },
         )
 
-        print(self.frequency)
-
         if z is not None:
             self.pt = self._pt_from_z(z)
             if z_error is not None:
                 self.pt_error = self._pt_error_from_z(z, z_error)
             if z_model_error is not None:
                 self.pt_model_error = self._pt_error_from_z(z, z_model_error)
-
-        print(self.frequency)
 
     def _pt_from_z(self, z):
         """
@@ -388,6 +384,12 @@ class PhaseTensor(TFBase):
         old_shape = None
         if self._has_tf():
             old_shape = self._dataset.transfer_function.shape
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
         pt = self._validate_array_input(pt, self._tf_dtypes["tf"], old_shape)
         if pt is None:
             return
@@ -416,6 +418,12 @@ class PhaseTensor(TFBase):
         old_shape = None
         if not self._has_tf_error():
             old_shape = self._dataset.transfer_function_error.shape
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
 
         pt_error = self._validate_array_input(pt_error, "float", old_shape)
         if pt_error is None:
@@ -525,7 +533,7 @@ class PhaseTensor(TFBase):
                 self.pt_error[:, 0, 0] ** 2 + self.pt_error[:, 1, 1] ** 2
             )
 
-            alpha_error = (
+            alpha_error = np.degrees(
                 0.5
                 / (x**2 + y**2)
                 * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
@@ -546,7 +554,7 @@ class PhaseTensor(TFBase):
                 + self.pt_model_error[:, 1, 1] ** 2
             )
 
-            alpha_model_error = (
+            alpha_model_error = np.degrees(
                 0.5
                 / (x**2 + y**2)
                 * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
@@ -785,7 +793,7 @@ class PhaseTensor(TFBase):
             with np.errstate(divide="ignore", invalid="ignore"):
                 return (
                     1.0
-                    / self._pi1
+                    / (4 * self._pi1)
                     * np.sqrt(
                         (self.pt[:, 0, 0] - self.pt[:, 1, 1]) ** 2
                         * (
@@ -806,7 +814,7 @@ class PhaseTensor(TFBase):
             with np.errstate(divide="ignore", invalid="ignore"):
                 return (
                     1.0
-                    / self._pi1
+                    / (4 * self._pi1)
                     * np.sqrt(
                         (self.pt[:, 0, 0] - self.pt[:, 1, 1]) ** 2
                         * (
@@ -848,7 +856,7 @@ class PhaseTensor(TFBase):
             with np.errstate(divide="ignore", invalid="ignore"):
                 return (
                     1.0
-                    / self._pi2
+                    / (4 * self._pi2)
                     * np.sqrt(
                         (self.pt[:, 0, 0] + self.pt[:, 1, 1]) ** 2
                         * (
@@ -869,7 +877,7 @@ class PhaseTensor(TFBase):
             with np.errstate(divide="ignore", invalid="ignore"):
                 return (
                     1.0
-                    / self._pi2
+                    / (4 * self._pi2)
                     * np.sqrt(
                         (self.pt[:, 0, 0] + self.pt[:, 1, 1]) ** 2
                         * (

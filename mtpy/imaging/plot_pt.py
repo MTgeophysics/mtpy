@@ -166,10 +166,6 @@ class PlotPhaseTensor(PlotBase):
         az = self.pt.azimuth
         az_error = self.pt.azimuth_error
 
-        # put the strike into a coordinate system that goes from -90 to 90
-        az[np.where(az > 90)] -= 180
-        az[np.where(az < -90)] += 180
-
         stlist = []
         stlabel = []
 
@@ -193,12 +189,12 @@ class PlotPhaseTensor(PlotBase):
         stlabel.append("PT")
 
         if self.strike_limits is None:
-            self.strike_limits = (-89.99, 89.99)
+            self.strike_limits = (0, 359.9)
         self.ax_strike.set_yscale("linear")
         self.ax_strike.set_xscale("log", nonpositive="clip")
         self.ax_strike.set_xlim(xmax=self.x_limits[-1], xmin=self.x_limits[0])
         self.ax_strike.set_ylim(self.strike_limits)
-        self.ax_strike.yaxis.set_major_locator(MultipleLocator(20))
+        self.ax_strike.yaxis.set_major_locator(MultipleLocator(45))
         self.ax_strike.yaxis.set_minor_locator(MultipleLocator(5))
         self.ax_strike.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
