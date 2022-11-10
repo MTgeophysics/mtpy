@@ -11,7 +11,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy import interpolate as spi
 
 from mt_metadata.transfer_functions.core import TF
 
@@ -277,82 +276,71 @@ class MT(TF, MTLocation):
 
     def interpolate(
         self,
-        new_freq,
-        method="slinear",
+        new_frequency,
+        method="cubic",
         bounds_error=True,
-        inplace=False,
         **kwargs,
     ):
         """
         Interpolate the impedance tensor onto different frequencies
 
-        :param new_freq: a 1-d array of frequencies to interpolate on
-                               to.  Must be with in the bounds of the existing
-                               frequency range, anything outside and an error
-                               will occur.
-        :type new_freq: np.ndarray
-        :param period_buffer: maximum ratio of a data period and the closest
-                              interpolation period. Any points outside this
-                              ratio will be excluded from the interpolated
-                              impedance array.
+        :param new_frequency: a 1-d array of frequencies to interpolate on
+         to.  Must be with in the bounds of the existing frequency range,
+         anything outside and an error will occur.
+        :type new_frequency: np.ndarray
+        :param method: method to interpolate by, defaults to "cubic"
+        :type method: string, optional
+        :param bounds_error: check for if input frequencies are within the
+         original frequencies, defaults to True
+        :type bounds_error: boolean, optional
+        :param **kwargs: key word arguments for `interp`
+        :type **kwargs: dictionary
+        :raises ValueError: If input frequencies are out of bounds
+        :return: New MT object with interpolated values.
+        :rtype: :class:`mtpy.core.MT`
 
-        :returns: a new impedance object with the corresponding
-                               frequencies and components.
-        :rtype: mtpy.core.z.Z
 
-        :returns: a new tipper object with the corresponding
-                                    frequencies and components.
-        :rtype: mtpy.core.z.Tipper
-
-        :Interpolate: ::
-
-            >>> import mtpy.core.mt as mt
-            >>> edi_fn = r"/home/edi_files/mt_01.edi"
-            >>> mt_obj = mt.MT(edi_fn)
-            >>> # create a new frequency range to interpolate onto
-            >>> new_freq = np.logspace(-3, 3, 24)
-            >>> new_z_object, new_tipper_obj = mt_obj.interpolate(new_freq)
-            >>> mt_obj.write_mt_file(new_fn=r"/home/edi_files/mt_01_interp.edi",
-            >>> ...                   new_Z_obj=new_z_object,
-            >>> ...                   new_Tipper_obj=new_tipper_object)
+        .. note:: 'cubic' seems to work the best, the 'slinear' seems to do
+         the same as 'linear' when using the `interp` in xarray.
 
         """
 
         # make sure the input is a numpy array
-        if not isinstance(new_freq, np.ndarray):
-            new_freq = np.array(new_freq)
+        if not isinstance(new_frequency, np.ndarray):
+            new_frequency = np.array(new_frequency)
 
         # check the bounds of the new frequency array
         if bounds_error:
 
-            if self.frequency.min() > new_freq.min():
+            if self.frequency.min() > new_frequency.min():
                 raise ValueError(
-                    f"New frequency minimum of {new_freq.min():.5g} "
+                    f"New frequency minimum of {new_frequency.min():.5g} "
                     "is smaller than old frequency minimum of "
                     f"{self.frequency.min():.5g}.  The new frequency range "
                     "needs to be within the bounds of the old one."
                 )
-            if self.frequency.max() < new_freq.max():
+            if self.frequency.max() < new_frequency.max():
                 raise ValueError(
-                    f"New frequency maximum of {new_freq.max():.5g} "
+                    f"New frequency maximum of {new_frequency.max():.5g} "
                     "is smaller than old frequency maximum of "
                     f"{self.frequency.max():.5g}.  The new frequency range "
                     "needs to be within the bounds of the old one."
                 )
 
-        new_z = self.Z.interpolate(1.0 / new_freq, method=method, **kwargs)
+        new_z = self.Z.interpolate(
+            1.0 / new_frequency, method=method, **kwargs
+        )
         new_t = self.Tipper.interpolate(
-            1.0 / new_freq, method=method, **kwargs
+            1.0 / new_frequency, method=method, **kwargs
         )
 
-        if inplace:
-            self.Z = new_z
-            self.Tipper = new_t
-        else:
-            new_m = MT()
-            new_m.Z = new_z
-            new_m.Tipper = new_t
-            return new_m
+        new_m = MT()
+        new_m.survey_metadata.update(self.survey_metadata)
+        new_m.station_metadata.update(self.station_metadata)
+
+        new_m.Z = new_z
+        new_m.Tipper = new_t
+        return new_m
 
     def plot_mt_response(self, **kwargs):
         """

@@ -122,6 +122,12 @@ class Z(TFBase):
         old_shape = None
         if self._has_tf():
             old_shape = self._dataset.transfer_function.shape
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
         z = self._validate_array_input(z, "complex", old_shape)
         if z is None:
             return
@@ -149,6 +155,12 @@ class Z(TFBase):
         old_shape = None
         if not self._has_tf_error():
             old_shape = self._dataset.transfer_function_error.shape
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
 
         z_error = self._validate_array_input(z_error, "float", old_shape)
         if z_error is None:
@@ -178,6 +190,13 @@ class Z(TFBase):
         old_shape = None
         if not self._has_tf_error():
             old_shape = self._dataset.transfer_function_error.shape
+
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
 
         z_model_error = self._validate_array_input(
             z_model_error, "float", old_shape

@@ -167,7 +167,7 @@ class PlotMultipleResponses(PlotBase):
                 ax,
                 period,
                 getattr(z_obj, f"res_{comp}"),
-                getattr(z_obj, f"res_err_{comp}"),
+                getattr(z_obj, f"res_error_{comp}"),
                 **prop,
             )
             eb_list.append(ebax[0])
@@ -246,7 +246,7 @@ class PlotMultipleResponses(PlotBase):
                     ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_error_{comp}"),
                     yx=True,
                     **prop,
                 )
@@ -255,7 +255,7 @@ class PlotMultipleResponses(PlotBase):
                     ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_error_{comp}"),
                     yx=False,
                     **prop,
                 )
@@ -547,9 +547,12 @@ class PlotMultipleResponses(PlotBase):
         cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
         cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
         ctipr = [
-            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)
+            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns)
+            for cc in range(ns)
         ]
-        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
+        ctipi = [
+            (float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)
+        ]
 
         # make marker lists for the different components
         mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns

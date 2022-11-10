@@ -253,7 +253,7 @@ class PlotMTResponse(PlotBase):
                 axr,
                 period,
                 getattr(z_obj, f"res_{comp}"),
-                getattr(z_obj, f"res_err_{comp}"),
+                getattr(z_obj, f"res_error_{comp}"),
                 **prop,
             )
             eb_list.append(ebax)
@@ -307,7 +307,7 @@ class PlotMTResponse(PlotBase):
                     axp,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_error_{comp}"),
                     yx=True,
                     **prop,
                 )
@@ -316,7 +316,7 @@ class PlotMTResponse(PlotBase):
                     axp,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_error_{comp}"),
                     yx=False,
                     **prop,
                 )
@@ -342,7 +342,7 @@ class PlotMTResponse(PlotBase):
             self.axr,
             self.period,
             self.Z.res_det,
-            self.Z.res_err_det,
+            self.Z.res_error_det,
             **self.det_error_bar_properties,
         )
 
@@ -351,7 +351,7 @@ class PlotMTResponse(PlotBase):
             self.axp,
             self.period,
             self.Z.phase_det,
-            self.Z.phase_err_det,
+            self.Z.phase_error_det,
             **self.det_error_bar_properties,
         )
 

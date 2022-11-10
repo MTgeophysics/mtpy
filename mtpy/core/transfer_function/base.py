@@ -223,7 +223,9 @@ class TFBase:
             and (self._dataset.transfer_function_error.values == 0).all()
             and (self._dataset.transfer_function_model_error.values == 0).all()
         ):
-            return True
+            if not self._has_frequency:
+                return True
+            return False
         return False
 
     def _has_tf(self):
@@ -244,6 +246,11 @@ class TFBase:
                 self._dataset.transfer_function_model_error.values == 0
             ).all()
         return False
+
+    def _has_frequency(self):
+        if (self._dataset.coords["period"].values == np.array([1])).all():
+            return False
+        return True
 
     @property
     def comps(self):

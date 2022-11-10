@@ -104,6 +104,13 @@ class Tipper(TFBase):
         old_shape = None
         if self._has_tf():
             old_shape = self._dataset.transfer_function.shape
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
+
         tipper = self._validate_array_input(tipper, "complex", old_shape)
         if tipper is None:
             return
@@ -134,6 +141,12 @@ class Tipper(TFBase):
         old_shape = None
         if not self._has_tf_error():
             old_shape = self._dataset.transfer_function_error.shape
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
 
         tipper_error = self._validate_array_input(
             tipper_error, "float", old_shape
@@ -169,7 +182,12 @@ class Tipper(TFBase):
         old_shape = None
         if not self._has_tf_error():
             old_shape = self._dataset.transfer_function_error.shape
-
+        elif self._has_frequency():
+            old_shape = (
+                self.frequency.size,
+                self._expected_shape[0],
+                self._expected_shape[1],
+            )
         tipper_model_error = self._validate_array_input(
             tipper_model_error, "float", old_shape
         )

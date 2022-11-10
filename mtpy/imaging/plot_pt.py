@@ -164,7 +164,7 @@ class PlotPhaseTensor(PlotBase):
         # --> set tick labels and limits
 
         az = self.pt.azimuth
-        az_err = self.pt.azimuth_err
+        az_error = self.pt.azimuth_error
 
         # put the strike into a coordinate system that goes from -90 to 90
         az[np.where(az > 90)] -= 180
@@ -183,7 +183,7 @@ class PlotPhaseTensor(PlotBase):
             mec=self.strike_pt_color,
             mew=self.marker_lw,
             ls="none",
-            yerr=az_err,
+            yerr=az_error,
             ecolor=self.strike_pt_color,
             capsize=self.marker_size,
             elinewidth=self.marker_lw,
@@ -208,9 +208,9 @@ class PlotPhaseTensor(PlotBase):
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin
-        minphierr = self.pt.phimin_err
+        minphierr = self.pt.phimin_error
         maxphi = self.pt.phimax
-        maxphierr = self.pt.phimax_err
+        maxphierr = self.pt.phimax_error
 
         ermin = self.ax_phase.errorbar(
             1.0 / self.pt.frequency,
@@ -279,7 +279,7 @@ class PlotPhaseTensor(PlotBase):
         # -----------------------plotSkew---------------------------------------
 
         skew = self.pt.beta
-        skewerr = self.pt.beta_err
+        skewerr = self.pt.beta_error
 
         erskew = self.ax_skew.errorbar(
             1.0 / self.pt.frequency,
@@ -333,7 +333,7 @@ class PlotPhaseTensor(PlotBase):
 
         # ----------------------plotEllipticity--------------------------------
         ellipticity = self.pt.ellipticity
-        ellipticityerr = self.pt.ellipticity_err
+        ellipticityerr = self.pt.ellipticity_error
 
         erskew = self.ax_ellipticity.errorbar(
             1.0 / self.pt.frequency,

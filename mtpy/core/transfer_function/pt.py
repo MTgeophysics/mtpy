@@ -86,12 +86,16 @@ class PhaseTensor(TFBase):
             },
         )
 
+        print(self.frequency)
+
         if z is not None:
             self.pt = self._pt_from_z(z)
             if z_error is not None:
                 self.pt_error = self._pt_error_from_z(z, z_error)
             if z_model_error is not None:
                 self.pt_model_error = self._pt_error_from_z(z, z_model_error)
+
+        print(self.frequency)
 
     def _pt_from_z(self, z):
         """
