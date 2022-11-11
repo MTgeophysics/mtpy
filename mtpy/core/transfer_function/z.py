@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 """
-.. module:: Z
-   :synopsis: Deal with MT responses Z and Tipper
+Z
+===
 
-.. moduleauthor:: Jared Peacock <jpeacock@usgs.gov> 
-.. moduleauthor:: Lars Krieger
+Container for the Impedance Tensor 
 
-Updated 11/2020 for logging and formating (J. Peacock).
-    - ToDo: add functionality for covariance matrix
+Originally written by Jared Peacock Lars Krieger
+Updated 2022 by J. Peacock to work with new framework
+
 """
 
 # =============================================================================
@@ -74,16 +74,12 @@ class Z(TFBase):
 
         :param z: array containing complex impedance values
         :type z: numpy.ndarray(n_frequency, 2, 2)
-
         :param z_error: array containing error values (standard deviation)
-                            of impedance tensor elements
+         of impedance tensor elements
         :type z_error: numpy.ndarray(n_frequency, 2, 2)
-
         :param frequency: array of frequencyuency values corresponding to impedance
-                     tensor elements.
+         tensor elements.
         :type frequency: np.ndarray(n_frequency)
-
-        Initialises the attributes with None
 
         """
 
@@ -140,6 +136,7 @@ class Z(TFBase):
     # ----impedance error-----------------------------------------------------
     @property
     def z_error(self):
+        """error of impedance tensor array as standard deviation"""
         if self._has_tf_error():
             return self._dataset.transfer_function_error.values
 
@@ -148,8 +145,7 @@ class Z(TFBase):
         """
         Set the attribute z_error
 
-        :param z_error: error of impedance tensor array as standard
-                            deviation
+        :param z_error: error of impedance tensor array as standard deviation
         :type z_error: np.ndarray(nfrequency, 2, 2)
         """
         old_shape = None
@@ -174,6 +170,7 @@ class Z(TFBase):
     # ----impedance model error-----------------------------------------------------
     @property
     def z_model_error(self):
+        """model error of impedance tensor array as standard deviation"""
         if self._has_tf_model_error():
             return self._dataset.transfer_function_model_error.values
 
@@ -588,26 +585,31 @@ class Z(TFBase):
 
     @property
     def phase_det(self):
+        """phase determinant"""
         if self.det is not None:
             return np.rad2deg(np.arctan2(self.det.imag, self.det.real))
 
     @property
     def phase_error_det(self):
+        """phase error determinant"""
         if self.det is not None:
             return np.rad2deg(np.arcsin(self.det_error / abs(self.det)))
 
     @property
     def phase_model_error_det(self):
+        """phase model error determinant"""
         if self.det is not None:
             return np.rad2deg(np.arcsin(self.det_model_error / abs(self.det)))
 
     @property
     def res_det(self):
+        """resistivity determinant"""
         if self.det is not None:
             return 0.2 * (1.0 / self.frequency) * abs(self.det) ** 2
 
     @property
     def res_error_det(self):
+        """resistivity error determinant"""
         if self.det_error is not None:
             return (
                 0.2
@@ -618,6 +620,7 @@ class Z(TFBase):
 
     @property
     def res_model_error_det(self):
+        """resistivity model error determinant"""
         if self.det_model_error is not None:
             return (
                 0.2
@@ -627,6 +630,17 @@ class Z(TFBase):
             )
 
     def _get_component(self, comp, array):
+        """
+        Get the correct component from an array
+
+        :param comp: [ xx | xy | yx | yy ]
+        :type comp: string
+        :param array: impedance array
+        :type array: np.ndarray
+        :return: array component
+        :rtype: np.ndarray
+
+        """
         if array is not None:
             index_dict = {"x": 0, "y": 1}
             ii = index_dict[comp[-2]]
@@ -636,102 +650,127 @@ class Z(TFBase):
 
     @property
     def res_xx(self):
+        """resistivity of xx component"""
         return self._get_component("xx", self.resistivity)
 
     @property
     def res_xy(self):
+        """resistivity of xy component"""
         return self._get_component("xy", self.resistivity)
 
     @property
     def res_yx(self):
+        """resistivity of yx component"""
         return self._get_component("yx", self.resistivity)
 
     @property
     def res_yy(self):
+        """resistivity of yy component"""
         return self._get_component("yy", self.resistivity)
 
     @property
     def res_error_xx(self):
+        """resistivity error of xx component"""
         return self._get_component("xx", self.resistivity_error)
 
     @property
     def res_error_xy(self):
+        """resistivity error of xy component"""
         return self._get_component("xy", self.resistivity_error)
 
     @property
     def res_error_yx(self):
+        """resistivity error of yx component"""
         return self._get_component("yx", self.resistivity_error)
 
     @property
     def res_error_yy(self):
+        """resistivity error of yy component"""
         return self._get_component("yy", self.resistivity_error)
 
     @property
     def res_model_error_xx(self):
+        """resistivity model error of xx component"""
         return self._get_component("xx", self.resistivity_model_error)
 
     @property
     def res_model_error_xy(self):
+        """resistivity model error of xy component"""
         return self._get_component("xy", self.resistivity_model_error)
 
     @property
     def res_model_error_yx(self):
+        """resistivity model error of yx component"""
         return self._get_component("yx", self.resistivity_model_error)
 
     @property
     def res_model_error_yy(self):
+        """resistivity model error of yy component"""
         return self._get_component("yy", self.resistivity_model_error)
 
     @property
     def phase_xx(self):
+        """phase of xx component"""
         return self._get_component("xx", self.phase)
 
     @property
     def phase_xy(self):
+        """phase of xy component"""
         return self._get_component("xy", self.phase)
 
     @property
     def phase_yx(self):
+        """phase of yx component"""
         return self._get_component("yx", self.phase)
 
     @property
     def phase_yy(self):
+        """phase of yy component"""
         return self._get_component("yy", self.phase)
 
     @property
     def phase_error_xx(self):
+        """phase error of xx component"""
         return self._get_component("xx", self.phase_error)
 
     @property
     def phase_error_xy(self):
+        """phase error of xy component"""
         return self._get_component("xy", self.phase_error)
 
     @property
     def phase_error_yx(self):
+        """phase error of yx component"""
         return self._get_component("yx", self.phase_error)
 
     @property
     def phase_error_yy(self):
+        """phase error of yy component"""
         return self._get_component("yy", self.phase_error)
 
     @property
     def phase_model_error_xx(self):
+        """phase model error of xx component"""
         return self._get_component("xx", self.phase_model_error)
 
     @property
     def phase_model_error_xy(self):
+        """phase model error of xy component"""
         return self._get_component("xy", self.phase_model_error)
 
     @property
     def phase_model_error_yx(self):
+        """phase model error of yx component"""
         return self._get_component("yx", self.phase_model_error)
 
     @property
     def phase_model_error_yy(self):
+        """phase model error of yy component"""
         return self._get_component("yy", self.phase_model_error)
 
     @property
     def phase_tensor(self):
+        """Phase tensor object based on impedance"""
         return PhaseTensor(
             z=self.z,
             z_error=self.z_error,
