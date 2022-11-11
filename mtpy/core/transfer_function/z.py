@@ -410,6 +410,7 @@ class Z(TFBase):
 
     @property
     def resistivity(self):
+        """resistivity of impedance"""
         if self.z is not None:
             return np.apply_along_axis(
                 lambda x: np.abs(x) ** 2 / self.frequency * 0.2, 0, self.z
@@ -417,11 +418,13 @@ class Z(TFBase):
 
     @property
     def phase(self):
+        """phase of impedance"""
         if self.z is not None:
             return np.rad2deg(np.angle(self.z))
 
     @property
     def resistivity_error(self):
+        """resistivity error of impedance"""
         if self.z is not None and self.z_error is not None:
             return np.apply_along_axis(
                 lambda x: np.abs(x) ** 2 / self.frequency * 0.2,
@@ -431,6 +434,7 @@ class Z(TFBase):
 
     @property
     def phase_error(self):
+        """phase error of impedance"""
         if self.z is not None and self.z_error is not None:
             return np.degrees(
                 np.arctan(self.resistivity_error / self.resistivity)
@@ -438,6 +442,7 @@ class Z(TFBase):
 
     @property
     def resistivity_model_error(self):
+        """resistivity model error of impedance"""
         if self.z is not None and self.z_model_error is not None:
             return np.apply_along_axis(
                 lambda x: np.abs(x) ** 2 / self.frequency * 0.2,
@@ -447,6 +452,7 @@ class Z(TFBase):
 
     @property
     def phase_model_error(self):
+        """phase model error of impedance"""
         if self.z is not None and self.z_model_error is not None:
             with np.errstate(divide="ignore"):
                 return np.degrees(
@@ -454,9 +460,24 @@ class Z(TFBase):
                 )
 
     def _compute_z_error(self, res, res_error, phase, phase_error):
+        """
+        Compute z error from apparent resistivity and phase.
+
+        :param res: resistivity array
+        :type res: np.ndarray
+        :param res_error: resistivity error array
+        :type res_error: np.ndarray
+        :param phase: phase array in degrees
+        :type phase: np.ndarray
+        :param phase_error: phase error array in degrees
+        :type phase_error: np.ndarray
+        :return: impedance error as a float
+        :rtype: np.ndarray
+
+        """
         if res_error is None:
             return None
-        return abs(
+        return np.abs(
             np.sqrt(5.0 * self.frequency * (res_error.T)).T
             * np.exp(1j * np.radians(phase_error))
         )
