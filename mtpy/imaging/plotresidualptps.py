@@ -343,7 +343,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                         {'cmap': 'mt_yl2rd',
                                          'range': (0, 10),
                                          'colorby': 'geometric_mean'})
-        self._read_ellipse_dict()
+        self._read_ellipse_dict(self._ellipse_dict)
         self.ellipse_scale = kwargs.pop('ellipse_scale', 10)
 
         #--> set colorbar properties---------------------------------
