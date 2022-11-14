@@ -412,7 +412,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                             {'range':(0,10), 'cmap':'mt_yl2rd',
                                              'size':.005,
                                              'colorby':'geometric_mean'}) 
-            self._read_ellipse_dict()
+            self._read_ellipse_dict(self._ellipse_dict)
             self.ellipse_scale = kwargs.pop('ellipse_scale', None)
         elif self.map_scale == 'm':        
             self.xpad = kwargs.pop('xpad', 1000)
@@ -422,7 +422,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                             {'range':(0,5), 'cmap':'mt_yl2rd',
                                              'size':500,
                                              'colorby':'geometric_mean'})
-            self._read_ellipse_dict()
+            self._read_ellipse_dict(self._ellipse_dict)
             self.ellipse_scale = kwargs.pop('ellipse_scale', None)
 
         elif self.map_scale == 'km':        
@@ -433,7 +433,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                             {'range':(0,5), 'cmap':'mt_yl2rd',
                                              'size':.5,
                                              'colorby':'geometric_mean'})
-            self._read_ellipse_dict()
+            self._read_ellipse_dict(self._ellipse_dict)
             self.ellipse_scale = kwargs.pop('ellipse_scale', None)
 
 
