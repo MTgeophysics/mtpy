@@ -661,7 +661,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                 print('index in big    :  {0}'.format(aa))
                                 print('index in 1      :  {0} '.format(rr))
                                 print('len_1 = {0}, len_2 = {1}'.format(
-                                        len(mt2.freq), len(mt1.freq)))
+                                        len(mt2.Z.freq), len(mt1.Z.freq)))
                                 print('len rpt_freq = {0}'.format(len(rpt.freq)))
                         except KeyError:
                             print('Station {0} does not have {1:.5f}Hz'.format(
