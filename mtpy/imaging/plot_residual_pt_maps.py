@@ -229,7 +229,7 @@ class PlotResidualPTMaps(PlotBase):
                 station_find = True
                 two_found.append(mt2.tf_id)
             except KeyError:
-                for mt2 in two.values:
+                for mt2 in two.values():
                     if mt2.tf_id in two_found:
                         continue
                     if mt1.tf_id == mt2.tf_id:
