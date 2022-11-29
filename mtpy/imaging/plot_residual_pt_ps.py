@@ -18,14 +18,14 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.imaging.mtplot_tools as mtpl
+from mtpy.imaging.mtplot_tools import PlotBaseProfile
 import mtpy.analysis.pt as mtpt
 import scipy.signal as sps
 
 # ==============================================================================
 
 
-class PlotResidualPTps(mtpl.MTEllipse):
+class PlotResidualPTPseudoSection(PlotBaseProfile):
     """
     This will plot residual phase tensors in a pseudo section.  The data is
     read in and stored in 2 ways, one as a list ResidualPhaseTensor object for
@@ -48,239 +48,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
     The ellipses are normalized by the largest Phi_max of the survey.
 
-
-    Arguments:
-    --------------
-
-        **fn_list1** : list of strings
-                        full paths to .edi files for survey 1
-
-        **fn_list2** : list of strings
-                        full paths to .edi files for survey 2
-
-        **rot90** : [ True | False ] True to rotate residual phase tensor
-                    by 90 degrees. False to leave as is.
-
-        **ellipse_dict** : dictionary
-                          dictionary of parameters for the phase tensor
-                          ellipses with keys:
-                              * 'size' -> size of ellipse in points
-                                         *default* is 2
-
-                              * 'colorby' : [ 'phimin' | 'phimax' | 'skew' |
-                                              'skew_seg' | 'phidet' |
-                                              'ellipticity' | 'geometric_mean']
-
-                                        - 'phimin' -> colors by minimum phase
-                                        - 'phimax' -> colors by maximum phase
-                                        - 'skew' -> colors by beta (skew)
-                                        - 'skew_seg' -> colors by beta in
-                                                       discrete segments
-                                                       defined by the range
-                                        - 'phidet' -> colors by determinant of
-                                                     the phase tensor
-                                        - 'ellipticity' -> colors by ellipticity
-                                        - 'geometric_mean' -> sqrt(phimin*phimax)
-                                        *default* is 'geometric_mean'
-
-                               * 'range' : tuple (min, max, step)
-                                     Need to input at least the min and max
-                                     and if using 'skew_seg' to plot
-                                     discrete values input step as well
-                                     *default* depends on 'colorby'
-
-                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' |
-                                      'mt_wh2bl' | 'mt_rd2bl' |
-                                      'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
-                                      'mt_rd2gr2bl' | 'mt_wh2or ]
-
-                                   - 'mt_yl2rd' -> yellow to red *default*
-                                   - 'mt_bl2yl2rd' -> blue to yellow to red
-                                   - 'mt_wh2bl' -> white to blue
-                                   - 'mt_rd2bl' -> red to blue
-                                   - 'mt_bl2wh2rd' -> blue to white to red
-                                   - 'mt_bl2gr2rd' -> blue to green to red
-                                   - 'mt_rd2gr2bl' -> red to green to blue
-                                   - 'mt_seg_bl2wh2rd' -> discrete blue to
-                                                         white to red
-                                   - 'mt_wh2or' -> white to orange
-
-
-        **ellipse_scale** : float
-                            value to which all ellipses are normalized to. So
-                            if you think a the maximum of change in the
-                            phase tensor is about 10 degrees, set this value
-                            to 10, then any phimax that is 10 degrees will make
-                            an ellipse with unit length.
-
-
-        **med_filt_kernel** : tuple(station, period)
-                              kernel size for the 2D median filter.
-                              the first is the number of stations to smooth
-                              over. The first number is the number of periods
-                              to smooth over. Both should be odd.
-                              *default* is None
-
-        **xstretch** : float
-                        is a factor that scales the distance from one
-                        station to the next to make the plot readable.
-                        *Default* is 1000
-        **ystretch** : float
-                        is a factor that scales the distance from one
-                        period to the next to make the plot readable.
-                        *Default* is 25
-
-        **linedir** : [ 'ns' | 'ew' ]
-                      predominant direction of profile line
-                      * 'ns' -> North-South Line
-                      * 'ew' -> East-West line
-                      *Default* is 'ns'
-
-        **station_id** : tuple or list
-                        start and stop of station name indicies.
-                        ex: for MT01dr station_id=(0,4) will be MT01
-
-        **rotz** : float or np.ndarray
-                   angle in degrees to rotate the data clockwise positive.
-                   Can be an array of angle to individually rotate stations or
-                   periods or both.
-                       - If rotating each station by a constant
-                         angle the array needs to have a shape of
-                         (# of stations)
-                        - If rotating by period needs to have shape
-                           # of periods
-                        - If rotating both individually shape=(ns, nf)
-                  *Default* is 0
-
-        **title** : string
-                    figure title
-
-        **dpi** : int
-                  dots per inch of the resolution. *default* is 300
-
-
-        **fig_num** : int
-                     figure number.  *Default* is 1
-
-
-        **tscale** : [ 'period' | 'frequency' ]
-
-                     * 'period'    -> plot vertical scale in period
-
-                     * 'frequency' -> plot vertical scale in frequency
-
-        **cb_dict** : dictionary to control the color bar
-
-                      * 'orientation' : [ 'vertical' | 'horizontal' ]
-                                       orientation of the color bar
-                                       *default* is vertical
-
-                      * 'position' : tuple (x,y,dx,dy)
-                                    - x -> lateral position of left hand corner
-                                          of the color bar in figure between
-                                          [0,1], 0 is left side
-
-                                    - y -> vertical position of the bottom of
-                                          the color bar in figure between
-                                          [0,1], 0 is bottom side.
-
-                                    - dx -> width of the color bar [0,1]
-
-                                    - dy -> height of the color bar [0,1]
-        **font_size** : float
-                        size of the font that labels the plot, 2 will be added
-                        to this number for the axis labels.
-
-        **plot_yn** : [ 'y' | 'n' ]
-                      * 'y' to plot on creating an instance
-
-                      * 'n' to not plot on creating an instance
-
-        **xlimits** : tuple(xmin, xmax)
-                   min and max along the x-axis in relative distance of degrees
-                   and multiplied by xstretch
-
-        **ylimits** : tuple(ymin, ymax)
-                   min and max period to plot, note that the scaling will be
-                   done in the code.  So if you want to plot from (.1s, 100s)
-                   input ylim=(.1,100)
-
-
-    ==================== ======================================================
-      Attributes          Description
-    ==================== ======================================================
-     ax                   matplotlib.axes instance for the main plot
-     ax2                  matplotlib.axes instance for the color bar
-     cb                   matplotlib.colors.ColorBar instance for color bar
-     cb_orientation       color bar orientation ('vertical' | 'horizontal')
-     cb_position          color bar position (x, y, dx, dy)
-     ellipse_cmap         ellipse color map, see above for options
-     ellipse_colorby      parameter to color ellipse by
-     ellipse_range        (min, max, step) values to color ellipses
-     ellipse_scale        value to which all ellipses are normalized to
-     ellipse_size         scaling factor to make ellipses visible
-     fig                  matplotlib.figure instance for the figure
-     fig_dpi              dots-per-inch resolution
-     fig_num              number of figure being plotted
-     fig_size             size of figure in inches
-     fn_list1             list of .edi file names for survey 1
-     fn_list2             list of .edi file names for survey 2
-     font_size            font size of axes tick label, axes labels will be
-                          font_size + 2
-     freq_list            list of frequencies from all .edi files
-     linedir              prominent direction of profile being plotted
-     med_filt_kernel      (station, frequency) kernel to apply median smoothing
-                          to the data.
-     mt_list1             list of mtplot.MTplot instances containing all
-                          important information for each station in survey 1
-     mt_list2             list of mtplot.MTplot instances containing all
-                          important information for each station in survey 2
-     offset_list          array of relative offsets of each station
-     plot_title           title of the plot
-     plot_yn              plot the pseudo section on instance creation
-     residual_pt_list     list ofmtpy.pt.ResidualPhaseTensor objects
-     rot90                rotates the residual phase tensors by 90 degrees
-                          if set to True
-     rpt_array            structured array with all the important information.
-                          This is the important array from which plotting
-                          occurs.
-     station_font_dict    font dictionary for station labels
-     station_id           index [min, max] to reaad station name
-     station_list         list of stations plotted
-     station_pad          padding between axis and station label
-     subplot_bottom       spacing between plot and bottom of figure window
-     subplot_hspace       vertical spacing between subplots
-     subplot_left         spacing between plot and left of figure window
-     subplot_right        spacing between plot and right of figure window
-     subplot_top          spacing between plot and top of figure window
-     subplot_wspace       horizontal spacing between subplots
-     tscale               temporal scale of y-axis ('frequency' | 'period')
-     xlimits              limits on x-axis (xmin, xmax)
-     xstretch             scaling factor to stretch x offsets
-     xstep                interval of station labels to plot
-                          *default* is 1 to label all stations
-     ylimits              limits on y-axis (ymin, ymax)
-     ystep                interval of period labels to plot
-                          *default* is 1 to label all powers of 10
-     ystretch             scaling factor to strech axes in y direction
-    ==================== ======================================================
-
-
-    ======================= ===================================================
-    Methods                 Description
-    ======================= ===================================================
-     plot                   plots the pseudo section
-     redraw_plot            on call redraws the plot from scratch
-     save_figure            saves figure to a file of given format
-     update_plot            updates the plot while still active
-     _apply_median_filter   apply a 2D median filter to the data
-     _compute_residual_pt   compute residual pt and fill rpt_array and
-                            fill residaul_pt_list
-     _get_freq_list         get a list of all possible frequencies from .edi's
-     _get_offsets           get a list of offsets of the station locations
-                            and fill rpt_array['offset']
-     _read_ellipse_dict     read ellipse dictionary and return a ellipse object
-    ======================= ===================================================
 
     To get a list of .edi files that you want to plot -->
     :Example: ::
@@ -324,135 +91,58 @@ class PlotResidualPTps(mtpl.MTEllipse):
 
     """
 
-    def __init__(self, fn_list1, fn_list2, **kwargs):
-        assert len(fn_list1) == len(fn_list2)
-        self.fn_list1 = fn_list1
-        self.fn_list2 = fn_list2
+    def __init__(
+        self,
+        mt_data_01,
+        mt_data_02,
+        frequencies=np.logspace(-3, 3, 40),
+        **kwargs
+    ):
+        assert len(mt_data_01) == len(mt_data_02)
 
-        self.mt_list1 = mtpl.get_mtlist(fn_list=fn_list1)
-        self.mt_list2 = mtpl.get_mtlist(fn_list=fn_list2)
+        super().__init__(**kwargs)
 
-        self.residual_pt_list = []
-        self.freq_list = None
-        self.nfreq = 42
+        self.freq_list = frequencies
+        self.mt_data_01 = mt_data_01
+        self.mt_data_02 = mt_data_02
+
+        self.ellipse_range = (0, 25)
+        self.ellipse_cmap = "mt_yl2rd"
+        self.ellipse_colorby = "geometric_mean"
+        self.ellipse_scale = None
+
+        self.residual_pt_list = None
         self.rpt_array = None
-        self.med_filt_kernel = kwargs.pop("med_filt_kernel", None)
-        self.rot90 = kwargs.pop("rot90", True)
+        self.med_filt_kernel = None
+        self._filt_applied = False
 
-        # --> set the ellipse properties
-        self.ellipse_cmap = kwargs.pop("cmap", "mt_yl2rd")
-        self.ellipse_range = kwargs.pop("range", (0, 10))
-        self.ellipse_colorby = kwargs.pop("colorby", "geometric_mean")
-        self.ellipse_scale = kwargs.pop("ellipse_scale", 10)
-        self.ellipse_size = kwargs.pop("ellipse_size", 2)
-
-        # --> set colorbar properties---------------------------------
-        # set orientation to horizonstal
-        cb_dict = kwargs.pop("cb_dict", {})
-        try:
-            self.cb_orientation = cb_dict["orientation"]
-        except KeyError:
-            self.cb_orientation = "vertical"
-        # set the position to middle outside the plot
-        try:
-            self.cb_position = cb_dict["position"]
-        except KeyError:
-            self.cb_position = None
-        # --> set plot properties ------------------------------
-        self.fig_num = kwargs.pop("fig_num", "residual_PT")
-        self.plot_title = kwargs.pop("plot_title", None)
-        self.fig_dpi = kwargs.pop("fig_dpi", 300)
-        self.tscale = kwargs.pop("tscale", "period")
-        self.fig_size = kwargs.pop("fig_size", [6, 6])
-        self.linedir = kwargs.pop("linedir", "ew")
-        self.font_size = kwargs.pop("font_size", 7)
-        self.station_id = kwargs.pop("station_id", [0, 4])
-        self.ystep = kwargs.pop("ystep", 4)
-        self.xstep = kwargs.pop("xstep", 1)
-        self.xlimits = kwargs.pop("xlimits", None)
-        self.ylimits = kwargs.pop("ylimits", None)
-
-        # --> set spacing of plot
-        self.subplot_wspace = 0.1
-        self.subplot_hspace = 0.15
-        self.subplot_right = 0.98
-        self.subplot_left = 0.085
-        self.subplot_top = 0.93
-        self.subplot_bottom = 0.1
-
-        # set the stretching in each direction
-        self.xstretch = kwargs.pop("xstretch", 1000)
-        self.ystretch = kwargs.pop("ystretch", 25)
-
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-
-        self._rot_z = kwargs.pop("rot_z", 0)
-        if isinstance(self._rot_z, float) or isinstance(self._rot_z, int):
-            self._rot_z = np.array([self._rot_z] * len(self.mt_list1))
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(self._rot_z, np.ndarray):
-            if self._rot_z.shape[0] != len(self.mt_list1):
-                self._rot_z = np.repeat(self._rot_z, len(self.mt_list1))
-        else:
-            pass
+        self._rotation_angle = 0
         # --> set station name properties
-        station_dict = kwargs.pop("station_dict", {})
-        self.station_id = station_dict.pop("id", self.station_id)
-        self.station_pad = station_dict.pop("pad", 0.0005)
-        self.station_font_dict = station_dict.pop(
-            "font_dict", {"size": self.font_size, "weight": "bold"}
-        )
+        self.station_y_pad = 0.0005
+
+        # --> set station name properties
+        self.station_id = (None, None)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         # --> plot if desired ------------------------
-        self.plot_yn = kwargs.pop("plot_yn", "y")
-        if self.plot_yn == "y":
+        if self.show_plot:
             self.plot()
 
+    @property
+    def rotation_angle(self):
+        return self._rotation_angle
+
     # ---need to rotate data on setting rotz
-    def _set_rot_z(self, rot_z):
+    @rotation_angle.setter
+    def rotation_angle(self, rot_z):
         """
         need to rotate data when setting z
         """
 
-        # if rotation angle is an int or float make an array the length of
-        # mt_list for plotting purposes
-        if isinstance(rot_z, float) or isinstance(rot_z, int):
-            self._rot_z = np.array([rot_z] * len(self.mt_list))
-        # if the rotation angle is an array for rotation of different
-        # freq than repeat that rotation array to the len(mt_list)
-        elif isinstance(rot_z, np.ndarray):
-            if rot_z.shape[0] != len(self.mt_list):
-                self._rot_z = np.repeat(rot_z, len(self.mt_list))
-        else:
-            pass
-        for ii, rpt in enumerate(self.residual_pt_list):
-            rpt.rot_z = self._rot_z[ii]
-
-    def _get_rot_z(self):
-        return self._rot_z
-
-    rot_z = property(
-        fget=_get_rot_z, fset=_set_rot_z, doc="""rotation angle(s)"""
-    )
-    # -------------------------------------------------------------------
-
-    def _get_freq_list(self):
-        """
-        get all possible periods to plot
-
-        """
-
-        freq_list = []
-        for mt1 in self.mt_list1:
-            freq_list.extend(mt1.frequency)
-        for mt2 in self.mt_list2:
-            freq_list.extend(mt2.frequency)
-        flist = np.array(sorted(set(freq_list), reverse=True))
-        self.freq_list = np.logspace(
-            np.log10(flist.min()), np.log10(flist.max()), self.nfreq
-        )
+        for tf_obj in self.mt_data_01 + self.mt_data_02:
+            tf_obj.rotation_angle = rot_z
 
     # ------------------------------------------------------------------
     def _compute_residual_pt(self):
@@ -460,11 +150,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
         compute residual phase tensor so the result is something useful to
         plot
         """
-        log_path = os.path.dirname(os.path.dirname(self.fn_list1[0]))
-        log_fn = os.path.join(log_path, "Residual_PT.log")
-        logfid = open(log_fn, "w")
-
-        self._get_freq_list()
 
         num_freq = self.freq_list.shape[0]
         num_station = len(self.mt_list1)

@@ -103,7 +103,7 @@ class PlotResidualPTMaps(PlotBase):
         self.mt_data_01 = mt_data_01
         self.mt_data_02 = mt_data_02
 
-        self.ellipse_range = (0, 5)
+        self.ellipse_range = (0, 25)
         self.ellipse_cmap = "mt_yl2rd"
         self.ellipse_colorby = "geometric_mean"
         self.ellipse_scale = None
