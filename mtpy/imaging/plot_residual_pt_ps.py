@@ -96,7 +96,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         mt_data_01,
         mt_data_02,
         frequencies=np.logspace(-3, 3, 40),
-        **kwargs
+        **kwargs,
     ):
         assert len(mt_data_01) == len(mt_data_02)
 
@@ -144,6 +144,44 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         for tf_obj in self.mt_data_01 + self.mt_data_02:
             tf_obj.rotation_angle = rot_z
 
+    def _match_lists(self, one, two):
+        """
+        Match the input lists by transfer function id
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        matches = []
+        two_found = []
+        for key, mt1 in one.items():
+            station_find = False
+            try:
+                mt2 = two[key]
+                matches.append([mt1, mt2])
+                station_find = True
+                two_found.append(mt2.tf_id)
+            except KeyError:
+                for mt2 in two.values():
+                    if mt2.tf_id in two_found:
+                        continue
+                    if mt1.tf_id == mt2.tf_id:
+                        if (
+                            abs(mt1.latitude - mt2.latitude) < 0.001
+                            and abs(mt1.longitude - mt2.longitude) < 0.001
+                        ):
+                            matches.append([mt1, mt2])
+                            station_find = True
+                            two_found.append(mt2.tf_id)
+                        break
+            if not station_find:
+                self.logger.warning(
+                    f"Could not find tf {mt1.tf_id} in second list"
+                )
+
+        return matches
+
     # ------------------------------------------------------------------
     def _compute_residual_pt(self):
         """
@@ -151,166 +189,110 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         plot
         """
 
+        matches = self._match_lists(self.mt_data_01, self.mt_data_02)
         num_freq = self.freq_list.shape[0]
-        num_station = len(self.mt_list1)
+        num_station = len(matches)
 
         # make a structured array to put stuff into for easier manipulation
         self.rpt_array = np.zeros(
             num_station,
             dtype=[
-                ("station", "U10"),
-                ("freq", (np.float, num_freq)),
-                ("lat", np.float),
-                ("lon", np.float),
-                ("elev", np.float),
-                ("offset", np.float),
-                ("phimin", (np.float, num_freq)),
-                ("phimax", (np.float, num_freq)),
-                ("skew", (np.float, num_freq)),
-                ("azimuth", (np.float, num_freq)),
-                ("geometric_mean", (np.float, num_freq)),
+                ("station", "U20"),
+                ("lat", float),
+                ("lon", float),
+                ("elev", float),
+                ("offset", float),
+                ("phimin", (float, num_freq)),
+                ("phimax", (float, num_freq)),
+                ("skew", (float, num_freq)),
+                ("azimuth", (float, num_freq)),
+                ("geometric_mean", (float, num_freq)),
             ],
         )
 
         self.residual_pt_list = []
-        for mm, mt1 in enumerate(self.mt_list1):
-            station_find = False
-            mt1.Z, mt1.Tipper = mt1.interpolate(
-                self.freq_list, bounds_error=False
+        freq_dict = dict(
+            [(np.round(ff, 5), ii) for ii, ff in enumerate(self.freq_list)]
+        )
+        for mm, match in enumerate(matches):
+            mt1 = match[0]
+            mt2 = match[1]
+
+            new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
+            new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
+
+            # make new phase tensor objects
+            pt1 = mtpt.PhaseTensor(z_object=new_z1)
+            pt2 = mtpt.PhaseTensor(z_object=new_z2)
+
+            # compute residual phase tensor
+            rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
+            rpt.compute_residual_pt(pt1, pt2)
+
+            # add some attributes to residual phase tensor object
+            rpt.station = mt1.station
+            rpt.lat = mt1.latitude
+            rpt.lon = mt1.longitude
+
+            # append to list for manipulating later
+            self.residual_pt_list.append(rpt)
+
+            # put stuff into an array because we cannot set values of
+            # rpt, need this for filtering.
+            st_1, st_2 = self.station_id
+            self.rpt_array[mm]["station"] = mt1.station[st_1:st_2]
+            self.rpt_array[mm]["lat"] = mt1.latitude
+            self.rpt_array[mm]["lon"] = mt1.longitude
+            self.rpt_array[mm]["elev"] = mt1.elevation
+
+            rpt_fdict = dict(
+                [
+                    (np.round(key, 5), value)
+                    for value, key in enumerate(rpt.frequency)
+                ]
             )
-            for mt2 in self.mt_list2:
-                if mt2.station == mt1.station:
-                    mt2.Z, mt2.Tipper = mt2.interpolate(
-                        self.freq_list, bounds_error=False
-                    )
-                    logfid.write("{0}{1}{0}\n".format("=" * 30, mt1.station))
+            for f_index, frequency in enumerate(rpt.frequency):
+                aa = freq_dict[np.round(frequency, 5)]
+                try:
+                    try:
+                        rr = rpt_fdict[np.round(frequency, 5)]
 
-                    # make new phase tensor objects
-                    pt1 = mtpt.PhaseTensor(z_object=mt1.Z)
-                    pt2 = mtpt.PhaseTensor(z_object=mt2.Z)
-
-                    # compute residual phase tensor
-                    rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
-                    rpt.compute_residual_pt(pt1, pt2)
-
-                    # add some attributes to residual phase tensor object
-                    rpt.station = mt1.station
-                    rpt.lat = mt1.latitude
-                    rpt.lon = mt1.longitude
-
-                    # append to list for manipulating later
-                    self.residual_pt_list.append(rpt)
-
-                    # be sure to tell the program you found the station
-                    station_find = True
-
-                    # put stuff into an array because we cannot set values of
-                    # rpt, need this for filtering.
-                    st_1, st_2 = self.station_id
-                    self.rpt_array[mm]["station"] = mt1.station[st_1:st_2]
-                    self.rpt_array[mm]["lat"] = mt1.latitude
-                    self.rpt_array[mm]["lon"] = mt1.longitude
-                    self.rpt_array[mm]["elev"] = mt1.elevation
-                    self.rpt_array[mm]["freq"][:] = self.freq_list
-                    self.rpt_array[mm]["phimin"][:] = rpt.residual_pt.phimin
-                    self.rpt_array[mm]["phimax"][:] = rpt.residual_pt.phimax
-                    self.rpt_array[mm]["azimuth"][:] = rpt.residual_pt.azimuth
-                    self.rpt_array[mm]["skew"][:] = rpt.residual_pt.skew
-                    self.rpt_array[mm]["geometric_mean"][:] = np.sqrt(
-                        abs(rpt.residual_pt.phimin * rpt.residual_pt.phimax)
+                        self.rpt_array[mm]["phimin"][aa] = abs(
+                            rpt.residual_pt.phimin[rr]
+                        )
+                        self.rpt_array[mm]["phimax"][aa] = abs(
+                            rpt.residual_pt.phimax[rr]
+                        )
+                        self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[
+                            rr
+                        ]
+                        self.rpt_array[mm]["azimuth"][
+                            aa
+                        ] = rpt.residual_pt.azimuth[rr]
+                        self.rpt_array[mm]["geometric_mean"][aa] = np.sqrt(
+                            abs(
+                                rpt.residual_pt.phimin[rr]
+                                * rpt.residual_pt.phimax[rr]
+                            )
+                        )
+                    except IndexError:
+                        self.logger.info("-" * 50)
+                        self.logger.info(mt1.station)
+                        self.logger.info(f"freq_index for 1:  {f_index}")
+                        self.logger.info(f"frequency looking for:  {frequency}")
+                        self.logger.info(f"index in big    :  {aa}")
+                        self.logger.info(f"index in 1      :  {rr}")
+                        self.logger.info(
+                            f"len_1 = {len(mt1.frequency)}, len_2 = {len(mt2.frequency)}"
+                        )
+                        self.logger.info(f"len rpt_freq = {len(rpt.frequency)}")
+                except KeyError:
+                    self.logger.info(
+                        f"Station {mt1.station} does not have {frequency:.5f}Hz"
                     )
 
-                    # rpt_fdict = dict(
-                    #     [
-                    #         (np.round(key, 5), value)
-                    #         for value, key in enumerate(rpt.freq)
-                    #     ]
-                    # )
-
-                    # for f_index, freq in enumerate(rpt.freq):
-                    #     aa = freq_dict[np.round(freq, 5)]
-                    #     try:
-                    #         rr = rpt_fdict[np.round(freq, 5)]
-                    #         try:
-                    #             self.rpt_array[mm]["phimin"][
-                    #                 aa
-                    #             ] = rpt.residual_pt.phimin[rr]
-                    #             self.rpt_array[mm]["phimax"][
-                    #                 aa
-                    #             ] = rpt.residual_pt.phimax[rr]
-                    #             self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[rr]
-                    #             self.rpt_array[mm]["azimuth"][
-                    #                 aa
-                    #             ] = rpt.residual_pt.azimuth[rr]
-                    #             self.rpt_array[mm]["geometric_mean"][aa] = np.sqrt(
-                    #                 abs(
-                    #                     rpt.residual_pt.phimin[rr]
-                    #                     * rpt.residual_pt.phimax[rr]
-                    #                 )
-                    #             )
-                    #             logfid.write("Freq={0:.5f} ".format(freq))
-                    #             logfid.write(
-                    #                 "Freq_list_index={0} ".format(
-                    #                     np.where(self.freq_list == freq)[0][0]
-                    #                 )
-                    #             )
-                    #             logfid.write("rpt_array_index={0} ".format(aa))
-                    #             logfid.write("rpt_dict={0} ".format(rr))
-                    #             logfid.write(
-                    #                 "rpt.freq_index={0} ".format(
-                    #                     np.where(rpt.freq == freq)[0][0]
-                    #                 )
-                    #             )
-                    #             logfid.write(
-                    #                 "Phi_max={0:2f} ".format(
-                    #                     rpt.residual_pt.phimax[rr]
-                    #                 )
-                    #             )
-                    #             logfid.write(
-                    #                 "Phi_min={0:2f} ".format(
-                    #                     rpt.residual_pt.phimin[rr]
-                    #                 )
-                    #             )
-                    #             logfid.write(
-                    #                 "Skew={0:2f} ".format(rpt.residual_pt.beta[rr])
-                    #             )
-                    #             logfid.write(
-                    #                 "Azimuth={0:2f}\n".format(
-                    #                     rpt.residual_pt.azimuth[rr]
-                    #                 )
-                    #             )
-
-                    #         except IndexError:
-                    #             print("-" * 50)
-                    #             print(mt1.station)
-                    #             print("freq_index for 1:  {0}".format(f_index))
-                    #             print("freq looking for:  {0}".format(freq))
-                    #             print("index in big    :  {0}".format(aa))
-                    #             print("index in 1      :  {0} ".format(rr))
-                    #             print(
-                    #                 "len_1 = {0}, len_2 = {1}".format(
-                    #                     len(mt2.frequency), len(mt1.frequency)
-                    #                 )
-                    #             )
-                    #             print("len rpt_freq = {0}".format(len(rpt.freq)))
-                    #     except KeyError:
-                    #         print(
-                    #             "Station {0} does not have {1:.5f}Hz".format(
-                    #                 mt1.station, freq
-                    #             )
-                    #         )
-
-                    break
-                else:
-                    pass
-            if station_find == False:
-                print(
-                    "Did not find {0} from list 1 in list 2".format(mt1.station)
-                )
         # from the data get the relative offsets and sort the data by them
         self._get_offsets()
-
-        logfid.close()
 
     # -------------------------------------------------------------------
 
@@ -509,7 +491,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
                     self.ax.add_artist(ellipd)
         # --> Set plot parameters
         # need to sort the offsets and station labels so they plot correctly
-        sdtype = [("offset", np.float), ("station", "U10")]
+        sdtype = [("offset", float), ("station", "U10")]
         slist = np.array(
             [
                 (oo, ss)
@@ -670,127 +652,3 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         self.ax.set_axisbelow(True)
 
         plt.show()
-
-    # -----------------------------------------------------------------------
-    def save_figure(
-        self,
-        save_fn,
-        file_format="pdf",
-        orientation="portrait",
-        fig_dpi=None,
-        close_plot="y",
-    ):
-        """
-        save_plot will save the figure to save_fn.
-
-        Arguments:
-        -----------
-
-            **save_fn** : string
-                          full path to save figure to, can be input as
-                          * directory path -> the directory path to save to
-                            in which the file will be saved as
-                            save_fn/station_name_ResPhase.file_format
-
-                          * full path -> file will be save to the given
-                            path.  If you use this option then the format
-                            will be assumed to be provided by the path
-
-            **file_format** : [ pdf | eps | jpg | png | svg ]
-                              file type of saved figure pdf,svg,eps...
-
-            **orientation** : [ landscape | portrait ]
-                              orientation in which the file will be saved
-                              *default* is portrait
-
-            **fig_dpi** : int
-                          The resolution in dots-per-inch the file will be
-                          saved.  If None then the dpi will be that at
-                          which the figure was made.  I don't think that
-                          it can be larger than dpi of the figure.
-
-            **close_plot** : [ y | n ]
-                             * 'y' will close the plot after saving.
-                             * 'n' will leave plot open
-
-        :Example: ::
-
-            >>> ptr.save_figure()
-
-        """
-
-        if fig_dpi is None:
-            fig_dpi = self.fig_dpi
-        if os.path.isdir(save_fn) == False:
-            file_format = save_fn[-3:]
-            self.fig.savefig(
-                save_fn,
-                dpi=fig_dpi,
-                format=file_format,
-                orientation=orientation,
-                bbox_inches="tight",
-            )
-            plt.clf()
-            plt.close(self.fig)
-        else:
-            if not os.path.exists(save_fn):
-                os.mkdir(save_fn)
-            if not os.path.exists(os.path.join(save_fn, "RPT_PS")):
-                os.mkdir(os.path.join(save_fn, "RPT_PS"))
-                save_fn = os.path.join(save_fn, "RPT_PS")
-            save_fn = os.path.join(
-                save_fn,
-                "RPT_PS_{0}.{1}".format(self.ellipse_colorby, file_format),
-            )
-            self.fig.savefig(
-                save_fn,
-                dpi=fig_dpi,
-                format=file_format,
-                orientation=orientation,
-                bbox_inches="tight",
-            )
-        if close_plot == "y":
-            plt.clf()
-            plt.close(self.fig)
-        else:
-            pass
-        self.fig_fn = save_fn
-        print("Saved figure to: " + self.fig_fn)
-
-    # -----------------------------------------------------------------------
-    def update_plot(self):
-        """
-        update any parameters that where changed using the built-in draw from
-        canvas.
-
-        Use this if you change an of the .fig or axes properties
-
-        :Example: ::
-
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
-            >>> p1.update_plot()
-
-        """
-
-        self.fig.canvas.draw()
-
-    # -------------------------------------------------------------------------
-    def redraw_plot(self):
-        """
-        use this function if you updated some attributes and want to re-plot.
-
-        :Example: ::
-
-            >>> # change the color and marker of the xy components
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> p1.xy_color = (.5,.5,.9)
-            >>> p1.xy_marker = '*'
-            >>> p1.redraw_plot()
-        """
-
-        plt.close(self.fig)
-        self.plot()

@@ -426,13 +426,26 @@ class PlotBaseProfile(PlotBase):
             tf.rotation_angle = value
         self._rotation_angle = value
 
-    def _get_profile_line(self):
-        x = np.zeros(self.mt_data.n_stations)
-        y = np.zeros(self.mt_data.n_stations)
+    def _get_profile_line(self, x=None, y=None):
+        """
+        Get profile line doing a linear regression through data points
 
-        for ii, tf in enumerate(self.mt_data.values()):
-            x[ii] = tf.longitude
-            y[ii] = tf.latitude
+        :param x: DESCRIPTION, defaults to None
+        :type x: TYPE, optional
+        :param y: DESCRIPTION, defaults to None
+        :type y: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if x is None and y is None:
+            x = np.zeros(self.mt_data.n_stations)
+            y = np.zeros(self.mt_data.n_stations)
+
+            for ii, tf in enumerate(self.mt_data.values()):
+                x[ii] = tf.longitude
+                y[ii] = tf.latitude
 
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
@@ -456,7 +469,7 @@ class PlotBaseProfile(PlotBase):
         self.profile_vector = np.array([1, profile.slope])
         self.profile_vector /= np.linalg.norm(self.profile_vector)
 
-    def _get_offset(self, tf):
+    def _get_offset(self, tf=None, x=None, y=None):
         """
         Get approximate offset distance for the station
 
