@@ -100,7 +100,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
     ):
         assert len(mt_data_01) == len(mt_data_02)
 
-        super().__init__(**kwargs)
+        super().__init__(None, **kwargs)
 
         self.freq_list = frequencies
         self.mt_data_01 = mt_data_01
@@ -125,6 +125,9 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        if self.mt_data_01 is not None and self.mt_data_02 is not None:
+            self._compute_residual_pt()
 
         # --> plot if desired ------------------------
         if self.show_plot:
@@ -239,8 +242,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
 
             # put stuff into an array because we cannot set values of
             # rpt, need this for filtering.
-            st_1, st_2 = self.station_id
-            self.rpt_array[mm]["station"] = mt1.station[st_1:st_2]
+            self.rpt_array[mm]["station"] = mt1.station
             self.rpt_array[mm]["lat"] = mt1.latitude
             self.rpt_array[mm]["lon"] = mt1.longitude
             self.rpt_array[mm]["elev"] = mt1.elevation
@@ -291,8 +293,15 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
                         f"Station {mt1.station} does not have {frequency:.5f}Hz"
                     )
 
+        # get profile line
+        self._get_profile_line(x=self.rpt_array["lon"], y=self.rpt_array["lat"])
+
+        # get offsets
+        for rpt in self.rpt_array:
+            rpt["offset"] = self._get_offset(x=rpt["lon"], y=rpt["lat"])
+
         # from the data get the relative offsets and sort the data by them
-        self._get_offsets()
+        self.rpt_array.sort(order=["offset"])
 
     # -------------------------------------------------------------------
 
@@ -325,301 +334,163 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
             abs(filt_phimin_arr * filt_phimax_arr)
         )
 
-        print("Applying Median Filter with kernel {0}".format(kernel))
+        self.logger.info(f"Applying Median Filter with kernel {kernel}")
 
-    # -------------------------------------------------------------------
-    def _get_offsets(self):
+    def get_pt_color_array(self, rpt_array):
         """
-        get relative offsets of stations
+        Get the appropriat color by array
         """
 
-        for ii, r_arr in enumerate(self.rpt_array):
-            # set the an arbitrary origin to compare distance to all other
-            # stations.
-            if ii == 0:
-                east0 = r_arr["lon"]
-                north0 = r_arr["lat"]
-                offset = 0.0
-                r_arr["offset"] = offset
+        # get the properties to color the ellipses by
+        if (
+            self.ellipse_colorby == "phiminang"
+            or self.ellipse_colorby == "phimin"
+        ):
+            color_array = rpt_array["phimin"]
+        elif (
+            self.ellipse_colorby == "phimaxang"
+            or self.ellipse_colorby == "phimax"
+        ):
+            color_array = rpt_array["phimax"]
+
+        elif (
+            self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg"
+        ):
+            color_array = rpt_array["skew"]
+
+        elif self.ellipse_colorby in ["strike", "azimuth"]:
+            color_array = rpt_array["azimuth"] % 180
+            color_array[np.where(color_array > 90)] -= 180
+
+        elif self.ellipse_colorby in ["geometric_mean"]:
+            color_array = rpt_array["geometric_mean"]
+        else:
+            raise NameError(self.ellipse_colorby + " is not supported")
+        return color_array
+
+    def _get_ellipse_max(self):
+        if self.ellipse_scale is None:
+            return self.rpt_array["phimax"].max()
+        else:
+            return self.ellipse_scale
+
+    def _get_patch(self, rpt):
+        """
+        Get ellipse patch
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        # --> get size of largest ellipse for this frequency for
+        #    normalization to give an indication of the size of
+        #    change.
+        emax = self._get_ellipse_max()
+
+        for f_index, ff in enumerate(self.freq_list):
+            if self.y_scale == "period":
+                plot_y = np.log10(1.0 / ff) * self.y_stretch
             else:
-                east = r_arr["lon"]
-                north = r_arr["lat"]
-                if self.linedir == "ew":
-                    if east0 < east:
-                        offset = np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    elif east0 > east:
-                        offset = -1 * np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    else:
-                        offset = 0
-                    r_arr["offset"] = offset
-                elif self.linedir == "ns":
-                    if north0 < north:
-                        offset = np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    elif north0 > north:
-                        offset = -1 * np.sqrt(
-                            (east0 - east) ** 2 + (north0 - north) ** 2
-                        )
-                    else:
-                        offset = 0
-                    r_arr["offset"] = offset
-        # be sure to order the structured array by offset, this will make
-        # sure that the median filter is spatially correct
-        self.rpt_array.sort(order="offset")
+                plot_y = np.log10(ff) * self.y_stretch
 
-    # --------------------------------------------------------------------------
-    def plot(self):
-        """
-        plot residual phase tensor
-        """
-
-        # get residual phase tensor for plotting
-        self._compute_residual_pt()
-
-        # filter data if desired
-        if self.med_filt_kernel is not None:
-            self._apply_median_filter(kernel=self.med_filt_kernel)
-        # set position properties for the plot
-        plt.rcParams["font.size"] = self.font_size
-        plt.rcParams["figure.subplot.left"] = self.subplot_left
-        plt.rcParams["figure.subplot.right"] = self.subplot_right
-        plt.rcParams["figure.subplot.bottom"] = self.subplot_bottom
-        plt.rcParams["figure.subplot.top"] = self.subplot_top
-        plt.rcParams["figure.subplot.wspace"] = self.subplot_wspace
-        plt.rcParams["figure.subplot.hspace"] = self.subplot_hspace
-
-        # make figure instance
-        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
-
-        # create axis instance, be sure to make aspect equal or ellipses will
-        # look funny.
-        self.ax = self.fig.add_subplot(1, 1, 1, aspect="equal")
-
-        # set local parameters with shorter names
-        es = self.ellipse_size
-        ck = self.ellipse_colorby
-        cmap = self.ellipse_cmap
-        ckmin = float(self.ellipse_range[0])
-        ckmax = float(self.ellipse_range[1])
-
-        try:
-            ckstep = float(self.ellipse_range[2])
-        except IndexError:
-            ckstep = 3
-        # set the number of segments in case a segmented map is desired
-        nseg = float((ckmax - ckmin) / (2 * ckstep))
-
-        if cmap == "mt_seg_bl2wh2rd":
-            bounds = np.arange(ckmin, ckmax + ckstep, ckstep)
-        # get largest ellipse
-        emax = self.ellipse_scale
-        # emax = self.rpt_array['phimax'].max()
-
-        # plot phase tensor ellipses
-        for ii, rpt in enumerate(self.rpt_array):
-
-            phimax = rpt["phimax"]
-            phimin = rpt["phimin"]
-            azimuth = rpt["azimuth"]
-
-            # get the properties to color the ellipses by
-            try:
-                color_array = rpt[self.ellipse_colorby]
-            except ValueError:
-                raise NameError(
-                    "{0} is not supported".format(self.ellipse_colorby)
+            # --> get ellipse properties
+            # if the ellipse size is not physically correct make it a dot
+            if rpt["phimax"][f_index] == 0 and rpt["phimin"][f_index] == 0:
+                continue
+            elif rpt["phimax"][f_index] > 100 or rpt["phimin"][f_index] > 100:
+                continue
+                self.logger.warning(
+                    "Bad data at {rpt['station']} for frequency {self.plot_freq}"
                 )
-            for jj, ff in enumerate(rpt["freq"]):
-                if phimin[jj] == 0.0 or phimax[jj] == 0.0:
-                    pass
-                else:
-                    # make sure the ellipses will be visable
-                    eheight = phimin[jj] / emax * es
-                    ewidth = phimax[jj] / emax * es
+            else:
+                scaling = self.ellipse_size / emax
+                e_height = rpt["phimin"][f_index] * scaling
+                e_width = rpt["phimax"][f_index] * scaling
+            # make an ellipse
+            if self.rot90:
+                e_angle = rpt["azimuth"][f_index] - 90
+            else:
+                e_angle = rpt["azimuth"][f_index]
 
-                    # create an ellipse scaled by phimin and phimax and orient
-                    # the ellipse so that north is up and east is right
-                    # need to add 90 to do so instead of subtracting
-                    if self.rot90 == True:
-                        ellipd = patches.Ellipse(
-                            (
-                                rpt["offset"] * self.xstretch,
-                                np.log10(ff) * self.ystretch,
-                            ),
-                            width=ewidth,
-                            height=eheight,
-                            angle=azimuth[jj] - 90,
-                        )
-                    else:
-                        ellipd = patches.Ellipse(
-                            (
-                                rpt["offset"] * self.xstretch,
-                                np.log10(ff) * self.ystretch,
-                            ),
-                            width=ewidth,
-                            height=eheight,
-                            angle=azimuth[jj],
-                        )
-                    # get ellipse color
-                    if cmap.find("seg") > 0:
-                        ellipd.set_facecolor(
-                            mtcl.get_plot_color(
-                                color_array[jj],
-                                self.ellipse_colorby,
-                                cmap,
-                                ckmin,
-                                ckmax,
-                                bounds=bounds,
-                            )
-                        )
-                    else:
-                        ellipd.set_facecolor(
-                            mtcl.get_plot_color(
-                                color_array[jj],
-                                self.ellipse_colorby,
-                                cmap,
-                                ckmin,
-                                ckmax,
-                            )
-                        )
-                    # == =add the ellipse to the plot == ========
-                    self.ax.add_artist(ellipd)
-        # --> Set plot parameters
-        # need to sort the offsets and station labels so they plot correctly
-        sdtype = [("offset", float), ("station", "U10")]
-        slist = np.array(
-            [
-                (oo, ss)
-                for oo, ss in zip(
-                    self.rpt_array["offset"], self.rpt_array["station"]
+            ellipd = patches.Ellipse(
+                (rpt["offset"], plot_y),
+                width=e_width,
+                height=e_height,
+                angle=e_angle,
+            )
+            # get ellipse color
+            if self.ellipse_cmap.find("seg") > 0:
+                ellipd.set_facecolor(
+                    mtcl.get_plot_color(
+                        rpt[self.ellipse_colorby][f_index],
+                        self.ellipse_colorby,
+                        self.ellipse_cmap,
+                        self.ellipse_range[0],
+                        self.ellipse_range[1],
+                        bounds=self.ellipse_cmap_bounds,
+                    )
                 )
-            ],
-            dtype=sdtype,
-        )
+            else:
+                ellipd.set_facecolor(
+                    mtcl.get_plot_color(
+                        rpt[self.ellipse_colorby][f_index],
+                        self.ellipse_colorby,
+                        self.ellipse_cmap,
+                        self.ellipse_range[0],
+                        self.ellipse_range[1],
+                    )
+                )
+            # ==> add ellipse to the plot
+            self.ax.add_artist(ellipd)
 
-        offset_sort = np.sort(slist, order="offset")
+    def _add_colorbar(self):
+        """
+        Add phase tensor color bar
 
-        self.offset_list = offset_sort["offset"]
-        self.station_list = offset_sort["station"]
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-        # min and max frequency of the plot
-        pmin = int(np.floor(np.log10(self.freq_list.min())))
-        pmax = int(np.ceil(np.log10(self.freq_list.max())))
+        """
 
-        # set y-axis major ticks to be on each power of 10
-        self.ax.yaxis.set_ticks(
-            np.arange(
-                pmin * self.ystretch, (pmax + 1) * self.ystretch, self.ystretch
-            )
-        )
-        # set y-ticklabels to coincide with the desired label
-        if self.tscale == "period":
-            # make tick labels that will represent period
-            yticklabels = [
-                mtpl.labeldict[-ii] for ii in range(pmin, pmax + 1, 1)
-            ]
-            self.ax.set_ylabel(
-                "Period (s)", fontsize=self.font_size + 2, fontweight="bold"
-            )
-        elif self.tscale == "frequency":
-            yticklabels = [
-                mtpl.labeldict[ii] for ii in range(pmin, pmax + 1, 1)
-            ]
-            self.ax.set_ylabel(
-                "Frequency (Hz)", fontsize=self.font_size + 2, fontweight="bold"
-            )
-        # --> set y-limits
-        if self.ylimits is None:
-            self.ax.set_ylim(pmin * self.ystretch, pmax * self.ystretch)
-        else:
-            pmin = np.log10(self.ylimits[0]) * self.ystretch
-            pmax = np.log10(self.ylimits[1]) * self.ystretch
-            self.ax.set_ylim(pmin, pmax)
-        # --> set y-axis tick labels
-        self.ax.set_yticklabels(yticklabels)
-
-        # --> set x-axis label
-        self.ax.set_xlabel(
-            "Station", fontsize=self.font_size + 2, fontweight="bold"
-        )
-
-        # set x-axis ticks
-        self.ax.set_xticks(self.offset_list * self.xstretch)
-
-        # set x-axis tick labels as station names
-        xticklabels = self.station_list
-        if self.xstep != 1:
-            xticklabels = np.zeros(
-                len(self.station_list), dtype=self.station_list.dtype
-            )
-            for xx in range(0, len(self.station_list), self.xstep):
-                xticklabels[xx] = self.station_list[xx]
-        self.ax.set_xticklabels(xticklabels)
-
-        # --> set x-limits
-        if self.xlimits is None:
-            self.ax.set_xlim(
-                self.offset_list.min() * self.xstretch - es * 2,
-                self.offset_list.max() * self.xstretch + es * 2,
-            )
-        else:
-            self.ax.set_xlim(self.xlimits)
-        # --> set title of the plot
-        if self.plot_title is None:
-            pass
-        else:
-            self.ax.set_title(self.plot_title, fontsize=self.font_size + 2)
-        # put a grid on the plot
-        self.ax.grid(alpha=0.25, which="both", color=(0.25, 0.25, 0.25))
-
-        # ==> make a colorbar with appropriate colors
         if self.cb_position is None:
             self.ax2, kw = mcb.make_axes(
                 self.ax, orientation=self.cb_orientation, shrink=0.35
             )
+
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
-        if cmap == "mt_seg_bl2wh2rd":
-            # make a color list
-            self.clist = [
-                (cc, cc, 1)
-                for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-            ] + [
-                (1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
-            ]
 
-            # make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
+        # make the colorbar
+        if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
+            cmap_input = mtcl.cmapdict[self.ellipse_cmap]
+        else:
+            cmap_input = mtcl.cm.get_cmap(self.ellipse_cmap)
 
-            # make bounds so that the middle is white
-            bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
-
-            # normalize the colors
-            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
-
-            # make the colorbar
+        if "seg" in self.ellipse_cmap:
+            norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
             self.cb = mcb.ColorbarBase(
                 self.ax2,
-                cmap=mt_seg_bl2wh2rd,
+                cmap=cmap_input,
                 norm=norms,
                 orientation=self.cb_orientation,
-                ticks=bounds[1:-1],
+                ticks=self.ellipse_cmap_bounds,
             )
         else:
             self.cb = mcb.ColorbarBase(
                 self.ax2,
-                cmap=mtcl.cmapdict[cmap],
-                norm=colors.Normalize(vmin=ckmin, vmax=ckmax),
+                cmap=cmap_input,
+                norm=colors.Normalize(
+                    vmin=self.ellipse_range[0], vmax=self.ellipse_range[1]
+                ),
                 orientation=self.cb_orientation,
             )
+
         # label the color bar accordingly
         self.cb.set_label(
-            mtpl.ckdict[ck], fontdict={"size": self.font_size, "weight": "bold"}
+            self.cb_label_dict[self.ellipse_colorby],
+            fontdict={"size": self.font_size, "weight": "bold"},
         )
 
         # place the label in the correct location
@@ -628,27 +499,119 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
             self.cb.ax.xaxis.set_label_coords(0.5, 1.3)
         elif self.cb_orientation == "vertical":
             self.cb.ax.yaxis.set_label_position("right")
-            self.cb.ax.yaxis.set_label_coords(1.5, 0.5)
+            self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis="y", direction="in")
-        # --> add reference ellipse
-        ref_ellip = patches.Ellipse((0, 0.0), width=es, height=es, angle=0)
-        ref_ellip.set_facecolor((0, 0, 0))
-        ref_ax_loc = list(self.ax2.get_position().bounds)
-        ref_ax_loc[0] *= 0.95
-        ref_ax_loc[1] -= 0.17
-        ref_ax_loc[2] = 0.1
-        ref_ax_loc[3] = 0.1
-        self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect="equal")
-        self.ref_ax.add_artist(ref_ellip)
-        self.ref_ax.set_xlim(-es / 2.0 * 1.05, es / 2.0 * 1.05)
-        self.ref_ax.set_ylim(-es / 2.0 * 1.05, es / 2.0 * 1.05)
-        plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
-        plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
-        self.ref_ax.set_title(r"$\Delta \Phi$ = 1")
 
-        # put the grid lines behind
-        #        [line.set_zorder(10000) for line in self.ax.lines]
+    # --------------------------------------------------------------------------
+    def plot(self):
+        """
+        plot residual phase tensor
+        """
+
+        self._set_subplot_params()
+
+        # create a plot instance
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        self.fig.clf()
+        self.ax = self.fig.add_subplot(1, 1, 1, aspect="equal")
+
+        y_min = 1
+        y_max = 1
+        station_list = np.zeros(
+            self.rpt_array.size,
+            dtype=[("offset", np.float), ("station", "U10")],
+        )
+
+        for ii, rpt in enumerate(self.rpt_array):
+            station_list[ii]["station"] = rpt["station"][
+                self.station_id[0] : self.station_id[1]
+            ]
+            station_list[ii]["offset"] = rpt["offset"]
+
+        y_min = (
+            np.floor(np.log10(self.freq_list.min()) / self.y_stretch)
+            * self.y_stretch
+        )
+        y_max = (
+            np.ceil(np.log10(self.freq_list.max()) / self.y_stretch)
+            * self.y_stretch
+        )
+
+        # --> Set plot parameters
+        self.station_list = np.sort(station_list, order="offset")
+
+        # set y-ticklabels
+        if self.y_scale == "period":
+            y_label = "Period (s)"
+            p_min = float(y_min)
+            p_max = float(y_max)
+            y_min = -1 * p_min
+            y_max = -1 * p_max
+
+        else:
+            y_label = "Frequency (Hz)"
+
+        self.ax.set_ylabel(y_label, fontdict=self.font_dict)
+
+        # set y-axis tick labels
+        self.ax.yaxis.set_ticks(
+            np.arange(y_min, (y_max), self.y_stretch * np.sign(y_max))
+        )
+
+        y_tick_labels = []
+
+        for tk in self.ax.get_yticks():
+            try:
+                y_tick_labels.append(
+                    self.period_label_dict[int(tk / self.y_stretch)]
+                )
+            except KeyError:
+                y_tick_labels.append("")
+
+        self.ax.set_yticklabels(y_tick_labels)
+
+        # --> set tick locations and labels
+
+        # set x-axis ticks
+        self.ax.set_xticks(self.station_list["offset"])
+
+        # set x-axis tick labels as station names
+        self.ax.set_xticklabels(self.station_list["station"])
+
+        # set x-axis label
+        self.ax.set_xlabel(
+            "Station", fontsize=self.font_size + 2, fontweight="bold"
+        )
+
+        # --> set x-limits
+        if self.x_limits is None:
+            self.ax.set_xlim(
+                np.floor(self.station_list["offset"].min())
+                - self.ellipse_size / 2,
+                np.ceil(self.station_list["offset"].max())
+                + self.ellipse_size / 2,
+            )
+        else:
+            self.ax.set_xlim(self.x_limits)
+        # --> set y-limits
+        if self.y_limits is None:
+            self.ax.set_ylim(y_min, y_max)
+        else:
+            pmin = np.log10(self.y_limits[0]) * self.y_stretch
+            pmax = np.log10(self.y_limits[1]) * self.y_stretch
+            self.ax.set_ylim(np.floor(pmin), np.ceil(pmax))
+
+        # --> set title of the plot
+        if self.plot_title is None:
+            pass
+        else:
+            self.ax.set_title(self.plot_title, fontsize=self.font_size + 2)
+
+        # put a grid on the plot
+        self.ax.grid(alpha=0.25, which="both", color=(0.25, 0.25, 0.25))
+
+        # ==> make a colorbar with appropriate colors
+        self._add_colorbar()
+
         self.ax.set_axisbelow(True)
-
-        plt.show()

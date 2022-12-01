@@ -447,6 +447,9 @@ class PlotBaseProfile(PlotBase):
                 x[ii] = tf.longitude
                 y[ii] = tf.latitude
 
+        elif x is None or y is None:
+            raise ValueError("get_profile")
+
         # check regression for 2 profile orientations:
         # horizontal (N=N(E)) or vertical(E=E(N))
         # use the one with the lower standard deviation
@@ -480,9 +483,15 @@ class PlotBaseProfile(PlotBase):
 
         """
 
-        station_vector = np.array(
-            [tf.longitude, tf.latitude - self.profile_line[1]]
-        )
+        if tf is not None:
+            station_vector = np.array(
+                [tf.longitude, tf.latitude - self.profile_line[1]]
+            )
+        elif x is not None and y is not None:
+            station_vector = np.array([x, y - self.profile_line[1]])
+        else:
+            raise ValueError(" get_offset needs an input of TF or x and y")
+
         direction = 1
         if self.profile_reverse:
             direction = -1
