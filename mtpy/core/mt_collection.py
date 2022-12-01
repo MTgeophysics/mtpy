@@ -27,6 +27,7 @@ from mtpy.imaging import (
     PlotStations,
     PlotMultipleResponses,
     PlotResidualPTMaps,
+    PlotResidualPTPseudoSection,
     PlotPhaseTensorMaps,
     PlotPhaseTensorPseudoSection,
     PlotStrike,
@@ -435,7 +436,7 @@ class MTCollection:
         coordinate_system = f"epsg:{epsg}"
         if bounding_box is not None:
             self.apply_bbox(*bounding_box)
-            
+
         df = self.dataframe
 
         gdf = gpd.GeoDataFrame(
@@ -716,6 +717,9 @@ class MTCollection:
 
         if plot_type in ["map"]:
             return PlotResidualPTMaps(mt_data_01, mt_data_02, **kwargs)
+
+        if plot_type in ["pseudosection", "ps"]:
+            return PlotResidualPTPseudoSection(mt_data_01, mt_data_02, **kwargs)
 
     def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
         """

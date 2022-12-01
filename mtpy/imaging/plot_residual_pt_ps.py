@@ -115,6 +115,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         self.rpt_array = None
         self.med_filt_kernel = None
         self._filt_applied = False
+        self.rot90 = True
 
         self._rotation_angle = 0
         # --> set station name properties
@@ -415,7 +416,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
                 e_angle = rpt["azimuth"][f_index]
 
             ellipd = patches.Ellipse(
-                (rpt["offset"], plot_y),
+                (rpt["offset"] * self.x_stretch, plot_y),
                 width=e_width,
                 height=e_height,
                 angle=e_angle,
@@ -511,6 +512,15 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
 
         self._set_subplot_params()
 
+        if self.med_filt_kernel is not None:
+            if self._filt_applied:
+                self._compute_residual_pt()
+                self._apply_median_filter(self.med_filt_kernel)
+            else:
+                self._apply_median_filter(self.med_filt_kernel)
+
+            self._filt_applied = True
+
         # create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         self.fig.clf()
@@ -524,19 +534,14 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         )
 
         for ii, rpt in enumerate(self.rpt_array):
+            self._get_patch(rpt)
             station_list[ii]["station"] = rpt["station"][
                 self.station_id[0] : self.station_id[1]
             ]
-            station_list[ii]["offset"] = rpt["offset"]
+            station_list[ii]["offset"] = rpt["offset"] * self.x_stretch
 
-        y_min = (
-            np.floor(np.log10(self.freq_list.min()) / self.y_stretch)
-            * self.y_stretch
-        )
-        y_max = (
-            np.ceil(np.log10(self.freq_list.max()) / self.y_stretch)
-            * self.y_stretch
-        )
+        y_min = np.floor(np.log10(self.freq_list.min())) * self.y_stretch
+        y_max = np.ceil(np.log10(self.freq_list.max())) * self.y_stretch
 
         # --> Set plot parameters
         self.station_list = np.sort(station_list, order="offset")

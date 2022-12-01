@@ -74,10 +74,9 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
     """
 
     def __init__(self, mt_data, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(mt_data, **kwargs)
 
         self._rotation_angle = 0
-        self.mt_data = mt_data
 
         self.x_stretch = 5000
         self.y_stretch = 1000
@@ -115,8 +114,10 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
         plot_x = self._get_offset(tf=tf)
         # --> set local variables
 
-        color_array = self.get_pt_color_array(tf.pt)
-        for index, ff in enumerate(tf.pt.frequency):
+        pt_obj = tf.pt
+
+        color_array = self.get_pt_color_array(pt_obj)
+        for index, ff in enumerate(pt_obj.frequency):
             if self.y_scale == "period":
                 plot_y = np.log10(1.0 / ff) * self.y_stretch
             else:
@@ -125,20 +126,19 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
             # --> get ellipse properties
             # if the ellipse size is not physically correct make it a dot
             if (
-                tf.pt.phimax[index] == 0
-                or tf.pt.phimax[index] > 100
-                or tf.pt.phimin[index] == 0
-                or tf.pt.phimin[index] > 100
+                pt_obj.phimax[index] == 0
+                or pt_obj.phimax[index] > 100
+                or pt_obj.phimin[index] == 0
+                or pt_obj.phimin[index] > 100
             ):
-                eheight = 0.0000001
-                ewidth = 0.0000001
+                continue
             else:
-                scaling = self.ellipse_size / tf.pt.phimax.max()
-                eheight = tf.pt.phimin[index] * scaling
-                ewidth = tf.pt.phimax[index] * scaling
-                azimuth = 90 - tf.pt.azimuth[index]
+                scaling = self.ellipse_size / pt_obj.phimax.max()
+                eheight = pt_obj.phimin[index] * scaling
+                ewidth = pt_obj.phimax[index] * scaling
+                azimuth = 90 - pt_obj.azimuth[index]
                 if self.y_scale == "period":
-                    azimuth = 90 + tf.pt.azimuth[index]
+                    azimuth = 90 + pt_obj.azimuth[index]
             # make an ellipse
             ellipd = patches.Ellipse(
                 (plot_x, plot_y),
@@ -163,44 +163,41 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
             self.ax.add_artist(ellipd)
 
             if tf.Tipper is not None:
+                t_obj = tf.Tipper
                 if "r" in self.plot_tipper:
 
-                    if tf.Tipper.mag_real[index] <= self.arrow_threshold:
+                    if t_obj.mag_real[index] <= self.arrow_threshold:
                         if self.y_scale == "period":
                             txr = (
-                                tf.Tipper.mag_real[index]
+                                t_obj.mag_real[index]
                                 * self.arrow_size
                                 * np.sin(
-                                    np.deg2rad(
-                                        -tf.Tipper.angle_real[index] + 180
-                                    )
+                                    np.deg2rad(-t_obj.angle_real[index] + 180)
                                     + self.arrow_direction * np.pi
                                 )
                             )
                             tyr = (
-                                tf.Tipper.mag_real[index]
+                                t_obj.mag_real[index]
                                 * self.arrow_size
                                 * np.cos(
-                                    np.deg2rad(
-                                        -tf.Tipper.angle_real[index] + 180
-                                    )
+                                    np.deg2rad(-t_obj.angle_real[index] + 180)
                                     + self.arrow_direction * np.pi
                                 )
                             )
                         else:
                             txr = (
-                                tf.Tipper.mag_real[index]
+                                t_obj.mag_real[index]
                                 * self.arrow_size
                                 * np.sin(
-                                    np.deg2rad(tf.Tipper.angle_real[index])
+                                    np.deg2rad(t_obj.angle_real[index])
                                     + self.arrow_direction * np.pi
                                 )
                             )
                             tyr = (
-                                tf.Tipper.mag_real[index]
+                                t_obj.mag_real[index]
                                 * self.arrow_size
                                 * np.cos(
-                                    np.deg2rad(tf.Tipper.angle_real[index])
+                                    np.deg2rad(t_obj.angle_real[index])
                                     + self.arrow_direction * np.pi
                                 )
                             )
@@ -221,42 +218,38 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
                         pass
                 # plot imaginary tipper
                 if "i" in self.plot_tipper:
-                    if tf.Tipper.mag_imag[index] <= self.arrow_threshold:
+                    if t_obj.mag_imag[index] <= self.arrow_threshold:
                         if self.y_scale == "period":
                             txi = (
-                                tf.Tipper.mag_imag[index]
+                                t_obj.mag_imag[index]
                                 * self.arrow_size
                                 * np.sin(
-                                    np.deg2rad(
-                                        -tf.Tipper.angle_imag[index] + 180
-                                    )
+                                    np.deg2rad(-t_obj.angle_imag[index] + 180)
                                     + self.arrow_direction * np.pi
                                 )
                             )
                             tyi = (
-                                tf.Tipper.mag_imag[index]
+                                t_obj.mag_imag[index]
                                 * self.arrow_size
                                 * np.cos(
-                                    np.deg2rad(
-                                        -tf.Tipper.angle_imag[index] + 180
-                                    )
+                                    np.deg2rad(-t_obj.angle_imag[index] + 180)
                                     + self.arrow_direction * np.pi
                                 )
                             )
                         else:
                             txi = (
-                                tf.Tipper.mag_imag[index]
+                                t_obj.mag_imag[index]
                                 * self.arrow_size
                                 * np.sin(
-                                    np.deg2rad(tf.Tipper.angle_imag[index])
+                                    np.deg2rad(t_obj.angle_imag[index])
                                     + self.arrow_direction * np.pi
                                 )
                             )
                             tyi = (
-                                tf.Tipper.mag_imag[index]
+                                t_obj.mag_imag[index]
                                 * self.arrow_size
                                 * np.cos(
-                                    np.deg2rad(tf.Tipper.angle_imag[index])
+                                    np.deg2rad(t_obj.angle_imag[index])
                                     + self.arrow_direction * np.pi
                                 )
                             )
