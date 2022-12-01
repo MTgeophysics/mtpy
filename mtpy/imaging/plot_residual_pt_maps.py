@@ -10,18 +10,28 @@ Created on Wed Oct 16 14:56:04 2013
 
 @author: jpeacock-pr
 """
-# ==============================================================================
-import matplotlib.pyplot as plt
+# =============================================================================
+# Imports
+# =============================================================================
 import numpy as np
-import os
+import scipy.signal as sps
+
+import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-import mtpy.utils.gis_tools as gis_tools
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
+
+import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.mtplot_tools import PlotBase
 import mtpy.analysis.pt as mtpt
-import scipy.signal as sps
+
+try:
+    import contextily as cx
+
+    has_cx = True
+except ModuleNotFoundError:
+    has_cx = False
 
 # ==============================================================================
 
@@ -99,6 +109,11 @@ class PlotResidualPTMaps(PlotBase):
 
         super().__init__(**kwargs)
 
+        self.map_epsg = 4326
+
+        self.image_file = None
+        self.image_extent = None
+
         self.freq_list = frequencies
         self.mt_data_01 = mt_data_01
         self.mt_data_02 = mt_data_02
@@ -107,6 +122,11 @@ class PlotResidualPTMaps(PlotBase):
         self.ellipse_cmap = "mt_yl2rd"
         self.ellipse_colorby = "geometric_mean"
         self.ellipse_scale = None
+
+        self.cx_source = None
+        self.cx_zoom = None
+        if has_cx:
+            self.cx_source = cx.providers.USGS.USTopo
 
         self.residual_pt_list = None
         self.rpt_array = None
@@ -131,22 +151,10 @@ class PlotResidualPTMaps(PlotBase):
         self.plot_freq_index = None
 
         # --> set background image properties
-        image_dict = kwargs.pop("image_dict", None)
-        if image_dict != None:
-            # make sure there is a file
-            try:
-                self.image_file = image_dict["file"]
-                if not os.path.isfile(image_dict["file"]):
-                    raise IOError("Image file does not exist")
-            except KeyError:
-                raise IOError("Need to include filename if plotting an image")
-            # make sure an extent is given
-            try:
-                self.image_extent = image_dict["extent"]
-            except KeyError:
-                raise NameError(
-                    "Need to include the extent of the image as "
-                    + "(left, right, bottom, top)"
+        if self.image_file is not None:
+            if self.image_extent is None:
+                raise ValueError(
+                    "Need to input extents of the image as (x0, y0, x1, y1)"
                 )
         # --> set a central reference point
         self.plot_reference_point = (0, 0)
@@ -592,6 +600,24 @@ class PlotResidualPTMaps(PlotBase):
                     fontsize=self.text_size,
                     fontweight=self.text_weight,
                 )
+
+        if self.image_file is None:
+            if has_cx:
+                try:
+                    cx_kwargs = {
+                        "crs": f"epsg:{self.map_epsg}",
+                        "source": self.cx_source,
+                    }
+                    if self.cx_zoom is not None:
+                        cx_kwargs["zoom"] = self.cx_zoom
+                    cx.add_basemap(
+                        self.ax,
+                        **cx_kwargs,
+                    )
+                except Exception as error:
+                    self.logger.warning(
+                        f"Could not add base map because {error}"
+                    )
 
         # --> set axes properties depending on map scale------------------------
         self.ax.set_xlabel(self.x_label, fontdict=self.font_dict)
