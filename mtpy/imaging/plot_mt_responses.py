@@ -672,7 +672,7 @@ class PlotMultipleResponses(PlotBase):
             if ax is not None:
                 ax.set_xlim(period_limits)
         if axpt is not None:
-            ax.set_xlim(
+            axpt.set_xlim(
                 [np.log10(period_limits[0]), np.log10(period_limits[1])]
             )
 
