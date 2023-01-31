@@ -671,8 +671,8 @@ class PlotMTResponse(PlotSettings):
         plt.setp(self.axr.get_xticklabels(), visible=False)
         self.axr.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                             fontdict=fontdict)
-        self.axr.set_yscale('log', nonposy='clip')
-        self.axr.set_xscale('log', nonposx='clip')
+        self.axr.set_yscale('log', nonpositive='clip')
+        self.axr.set_xscale('log', nonpositive='clip')
         self.axr.set_xlim(self.x_limits)
         self.axr.set_ylim(self.res_limits)
         self.axr.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
@@ -748,7 +748,7 @@ class PlotMTResponse(PlotSettings):
         # --> set axes properties
         self.axp.set_xlabel('Period (s)', fontdict)
         self.axp.set_ylabel('Phase (deg)', fontdict)
-        self.axp.set_xscale('log', nonposx='clip')
+        self.axp.set_xscale('log', nonpositive='clip')
         self.axp.set_ylim(self.phase_limits)
         self.axp.yaxis.set_major_locator(MultipleLocator(15))
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
@@ -856,7 +856,7 @@ class PlotMTResponse(PlotSettings):
             self.axt.set_xlabel('Period (s)', fontdict=fontdict)
             self.axt.set_ylabel('Tipper', fontdict=fontdict)
 
-            # self.axt.set_xscale('log', nonposx='clip')
+            self.axt.set_xscale('log', nonpositive='clip')
             if self.tipper_limits is None:
                 tmax = max([np.nanmax(tyr), np.nanmax(tyi)])
                 if tmax > 1:
@@ -1097,8 +1097,8 @@ class PlotMTResponse(PlotSettings):
 
             # --> set axes properties
             plt.setp(self.axr2.get_xticklabels(), visible=False)
-            self.axr2.set_yscale('log', nonposy='clip')
-            self.axr2.set_xscale('log', nonposx='clip')
+            self.axr2.set_yscale('log', nonpositive='clip')
+            self.axr2.set_xscale('log', nonpositive='clip')
             self.axr2.set_xlim(self.x_limits)
             self.axr2.grid(True, alpha=.25,
                            which='both',
@@ -1160,7 +1160,7 @@ class PlotMTResponse(PlotSettings):
 
             # --> set axes properties
             self.axp2.set_xlabel('Period (s)', fontdict)
-            self.axp2.set_xscale('log', nonposx='clip')
+            self.axp2.set_xscale('log', nonpositive='clip')
             self.axp2.set_ylim(ymin=-179.9, ymax=179.9)
             self.axp2.yaxis.set_major_locator(MultipleLocator(30))
             self.axp2.yaxis.set_minor_locator(MultipleLocator(5))

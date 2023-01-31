@@ -14,7 +14,7 @@ from .plot_response import PlotResponse
 # from mtpy.imaging.modem_phase_tensor_maps import PlotPTMaps  # can cause circular import error
 # from mtpy.imaging.plot_depth_slice import PlotDepthSlice     # can cause circular import error
 from .plot_slices import PlotSlices
-from .plot_rms_maps import PlotRMSMaps
+# from .plot_rms_maps import PlotRMSMaps
 from .phase_tensor_maps import PlotPTMaps
 
 __all__ = [
