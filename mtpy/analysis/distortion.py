@@ -105,7 +105,7 @@ def find_distortion(z_object, g='det', num_freq=None, lo_dims=None):
                   z_object.z_err[0:num_freq],
                   z_object.freq[0:num_freq])
 
-    g = 'det'
+    # g = 'det'
 
     dim_arr = MTge.dimensionality(z_object=z_obj)
     st_arr = -1 * MTge.strike_angle(z_object=z_obj)[:, 0]

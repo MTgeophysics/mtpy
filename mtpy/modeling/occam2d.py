@@ -1074,7 +1074,7 @@ class Profile():
         """
 
         self._get_edi_list()
-
+        
         strike_angles = np.zeros(self.num_edi)
 
         easts = np.zeros(self.num_edi)
@@ -1178,7 +1178,10 @@ class Profile():
             self.profile_line = (p1, p2)
         
             for edi in self.edi_list:
+                zero_vals = edi.Z.z == 0
                 edi.Z.rotate(self.geoelectric_strike - edi.Z.rotation_angle)
+                edi.Z.z[zero_vals] = 0
+                edi.Z.compute_resistivity_phase()
                 # rotate tipper to profile azimuth, not strike.
                 try:
                     edi.Tipper.rotate((self.profile_angle - 90) % 180 -
