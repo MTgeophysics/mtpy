@@ -699,6 +699,8 @@ class MT(object):
         # interpolate the impedance tensor
         for ii in range(2):
             for jj in range(2):
+                if (self.Z.z[:, ii, jj] == 0).all():
+                    continue
                 # need to look out for zeros in the impedance
                 # get the indicies of non-zero components
                 nz_index = np.nonzero(self.Z.z[:, ii, jj])
@@ -727,9 +729,7 @@ class MT(object):
                     for ifidx, ifreq in enumerate(new_f):
                         # find nearest data period
                         difference = np.abs(np.log10(ifreq) - np.log10(f))
-                        fidx = np.where(difference == np.amin(difference))[0][
-                            0
-                        ]
+                        fidx = np.where(difference == np.amin(difference))[0][0]
                         if (
                             max(f[fidx] / ifreq, ifreq / f[fidx])
                             < period_buffer
@@ -739,15 +739,20 @@ class MT(object):
                     new_f = np.array(new_f_update)
                     new_nz_index = np.array(new_nz_index_update)
                 # create a function that does 1d interpolation
-                z_func_real = spi.interp1d(f, z_real, kind=interp_type)
-                z_func_imag = spi.interp1d(f, z_imag, kind=interp_type)
-                z_func_err = spi.interp1d(f, z_err, kind=interp_type)
+                try:
+                    z_func_real = spi.interp1d(f, z_real, kind=interp_type)
+                    z_func_imag = spi.interp1d(f, z_imag, kind=interp_type)
+                    z_func_err = spi.interp1d(f, z_err, kind=interp_type)
 
-                # interpolate onto new frequency range
-                new_Z.z[new_nz_index, ii, jj] = z_func_real(
-                    new_f
-                ) + 1j * z_func_imag(new_f)
-                new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
+                    # interpolate onto new frequency range
+                    new_Z.z[new_nz_index, ii, jj] = z_func_real(
+                        new_f
+                    ) + 1j * z_func_imag(new_f)
+                    new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
+                except ValueError:
+                    print(
+                        f"{self.station}: Could not interpolate because not enough data."
+                    )
         # compute resistivity and phase for new Z object
         new_Z.compute_resistivity_phase()
 
