@@ -43,22 +43,34 @@ class Z(TFBase):
 
 
     :param z_error: array containing error values (standard deviation)
-                        of impedance tensor elements
+     of impedance tensor elements
     :type z_error: numpy.ndarray(n_frequency, 2, 2)
-
-    :param frequency: array of frequencyuency values corresponding to impedance tensor
-                 elements.
+    :param frequency: array of frequencyuency values corresponding to impedance
+     tensor elements.
     :type frequency: np.ndarray(n_frequency)
 
-    :Example: ::
+    Create Impedance from scracth
+    ------------------------------
 
-        >>> import mtpy.core.z as mtz
-        >>> import numpy as np
-        >>> z_test = np.array([[0+0j, 1+1j], [-1-1j, 0+0j]])
-        >>> z_object = mtz.Z(z=z_test, frequency=[1])
-        >>> z_object.rotate(45)
-        >>> z_object.resistivity
+    >>> import mtpy.core import Z
+    >>> import numpy as np
+    >>> z_test = np.array([[0+0j, 1+1j], [-1-1j, 0+0j]])
+    >>> z_object = Z(z=z_test, frequency=[1])
+    >>> z_object.rotate(45)
+    >>> z_object.resistivity
 
+    Create from resistivity and phase
+    -----------------------------------
+
+    >>> z_object = Z()
+    >>> z_object.set_resistivity_phase(
+        np.array([[5, 100], [100, 5]]),
+        np.array([[90, 45], [-135, -90]]),
+        np.array([1])
+        )
+    >>> z_object.z
+    array([[[ 3.06161700e-16 +5.j, 1.58113883e+01+15.8113883j],
+            [-1.58113883e+01-15.8113883j, 3.06161700e-16 -5.j ]]])
 
     """
 
@@ -70,7 +82,7 @@ class Z(TFBase):
         z_model_error=None,
     ):
         """
-        Initialise an instance of the Z class.
+        Initialize an instance of the Z class.
 
         :param z: array containing complex impedance values
         :type z: numpy.ndarray(n_frequency, 2, 2)
@@ -496,22 +508,22 @@ class Z(TFBase):
         Set values for resistivity (res - in Ohm m) and phase
         (phase - in degrees), including error propagation.
 
-
         :param resistivity: resistivity array in Ohm-m
         :type resistivity: np.ndarray(num_frequency, 2, 2)
-
         :param phase: phase array in degrees
         :type phase: np.ndarray(num_frequency, 2, 2)
-
         :param frequency: frequency array in Hz
         :type frequency: np.ndarray(num_frequency)
-
         :param res_error: resistivity error array in Ohm-m
         :type res_error: np.ndarray(num_frequency, 2, 2)
-
         :param phase_error: phase error array in degrees
         :type phase_error: np.ndarray(num_frequency, 2, 2)
 
+        .. note:: The error propogation is causal, meaning the apparent
+         resistivity error and phase error are linked through a Taylor exampsion
+         approximation where the phase error is estimated from the apparent
+         resistivity error.  Therefore if you set the phase error
+         you will likely not get back the same phase error.
 
         """
 
@@ -543,12 +555,7 @@ class Z(TFBase):
 
     @property
     def det(self):
-        """
-        Return the determinant of Z
-
-        :returns: det_Z
-        :rtype: np.ndarray(nfrequency)
-        """
+        """determinant of impedance"""
         if self.z is not None:
             det_z = np.array([np.linalg.det(ii) ** 0.5 for ii in self.z])
 
@@ -557,10 +564,7 @@ class Z(TFBase):
     @property
     def det_error(self):
         """
-        Return the determinant of Z error
-
-        :returns: det_z_error
-        :rtype: np.ndarray(nfrequency)
+        Return the determinant of impedance error
         """
         det_z_error = None
         if self.z_error is not None:
@@ -582,10 +586,7 @@ class Z(TFBase):
     @property
     def det_model_error(self):
         """
-        Return the determinant of Z error
-
-        :returns: det_z_error
-        :rtype: np.ndarray(nfrequency)
+        Return the determinant of impedance model error
         """
         det_z_error = None
         if self.z_model_error is not None:
