@@ -36,14 +36,21 @@ class PhaseTensor(TFBase):
 
     PT is a complex array of the form (n_freq, 2, 2),
     with indices in the following order:
-        PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)
+
+        - PTxx: (0,0)
+        - PTxy: (0,1)
+        - PTyx: (1,0)
+        - PTyy: (1,1)
 
     All internal methods are based on (Caldwell et al.,2004) and
          (Bibby et al.,2005), in which they use the canonical cartesian 2D
     reference (x1, x2). However, all components, coordinates,
     and angles for in- and outputs are given in the geographical
     reference frame:
-                x-axis = North ; y-axis = East (; z-axis = Down)
+
+                - x-axis = North
+                - y-axis = East
+                - z-axis = Down
 
     Therefore, all results from using those methods are consistent
          (angles are referenced from North rather than x1).
@@ -54,9 +61,10 @@ class PhaseTensor(TFBase):
     frequency              array of frequencies associated with elements of
                            impedance tensor.
     pt                     phase tensor array
-    pt_error                 phase tensor error
-    z                      impedance tensor
-    z_error                  impedance error
+    pt_error               phase tensor error
+    pt_model_error         phase tensor model error
+    alpha                  azimuth angle
+    beta                   invariant rotation angle
     rotation_angle         rotation angle in degrees
     ====================== ====================================================
 
@@ -639,18 +647,15 @@ class PhaseTensor(TFBase):
         - Error of Skew(PT) - Numpy array
 
         """
-        if self._has_tf():
-            return self.pt[:, 0, 1] - self.pt[:, 1, 0]
+        return self.beta
 
     @property
     def skew_error(self):
-        if self._has_tf_error():
-            return self.pt_error[:, 0, 1] + self.pt_error[:, 1, 0]
+        return self.beta_error
 
     @property
     def skew_model_error(self):
-        if self._has_tf_model_error():
-            return self.pt_model_error[:, 0, 1] + self.pt_model_error[:, 1, 0]
+        return self.beta_model_error
 
     # ---azimuth (strike angle)-------------------------------------------------
     @property
