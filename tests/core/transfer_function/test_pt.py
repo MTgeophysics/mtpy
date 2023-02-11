@@ -35,53 +35,32 @@ class TestPTInitialize(unittest.TestCase):
     def test_has_tf_model_error(self):
         self.assertFalse(self.pt._has_tf_model_error())
 
-    def test_pt(self):
-        self.assertEqual(None, self.pt.pt)
-
-    def test_pt_error(self):
-        self.assertEqual(None, self.pt.pt_error)
-
-    def test_pt_model_error(self):
-        self.assertEqual(None, self.pt.pt_model_error)
-
-    def test_phimin(self):
-        self.assertEqual(None, self.pt.resistivity)
-
-    def test_phimax(self):
-        self.assertEqual(None, self.pt.phase)
-
-    def test_phimin_error(self):
-        self.assertEqual(None, self.pt.resistivity_error)
-
-    def test_phimax_error(self):
-        self.assertEqual(None, self.pt.phase_error)
-
-    def test_phimin_model_error(self):
-        self.assertEqual(None, self.pt.resistivity_model_error)
-
-    def test_phimax_model_error(self):
-        self.assertEqual(None, self.pt.phase_model_error)
+    def test_empty_properties(self):
+        for attr in [
+            "pt",
+            "phimin",
+            "phimax",
+            "alpha",
+            "beta",
+            "skew",
+            "trace",
+            "azimuth",
+            "ellipticity",
+        ]:
+            with self.subTest(f"{attr}"):
+                self.assertEqual(None, getattr(self.pt, attr))
+            with self.subTest(f"{attr}_error"):
+                self.assertEqual(None, getattr(self.pt, f"{attr}_error"))
+            with self.subTest(f"{attr}_model_error"):
+                self.assertEqual(None, getattr(self.pt, f"{attr}_model_error"))
 
 
 class TestZSetResPhase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pt = Z()
-        self.resistivity = np.array([[[5.0, 100.0], [100.0, 5.0]]])
-        self.phase = np.array([[[90.0, 45.0], [-135.0, -90.0]]])
-        self.resistivity_error = np.array([[1, 5], [5, 1]])
-        self.phase_error = np.array([[0.5, 1], [1, 0.5]])
-        self.resistivity_model_error = np.array([[2, 10], [10, 2]])
-        self.phase_model_error = np.array([[0.5, 1], [1, 0.5]])
-        self.pt.set_phimin_phimax(
-            self.resistivity,
-            self.phase,
-            np.array([1]),
-            res_error=self.resistivity_error,
-            phase_error=self.phase_error,
-            res_model_error=self.resistivity_model_error,
-            phase_model_error=self.phase_model_error,
-        )
+        z = np.array([[0, 1 + 1j], [-1 - 1j, 0]])
+        z_error = np.array([[0.1, 0.05], [0.05, 0.1]])
+        self.pt = PhaseTensor(z=z)
 
     def test_is_empty(self):
         self.assertFalse(self.pt._is_empty())
