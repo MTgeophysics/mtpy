@@ -1821,10 +1821,9 @@ class Model:
             vtk_z = -1 * (self.grid_z + shift_z) * scale
             cell_data = {label: np.rot90(self.res_model)}
 
-        gridToVTK(vtk_fn, vtk_x, vtk_y, vtk_z, cellData=cell_data)
+        gridToVTK(vtk_fn.as_posix(), vtk_x, vtk_y, vtk_z, cellData=cell_data)
 
         self._logger.info("Wrote model file to {}".format(vtk_fn))
-        self.print_model_file_summary()
 
     def write_geosoft_xyz(
         self,

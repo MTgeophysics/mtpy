@@ -338,7 +338,7 @@ class PhaseTensor(TFBase):
         if self._is_empty():
             self._dataset = self._initialize(tf_model_error=pt_model_error)
         else:
-            self._dataset["transfer_function_error"].loc[
+            self._dataset["transfer_function_model_error"].loc[
                 self.comps
             ] = pt_model_error
 

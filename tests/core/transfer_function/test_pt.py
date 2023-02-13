@@ -60,7 +60,7 @@ class TestZSetResPhase(unittest.TestCase):
     def setUpClass(self):
         z = np.array([[0, 1 + 1j], [-1 - 1j, 0]])
         z_error = np.array([[0.1, 0.05], [0.05, 0.1]])
-        self.pt = PhaseTensor(z=z)
+        self.pt = PhaseTensor(z=z, z_error=z_error, z_model_error=z_error)
 
     def test_is_empty(self):
         self.assertFalse(self.pt._is_empty())
@@ -74,43 +74,30 @@ class TestZSetResPhase(unittest.TestCase):
     def test_has_tf_model_error(self):
         self.assertTrue(self.pt._has_tf_model_error())
 
-    def test_phimin(self):
-        self.assertTrue(np.isclose(self.pt.resistivity, self.resistivity).all())
+    def test_pt(self):
+        self.assertTrue(
+            np.isclose(self.pt.pt, np.array([[[1.0, 0.0], [0.0, 1.0]]])).all()
+        )
+
+    def test_pt_error(self):
+        self.assertTrue(
+            np.isclose(
+                self.pt.pt_error, np.array([[[0.1, 0.2], [0.2, 0.1]]])
+            ).all()
+        )
+
+    def test_pt_model_error(self):
+        self.assertTrue(
+            np.isclose(
+                self.pt.pt_model_error, np.array([[[0.1, 0.2], [0.2, 0.1]]])
+            ).all()
+        )
 
     def test_phimax(self):
-        self.assertTrue(np.isclose(self.pt.phase, self.phase).all())
+        self.assertTrue(np.isclose(self.pt.phimax, np.array([45.0])).all())
 
-    def test_phimin_error(self):
-        self.assertTrue(
-            np.isclose(self.resistivity_error, self.pt.resistivity_error).all()
-        )
-
-    def test_phimax_error(self):
-        self.assertTrue(
-            np.isclose(
-                self.pt.phase_error,
-                np.array(
-                    [[[11.30993247, 2.86240523], [2.86240523, 11.30993247]]]
-                ),
-            ).all()
-        )
-
-    def test_phimin_model_error(self):
-        self.assertTrue(
-            np.isclose(
-                self.resistivity_model_error, self.pt.resistivity_model_error
-            ).all()
-        )
-
-    def test_phimax_model_error(self):
-        self.assertTrue(
-            np.isclose(
-                self.pt.phase_model_error,
-                np.array(
-                    [[[21.80140949, 5.71059314], [5.71059314, 21.80140949]]]
-                ),
-            ).all()
-        )
+    def test_phimin(self):
+        self.assertTrue(np.isclose(self.pt.phimin, np.array([45.0])).all())
 
 
 # =============================================================================
