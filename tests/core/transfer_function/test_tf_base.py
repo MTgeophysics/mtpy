@@ -241,7 +241,7 @@ class TestTFRotation(unittest.TestCase):
     def test_rot_tf(self):
         self.assertEqual(
             np.isclose(
-                self.rot_tf.transfer_function.values, self.true_rot_tf
+                self.rot_tf._dataset.transfer_function.values, self.true_rot_tf
             ).all(),
             True,
         )
@@ -258,7 +258,7 @@ class TestTFRotation(unittest.TestCase):
     def test_rot_tf_error(self):
         self.assertEqual(
             np.isclose(
-                self.rot_tf.transfer_function_error.values,
+                self.rot_tf._dataset.transfer_function_error.values,
                 self.true_rot_tf_error,
             ).all(),
             True,
@@ -276,7 +276,7 @@ class TestTFRotation(unittest.TestCase):
     def test_rot_tf_model_error(self):
         self.assertEqual(
             np.isclose(
-                self.rot_tf.transfer_function_model_error.values,
+                self.rot_tf._dataset.transfer_function_model_error.values,
                 self.true_rot_tf_model_error,
             ).all(),
             True,
@@ -310,9 +310,7 @@ class TestTFInterpolation(unittest.TestCase):
         self.new_periods = np.logspace(-3, 3, 12)
 
     def interpolate(self, interp_type, bounds_error=False):
-        interp_tf = spi.interp1d(
-            self.period, self.tf, axis=0, kind=interp_type
-        )
+        interp_tf = spi.interp1d(self.period, self.tf, axis=0, kind=interp_type)
         interp_tf_error = spi.interp1d(
             self.period, self.tf_error, axis=0, kind=interp_type
         )
@@ -331,9 +329,7 @@ class TestTFInterpolation(unittest.TestCase):
 
     def test_nearest(self):
         interp_ds = self.interpolate("nearest")
-        interp_tf = self.tf_base.interpolate(
-            self.new_periods, method="nearest"
-        )
+        interp_tf = self.tf_base.interpolate(self.new_periods, method="nearest")
 
         for key in [
             "transfer_function",
@@ -381,9 +377,7 @@ class TestTFInterpolation(unittest.TestCase):
 
     def test_slinear(self):
         interp_ds = self.interpolate("slinear")
-        interp_tf = self.tf_base.interpolate(
-            self.new_periods, method="slinear"
-        )
+        interp_tf = self.tf_base.interpolate(self.new_periods, method="slinear")
 
         for key in [
             "transfer_function",
