@@ -18,6 +18,11 @@ from mt_metadata import TF_EDI_CGG
 # =============================================================================
 
 
+class TestMT(unittest.TestCase):
+    def setUpClass(self):
+        pass
+
+
 class TestMT2DataFrame(unittest.TestCase):
     @classmethod
     def setUpClass(self):
