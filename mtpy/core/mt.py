@@ -49,7 +49,7 @@ class MT(TF, MTLocation):
 
         new_mt_obj = MT()
         new_mt_obj.survey_metadata.update(self.survey_metadata)
-        new_mt_obj.staiton_metadata.update(self.station_metadata)
+        new_mt_obj.station_metadata.update(self.station_metadata)
 
         return new_mt_obj
 

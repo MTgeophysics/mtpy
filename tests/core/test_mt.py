@@ -19,7 +19,24 @@ from mt_metadata import TF_EDI_CGG
 
 
 class TestMT(unittest.TestCase):
-    def setUpClass(self):
+    def setUp(self):
+        self.mt = MT()
+
+    def test_clone_empty(self):
+        self.mt.station = "test_01"
+        self.mt.survey = "big"
+        self.mt.latitude = 10
+        self.mt.longitude = 20
+        new_mt = self.mt.clone_empty()
+
+        for attr in ["survey", "station", "latitude", "longitude"]:
+            with self.subTest(attr):
+                self.assertEqual(getattr(new_mt, attr), getattr(self.mt, attr))
+
+        with self.subTest("tf is empty"):
+            self.assertFalse(new_mt.has_transfer_function())
+
+    def test_set_z(self):
         pass
 
 
