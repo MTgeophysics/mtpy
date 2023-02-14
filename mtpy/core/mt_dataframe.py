@@ -203,59 +203,72 @@ class MTDataFrame:
                 continue
 
             if key in ["zxx", "zxy", "zyx", "zyy"]:
-                entry[key][:] = z_object.z[:, index["ii"], index["jj"]]
+                if z_object._has_tf():
+                    entry[key][:] = z_object.z[:, index["ii"], index["jj"]]
             elif key in ["zxx_error", "zxy_error", "zyx_error", "zyy_error"]:
-                entry[key][:] = z_object.z_err[:, index["ii"], index["jj"]]
+                if z_object._has_tf_error():
+                    entry[key][:] = z_object.z_error[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in [
                 "zxx_model_error",
                 "zxy_model_error",
                 "zyx_model_error",
                 "zyy_model_error",
             ]:
-                entry[key][:] = z_object.z_model_err[
-                    :, index["ii"], index["jj"]
-                ]
+                if z_object._has_tf_model_error():
+                    entry[key][:] = z_object.z_model_error[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in ["res_xx", "res_xy", "res_yx", "res_yy"]:
-                entry[key][:] = z_object.resistivity[
-                    :, index["ii"], index["jj"]
-                ]
+                if z_object._has_tf():
+                    entry[key][:] = z_object.resistivity[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in [
                 "res_xx_error",
                 "res_xy_error",
                 "res_yx_error",
                 "res_yy_error",
             ]:
-                entry[key][:] = z_object.resistivity_err[
-                    :, index["ii"], index["jj"]
-                ]
+                if z_object._has_tf_error():
+                    entry[key][:] = z_object.resistivity_error[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in [
                 "res_xx_model_error",
                 "res_xy_model_error",
                 "res_yx_model_error",
                 "res_yy_model_error",
             ]:
-                entry[key][:] = z_object.resistivity_model_err[
-                    :, index["ii"], index["jj"]
-                ]
+                if z_object._has_tf_model_error():
+                    entry[key][:] = z_object.resistivity_model_error[
+                        :, index["ii"], index["jj"]
+                    ]
 
             elif key in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
-                entry[key][:] = z_object.phase[:, index["ii"], index["jj"]]
+                if z_object._has_tf():
+                    entry[key][:] = z_object.phase[:, index["ii"], index["jj"]]
             elif key in [
                 "phase_xx_error",
                 "phase_xy_error",
                 "phase_yx_error",
                 "phase_yy_error",
             ]:
-                entry[key][:] = z_object.phase_err[:, index["ii"], index["jj"]]
+                if z_object._has_tf_error():
+                    entry[key][:] = z_object.phase_error[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in [
                 "phase_xx_model_error",
                 "phase_xy_model_error",
                 "phase_yx_model_error",
                 "phase_yy_model_error",
             ]:
-                entry[key][:] = z_object.phase_model_err[
-                    :, index["ii"], index["jj"]
-                ]
+                if z_object._has_tf_model_error():
+                    entry[key][:] = z_object.phase_model_error[
+                        :, index["ii"], index["jj"]
+                    ]
 
         return entry
 
@@ -277,13 +290,18 @@ class MTDataFrame:
             if index is None:
                 continue
             if key in ["tzx", "tzy"]:
-                entry[key][:] = t_object.tipper[:, index["ii"], index["jj"]]
+                if t_object._has_tf():
+                    entry[key][:] = t_object.tipper[:, index["ii"], index["jj"]]
             elif key in ["tzx_error", "tzy_error"]:
-                entry[key][:] = t_object.tipper_err[:, index["ii"], index["jj"]]
+                if t_object._has_tf_error():
+                    entry[key][:] = t_object.tipper_error[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in ["tzx_model_error", "tzy_model_error"]:
-                entry[key][:] = t_object.tipper_model_err[
-                    :, index["ii"], index["jj"]
-                ]
+                if t_object._has_tf_model_error():
+                    entry[key][:] = t_object.tipper_model_error[
+                        :, index["ii"], index["jj"]
+                    ]
 
         return entry
 

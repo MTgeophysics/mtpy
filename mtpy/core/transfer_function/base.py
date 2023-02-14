@@ -99,8 +99,11 @@ class TFBase:
             msg = f"Cannot compare {type(other)} with TFBase"
             self.logger.error(msg)
             raise ValueError(msg)
-        if self._tf_dataset != other._tf_dataset:
-            return False
+
+        # loop over variables to make sure they are all the same.
+        for var in list(self._dataset.data_vars):
+            if not (self._dataset[var] == other._dataset[var]).all().data:
+                return False
         return True
 
     def copy(self):
