@@ -10,6 +10,7 @@ Created on Mon Oct  3 10:59:50 2022
 # =============================================================================
 import unittest
 
+import numpy as np
 from mtpy import MT
 from mtpy.core.mt_dataframe import MTDataFrame
 
@@ -36,8 +37,62 @@ class TestMT(unittest.TestCase):
         with self.subTest("tf is empty"):
             self.assertFalse(new_mt.has_transfer_function())
 
-    def test_set_z(self):
-        pass
+
+class TestMTSetImpedance(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.z = np.array(
+            [[0.1 - 0.1j, 10 + 10j], [-10 - 10j, -0.1 + 0.1j]]
+        ).reshape((1, 2, 2))
+        self.z_err = np.array([[0.1, 0.05], [0.05, 0.1]]).reshape((1, 2, 2))
+
+        self.res = np.array([[[4.0e-03, 4.0e01], [4.0e01, 4.0e-03]]])
+        self.res_err = np.array([[[0.002, 0.0005], [0.0005, 0.002]]])
+        self.phase = np.array([[[-45.0, 45.0], [-135.0, 135.0]]])
+        self.phase_err = np.array(
+            [
+                [
+                    [2.65650512e01, 7.16197244e-04],
+                    [7.16197244e-04, 2.65650512e01],
+                ]
+            ]
+        )
+
+        self.mt = MT()
+        self.mt.impedance = self.z
+        self.mt.impedance_error = self.z_err
+        self.mt.impedance_model_error = self.z_err
+
+    def test_impedance(self):
+        self.assertTrue((self.mt.impedance == self.z).all())
+
+    def test_impedance_error(self):
+        self.assertTrue(np.allclose(self.mt.impedance_error, self.z_err))
+
+    def test_impedance_model_error(self):
+        self.assertTrue(np.allclose(self.mt.impedance_model_error, self.z_err))
+
+    def test_resistivity(self):
+        self.assertTrue(np.allclose(self.mt.Z.resistivity, self.res))
+
+    def test_resistivity_error(self):
+        self.assertTrue(np.allclose(self.mt.Z.resistivity_error, self.res_err))
+
+    def test_resistivity_model_error(self):
+        self.assertTrue(
+            np.allclose(self.mt.Z.resistivity_model_error, self.res_err)
+        )
+
+    def test_phase(self):
+        self.assertTrue(np.allclose(self.mt.Z.phase, self.phase))
+
+    def test_phase_error(self):
+        self.assertTrue(np.allclose(self.mt.Z.phase_error, self.phase_err))
+
+    def test_phase_model_error(self):
+        self.assertTrue(
+            np.allclose(self.mt.Z.phase_model_error, self.phase_err)
+        )
 
 
 class TestMT2DataFrame(unittest.TestCase):
