@@ -310,6 +310,7 @@ class MT(TF, MTLocation):
                 inplace=inplace,
             )
             new_mt.Tipper = self.Tipper
+            return new_mt
 
     def interpolate(
         self,
