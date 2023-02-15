@@ -58,6 +58,10 @@ class TestMTSetImpedance(unittest.TestCase):
             ]
         )
 
+        self.pt = np.array(
+            [[[1.00020002, -0.020002], [-0.020002, 1.00020002]]]
+        )
+
         self.mt = MT()
         self.mt.impedance = self.z
         self.mt.impedance_error = self.z_err
