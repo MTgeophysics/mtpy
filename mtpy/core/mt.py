@@ -150,6 +150,9 @@ class MT(TF, MTLocation):
         recalculate tipper angle and magnitude
         """
 
+        if t_object is None:
+            return
+
         if not isinstance(t_object.frequency, type(None)):
             if not (self.frequency == t_object.frequency).all():
                 self.frequency = t_object.frequency
