@@ -61,6 +61,13 @@ class TestMTSetImpedance(unittest.TestCase):
         self.pt = np.array(
             [[[1.00020002, -0.020002], [-0.020002, 1.00020002]]]
         )
+        self.pt_error = np.array(
+            [[[0.01040308, 0.02020604], [0.02020604, 0.01040308]]]
+        )
+        self.pt_azimuth = np.array([315.0])
+        self.pt_azimuth_error = np.array([3.30832308])
+        self.pt_skew = np.array([0])
+        self.pt_skew_error = np.array([0.40923428])
 
         self.mt = MT()
         self.mt.impedance = self.z
@@ -96,6 +103,39 @@ class TestMTSetImpedance(unittest.TestCase):
     def test_phase_model_error(self):
         self.assertTrue(
             np.allclose(self.mt.Z.phase_model_error, self.phase_err)
+        )
+
+    def test_phase_tensor(self):
+        self.assertTrue(np.allclose(self.pt, self.mt.pt.pt))
+
+    def test_phase_tensor_error(self):
+        self.assertTrue(np.allclose(self.pt_error, self.mt.pt.pt_error))
+
+    def test_phase_tensor_model_error(self):
+        self.assertTrue(np.allclose(self.pt_error, self.mt.pt.pt_model_error))
+
+    def test_phase_tensor_azimuth(self):
+        self.assertTrue(np.allclose(self.pt_azimuth, self.mt.pt.azimuth))
+
+    def test_phase_tensor_azimuth_error(self):
+        self.assertTrue(
+            np.allclose(self.pt_azimuth_error, self.mt.pt.azimuth_error)
+        )
+
+    def test_phase_tensor_azimuth_model_error(self):
+        self.assertTrue(
+            np.allclose(self.pt_azimuth_error, self.mt.pt.azimuth_model_error)
+        )
+
+    def test_phase_tensor_skew(self):
+        self.assertTrue(np.allclose(self.pt_skew, self.mt.pt.skew))
+
+    def test_phase_tensor_skew_error(self):
+        self.assertTrue(np.allclose(self.pt_skew_error, self.mt.pt.skew_error))
+
+    def test_phase_tensor_skew_model_error(self):
+        self.assertTrue(
+            np.allclose(self.pt_skew_error, self.mt.pt.skew_model_error)
         )
 
 
