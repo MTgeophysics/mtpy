@@ -10,6 +10,7 @@ Base classes for plotting classes
 from pathlib import Path
 import numpy as np
 from scipy import stats
+from scipy import interpolate
 
 import matplotlib.pyplot as plt
 
@@ -217,6 +218,95 @@ class PlotBaseMaps(PlotBase):
             nearest_neighbors=self.nearest_neighbors,
         )
 
+    @staticmethod
+    def get_interp1d_functions_z(tf, interp_type="slinear"):
+        """
+        :param interp_type: DESCRIPTION, defaults to "slinear"
+        :type interp_type: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+        if tf.Z is None:
+            return None
+
+        # interpolate the impedance tensor
+        zmap = {0: "x", 1: "y"}
+        interp_dict = {}
+        for ii in range(2):
+            for jj in range(2):
+                comp = f"z{zmap[ii]}{zmap[jj]}"
+                interp_dict[comp] = {}
+                # need to look out for zeros in the impedance
+                # get the indicies of non-zero components
+                nz_index = np.nonzero(tf.Z.z[:, ii, jj])
+
+                if len(nz_index[0]) == 0:
+                    continue
+                # get the non-zero components
+                z_real = tf.Z.z[nz_index, ii, jj].real
+                z_imag = tf.Z.z[nz_index, ii, jj].imag
+                z_error = tf.Z.z_error[nz_index, ii, jj]
+
+                # get the frequencies of non-zero components
+                f = tf.Z.frequency[nz_index]
+
+                # create a function that does 1d interpolation
+                interp_dict[comp]["real"] = interpolate.interp1d(
+                    f, z_real, kind=interp_type
+                )
+                interp_dict[comp]["imag"] = interpolate.interp1d(
+                    f, z_imag, kind=interp_type
+                )
+                interp_dict[comp]["err"] = interpolate.interp1d(
+                    f, z_error, kind=interp_type
+                )
+
+        return interp_dict
+
+    @staticmethod
+    def get_interp1d_functions_t(tf, interp_type="slinear"):
+        """
+        :param interp_type: DESCRIPTION, defaults to "slinear"
+        :type interp_type: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+        if tf.Tipper is None:
+            return None
+
+        # interpolate the impedance tensor
+        zmap = {0: "x", 1: "y"}
+        interp_dict = {}
+        for jj in range(2):
+            comp = f"tz{zmap[jj]}"
+            interp_dict[comp] = {}
+            # need to look out for zeros in the impedance
+            # get the indicies of non-zero components
+            nz_index = np.nonzero(tf.Tipper.tipper[:, 0, jj])
+
+            if len(nz_index[0]) == 0:
+                continue
+            # get the non-zero components
+            t_real = tf.Tipper.tipper[nz_index, 0, jj].real
+            t_imag = tf.Tipper.tipper[nz_index, 0, jj].imag
+            t_err = tf.Tipper.tipper_error[nz_index, 0, jj]
+
+            # get the frequencies of non-zero components
+            f = tf.Tipper.frequency[nz_index]
+
+            # create a function that does 1d interpolation
+            interp_dict[comp]["real"] = interpolate.interp1d(
+                f, t_real, kind=interp_type
+            )
+            interp_dict[comp]["imag"] = interpolate.interp1d(
+                f, t_imag, kind=interp_type
+            )
+            interp_dict[comp]["err"] = interpolate.interp1d(
+                f, t_err, kind=interp_type
+            )
+
+        return interp_dict
+
     def _get_interpolated_z(self, tf):
         """
 
@@ -227,35 +317,37 @@ class PlotBaseMaps(PlotBase):
 
         """
         if not hasattr(tf, "z_interp_dict"):
-            tf.z_interp_dict = tf.get_interp1d_functions_z()
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
         return np.nan_to_num(
             np.array(
                 [
                     [
-                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zxx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zxy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
                         * tf.z_interp_dict["zxy"]["imag"](
                             1.0 / self.plot_period
                         )[0],
                     ],
                     [
-                        tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zyx"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
                         * tf.z_interp_dict["zyx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zyy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
                         * tf.z_interp_dict["zyy"]["imag"](
                             1.0 / self.plot_period
@@ -263,9 +355,9 @@ class PlotBaseMaps(PlotBase):
                     ],
                 ]
             )
-        )
+        ).reshape((1, 2, 2))
 
-    def _get_interpolated_z_err(self, tf):
+    def _get_interpolated_z_error(self, tf):
         """
 
         :param tf: DESCRIPTION
@@ -275,7 +367,7 @@ class PlotBaseMaps(PlotBase):
 
         """
         if not hasattr(tf, "z_interp_dict"):
-            tf.z_interp_dict = tf.get_interp1d_functions_z()
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
         return np.nan_to_num(
             np.array(
                 [
@@ -297,7 +389,7 @@ class PlotBaseMaps(PlotBase):
                     ],
                 ]
             )
-        )
+        ).reshape((1, 2, 2))
 
     def _get_interpolated_t(self, tf):
         """
@@ -309,8 +401,8 @@ class PlotBaseMaps(PlotBase):
 
         """
         if not hasattr(tf, "t_interp_dict"):
-            tf.z_interp_dict = tf.get_interp1d_functions_t()
-        if tf.t_interp_dict == {}:
+            tf.t_interp_dict = self.get_interp1d_functions_t(tf)
+        if not tf.has_tipper():
             return np.zeros((1, 1, 2), dtype=complex)
         return np.nan_to_num(
             np.array(
@@ -335,7 +427,7 @@ class PlotBaseMaps(PlotBase):
                     ]
                 ]
             )
-        )
+        ).reshape((1, 1, 2))
 
     def _get_interpolated_t_err(self, tf):
         """
@@ -347,9 +439,9 @@ class PlotBaseMaps(PlotBase):
 
         """
         if not hasattr(tf, "t_interp_dict"):
-            tf.z_interp_dict = tf.get_interp1d_functions_t()
+            tf.t_interp_dict = self.get_interp1d_functions_t(tf)
 
-        if tf.t_interp_dict == {}:
+        if not tf.has_tipper():
             return np.array((1, 1, 2), dtype=float)
         return np.nan_to_num(
             np.array(
@@ -366,7 +458,7 @@ class PlotBaseMaps(PlotBase):
                     ]
                 ]
             )
-        )
+        ).reshape((1, 1, 2))
 
     def add_raster(self, ax, raster_fn, add_colorbar=True, **kwargs):
         """
@@ -544,7 +636,7 @@ class PlotBaseProfile(PlotBase):
             )
         )
 
-    def _get_interpolated_z_err(self, tf):
+    def _get_interpolated_z_error(self, tf):
         """
 
         :param tf: DESCRIPTION

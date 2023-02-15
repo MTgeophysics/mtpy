@@ -361,7 +361,9 @@ class MT(TF, MTLocation):
                     "needs to be within the bounds of the old one."
                 )
 
-        new_z = self.Z.interpolate(1.0 / new_frequency, method=method, **kwargs)
+        new_z = self.Z.interpolate(
+            1.0 / new_frequency, method=method, **kwargs
+        )
         new_t = self.Tipper.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
