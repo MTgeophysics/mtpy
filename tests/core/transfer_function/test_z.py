@@ -199,6 +199,21 @@ class TestRemoveDistortion(unittest.TestCase):
         with self.subTest(("z")):
             self.assertTrue(np.allclose(new_z.z, self.z.z))
 
+    def test_fail_bad_input_shape_too_many(self):
+        self.assertRaises(
+            ValueError, self.z.remove_distortion, np.random.rand(4, 3, 3, 3)
+        )
+
+    def test_fail_bad_input_shape_not_z_shape(self):
+        self.assertRaises(
+            ValueError, self.z.remove_distortion, np.random.rand(4, 3, 3)
+        )
+
+    def test_fail_bad_input_singular_matrix(self):
+        self.assertRaises(
+            ValueError, self.z.remove_distortion, np.matrix([[0, 1], [0, 0]])
+        )
+
 
 # =============================================================================
 # Run

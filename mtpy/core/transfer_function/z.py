@@ -351,7 +351,7 @@ class Z(TFBase):
             ):
                 self.logger.info(
                     "Distortion is not time-dependent - taking only first"
-                    + "of given distortion tensors"
+                    " of given distortion tensors."
                 )
                 try:
                     distortion_tensor = distortion_tensor[0]
@@ -360,8 +360,8 @@ class Z(TFBase):
                     msg = "Distortion tensor and error are not correct shape"
                     self.logger.error(msg)
                     raise ValueError(msg)
-            if not (distortion_tensor.shape == (2, 2)) and (
-                distortion_error_tensor.shape == (2, 2)
+            if (distortion_tensor.shape != (2, 2)) and (
+                distortion_error_tensor.shape != (2, 2)
             ):
                 msg = "Distortion tensor and error are not correct shape"
                 self.logger.error(msg)
