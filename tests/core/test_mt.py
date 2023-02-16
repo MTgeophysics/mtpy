@@ -205,6 +205,28 @@ class TestMT2DataFrame(unittest.TestCase):
     def test_to_t(self):
         self.assertEqual(self.m1.Tipper, self.mt_df.to_t_object(self.sdf))
 
+    def test_from_dataframe(self):
+        m2 = MT()
+        m2.from_dataframe(self.sdf)
+
+        for key in [
+            "station",
+            "latitude",
+            "longitude",
+            "elevation",
+            "east",
+            "north",
+            "utm_epsg",
+            "model_north",
+            "model_east",
+            "model_elevation",
+        ]:
+            with self.subTest(key):
+                self.assertTrue(getattr(m2, key) == getattr(self.m1, key))
+
+        with self.subTest("dataset"):
+            self.assertEqual(self.m1._transfer_function, m2._transfer_function)
+
 
 # =============================================================================
 # Run
