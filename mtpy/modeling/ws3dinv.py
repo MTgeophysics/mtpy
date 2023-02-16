@@ -410,13 +410,13 @@ class WSData(object):
         n_stations = len(self.data)
         n_periods = self.data[0]['z_data'].shape[0]
 
-        ofid = file(self.data_fn, 'w')
+        ofid = open(self.data_fn, 'w')
         ofid.write('{0:d} {1:d} {2:d}\n'.format(n_stations, n_periods,
                                                 self.n_z))
 
         #write N-S locations
         ofid.write('Station_Location: N-S \n')
-        for ii in range(n_stations/self.n_z+1):
+        for ii in range(int(n_stations/self.n_z)+1):
             for ll in range(self.n_z):
                 index = ii*self.n_z+ll
                 try:
@@ -427,7 +427,7 @@ class WSData(object):
 
         #write E-W locations
         ofid.write('Station_Location: E-W \n')
-        for ii in range(n_stations/self.n_z+1):
+        for ii in range(int(n_stations/self.n_z)+1):
             for ll in range(self.n_z):
                 index = ii*self.n_z+ll
                 try:
@@ -441,7 +441,7 @@ class WSData(object):
             ofid.write('DATA_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_data'][ii].reshape(4,)
-                for jj in range(self.n_z/2):
+                for jj in range(int(self.n_z/2)):
                     ofid.write('{0:+.4e} '.format(zline[jj].real))
                     ofid.write('{0:+.4e} '.format(-zline[jj].imag))
                 ofid.write('\n')
@@ -451,7 +451,7 @@ class WSData(object):
             ofid.write('ERROR_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_data_err'][ii].reshape(4,)
-                for jj in range(self.n_z/2):
+                for jj in range(int(self.n_z/2)):
                     ofid.write('{0:+.4e} '.format(zline[jj].real))
                     ofid.write('{0:+.4e} '.format(zline[jj].imag))
                 ofid.write('\n')
@@ -461,7 +461,7 @@ class WSData(object):
             ofid.write('ERMAP_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_err_map'][ii].reshape(4,)
-                for jj in range(self.n_z/2):
+                for jj in range(int(self.n_z/2)):
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                 ofid.write('\n')
@@ -748,7 +748,7 @@ class WSStation(object):
             self.station_fn = os.path.join(self.save_path,
                                            'WS_Station_Locations.txt')
 
-        sfid = file(self.station_fn, 'w')
+        sfid = open(self.station_fn, 'w')
         sfid.write('{0:<14}{1:^14}{2:^14}{3:^14}\n'.format('station', 'east',
                                                     'north', 'elev'))
         for ee, nn, zz, ss in zip(self.east, self.north, self.elev, self.names):
@@ -1148,16 +1148,16 @@ class WSMesh(object):
         #   wsinv3d
         east_nodes = east_gridr.copy()
         nx = east_gridr.shape[0]
-        east_nodes[:nx/2] = np.array([abs(east_gridr[ii]-east_gridr[ii+1])
+        east_nodes[:int(nx/2)] = np.array([abs(east_gridr[ii]-east_gridr[ii+1])
                                           for ii in range(int(nx/2))])
-        east_nodes[nx/2:] = np.array([abs(east_gridr[ii]-east_gridr[ii+1])
+        east_nodes[int(nx/2):] = np.array([abs(east_gridr[ii]-east_gridr[ii+1])
                                           for ii in range(int(nx/2)-1, nx-1)])
 
         north_nodes = north_gridr.copy()
         ny = north_gridr.shape[0]
-        north_nodes[:ny/2] = np.array([abs(north_gridr[ii]-north_gridr[ii+1])
+        north_nodes[:int(ny/2)] = np.array([abs(north_gridr[ii]-north_gridr[ii+1])
                                        for ii in range(int(ny/2))])
-        north_nodes[ny/2:] = np.array([abs(north_gridr[ii]-north_gridr[ii+1])
+        north_nodes[int(ny/2):] = np.array([abs(north_gridr[ii]-north_gridr[ii+1])
                                        for ii in range(int(ny/2)-1, ny-1)])
 
         #--put the grids into coordinates relative to the center of the grid
@@ -1524,7 +1524,7 @@ class WSMesh(object):
             nr = len(self.res_list)
 
         #--> write file
-        ifid = file(self.initial_fn, 'w')
+        ifid = open(self.initial_fn, 'w')
         ifid.write('# {0}\n'.format(self.title.upper()))
         ifid.write('{0} {1} {2} {3}\n'.format(self.nodes_north.shape[0],
                                               self.nodes_east.shape[0],
@@ -1812,7 +1812,7 @@ class WSModel(object):
         read in a model file as x-north, y-east, z-positive down
         """
 
-        mfid = file(self.model_fn, 'r')
+        mfid = open(self.model_fn, 'r')
         mlines = mfid.readlines()
         mfid.close()
 
