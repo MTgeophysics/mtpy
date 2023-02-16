@@ -98,6 +98,47 @@ class TestErrorEstimation(unittest.TestCase):
         )
         self.assertTrue(np.allclose(err, est))
 
+    def test_compute_median(self):
+        err = self.m.compute_error(error_type="median", floor=False)
+
+        est = np.array(
+            [
+                [[0.00707107, 0.00707107], [0.00707107, 0.00707107]],
+                [[0.01414214, 0.01414214], [0.01414214, 0.01414214]],
+            ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_median_floor(self):
+        err = self.m.compute_error(error_type="median", floor=True)
+
+        est = np.array(
+            [[[0.1, 0.02], [0.07, 0.25]], [[0.05, 0.1], [0.03, 0.025]]]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_eigen(self):
+        err = self.m.compute_error(error_type="eigen", floor=False)
+
+        est = np.array(
+            [
+                [[0.70890761, 0.70890761], [0.70890761, 0.70890761]],
+                [[1.4186272, 1.4186272], [1.4186272, 1.4186272]],
+            ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_eigen_floor(self):
+        err = self.m.compute_error(error_type="eigen", floor=True)
+
+        est = np.array(
+            [
+                [[0.70890761, 0.70890761], [0.70890761, 0.70890761]],
+                [[1.4186272, 1.4186272], [1.4186272, 1.4186272]],
+            ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
 
 # =============================================================================
 # Run
