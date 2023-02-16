@@ -144,6 +144,15 @@ class ModelErrors:
         if data.shape == expected_shape:
             data = data.reshape((1, expected_shape[0], expected_shape[1]))
 
+        if (
+            data.shape[1] != expected_shape[0]
+            or data.shape[2] != expected_shape[1]
+        ):
+            raise ValueError(
+                f"Shape {data.shape} is not expected shape of (n, "
+                f"{expected_shape[0]}, expected_shape[1])"
+            )
+
         return data
 
     @property
@@ -260,7 +269,9 @@ class ModelErrors:
 
         """
 
-        od = self.mask_zeros(np.array([self.data[:, 0, 1], self.data[:, 1, 0]]))
+        od = self.mask_zeros(
+            np.array([self.data[:, 0, 1], self.data[:, 1, 0]])
+        )
         err = self.error_value * np.ma.abs(np.ma.mean(od, axis=0))
 
         if self.floor:
