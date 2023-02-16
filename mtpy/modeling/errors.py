@@ -190,6 +190,26 @@ class ModelErrors:
 
         return np.ma.masked_equal(data, 0)
 
+    def resize_output(self, error_array):
+        """
+        resize the error estimtion to the same size as the input data
+
+        :param error_array: DESCRIPTION
+        :type error_array: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if error_array.shape != self.data.shape:
+            if error_array.shape[0] == self.data.shape[0]:
+                err = np.zeros_like(self.data, dtype=float)
+                for index in range(self.data.shape[0]):
+                    err[index] = error_array[index]
+                return err
+
+        return error_array
+
     def compute_error(
         self, data=None, error_type=None, error_value=None, floor=None
     ):
@@ -221,7 +241,7 @@ class ModelErrors:
         if self.floor:
             err = self.set_floor(err)
 
-        return err
+        return self.resize_output(err)
 
     def compute_percent_error(self):
         """
@@ -388,8 +408,8 @@ class ModelErrors:
 
         """
 
-        err_xy = self.compute_percent_error(self.data[:, 0, 1])
-        err_yx = self.compute_percent_error(self.data[:, 1, 0])
+        err_xy = np.abs(self.data[:, 0, 1]) * self.error_value
+        err_yx = np.abs(self.data[:, 1, 0]) * self.error_value
 
         err = np.zeros_like(self.data, dtype=float)
         err[:, 0, :] = err_xy
