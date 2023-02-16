@@ -141,6 +141,15 @@ class TestMTSetImpedance(unittest.TestCase):
     def test_remove_static_shift(self):
         new_mt = self.mt.remove_static_shift(ss_x=0.5, ss_y=1.5, inplace=False)
 
+        self.assertTrue(
+            np.allclose(
+                (self.mt.impedance.data / new_mt.impedance.data) ** 2,
+                np.array(
+                    [[[0.5 + 0.0j, 0.5 + 0.0j], [1.5 - 0.0j, 1.5 - 0.0j]]]
+                ),
+            )
+        )
+
 
 class TestMT2DataFrame(unittest.TestCase):
     @classmethod
