@@ -217,7 +217,11 @@ class ModelErrors:
         if floor is not None:
             self.floor = floor
 
-        return self._functions[self.error_type]()
+        err = self._functions[self.error_type]()
+        if self.floor:
+            err = self.set_floor(err)
+
+        return err
 
     def compute_percent_error(self):
         """
@@ -247,13 +251,12 @@ class ModelErrors:
 
         """
 
-        for ii in range(self.data.shape[1]):
-            for jj in range(self.data.shape[2]):
-                index = np.where(
-                    self.measurement_error[:, ii, jj] < error_array
-                )
-                self.measurement_error[index, ii, jj] = error_array[index]
-        return self.measurement_error
+        if self.measurement_error is not None:
+
+            index = np.where(error_array < self.measurement_error)
+            error_array[index] = self.measurement_error[index]
+
+        return error_array
 
     def compute_off_diagonal_mean_error(self):
         """

@@ -25,17 +25,15 @@ class TestErrorEstimation(unittest.TestCase):
         self.m = ModelErrors(self.data, self.data_error)
 
     def test_bad_shape(self):
-        def set_data(data):
-            self.m.data = data
-
-        self.assertRaises(ValueError, set_data, np.random.rand(3, 3, 3))
-
-    def test_bad_shape_error(self):
-        def set_measurement_error(error):
-            self.m.measurement_error = error
 
         self.assertRaises(
-            ValueError, set_measurement_error, np.random.rand(3, 3, 3)
+            ValueError, self.m.validate_array_shape, np.random.rand(3, 3, 3)
+        )
+
+    def test_bad_shape_error(self):
+
+        self.assertRaises(
+            ValueError, self.m.validate_array_shape, np.random.rand(3, 3, 3)
         )
 
     def test_set_error_type_fail(self):
@@ -60,8 +58,17 @@ class TestErrorEstimation(unittest.TestCase):
         self.m.error_value = 5
         self.assertEqual(0.05, self.m.error_value)
 
-    # def test_compute_percent_error(self):
-    #     self.m.error_value = .
+    def test_compute_percent_error(self):
+        err = self.m.compute_error(
+            error_type="percent", error_value=5, floor=False
+        )
+        self.assertTrue(np.allclose(np.abs(self.data) * 0.05, err))
+
+    def test_compute_percent_error_floor(self):
+        err = self.m.compute_error(
+            error_type="percent", error_value=5, floor=True
+        )
+        self.assertFalse(np.allclose(np.abs(self.data) * 0.05, err))
 
 
 # =============================================================================
