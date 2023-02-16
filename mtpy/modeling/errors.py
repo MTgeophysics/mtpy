@@ -69,7 +69,7 @@ class ModelErrors:
 
         """
 
-        if value > 1:
+        if value >= 1:
             value /= 100.0
 
         return value
@@ -210,54 +210,6 @@ class ModelErrors:
 
         return error_array
 
-    def compute_error(
-        self, data=None, error_type=None, error_value=None, floor=None
-    ):
-        """
-
-        :param data: DESCRIPTION, defaults to None
-        :type data: TYPE, optional
-        :param error_type: DESCRIPTION, defaults to None
-        :type error_type: TYPE, optional
-        :param error_value: DESCRIPTION, defaults to None
-        :type error_value: TYPE, optional
-        :param floor: DESCRIPTION, defaults to None
-        :type floor: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if data is not None:
-            self.data = data
-        if error_type is not None:
-            self.error_type = error_type
-        if error_value is not None:
-            self.error_value = error_value
-        if floor is not None:
-            self.floor = floor
-
-        err = self._functions[self.error_type]()
-        if self.floor:
-            err = self.set_floor(err)
-
-        return self.resize_output(err)
-
-    def compute_percent_error(self):
-        """
-        Percent error
-
-        :param data: DESCRIPTION
-        :type data: TYPE
-        :param percent: DESCRIPTION
-        :type percent: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        return self.error_value * np.abs(self.data)
-
     def set_floor(self, error_array):
         """
         Set error floor
@@ -278,6 +230,25 @@ class ModelErrors:
 
         return error_array
 
+    def compute_percent_error(self):
+        """
+        Percent error
+
+        :param data: DESCRIPTION
+        :type data: TYPE
+        :param percent: DESCRIPTION
+        :type percent: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        err = self.error_value * np.abs(self.data)
+        if self.floor:
+            err = self.set_floor(err)
+
+        return err
+
     def compute_off_diagonal_mean_error(self):
         """
         error_value * (Zxy + Zyx) / 2
@@ -295,7 +266,9 @@ class ModelErrors:
         od = self.mask_zeros(
             np.array([self.data[:, 0, 1], self.data[:, 1, 0]])
         )
-        err = self.error_value * np.ma.abs(np.ma.mean(od, axis=0))
+        err = self.resize_output(
+            self.error_value * np.ma.abs(np.ma.mean(od, axis=0))
+        )
 
         if self.floor:
             err = self.set_floor(err)
@@ -319,7 +292,9 @@ class ModelErrors:
         """
 
         data = self.mask_zeros(self.data)
-        err = np.abs(np.ma.median(data, axis=(1, 2))) * self.error_value
+        err = self.resize_output(
+            np.abs(np.ma.median(data, axis=(1, 2))) * self.error_value
+        )
 
         if self.floor:
             err = self.set_floor(err)
@@ -354,6 +329,8 @@ class ModelErrors:
         if np.atleast_1d(err).sum(axis=0) == 0:
             err = self.error_value * data[np.nonzero(data)].mean()
 
+        err = self.resize_output(err)
+
         if self.floor:
             err = self.set_floor(err)
         return err
@@ -381,8 +358,9 @@ class ModelErrors:
 
         data = self.mask_zeros(data)
 
-        err = self.error_value * np.ma.sqrt(
-            np.ma.abs(data[:, 0, 1] * data[:, 1, 0])
+        err = self.resize_output(
+            self.error_value
+            * np.ma.sqrt(np.ma.abs(data[:, 0, 1] * data[:, 1, 0]))
         )
 
         if self.floor:
@@ -415,6 +393,10 @@ class ModelErrors:
         err[:, 0, :] = err_xy
         err[:, 1, :] = err_yx
 
+        err = self.resize_output(err)
+        if self.floor:
+            err = self.set_floor(err)
+
         return err
 
     def compute_absolute_error(self):
@@ -428,5 +410,37 @@ class ModelErrors:
         :rtype: TYPE
 
         """
+        err = np.ones_like(self.data, dtype=float) * self.error_value
 
-        return np.ones_like(self.data, dtype=float) * self.error_value
+        if self.floor:
+            err = self.set_floor(err)
+        return err
+
+    def compute_error(
+        self, data=None, error_type=None, error_value=None, floor=None
+    ):
+        """
+
+        :param data: DESCRIPTION, defaults to None
+        :type data: TYPE, optional
+        :param error_type: DESCRIPTION, defaults to None
+        :type error_type: TYPE, optional
+        :param error_value: DESCRIPTION, defaults to None
+        :type error_value: TYPE, optional
+        :param floor: DESCRIPTION, defaults to None
+        :type floor: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if data is not None:
+            self.data = data
+        if error_type is not None:
+            self.error_type = error_type
+        if error_value is not None:
+            self.error_value = error_value
+        if floor is not None:
+            self.floor = floor
+
+        return self._functions[self.error_type]()
