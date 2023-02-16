@@ -289,10 +289,10 @@ class Z(TFBase):
 
         z_corrected = copy.copy(self.z)
 
-        z_corrected[:, 0, 0] = self.z[:, 0, 0] / np.sqrt(x_factors)
-        z_corrected[:, 0, 1] = self.z[:, 0, 1] / np.sqrt(x_factors)
-        z_corrected[:, 1, 0] = self.z[:, 1, 0] / np.sqrt(y_factors)
-        z_corrected[:, 1, 1] = self.z[:, 1, 1] / np.sqrt(y_factors)
+        z_corrected[:, 0, 0] = self.z[:, 0, 0] / x_factors
+        z_corrected[:, 0, 1] = self.z[:, 0, 1] / x_factors
+        z_corrected[:, 1, 0] = self.z[:, 1, 0] / y_factors
+        z_corrected[:, 1, 1] = self.z[:, 1, 1] / y_factors
 
         if inplace:
             self.z = z_corrected
@@ -388,25 +388,26 @@ class Z(TFBase):
 
         # propagation of errors - step 2 - product of D.inverse and Z;
         # D.I * Z, making it 4 summands for each component:
-        z_corrected = np.zeros_like(self.z)
-        z_corrected_error = np.zeros_like(self.z_error)
+        z_corrected = np.zeros_like(self.z, dtype=complex)
+        z_corrected_error = np.zeros_like(self.z, dtype=float)
 
         for idx_f in range(len(self.z)):
             z_corrected[idx_f] = np.array(np.dot(DI, np.matrix(self.z[idx_f])))
-            for ii in range(2):
-                for jj in range(2):
-                    z_corrected_error[idx_f, ii, jj] = np.sum(
-                        np.abs(
-                            np.array(
-                                [
-                                    DI_error[ii, 0] * self.z[idx_f, 0, jj],
-                                    DI[ii, 0] * self.z_error[idx_f, 0, jj],
-                                    DI_error[ii, 1] * self.z[idx_f, 1, jj],
-                                    DI[ii, 1] * self.z_error[idx_f, 1, jj],
-                                ]
+            if self._has_tf_error():
+                for ii in range(2):
+                    for jj in range(2):
+                        z_corrected_error[idx_f, ii, jj] = np.sum(
+                            np.abs(
+                                np.array(
+                                    [
+                                        DI_error[ii, 0] * self.z[idx_f, 0, jj],
+                                        DI[ii, 0] * self.z_error[idx_f, 0, jj],
+                                        DI_error[ii, 1] * self.z[idx_f, 1, jj],
+                                        DI[ii, 1] * self.z_error[idx_f, 1, jj],
+                                    ]
+                                )
                             )
                         )
-                    )
 
         if inplace:
             self.z = z_corrected
@@ -541,7 +542,9 @@ class Z(TFBase):
         res_error = self._validate_array_input(res_error, float)
         phase_error = self._validate_array_input(phase_error, float)
         res_model_error = self._validate_array_input(res_model_error, float)
-        phase_model_error = self._validate_array_input(phase_model_error, float)
+        phase_model_error = self._validate_array_input(
+            phase_model_error, float
+        )
 
         abs_z = np.sqrt(5.0 * self.frequency * (resistivity.T)).T
         self.z = abs_z * np.exp(1j * np.radians(phase))

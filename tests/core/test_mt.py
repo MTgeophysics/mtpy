@@ -138,6 +138,9 @@ class TestMTSetImpedance(unittest.TestCase):
             np.allclose(self.pt_skew_error, self.mt.pt.skew_model_error)
         )
 
+    def test_remove_static_shift(self):
+        new_mt = self.mt.remove_static_shift(ss_x=0.5, ss_y=1.5, inplace=False)
+
 
 class TestMT2DataFrame(unittest.TestCase):
     @classmethod
