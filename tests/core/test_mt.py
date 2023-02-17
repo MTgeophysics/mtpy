@@ -58,9 +58,7 @@ class TestMTSetImpedance(unittest.TestCase):
             ]
         )
 
-        self.pt = np.array(
-            [[[1.00020002, -0.020002], [-0.020002, 1.00020002]]]
-        )
+        self.pt = np.array([[[1.00020002, -0.020002], [-0.020002, 1.00020002]]])
         self.pt_error = np.array(
             [[[0.01040308, 0.02020604], [0.02020604, 0.01040308]]]
         )
@@ -175,7 +173,7 @@ class TestSetTipper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.t = np.array([[[0.25 - 0.2j, 0.25 + 0.2j]]])
-        self.t_err = np.array([[[0.02, 0.02]]])
+        self.t_err = np.array([[[0.02, 0.03]]])
 
         self.mt = MT()
         self.mt.tipper = self.t
@@ -188,10 +186,11 @@ class TestSetTipper(unittest.TestCase):
         self.assertTrue(np.allclose(self.mt.tipper_error.data, self.t_err))
 
     def test_tipper_model_error(self):
-        err = 
-        self.assertTrue(
-            np.allclose(self.mt.tipper_model_error.data, self.t_err)
+        err = np.array([[[0.02, 0.03]]])
+        self.mt.compute_model_t_errors(
+            error_type="absolute", error_value=0.02, floor=True
         )
+        self.assertTrue(np.allclose(self.mt.tipper_model_error.data, err))
 
 
 class TestMT2DataFrame(unittest.TestCase):
