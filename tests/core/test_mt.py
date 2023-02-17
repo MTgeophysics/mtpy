@@ -151,6 +151,26 @@ class TestMTSetImpedance(unittest.TestCase):
         )
 
 
+class TestMTComputeModelError(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.z = np.array(
+            [[0.1 - 0.1j, 10 + 10j], [-10 - 10j, -0.1 + 0.1j]]
+        ).reshape((1, 2, 2))
+        self.z_err = np.array([[0.1, 0.05], [0.05, 0.1]]).reshape((1, 2, 2))
+
+        self.mt = MT()
+        self.mt.impedance = self.z
+        self.mt.impedance_error = self.z_err
+
+    def test_compute_model_error(self):
+        err = np.array([[[0.70710678, 0.70710678], [0.70710678, 0.70710678]]])
+
+        self.mt.compute_model_z_errors()
+
+        self.assertTrue(np.allclose(self.mt.impedance_model_error.data, err))
+
+
 class TestSetTipper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
