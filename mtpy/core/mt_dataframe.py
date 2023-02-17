@@ -9,128 +9,130 @@ Created on Sun Oct  2 13:20:28 2022
 # Imports
 # =============================================================================
 import numpy as np
+import pandas as pd
 
 from . import Z, Tipper
 
 # =============================================================================
+base_df_dtypes = dict(
+    [
+        ("station", "U25"),
+        ("latitude", float),
+        ("longitude", float),
+        ("elevation", float),
+        ("datum_epsg", "U6"),
+        ("east", float),
+        ("north", float),
+        ("utm_epsg", "U6"),
+        ("model_east", float),
+        ("model_north", float),
+        ("model_elevation", float),
+        ("period", float),
+        ("zxx", complex),
+        ("zxx_error", float),
+        ("zxx_model_error", float),
+        ("zxy", complex),
+        ("zxy_error", float),
+        ("zxy_model_error", float),
+        ("zyx", complex),
+        ("zyx_error", float),
+        ("zyx_model_error", float),
+        ("zyy", complex),
+        ("zyy_error", float),
+        ("zyy_model_error", float),
+        ("tzx", complex),
+        ("tzx_error", float),
+        ("tzx_model_error", float),
+        ("tzy", complex),
+        ("tzy_error", float),
+        ("tzy_model_error", float),
+        ("res_xx", complex),
+        ("res_xx_error", float),
+        ("res_xx_model_error", float),
+        ("res_xy", complex),
+        ("res_xy_error", float),
+        ("res_xy_model_error", float),
+        ("res_yx", complex),
+        ("res_yx_error", float),
+        ("res_yx_model_error", float),
+        ("res_yy", complex),
+        ("res_yy_error", float),
+        ("res_yy_model_error", float),
+        ("phase_xx", complex),
+        ("phase_xx_error", float),
+        ("phase_xx_model_error", float),
+        ("phase_xy", complex),
+        ("phase_xy_error", float),
+        ("phase_xy_model_error", float),
+        ("phase_yx", complex),
+        ("phase_yx_error", float),
+        ("phase_yx_model_error", float),
+        ("phase_yy", complex),
+        ("phase_yy_error", float),
+        ("phase_yy_model_error", float),
+        ("ptxx", complex),
+        ("ptxx_error", float),
+        ("ptxx_model_error", float),
+        ("ptxy", complex),
+        ("ptxy_error", float),
+        ("ptxy_model_error", float),
+        ("ptyx", complex),
+        ("ptyx_error", float),
+        ("ptyx_model_error", float),
+        ("ptyy", complex),
+        ("ptyy_error", float),
+        ("ptyy_model_error", float),
+    ]
+)
+
+# df_dtypes = get_dtypes(
+#     [
+#         "station",
+#         "latitude",
+#         "longitude",
+#         "elevation",
+#         "datum_epsg",
+#         "east",
+#         "north",
+#         "utm_epsg",
+#         "model_east",
+#         "model_north",
+#         "model_elevation",
+#         "period",
+#         "zxx",
+#         "zxx_error",
+#         "zxx_model_error",
+#         "zxy",
+#         "zxy_error",
+#         "zxy_model_error",
+#         "zyx",
+#         "zyx_error",
+#         "zyx_model_error",
+#         "zyy",
+#         "zyy_error",
+#         "zyy_model_error",
+#         "tzx",
+#         "tzx_error",
+#         "tzx_model_error",
+#         "tzy",
+#         "tzy_error",
+#         "tzy_model_error",
+#     ]
+# )
 
 
-class MTDataFrame:
-    def __init__(self, **kwargs):
-        self.base_df_dtypes = dict(
-            [
-                ("station", "U25"),
-                ("latitude", float),
-                ("longitude", float),
-                ("elevation", float),
-                ("datum_epsg", "U6"),
-                ("east", float),
-                ("north", float),
-                ("utm_epsg", "U6"),
-                ("model_east", float),
-                ("model_north", float),
-                ("model_elevation", float),
-                ("period", float),
-                ("zxx", complex),
-                ("zxx_error", float),
-                ("zxx_model_error", float),
-                ("zxy", complex),
-                ("zxy_error", float),
-                ("zxy_model_error", float),
-                ("zyx", complex),
-                ("zyx_error", float),
-                ("zyx_model_error", float),
-                ("zyy", complex),
-                ("zyy_error", float),
-                ("zyy_model_error", float),
-                ("tzx", complex),
-                ("tzx_error", float),
-                ("tzx_model_error", float),
-                ("tzy", complex),
-                ("tzy_error", float),
-                ("tzy_model_error", float),
-                ("res_xx", complex),
-                ("res_xx_error", float),
-                ("res_xx_model_error", float),
-                ("res_xy", complex),
-                ("res_xy_error", float),
-                ("res_xy_model_error", float),
-                ("res_yx", complex),
-                ("res_yx_error", float),
-                ("res_yx_model_error", float),
-                ("res_yy", complex),
-                ("res_yy_error", float),
-                ("res_yy_model_error", float),
-                ("phase_xx", complex),
-                ("phase_xx_error", float),
-                ("phase_xx_model_error", float),
-                ("phase_xy", complex),
-                ("phase_xy_error", float),
-                ("phase_xy_model_error", float),
-                ("phase_yx", complex),
-                ("phase_yx_error", float),
-                ("phase_yx_model_error", float),
-                ("phase_yy", complex),
-                ("phase_yy_error", float),
-                ("phase_yy_model_error", float),
-                ("ptxx", complex),
-                ("ptxx_error", float),
-                ("ptxx_model_error", float),
-                ("ptxy", complex),
-                ("ptxy_error", float),
-                ("ptxy_model_error", float),
-                ("ptyx", complex),
-                ("ptyx_error", float),
-                ("ptyx_model_error", float),
-                ("ptyy", complex),
-                ("ptyy_error", float),
-                ("ptyy_model_error", float),
-            ]
-        )
+class MTDataFrame(pd.DataFrame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self.df_dtypes = self._get_dtypes(
-            [
-                "station",
-                "latitude",
-                "longitude",
-                "elevation",
-                "datum_epsg",
-                "east",
-                "north",
-                "utm_epsg",
-                "model_east",
-                "model_north",
-                "model_elevation",
-                "period",
-                "zxx",
-                "zxx_error",
-                "zxx_model_error",
-                "zxy",
-                "zxy_error",
-                "zxy_model_error",
-                "zyx",
-                "zyx_error",
-                "zyx_model_error",
-                "zyy",
-                "zyy_error",
-                "zyy_model_error",
-                "tzx",
-                "tzx_error",
-                "tzx_model_error",
-                "tzy",
-                "tzy_error",
-                "tzy_model_error",
-            ]
-        )
-
-        self._index_dict = {
-            "xx": {"ii": 0, "jj": 0},
-            "xy": {"ii": 0, "jj": 1},
-            "yx": {"ii": 1, "jj": 0},
-            "yy": {"ii": 1, "jj": 1},
-            "zx": {"ii": 0, "jj": 0},
-            "zy": {"ii": 0, "jj": 1},
-        }
+    @property
+    def _constructor(self):
+        """
+        Creates a self object that is basically a pandas.Dataframe.
+        self is a dataframe-like object inherited from pandas.DataFrame
+        self behaves like a dataframe + new custom attributes and methods.
+        """
+        return MTDataFrame
 
     def _get_dtypes(self, cols):
         """
@@ -146,7 +148,7 @@ class MTDataFrame:
         dtypes = {}
         for key in cols:
             try:
-                dtypes[key] = self.base_df_dtypes[key]
+                dtypes[key] = base_df_dtypes[key]
             except KeyError:
                 raise KeyError(f"Could not find {key} in df_dtypes")
 
@@ -155,15 +157,24 @@ class MTDataFrame:
     def _get_index(self, key):
         """ """
 
+        index_dict = {
+            "xx": {"ii": 0, "jj": 0},
+            "xy": {"ii": 0, "jj": 1},
+            "yx": {"ii": 1, "jj": 0},
+            "yy": {"ii": 1, "jj": 1},
+            "zx": {"ii": 0, "jj": 0},
+            "zy": {"ii": 0, "jj": 1},
+        }
+
         if key.startswith("z") or key.startswith("t"):
-            return self._index_dict[key[1:3]]
+            return index_dict[key[1:3]]
 
         elif key.startswith("res"):
-            return self._index_dict[key[4:6]]
+            return index_dict[key[4:6]]
         elif key.startswith("phase"):
-            return self._index_dict[key[6:8]]
+            return index_dict[key[6:8]]
         elif key.startswith("pt"):
-            return self._index_dict[key[2:4]]
+            return index_dict[key[2:4]]
         else:
             return None
 
