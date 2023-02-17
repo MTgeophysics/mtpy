@@ -139,6 +139,28 @@ class TestErrorEstimation(unittest.TestCase):
         )
         self.assertTrue(np.allclose(err, est))
 
+    def test_compute_geometric_mean(self):
+        err = self.m.compute_error(error_type="geometric_mean", floor=False)
+
+        est = np.array(
+            [
+                [[0.12247449, 0.12247449], [0.12247449, 0.12247449]],
+                [[0.12247449, 0.12247449], [0.12247449, 0.12247449]],
+            ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_geometric_mean_floor(self):
+        err = self.m.compute_error(error_type="geometric_mean", floor=True)
+
+        est = np.array(
+            [
+                [[0.12247449, 0.12247449], [0.12247449, 0.25]],
+                [[0.12247449, 0.12247449], [0.12247449, 0.12247449]],
+            ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
 
 # =============================================================================
 # Run
