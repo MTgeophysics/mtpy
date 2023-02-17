@@ -19,7 +19,7 @@ class ModelErrors:
             "egbert": self.compute_geometric_mean_error,
             "geometric_mean": self.compute_geometric_mean_error,
             "arithmetic_mean": self.compute_off_diagonal_mean_error,
-            "off-diagonals": self.compute_off_diagonals_error,
+            "row": self.compute_row_error,
             "mean_od": self.compute_off_diagonal_mean_error,
             "median": self.compute_median_error,
             "eigen": self.compute_eigen_value_error,
@@ -371,7 +371,7 @@ class ModelErrors:
 
         return err
 
-    def compute_off_diagonals_error(self):
+    def compute_row_error(self):
         """
         set zxx and zxy the same error and zyy and zyx the same error
 
@@ -390,8 +390,10 @@ class ModelErrors:
         err_yx = np.abs(self.data[:, 1, 0]) * self.error_value
 
         err = np.zeros_like(self.data, dtype=float)
-        err[:, 0, :] = err_xy
-        err[:, 1, :] = err_yx
+        err[:, 0, 0] = err_xy
+        err[:, 0, 1] = err_xy
+        err[:, 1, 0] = err_yx
+        err[:, 1, 1] = err_yx
 
         err = self.resize_output(err)
         if self.floor:

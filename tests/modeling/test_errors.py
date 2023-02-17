@@ -20,8 +20,8 @@ class TestErrorEstimation(unittest.TestCase):
 
         self.data = np.array(
             [
-                [[0.1 - 0.1j, 10 + 10j], [-0.3 + 0.3j, -20 - 20j]],
-                [[0.2 - 0.2j, 5 + 5j], [-0.6 + 0.6j, -40 - 40j]],
+                [[0.1 - 0.1j, 10 + 10j], [-20 - 20j, -0.3 + 0.3j]],
+                [[0.2 - 0.2j, 5 + 5j], [-40 - 40j, -0.6 + 0.6j]],
             ]
         )
         self.data_error = np.array(
@@ -67,21 +67,35 @@ class TestErrorEstimation(unittest.TestCase):
         err = self.m.compute_error(
             error_type="percent", error_value=5, floor=False
         )
-        self.assertTrue(np.allclose(np.abs(self.data) * 0.05, err))
+        est = np.array(
+            [
+                [[0.00707107, 0.70710678], [1.41421356, 0.0212132]],
+                [[0.01414214, 0.35355339], [2.82842712, 0.04242641]],
+            ]
+        )
+
+        self.assertTrue(np.allclose(err, est))
 
     def test_compute_percent_error_floor(self):
         err = self.m.compute_error(
             error_type="percent", error_value=5, floor=True
         )
-        self.assertFalse(np.allclose(np.abs(self.data) * 0.05, err))
+        est = np.array(
+            [
+                [[0.1, 0.70710678], [1.41421356, 0.25]],
+                [[0.05, 0.35355339], [2.82842712, 0.04242641]],
+            ]
+        )
+
+        self.assertTrue(np.allclose(err, est))
 
     def test_compute_off_diagonal_mean_error(self):
         err = self.m.compute_error(error_type="arithmetic_mean", floor=False)
 
         est = np.array(
             [
-                [[0.35371245, 0.35371245], [0.35371245, 0.35371245]],
-                [[0.17804494, 0.17804494], [0.17804494, 0.17804494]],
+                [[0.35355339, 0.35355339], [0.35355339, 0.35355339]],
+                [[1.23743687, 1.23743687], [1.23743687, 1.23743687]],
             ]
         )
 
@@ -92,8 +106,8 @@ class TestErrorEstimation(unittest.TestCase):
 
         est = np.array(
             [
-                [[0.35371245, 0.35371245], [0.35371245, 0.35371245]],
-                [[0.17804494, 0.17804494], [0.17804494, 0.17804494]],
+                [[0.35355339, 0.35355339], [0.35355339, 0.35355339]],
+                [[1.23743687, 1.23743687], [1.23743687, 1.23743687]],
             ]
         )
         self.assertTrue(np.allclose(err, est))
@@ -122,8 +136,8 @@ class TestErrorEstimation(unittest.TestCase):
 
         est = np.array(
             [
-                [[0.70890761, 0.70890761], [0.70890761, 0.70890761]],
-                [[1.4186272, 1.4186272], [1.4186272, 1.4186272]],
+                [[1.0001, 1.0001], [1.0001, 1.0001]],
+                [[1.00039992, 1.00039992], [1.00039992, 1.00039992]],
             ]
         )
         self.assertTrue(np.allclose(err, est))
@@ -133,8 +147,8 @@ class TestErrorEstimation(unittest.TestCase):
 
         est = np.array(
             [
-                [[0.70890761, 0.70890761], [0.70890761, 0.70890761]],
-                [[1.4186272, 1.4186272], [1.4186272, 1.4186272]],
+                [[1.0001, 1.0001], [1.0001, 1.0001]],
+                [[1.00039992, 1.00039992], [1.00039992, 1.00039992]],
             ]
         )
         self.assertTrue(np.allclose(err, est))
@@ -142,22 +156,50 @@ class TestErrorEstimation(unittest.TestCase):
     def test_compute_geometric_mean(self):
         err = self.m.compute_error(error_type="geometric_mean", floor=False)
 
-        est = np.array(
-            [
-                [[0.12247449, 0.12247449], [0.12247449, 0.12247449]],
-                [[0.12247449, 0.12247449], [0.12247449, 0.12247449]],
-            ]
-        )
+        est = np.array([[[1.0, 1.0], [1.0, 1.0]], [[1.0, 1.0], [1.0, 1.0]]])
         self.assertTrue(np.allclose(err, est))
 
     def test_compute_geometric_mean_floor(self):
         err = self.m.compute_error(error_type="geometric_mean", floor=True)
 
+        est = np.array([[[1.0, 1.0], [1.0, 1.0]], [[1.0, 1.0], [1.0, 1.0]]])
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_by_row(self):
+        err = self.m.compute_error(error_type="row", floor=False)
+
         est = np.array(
             [
-                [[0.12247449, 0.12247449], [0.12247449, 0.25]],
-                [[0.12247449, 0.12247449], [0.12247449, 0.12247449]],
+                [[0.70710678, 0.70710678], [1.41421356, 1.41421356]],
+                [[0.35355339, 0.35355339], [2.82842712, 2.82842712]],
             ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_by_row_floor(self):
+        err = self.m.compute_error(error_type="row", floor=True)
+
+        est = np.array(
+            [
+                [[0.70710678, 0.70710678], [1.41421356, 1.41421356]],
+                [[0.35355339, 0.35355339], [2.82842712, 2.82842712]],
+            ]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_absolute(self):
+        err = self.m.compute_error(error_type="absolute", floor=False)
+
+        est = np.array(
+            [[[0.05, 0.05], [0.05, 0.05]], [[0.05, 0.05], [0.05, 0.05]]]
+        )
+        self.assertTrue(np.allclose(err, est))
+
+    def test_compute_absolute_floor(self):
+        err = self.m.compute_error(error_type="absolute", floor=True)
+
+        est = np.array(
+            [[[0.1, 0.05], [0.07, 0.25]], [[0.05, 0.1], [0.05, 0.05]]]
         )
         self.assertTrue(np.allclose(err, est))
 
