@@ -18,9 +18,9 @@ class ModelErrors:
         self._functions = {
             "egbert": self.compute_geometric_mean_error,
             "geometric_mean": self.compute_geometric_mean_error,
-            "arithmetic_mean": self.compute_off_diagonal_mean_error,
+            "arithmetic_mean": self.compute_arithmetic_mean_error,
             "row": self.compute_row_error,
-            "mean_od": self.compute_off_diagonal_mean_error,
+            "mean_od": self.compute_arithmetic_mean_error,
             "median": self.compute_median_error,
             "eigen": self.compute_eigen_value_error,
             "percent": self.compute_percent_error,
@@ -40,11 +40,12 @@ class ModelErrors:
         self.error_type = "percent"
         self.floor = True
         self.mode = "impedance"
-        self.data = data
-        self.measurement_error = measurement_error
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        self.data = data
+        self.measurement_error = measurement_error
 
     def __str__(self):
         lines = ["Model Errors:", "-" * 20]
@@ -150,7 +151,7 @@ class ModelErrors:
         ):
             raise ValueError(
                 f"Shape {data.shape} is not expected shape of (n, "
-                f"{expected_shape[0]}, expected_shape[1])"
+                f"{expected_shape[0]}, {expected_shape[1]})"
             )
 
         return data
@@ -249,7 +250,7 @@ class ModelErrors:
 
         return err
 
-    def compute_off_diagonal_mean_error(self):
+    def compute_arithmetic_mean_error(self):
         """
         error_value * (Zxy + Zyx) / 2
 
@@ -263,11 +264,17 @@ class ModelErrors:
 
         """
 
-        od = self.mask_zeros(
-            np.array([self.data[:, 0, 1], self.data[:, 1, 0]])
-        )
+        if self.data.shape[1] < 2:
+            od = self.mask_zeros(
+                np.array([self.data[:, 0, 0], self.data[:, 0, 1]])
+            )
+
+        else:
+            od = self.mask_zeros(
+                np.array([self.data[:, 0, 1], self.data[:, 1, 0]])
+            )
         err = self.resize_output(
-            self.error_value * np.ma.abs(np.ma.mean(od, axis=0))
+            self.error_value * np.ma.mean(np.ma.abs(od), axis=0)
         )
 
         if self.floor:
@@ -317,6 +324,12 @@ class ModelErrors:
 
         """
 
+        if self.data.shape[1] < 2:
+            raise IndexError(
+                "Cannot compute eigen value error with an array of shape "
+                f"{self.data.shape}"
+            )
+
         data = self.mask_zeros(self.data)
 
         try:
@@ -350,18 +363,33 @@ class ModelErrors:
 
         data = self.data.copy()
 
-        zero_xy = np.where(data[:, 0, 1] == 0)
-        data[zero_xy, 0, 1] = data[zero_xy, 1, 0]
+        if self.data.shape[1] < 2:
+            zero_xy = np.where(data[:, 0, 0] == 0)
+            data[zero_xy, 0, 0] = data[zero_xy, 0, 0]
 
-        zero_yx = np.where(data[:, 1, 0] == 0)
-        data[zero_yx, 1, 0] = data[zero_yx, 0, 1]
+            zero_yx = np.where(data[:, 0, 1] == 0)
+            data[zero_yx, 0, 1] = data[zero_yx, 0, 1]
 
-        data = self.mask_zeros(data)
+            data = self.mask_zeros(data)
 
-        err = self.resize_output(
-            self.error_value
-            * np.ma.sqrt(np.ma.abs(data[:, 0, 1] * data[:, 1, 0]))
-        )
+            err = self.resize_output(
+                self.error_value
+                * np.ma.sqrt(np.ma.abs(data[:, 0, 0] * data[:, 0, 1]))
+            )
+
+        else:
+            zero_xy = np.where(data[:, 0, 1] == 0)
+            data[zero_xy, 0, 1] = data[zero_xy, 1, 0]
+
+            zero_yx = np.where(data[:, 1, 0] == 0)
+            data[zero_yx, 1, 0] = data[zero_yx, 0, 1]
+
+            data = self.mask_zeros(data)
+
+            err = self.resize_output(
+                self.error_value
+                * np.ma.sqrt(np.ma.abs(data[:, 0, 1] * data[:, 1, 0]))
+            )
 
         if self.floor:
             err = self.set_floor(err)
@@ -386,14 +414,23 @@ class ModelErrors:
 
         """
 
-        err_xy = np.abs(self.data[:, 0, 1]) * self.error_value
-        err_yx = np.abs(self.data[:, 1, 0]) * self.error_value
+        if self.data.shape[1] < 2:
+            err_xy = np.abs(self.data[:, 0, 0]) * self.error_value
+            err_yx = np.abs(self.data[:, 0, 1]) * self.error_value
 
-        err = np.zeros_like(self.data, dtype=float)
-        err[:, 0, 0] = err_xy
-        err[:, 0, 1] = err_xy
-        err[:, 1, 0] = err_yx
-        err[:, 1, 1] = err_yx
+            err = np.zeros_like(self.data, dtype=float)
+            err[:, 0, 0] = err_xy
+            err[:, 0, 1] = err_yx
+
+        else:
+            err_xy = np.abs(self.data[:, 0, 1]) * self.error_value
+            err_yx = np.abs(self.data[:, 1, 0]) * self.error_value
+
+            err = np.zeros_like(self.data, dtype=float)
+            err[:, 0, 0] = err_xy
+            err[:, 0, 1] = err_xy
+            err[:, 1, 0] = err_yx
+            err[:, 1, 1] = err_yx
 
         err = self.resize_output(err)
         if self.floor:

@@ -526,6 +526,7 @@ class MT(TF, MTLocation):
             error_value=error_value,
             error_type=error_type,
             floor=floor,
+            mode="impedance",
         )
 
         err = z_model_error.compute_error()
@@ -578,6 +579,7 @@ class MT(TF, MTLocation):
             error_value=error_value,
             error_type=error_type,
             floor=floor,
+            mode="tipper",
         )
 
         err = t_model_error.compute_error()
