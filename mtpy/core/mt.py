@@ -365,9 +365,7 @@ class MT(TF, MTLocation):
                     "needs to be within the bounds of the old one."
                 )
 
-        new_z = self.Z.interpolate(
-            1.0 / new_frequency, method=method, **kwargs
-        )
+        new_z = self.Z.interpolate(1.0 / new_frequency, method=method, **kwargs)
         new_t = self.Tipper.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
@@ -425,7 +423,7 @@ class MT(TF, MTLocation):
             self.utm_crs = utm_crs
 
         n_entries = self.period.size
-        mt_df = MTDataFrame()
+        mt_df = MTDataFrame(n_entries)
         if cols is not None:
             mt_df.df_dtypes = mt_df._get_dtypes(cols)
 
@@ -449,7 +447,7 @@ class MT(TF, MTLocation):
         if self.has_tipper():
             entry = mt_df.from_t_object(self.Tipper, entry)
 
-        return pd.DataFrame(entry)
+        return MTDataFrame(entry)
 
     def from_dataframe(self, df):
         """

@@ -22,13 +22,13 @@ class TestMTDataFrame(unittest.TestCase):
     @classmethod
     def setUpClass(self):
 
-        m1 = MT(TF_EDI_CGG)
-        m1.read_tf_file()
+        self.m1 = MT(TF_EDI_CGG)
+        self.m1.read_tf_file()
 
-        self.sdf.to_dataframe()
+        self.sdf = self.m1.to_dataframe()
 
     def test_station(self):
-        self.assertEqual(self.sdf.station, "TEST01")
+        self.assertEqual(self.sdf.station.unique()[0], "TEST01")
 
     def test_period(self):
         self.assertEqual(self.sdf.period.size, 73)
@@ -41,6 +41,10 @@ class TestMTDataFrame(unittest.TestCase):
 
     def test_elevation(self):
         self.assertEqual(self.sdf.elevation.unique()[0], 175.27)
+
+    def test_to_z_object(self):
+        new_z = self.sdf.to_z_object("TEST01")
+        self.assertTrue(self.m1.Z == new_z)
 
 
 # =============================================================================
