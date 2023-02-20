@@ -19,6 +19,11 @@ from . import Z, Tipper
 class MTStationDataFrame:
     """
     Dataframe for a single station
+
+    Tried subclassing pandas.DataFrame, but that turned out to not be straight
+    forward, so when with compilation instead.
+
+    Think about having period as an index?
     """
 
     def __init__(self, data=None, n_entries=0, **kwargs):
