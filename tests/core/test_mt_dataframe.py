@@ -85,6 +85,36 @@ class TestMTDataFrame(unittest.TestCase):
         self.assertTrue(self.m1.Tipper == new_t)
 
 
+class TestMTStationDataFrameValidation(unittest.TestCase):
+    def setUp(self):
+        self.sdf = MTStationDataFrame()
+
+    def test_bad_input_fail(self):
+        self.assertRaises(TypeError, self.sdf._validate_data, 10)
+
+    def test_from_dict(self):
+        df = MTStationDataFrame(
+            {
+                "station": "a",
+                "period": [0, 1],
+                "latitude": 10,
+                "longitude": 20,
+                "elevation": 30,
+            }
+        )
+        with self.subTest("size"):
+            self.assertTrue(df.size == 2)
+
+    def test_from_dict_fail(self):
+        d = {
+            "station": "a",
+            "period": [0, 1],
+            "latitude": 10,
+        }
+
+        self.assertRaises(ValueError, self.sdf._validate_data, d)
+
+
 # =============================================================================
 # Run
 # =============================================================================
