@@ -156,6 +156,11 @@ class MTStationDataFrame:
         return False
 
     @property
+    def size(self):
+        if self._has_data():
+            return self.period.size
+
+    @property
     def _index_dict(self):
         return {
             "xx": {"ii": 0, "jj": 0},
@@ -352,6 +357,9 @@ class MTStationDataFrame:
         """
 
         for key in self.dataframe.dtypes.keys():
+            if key in ["period"]:
+                self.dataframe.loc[:, "period"] = z_object.period
+
             index = self._get_index(key)
             if index is None:
                 continue
@@ -444,6 +452,9 @@ class MTStationDataFrame:
 
         """
         for key in self.dataframe.dtypes.keys():
+            if key in ["period"]:
+                self.dataframe.loc[:, "period"] = t_object.period
+
             index = self._get_index(key)
             if index is None:
                 continue
