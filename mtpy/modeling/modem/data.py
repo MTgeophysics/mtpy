@@ -18,7 +18,7 @@ import numpy as np
 from pathlib import Path
 import pandas as pd
 
-from mtpy.core.mt_dataframe import MTDataFrame
+from mtpy.core.mt_dataframe import MTStationDataFrame
 from mtpy.core.mt_location import MTLocation
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.modeling.errors import ModelErrors
@@ -205,7 +205,7 @@ class Data:
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
         if dataframe is None:
-            self.dataframe = MTDataFrame()
+            self.dataframe = MTStationDataFrame()
         else:
             self.dataframe = dataframe
         if center_point is None:

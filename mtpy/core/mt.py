@@ -10,13 +10,12 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 from mt_metadata.transfer_functions.core import TF
 
 from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
-from mtpy.core.mt_dataframe import MTDataFrame
+from mtpy.core.mt_dataframe import MTStationDataFrame
 
 import mtpy.analysis.distortion as MTdistortion
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
@@ -423,31 +422,27 @@ class MT(TF, MTLocation):
             self.utm_crs = utm_crs
 
         n_entries = self.period.size
-        mt_df = MTDataFrame(n_entries)
-        if cols is not None:
-            mt_df.df_dtypes = mt_df._get_dtypes(cols)
+        mt_df = MTStationDataFrame(n_entries=n_entries)
 
-        entry = mt_df.make_empty_entry(n_entries)
+        mt_df.station = self.station
+        mt_df.latitude = self.latitude
+        mt_df.longitude = self.longitude
+        mt_df.elevation = self.elevation
+        mt_df.datum_epsg = self.datum_epsg
+        mt_df.east = self.east
+        mt_df.north = self.north
+        mt_df.utm_epsg = self.utm_epsg
+        mt_df.model_east = self.model_east
+        mt_df.model_north = self.model_north
+        mt_df.model_elevation = self.model_elevation
 
-        entry["station"][:] = self.station
-        entry["latitude"][:] = self.latitude
-        entry["longitude"][:] = self.longitude
-        entry["elevation"][:] = self.elevation
-        entry["datum_epsg"][:] = self.datum_epsg
-        entry["east"][:] = self.east
-        entry["north"][:] = self.north
-        entry["utm_epsg"][:] = self.utm_epsg
-        entry["model_east"][:] = self.model_east
-        entry["model_north"][:] = self.model_north
-        entry["model_elevation"][:] = self.model_elevation
-
-        entry["period"][:] = self.period
+        mt_df.dataframe.loc[:, "period"] = self.period
         if self.has_impedance():
-            entry = mt_df.from_z_object(self.Z, entry)
+            mt_df.from_z_object(self.Z)
         if self.has_tipper():
-            entry = mt_df.from_t_object(self.Tipper, entry)
+            mt_df.from_t_object(self.Tipper)
 
-        return MTDataFrame(entry)
+        return mt_df
 
     def from_dataframe(self, df):
         """
@@ -460,7 +455,7 @@ class MT(TF, MTLocation):
 
         """
 
-        mt_df = MTDataFrame()
+        mt_df = MTStationDataFrame()
         for key in [
             "station",
             "latitude",

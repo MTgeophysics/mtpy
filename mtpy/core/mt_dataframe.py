@@ -16,218 +16,144 @@ from . import Z, Tipper
 # =============================================================================
 
 
-class MTDataFrame(pd.DataFrame):
-    def __init__(
-        self,
-        n_entries=0,
-        impedance=True,
-        tipper=True,
-        res_phase=False,
-        pt=False,
-        *args,
-        **kwargs,
-    ):
+class MTStationDataFrame:
+    """
+    Dataframe for a single station
+    """
 
-        super().__init__(*args, **kwargs)
+    def __init__(self, data=None, n_entries=0, **kwargs):
+        self._dtype_list = [
+            ("station", "U25"),
+            ("latitude", float),
+            ("longitude", float),
+            ("elevation", float),
+            ("datum_epsg", "U6"),
+            ("east", float),
+            ("north", float),
+            ("utm_epsg", "U6"),
+            ("model_east", float),
+            ("model_north", float),
+            ("model_elevation", float),
+            ("period", float),
+            ("zxx", complex),
+            ("zxx_error", float),
+            ("zxx_model_error", float),
+            ("zxy", complex),
+            ("zxy_error", float),
+            ("zxy_model_error", float),
+            ("zyx", complex),
+            ("zyx_error", float),
+            ("zyx_model_error", float),
+            ("zyy", complex),
+            ("zyy_error", float),
+            ("zyy_model_error", float),
+            ("tzx", complex),
+            ("tzx_error", float),
+            ("tzx_model_error", float),
+            ("tzy", complex),
+            ("tzy_error", float),
+            ("tzy_model_error", float),
+            ("res_xx", complex),
+            ("res_xx_error", float),
+            ("res_xx_model_error", float),
+            ("res_xy", complex),
+            ("res_xy_error", float),
+            ("res_xy_model_error", float),
+            ("res_yx", complex),
+            ("res_yx_error", float),
+            ("res_yx_model_error", float),
+            ("res_yy", complex),
+            ("res_yy_error", float),
+            ("res_yy_model_error", float),
+            ("phase_xx", complex),
+            ("phase_xx_error", float),
+            ("phase_xx_model_error", float),
+            ("phase_xy", complex),
+            ("phase_xy_error", float),
+            ("phase_xy_model_error", float),
+            ("phase_yx", complex),
+            ("phase_yx_error", float),
+            ("phase_yx_model_error", float),
+            ("phase_yy", complex),
+            ("phase_yy_error", float),
+            ("phase_yy_model_error", float),
+            ("ptxx", complex),
+            ("ptxx_error", float),
+            ("ptxx_model_error", float),
+            ("ptxy", complex),
+            ("ptxy_error", float),
+            ("ptxy_model_error", float),
+            ("ptyx", complex),
+            ("ptyx_error", float),
+            ("ptyx_model_error", float),
+            ("ptyy", complex),
+            ("ptyy_error", float),
+            ("ptyy_model_error", float),
+        ]
 
-    def _get_initial_array(
-        self,
-        n_entries=0,
-        impedance=True,
-        tipper=True,
-        res_phase=False,
-        pt=False,
-    ):
+        if data is not None:
+            self.dataframe = self._validate_data(data)
 
-        base_columns = self._basic_columns
-        if impedance:
-            base_columns += self._impedance_columns
-        if tipper:
-            base_columns += self._tipper_columns
-        if res_phase:
-            base_columns += self._res_phase_columns
-        if pt:
-            base_columns += self._pt_columns
+        else:
+            self.dataframe = self._get_initial_df(n_entries)
 
-        return np.empty(n_entries, dtype=self._get_dtypes(base_columns))
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-    @property
-    def _constructor(self):
+    def __str__(self):
+        if self._has_data():
+            return self.dataframe.__str__()
+
+        else:
+            return "Empty MTStationDataFrame"
+
+    def __repr__(self):
+        if self._has_data():
+            return self.dataframe.__repr__()
+        else:
+            return "MTStationDataFrame()"
+
+    def __eq__(self, other):
+        other = self._validata_data(other)
+        return self.dataframe == other
+
+    def _validate_data(self, data):
         """
-        Creates a self object that is basically a pandas.Dataframe.
-        self is a dataframe-like object inherited from pandas.DataFrame
-        self behaves like a dataframe + new custom attributes and methods.
+
+        :param data: DESCRIPTION
+        :type data: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
         """
-        return MTDataFrame
 
-    @property
-    def _constructor_sliced(self):
-        return MTDataFrame
+        if isinstance(data, (dict, np.ndarray)):
+            df = pd.DataFrame(data)
 
-    @property
-    def _basic_columns(self):
-        return [
-            "station",
-            "latitude",
-            "longitude",
-            "elevation",
-            "datum_epsg",
-            "east",
-            "north",
-            "utm_epsg",
-            "model_east",
-            "model_north",
-            "model_elevation",
-            "period",
-        ]
+        elif isinstance(data, pd.DataFrame):
+            df = data
 
-    @property
-    def _impedance_columns(self):
-        return [
-            "zxx",
-            "zxx_error",
-            "zxx_model_error",
-            "zxy",
-            "zxy_error",
-            "zxy_model_error",
-            "zyx",
-            "zyx_error",
-            "zyx_model_error",
-            "zyy",
-            "zyy_error",
-            "zyy_model_error",
-        ]
+        else:
+            raise TypeError("Input data must be a pandas.DataFrame")
 
-    @property
-    def _tipper_columns(self):
-        return [
-            "tzx",
-            "tzx_error",
-            "tzx_model_error",
-            "tzy",
-            "tzy_error",
-            "tzy_model_error",
-        ]
+        for col in ["station", "period", "latitude", "longitude", "elevation"]:
+            if col not in df.columns:
+                raise ValueError(f"Input missing column {col}.")
 
-    @property
-    def _res_phase_columns(self):
-        return [
-            "res_xx",
-            "res_xx_error",
-            "res_xx_model_error",
-            "res_xy",
-            "res_xy_error",
-            "res_xy_model_error",
-            "res_yx",
-            "res_yx_error",
-            "res_yx_model_error",
-            "res_yy",
-            "res_yy_error",
-            "res_yy_model_error",
-            "phase_xx",
-            "phase_xx_error",
-            "phase_xx_model_error",
-            "phase_xy",
-            "phase_xy_error",
-            "phase_xy_model_error",
-            "phase_yx",
-            "phase_yx_error",
-            "phase_yx_model_error",
-            "phase_yy",
-            "phase_yy_error",
-            "phase_yy_model_error",
-        ]
+        return df
 
-    @property
-    def _pt_columns(self):
-        return [
-            "ptxx",
-            "ptxx_error",
-            "ptxx_model_error",
-            "ptxy",
-            "ptxy_error",
-            "ptxy_model_error",
-            "ptyx",
-            "ptyx_error",
-            "ptyx_model_error",
-            "ptyy",
-            "ptyy_error",
-            "ptyy_model_error",
-        ]
+    def _get_initial_df(self, n_entries=0):
 
-    @property
-    def _base_df_dtypes(self):
-
-        return dict(
-            [
-                ("station", "U25"),
-                ("latitude", float),
-                ("longitude", float),
-                ("elevation", float),
-                ("datum_epsg", "U6"),
-                ("east", float),
-                ("north", float),
-                ("utm_epsg", "U6"),
-                ("model_east", float),
-                ("model_north", float),
-                ("model_elevation", float),
-                ("period", float),
-                ("zxx", complex),
-                ("zxx_error", float),
-                ("zxx_model_error", float),
-                ("zxy", complex),
-                ("zxy_error", float),
-                ("zxy_model_error", float),
-                ("zyx", complex),
-                ("zyx_error", float),
-                ("zyx_model_error", float),
-                ("zyy", complex),
-                ("zyy_error", float),
-                ("zyy_model_error", float),
-                ("tzx", complex),
-                ("tzx_error", float),
-                ("tzx_model_error", float),
-                ("tzy", complex),
-                ("tzy_error", float),
-                ("tzy_model_error", float),
-                ("res_xx", complex),
-                ("res_xx_error", float),
-                ("res_xx_model_error", float),
-                ("res_xy", complex),
-                ("res_xy_error", float),
-                ("res_xy_model_error", float),
-                ("res_yx", complex),
-                ("res_yx_error", float),
-                ("res_yx_model_error", float),
-                ("res_yy", complex),
-                ("res_yy_error", float),
-                ("res_yy_model_error", float),
-                ("phase_xx", complex),
-                ("phase_xx_error", float),
-                ("phase_xx_model_error", float),
-                ("phase_xy", complex),
-                ("phase_xy_error", float),
-                ("phase_xy_model_error", float),
-                ("phase_yx", complex),
-                ("phase_yx_error", float),
-                ("phase_yx_model_error", float),
-                ("phase_yy", complex),
-                ("phase_yy_error", float),
-                ("phase_yy_model_error", float),
-                ("ptxx", complex),
-                ("ptxx_error", float),
-                ("ptxx_model_error", float),
-                ("ptxy", complex),
-                ("ptxy_error", float),
-                ("ptxy_model_error", float),
-                ("ptyx", complex),
-                ("ptyx_error", float),
-                ("ptyx_model_error", float),
-                ("ptyy", complex),
-                ("ptyy_error", float),
-                ("ptyy_model_error", float),
-            ]
+        return pd.DataFrame(
+            np.empty(n_entries, dtype=np.dtype(self._dtype_list))
         )
+
+    def _has_data(self):
+        if self.dataframe is None:
+            return False
+        elif self.dataframe.shape[0] > 0:
+            return True
+        return False
 
     @property
     def _index_dict(self):
@@ -239,26 +165,6 @@ class MTDataFrame(pd.DataFrame):
             "zx": {"ii": 0, "jj": 0},
             "zy": {"ii": 0, "jj": 1},
         }
-
-    def _get_dtypes(self, cols):
-        """
-        Get dtypes for the dataframe
-
-        :param cols: columns to use in data types
-        :type cols: list of strings
-        :return: dictionary of data types
-        :rtype: dictionary
-
-        """
-
-        dtypes = []
-        for key in cols:
-            try:
-                dtypes.append((key, self._base_df_dtypes[key]))
-            except KeyError:
-                raise KeyError(f"Could not find {key} in df_dtypes")
-
-        return np.dtype(dtypes)
 
     def _get_index(self, key):
         """ """
@@ -275,25 +181,165 @@ class MTDataFrame(pd.DataFrame):
         else:
             return None
 
-    def make_empty_entry(self, n_entries):
+    @property
+    def period(self):
         """
+        Get frequencies
 
-        :param n_entries: number of expected rows
-        :type n_entries: int
-        :param dtypes: DESCRIPTION
-        :type dtypes: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        return dict(
-            [
-                (col, np.zeros(n_entries, dtype))
-                for col, dtype in self.dtypes.items()
-            ]
-        )
 
-    def from_z_object(self, z_object, entry):
+        if self._has_data():
+            return self.dataframe.period
+
+    @property
+    def frequency(self):
+        """
+        Get frequencies
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self._has_data():
+            return 1.0 / self.dataframe.period
+
+    @property
+    def station(self):
+        """station name"""
+        if self._has_data():
+            return self.dataframe.station.unique()[0]
+
+    @station.setter
+    def station(self, value):
+        """station name"""
+        if self._has_data():
+            self.dataframe.loc[:, "station"] = value
+
+    @property
+    def latitude(self):
+        """latitude"""
+        if self._has_data():
+            return self.dataframe.latitude.unique()[0]
+
+    @latitude.setter
+    def latitude(self, value):
+        """latitude"""
+        if self._has_data():
+            self.dataframe.loc[:, "latitude"] = value
+
+    @property
+    def longitude(self):
+        """longitude"""
+        if self._has_data():
+            return self.dataframe.longitude.unique()[0]
+
+    @longitude.setter
+    def longitude(self, value):
+        """longitude"""
+        if self._has_data():
+            self.dataframe.loc[:, "longitude"] = value
+
+    @property
+    def elevation(self):
+        """elevation"""
+        if self._has_data():
+            return self.dataframe.elevation.unique()[0]
+
+    @elevation.setter
+    def elevation(self, value):
+        """elevation"""
+        if self._has_data():
+            self.dataframe.loc[:, "elevation"] = value
+
+    @property
+    def datum_epsg(self):
+        """datum_epsg"""
+        if self._has_data():
+            return self.dataframe.datum_epsg.unique()[0]
+
+    @datum_epsg.setter
+    def datum_epsg(self, value):
+        """datum_epsg"""
+        if self._has_data():
+            self.dataframe.loc[:, "datum_epsg"] = value
+
+    @property
+    def east(self):
+        """station"""
+        if self._has_data():
+            return self.dataframe.east.unique()[0]
+
+    @east.setter
+    def east(self, value):
+        """east"""
+        if self._has_data():
+            self.dataframe.loc[:, "east"] = value
+
+    @property
+    def north(self):
+        """north"""
+        if self._has_data():
+            return self.dataframe.north.unique()[0]
+
+    @north.setter
+    def north(self, value):
+        """north"""
+        if self._has_data():
+            self.dataframe.loc[:, "north"] = value
+
+    @property
+    def utm_epsg(self):
+        """utm_epsg"""
+        if self._has_data():
+            return self.dataframe.utm_epsg.unique()[0]
+
+    @utm_epsg.setter
+    def utm_epsg(self, value):
+        """utm_epsg"""
+        if self._has_data():
+            self.dataframe.loc[:, "utm_epsg"] = value
+
+    @property
+    def model_east(self):
+        """model_east"""
+        if self._has_data():
+            return self.dataframe.model_east.unique()[0]
+
+    @model_east.setter
+    def model_east(self, value):
+        """model_east"""
+        if self._has_data():
+            self.dataframe.loc[:, "model_east"] = value
+
+    @property
+    def model_north(self):
+        """model_north"""
+        if self._has_data():
+            return self.dataframe.model_north.unique()[0]
+
+    @model_north.setter
+    def model_north(self, value):
+        """model_north"""
+        if self._has_data():
+            self.dataframe.loc[:, "model_north"] = value
+
+    @property
+    def model_elevation(self):
+        """model_elevation"""
+        if self._has_data():
+            return self.dataframe.model_elevation.unique()[0]
+
+    @model_elevation.setter
+    def model_elevation(self, value):
+        """model_elevation"""
+        if self._has_data():
+            self.dataframe.loc[:, "model_elevation"] = value
+
+    def from_z_object(self, z_object):
         """
         Fill impedance
         :param impedance: DESCRIPTION
@@ -305,17 +351,19 @@ class MTDataFrame(pd.DataFrame):
 
         """
 
-        for key in self.dtypes.keys():
+        for key in self.dataframe.dtypes.keys():
             index = self._get_index(key)
             if index is None:
                 continue
 
             if key in ["zxx", "zxy", "zyx", "zyy"]:
                 if z_object._has_tf():
-                    entry[key][:] = z_object.z[:, index["ii"], index["jj"]]
+                    self.dataframe.loc[:, key] = z_object.z[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in ["zxx_error", "zxy_error", "zyx_error", "zyy_error"]:
                 if z_object._has_tf_error():
-                    entry[key][:] = z_object.z_error[
+                    self.dataframe.loc[:, key] = z_object.z_error[
                         :, index["ii"], index["jj"]
                     ]
             elif key in [
@@ -325,12 +373,12 @@ class MTDataFrame(pd.DataFrame):
                 "zyy_model_error",
             ]:
                 if z_object._has_tf_model_error():
-                    entry[key][:] = z_object.z_model_error[
+                    self.dataframe.loc[:, key] = z_object.z_model_error[
                         :, index["ii"], index["jj"]
                     ]
             elif key in ["res_xx", "res_xy", "res_yx", "res_yy"]:
                 if z_object._has_tf():
-                    entry[key][:] = z_object.resistivity[
+                    self.dataframe.loc[:, key] = z_object.resistivity[
                         :, index["ii"], index["jj"]
                     ]
             elif key in [
@@ -340,7 +388,7 @@ class MTDataFrame(pd.DataFrame):
                 "res_yy_error",
             ]:
                 if z_object._has_tf_error():
-                    entry[key][:] = z_object.resistivity_error[
+                    self.dataframe.loc[:, key] = z_object.resistivity_error[
                         :, index["ii"], index["jj"]
                     ]
             elif key in [
@@ -350,13 +398,17 @@ class MTDataFrame(pd.DataFrame):
                 "res_yy_model_error",
             ]:
                 if z_object._has_tf_model_error():
-                    entry[key][:] = z_object.resistivity_model_error[
+                    self.dataframe.loc[
+                        :, key
+                    ] = z_object.resistivity_model_error[
                         :, index["ii"], index["jj"]
                     ]
 
             elif key in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
                 if z_object._has_tf():
-                    entry[key][:] = z_object.phase[:, index["ii"], index["jj"]]
+                    self.dataframe.loc[:, key] = z_object.phase[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in [
                 "phase_xx_error",
                 "phase_xy_error",
@@ -364,7 +416,7 @@ class MTDataFrame(pd.DataFrame):
                 "phase_yy_error",
             ]:
                 if z_object._has_tf_error():
-                    entry[key][:] = z_object.phase_error[
+                    self.dataframe.loc[:, key] = z_object.phase_error[
                         :, index["ii"], index["jj"]
                     ]
             elif key in [
@@ -374,13 +426,11 @@ class MTDataFrame(pd.DataFrame):
                 "phase_yy_model_error",
             ]:
                 if z_object._has_tf_model_error():
-                    entry[key][:] = z_object.phase_model_error[
+                    self.dataframe.loc[:, key] = z_object.phase_model_error[
                         :, index["ii"], index["jj"]
                     ]
 
-        return entry
-
-    def from_t_object(self, t_object, entry):
+    def from_t_object(self, t_object):
         """
         Fill tipper
         :param tipper: DESCRIPTION
@@ -393,61 +443,33 @@ class MTDataFrame(pd.DataFrame):
         :rtype: TYPE
 
         """
-        for key in self.dtypes.keys():
+        for key in self.dataframe.dtypes.keys():
             index = self._get_index(key)
             if index is None:
                 continue
             if key in ["tzx", "tzy"]:
                 if t_object._has_tf():
-                    entry[key][:] = t_object.tipper[:, index["ii"], index["jj"]]
+                    self.dataframe.loc[:, key] = t_object.tipper[
+                        :, index["ii"], index["jj"]
+                    ]
             elif key in ["tzx_error", "tzy_error"]:
                 if t_object._has_tf_error():
-                    entry[key][:] = t_object.tipper_error[
+                    self.dataframe.loc[:, key] = t_object.tipper_error[
                         :, index["ii"], index["jj"]
                     ]
             elif key in ["tzx_model_error", "tzy_model_error"]:
                 if t_object._has_tf_model_error():
-                    entry[key][:] = t_object.tipper_model_error[
+                    self.dataframe.loc[:, key] = t_object.tipper_model_error[
                         :, index["ii"], index["jj"]
                     ]
 
-        return entry
-
-    @property
-    def frequency(self):
-        """
-        Get frequencies
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if hasattr(self, "period"):
-            return 1.0 / self.period
-
-    def get_station_df(self, station):
-        """
-        Get station data frame
-        :param station: DESCRIPTION
-        :type station: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        if hasattr(self, "station"):
-            if station in self.station:
-                return self.loc[self.station == station]
-
-    def to_z_object(self, station):
+    def to_z_object(self):
         """
         fill z_object from dataframe
 
         Need to have the components this way for transposing the elements so
         that the shape is (nf, 2, 2)
         """
-
-        sdf = self.get_station_df(station)
 
         nf = self.period.size
         z = np.zeros((nf, 2, 2), dtype=complex)
@@ -462,60 +484,70 @@ class MTDataFrame(pd.DataFrame):
         phase_err = np.zeros((nf, 2, 2), dtype=float)
         phase_model_err = np.zeros((nf, 2, 2), dtype=float)
 
-        for key in sdf.columns:
+        for key in self.dataframe.columns:
             index = self._get_index(key)
             if index is None:
                 continue
 
             if key in ["zxx", "zxy", "zyx", "zyy"]:
-                z[:, index["ii"], index["jj"]] = sdf[key][:]
+                z[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
             elif key in ["zxx_error", "zxy_error", "zyx_error", "zyy_error"]:
-                z_err[:, index["ii"], index["jj"]] = sdf[key][:]
+                z_err[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
             elif key in [
                 "zxx_model_error",
                 "zxy_model_error",
                 "zyx_model_error",
                 "zyy_model_error",
             ]:
-                z_model_err[:, index["ii"], index["jj"]] = sdf[key][:]
+                z_model_err[:, index["ii"], index["jj"]] = self.dataframe[key][
+                    :
+                ]
 
             ### resistivity
             elif key in ["res_xx", "res_xy", "res_yx", "res_yy"]:
-                res[:, index["ii"], index["jj"]] = sdf[key][:]
+                res[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
             elif key in [
                 "res_xx_error",
                 "res_xy_error",
                 "res_yx_error",
                 "res_yy_error",
             ]:
-                res_err[:, index["ii"], index["jj"]] = sdf[key][:]
+                res_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    :, key
+                ]
             elif key in [
                 "res_xx_model_error",
                 "res_xy_model_error",
                 "res_yx_model_error",
                 "res_yy_model_error",
             ]:
-                res_model_err[:, index["ii"], index["jj"]] = sdf[key][:]
+                res_model_err[:, index["ii"], index["jj"]] = self.dataframe[
+                    key
+                ][:]
 
             ### Phase
             elif key in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
-                phase[:, index["ii"], index["jj"]] = sdf[key][:]
+                phase[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
             elif key in [
                 "phase_xx_error",
                 "phase_xy_error",
                 "phase_yx_error",
                 "phase_yy_error",
             ]:
-                phase_err[:, index["ii"], index["jj"]] = sdf[key][:]
+                phase_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    :, key
+                ]
             elif key in [
                 "phase_xx_model_error",
                 "phase_xy_model_error",
                 "phase_yx_model_error",
                 "phase_yy_model_error",
             ]:
-                phase_model_err[:, index["ii"], index["jj"]] = sdf[key][:]
+                phase_model_err[:, index["ii"], index["jj"]] = self.dataframe[
+                    key
+                ][:]
 
-        z_object = Z(z, z_err, self.get_frequency(sdf), z_model_err)
+        z_object = Z(z, z_err, self.frequency, z_model_err)
 
         if (z == 0).all():
             # only load in resistivity and phase if impedance is 0, otherwise
@@ -538,7 +570,7 @@ class MTDataFrame(pd.DataFrame):
 
         return z_object
 
-    def to_t_object(self, df):
+    def to_t_object(self):
         """
         To a tipper object
 
@@ -547,21 +579,23 @@ class MTDataFrame(pd.DataFrame):
 
         """
 
-        nf = self.get_frequency(df).size
+        nf = self.dataframe.period.size
         t = np.zeros((nf, 1, 2), dtype=complex)
         t_err = np.zeros((nf, 1, 2), dtype=float)
         t_model_err = np.zeros((nf, 1, 2), dtype=float)
 
-        for key in df.columns:
+        for key in self.dataframe.columns:
             index = self._get_index(key)
             if index is None:
                 continue
 
             if key in ["tzx", "tzy"]:
-                t[:, index["ii"], index["jj"]] = df[key][:]
+                t[:, index["ii"], index["jj"]] = self.dataframe[key][:]
             elif key in ["tzx_error", "tzy_error"]:
-                t_err[:, index["ii"], index["jj"]] = df[key][:]
+                t_err[:, index["ii"], index["jj"]] = self.dataframe[key][:]
             elif key in ["tzx_model_error", "tzy_model_error"]:
-                t_model_err[:, index["ii"], index["jj"]] = df[key][:]
+                t_model_err[:, index["ii"], index["jj"]] = self.dataframe[key][
+                    :
+                ]
 
-        return Tipper(t, t_err, self.get_frequency(df), t_model_err)
+        return Tipper(t, t_err, self.frequency, t_model_err)
