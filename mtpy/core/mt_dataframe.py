@@ -16,7 +16,7 @@ from . import Z, Tipper
 # =============================================================================
 
 
-class MTStationDataFrame:
+class MTDataFrame:
     """
     Dataframe for a single station
 
@@ -102,6 +102,8 @@ class MTStationDataFrame:
         else:
             self.dataframe = self._get_initial_df(n_entries)
 
+        self.working_station = None
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -160,6 +162,29 @@ class MTStationDataFrame:
             return True
         return False
 
+    def get_station_df(self, station=None):
+        """
+        get a single station df
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if station is not None:
+            self.working_station = station
+        if self._has_data():
+            if self.working_station is None:
+                self.working_station = self.dataframe.station.unique()[0]
+
+            if self.working_station not in self.dataframe.station:
+                raise ValueError(
+                    f"Could not find station {self.working_station} in dataframe."
+                )
+
+            return self.dataframe[
+                self.dataframe.station == self.working_station
+            ]
+
     @property
     def size(self):
         if self._has_data():
@@ -202,7 +227,7 @@ class MTStationDataFrame:
         """
 
         if self._has_data():
-            return self.dataframe.period
+            return np.sort(self.dataframe.period.unique())
 
     @property
     def frequency(self):
@@ -221,133 +246,180 @@ class MTStationDataFrame:
     def station(self):
         """station name"""
         if self._has_data():
-            return self.dataframe.station.unique()[0]
+            if self.working_station is None:
+                self.working_station = self.dataframe.station.unique()[0]
+            return self.working_station
 
     @station.setter
     def station(self, value):
         """station name"""
         if self._has_data():
-            self.dataframe.loc[:, "station"] = value
+            if self.working_station in [None, ""]:
+                self.dataframe.loc[
+                    self.dataframe.station == "", "station"
+                ] = value
+                self.working_station = value
 
     @property
     def latitude(self):
         """latitude"""
         if self._has_data():
-            return self.dataframe.latitude.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "latitude"
+            ].unique()[0]
 
     @latitude.setter
     def latitude(self, value):
         """latitude"""
         if self._has_data():
-            self.dataframe.loc[:, "latitude"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "latitude"
+            ] = value
 
     @property
     def longitude(self):
         """longitude"""
         if self._has_data():
-            return self.dataframe.longitude.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "longitude"
+            ].unique()[0]
 
     @longitude.setter
     def longitude(self, value):
         """longitude"""
         if self._has_data():
-            self.dataframe.loc[:, "longitude"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "longitude"
+            ] = value
 
     @property
     def elevation(self):
         """elevation"""
         if self._has_data():
-            return self.dataframe.elevation.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "elevation"
+            ].unique()[0]
 
     @elevation.setter
     def elevation(self, value):
         """elevation"""
         if self._has_data():
-            self.dataframe.loc[:, "elevation"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "elevation"
+            ] = value
 
     @property
     def datum_epsg(self):
         """datum_epsg"""
         if self._has_data():
-            return self.dataframe.datum_epsg.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "datum_epsg"
+            ].unique()[0]
 
     @datum_epsg.setter
     def datum_epsg(self, value):
         """datum_epsg"""
         if self._has_data():
-            self.dataframe.loc[:, "datum_epsg"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "datum_epsg"
+            ] = value
 
     @property
     def east(self):
         """station"""
         if self._has_data():
-            return self.dataframe.east.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "east"
+            ].unique()[0]
 
     @east.setter
     def east(self, value):
         """east"""
         if self._has_data():
-            self.dataframe.loc[:, "east"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "east"
+            ] = value
 
     @property
     def north(self):
         """north"""
         if self._has_data():
-            return self.dataframe.north.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "north"
+            ].unique()[0]
 
     @north.setter
     def north(self, value):
         """north"""
         if self._has_data():
-            self.dataframe.loc[:, "north"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "north"
+            ] = value
 
     @property
     def utm_epsg(self):
         """utm_epsg"""
         if self._has_data():
-            return self.dataframe.utm_epsg.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "utm_epsg"
+            ].unique()[0]
 
     @utm_epsg.setter
     def utm_epsg(self, value):
         """utm_epsg"""
         if self._has_data():
-            self.dataframe.loc[:, "utm_epsg"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "utm_epsg"
+            ] = value
 
     @property
     def model_east(self):
         """model_east"""
         if self._has_data():
-            return self.dataframe.model_east.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "model_east"
+            ].unique()[0]
 
     @model_east.setter
     def model_east(self, value):
         """model_east"""
         if self._has_data():
-            self.dataframe.loc[:, "model_east"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "model_east"
+            ] = value
 
     @property
     def model_north(self):
         """model_north"""
         if self._has_data():
-            return self.dataframe.model_north.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "model_north"
+            ].unique()[0]
 
     @model_north.setter
     def model_north(self, value):
         """model_north"""
         if self._has_data():
-            self.dataframe.loc[:, "model_north"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station, "model_north"
+            ] = value
 
     @property
     def model_elevation(self):
         """model_elevation"""
         if self._has_data():
-            return self.dataframe.model_elevation.unique()[0]
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "model_elevation"
+            ].unique()[0]
 
     @model_elevation.setter
     def model_elevation(self, value):
         """model_elevation"""
         if self._has_data():
-            self.dataframe.loc[:, "model_elevation"] = value
+            self.dataframe.loc[
+                self.dataframe.station == self.station,
+                "model_elevation",
+            ] = value
 
     def from_z_object(self, z_object):
         """
@@ -363,7 +435,9 @@ class MTStationDataFrame:
 
         for key in self.dataframe.dtypes.keys():
             if key in ["period"]:
-                self.dataframe.loc[:, "period"] = z_object.period
+                self.dataframe.loc[
+                    self.dataframe.station == self.station, "period"
+                ] = z_object.period
 
             index = self._get_index(key)
             if index is None:
@@ -371,14 +445,14 @@ class MTStationDataFrame:
 
             if key in ["zxx", "zxy", "zyx", "zyy"]:
                 if z_object._has_tf():
-                    self.dataframe.loc[:, key] = z_object.z[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.z[:, index["ii"], index["jj"]]
             elif key in ["zxx_error", "zxy_error", "zyx_error", "zyy_error"]:
                 if z_object._has_tf_error():
-                    self.dataframe.loc[:, key] = z_object.z_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.z_error[:, index["ii"], index["jj"]]
             elif key in [
                 "zxx_model_error",
                 "zxy_model_error",
@@ -386,14 +460,14 @@ class MTStationDataFrame:
                 "zyy_model_error",
             ]:
                 if z_object._has_tf_model_error():
-                    self.dataframe.loc[:, key] = z_object.z_model_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.z_model_error[:, index["ii"], index["jj"]]
             elif key in ["res_xx", "res_xy", "res_yx", "res_yy"]:
                 if z_object._has_tf():
-                    self.dataframe.loc[:, key] = z_object.resistivity[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.resistivity[:, index["ii"], index["jj"]]
             elif key in [
                 "res_xx_error",
                 "res_xy_error",
@@ -401,9 +475,9 @@ class MTStationDataFrame:
                 "res_yy_error",
             ]:
                 if z_object._has_tf_error():
-                    self.dataframe.loc[:, key] = z_object.resistivity_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.resistivity_error[:, index["ii"], index["jj"]]
             elif key in [
                 "res_xx_model_error",
                 "res_xy_model_error",
@@ -419,9 +493,9 @@ class MTStationDataFrame:
 
             elif key in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
                 if z_object._has_tf():
-                    self.dataframe.loc[:, key] = z_object.phase[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.phase[:, index["ii"], index["jj"]]
             elif key in [
                 "phase_xx_error",
                 "phase_xy_error",
@@ -429,9 +503,9 @@ class MTStationDataFrame:
                 "phase_yy_error",
             ]:
                 if z_object._has_tf_error():
-                    self.dataframe.loc[:, key] = z_object.phase_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.phase_error[:, index["ii"], index["jj"]]
             elif key in [
                 "phase_xx_model_error",
                 "phase_xy_model_error",
@@ -439,9 +513,9 @@ class MTStationDataFrame:
                 "phase_yy_model_error",
             ]:
                 if z_object._has_tf_model_error():
-                    self.dataframe.loc[:, key] = z_object.phase_model_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = z_object.phase_model_error[:, index["ii"], index["jj"]]
 
     def from_t_object(self, t_object):
         """
@@ -458,26 +532,28 @@ class MTStationDataFrame:
         """
         for key in self.dataframe.dtypes.keys():
             if key in ["period"]:
-                self.dataframe.loc[:, "period"] = t_object.period
+                self.dataframe.loc[
+                    self.dataframe.station == self.station, "period"
+                ] = t_object.period
 
             index = self._get_index(key)
             if index is None:
                 continue
             if key in ["tzx", "tzy"]:
                 if t_object._has_tf():
-                    self.dataframe.loc[:, key] = t_object.tipper[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = t_object.tipper[:, index["ii"], index["jj"]]
             elif key in ["tzx_error", "tzy_error"]:
                 if t_object._has_tf_error():
-                    self.dataframe.loc[:, key] = t_object.tipper_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = t_object.tipper_error[:, index["ii"], index["jj"]]
             elif key in ["tzx_model_error", "tzy_model_error"]:
                 if t_object._has_tf_model_error():
-                    self.dataframe.loc[:, key] = t_object.tipper_model_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    self.dataframe.loc[
+                        self.dataframe.station == self.station, key
+                    ] = t_object.tipper_model_error[:, index["ii"], index["jj"]]
 
     def to_z_object(self):
         """
@@ -506,22 +582,28 @@ class MTStationDataFrame:
                 continue
 
             if key in ["zxx", "zxy", "zyx", "zyy"]:
-                z[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
+                z[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
             elif key in ["zxx_error", "zxy_error", "zyx_error", "zyy_error"]:
-                z_err[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
+                z_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
             elif key in [
                 "zxx_model_error",
                 "zxy_model_error",
                 "zyx_model_error",
                 "zyy_model_error",
             ]:
-                z_model_err[:, index["ii"], index["jj"]] = self.dataframe[key][
-                    :
+                z_model_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
                 ]
 
             ### resistivity
             elif key in ["res_xx", "res_xy", "res_yx", "res_yy"]:
-                res[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
+                res[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
             elif key in [
                 "res_xx_error",
                 "res_xy_error",
@@ -529,7 +611,7 @@ class MTStationDataFrame:
                 "res_yy_error",
             ]:
                 res_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
-                    :, key
+                    self.dataframe.station == self.station, key
                 ]
             elif key in [
                 "res_xx_model_error",
@@ -537,13 +619,15 @@ class MTStationDataFrame:
                 "res_yx_model_error",
                 "res_yy_model_error",
             ]:
-                res_model_err[:, index["ii"], index["jj"]] = self.dataframe[
-                    key
-                ][:]
+                res_model_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
 
             ### Phase
             elif key in ["phase_xx", "phase_xy", "phase_yx", "phase_yy"]:
-                phase[:, index["ii"], index["jj"]] = self.dataframe.loc[:, key]
+                phase[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
             elif key in [
                 "phase_xx_error",
                 "phase_xy_error",
@@ -551,7 +635,7 @@ class MTStationDataFrame:
                 "phase_yy_error",
             ]:
                 phase_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
-                    :, key
+                    self.dataframe.station == self.station, key
                 ]
             elif key in [
                 "phase_xx_model_error",
@@ -559,9 +643,11 @@ class MTStationDataFrame:
                 "phase_yx_model_error",
                 "phase_yy_model_error",
             ]:
-                phase_model_err[:, index["ii"], index["jj"]] = self.dataframe[
-                    key
-                ][:]
+                phase_model_err[
+                    :, index["ii"], index["jj"]
+                ] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
 
         z_object = Z(z, z_err, self.frequency, z_model_err)
 
@@ -595,7 +681,7 @@ class MTStationDataFrame:
 
         """
 
-        nf = self.dataframe.period.size
+        nf = self.period.size
         t = np.zeros((nf, 1, 2), dtype=complex)
         t_err = np.zeros((nf, 1, 2), dtype=float)
         t_model_err = np.zeros((nf, 1, 2), dtype=float)
@@ -606,12 +692,16 @@ class MTStationDataFrame:
                 continue
 
             if key in ["tzx", "tzy"]:
-                t[:, index["ii"], index["jj"]] = self.dataframe[key][:]
+                t[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
             elif key in ["tzx_error", "tzy_error"]:
-                t_err[:, index["ii"], index["jj"]] = self.dataframe[key][:]
+                t_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
+                ]
             elif key in ["tzx_model_error", "tzy_model_error"]:
-                t_model_err[:, index["ii"], index["jj"]] = self.dataframe[key][
-                    :
+                t_model_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                    self.dataframe.station == self.station, key
                 ]
 
         return Tipper(t, t_err, self.frequency, t_model_err)

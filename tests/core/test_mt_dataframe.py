@@ -10,7 +10,7 @@ Created on Mon Oct  3 10:59:50 2022
 # =============================================================================
 import unittest
 
-from mtpy.core.mt_dataframe import MTStationDataFrame
+from mtpy.core.mt_dataframe import MTDataFrame
 from mtpy import MT
 
 from mt_metadata import TF_EDI_CGG
@@ -30,6 +30,7 @@ class TestMTDataFrame(unittest.TestCase):
         self.m1.model_elevation = 20
 
         self.sdf = self.m1.to_dataframe()
+        self.sdf.working_station = "TEST01"
 
     def test_station(self):
         self.assertEqual(self.sdf.station, "TEST01")
@@ -73,27 +74,27 @@ class TestMTDataFrame(unittest.TestCase):
         self.assertTrue(self.m1.Tipper == new_t)
 
     def test_from_z_object(self):
-        new_df = MTStationDataFrame(n_entries=self.sdf.size)
+        new_df = MTDataFrame(n_entries=self.sdf.size)
         new_df.from_z_object(self.m1.Z)
         new_z = new_df.to_z_object()
         self.assertTrue(self.m1.Z == new_z)
 
     def test_from_t_object(self):
-        new_df = MTStationDataFrame(n_entries=self.sdf.size)
+        new_df = MTDataFrame(n_entries=self.sdf.size)
         new_df.from_t_object(self.m1.Tipper)
         new_t = new_df.to_t_object()
         self.assertTrue(self.m1.Tipper == new_t)
 
 
-class TestMTStationDataFrameValidation(unittest.TestCase):
+class TestMTDataFrameValidation(unittest.TestCase):
     def setUp(self):
-        self.sdf = MTStationDataFrame()
+        self.sdf = MTDataFrame()
 
     def test_bad_input_fail(self):
         self.assertRaises(TypeError, self.sdf._validate_data, 10)
 
     def test_from_dict(self):
-        df = MTStationDataFrame(
+        df = MTDataFrame(
             {
                 "station": "a",
                 "period": [0, 1],

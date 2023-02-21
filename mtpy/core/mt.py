@@ -15,7 +15,7 @@ from mt_metadata.transfer_functions.core import TF
 
 from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
-from mtpy.core.mt_dataframe import MTStationDataFrame
+from mtpy.core.mt_dataframe import MTDataFrame
 
 import mtpy.analysis.distortion as MTdistortion
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
@@ -422,7 +422,7 @@ class MT(TF, MTLocation):
             self.utm_crs = utm_crs
 
         n_entries = self.period.size
-        mt_df = MTStationDataFrame(n_entries=n_entries)
+        mt_df = MTDataFrame(n_entries=n_entries)
 
         mt_df.station = self.station
         mt_df.latitude = self.latitude
@@ -455,7 +455,7 @@ class MT(TF, MTLocation):
 
         """
 
-        mt_df = MTStationDataFrame()
+        mt_df = MTDataFrame()
         for key in [
             "station",
             "latitude",
