@@ -807,7 +807,9 @@ class Z(TFBase):
         """Weaver Invariants"""
         return ZInvariants(z=self.z)
 
-    def estimate_dimensionality(self):
+    def estimate_dimensionality(
+        self, skew_threshold=5, eccentricity_threshold=0.1
+    ):
         """
         Estimate dimensionality of the impedance tensor from parameters such
         as strike and phase tensor eccentricity
@@ -817,20 +819,14 @@ class Z(TFBase):
 
         """
 
-        # use criteria from Bibby et al. 2005 for determining the dimensionality
-        # for each frequency of the pt/z array:
-        for idx_f in range(len(pt_obj.pt)):
-            # 1. determine skew value...
-            skew = pt_obj.beta[idx_f]
-            # compare with threshold for 3D
-            if np.abs(skew) > skew_threshold:
-                lo_dimensionality.append(3)
-            else:
-                # 2.check for eccentricity:
-                ecc = pt_obj._pi1()[0][idx_f] / pt_obj._pi2()[0][idx_f]
-                if ecc > eccentricity_threshold:
-                    lo_dimensionality.append(2)
-                else:
-                    lo_dimensionality.append(1)
+        dimensionality = np.ones(self.period.size, dtype=int)
 
-        return np.array(lo_dimensionality)
+        # need to get 2D first then 3D
+        dimensionality[
+            np.where(self.phase_tensor.eccentricity > eccentricity_threshold)
+        ] = 2
+        dimensionality[
+            np.where(np.abs(self.phase_tensor.skew) > skew_threshold)
+        ] = 3
+
+        return dimensionality

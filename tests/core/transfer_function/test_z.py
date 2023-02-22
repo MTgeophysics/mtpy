@@ -269,6 +269,39 @@ class TestInvariants(unittest.TestCase):
     def test_strike_error(self):
         self.assertAlmostEqual(5.185204, self.z.invariants.strike_error[0], 5)
 
+    def test_estimate_dimensionality(self):
+        self.assertTrue(
+            np.all(self.z.estimate_dimensionality() == np.array([1]))
+        )
+
+
+class TestEstimateDimensionality(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.z = Z(
+            z=np.array(
+                [
+                    [
+                        [-7.420305 - 15.02897j, 53.44306 + 114.4988j],
+                        [-49.96444 - 116.4191j, 11.95081 + 21.52367j],
+                    ],
+                    [
+                        [-1.420305 - 1.02897j, 603.44306 + 814.4988j],
+                        [-10.96444 - 21.4191j, 1.95081 + 1.52367j],
+                    ],
+                    [
+                        [-70.420305 - 111.02897j, 3.44306 + 214.4988j],
+                        [-19.96444 - 56.4191j, 81.95081 + 314.52367j],
+                    ],
+                ]
+            )
+        )
+
+    def test_estimate_dimensionality(self):
+        self.assertTrue(
+            np.all(self.z.estimate_dimensionality() == np.array([1, 2, 3]))
+        )
+
 
 # =============================================================================
 # Run
