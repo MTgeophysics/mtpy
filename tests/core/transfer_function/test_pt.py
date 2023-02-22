@@ -94,11 +94,57 @@ class TestZSetResPhase(unittest.TestCase):
             ).all()
         )
 
+    def test_det(self):
+        self.assertTrue(np.isclose(self.pt.det, np.array([1.0])).all())
+
     def test_phimax(self):
         self.assertTrue(np.isclose(self.pt.phimax, np.array([45.0])).all())
 
     def test_phimin(self):
         self.assertTrue(np.isclose(self.pt.phimin, np.array([45.0])).all())
+
+    def test_azimuth(self):
+        self.assertTrue(np.isclose(self.pt.azimuth, np.array([0.0])).all())
+
+    def test_beta(self):
+        self.assertTrue(np.isclose(self.pt.beta, np.array([0.0])).all())
+
+    def test_skew(self):
+        self.assertTrue(np.isclose(self.pt.skew, np.array([0.0])).all())
+
+    def test_ellipticity(self):
+        self.assertTrue(np.isclose(self.pt.ellipticity, np.array([0.0])).all())
+
+    def test_eccentricity(self):
+        self.assertTrue(np.isclose(self.pt.eccentricity, np.array([0.0])).all())
+
+    def test_det_error(self):
+        self.assertTrue(np.isclose(self.pt.det_error, np.array([0.2])).all())
+
+    def test_phimax_error(self):
+        self.assertTrue(np.all(np.isnan(self.pt.phimax_error)))
+
+    def test_phimin_error(self):
+        self.assertTrue(np.all(np.isnan(self.pt.phimin_error)))
+
+    def test_azimuth_error(self):
+        self.assertTrue(np.all(np.isnan(self.pt.azimuth_error)))
+
+    def test_beta_error(self):
+        self.assertTrue(
+            np.isclose(self.pt.beta_error, np.array([4.05142342])).all()
+        )
+
+    def test_skew_error(self):
+        self.assertTrue(
+            np.isclose(self.pt.skew_error, np.array([4.05142342])).all()
+        )
+
+    def test_ellipticity_error(self):
+        self.assertTrue(np.all(np.isnan(self.pt.ellipticity_error)))
+
+    def test_eccentricity_error(self):
+        self.assertTrue(np.all(np.isnan(self.pt.eccentricity_error)))
 
 
 # =============================================================================
