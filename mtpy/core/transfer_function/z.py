@@ -20,6 +20,7 @@ import numpy as np
 import mtpy.utils.calculator as MTcc
 from .base import TFBase
 from .pt import PhaseTensor
+from .zinvariants import ZInvariants
 
 # ==============================================================================
 # Impedance Tensor Class
@@ -542,9 +543,7 @@ class Z(TFBase):
         res_error = self._validate_array_input(res_error, float)
         phase_error = self._validate_array_input(phase_error, float)
         res_model_error = self._validate_array_input(res_model_error, float)
-        phase_model_error = self._validate_array_input(
-            phase_model_error, float
-        )
+        phase_model_error = self._validate_array_input(phase_model_error, float)
 
         abs_z = np.sqrt(5.0 * self.frequency * (resistivity.T)).T
         self.z = abs_z * np.exp(1j * np.radians(phase))
@@ -802,3 +801,8 @@ class Z(TFBase):
             z_model_error=self.z_model_error,
             frequency=self.frequency,
         )
+
+    @property
+    def invariants(self):
+        """Weaver Invariants"""
+        return ZInvariants(z=self.z)

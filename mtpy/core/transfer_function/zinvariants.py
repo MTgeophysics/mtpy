@@ -17,56 +17,19 @@ import numpy as np
 # =============================================================================
 
 
-class Zinvariants:
+class ZInvariants:
     """
-    calculates invariants from Weaver et al. [2000, 2003].  At the moment it
+    Calculates invariants from Weaver et al. [2000, 2003].  At the moment it
     does not calculate the error for each invariant, only the strike.
 
-    Arguments
-    ----------
-        **z_object** : type mtpy.core.z
-                       needs to have attributes:
-                           *z --> np.array((nf, 2, 2), dtype='complex')
+    :type z: complex np.array(nf,2,2)
+    :param z: impedance tensor array
 
-                           *z_err --> np.array((nf, 2, 2), dtype='real')
-
-                           *frequency --> np.array(nf)
-
-        **z** : complex np.array(nf,2,2)
-                impedance tensor array
-
-        **z_err** : real np.array(nf,2,2)
-                impedance tensor error array
-
-        **frequency** : np.array(nf)
-                          array of frequency cooresponding to the impedance
-                          tensor elements.
-
-    Attributes
-    -----------
-        **inv1**       : real off diaganol part normalizing factor
-
-        **inv2**       : imaginary off diaganol normalizing factor
-
-        **inv3**       : real anisotropy factor (range from [0,1])
-
-        **inv4**       : imaginary anisotropy factor (range from [0,1])
-
-        **inv5**       : suggests electric field twist
-
-        **inv6**       : suggests in phase small scale distortion
-
-        **inv7**       : suggests 3D structure
-
-        **strike**     : strike angle (deg) assuming positive clockwise 0=N
-
-        **strike_err** : strike angle error (deg)
-
-        **q**          : dependent variable suggesting dimensionality
 
 
     Further reading
     ----------------
+
         Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2000,
            Characterization of the magnetotelluric tensor in terms of its
            invariants, Geophysical Journal International, 141, 321--336.
@@ -96,10 +59,10 @@ class Zinvariants:
         self.z = z
 
     def __str__(self):
-        return (
-            "Computes the invariants of the impedance tensor according "
-            + "Weaver et al., [2000, 2003]."
-        )
+        return f"Weaver Invariants \n\tHas Impedance:  {self.has_impedance()}"
+
+    def __repr__(self):
+        return self.__str__()
 
     def has_impedance(self):
         if np.all(self.z == 0):
@@ -159,13 +122,13 @@ class Zinvariants:
 
             return ex
 
-    @propery
+    @property
     def normalizing_real(self):
         """inv 1"""
         if self.has_impedance():
             return np.sqrt(self._x4**2 + self._x1**2)
 
-    @propery
+    @property
     def normalizing_imag(self):
         """inv 2"""
         if self.has_impedance():
@@ -232,13 +195,19 @@ class Zinvariants:
     @property
     def strike(self):
         if self.has_impedance():
-            return 0.5 * np.rad2deg(
-                np.arctan2(
-                    (self._x1 * self._e2 - self._x2 * self._e1) / self._ex
-                    - (self._x3 * self._e4 - self._x4 * self._e3) / self._ex,
-                    (self._x1 * self._e3 - self._x3 * self._e1) / self._ex
-                    + (self._x2 * self._e4 - self._x4 * self._e2) / self._ex,
+            return (
+                0.5
+                * np.rad2deg(
+                    np.arctan2(
+                        (self._x1 * self._e2 - self._x2 * self._e1) / self._ex
+                        - (self._x3 * self._e4 - self._x4 * self._e3)
+                        / self._ex,
+                        (self._x1 * self._e3 - self._x3 * self._e1) / self._ex
+                        + (self._x2 * self._e4 - self._x4 * self._e2)
+                        / self._ex,
+                    )
                 )
+                % 360
             )
 
     @property
