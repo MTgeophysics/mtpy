@@ -13,7 +13,6 @@ import numpy as np
 
 
 from mtpy.imaging.mtplot_tools import PlotBase
-from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
 
 
 # =============================================================================
@@ -58,7 +57,7 @@ class PlotPenetrationDepth1D(PlotBase):
 
         """
 
-        return calculate_depth_of_investigation(self.tf.Z)
+        return self.tf.Z.estimate_depth_of_investigation()
 
     def plot(self):
         """

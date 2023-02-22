@@ -13,13 +13,13 @@ Created on Wed Oct 16 14:56:04 2013
 # ==============================================================================
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.mtplot_tools import PlotBaseProfile
-import mtpy.analysis.pt as mtpt
+from mtpy.analysis.residual_phase_tensor import ResidualPhaseTensor
 import scipy.signal as sps
 
 # ==============================================================================
@@ -225,13 +225,8 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
             new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
             new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
-            # make new phase tensor objects
-            pt1 = mtpt.PhaseTensor(z_object=new_z1)
-            pt2 = mtpt.PhaseTensor(z_object=new_z2)
-
             # compute residual phase tensor
-            rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
-            rpt.compute_residual_pt(pt1, pt2)
+            rpt = ResidualPhaseTensor(new_z1.pt, new_z2.pt)
 
             # add some attributes to residual phase tensor object
             rpt.station = mt1.station

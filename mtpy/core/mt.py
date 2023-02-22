@@ -17,7 +17,6 @@ from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
 from mtpy.core.mt_dataframe import MTDataFrame
 
-import mtpy.analysis.distortion as MTdistortion
 from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
 from mtpy.modeling.errors import ModelErrors
 
@@ -247,17 +246,13 @@ class MT(TF, MTLocation):
             >>>                    new_Z=new_z)
 
         """
-        distortion, new_z_object = MTdistortion.remove_distortion(
-            z_object=self.Z.copy(), num_freq=num_freq
-        )
         if inplace:
-            self.Z = new_z_object
-            return distortion, None
+            self.Z = self.Z.remove_distortion()
         else:
             new_mt = self.clone_empty()
-            new_mt.Z = new_z_object
+            new_mt.Z = self.Z.remove_distortion()
             new_mt.Tipper = self.Tipper
-            return distortion, new_mt
+            return new_mt
 
     def remove_static_shift(self, ss_x=1.0, ss_y=1.0, inplace=False):
         """

@@ -14,7 +14,6 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 
-from mtpy.analysis.zinvariants import Zinvariants
 from mtpy.imaging.mtplot_tools import PlotBase
 from mtpy.core import Tipper
 

@@ -46,6 +46,7 @@ class TestPTInitialize(unittest.TestCase):
             "trace",
             "azimuth",
             "ellipticity",
+            "eccentricity",
         ]:
             with self.subTest(f"{attr}"):
                 self.assertEqual(None, getattr(self.pt, attr))

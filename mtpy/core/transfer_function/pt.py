@@ -821,3 +821,34 @@ class PhaseTensor(TFBase):
             pt_2d[:, 0, 0] = self.phimax[:]
             pt_2d[:, 1, 1] = self.phimin[:]
             return pt_2d
+
+    @property
+    def eccentricity(self):
+        """eccentricty estimation of dimensionality"""
+
+        if self._has_tf():
+            return self._pi1 / self._pi2
+
+    @property
+    def eccentricity_error(self):
+        """Error in eccentricity estimation"""
+        if self._has_tf_error():
+            return (
+                np.sqrt(
+                    (self._pi1_error / self._pi1) ** 2
+                    + (self._pi2_error / self._pi2) ** 2
+                )
+                * self.eccentricity
+            )
+
+    @property
+    def eccentricity_model_error(self):
+        """Error in eccentricity estimation"""
+        if self._has_tf_model_error():
+            return (
+                np.sqrt(
+                    (self._pi1_model_error / self._pi1) ** 2
+                    + (self._pi2_model_error / self._pi2) ** 2
+                )
+                * self.eccentricity
+            )

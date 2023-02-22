@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps
-from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
 
 # =============================================================================
 
@@ -76,7 +75,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         """
 
-        return calculate_depth_of_investigation(z_object)
+        return z_object.estimate_depth_of_investigation()
 
     def _filter_depth_array(self, depth_array, comp):
         """
