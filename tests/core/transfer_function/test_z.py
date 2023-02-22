@@ -215,6 +215,32 @@ class TestRemoveDistortion(unittest.TestCase):
         )
 
 
+class TestInvariants(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.z = Z(
+            z=np.array(
+                [
+                    [-7.420305 - 15.02897j, 53.44306 + 114.4988j],
+                    [-49.96444 - 116.4191j, 11.95081 + 21.52367j],
+                ]
+            )
+        )
+
+    def test_normalizing_real(self):
+        self.assertAlmostEqual(
+            51.753349, self.z.invariants.normalizing_real[0], 5
+        )
+
+    def test_normalizing_imag(self):
+        self.assertAlmostEqual(
+            115.504607, self.z.invariants.normalizing_imag[0], 5
+        )
+
+    def test_strike(self):
+        self.assertAlmostEqual(17.266664, self.z.invariants.strike[0], 5)
+
+
 # =============================================================================
 # Run
 # =============================================================================
