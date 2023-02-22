@@ -237,8 +237,37 @@ class TestInvariants(unittest.TestCase):
             115.504607, self.z.invariants.normalizing_imag[0], 5
         )
 
+    def test_anisotropy_real(self):
+        self.assertAlmostEqual(
+            0.190142, self.z.invariants.anisotropic_real[0], 5
+        )
+
+    def test_anisotropy_imag(self):
+        self.assertAlmostEqual(
+            0.158448, self.z.invariants.anisotropic_imag[0], 5
+        )
+
+    def test_electric_twist(self):
+        self.assertAlmostEqual(0.071840, self.z.invariants.electric_twist[0], 5)
+
+    def test_phase_distortion(self):
+        self.assertAlmostEqual(
+            -0.015665, self.z.invariants.phase_distortion[0], 5
+        )
+
+    def test_dimensionality(self):
+        self.assertAlmostEqual(
+            0.0503231, self.z.invariants.dimensionality[0], 5
+        )
+
+    def test_structure_3d(self):
+        self.assertAlmostEqual(-0.180011, self.z.invariants.structure_3d[0], 5)
+
     def test_strike(self):
         self.assertAlmostEqual(17.266664, self.z.invariants.strike[0], 5)
+
+    def test_strike_error(self):
+        self.assertAlmostEqual(5.185204, self.z.invariants.strike_error[0], 5)
 
 
 # =============================================================================

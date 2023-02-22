@@ -69,45 +69,73 @@ class ZInvariants:
             return False
         return True
 
+    def _zero_to_nan(self, array):
+        """
+         convert zeros to nans
+        :param array: DESCRIPTION
+        :type array: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        array[np.where(array == 0)] = np.nan
+        return array
+
     @property
     def _x1(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 0].real + self.z[:, 1, 1].real)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 0].real + self.z[:, 1, 1].real)
+            )
 
     @property
     def _x2(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 1].real + self.z[:, 1, 0].real)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 1].real + self.z[:, 1, 0].real)
+            )
 
     @property
     def _x3(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 0].real - self.z[:, 1, 1].real)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 0].real - self.z[:, 1, 1].real)
+            )
 
     @property
     def _x4(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 1].real - self.z[:, 1, 0].real)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 1].real - self.z[:, 1, 0].real)
+            )
 
     @property
     def _e1(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 0].imag + self.z[:, 1, 1].imag)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 0].imag + self.z[:, 1, 1].imag)
+            )
 
     @property
     def _e2(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 1].imag + self.z[:, 1, 0].imag)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 1].imag + self.z[:, 1, 0].imag)
+            )
 
     @property
     def _e3(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 0].imag - self.z[:, 1, 1].imag)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 0].imag - self.z[:, 1, 1].imag)
+            )
 
     @property
     def _e4(self):
         if self.has_impedance():
-            return 0.5 * (self.z[:, 0, 1].imag - self.z[:, 1, 0].imag)
+            return self._zero_to_nan(
+                0.5 * (self.z[:, 0, 1].imag - self.z[:, 1, 0].imag)
+            )
 
     @property
     def _ex(self):
@@ -120,7 +148,7 @@ class ZInvariants:
             )
             ex[np.where(ex == 0)] = np.nan
 
-            return ex
+            return self._zero_to_nan(ex)
 
     @property
     def normalizing_real(self):
