@@ -398,9 +398,10 @@ class Z(TFBase):
     def phase_error(self):
         """phase error of impedance"""
         if self.z is not None and self.z_error is not None:
-            return np.degrees(
-                np.arctan(self.resistivity_error / self.resistivity)
-            )
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return np.degrees(
+                    np.arctan(self.resistivity_error / self.resistivity)
+                )
 
     @property
     def resistivity_model_error(self):

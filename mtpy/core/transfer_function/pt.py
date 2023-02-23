@@ -27,20 +27,20 @@ from .base import TFBase
 
 class PhaseTensor(TFBase):
     """
-    PhaseTensor class - generates a Phase Tensor (phase tesnor) object.
+    PhaseTensor class - generates a Phase Tensor (phase tensor) object.
 
     Methods  include reading and writing from and to edi-objects, rotations
     combinations of Z instances, as well as
     calculation of invariants, inverse, amplitude/phase,...
 
 
-    phase tesnor is a complex array of the form (n_freq, 2, 2),
+    phase tensor is a complex array of the form (n_freq, 2, 2),
     with indices in the following order:
 
-        - phase tesnorxx: (0,0)
-        - phase tesnorxy: (0,1)
-        - phase tesnoryx: (1,0)
-        - phase tesnoryy: (1,1)
+        - phase tensor_xx: (0,0)
+        - phase tensor_xy: (0,1)
+        - phase tensor_yx: (1,0)
+        - phase tensor_yy: (1,1)
 
     All internal methods are based on (Caldwell et al.,2004) and
     (Bibby et al.,2005), in which they use the canonical cartesian 2D
@@ -115,7 +115,7 @@ class PhaseTensor(TFBase):
         if det_zero.shape[0] > 0:
             self.logger.debug(
                 f"z at index {det_zero} contains a singular matrix,"
-                " thus it cannot be converted into a phase tesnor, setting to 0."
+                " thus it cannot be converted into a phase tensor, setting to 0."
             )
 
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -175,65 +175,71 @@ class PhaseTensor(TFBase):
 
         det_real = np.abs(np.linalg.det(z_real))
 
-        pt_error[:, 0, 0] = (
-            np.abs(-pt_array[:, 0, 0] * z_real[:, 1, 1] * z_error[:, 0, 0])
-            + np.abs(pt_array[:, 0, 0] * z_real[:, 0, 1] * z_error[:, 1, 0])
-            + np.abs(
-                (z_imag[:, 0, 0] - pt_array[:, 0, 0] * z_real[:, 0, 0])
-                * z_error[:, 1, 1]
-            )
-            + np.abs(
-                (-z_imag[:, 1, 0] + pt_array[:, 0, 0] * z_real[:, 1, 0])
-                * z_error[:, 0, 1]
-            )
-            + np.abs(z_real[:, 1, 1] * z_error[:, 0, 0])
-            + np.abs(z_real[:, 0, 1] * z_error[:, 1, 0])
-        ) / det_real
+        with np.errstate(divide="ignore", invalid="ignore"):
 
-        pt_error[:, 0, 1] = (
-            np.abs(-pt_array[:, 0, 1] * z_real[:, 1, 1] * z_error[:, 0, 0])
-            + np.abs(pt_array[:, 0, 1] * z_real[:, 0, 1] * z_error[:, 1, 0])
-            + np.abs(
-                (z_imag[:, 0, 1] - pt_array[:, 0, 1] * z_real[:, 0, 0])
-                * z_error[:, 1, 1]
-            )
-            + np.abs(
-                (-z_imag[:, 1, 1] + pt_array[:, 0, 1] * z_real[:, 1, 0])
-                * z_error[:, 0, 1]
-            )
-            + np.abs(z_real[:, 1, 1] * z_error[:, 0, 1])
-            + np.abs(z_real[:, 0, 1] * z_error[:, 1, 1])
-        ) / det_real
+            pt_error[:, 0, 0] = (
+                np.abs(-pt_array[:, 0, 0] * z_real[:, 1, 1] * z_error[:, 0, 0])
+                + np.abs(pt_array[:, 0, 0] * z_real[:, 0, 1] * z_error[:, 1, 0])
+                + np.abs(
+                    (z_imag[:, 0, 0] - pt_array[:, 0, 0] * z_real[:, 0, 0])
+                    * z_error[:, 1, 1]
+                )
+                + np.abs(
+                    (-z_imag[:, 1, 0] + pt_array[:, 0, 0] * z_real[:, 1, 0])
+                    * z_error[:, 0, 1]
+                )
+                + np.abs(z_real[:, 1, 1] * z_error[:, 0, 0])
+                + np.abs(z_real[:, 0, 1] * z_error[:, 1, 0])
+            ) / det_real
 
-        pt_error[:, 1, 0] = (
-            np.abs(
-                (z_imag[:, 1, 0] - pt_array[:, 1, 0] * z_real[:, 1, 1])
-                * z_error[:, 0, 0]
-            )
-            + np.abs(pt_array[:, 1, 0] * z_real[:, 1, 0] * z_error[:, 0, 1])
-            + np.abs(
-                (-z_imag[:, 0, 0] + pt_array[:, 1, 0] * z_real[:, 0, 1])
-                * z_error[:, 1, 0]
-            )
-            + np.abs(-pt_array[:, 1, 0] * z_real[:, 0, 0] * z_error[:, 1, 1])
-            + np.abs(z_real[:, 0, 0] * z_error[:, 1, 0])
-            + np.abs(-z_real[:, 1, 0] * z_error[:, 0, 0])
-        ) / det_real
+            pt_error[:, 0, 1] = (
+                np.abs(-pt_array[:, 0, 1] * z_real[:, 1, 1] * z_error[:, 0, 0])
+                + np.abs(pt_array[:, 0, 1] * z_real[:, 0, 1] * z_error[:, 1, 0])
+                + np.abs(
+                    (z_imag[:, 0, 1] - pt_array[:, 0, 1] * z_real[:, 0, 0])
+                    * z_error[:, 1, 1]
+                )
+                + np.abs(
+                    (-z_imag[:, 1, 1] + pt_array[:, 0, 1] * z_real[:, 1, 0])
+                    * z_error[:, 0, 1]
+                )
+                + np.abs(z_real[:, 1, 1] * z_error[:, 0, 1])
+                + np.abs(z_real[:, 0, 1] * z_error[:, 1, 1])
+            ) / det_real
 
-        pt_error[:, 1, 1] = (
-            np.abs(
-                (z_imag[:, 1, 1] - pt_array[:, 1, 1] * z_real[:, 1, 1])
-                * z_error[:, 0, 0]
-            )
-            + np.abs(pt_array[:, 1, 1] * z_real[:, 1, 0] * z_error[:, 0, 1])
-            + np.abs(
-                (-z_imag[:, 0, 1] + pt_array[:, 1, 1] * z_real[:, 0, 1])
-                * z_error[:, 1, 0]
-            )
-            + np.abs(-pt_array[:, 1, 1] * z_real[:, 0, 0] * z_error[:, 1, 1])
-            + np.abs(z_real[:, 0, 0] * z_error[:, 1, 1])
-            + np.abs(-z_real[:, 1, 0] * z_error[:, 0, 1])
-        ) / det_real
+            pt_error[:, 1, 0] = (
+                np.abs(
+                    (z_imag[:, 1, 0] - pt_array[:, 1, 0] * z_real[:, 1, 1])
+                    * z_error[:, 0, 0]
+                )
+                + np.abs(pt_array[:, 1, 0] * z_real[:, 1, 0] * z_error[:, 0, 1])
+                + np.abs(
+                    (-z_imag[:, 0, 0] + pt_array[:, 1, 0] * z_real[:, 0, 1])
+                    * z_error[:, 1, 0]
+                )
+                + np.abs(
+                    -pt_array[:, 1, 0] * z_real[:, 0, 0] * z_error[:, 1, 1]
+                )
+                + np.abs(z_real[:, 0, 0] * z_error[:, 1, 0])
+                + np.abs(-z_real[:, 1, 0] * z_error[:, 0, 0])
+            ) / det_real
+
+            pt_error[:, 1, 1] = (
+                np.abs(
+                    (z_imag[:, 1, 1] - pt_array[:, 1, 1] * z_real[:, 1, 1])
+                    * z_error[:, 0, 0]
+                )
+                + np.abs(pt_array[:, 1, 1] * z_real[:, 1, 0] * z_error[:, 0, 1])
+                + np.abs(
+                    (-z_imag[:, 0, 1] + pt_array[:, 1, 1] * z_real[:, 0, 1])
+                    * z_error[:, 1, 0]
+                )
+                + np.abs(
+                    -pt_array[:, 1, 1] * z_real[:, 0, 0] * z_error[:, 1, 1]
+                )
+                + np.abs(z_real[:, 0, 0] * z_error[:, 1, 1])
+                + np.abs(-z_real[:, 1, 0] * z_error[:, 0, 1])
+            ) / det_real
 
         return pt_error
 
@@ -248,7 +254,7 @@ class PhaseTensor(TFBase):
         """
         Set the attribute 'pt'.
 
-        :param pt: phase tensor array
+        :param pt: phase tensor array shape (n_frequencies, 2, 2)
         :type pt: np.ndarray
 
         Test for shape, but no test for consistency!
@@ -283,7 +289,7 @@ class PhaseTensor(TFBase):
         """
         Set the attribute 'pt_error'.
 
-        :param pt_error: phase tensor error array
+        :param pt_error: phase tensor error array shape (n_frequencies, 2, 2)
         :type pt_error: np.ndarray
 
         Test for shape, but no test for consistency!
@@ -320,7 +326,7 @@ class PhaseTensor(TFBase):
         """
         Set the attribute 'pt_error'.
 
-        :param pt: phase tensor model error array
+        :param pt: phase tensor model error array shape (n_frequencies, 2, 2)
         :type pt: np.ndarray
 
         Test for shape, but no test for consistency!
@@ -374,7 +380,7 @@ class PhaseTensor(TFBase):
     # ---alpha-------------------------------------------------------------
     @property
     def alpha(self):
-        """Principal axis angle (strike) of phase tesnor in degrees"""
+        """Principal axis angle (strike) of phase tensor in degrees"""
 
         if self.pt is None:
             return None
@@ -388,7 +394,7 @@ class PhaseTensor(TFBase):
 
     @property
     def alpha_error(self):
-        """Principal axis angle error of phase tesnor in degrees"""
+        """Principal axis angle error of phase tensor in degrees"""
 
         if self._has_tf_error():
             y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
@@ -409,7 +415,7 @@ class PhaseTensor(TFBase):
 
     @property
     def alpha_model_error(self):
-        """Principal axis angle model error of phase tesnor in degrees"""
+        """Principal axis angle model error of phase tensor in degrees"""
 
         if self._has_tf_model_error():
             y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
@@ -433,7 +439,7 @@ class PhaseTensor(TFBase):
     # ---beta-------------------------------------------------------------
     @property
     def beta(self):
-        """3D-dimensionality angle Beta (invariant) of phase tesnor in degrees"""
+        """3D-dimensionality angle Beta (invariant) of phase tensor in degrees"""
 
         if self.pt is None:
             return None
@@ -447,7 +453,7 @@ class PhaseTensor(TFBase):
 
     @property
     def beta_error(self):
-        """3D-dimensionality angle error Beta of phase tesnor in degrees"""
+        """3D-dimensionality angle error Beta of phase tensor in degrees"""
 
         if self._has_tf_error():
 
@@ -469,7 +475,7 @@ class PhaseTensor(TFBase):
 
     @property
     def beta_model_error(self):
-        """3D-dimensionality angle model error Beta of phase tesnor in degrees"""
+        """3D-dimensionality angle model error Beta of phase tensor in degrees"""
 
         if self._has_tf_error():
 
@@ -494,17 +500,17 @@ class PhaseTensor(TFBase):
     # ---skew-------------------------------------------------------------
     @property
     def skew(self):
-        """3D-dimensionality skew angle of phase tesnor in degrees"""
+        """3D-dimensionality skew angle of phase tensor in degrees"""
         return self.beta
 
     @property
     def skew_error(self):
-        """3D-dimensionality skew angle error of phase tesnor in degrees"""
+        """3D-dimensionality skew angle error of phase tensor in degrees"""
         return self.beta_error
 
     @property
     def skew_model_error(self):
-        """3D-dimensionality skew angle model error of phase tesnor in degrees"""
+        """3D-dimensionality skew angle model error of phase tensor in degrees"""
         return self.beta_model_error
 
     # ---azimuth (strike angle)-------------------------------------------------
@@ -788,11 +794,11 @@ class PhaseTensor(TFBase):
     @property
     def only1d(self):
         """
-        Return phase tesnor in 1D form.
+        Return phase tensor in 1D form.
 
-        If phase tesnor is not 1D per se, the diagonal elements are set to zero,
+        If phase tensor is not 1D per se, the diagonal elements are set to zero,
         the off-diagonal elements keep their signs, but their absolute is
-        set to the mean of the original phase tesnor off-diagonal absolutes.
+        set to the mean of the original phase tensor off-diagonal absolutes.
         """
 
         if self._has_tf():
@@ -809,9 +815,9 @@ class PhaseTensor(TFBase):
     @property
     def only2d(self):
         """
-        Return phase tesnor in 2D form.
+        Return phase tensor in 2D form.
 
-        If phase tesnor is not 2D per se, the diagonal elements are set to zero.
+        If phase tensor is not 2D per se, the diagonal elements are set to zero.
         """
         if self._has_tf():
             pt_2d = copy.copy(self.pt)

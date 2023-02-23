@@ -195,7 +195,7 @@ class MTData(OrderedDict, MTStations):
         """
 
         df_list = [
-            mt_obj.to_dataframe(utm_crs=utm_crs, cols=cols)
+            mt_obj.to_dataframe(utm_crs=utm_crs, cols=cols).dataframe
             for mt_obj in self.values()
         ]
 
