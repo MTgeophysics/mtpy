@@ -113,29 +113,30 @@ class PhaseTensor(TFBase):
         det_real = np.linalg.det(z_real)
         det_zero = np.where(det_real == 0)[0]
         if det_zero.shape[0] > 0:
-            self.logger.warning(
+            self.logger.debug(
                 f"z at index {det_zero} contains a singular matrix,"
                 " thus it cannot be converted into a phase tesnor, setting to 0."
             )
 
-        pt_array[:, 0, 0] = (
-            z_real[:, 1, 1] * z_imag[:, 0, 0]
-            - z_real[:, 0, 1] * z_imag[:, 1, 0]
-        )
-        pt_array[:, 0, 1] = (
-            z_real[:, 1, 1] * z_imag[:, 0, 1]
-            - z_real[:, 0, 1] * z_imag[:, 1, 1]
-        )
-        pt_array[:, 1, 0] = (
-            z_real[:, 0, 0] * z_imag[:, 1, 0]
-            - z_real[:, 1, 0] * z_imag[:, 0, 0]
-        )
-        pt_array[:, 1, 1] = (
-            z_real[:, 0, 0] * z_imag[:, 1, 1]
-            - z_real[:, 1, 0] * z_imag[:, 0, 1]
-        )
+        with np.errstate(divide="ignore", invalid="ignore"):
+            pt_array[:, 0, 0] = (
+                z_real[:, 1, 1] * z_imag[:, 0, 0]
+                - z_real[:, 0, 1] * z_imag[:, 1, 0]
+            )
+            pt_array[:, 0, 1] = (
+                z_real[:, 1, 1] * z_imag[:, 0, 1]
+                - z_real[:, 0, 1] * z_imag[:, 1, 1]
+            )
+            pt_array[:, 1, 0] = (
+                z_real[:, 0, 0] * z_imag[:, 1, 0]
+                - z_real[:, 1, 0] * z_imag[:, 0, 0]
+            )
+            pt_array[:, 1, 1] = (
+                z_real[:, 0, 0] * z_imag[:, 1, 1]
+                - z_real[:, 1, 0] * z_imag[:, 0, 1]
+            )
 
-        pt_array = np.apply_along_axis(lambda x: x / det_real, 0, pt_array)
+            pt_array = np.apply_along_axis(lambda x: x / det_real, 0, pt_array)
 
         return pt_array
 
