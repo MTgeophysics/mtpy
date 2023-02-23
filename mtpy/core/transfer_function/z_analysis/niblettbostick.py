@@ -25,8 +25,6 @@ Updated 2022-09 JP
 import numpy as np
 import scipy.interpolate as spi
 
-from mtpy.analysis import geometry
-from mtpy.core import Z
 from mtpy.utils import MU0
 
 # =============================================================================
@@ -174,16 +172,13 @@ def calculate_depth_of_investigation(z_object):
 
     """
 
-    if not isinstance(z_object, Z):
-        raise TypeError("Input must be a mtpy.core.Z object")
-
     if z_object.z.shape[0] > 1:
 
-        dimensions = geometry.dimensionality(z_object=z_object)
-        angles = geometry.strike_angle(z_object=z_object)
+        dimensions = z_object.estimate_dimensionality()
+        angles = z_object.phase_tensor.azimuth
 
         # reduce actual Z by the 3D layers:
-        angles_2d = np.nan_to_num(angles[np.where(dimensions != 3)][:, 0])
+        angles_2d = np.nan_to_num(angles[np.where(dimensions != 3)])
         periods_2d = z_object.period[np.where(dimensions != 3)]
 
         # interperpolate strike angle onto all periods

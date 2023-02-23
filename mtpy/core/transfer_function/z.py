@@ -20,7 +20,11 @@ import numpy as np
 import mtpy.utils.calculator as MTcc
 from .base import TFBase
 from .pt import PhaseTensor
-from .z_analysis import ZInvariants, find_distortion
+from .z_analysis import (
+    ZInvariants,
+    find_distortion,
+    calculate_depth_of_investigation,
+)
 
 # ==============================================================================
 # Impedance Tensor Class
@@ -862,3 +866,14 @@ class Z(TFBase):
                 new_z_object.z_error = self.z_error[0:nf]
 
         return find_distortion(new_z_object, comp=comp, only_2d=only_2d)
+
+    def estimate_depth_of_investigation(self):
+        """
+        estimate depth of investigation
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return calculate_depth_of_investigation(self)
