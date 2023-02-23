@@ -20,7 +20,7 @@ import numpy as np
 import mtpy.utils.calculator as MTcc
 from .base import TFBase
 from .pt import PhaseTensor
-from .z_analysis import ZInvariants
+from .z_analysis import ZInvariants, find_distortion
 
 # ==============================================================================
 # Impedance Tensor Class
@@ -830,3 +830,36 @@ class Z(TFBase):
         ] = 3
 
         return dimensionality
+
+    def estimate_distortion(
+        self,
+        n_frequencies=None,
+        comp="det",
+        only_2d=False,
+    ):
+        """
+
+        :param n_frequencies: DESCRIPTION, defaults to 20
+        :type n_frequencies: TYPE, optional
+        :param comp: DESCRIPTION, defaults to "det"
+        :type comp: TYPE, optional
+        :param : DESCRIPTION
+        :type : TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if n_frequencies is None:
+            nf = self.frequency.size
+        else:
+            nf = self.frequency.size
+
+        if self._has_tf():
+            new_z_object = Z(
+                z=self.z[0:nf, :, :],
+                frequency=self.frequency[0:nf],
+            )
+            if self._has_tf_error():
+                new_z_object.z_error = self.z_error[0:nf]
+
+        return find_distortion(new_z_object, comp=comp, only_2d=only_2d)

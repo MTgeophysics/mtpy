@@ -275,7 +275,7 @@ class TestInvariants(unittest.TestCase):
         )
 
 
-class TestEstimateDimensionality(unittest.TestCase):
+class TestEstimateDimensionalityDistortion(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.z = Z(
@@ -301,6 +301,27 @@ class TestEstimateDimensionality(unittest.TestCase):
         self.assertTrue(
             np.all(self.z.estimate_dimensionality() == np.array([1, 2, 3]))
         )
+
+    def test_estimate_distortion(self):
+        d, d_err = self.z.estimate_distortion()
+        with self.subTest("distortion"):
+            self.assertTrue(
+                np.isclose(
+                    d,
+                    np.array(
+                        [[0.99707684, -1.01783035], [0.04933412, 1.08934035]]
+                    ),
+                ).all()
+            )
+        with self.subTest("distortion error"):
+            self.assertTrue(
+                np.isclose(
+                    d_err,
+                    np.array(
+                        [[0.57735027, 0.57735027], [0.57735027, 0.57735027]]
+                    ),
+                ).all()
+            )
 
 
 # =============================================================================
