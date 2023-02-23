@@ -17,7 +17,7 @@ from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
 from mtpy.core.mt_dataframe import MTDataFrame
 
-from mtpy.imaging import PlotMTResponse, PlotPhaseTensor
+from mtpy.imaging import PlotMTResponse, PlotPhaseTensor, PlotPenetrationDepth1D
 from mtpy.modeling.errors import ModelErrors
 
 
@@ -414,6 +414,19 @@ class MT(TF, MTLocation):
         """
         kwargs["ellipse_size"] = 0.5
         return PlotPhaseTensor(self.pt, station=self.station, **kwargs)
+
+    def plot_depth_of_penetration(self, **kwargs):
+        """
+        Plot Depth of Penetration estimated from Niblett-Bostick estimation
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return PlotPenetrationDepth1D(self, **kwargs)
 
     def to_dataframe(self, utm_crs=None, cols=None):
         """

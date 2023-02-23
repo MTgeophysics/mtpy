@@ -230,27 +230,23 @@ def calculate_depth_of_investigation(z_object):
             ] = calculate_niblett_bostick_resistivity_weidelt(res, phase)
 
     for x in ["depth", "resistivity"]:
-
-        depth_array[f"{x}_min"] = np.nanmin(
-            np.array(
-                [
-                    depth_array[f"{x}_det"],
-                    depth_array[f"{x}_xy"],
-                    depth_array[f"{x}_yx"],
-                ]
-            ),
-            axis=0,
+        d = np.array(
+            [
+                depth_array[f"{x}_det"],
+                depth_array[f"{x}_xy"],
+                depth_array[f"{x}_yx"],
+            ]
         )
+        if np.all(np.isnan(d)):
+            depth_array[f"{x}_min"] = np.nan
+            depth_array[f"{x}_max"] = np.nan
+            continue
 
-        depth_array[f"{x}_max"] = np.nanmax(
-            np.array(
-                [
-                    depth_array[f"{x}_det"],
-                    depth_array[f"{x}_xy"],
-                    depth_array[f"{x}_yx"],
-                ]
-            ),
-            axis=0,
-        )
+        with np.warnings.catch_warnings():
+            np.warnings.filterwarnings(
+                "ignore", r"All-NaN (slice|axis) encountered"
+            )
+            depth_array[f"{x}_min"] = np.nanmin(d, axis=0)
+            depth_array[f"{x}_max"] = np.nanmax(d, axis=0)
 
     return depth_array
