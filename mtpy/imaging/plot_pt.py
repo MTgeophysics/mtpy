@@ -44,7 +44,7 @@ class PlotPhaseTensor(PlotBase):
         self.subplot_bottom = 0.1
         self.subplot_top = 0.95
         self.subplot_wspace = 0.1
-        self.subplot_hspace = 0.35
+        self.subplot_hspace = 0.15
 
         self.ellipse_spacing = 10
 
@@ -154,6 +154,7 @@ class PlotPhaseTensor(PlotBase):
         )
 
         plt.setp(self.ax_pt.get_yticklabels(), visible=False)
+        # plt.setp(self.ax_pt.get_xticklabels(), visible=False)
 
         self.cbpt.set_label(
             self.cb_label_dict[self.ellipse_colorby],
@@ -271,6 +272,7 @@ class PlotPhaseTensor(PlotBase):
         )
 
         self.ax_phase.set_ylabel("Phase (deg)", fontdict=self.font_dict)
+        plt.setp(self.ax_phase.get_xticklabels(), visible=False)
 
         # -----------------------plotSkew---------------------------------------
 
@@ -325,6 +327,7 @@ class PlotPhaseTensor(PlotBase):
         skew_font_dict = self.font_dict.copy()
         skew_font_dict["color"] = self.skew_color
         self.ax_skew.set_ylabel("Skew (deg)", fontdict=skew_font_dict)
+        plt.setp(self.ax_skew.get_xticklabels(), visible=False)
         # self.ax_skew.set_title("Skew Angle", fontdict=self.font_dict)
 
         # ----------------------plotEllipticity--------------------------------
