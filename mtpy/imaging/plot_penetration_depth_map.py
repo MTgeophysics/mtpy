@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps
-from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
-from mtpy.core.z import Z
 
 # =============================================================================
 
@@ -33,6 +31,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         self.depth_units = "km"
         self.plot_period = 1
+        self._old_plot_period = None
         self.plot_det = True
         self.plot_te = True
         self.plot_tm = True
@@ -46,7 +45,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             "yx": "TM Mode",
         }
         self.depth_range = [None, None]
-        self.depth_tolerance = 0.65
+        self.depth_tolerance = 1
 
         self.subplot_wspace = 0.2
         self.subplot_hspace = 0.1
@@ -76,7 +75,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         """
 
-        return calculate_depth_of_investigation(z_object)
+        return z_object.estimate_depth_of_investigation()
 
     def _filter_depth_array(self, depth_array, comp):
         """
@@ -89,13 +88,13 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         """
 
-        depth_array = depth_array.copy()
         depth_array = depth_array[np.nonzero(depth_array)]
-        d_comp = depth_array[comp]
-        d_median = np.median(d_comp)
-        d_min = d_median * (1 - self.depth_tolerance)
-        d_max = d_median * (1 + self.depth_tolerance)
-        good_index = np.where((d_comp >= d_min) & (d_comp <= d_max))
+        d_median = np.median(depth_array[comp])
+        d_min = d_median - (depth_array[comp].std() * self.depth_tolerance)
+        d_max = d_median + (depth_array[comp].std() * self.depth_tolerance)
+        good_index = np.where(
+            (depth_array[comp] >= d_min) & (depth_array[comp] <= d_max)
+        )
 
         return depth_array[good_index]
 
@@ -122,10 +121,10 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         )
 
         for ii, tf in enumerate(self.mt_data.values()):
-            z = self._get_interpolated_z(tf)
-            if (z == 0).all():
+
+            z_object = tf.Z.interpolate([1.0 / self.plot_period])
+            if (np.nan_to_num(z_object.z) == 0).all():
                 continue
-            z_object = Z(z, frequency=[1.0 / self.plot_period])
             d = self._get_nb_estimation(z_object)
 
             depth_array["station"][ii] = tf.station
@@ -224,12 +223,13 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         # get data array and make sure there is depth information, if not
         # break
-        depth_array = self._get_depth_array()
-        if depth_array.size == 0:
-            self.logger.warning(
-                f"No stations have data for period {self.plot_period} "
-            )
-            return
+        if self._old_plot_period != self.plot_period:
+            depth_array = self._get_depth_array()
+            if depth_array.size == 0:
+                self.logger.warning(
+                    f"No stations have data for period {self.plot_period} "
+                )
+                return
 
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()

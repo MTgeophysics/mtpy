@@ -670,6 +670,7 @@ class Data:
                         z_lines.append(d_line)
                     elif comp.startswith("t"):
                         t_lines.append(d_line)
+
         with open(self.data_filename, "w") as dfid:
             dfid.write("\n".join(z_lines + t_lines))
 

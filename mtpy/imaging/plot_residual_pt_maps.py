@@ -24,7 +24,7 @@ import matplotlib.colorbar as mcb
 import mtpy.utils.gis_tools as gis_tools
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.mtplot_tools import PlotBase
-import mtpy.analysis.pt as mtpt
+from mtpy.analysis.residual_phase_tensor import ResidualPhaseTensor
 
 try:
     import contextily as cx
@@ -297,13 +297,8 @@ class PlotResidualPTMaps(PlotBase):
             new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
             new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
-            # make new phase tensor objects
-            pt1 = mtpt.PhaseTensor(z_object=new_z1)
-            pt2 = mtpt.PhaseTensor(z_object=new_z2)
-
             # compute residual phase tensor
-            rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
-            rpt.compute_residual_pt(pt1, pt2)
+            rpt = ResidualPhaseTensor(new_z1.pt, new_z2.pt)
 
             # add some attributes to residual phase tensor object
             rpt.station = mt1.station

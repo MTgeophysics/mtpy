@@ -44,7 +44,7 @@ class PlotPhaseTensor(PlotBase):
         self.subplot_bottom = 0.1
         self.subplot_top = 0.95
         self.subplot_wspace = 0.1
-        self.subplot_hspace = 0.35
+        self.subplot_hspace = 0.15
 
         self.ellipse_spacing = 10
 
@@ -154,6 +154,7 @@ class PlotPhaseTensor(PlotBase):
         )
 
         plt.setp(self.ax_pt.get_yticklabels(), visible=False)
+        # plt.setp(self.ax_pt.get_xticklabels(), visible=False)
 
         self.cbpt.set_label(
             self.cb_label_dict[self.ellipse_colorby],
@@ -164,11 +165,7 @@ class PlotPhaseTensor(PlotBase):
         # --> set tick labels and limits
 
         az = self.pt.azimuth
-        az_err = self.pt.azimuth_err
-
-        # put the strike into a coordinate system that goes from -90 to 90
-        az[np.where(az > 90)] -= 180
-        az[np.where(az < -90)] += 180
+        az_error = self.pt.azimuth_error
 
         stlist = []
         stlabel = []
@@ -183,7 +180,7 @@ class PlotPhaseTensor(PlotBase):
             mec=self.strike_pt_color,
             mew=self.marker_lw,
             ls="none",
-            yerr=az_err,
+            yerr=az_error,
             ecolor=self.strike_pt_color,
             capsize=self.marker_size,
             elinewidth=self.marker_lw,
@@ -193,12 +190,12 @@ class PlotPhaseTensor(PlotBase):
         stlabel.append("PT")
 
         if self.strike_limits is None:
-            self.strike_limits = (-89.99, 89.99)
+            self.strike_limits = (0, 359.9)
         self.ax_strike.set_yscale("linear")
         self.ax_strike.set_xscale("log", nonpositive="clip")
         self.ax_strike.set_xlim(xmax=self.x_limits[-1], xmin=self.x_limits[0])
         self.ax_strike.set_ylim(self.strike_limits)
-        self.ax_strike.yaxis.set_major_locator(MultipleLocator(20))
+        self.ax_strike.yaxis.set_major_locator(MultipleLocator(45))
         self.ax_strike.yaxis.set_minor_locator(MultipleLocator(5))
         self.ax_strike.grid(
             True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25
@@ -208,9 +205,9 @@ class PlotPhaseTensor(PlotBase):
 
         # ---------plot Min & Max Phase-----------------------------------------
         minphi = self.pt.phimin
-        minphierr = self.pt.phimin_err
+        minphierr = self.pt.phimin_error
         maxphi = self.pt.phimax
-        maxphierr = self.pt.phimax_err
+        maxphierr = self.pt.phimax_error
 
         ermin = self.ax_phase.errorbar(
             1.0 / self.pt.frequency,
@@ -275,11 +272,12 @@ class PlotPhaseTensor(PlotBase):
         )
 
         self.ax_phase.set_ylabel("Phase (deg)", fontdict=self.font_dict)
+        plt.setp(self.ax_phase.get_xticklabels(), visible=False)
 
         # -----------------------plotSkew---------------------------------------
 
         skew = self.pt.beta
-        skewerr = self.pt.beta_err
+        skewerr = self.pt.beta_error
 
         erskew = self.ax_skew.errorbar(
             1.0 / self.pt.frequency,
@@ -329,11 +327,12 @@ class PlotPhaseTensor(PlotBase):
         skew_font_dict = self.font_dict.copy()
         skew_font_dict["color"] = self.skew_color
         self.ax_skew.set_ylabel("Skew (deg)", fontdict=skew_font_dict)
+        plt.setp(self.ax_skew.get_xticklabels(), visible=False)
         # self.ax_skew.set_title("Skew Angle", fontdict=self.font_dict)
 
         # ----------------------plotEllipticity--------------------------------
         ellipticity = self.pt.ellipticity
-        ellipticityerr = self.pt.ellipticity_err
+        ellipticityerr = self.pt.ellipticity_error
 
         erskew = self.ax_ellipticity.errorbar(
             1.0 / self.pt.frequency,

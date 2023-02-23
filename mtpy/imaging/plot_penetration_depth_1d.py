@@ -7,14 +7,9 @@ Created on Thu Sep 22 10:58:58 2022
 # =============================================================================
 # Imports
 # =============================================================================
-
 import matplotlib.pyplot as plt
-import numpy as np
-
 
 from mtpy.imaging.mtplot_tools import PlotBase
-from mtpy.analysis.niblettbostick import calculate_depth_of_investigation
-
 
 # =============================================================================
 
@@ -58,7 +53,7 @@ class PlotPenetrationDepth1D(PlotBase):
 
         """
 
-        return calculate_depth_of_investigation(self.tf.Z)
+        return self.tf.Z.estimate_depth_of_investigation()
 
     def plot(self):
         """
@@ -102,7 +97,7 @@ class PlotPenetrationDepth1D(PlotBase):
         self.ax.set_xlabel(
             f"Depth ({self.depth_units})", fontdict=self.font_dict
         )
-        self.ax.set_ylabel(f"Period (s)", fontdict=self.font_dict)
+        self.ax.set_ylabel("Period (s)", fontdict=self.font_dict)
 
         self.ax.set_ylim(self.set_period_limits(depth_array["period"])[::-1])
         self.fig.suptitle(

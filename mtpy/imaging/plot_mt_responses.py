@@ -167,7 +167,7 @@ class PlotMultipleResponses(PlotBase):
                 ax,
                 period,
                 getattr(z_obj, f"res_{comp}"),
-                getattr(z_obj, f"res_err_{comp}"),
+                getattr(z_obj, f"res_error_{comp}"),
                 **prop,
             )
             eb_list.append(ebax[0])
@@ -246,7 +246,7 @@ class PlotMultipleResponses(PlotBase):
                     ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_error_{comp}"),
                     yx=True,
                     **prop,
                 )
@@ -255,7 +255,7 @@ class PlotMultipleResponses(PlotBase):
                     ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_error_{comp}"),
                     yx=False,
                     **prop,
                 )

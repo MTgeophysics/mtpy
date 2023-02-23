@@ -13,14 +13,14 @@ import numpy as np
 
 
 class ModelErrors:
-    def __init__(self, array=None, **kwargs):
+    def __init__(self, data=None, measurement_error=None, **kwargs):
 
         self._functions = {
             "egbert": self.compute_geometric_mean_error,
             "geometric_mean": self.compute_geometric_mean_error,
-            "arithmetic_mean": self.compute_off_diagonal_mean_error,
-            "off-diagonals": self.compute_off_diagonals_error,
-            "mean_od": self.compute_off_diagonal_mean_error,
+            "arithmetic_mean": self.compute_arithmetic_mean_error,
+            "row": self.compute_row_error,
+            "mean_od": self.compute_arithmetic_mean_error,
             "median": self.compute_median_error,
             "eigen": self.compute_eigen_value_error,
             "percent": self.compute_percent_error,
@@ -40,10 +40,12 @@ class ModelErrors:
         self.error_type = "percent"
         self.floor = True
         self.mode = "impedance"
-        self.array = array
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        self.data = data
+        self.measurement_error = measurement_error
 
     def __str__(self):
         lines = ["Model Errors:", "-" * 20]
@@ -68,7 +70,7 @@ class ModelErrors:
 
         """
 
-        if value > 1:
+        if value >= 1:
             value /= 100.0
 
         return value
@@ -126,99 +128,95 @@ class ModelErrors:
         except KeyError:
             raise NotImplementedError(f"Mode {self.mode} not supported.")
 
-    def validate_array_shape(self, array):
+    def validate_array_shape(self, data):
         """
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        if not isinstance(array, np.ndarray):
-            array = np.array(array)
+        if not isinstance(data, np.ndarray):
+            data = np.array(data)
 
         expected_shape = self._get_shape()
-        if array.shape == expected_shape:
-            array = array.reshape((1, expected_shape[0], expected_shape[1]))
+        if data.shape == expected_shape:
+            data = data.reshape((1, expected_shape[0], expected_shape[1]))
 
-        return array
+        if (
+            data.shape[1] != expected_shape[0]
+            or data.shape[2] != expected_shape[1]
+        ):
+            raise ValueError(
+                f"Shape {data.shape} is not expected shape of (n, "
+                f"{expected_shape[0]}, {expected_shape[1]})"
+            )
+
+        return data
 
     @property
-    def array(self):
-        return self._array
+    def data(self):
+        return self._data
 
-    @array.setter
-    def array(self, value):
+    @data.setter
+    def data(self, value):
         if value is not None:
-            self._array = self.validate_array_shape(value)
+            self._data = self.validate_array_shape(value)
         else:
-            self._array = None
+            self._data = None
 
-    def mask_zeros(self, array):
+    @property
+    def measurement_error(self):
+        return self._measurement_error
+
+    @measurement_error.setter
+    def measurement_error(self, value):
+        if value is not None:
+            self._measurement_error = self.validate_array_shape(value)
+        else:
+            self._measurement_error = None
+
+    def mask_zeros(self, data):
         """
         mask zeros
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        return np.ma.masked_equal(array, 0)
+        return np.ma.masked_equal(data, 0)
 
-    def compute_error(
-        self, array=None, error_type=None, error_value=None, floor=None
-    ):
+    def resize_output(self, error_array):
         """
+        resize the error estimtion to the same size as the input data
 
-        :param array: DESCRIPTION, defaults to None
-        :type array: TYPE, optional
-        :param error_type: DESCRIPTION, defaults to None
-        :type error_type: TYPE, optional
-        :param error_value: DESCRIPTION, defaults to None
-        :type error_value: TYPE, optional
-        :param floor: DESCRIPTION, defaults to None
-        :type floor: TYPE, optional
+        :param error_array: DESCRIPTION
+        :type error_array: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        if array is not None:
-            self.array = array
-        if error_type is not None:
-            self.error_type = error_type
-        if error_value is not None:
-            self.error_value = error_value
-        if floor is not None:
-            self.floor = floor
+        if error_array.shape != self.data.shape:
+            if error_array.shape[0] == self.data.shape[0]:
+                err = np.zeros_like(self.data, dtype=float)
+                for index in range(self.data.shape[0]):
+                    err[index] = error_array[index]
+                return err
 
-        return self._functions[self.error_type]()
-
-    def compute_percent_error(self):
-        """
-        Percent error
-
-        :param array: DESCRIPTION
-        :type array: TYPE
-        :param percent: DESCRIPTION
-        :type percent: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        return self.error_value * np.abs(self.array)
+        return error_array
 
     def set_floor(self, error_array):
         """
         Set error floor
 
         :param array: DESCRIPTION
-        :type array: TYPE
+        :type data: TYPE
         :param floor: DESCRIPTION
         :type floor: TYPE
         :return: DESCRIPTION
@@ -226,16 +224,39 @@ class ModelErrors:
 
         """
 
-        error_array[np.where(error_array < self.error_value)] = self.error_value
+        if self.measurement_error is not None:
+
+            index = np.where(error_array < self.measurement_error)
+            error_array[index] = self.measurement_error[index]
+
         return error_array
 
-    def compute_off_diagonal_mean_error(self):
+    def compute_percent_error(self):
+        """
+        Percent error
+
+        :param data: DESCRIPTION
+        :type data: TYPE
+        :param percent: DESCRIPTION
+        :type percent: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        err = self.error_value * np.abs(self.data)
+        if self.floor:
+            err = self.set_floor(err)
+
+        return err
+
+    def compute_arithmetic_mean_error(self):
         """
         error_value * (Zxy + Zyx) / 2
 
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :param error_value: DESCRIPTION
         :type error_value: TYPE
         :return: DESCRIPTION
@@ -243,10 +264,18 @@ class ModelErrors:
 
         """
 
-        od = self.mask_zeros(
-            np.array([self.array[:, 0, 1], self.array[:, 1, 0]])
+        if self.data.shape[1] < 2:
+            od = self.mask_zeros(
+                np.array([self.data[:, 0, 0], self.data[:, 0, 1]])
+            )
+
+        else:
+            od = self.mask_zeros(
+                np.array([self.data[:, 0, 1], self.data[:, 1, 0]])
+            )
+        err = self.resize_output(
+            self.error_value * np.ma.mean(np.ma.abs(od), axis=0)
         )
-        err = self.error_value * np.ma.abs(np.ma.mean(od, axis=0))
 
         if self.floor:
             err = self.set_floor(err)
@@ -269,8 +298,10 @@ class ModelErrors:
 
         """
 
-        array = self.mask_zeros(self.array)
-        err = np.abs(np.ma.median(array, axis=(1, 2))) * self.error_value
+        data = self.mask_zeros(self.data)
+        err = self.resize_output(
+            np.abs(np.ma.median(data, axis=(1, 2))) * self.error_value
+        )
 
         if self.floor:
             err = self.set_floor(err)
@@ -282,10 +313,10 @@ class ModelErrors:
 
     def compute_eigen_value_error(self):
         """
-        error_value * eigen(array).mean()
+        error_value * eigen(data).mean()
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :param error_value: DESCRIPTION
         :type error_value: TYPE
         :return: DESCRIPTION
@@ -293,17 +324,25 @@ class ModelErrors:
 
         """
 
-        array = self.mask_zeros(self.array)
+        if self.data.shape[1] < 2:
+            raise IndexError(
+                "Cannot compute eigen value error with an array of shape "
+                f"{self.data.shape}"
+            )
+
+        data = self.mask_zeros(self.data)
 
         try:
-            err = self.error_value * np.abs(np.linalg.eigvals(array)).mean(
+            err = self.error_value * np.abs(np.linalg.eigvals(data)).mean(
                 axis=1
             )
         except np.Exception:
-            err = self.error_value * np.abs(np.linalg.eigvals(array)).mean()
+            err = self.error_value * np.abs(np.linalg.eigvals(data)).mean()
 
         if np.atleast_1d(err).sum(axis=0) == 0:
-            err = self.error_value * array[np.nonzero(array)].mean()
+            err = self.error_value * data[np.nonzero(data)].mean()
+
+        err = self.resize_output(err)
 
         if self.floor:
             err = self.set_floor(err)
@@ -313,8 +352,8 @@ class ModelErrors:
         """
         error_value * sqrt(Zxy * Zyx)
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :param error_value: DESCRIPTION
         :type error_value: TYPE
         :return: DESCRIPTION
@@ -322,19 +361,35 @@ class ModelErrors:
 
         """
 
-        array = self.array.copy()
+        data = self.data.copy()
 
-        zero_xy = np.where(array[:, 0, 1] == 0)
-        array[zero_xy, 0, 1] = array[zero_xy, 1, 0]
+        if self.data.shape[1] < 2:
+            zero_xy = np.where(data[:, 0, 0] == 0)
+            data[zero_xy, 0, 0] = data[zero_xy, 0, 0]
 
-        zero_yx = np.where(array[:, 1, 0] == 0)
-        array[zero_yx, 1, 0] = array[zero_yx, 0, 1]
+            zero_yx = np.where(data[:, 0, 1] == 0)
+            data[zero_yx, 0, 1] = data[zero_yx, 0, 1]
 
-        array = self.mask_zeros(array)
+            data = self.mask_zeros(data)
 
-        err = self.error_value * np.ma.sqrt(
-            np.ma.abs(array[:, 0, 1] * array[:, 1, 0])
-        )
+            err = self.resize_output(
+                self.error_value
+                * np.ma.sqrt(np.ma.abs(data[:, 0, 0] * data[:, 0, 1]))
+            )
+
+        else:
+            zero_xy = np.where(data[:, 0, 1] == 0)
+            data[zero_xy, 0, 1] = data[zero_xy, 1, 0]
+
+            zero_yx = np.where(data[:, 1, 0] == 0)
+            data[zero_yx, 1, 0] = data[zero_yx, 0, 1]
+
+            data = self.mask_zeros(data)
+
+            err = self.resize_output(
+                self.error_value
+                * np.ma.sqrt(np.ma.abs(data[:, 0, 1] * data[:, 1, 0]))
+            )
 
         if self.floor:
             err = self.set_floor(err)
@@ -344,12 +399,12 @@ class ModelErrors:
 
         return err
 
-    def compute_off_diagonals_error(self):
+    def compute_row_error(self):
         """
         set zxx and zxy the same error and zyy and zyx the same error
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :param error_value: DESCRIPTION
         :type error_value: TYPE
         :param floor: DESCRIPTION, defaults to True
@@ -359,27 +414,72 @@ class ModelErrors:
 
         """
 
-        err_xy = self.compute_percent_error(self.array[:, 0, 1])
-        err_yx = self.compute_percent_error(self.array[:, 1, 0])
+        if self.data.shape[1] < 2:
+            err_xy = np.abs(self.data[:, 0, 0]) * self.error_value
+            err_yx = np.abs(self.data[:, 0, 1]) * self.error_value
 
-        err = np.zeros_like(self.array, dtype=float)
-        err[:, 0, :] = err_xy
-        err[:, 1, :] = err_yx
+            err = np.zeros_like(self.data, dtype=float)
+            err[:, 0, 0] = err_xy
+            err[:, 0, 1] = err_yx
+
+        else:
+            err_xy = np.abs(self.data[:, 0, 1]) * self.error_value
+            err_yx = np.abs(self.data[:, 1, 0]) * self.error_value
+
+            err = np.zeros_like(self.data, dtype=float)
+            err[:, 0, 0] = err_xy
+            err[:, 0, 1] = err_xy
+            err[:, 1, 0] = err_yx
+            err[:, 1, 1] = err_yx
+
+        err = self.resize_output(err)
+        if self.floor:
+            err = self.set_floor(err)
 
         return err
 
     def compute_absolute_error(self):
         """
 
-        :param array: DESCRIPTION
-        :type array: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
         :param error_value: DESCRIPTION
         :type error_value: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
+        err = np.ones_like(self.data, dtype=float) * self.error_value
 
-        err = np.zeros_like(self.array, dtype=float)
-        err[:] = self.error_value
+        if self.floor:
+            err = self.set_floor(err)
         return err
+
+    def compute_error(
+        self, data=None, error_type=None, error_value=None, floor=None
+    ):
+        """
+
+        :param data: DESCRIPTION, defaults to None
+        :type data: TYPE, optional
+        :param error_type: DESCRIPTION, defaults to None
+        :type error_type: TYPE, optional
+        :param error_value: DESCRIPTION, defaults to None
+        :type error_value: TYPE, optional
+        :param floor: DESCRIPTION, defaults to None
+        :type floor: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if data is not None:
+            self.data = data
+        if error_type is not None:
+            self.error_type = error_type
+        if error_value is not None:
+            self.error_value = error_value
+        if floor is not None:
+            self.floor = floor
+
+        return self._functions[self.error_type]()

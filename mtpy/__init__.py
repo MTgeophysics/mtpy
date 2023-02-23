@@ -6,8 +6,6 @@ MTpy
 
 """
 
-# define mtpy release version through the variable __version__
-# see https://packaging.python.org/guides/single-sourcing-package-version/
 __version__ = "1.1.5"
 
 # load mtpy default logging config
@@ -17,8 +15,13 @@ debug_logger = get_mtpy_logger(__name__, fn="mtpy_debug", level="debug")
 debug_logger.debug("Starting MTpy Debug Log File")
 
 error_logger = get_mtpy_logger("error", fn="mtpy_error", level="error")
-matplotlib_logger = get_mtpy_logger("matplotlib", fn="matplotlib_warn", level="warning")
+matplotlib_logger = get_mtpy_logger(
+    "matplotlib", fn="matplotlib_warn", level="warning"
+)
 
+# =============================================================================
+# Commonly used objects
+# =============================================================================
 from mtpy.core.mt import MT
 from mtpy.core.mt_collection import MTCollection
 

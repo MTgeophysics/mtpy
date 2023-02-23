@@ -35,9 +35,9 @@ except ModuleNotFoundError:
     has_cx = False
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps, add_raster
-from mtpy.core import Z, Tipper
-import mtpy.imaging.mtcolors as mtcl
-import mtpy.analysis.pt as mtpt
+from mtpy.core import Tipper
+from mtpy.imaging import mtcolors
+from mtpy.core.transfer_function import PhaseTensor
 
 
 # ==============================================================================
@@ -62,6 +62,15 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         # set the frequency to plot
         self.plot_station = False
         self.plot_period = 1.0
+
+        self.pt_type = "wedges"
+        self.skew_cmap = "mt_seg_bl2wh2rd"
+        self.phase_limits = (0, 90)
+        self.skew_limits = (-9, 9)
+        self.skew_step = 3
+        self.skew_lw = 2.5
+        self.ellipse_alpha = 0.85
+        self.wedge_width = 7.0
 
         # read in map scale
         self.map_scale = "deg"
@@ -101,6 +110,15 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         # --> plot if desired ------------------------
         if self.show_plot:
             self.plot()
+
+    @property
+    def skew_cmap_bounds(self):
+        """skew bounds for a segmented colorbar"""
+        return np.arange(
+            self.skew_limits[0],
+            self.skew_limits[1] + self.skew_step,
+            self.skew_step,
+        )
 
     @property
     def map_scale(self):
@@ -174,20 +192,31 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         :rtype: TYPE
 
         """
-        z = self._get_interpolated_z(tf)
-        z_err = self._get_interpolated_z_err(tf)
+        try:
+            z = self._get_interpolated_z(tf)
+            z_error = self._get_interpolated_z_error(tf)
 
-        new_z_obj = Z(z, z_err, frequency=[1.0 / self.plot_period])
-        pt_obj = mtpt.PhaseTensor(z_object=new_z_obj)
+            pt_obj = PhaseTensor(z=z, z_error=z_error)
+        except ValueError:
+            self.logger.warning(
+                f"Could not estimate phase tensor for {tf.station} at period "
+                f"{self.plot_period} s."
+            )
+            pt_obj = None
 
         new_t_obj = None
-        if tf.t_interp_dict is not None:
+        if tf.has_tipper():
+            try:
+                t = self._get_interpolated_t(tf)
+                t_err = self._get_interpolated_t_err(tf)
 
-            t = self._get_interpolated_t(tf)
-            t_err = self._get_interpolated_t_err(tf)
-
-            if (t != 0).all():
-                new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
+                if (t != 0).all():
+                    new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
+            except ValueError:
+                self.logger.warning(
+                    f"Could not estimate tipper for {tf.station} at period "
+                    f"{self.plot_period} s."
+                )
 
         return pt_obj, new_t_obj
 
@@ -237,7 +266,38 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 fontweight="bold",  # +2,
             )
 
-    def _get_patch(self, tf):
+    def _get_location(self, tf):
+        """
+        Get plot_x and plot_y in appropriate units
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :raises NameError: DESCRIPTION
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        # if map scale is lat lon set parameters
+        if self.map_scale == "deg":
+            plot_x = tf.longitude - self.reference_point[0]
+            plot_y = tf.latitude - self.reference_point[1]
+        # if map scale is in meters easting and northing
+        elif self.map_scale in ["m", "km"]:
+            tf.project_point_ll2utm(
+                epsg=self.map_epsg, utm_zone=self.map_utm_zone
+            )
+
+            plot_x = tf.east - self.reference_point[0]
+            plot_y = tf.north - self.reference_point[1]
+            if self.map_scale in ["km"]:
+                plot_x /= 1000.0
+                plot_y /= 1000.0
+        else:
+            raise NameError("mapscale not recognized")
+
+        return plot_x, plot_y
+
+    def _get_patch_ellipse(self, tf):
         """
         Get ellipse patch
 
@@ -250,82 +310,87 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
         pt_obj, t_obj = self._get_pt(tf)
 
-        # if map scale is lat lon set parameters
-        if self.map_scale == "deg":
-            plotx = tf.longitude - self.reference_point[0]
-            ploty = tf.latitude - self.reference_point[1]
-        # if map scale is in meters easting and northing
-        elif self.map_scale in ["m", "km"]:
-            tf.project_point_ll2utm(
-                epsg=self.map_epsg, utm_zone=self.map_utm_zone
-            )
-
-            plotx = tf.east - self.reference_point[0]
-            ploty = tf.north - self.reference_point[1]
-            if self.map_scale in ["km"]:
-                plotx /= 1000.0
-                ploty /= 1000.0
-        else:
-            raise NameError("mapscale not recognized")
-        # --> set local variables
-        phimin = np.nan_to_num(pt_obj.phimin)
-        phimax = np.nan_to_num(pt_obj.phimax)
-        eangle = np.nan_to_num(pt_obj.azimuth)
-
-        color_array = self.get_pt_color_array(pt_obj)
-        bounds = np.arange(
-            self.ellipse_range[0],
-            self.ellipse_range[1] + self.ellipse_range[2],
-            self.ellipse_range[2],
-        )
-
-        has_ellipse = True
-        # --> get ellipse properties
-        # if the ellipse size is not physically correct make it a dot
-        if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
-            eheight = 0.0000001
-            ewidth = 0.0000001
+        if pt_obj is None and t_obj is None:
+            return (0, 0)
+        if pt_obj is None:
             has_ellipse = False
 
-        else:
-            scaling = self.ellipse_size / phimax
-            eheight = phimin * scaling
-            ewidth = phimax * scaling
-            # make an ellipse
-            ellipd = patches.Ellipse(
-                (plotx, ploty),
-                width=ewidth,
-                height=eheight,
-                angle=90 - eangle,
-                lw=self.lw,
+        if pt_obj is not None:
+            plot_x, plot_y = self._get_location(tf)
+
+            # --> set local variables
+            phimin = np.nan_to_num(pt_obj.phimin)[0]
+            phimax = np.nan_to_num(pt_obj.phimax)[0]
+            eangle = np.nan_to_num(pt_obj.azimuth)[0]
+
+            color_array = self.get_pt_color_array(pt_obj)
+            bounds = np.arange(
+                self.ellipse_range[0],
+                self.ellipse_range[1] + self.ellipse_range[2],
+                self.ellipse_range[2],
             )
 
-            # get ellipse color
-            ellipd.set_facecolor(
-                mtcl.get_plot_color(
-                    color_array[0],
-                    self.ellipse_colorby,
-                    self.ellipse_cmap,
-                    self.ellipse_range[0],
-                    self.ellipse_range[1],
-                    bounds=bounds,
+            has_ellipse = True
+            # --> get ellipse properties
+            # if the ellipse size is not physically correct make it a dot
+            if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
+                eheight = 0.0000001
+                ewidth = 0.0000001
+                has_ellipse = False
+
+            else:
+                scaling = self.ellipse_size / phimax
+                eheight = phimin * scaling
+                ewidth = phimax * scaling
+                # make an ellipse
+                ellipd = patches.Ellipse(
+                    (plot_x, plot_y),
+                    width=ewidth,
+                    height=eheight,
+                    angle=90 - eangle,
+                    lw=self.lw,
                 )
-            )
 
-            self.ax.add_artist(ellipd)
+                # get ellipse color
+                ellipd.set_facecolor(
+                    mtcolors.get_plot_color(
+                        color_array[0],
+                        self.ellipse_colorby,
+                        self.ellipse_cmap,
+                        self.ellipse_range[0],
+                        self.ellipse_range[1],
+                        bounds=bounds,
+                    )
+                )
 
+                self.ax.add_artist(ellipd)
+
+        has_tipper = self._get_tipper_patch(plot_x, plot_y, t_obj)
+
+        if has_ellipse or has_tipper:
+            return plot_x, plot_y
+        else:
+            return (0, 0)
+
+    def _get_tipper_patch(self, plot_x, plot_y, t_obj):
+        """
+
+        :param t_obj: DESCRIPTION
+        :type t_obj: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
         has_tipper = False
         if t_obj is not None:
-
             if "r" in self.plot_tipper == "yri":
-
                 if t_obj.mag_real[0] <= self.arrow_threshold:
                     has_tipper = True
                     txr = (
                         t_obj.mag_real[0]
                         * self.arrow_size
                         * np.sin(
-                            (t_obj.angle_real[0]) * np.pi / 180
+                            np.deg2rad(t_obj.angle_real[0])
                             + self.arrow_direction * np.pi
                         )
                     )
@@ -333,14 +398,14 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         t_obj.mag_real[0]
                         * self.arrow_size
                         * np.cos(
-                            (t_obj.angle_real[0]) * np.pi / 180
+                            np.deg2rad(t_obj.angle_real[0])
                             + self.arrow_direction * np.pi
                         )
                     )
 
                     self.ax.arrow(
-                        plotx,
-                        ploty,
+                        plot_x,
+                        plot_y,
                         txr,
                         tyr,
                         width=self.arrow_lw,
@@ -352,14 +417,16 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     )
                 else:
                     pass
+
             # plot imaginary tipper
             if "i" in self.plot_tipper:
                 if t_obj.mag_imag[0] <= self.arrow_threshold:
+                    has_tipper = True
                     txi = (
                         t_obj.mag_imag[0]
                         * self.arrow_size
                         * np.sin(
-                            (t_obj.angle_imag[0]) * np.pi / 180
+                            np.deg2rad(t_obj.angle_imag[0])
                             + self.arrow_direction * np.pi
                         )
                     )
@@ -367,14 +434,14 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         t_obj.mag_imag[0]
                         * self.arrow_size
                         * np.cos(
-                            (t_obj.angle_imag[0]) * np.pi / 180
+                            np.deg2rad(t_obj.angle_imag[0])
                             + self.arrow_direction * np.pi
                         )
                     )
 
                     self.ax.arrow(
-                        plotx,
-                        ploty,
+                        plot_x,
+                        plot_y,
                         txi,
                         tyi,
                         width=self.arrow_lw,
@@ -384,13 +451,119 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         head_width=self.arrow_head_width,
                         head_length=self.arrow_head_length,
                     )
+        return has_tipper
+
+    def _get_patch_wedges(self, tf):
+        """
+        Add patches to plot
+        """
+
+        pt_obj, t_obj = self._get_pt(tf)
+        plot_x, plot_y = self._get_location(tf)
+
+        # --> set local variables
+        phimin = np.nan_to_num(pt_obj.phimin)[0]
+        phimax = np.nan_to_num(pt_obj.phimax)[0]
+        eangle = np.nan_to_num(pt_obj.azimuth)[0]
+
+        has_ellipse = True
+        w1 = patches.Wedge(
+            (plot_x, plot_y),
+            self.ellipse_size,
+            90 - eangle - self.wedge_width,
+            90 - eangle + self.wedge_width,
+            color=mtcolors.get_plot_color(
+                phimax,
+                "phimax",
+                self.ellipse_cmap,
+                self.phase_limits[0],
+                self.phase_limits[1],
+            ),
+        )
+        w2 = patches.Wedge(
+            (plot_x, plot_y),
+            self.ellipse_size,
+            270 - eangle - self.wedge_width,
+            270 - eangle + self.wedge_width,
+            color=mtcolors.get_plot_color(
+                phimax,
+                "phimax",
+                self.ellipse_cmap,
+                self.phase_limits[0],
+                self.phase_limits[1],
+            ),
+        )
+
+        w3 = patches.Wedge(
+            (plot_x, plot_y),
+            self.ellipse_size * phimin / phimax,
+            -1 * eangle - self.wedge_width,
+            -1 * eangle + self.wedge_width,
+            color=mtcolors.get_plot_color(
+                phimin,
+                "phimin",
+                self.ellipse_cmap,
+                self.phase_limits[0],
+                self.phase_limits[1],
+            ),
+        )
+        w4 = patches.Wedge(
+            (plot_x, plot_y),
+            self.ellipse_size * phimin / phimax,
+            180 - eangle - self.wedge_width,
+            180 - eangle + self.wedge_width,
+            color=mtcolors.get_plot_color(
+                phimin,
+                "phimin",
+                self.ellipse_cmap,
+                self.phase_limits[0],
+                self.phase_limits[1],
+            ),
+        )
+
+        # make an ellipse
+        e1 = patches.Ellipse(
+            (plot_x, plot_y),
+            width=2 * self.ellipse_size,
+            height=2 * self.ellipse_size * phimin / phimax,
+            angle=90 - eangle,
+        )
+
+        # geometric mean of phimin and phimax
+        gm = np.sqrt(abs(phimin) * abs(phimax))
+        e1.set_facecolor(
+            mtcolors.get_plot_color(
+                gm,
+                "geometric_mean",
+                self.ellipse_cmap,
+                self.phase_limits[0],
+                self.phase_limits[1],
+            )
+        )
+        e1.set_edgecolor(
+            mtcolors.get_plot_color(
+                pt_obj.skew,
+                "skew_seg",
+                self.skew_cmap,
+                self.skew_limits[0],
+                self.skew_limits[1],
+                self.skew_cmap_bounds,
+            )
+        )
+        e1.set_linewidth(self.skew_lw)
+        e1.set_alpha(self.ellipse_alpha)
+        ### add patches
+        for patch in [e1, w1, w2, w3, w4]:
+            self.ax.add_patch(patch)
+
+        has_tipper = self._get_tipper_patch(plot_x, plot_y, t_obj)
 
         if has_ellipse or has_tipper:
-            return plotx, ploty
+            return plot_x, plot_y
         else:
             return (0, 0)
 
-    def _add_colorbar(self):
+    def _add_colorbar_ellipse(self):
         """
         Add phase tensor color bar
 
@@ -408,10 +581,10 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ax2 = self.fig.add_axes(self.cb_position)
 
         # make the colorbar
-        if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
-            cmap_input = mtcl.cmapdict[self.ellipse_cmap]
+        if self.ellipse_cmap in list(mtcolors.cmapdict.keys()):
+            cmap_input = mtcolors.cmapdict[self.ellipse_cmap]
         else:
-            cmap_input = mtcl.cm.get_cmap(self.ellipse_cmap)
+            cmap_input = mtcolors.cm.get_cmap(self.ellipse_cmap)
 
         if "seg" in self.ellipse_cmap:
             norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
@@ -447,6 +620,106 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.cb.ax.yaxis.set_label_coords(1.25, 0.5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis="y", direction="in")
+
+    def _add_colorbar_wedges(self):
+        """
+        Add phase tensor color bar
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.cb_orientation == "vertical":
+            self.ax2, kw = mcb.make_axes(
+                self.ax,
+                orientation=self.cb_orientation,
+                shrink=0.15,
+                anchor=(0, 0.60),
+            )
+
+            pos = self.ax2.get_position()
+            x3_pos = (pos.x0, pos.y0 - 0.175, pos.width, pos.height)
+
+            self.ax3 = self.fig.add_axes(x3_pos)
+
+        elif self.cb_orientation == "horizontal":
+            self.ax2, kw = mcb.make_axes(
+                self.ax,
+                orientation=self.cb_orientation,
+                shrink=0.15,
+                anchor=(0.4, 0),
+            )
+            pos = self.ax2.get_position()
+            x3_pos = (pos.x0 + 0.175, pos.y0, pos.width, pos.height)
+
+            self.ax3 = self.fig.add_axes(x3_pos)
+
+        # make the colorbar
+        for key, ax in zip(["ellipse", "skew"], [self.ax2, self.ax3]):
+            dict_key = f"{key}_cmap"
+            cmap = getattr(self, dict_key)
+            if cmap in list(mtcolors.cmapdict.keys()):
+                if "ellipse" in key:
+                    cmap_input = mtcolors.cmapdict[cmap]
+                else:
+                    cmap_input = mtcolors.cmapdict[cmap]
+            else:
+                cmap_input = mtcolors.cm.get_cmap(cmap)
+
+            if "seg" in cmap and "ellipse" in key:
+
+                norms = colors.BoundaryNorm(
+                    self.ellipse_cmap_bounds, cmap_input.N
+                )
+                self.cb = mcb.ColorbarBase(
+                    ax,
+                    cmap=cmap_input,
+                    norm=norms,
+                    orientation=self.cb_orientation,
+                    ticks=self.ellipse_cmap_bounds,
+                )
+
+            elif "skew" in key:
+                norms = colors.BoundaryNorm(self.skew_cmap_bounds, cmap_input.N)
+                cb = mcb.ColorbarBase(
+                    ax,
+                    cmap=cmap_input,
+                    norm=norms,
+                    orientation=self.cb_orientation,
+                    ticks=self.skew_cmap_bounds,
+                )
+
+            else:
+                cb = mcb.ColorbarBase(
+                    ax,
+                    cmap=cmap_input,
+                    norm=colors.Normalize(
+                        vmin=self.ellipse_range[0], vmax=self.ellipse_range[1]
+                    ),
+                    orientation=self.cb_orientation,
+                )
+
+            # label the color bar accordingly
+            if key == "ellipse":
+                label = "Phase (deg)"
+            else:
+                label = "Skew (deg)"
+
+            cb.set_label(
+                label,
+                fontdict={"size": self.font_size, "weight": "bold"},
+            )
+
+            # place the label in the correct location
+            if self.cb_orientation == "horizontal":
+                cb.ax.xaxis.set_label_position("top")
+                cb.ax.xaxis.set_label_coords(0.5, 1.3)
+            elif self.cb_orientation == "vertical":
+                cb.ax.yaxis.set_label_position("right")
+                cb.ax.yaxis.set_label_coords(1.25, 0.5)
+                cb.ax.yaxis.tick_left()
+                cb.ax.tick_params(axis="y", direction="in")
 
     # -----------------------------------------------
     # The main plot method for this module
@@ -486,7 +759,14 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self.plot_xarr = np.zeros(len(self.mt_data))
         self.plot_yarr = np.zeros(len(self.mt_data))
         for index, tf in enumerate(self.mt_data.values()):
-            plot_x, plot_y = self._get_patch(tf)
+            if self.pt_type == "ellipses":
+                plot_x, plot_y = self._get_patch_ellipse(tf)
+            elif self.pt_type == "wedges":
+                plot_x, plot_y = self._get_patch_wedges(tf)
+            else:
+                raise ValueError(
+                    f"{self.pt_type} not supported. Use ['ellipses' | 'wedges']"
+                )
             self.plot_xarr[index] = plot_x
             self.plot_yarr[index] = plot_y
 
@@ -572,4 +852,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
         self.ax.set_axisbelow(True)
 
-        self._add_colorbar()
+        if self.pt_type == "ellipses":
+            self._add_colorbar_ellipse()
+        elif self.pt_type == "wedges":
+            self._add_colorbar_wedges()

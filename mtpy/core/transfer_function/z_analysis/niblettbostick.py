@@ -25,8 +25,6 @@ Updated 2022-09 JP
 import numpy as np
 import scipy.interpolate as spi
 
-from mtpy.analysis import geometry
-from mtpy.core.z import Z
 from mtpy.utils import MU0
 
 # =============================================================================
@@ -174,16 +172,13 @@ def calculate_depth_of_investigation(z_object):
 
     """
 
-    if not isinstance(z_object, Z):
-        raise TypeError("Input must be a mtpy.core.Z object")
-
     if z_object.z.shape[0] > 1:
 
-        dimensions = geometry.dimensionality(z_object=z_object)
-        angles = geometry.strike_angle(z_object=z_object)
+        dimensions = z_object.estimate_dimensionality()
+        angles = z_object.phase_tensor.azimuth
 
         # reduce actual Z by the 3D layers:
-        angles_2d = np.nan_to_num(angles[np.where(dimensions != 3)][:, 0])
+        angles_2d = np.nan_to_num(angles[np.where(dimensions != 3)])
         periods_2d = z_object.period[np.where(dimensions != 3)]
 
         # interperpolate strike angle onto all periods
@@ -235,27 +230,23 @@ def calculate_depth_of_investigation(z_object):
             ] = calculate_niblett_bostick_resistivity_weidelt(res, phase)
 
     for x in ["depth", "resistivity"]:
-
-        depth_array[f"{x}_min"] = np.nanmin(
-            np.array(
-                [
-                    depth_array[f"{x}_det"],
-                    depth_array[f"{x}_xy"],
-                    depth_array[f"{x}_yx"],
-                ]
-            ),
-            axis=0,
+        d = np.array(
+            [
+                depth_array[f"{x}_det"],
+                depth_array[f"{x}_xy"],
+                depth_array[f"{x}_yx"],
+            ]
         )
+        if np.all(np.isnan(d)):
+            depth_array[f"{x}_min"] = np.nan
+            depth_array[f"{x}_max"] = np.nan
+            continue
 
-        depth_array[f"{x}_max"] = np.nanmax(
-            np.array(
-                [
-                    depth_array[f"{x}_det"],
-                    depth_array[f"{x}_xy"],
-                    depth_array[f"{x}_yx"],
-                ]
-            ),
-            axis=0,
-        )
+        with np.warnings.catch_warnings():
+            np.warnings.filterwarnings(
+                "ignore", r"All-NaN (slice|axis) encountered"
+            )
+            depth_array[f"{x}_min"] = np.nanmin(d, axis=0)
+            depth_array[f"{x}_max"] = np.nanmax(d, axis=0)
 
     return depth_array

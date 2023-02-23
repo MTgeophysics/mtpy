@@ -22,7 +22,7 @@ class TestMTLocation(unittest.TestCase):
     def test_set_latitude(self):
         with self.subTest("string"):
             self.loc.latitude = "40:00:00"
-            self.assertEquals(self.loc.latitude, 40.0)
+            self.assertEqual(self.loc.latitude, 40.0)
 
         with self.subTest("int"):
             self.loc.latitude = 40

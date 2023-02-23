@@ -104,12 +104,27 @@ class PlotMTResponse(PlotBase):
         self.subplot_bottom = 0.1
         self.subplot_top = 0.93
 
+        self.plot_model_error = False
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
         # plot on initializing
         if self.show_plot:
             self.plot()
+
+    @property
+    def plot_model_error(self):
+        return self._plot_model_error
+
+    @plot_model_error.setter
+    def plot_model_error(self, value):
+        if value:
+            self._error_str = "model_error"
+        else:
+            self._error_str = "error"
+
+        self._plot_model_error = value
 
     @property
     def period(self):
@@ -253,7 +268,7 @@ class PlotMTResponse(PlotBase):
                 axr,
                 period,
                 getattr(z_obj, f"res_{comp}"),
-                getattr(z_obj, f"res_err_{comp}"),
+                getattr(z_obj, f"res_{self._error_str}_{comp}"),
                 **prop,
             )
             eb_list.append(ebax)
@@ -307,7 +322,7 @@ class PlotMTResponse(PlotBase):
                     axp,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_{self._error_str}_{comp}"),
                     yx=True,
                     **prop,
                 )
@@ -316,7 +331,7 @@ class PlotMTResponse(PlotBase):
                     axp,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_err_{comp}"),
+                    getattr(z_obj, f"phase_{self._error_str}_{comp}"),
                     yx=False,
                     **prop,
                 )
@@ -342,7 +357,7 @@ class PlotMTResponse(PlotBase):
             self.axr,
             self.period,
             self.Z.res_det,
-            self.Z.res_err_det,
+            self.Z.res_error_det,
             **self.det_error_bar_properties,
         )
 
@@ -351,7 +366,7 @@ class PlotMTResponse(PlotBase):
             self.axp,
             self.period,
             self.Z.phase_det,
-            self.Z.phase_err_det,
+            self.Z.phase_error_det,
             **self.det_error_bar_properties,
         )
 

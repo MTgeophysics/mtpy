@@ -14,7 +14,6 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 
-from mtpy.analysis.zinvariants import Zinvariants
 from mtpy.imaging.mtplot_tools import PlotBase
 from mtpy.core import Tipper
 
@@ -214,79 +213,76 @@ class PlotStrike(PlotBase):
 
         for mt in self.mt_data.values():
             # -----------get strike angle from invariants----------------------
-            zinv = Zinvariants(mt.Z)
+            if mt.has_impedance():
+                zinv = mt.Z.invariants
 
-            # subtract 90 because polar plot assumes 0 is on the x an 90 is
-            # on the y
-            zs = 90 - zinv.strike
-            # make a dictionary of strikes with keys as period
-            for period, plot_strike, strike in zip(mt.period, zs, zinv.strike):
-                entry = {
-                    "estimate": "invariant",
-                    "period": period,
-                    "plot_strike": plot_strike,
-                    "measured_strike": strike,
-                }
-                entries.append(entry)
+                # subtract 90 because polar plot assumes 0 is on the x an 90 is
+                # on the y
+                zs = 90 - zinv.strike
+                # make a dictionary of strikes with keys as period
+                for period, plot_strike, strike in zip(
+                    mt.period, zs, zinv.strike
+                ):
+                    entry = {
+                        "estimate": "invariant",
+                        "period": period,
+                        "plot_strike": plot_strike,
+                        "measured_strike": strike,
+                    }
+                    entries.append(entry)
 
-            # ------------get strike from phase tensor strike angle------------
-            # subtract 90 because polar plot assumes 0 is on the x an 90 is
-            # on the y
-            pt = mt.pt
-            az = 90 - pt.azimuth
-            az_err = pt.azimuth_err
-            az[pt.phimax == 0] = np.nan
+                # ------------get strike from phase tensor strike angle------------
+                # subtract 90 because polar plot assumes 0 is on the x an 90 is
+                # on the y
+                pt = mt.pt
+                az = 90 - pt.azimuth
+                az_err = pt.azimuth_error
+                az[pt.phimax == 0] = np.nan
 
-            # put an error max on the estimation of strike angle
-            if self.pt_error_floor:
-                az[np.where(az_err > self.pt_error_floor)] = 0.0
+                # put an error max on the estimation of strike angle
+                if self.pt_error_floor:
+                    az[np.where(az_err > self.pt_error_floor)] = 0.0
 
-            # make a dictionary of strikes with keys as period
-            for period, plot_strike, strike in zip(mt.period, az, pt.azimuth):
-                entry = {
-                    "estimate": "pt",
-                    "period": period,
-                    "plot_strike": plot_strike,
-                    "measured_strike": strike,
-                }
-                entries.append(entry)
+                # make a dictionary of strikes with keys as period
+                for period, plot_strike, strike in zip(
+                    mt.period, az, pt.azimuth
+                ):
+                    entry = {
+                        "estimate": "pt",
+                        "period": period,
+                        "plot_strike": plot_strike,
+                        "measured_strike": strike,
+                    }
+                    entries.append(entry)
 
             # -----------get tipper strike------------------------------------
-            tip = mt.Tipper
-            if isinstance(tip, Tipper):
-                if tip.tipper is None:
-                    tip = Tipper(
-                        np.zeros((len(mt.period), 1, 2), dtype="complex"),
-                        frequency=[1],
-                    )
-                    tip.compute_mag_direction()
-                    tip.compute_amp_phase()
-            else:
-                if tip is None:
-                    tip = Tipper(
-                        np.zeros((len(mt.period), 1, 2), dtype="complex"),
-                        frequency=[1],
-                    )
-                    tip.compute_mag_direction()
-                    tip.compute_amp_phase()
-            # # subtract 90 because polar plot assumes 0 is on the x an 90 is
-            # on the y
-            tipr = 90 - tip.angle_real
+            if mt.has_tipper():
+                tip = mt.Tipper
+                if isinstance(tip, Tipper):
+                    if tip.tipper is None:
+                        tip = Tipper(
+                            np.zeros((len(mt.period), 1, 2), dtype="complex"),
+                            frequency=[1],
+                        )
 
-            tipr[np.where(abs(tipr) == 180.0)] = np.nan
-            tipr[np.where(abs(tipr) == 0)] = np.nan
+                # # subtract 90 because polar plot assumes 0 is on the x an 90 is
+                # on the y
+                tipr = 90 - tip.angle_real
 
-            # make a dictionary of strikes with keys as period
-            for period, plot_strike, strike in zip(
-                mt.period, tipr, tip.angle_real
-            ):
-                entry = {
-                    "estimate": "tipper",
-                    "period": period,
-                    "plot_strike": plot_strike,
-                    "measured_strike": strike,
-                }
-                entries.append(entry)
+                tipr[np.where(abs(tipr) == 180.0)] = np.nan
+                tipr[np.where(abs(tipr) == 0)] = np.nan
+
+                # make a dictionary of strikes with keys as period
+                for period, plot_strike, strike in zip(
+                    mt.period, tipr, tip.angle_real
+                ):
+                    entry = {
+                        "estimate": "tipper",
+                        "period": period,
+                        "plot_strike": plot_strike,
+                        "measured_strike": strike,
+                    }
+                    entries.append(entry)
 
         self.strike_df = pd.DataFrame(entries)
 
