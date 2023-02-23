@@ -223,13 +223,15 @@ class MT(TF, MTLocation):
         """RRHY metadata"""
         return self.station_metadata.runs[0].rrhy
 
-    def remove_distortion(self, num_freq=None, inplace=False):
+    def remove_distortion(
+        self, n_frequencies=None, comp="det", only_2d=False, inplace=False
+    ):
         """
         remove distortion following Bibby et al. [2005].
 
-        :param num_freq: number of frequencies to look for distortion from the
+        :param n_frequencies: number of frequencies to look for distortion from the
                          highest frequency
-        :type num_freq: int
+        :type n_frequencies: int
 
         :returns: Distortion matrix
         :rtype: np.ndarray(2, 2, dtype=real)
@@ -247,10 +249,20 @@ class MT(TF, MTLocation):
 
         """
         if inplace:
-            self.Z = self.Z.remove_distortion()
+            self.Z = self.Z.remove_distortion(
+                n_frequencies=n_frequencies,
+                comp=comp,
+                only_2d=only_2d,
+                inplace=False,
+            )
         else:
             new_mt = self.clone_empty()
-            new_mt.Z = self.Z.remove_distortion()
+            new_mt.Z = self.Z.remove_distortion(
+                n_frequencies=n_frequencies,
+                comp=comp,
+                only_2d=only_2d,
+                inplace=False,
+            )
             new_mt.Tipper = self.Tipper
             return new_mt
 
@@ -439,7 +451,7 @@ class MT(TF, MTLocation):
 
         return mt_df
 
-    def from_dataframe(self, df):
+    def from_dataframe(self, mt_df):
         """
         fill transfer function attributes from a dataframe for a single station
 
@@ -450,7 +462,16 @@ class MT(TF, MTLocation):
 
         """
 
-        mt_df = MTDataFrame()
+        if not isinstance(mt_df, MTDataFrame):
+            try:
+                mt_df = MTDataFrame(mt_df)
+            except TypeError:
+                raise TypeError(
+                    f"Input dataframe must be an MTDataFrame not {type(mt_df)}"
+                )
+            except ValueError as error:
+                raise ValueError(error)
+
         for key in [
             "station",
             "latitude",
@@ -464,12 +485,12 @@ class MT(TF, MTLocation):
             "model_elevation",
         ]:
             try:
-                setattr(self, key, df[key].unique()[0])
+                setattr(self, key, getattr(mt_df, key))
             except KeyError:
                 continue
 
-        self.Z = mt_df.to_z_object(df)
-        self.Tipper = mt_df.to_t_object(df)
+        self.Z = mt_df.to_z_object()
+        self.Tipper = mt_df.to_t_object()
 
     def compute_model_z_errors(
         self, error_value=5, error_type="geometric_mean", floor=True

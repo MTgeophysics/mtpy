@@ -23,6 +23,7 @@ from .pt import PhaseTensor
 from .z_analysis import (
     ZInvariants,
     find_distortion,
+    remove_distortion_from_z_object,
     calculate_depth_of_investigation,
 )
 
@@ -310,7 +311,13 @@ class Z(TFBase):
             )
 
     def remove_distortion(
-        self, distortion_tensor, distortion_error_tensor=None, inplace=False
+        self,
+        distortion_tensor=None,
+        distortion_error_tensor=None,
+        n_frequencies=None,
+        comp="det",
+        only_2d=False,
+        inplace=False,
     ):
         """
         Remove distortion D form an observed impedance tensor Z to obtain
@@ -340,79 +347,17 @@ class Z(TFBase):
 
         """
 
-        if distortion_error_tensor is None:
-            distortion_error_tensor = np.zeros_like(distortion_tensor)
-        # for all frequency, calculate D.Inverse, then obtain Z0 = D.I * Z
-        try:
-            if not (len(distortion_tensor.shape) in [2, 3]) and (
-                len(distortion_error_tensor.shape) in [2, 3]
-            ):
-                msg = "Distortion tensor and error are not correct shape"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            if (
-                len(distortion_tensor.shape) == 3
-                or len(distortion_error_tensor.shape) == 3
-            ):
-                self.logger.info(
-                    "Distortion is not time-dependent - taking only first"
-                    " of given distortion tensors."
-                )
-                try:
-                    distortion_tensor = distortion_tensor[0]
-                    distortion_error_tensor = distortion_error_tensor[0]
-                except IndexError:
-                    msg = "Distortion tensor and error are not correct shape"
-                    self.logger.error(msg)
-                    raise ValueError(msg)
-            if (distortion_tensor.shape != (2, 2)) and (
-                distortion_error_tensor.shape != (2, 2)
-            ):
-                msg = "Distortion tensor and error are not correct shape"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            distortion_tensor = np.matrix(np.real(distortion_tensor))
-        except ValueError:
-            msg = "Input distortion tensor, must be (2, 2)"
-            raise ValueError(msg)
-        try:
-            DI = distortion_tensor.I
-        except np.linalg.LinAlgError:
-            raise ValueError(
-                "The provided distortion tensor is singular cannot be used."
+        if distortion_tensor is None:
+            (
+                distortion_tensor,
+                distortion_error_tensor,
+            ) = self.estimate_distortion(
+                n_frequencies=n_frequencies, comp=comp, only_2d=only_2d
             )
-        # propagation of errors (using 1-norm) - step 1 - inversion of D:
-        DI_error = np.zeros_like(distortion_error_tensor)
 
-        # todo :include error on  determinant!!
-        # D_det = np.linalg.det(distortion_tensor)
-
-        dummy, DI_error = MTcc.invertmatrix_incl_errors(
-            distortion_tensor, distortion_error_tensor
+        z_corrected, z_corrected_error = remove_distortion_from_z_object(
+            self, distortion_tensor, distortion_error_tensor, self.logger
         )
-
-        # propagation of errors - step 2 - product of D.inverse and Z;
-        # D.I * Z, making it 4 summands for each component:
-        z_corrected = np.zeros_like(self.z, dtype=complex)
-        z_corrected_error = np.zeros_like(self.z, dtype=float)
-
-        for idx_f in range(len(self.z)):
-            z_corrected[idx_f] = np.array(np.dot(DI, np.matrix(self.z[idx_f])))
-            if self._has_tf_error():
-                for ii in range(2):
-                    for jj in range(2):
-                        z_corrected_error[idx_f, ii, jj] = np.sum(
-                            np.abs(
-                                np.array(
-                                    [
-                                        DI_error[ii, 0] * self.z[idx_f, 0, jj],
-                                        DI[ii, 0] * self.z_error[idx_f, 0, jj],
-                                        DI_error[ii, 1] * self.z[idx_f, 1, jj],
-                                        DI[ii, 1] * self.z_error[idx_f, 1, jj],
-                                    ]
-                                )
-                            )
-                        )
 
         if inplace:
             self.z = z_corrected

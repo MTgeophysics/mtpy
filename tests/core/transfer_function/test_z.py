@@ -321,8 +321,7 @@ class TestZAnalysis(unittest.TestCase):
             )
 
     def test_remove_distortion(self):
-        d, d_err = self.z.estimate_distortion()
-        new_z = self.z.remove_distortion(d, d_err)
+        new_z = self.z.remove_distortion()
 
         self.assertTrue(
             np.isclose(

@@ -148,6 +148,31 @@ class TestMTSetImpedance(unittest.TestCase):
             )
         )
 
+    def test_remove_distortion(self):
+        new_mt = self.mt.remove_distortion()
+
+        self.assertTrue(
+            np.all(
+                np.isclose(
+                    new_mt.Z.z,
+                    np.array(
+                        [
+                            [
+                                [
+                                    0.099995 - 0.099995j,
+                                    9.99949999 + 9.99949999j,
+                                ],
+                                [
+                                    -9.99949999 - 9.99949999j,
+                                    -0.099995 + 0.099995j,
+                                ],
+                            ]
+                        ]
+                    ),
+                )
+            )
+        )
+
 
 class TestMTComputeModelError(unittest.TestCase):
     @classmethod
@@ -200,33 +225,32 @@ class TestMT2DataFrame(unittest.TestCase):
         self.m1 = MT(TF_EDI_CGG)
         self.m1.read_tf_file()
 
-        self.sdf = self.m1.to_dataframe()
-        self.mt_df = MTDataFrame()
+        self.mt_df = self.m1.to_dataframe()
 
     def test_station(self):
-        self.assertEqual(self.sdf.station.unique()[0], "TEST01")
+        self.assertEqual(self.mt_df.station, "TEST01")
 
     def test_period(self):
-        self.assertEqual(self.sdf.period.size, 73)
+        self.assertEqual(self.mt_df.period.size, 73)
 
     def test_latitude(self):
-        self.assertEqual(self.sdf.latitude.unique()[0], -30.930285)
+        self.assertEqual(self.mt_df.latitude, -30.930285)
 
     def test_longitude(self):
-        self.assertEqual(self.sdf.longitude.unique()[0], 127.22923)
+        self.assertEqual(self.mt_df.longitude, 127.22923)
 
     def test_elevation(self):
-        self.assertEqual(self.sdf.elevation.unique()[0], 175.27)
+        self.assertEqual(self.mt_df.elevation, 175.27)
 
     def test_to_z(self):
-        self.assertEqual(self.m1.Z, self.mt_df.to_z_object(self.sdf))
+        self.assertEqual(self.m1.Z, self.mt_df.to_z_object())
 
     def test_to_t(self):
-        self.assertEqual(self.m1.Tipper, self.mt_df.to_t_object(self.sdf))
+        self.assertEqual(self.m1.Tipper, self.mt_df.to_t_object())
 
     def test_from_dataframe(self):
         m2 = MT()
-        m2.from_dataframe(self.sdf)
+        m2.from_dataframe(self.mt_df)
 
         for key in [
             "station",
@@ -245,6 +269,9 @@ class TestMT2DataFrame(unittest.TestCase):
 
         with self.subTest("dataset"):
             self.assertEqual(self.m1._transfer_function, m2._transfer_function)
+
+    def test_from_dataframe_fail(self):
+        self.assertRaises(TypeError, self.m1.from_dataframe, "a")
 
 
 # =============================================================================
