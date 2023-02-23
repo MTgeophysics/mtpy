@@ -413,9 +413,8 @@ class Z(TFBase):
         if inplace:
             self.z = z_corrected
             self.z_error = z_corrected_error
-            return distortion_tensor, None
         else:
-            return distortion_tensor, Z(
+            return Z(
                 z=z_corrected,
                 z_error=z_corrected_error,
                 frequency=self.frequency,

@@ -191,13 +191,9 @@ class TestRemoveDistortion(unittest.TestCase):
         self.dz.z = np.array(np.dot(self.distortion, z)).reshape((1, 2, 2))
 
     def test_remove_distortion(self):
-        d, new_z = self.dz.remove_distortion(self.distortion)
+        new_z = self.dz.remove_distortion(self.distortion)
 
-        with self.subTest("distortion matrix"):
-            self.assertTrue(np.allclose(self.distortion, d))
-
-        with self.subTest(("z")):
-            self.assertTrue(np.allclose(new_z.z, self.z.z))
+        self.assertTrue(np.allclose(new_z.z, self.z.z))
 
     def test_fail_bad_input_shape_too_many(self):
         self.assertRaises(
@@ -322,6 +318,50 @@ class TestEstimateDimensionalityDistortion(unittest.TestCase):
                     ),
                 ).all()
             )
+
+    def test_remove_distortion(self):
+        d, d_err = self.z.estimate_distortion()
+        new_z = self.z.remove_distortion(d, d_err)
+
+        self.assertTrue(
+            np.isclose(
+                new_z.z,
+                np.array(
+                    [
+                        [
+                            [
+                                -51.86565263 - 118.68192661j,
+                                61.93545384 + 129.03863553j,
+                            ],
+                            [
+                                -43.51779826 - 101.49631509j,
+                                8.1657482 + 13.91453345j,
+                            ],
+                        ],
+                        [
+                            [
+                                -11.18221849 - 20.17117021j,
+                                580.21646901 + 782.15493955j,
+                            ],
+                            [
+                                -9.55878948 - 18.74893648j,
+                                -24.48606379 - 34.02357534j,
+                            ],
+                        ],
+                        [
+                            [
+                                -85.38777896 - 156.96774979j,
+                                76.70274771 + 487.33602186j,
+                            ],
+                            [
+                                -14.46004384 - 44.68321988j,
+                                71.75603776 + 266.65805243j,
+                            ],
+                        ],
+                    ]
+                ),
+            ).all()
+        )
 
 
 # =============================================================================
