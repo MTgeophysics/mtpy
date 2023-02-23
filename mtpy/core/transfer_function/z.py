@@ -855,7 +855,7 @@ class Z(TFBase):
         if n_frequencies is None:
             nf = self.frequency.size
         else:
-            nf = self.frequency.size
+            nf = n_frequencies
 
         if self._has_tf():
             new_z_object = Z(

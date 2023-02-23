@@ -271,7 +271,7 @@ class TestInvariants(unittest.TestCase):
         )
 
 
-class TestEstimateDimensionalityDistortion(unittest.TestCase):
+class TestZAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.z = Z(
@@ -290,7 +290,8 @@ class TestEstimateDimensionalityDistortion(unittest.TestCase):
                         [-19.96444 - 56.4191j, 81.95081 + 314.52367j],
                     ],
                 ]
-            )
+            ),
+            frequency=np.array([10, 1, 0.1]),
         )
 
     def test_estimate_dimensionality(self):
@@ -362,6 +363,70 @@ class TestEstimateDimensionalityDistortion(unittest.TestCase):
                 ),
             ).all()
         )
+
+    def test_depth_of_investigation(self):
+        doi = self.z.estimate_depth_of_investigation()
+
+        with self.subTest("depth determinant"):
+            self.assertTrue(
+                np.all(
+                    np.isclose(
+                        np.array(
+                            [1987.75038069, 24854.87498141, 283705.23967805]
+                        ),
+                        doi["depth_det"],
+                    )
+                )
+            )
+
+        with self.subTest("depth xy"):
+            self.assertTrue(
+                np.all(
+                    np.isclose(
+                        np.array(
+                            [2011.03691158, 161332.55006745, 341429.42016186]
+                        ),
+                        doi["depth_xy"],
+                    )
+                )
+            )
+
+        with self.subTest("depth yx"):
+            self.assertTrue(
+                np.all(
+                    np.isclose(
+                        np.array(
+                            [2016.30231674, 3829.64228158, 95249.86168927]
+                        ),
+                        doi["depth_yx"],
+                    )
+                )
+            )
+        with self.subTest("depth min"):
+            self.assertTrue(
+                np.all(
+                    np.isclose(
+                        np.array(
+                            [1987.75038069, 3829.64228158, 95249.86168927]
+                        ),
+                        doi["depth_min"],
+                    )
+                )
+            )
+        with self.subTest("depth max"):
+            self.assertTrue(
+                np.all(
+                    np.isclose(
+                        np.array(
+                            [2016.30231674, 161332.55006745, 341429.42016186]
+                        ),
+                        doi["depth_max"],
+                    )
+                )
+            )
+
+        with self.subTest("period"):
+            self.assertTrue(np.all(np.isclose(doi["period"], self.z.period)))
 
 
 # =============================================================================
