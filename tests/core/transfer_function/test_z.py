@@ -185,7 +185,7 @@ class TestRemoveDistortion(unittest.TestCase):
         self.z = Z()
         self.z.z = z
 
-        self.distortion = np.matrix(np.real([[0.5, 0.1], [0.2, 0.6]]))
+        self.distortion = np.array(np.real([[0.5, 0.1], [0.2, 0.6]]))
 
         self.dz = Z()
         self.dz.z = np.array(np.dot(self.distortion, z)).reshape((1, 2, 2))
@@ -207,7 +207,7 @@ class TestRemoveDistortion(unittest.TestCase):
 
     def test_fail_bad_input_singular_matrix(self):
         self.assertRaises(
-            ValueError, self.z.remove_distortion, np.matrix([[0, 1], [0, 0]])
+            ValueError, self.z.remove_distortion, np.array([[0, 1], [0, 0]])
         )
 
 

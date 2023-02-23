@@ -98,16 +98,15 @@ def find_distortion(z_object, comp="det", only_2d=False):
     if only_2d:
         dim_array[np.where(dim_array == 1)] = 4
 
-    dis = np.zeros_like(z_object.z, dtype=np.float)
-    dis_error = np.ones_like(z_object.z, dtype=np.float)
+    dis = np.zeros_like(z_object.z, dtype=float)
+    dis_error = np.ones_like(z_object.z, dtype=float)
 
     # dictionary of values that should be no distortion in case distortion
     # cannot be calculated for that component
-    rot_mat = np.matrix([[0, -1], [1, 0]])
+    rot_mat = np.array([[0, -1], [1, 0]])
     for index, dim in enumerate(dim_array):
         if np.any(z_object.z[index] == 0.0 + 0.0j) == True:
             dis[index] = np.identity(2)
-            print("Found a zero in z at {0}, skippincomp".format(index))
             continue
 
         if dim == 1:
@@ -190,8 +189,8 @@ def find_distortion(z_object, comp="det", only_2d=False):
             par_i = 2 * tetm_i[0, 1] / (T - si)
             orth_i = 2 * tetm_i[1, 0] / (T + si)
 
-            mat2_r = np.matrix([[0, 1.0 / orth_r], [1.0 / par_r, 0]])
-            mat2_i = np.matrix([[0, 1.0 / orth_i], [1.0 / par_i, 0]])
+            mat2_r = np.array([[0, 1.0 / orth_r], [1.0 / par_r, 0]])
+            mat2_i = np.array([[0, 1.0 / orth_i], [1.0 / par_i, 0]])
 
             avg_mat = np.mean(
                 np.array([np.dot(tetm_r, mat2_r), np.dot(tetm_i, mat2_i)]),
@@ -429,12 +428,12 @@ def remove_distortion_from_z_object(
             if logger is not None:
                 logger.error(msg)
             raise ValueError(msg)
-        distortion_tensor = np.matrix(np.real(distortion_tensor))
+        distortion_tensor = np.array(np.real(distortion_tensor))
     except ValueError:
         msg = "Input distortion tensor, must be (2, 2)"
         raise ValueError(msg)
     try:
-        DI = distortion_tensor.I
+        DI = np.linalg.inv(distortion_tensor)
     except np.linalg.LinAlgError:
         raise ValueError(
             "The provided distortion tensor is singular cannot be used."
@@ -455,7 +454,7 @@ def remove_distortion_from_z_object(
     z_corrected_error = np.zeros_like(z_object.z, dtype=float)
 
     for idx_f in range(len(z_object.z)):
-        z_corrected[idx_f] = np.array(np.dot(DI, np.matrix(z_object.z[idx_f])))
+        z_corrected[idx_f] = np.array(np.dot(DI, np.array(z_object.z[idx_f])))
         if z_object._has_tf_error():
             for ii in range(2):
                 for jj in range(2):

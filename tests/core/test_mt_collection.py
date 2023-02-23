@@ -27,13 +27,16 @@ from mth5.helpers import validate_name
 #
 # =============================================================================
 class TestMTCollection(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.fn_list = [
-            value for key, value in mt_metadata.__dict__.items() if key.startswith("TF")
+            value
+            for key, value in mt_metadata.__dict__.items()
+            if key.startswith("TF")
         ]
 
         self.mc = MTCollection()
-        self.mc.initialize_collection("test_collection")
+        self.mc.open_collection("test_collection")
 
         self.mc.add_tf(self.fn_list)
 
@@ -42,15 +45,18 @@ class TestMTCollection(unittest.TestCase):
                 "station": {
                     0: "14-IEB0537A",
                     1: "NMX20",
-                    2: "24",
-                    3: "300",
-                    4: "BP05",
-                    5: "YSW212abcdefghijkl",
-                    6: "GEO858",
-                    7: "TEST01",
-                    8: "Geoscience_Australia",
-                    9: "s08",
-                    10: "SAGE_2005",
+                    2: "22",
+                    3: "24",
+                    4: "2813",
+                    5: "300",
+                    6: "BP05",
+                    7: "YSW212abcdefghijkl",
+                    8: "GEO858",
+                    9: "TEST01",
+                    10: "Geoscience_Australia",
+                    11: "s08",
+                    12: "SAGE_2005",
+                    13: "21PBS-FJM",
                 },
                 "survey": {
                     0: "BOULIA",
@@ -59,63 +65,78 @@ class TestMTCollection(unittest.TestCase):
                     3: "unknown_survey",
                     4: "unknown_survey",
                     5: "unknown_survey",
-                    6: "unknown_survey_001",
-                    7: "unknown_survey_002",
-                    8: "unknown_survey_003",
-                    9: "unknown_survey_004",
-                    10: "unknown_survey_005",
+                    6: "unknown_survey",
+                    7: "unknown_survey",
+                    8: "unknown_survey_001",
+                    9: "unknown_survey_002",
+                    10: "unknown_survey_003",
+                    11: "unknown_survey_004",
+                    12: "unknown_survey_005",
+                    13: "unknown_survey_006",
                 },
                 "latitude": {
                     0: -22.823722222222223,
                     1: 34.470528,
-                    2: 32.83331167,
-                    3: 34.727,
-                    4: 0.0,
-                    5: 44.631,
-                    6: 22.691378333333333,
-                    7: -30.930285,
-                    8: -23.051133333333333,
-                    9: -34.646,
-                    10: 35.55,
+                    2: 38.6653467,
+                    3: 32.83331167,
+                    4: 44.1479163,
+                    5: 34.727,
+                    6: 0.0,
+                    7: 44.631,
+                    8: 22.691378333333333,
+                    9: -30.930285,
+                    10: -23.051133333333333,
+                    11: -34.646,
+                    12: 35.55,
+                    13: 0.0,
                 },
                 "longitude": {
                     0: 139.29469444444445,
                     1: -108.712288,
-                    2: -107.08305667,
-                    3: -115.735,
-                    4: 0.0,
-                    5: -110.44,
-                    6: 139.70504,
-                    7: 127.22923,
-                    8: 139.46753333333334,
-                    9: 137.006,
-                    10: -106.28333333333333,
+                    2: -113.1690717,
+                    3: -107.08305667,
+                    4: -111.0497517,
+                    5: -115.735,
+                    6: 0.0,
+                    7: -110.44,
+                    8: 139.70504,
+                    9: 127.22923,
+                    10: 139.46753333333334,
+                    11: 137.006,
+                    12: -106.28333333333333,
+                    13: 0.0,
                 },
                 "elevation": {
                     0: 158.0,
                     1: 1940.05,
-                    2: 0.0,
+                    2: 1548.1,
                     3: 0.0,
                     4: 0.0,
                     5: 0.0,
-                    6: 181.0,
-                    7: 175.27,
-                    8: 122.0,
-                    9: 0.0,
-                    10: 0.0,
+                    6: 0.0,
+                    7: 0.0,
+                    8: 181.0,
+                    9: 175.27,
+                    10: 122.0,
+                    11: 0.0,
+                    12: 0.0,
+                    13: 0.0,
                 },
                 "tf_id": {
                     0: "14-IEB0537A",
                     1: "NMX20",
-                    2: "24",
-                    3: "300",
-                    4: "BP05",
-                    5: "ysw212abcdefghijkl",
-                    6: "GEO858",
-                    7: "TEST01",
-                    8: "Geoscience_Australia",
-                    9: "s08",
-                    10: "SAGE_2005",
+                    2: "22",
+                    3: "24",
+                    4: "2813",
+                    5: "300",
+                    6: "BP05",
+                    7: "ysw212abcdefghijkl",
+                    8: "GEO858",
+                    9: "TEST01",
+                    10: "Geoscience_Australia",
+                    11: "s08",
+                    12: "SAGE_2005",
+                    13: "21PBS-FJM",
                 },
                 "units": {
                     0: "none",
@@ -129,6 +150,9 @@ class TestMTCollection(unittest.TestCase):
                     8: "none",
                     9: "none",
                     10: "none",
+                    11: "none",
+                    12: "none",
+                    13: "none",
                 },
                 "has_impedance": {
                     0: True,
@@ -136,64 +160,79 @@ class TestMTCollection(unittest.TestCase):
                     2: True,
                     3: True,
                     4: True,
-                    5: False,
+                    5: True,
                     6: True,
-                    7: True,
+                    7: False,
                     8: True,
                     9: True,
                     10: True,
+                    11: True,
+                    12: True,
+                    13: True,
                 },
                 "has_tipper": {
                     0: True,
                     1: True,
-                    2: False,
-                    3: True,
+                    2: True,
+                    3: False,
                     4: False,
                     5: True,
-                    6: True,
+                    6: False,
                     7: True,
                     8: True,
-                    9: False,
+                    9: True,
                     10: True,
+                    11: False,
+                    12: True,
+                    13: True,
                 },
                 "has_covariance": {
                     0: True,
                     1: True,
                     2: False,
-                    3: True,
+                    3: False,
                     4: False,
                     5: True,
                     6: False,
-                    7: False,
-                    8: True,
+                    7: True,
+                    8: False,
                     9: False,
                     10: True,
+                    11: False,
+                    12: True,
+                    13: False,
                 },
                 "period_min": {
                     0: 0.003125,
                     1: 4.65455,
-                    2: 0.0009765625,
-                    3: 1.16364,
-                    4: 1.333333,
-                    5: 0.01818,
-                    6: 0.005154639175257732,
-                    7: 0.0012115271966653925,
-                    8: 0.00010061273153504844,
-                    9: 0.007939999015440123,
-                    10: 0.00419639110365086,
+                    2: 0.0125,
+                    3: 0.0009765625,
+                    4: 0.00390625,
+                    5: 1.16364,
+                    6: 1.333333,
+                    7: 0.01818,
+                    8: 0.005154639175257732,
+                    9: 0.0012115271966653925,
+                    10: 0.00010061273153504844,
+                    11: 0.007939999015440123,
+                    12: 0.00419639110365086,
+                    13: 0.000726427429899753,
                 },
                 "period_max": {
                     0: 2941.176470588235,
                     1: 29127.11,
-                    2: 42.6657564638621,
-                    3: 10922.66699,
-                    4: 64.55,
-                    5: 4096.0,
-                    6: 1449.2753623188407,
-                    7: 1211.5274902250933,
-                    8: 1.0240026214467108,
-                    9: 2730.8332372990308,
-                    10: 209.73154362416108,
+                    2: 1365.3368285956144,
+                    3: 42.6657564638621,
+                    4: 1024.002621446711,
+                    5: 10922.66699,
+                    6: 64.55,
+                    7: 4096.0,
+                    8: 1449.2753623188407,
+                    9: 1211.5274902250933,
+                    10: 1.0240026214467108,
+                    11: 2730.8332372990308,
+                    12: 209.73154362416108,
+                    13: 526.3157894736842,
                 },
                 "hdf5_reference": {
                     0: None,
@@ -207,6 +246,9 @@ class TestMTCollection(unittest.TestCase):
                     8: None,
                     9: None,
                     10: None,
+                    11: None,
+                    12: None,
+                    13: None,
                 },
                 "station_hdf5_reference": {
                     0: None,
@@ -220,6 +262,9 @@ class TestMTCollection(unittest.TestCase):
                     8: None,
                     9: None,
                     10: None,
+                    11: None,
+                    12: None,
+                    13: None,
                 },
             }
         )
@@ -252,6 +297,7 @@ class TestMTCollection(unittest.TestCase):
     def test_get_tf(self):
         for tf_fn in self.fn_list:
             original = MT(tf_fn)
+            original.read_tf_file()
 
             h5_tf = self.mc.get_tf(validate_name(original.tf_id))
 
@@ -268,10 +314,13 @@ class TestMTCollection(unittest.TestCase):
                 self.assertTrue((original.dataset == h5_tf.dataset).all())
                 continue
             with self.subTest(original.tf_id):
-                self.mc.logger.info(f"testing: {original.tf_id} from {tf_fn.name}")
+                self.mc.logger.info(
+                    f"testing: {original.tf_id} from {tf_fn.name}"
+                )
                 self.assertEqual(h5_tf, original)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mc.mth5_collection.close_mth5()
         self.mc.mth5_filename.unlink()
 
