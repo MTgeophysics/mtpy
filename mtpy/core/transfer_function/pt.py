@@ -397,44 +397,46 @@ class PhaseTensor(TFBase):
         """Principal axis angle error of phase tensor in degrees"""
 
         if self._has_tf_error():
-            y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
-            yerr = np.sqrt(
-                self.pt_error[:, 0, 1] ** 2 + self.pt_error[:, 1, 0] ** 2
-            )
-            x = self.pt[:, 0, 0] - self.pt[:, 1, 1]
-            xerr = np.sqrt(
-                self.pt_error[:, 0, 0] ** 2 + self.pt_error[:, 1, 1] ** 2
-            )
+            with np.errstate(divide="ignore", invalid="ignore"):
+                y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
+                yerr = np.sqrt(
+                    self.pt_error[:, 0, 1] ** 2 + self.pt_error[:, 1, 0] ** 2
+                )
+                x = self.pt[:, 0, 0] - self.pt[:, 1, 1]
+                xerr = np.sqrt(
+                    self.pt_error[:, 0, 0] ** 2 + self.pt_error[:, 1, 1] ** 2
+                )
 
-            alpha_error = np.degrees(
-                0.5
-                / (x**2 + y**2)
-                * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
-            )
-            return alpha_error
+                alpha_error = np.degrees(
+                    0.5
+                    / (x**2 + y**2)
+                    * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
+                )
+                return alpha_error
 
     @property
     def alpha_model_error(self):
         """Principal axis angle model error of phase tensor in degrees"""
 
         if self._has_tf_model_error():
-            y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
-            yerr = np.sqrt(
-                self.pt_model_error[:, 0, 1] ** 2
-                + self.pt_model_error[:, 1, 0] ** 2
-            )
-            x = self.pt[:, 0, 0] - self.pt[:, 1, 1]
-            xerr = np.sqrt(
-                self.pt_model_error[:, 0, 0] ** 2
-                + self.pt_model_error[:, 1, 1] ** 2
-            )
+            with np.errstate(divide="ignore", invalid="ignore"):
+                y = self.pt[:, 0, 1] + self.pt[:, 1, 0]
+                yerr = np.sqrt(
+                    self.pt_model_error[:, 0, 1] ** 2
+                    + self.pt_model_error[:, 1, 0] ** 2
+                )
+                x = self.pt[:, 0, 0] - self.pt[:, 1, 1]
+                xerr = np.sqrt(
+                    self.pt_model_error[:, 0, 0] ** 2
+                    + self.pt_model_error[:, 1, 1] ** 2
+                )
 
-            alpha_model_error = np.degrees(
-                0.5
-                / (x**2 + y**2)
-                * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
-            )
-            return alpha_model_error
+                alpha_model_error = np.degrees(
+                    0.5
+                    / (x**2 + y**2)
+                    * np.sqrt(y**2 * xerr**2 + x**2 * yerr**2)
+                )
+                return alpha_model_error
 
     # ---beta-------------------------------------------------------------
     @property
@@ -550,14 +552,15 @@ class PhaseTensor(TFBase):
     def ellipticity_error(self):
         """Ellipticity error of the phase tensor, related to dimesionality"""
         if self._has_tf_error():
-            return (
-                self.ellipticity
-                * np.sqrt(self.phimax_error + self.phimin_error)
-                * np.sqrt(
-                    (1 / (self.phimax - self.phimin)) ** 2
-                    + (1 / (self.phimax + self.phimin)) ** 2
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return (
+                    self.ellipticity
+                    * np.sqrt(self.phimax_error + self.phimin_error)
+                    * np.sqrt(
+                        (1 / (self.phimax - self.phimin)) ** 2
+                        + (1 / (self.phimax + self.phimin)) ** 2
+                    )
                 )
-            )
 
     @property
     def ellipticity_model_error(self):
