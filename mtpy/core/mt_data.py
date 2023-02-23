@@ -28,7 +28,6 @@ from mtpy.imaging import (
     PlotPhaseTensorMaps,
     PlotPhaseTensorPseudoSection,
     PlotStrike,
-    PlotPenetrationDepth1D,
     PlotPenetrationDepthMap,
     PlotResPhaseMaps,
     PlotResPhasePseudoSection,
@@ -92,6 +91,7 @@ class MTData(OrderedDict, MTStations):
         if survey is not None:
             mt_object.survey = survey
         self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
+        self.compute_relative_locations()
 
     def remove_station(self, station_id, survey_id=None):
         """
@@ -452,6 +452,14 @@ class MTData(OrderedDict, MTStations):
         modem_kwargs = dict(self.model_parameters)
         modem_kwargs.update(kwargs)
 
+        if np.all(self.station_locations.model_east == 0):
+            if self.utm_crs is None:
+                raise ValueError(
+                    "Need to input data UTM EPSG or CRS to compute relative "
+                    "station locations"
+                )
+            self.compute_relative_locations()
+
         modem_data = Data(
             dataframe=self.to_dataframe(),
             center_point=self.center_point,
@@ -637,7 +645,7 @@ class MTData(OrderedDict, MTStations):
             station_key=station_key,
         )
 
-        return PlotPenetrationDepth1D(mt_object, **kwargs)
+        return mt_object.plot_depth_of_penetration(**kwargs)
 
     def plot_penetration_depth_map(self, **kwargs):
         """

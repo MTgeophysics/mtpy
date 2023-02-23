@@ -68,7 +68,7 @@ class MTStations:
                 setattr(self, key, kwargs[key])
 
         if self.mt_list is not None:
-            self.calculate_rel_locations()
+            self.compute_relative_locations()
 
     def __str__(self):
         fmt_dict = dict(
@@ -252,7 +252,7 @@ class MTStations:
             if self.utm_epsg is None:
                 self.utm_epsg = df.utm_epsg.unique()[0]
 
-    def calculate_rel_locations(self, shift_east=0, shift_north=0):
+    def compute_relative_locations(self, shift_east=0, shift_north=0):
         """
         put station in a coordinate system relative to
         (shift_east, shift_north)
