@@ -97,7 +97,7 @@ class PlotPenetrationDepth1D(PlotBase):
         self.ax.set_xlabel(
             f"Depth ({self.depth_units})", fontdict=self.font_dict
         )
-        self.ax.set_ylabel(f"Period (s)", fontdict=self.font_dict)
+        self.ax.set_ylabel("Period (s)", fontdict=self.font_dict)
 
         self.ax.set_ylim(self.set_period_limits(depth_array["period"])[::-1])
         self.fig.suptitle(

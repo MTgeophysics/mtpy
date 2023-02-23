@@ -192,19 +192,31 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         :rtype: TYPE
 
         """
-        z = self._get_interpolated_z(tf)
-        z_error = self._get_interpolated_z_error(tf)
+        try:
+            z = self._get_interpolated_z(tf)
+            z_error = self._get_interpolated_z_error(tf)
 
-        pt_obj = PhaseTensor(z=z, z_error=z_error)
+            pt_obj = PhaseTensor(z=z, z_error=z_error)
+        except ValueError:
+            self.logger.warning(
+                f"Could not estimate phase tensor for {tf.station} at period "
+                f"{self.plot_period} s."
+            )
+            pt_obj = None
 
         new_t_obj = None
         if tf.has_tipper():
+            try:
+                t = self._get_interpolated_t(tf)
+                t_err = self._get_interpolated_t_err(tf)
 
-            t = self._get_interpolated_t(tf)
-            t_err = self._get_interpolated_t_err(tf)
-
-            if (t != 0).all():
-                new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
+                if (t != 0).all():
+                    new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
+            except ValueError:
+                self.logger.warning(
+                    f"Could not estimate tipper for {tf.station} at period "
+                    f"{self.plot_period} s."
+                )
 
         return pt_obj, new_t_obj
 
@@ -298,54 +310,60 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
         pt_obj, t_obj = self._get_pt(tf)
 
-        plot_x, plot_y = self._get_location(tf)
-
-        # --> set local variables
-        phimin = np.nan_to_num(pt_obj.phimin)[0]
-        phimax = np.nan_to_num(pt_obj.phimax)[0]
-        eangle = np.nan_to_num(pt_obj.azimuth)[0]
-
-        color_array = self.get_pt_color_array(pt_obj)
-        bounds = np.arange(
-            self.ellipse_range[0],
-            self.ellipse_range[1] + self.ellipse_range[2],
-            self.ellipse_range[2],
-        )
-
-        has_ellipse = True
-        # --> get ellipse properties
-        # if the ellipse size is not physically correct make it a dot
-        if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
-            eheight = 0.0000001
-            ewidth = 0.0000001
+        if pt_obj is None and t_obj is None:
+            return (0, 0)
+        if pt_obj is None:
             has_ellipse = False
 
-        else:
-            scaling = self.ellipse_size / phimax
-            eheight = phimin * scaling
-            ewidth = phimax * scaling
-            # make an ellipse
-            ellipd = patches.Ellipse(
-                (plot_x, plot_y),
-                width=ewidth,
-                height=eheight,
-                angle=90 - eangle,
-                lw=self.lw,
+        if pt_obj is not None:
+            plot_x, plot_y = self._get_location(tf)
+
+            # --> set local variables
+            phimin = np.nan_to_num(pt_obj.phimin)[0]
+            phimax = np.nan_to_num(pt_obj.phimax)[0]
+            eangle = np.nan_to_num(pt_obj.azimuth)[0]
+
+            color_array = self.get_pt_color_array(pt_obj)
+            bounds = np.arange(
+                self.ellipse_range[0],
+                self.ellipse_range[1] + self.ellipse_range[2],
+                self.ellipse_range[2],
             )
 
-            # get ellipse color
-            ellipd.set_facecolor(
-                mtcolors.get_plot_color(
-                    color_array[0],
-                    self.ellipse_colorby,
-                    self.ellipse_cmap,
-                    self.ellipse_range[0],
-                    self.ellipse_range[1],
-                    bounds=bounds,
+            has_ellipse = True
+            # --> get ellipse properties
+            # if the ellipse size is not physically correct make it a dot
+            if phimax == 0 or phimax > 100 or phimin == 0 or phimin > 100:
+                eheight = 0.0000001
+                ewidth = 0.0000001
+                has_ellipse = False
+
+            else:
+                scaling = self.ellipse_size / phimax
+                eheight = phimin * scaling
+                ewidth = phimax * scaling
+                # make an ellipse
+                ellipd = patches.Ellipse(
+                    (plot_x, plot_y),
+                    width=ewidth,
+                    height=eheight,
+                    angle=90 - eangle,
+                    lw=self.lw,
                 )
-            )
 
-            self.ax.add_artist(ellipd)
+                # get ellipse color
+                ellipd.set_facecolor(
+                    mtcolors.get_plot_color(
+                        color_array[0],
+                        self.ellipse_colorby,
+                        self.ellipse_cmap,
+                        self.ellipse_range[0],
+                        self.ellipse_range[1],
+                        bounds=bounds,
+                    )
+                )
+
+                self.ax.add_artist(ellipd)
 
         has_tipper = self._get_tipper_patch(plot_x, plot_y, t_obj)
 
@@ -524,7 +542,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         )
         e1.set_edgecolor(
             mtcolors.get_plot_color(
-                abs(pt_obj.skew),
+                pt_obj.skew,
                 "skew_seg",
                 self.skew_cmap,
                 self.skew_limits[0],
@@ -663,9 +681,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 )
 
             elif "skew" in key:
-                norms = colors.BoundaryNorm(
-                    self.skew_cmap_bounds, cmap_input.N
-                )
+                norms = colors.BoundaryNorm(self.skew_cmap_bounds, cmap_input.N)
                 cb = mcb.ColorbarBase(
                     ax,
                     cmap=cmap_input,
