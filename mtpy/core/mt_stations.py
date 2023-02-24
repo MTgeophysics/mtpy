@@ -600,3 +600,82 @@ class MTStations:
 
         self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
         return vtk_fn
+
+    def extract_from_profile(self, x1, y1, x2, y2, radius):
+        """
+        extract stations along a profile line that lie with in the given
+        radius
+
+        :param point1: DESCRIPTION
+        :type point1: TYPE
+        :param point2: DESCRIPTION
+        :type point2: TYPE
+        :param radius: DESCRIPTION
+        :type radius: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if np.abs(x2 - x1) < 100:
+            if self.utm_crs is None:
+                raise ValueError("Must input UTM CRS or EPSG.")
+            point_1 = MTLocation(
+                longitude=x1, latitude=y1, utm_crs=self.utm_crs
+            )
+            point_2 = MTLocation(
+                longitude=x2, latitude=y2, utm_crs=self.utm_crs
+            )
+            x1 = point_1.east
+            y1 = point_1.north
+            x2 = point_2.east
+            y2 = point_2.north
+
+        def distance(x, y):
+            return np.abs(
+                (x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y1)
+            ) / np.sqrt((x2 - x2) ** 2 + (y2 - y1) ** 2)
+
+        slope = (y2 - y1) / (x2 - x1)
+        intersection = y1 - slope * x1
+
+        profile_list = []
+        for mt_obj in self.mt_list:
+            d = distance(mt_obj.east, mt_obj.north)
+
+            if d <= radius:
+                mt_obj = self._project_onto_profile_line(
+                    mt_obj, slope, intersection
+                )
+                profile_list.append(mt_obj)
+
+        return profile_list
+
+    def _project_onto_profile_line(
+        self, tf, profile_slope, profile_intersection
+    ):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :param profile_slope: DESCRIPTION
+        :type profile_slope: TYPE
+        :param profile_intersection: DESCRIPTION
+        :type profile_intersection: TYPE
+        :param units: DESCRIPTION, defaults to "deg"
+        :type units: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        profile_vector = np.array([1, profile_slope])
+        profile_vector /= np.linalg.norm(profile_vector)
+
+        station_vector = np.array([tf.east, tf.north - profile_intersection])
+
+        tf.offset = np.linalg.norm(
+            np.dot(profile_vector, station_vector) * profile_vector
+        )
+
+        return tf

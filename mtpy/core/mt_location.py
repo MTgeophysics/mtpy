@@ -205,7 +205,11 @@ class MTLocation:
     def east(self, value):
         """set east"""
         self._east = value
-        if self.datum_crs is not None and self.utm_crs is not None:
+        if (
+            self.datum_crs is not None
+            and self.utm_crs is not None
+            and self._north != 0
+        ):
             self._longitude, self._latitude = project_point(
                 self._east, self._north, self.utm_crs, self.datum_crs
             )
@@ -219,7 +223,11 @@ class MTLocation:
     def north(self, value):
         """set north"""
         self._north = value
-        if self.datum_crs is not None and self.utm_crs is not None:
+        if (
+            self.datum_crs is not None
+            and self.utm_crs is not None
+            and self._east != 0
+        ):
             self._longitude, self._latitude = project_point(
                 self._east, self._north, self.utm_crs, self.datum_crs
             )
@@ -231,7 +239,11 @@ class MTLocation:
     @latitude.setter
     def latitude(self, lat):
         self._latitude = assert_lat_value(lat)
-        if self.utm_crs is not None and self.datum_crs is not None:
+        if (
+            self.utm_crs is not None
+            and self.datum_crs is not None
+            and self._longitude != 0
+        ):
             self._east, self._north = project_point(
                 self._longitude, self._latitude, self.datum_crs, self.utm_crs
             )
@@ -243,7 +255,11 @@ class MTLocation:
     @longitude.setter
     def longitude(self, lon):
         self._longitude = assert_lon_value(lon)
-        if self.utm_crs is not None and self.datum_crs is not None:
+        if (
+            self.utm_crs is not None
+            and self.datum_crs is not None
+            and self._latitude != 0
+        ):
             self._east, self._north = project_point(
                 self._longitude, self._latitude, self.datum_crs, self.utm_crs
             )
