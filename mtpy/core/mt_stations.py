@@ -640,6 +640,7 @@ class MTStations:
         intersection = y1 - slope * x1
 
         profile_list = []
+        offsets = []
         for mt_obj in self.mt_list:
             d = distance(mt_obj.east, mt_obj.north)
 
@@ -648,8 +649,17 @@ class MTStations:
                     mt_obj, slope, intersection
                 )
                 profile_list.append(mt_obj)
+                offsets.append(mt_obj.offset)
 
-        return profile_list
+        offsets = np.array(offsets)
+        indexes = np.argsort(offsets)
+
+        sorted_profile_list = []
+        for index in indexes:
+            profile_list[index].offset -= offsets.min()
+            sorted_profile_list.append(profile_list[index])
+
+        return sorted_profile_list
 
     def _project_onto_profile_line(
         self, tf, profile_slope, profile_intersection
