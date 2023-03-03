@@ -293,7 +293,7 @@ class PlotStrike(PlotBase):
         s_mean = estimate_df.measured_strike.mean(skipna=True)
         s_mean %= 360
 
-        return s_mean
+        return s_mean - 180
 
     def get_median(self, estimate_df):
         """
@@ -302,7 +302,7 @@ class PlotStrike(PlotBase):
         s_median = estimate_df.measured_strike.median(skipna=True)
         s_median %= 360
 
-        return s_median
+        return s_median - 180
 
     def get_mode(self, estimate_df):
         """
@@ -313,7 +313,7 @@ class PlotStrike(PlotBase):
         ).mode[0]
         s_mode %= 360
 
-        return s_mode
+        return s_mode - 180
 
     def get_estimate(self, estimate, period_range=None):
         if period_range is None:
@@ -686,7 +686,9 @@ class PlotStrike(PlotBase):
                 # set plot labels
                 if jj == 1:
                     if "h" in self.plot_orientation:
-                        self._set_ax_label(ax_inv, "Strike (Z)", self.color_inv)
+                        self._set_ax_label(
+                            ax_inv, "Strike (Z)", self.color_inv
+                        )
                     elif "v" in self.plot_orientation:
                         self._set_ax_label(ax_inv, self.title_dict[bb], None)
 
