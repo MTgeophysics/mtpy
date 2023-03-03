@@ -371,10 +371,38 @@ class Data:
     def get_n_stations(self, mode):
         if self.dataframe is not None:
             if "impedance" in mode.lower():
-                gb = ["zxx", "zxy", "zyx", "zyy"]
+                return (
+                    self.dataframe.loc[
+                        (self.dataframe.zxx != 0)
+                        | (self.dataframe.zxy != 0)
+                        | (self.dataframe.zyx != 0)
+                        | (self.dataframe.zyy != 0),
+                        "station",
+                    ]
+                    .unique()
+                    .size
+                )
             elif "vertical" in mode.lower():
-                gb = ["tzx", "tzy"]
-            return self.dataframe.groupby(gb).first().station.unique().size
+                return (
+                    self.dataframe.loc[
+                        (self.dataframe.tzx != 0) | (self.dataframe.tzy != 0),
+                        "station",
+                    ]
+                    .unique()
+                    .size
+                )
+            elif "phase_tensor" in mode.lower():
+                return (
+                    self.dataframe.loc[
+                        (self.dataframe.ptxx != 0)
+                        | (self.dataframe.ptxy != 0)
+                        | (self.dataframe.ptyx != 0)
+                        | (self.dataframe.ptyy != 0),
+                        "station",
+                    ]
+                    .unique()
+                    .size
+                )
 
     @property
     def n_periods(self):

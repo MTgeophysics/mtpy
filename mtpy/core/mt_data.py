@@ -255,14 +255,7 @@ class MTData(OrderedDict, MTStations):
                 )
             ]
 
-            interp_z, interp_t = mt_obj.interpolate(1.0 / interp_periods)
-
-            new_mt_obj = mt_obj.copy()
-            new_mt_obj._transfer_function = (
-                new_mt_obj._initialize_transfer_function(interp_periods)
-            )
-            new_mt_obj.Z = interp_z
-            new_mt_obj.Tipper = interp_t
+            new_mt_obj = mt_obj.interpolate(1.0 / interp_periods)
 
             if inplace:
                 self.update(
@@ -275,6 +268,8 @@ class MTData(OrderedDict, MTStations):
                 mt_data.add_station(new_mt_obj)
 
         if not inplace:
+            mt_data.z_model_error = self.z_model_error
+            mt_data.t_model_error = self.t_model_error
             return mt_data
 
     def rotate(self, rotation_angle, inplace=True):
