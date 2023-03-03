@@ -359,7 +359,10 @@ class MTCollection:
         for row in tf_df.itertuples():
             tf = self.get_tf(row.station, survey=row.survey)
 
-            mt_data.add_station(tf)
+            mt_data.add_station(tf, compute_relative_location=False)
+
+        # compute locations at the end
+        mt_data.compute_relative_locations()
 
         return mt_data
 

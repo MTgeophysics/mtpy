@@ -95,7 +95,9 @@ class MTData(OrderedDict, MTStations):
     def mt_list(self):
         return self.values()
 
-    def add_station(self, mt_object, survey=None):
+    def add_station(
+        self, mt_object, survey=None, compute_relative_location=True
+    ):
         """
         Add a new station's mt_object
 
@@ -110,7 +112,8 @@ class MTData(OrderedDict, MTStations):
         if survey is not None:
             mt_object.survey = survey
         self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
-        self.compute_relative_locations()
+        if compute_relative_location:
+            self.compute_relative_locations()
 
     def remove_station(self, station_id, survey_id=None):
         """
@@ -285,7 +288,7 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(new_mt_obj)
+                mt_data.add_station(new_mt_obj, compute_relative_location=False)
 
         if not inplace:
             return mt_data
