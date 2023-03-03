@@ -72,6 +72,25 @@ class MTData(OrderedDict, MTStations):
             )
         return mt_obj
 
+    def clone_empty(self):
+        """
+        return an empty copy including properties
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        md = MTData()
+        md.z_model_error = self.z_model_error
+        md.t_model_error = self.t_model_error
+        md._datum_crs = self._datum_crs
+        md._utm_crs = self._utm_crs
+        md.data_rotation_angle = self.data_rotation_angle
+        md.model_parameters = self.model_parameters
+
+        return md
+
     @property
     def mt_list(self):
         return self.values()
@@ -246,7 +265,8 @@ class MTData(OrderedDict, MTStations):
         """
 
         if not inplace:
-            mt_data = MTData()
+            mt_data = self.clone_empty()
+
         for mt_obj in self.values():
             interp_periods = new_periods[
                 np.where(
@@ -268,8 +288,6 @@ class MTData(OrderedDict, MTStations):
                 mt_data.add_station(new_mt_obj)
 
         if not inplace:
-            mt_data.z_model_error = self.z_model_error
-            mt_data.t_model_error = self.t_model_error
             return mt_data
 
     def rotate(self, rotation_angle, inplace=True):
@@ -286,7 +304,7 @@ class MTData(OrderedDict, MTStations):
         self.data_rotation_angle = rotation_angle
 
         if not inplace:
-            mt_data = MTData()
+            mt_data = self.clone_empty
         for mt_obj in self.values():
             if not inplace:
                 rot_mt_obj = mt_obj.copy()

@@ -363,6 +363,18 @@ class MTCollection:
 
         return mt_data
 
+    def from_mt_data(self, suffix=None):
+        """
+        TODO
+        From mt data
+        :param suffix: DESCRIPTION, defaults to None
+        :type suffix: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
+
     def check_for_duplicates(self, locate="location", sig_figs=6):
         """
         Check for duplicate station locations in a MT DataFrame
@@ -571,9 +583,7 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(
-                                f"wrote average file {edi_obj.fn}"
-                            )
+                            self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:

@@ -48,6 +48,9 @@ class MT(TF, MTLocation):
         new_mt_obj = MT()
         new_mt_obj.survey_metadata.update(self.survey_metadata)
         new_mt_obj.station_metadata.update(self.station_metadata)
+        new_mt_obj.datum_crs = self.datum_crs
+        new_mt_obj.utm_crs = self.utm_crs
+        new_mt_obj._rotation_angle = self._rotation_angle
 
         return new_mt_obj
 
@@ -66,8 +69,9 @@ class MT(TF, MTLocation):
 
         TODO figure this out with xarray
         """
-        self._rotation_angle = theta_r
-        self.rotate(self._rotation_angle)
+
+        self.rotate(theta_r)
+        self._rotation_angle += theta_r
 
     def rotate(self, theta_r, inplace=True):
         """
@@ -94,6 +98,7 @@ class MT(TF, MTLocation):
             new_m = self.clone_empty()
             new_m.Z = self.Z.rotate(theta_r)
             new_m.Tipper = self.Tipper.rotate(theta_r)
+            new_m._rotation_angle = self._rotation_angle
             return new_m
 
     @property

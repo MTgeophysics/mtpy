@@ -316,6 +316,6 @@ class MTLocation:
 
         """
 
-        self.model_east = self.east - center_location.east
+        self.model_east = self.east - center_location.model_east
         self.model_north = self.north - center_location.model_north
         self.model_elevation = self.elevation - center_location.model_elevation

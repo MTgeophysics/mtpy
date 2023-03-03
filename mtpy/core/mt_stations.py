@@ -291,18 +291,41 @@ class MTStations:
             return center_location
 
         else:
-            self.logger.debug("locating center from UTM grid")
-            center_location.east = (
-                self.station_locations.east.max()
-                + self.station_locations.east.min()
-            ) / 2
-            center_location.north = (
-                self.station_locations.north.max()
-                + self.station_locations.north.min()
-            ) / 2
-
             center_location.datum_epsg = self.datum_epsg
             center_location.utm_epsg = self.utm_epsg
+            if np.all(self.station_locations.east == 0) or np.all(
+                self.station_locations.north == 0
+            ):
+                if np.all(self.station_locations.latitude != 0) and np.all(
+                    self.station_locations.longitude != 0
+                ):
+                    self.logger.debug(
+                        "locating center from latitude and longitude"
+                    )
+                    center_location.latitude = (
+                        self.station_locations.latitude.max()
+                        + self.station_locations.latitude.min()
+                    ) / 2
+                    center_location.longitude = (
+                        self.station_locations.longitude.max()
+                        + self.station_locations.longitude.min()
+                    ) / 2
+                else:
+                    raise ValueError(
+                        "Station locations are all 0 cannot find center."
+                    )
+
+            else:
+                self.logger.debug("locating center from UTM grid")
+                center_location.east = (
+                    self.station_locations.east.max()
+                    + self.station_locations.east.min()
+                ) / 2
+                center_location.north = (
+                    self.station_locations.north.max()
+                    + self.station_locations.north.min()
+                ) / 2
+
             center_location.model_east = center_location.east
             center_location.model_north = center_location.north
             center_location.model_elevation = self._center_elev
