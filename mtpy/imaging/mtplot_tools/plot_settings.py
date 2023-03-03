@@ -292,10 +292,15 @@ class PlotSettings(MTArrows, MTEllipse):
             try:
                 phase_det = np.linalg.det(phase)
                 nz = np.nonzero(phase_det)
-                return [
+                phase_limits = [
                     np.amin(phase_det[nz]),
                     np.amax(phase_det[nz]),
                 ]
+                if phase_limits[0] < -180:
+                    phase_limits[0] = -180
+                if phase_limits[1] > 180:
+                    phase_limits[1] = 180
+                return phase_limits
 
             except ValueError:
                 return [-180, 180]

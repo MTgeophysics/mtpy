@@ -547,9 +547,12 @@ class PlotMultipleResponses(PlotBase):
         cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
         cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
         ctipr = [
-            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)
+            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns)
+            for cc in range(ns)
         ]
-        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
+        ctipi = [
+            (float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)
+        ]
 
         # make marker lists for the different components
         mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
@@ -668,13 +671,14 @@ class PlotMultipleResponses(PlotBase):
             10 ** np.floor(np.log10(min(period))),
             10 ** np.ceil(np.log10(max(period))),
         ]
-        for ax in [axr, axp, axt]:
+        for ax in [axr, axp]:
             if ax is not None:
                 ax.set_xlim(period_limits)
-        if axpt is not None:
-            axpt.set_xlim(
-                [np.log10(period_limits[0]), np.log10(period_limits[1])]
-            )
+        if ax in [axt, axpt]:
+            if ax is not None:
+                ax.set_xlim(
+                    [np.log10(period_limits[0]), np.log10(period_limits[1])]
+                )
 
         # make legend
         if self.plot_num == 1:
