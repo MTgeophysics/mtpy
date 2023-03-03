@@ -48,8 +48,13 @@ class MT(TF, MTLocation):
         new_mt_obj = MT()
         new_mt_obj.survey_metadata.update(self.survey_metadata)
         new_mt_obj.station_metadata.update(self.station_metadata)
-        new_mt_obj.datum_crs = self.datum_crs
-        new_mt_obj.utm_crs = self.utm_crs
+        new_mt_obj._datum_crs = self._datum_crs
+        new_mt_obj._utm_crs = self._utm_crs
+        new_mt_obj._east = self._east
+        new_mt_obj._north = self._north
+        new_mt_obj.model_east = self.model_east
+        new_mt_obj.model_north = self.model_north
+        new_mt_obj.model_elevation = self.model_elevation
         new_mt_obj._rotation_angle = self._rotation_angle
 
         return new_mt_obj
