@@ -122,7 +122,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
         for ii, tf in enumerate(self.mt_data.values()):
 
-            z_object = tf.Z.interpolate([1.0 / self.plot_period])
+            z_object = tf.Z.interpolate([self.plot_period])
             if (np.nan_to_num(z_object.z) == 0).all():
                 continue
             d = self._get_nb_estimation(z_object)
@@ -133,12 +133,16 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
             elev = 0
             if tf.elevation is not None:
                 depth_array["elevation"][ii] = tf.elevation * self.depth_scale
-                elev = tf.elevation
+                elev = tf.elevation * self.depth_scale
             depth_array["det"][ii] = (
                 d["depth_det"][0] - elev
             ) * self.depth_scale
-            depth_array["xy"][ii] = (d["depth_xy"][0] - elev) * self.depth_scale
-            depth_array["yx"][ii] = (d["depth_yx"][0] - elev) * self.depth_scale
+            depth_array["xy"][ii] = (
+                d["depth_xy"][0] - elev
+            ) * self.depth_scale
+            depth_array["yx"][ii] = (
+                d["depth_yx"][0] - elev
+            ) * self.depth_scale
 
         return depth_array
 
@@ -303,7 +307,9 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
 
             ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
             ax.set_ylabel("Latitude (deg)", fontdict=self.font_dict)
-            ax.set_title(self.subplot_title_dict[comp], fontdict=self.font_dict)
+            ax.set_title(
+                self.subplot_title_dict[comp], fontdict=self.font_dict
+            )
 
         self.fig.suptitle(
             f"Depth of investigation for period {self.plot_period:5g} (s)",
