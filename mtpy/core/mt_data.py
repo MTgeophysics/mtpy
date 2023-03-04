@@ -45,7 +45,8 @@ class MTData(OrderedDict, MTStations):
 
         if mt_list is not None:
             for mt_obj in mt_list:
-                self.add_station(mt_obj)
+                self.add_station(mt_obj, compute_relative_location=False)
+            self.compute_relative_locations()
 
         MTStations.__init__(self, None, None, **kwargs)
 
@@ -312,12 +313,43 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(rot_mt_obj)
+                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
             else:
                 mt_obj.rotation_angle = rotation_angle
 
         if not inplace:
             return mt_data
+
+    def get_profile(self, x1, y1, x2, y2, radius):
+        """
+        Get stations along a profile line given the (x1, y1) and (x2, y2)
+        coordinates within a given radius (in meters).
+
+        These can be in (longitude, latitude) or (easting, northing).
+        The calculation is done in UTM, therefore a UTM CRS must be input
+
+        :param x1: DESCRIPTION
+        :type x1: TYPE
+        :param y1: DESCRIPTION
+        :type y1: TYPE
+        :param x2: DESCRIPTION
+        :type x2: TYPE
+        :param y2: DESCRIPTION
+        :type y2: TYPE
+        :param radius: DESCRIPTION
+        :type radius: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        profile_stations = self._extract_profile(x1, y1, x2, y2, radius)
+
+        mt_data = self.clone_empty()
+        for mt_obj in profile_stations:
+            mt_data.add_station(mt_obj, compute_relative_location=False)
+
+        return mt_data
 
     def compute_model_errors(
         self,

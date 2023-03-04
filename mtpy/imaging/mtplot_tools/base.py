@@ -322,32 +322,30 @@ class PlotBaseMaps(PlotBase):
             np.array(
                 [
                     [
-                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
                         + 1j
                         * tf.z_interp_dict["zxx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zxy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zxy"]["imag"](
                             1.0 / self.plot_period
                         )[0],
                     ],
                     [
-                        tf.z_interp_dict["zyx"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zyx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zyy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zyy"]["imag"](
                             1.0 / self.plot_period
@@ -531,6 +529,9 @@ class PlotBaseProfile(PlotBase):
 
         """
 
+        if np.any(self.mt_data.station_locations.profile_offset != 0):
+            return
+
         if x is None and y is None:
             x = np.zeros(self.mt_data.n_stations)
             y = np.zeros(self.mt_data.n_stations)
@@ -554,17 +555,15 @@ class PlotBaseProfile(PlotBase):
                 1.0 / profile2.slope,
                 -profile2.intercept / profile2.slope,
             )
-            profile = profile2
         else:
             self.profile_line = profile1[:2]
-            profile = profile1
 
-        self.profile_angle = (90 - np.rad2deg(np.arctan(profile.slope))) % 180
+        for mt_obj in self.mt_data.values():
+            mt_obj.project_onto_profile_line(
+                self.profile_line[0], self.profile_line[1]
+            )
 
-        self.profile_vector = np.array([1, profile.slope])
-        self.profile_vector /= np.linalg.norm(self.profile_vector)
-
-    def _get_offset(self, tf=None, x=None, y=None):
+    def _get_offset(self, tf):
         """
         Get approximate offset distance for the station
 
@@ -575,26 +574,11 @@ class PlotBaseProfile(PlotBase):
 
         """
 
-        if tf is not None:
-            station_vector = np.array(
-                [tf.longitude, tf.latitude - self.profile_line[1]]
-            )
-        elif x is not None and y is not None:
-            station_vector = np.array([x, y - self.profile_line[1]])
-        else:
-            raise ValueError(" get_offset needs an input of TF or x and y")
-
         direction = 1
         if self.profile_reverse:
             direction = -1
 
-        return direction * (
-            np.linalg.norm(
-                np.dot(self.profile_vector, station_vector)
-                * self.profile_vector
-            )
-            * self.x_stretch
-        )
+        return direction * tf.profile_offset * self.x_stretch
 
     def _get_interpolated_z(self, tf):
         """

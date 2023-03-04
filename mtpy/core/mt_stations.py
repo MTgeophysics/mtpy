@@ -53,6 +53,7 @@ class MTStations:
                 ("model_east", float),
                 ("model_north", float),
                 ("model_elev", float),
+                ("profile_offset", float),
             ]
         )
         self._datum_crs = CRS.from_epsg(4326)
@@ -232,6 +233,7 @@ class MTStations:
             entries["model_east"][ii] = mt_obj.model_east
             entries["model_north"][ii] = mt_obj.model_north
             entries["model_elev"][ii] = mt_obj.model_elevation
+            entries["profile_offset"][ii] = mt_obj.profile_offset
 
         station_df = pd.DataFrame(entries)
         self._validate_station_locations(station_df)
@@ -624,7 +626,7 @@ class MTStations:
         self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
         return vtk_fn
 
-    def extract_from_profile(self, x1, y1, x2, y2, radius):
+    def _extract_profile(self, x1, y1, x2, y2, radius):
         """
         extract stations along a profile line that lie with in the given
         radius
@@ -657,7 +659,7 @@ class MTStations:
         def distance(x, y):
             return np.abs(
                 (x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y1)
-            ) / np.sqrt((x2 - x2) ** 2 + (y2 - y1) ** 2)
+            ) / np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
         slope = (y2 - y1) / (x2 - x1)
         intersection = y1 - slope * x1
@@ -668,47 +670,16 @@ class MTStations:
             d = distance(mt_obj.east, mt_obj.north)
 
             if d <= radius:
-                mt_obj = self._project_onto_profile_line(
-                    mt_obj, slope, intersection
-                )
+                mt_obj.project_onto_profile_line(slope, intersection)
                 profile_list.append(mt_obj)
-                offsets.append(mt_obj.offset)
+                offsets.append(mt_obj.profile_offset)
 
         offsets = np.array(offsets)
         indexes = np.argsort(offsets)
 
         sorted_profile_list = []
         for index in indexes:
-            profile_list[index].offset -= offsets.min()
+            profile_list[index].profile_offset -= offsets.min()
             sorted_profile_list.append(profile_list[index])
 
         return sorted_profile_list
-
-    def _project_onto_profile_line(
-        self, tf, profile_slope, profile_intersection
-    ):
-        """
-
-        :param tf: DESCRIPTION
-        :type tf: TYPE
-        :param profile_slope: DESCRIPTION
-        :type profile_slope: TYPE
-        :param profile_intersection: DESCRIPTION
-        :type profile_intersection: TYPE
-        :param units: DESCRIPTION, defaults to "deg"
-        :type units: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        profile_vector = np.array([1, profile_slope])
-        profile_vector /= np.linalg.norm(profile_vector)
-
-        station_vector = np.array([tf.east, tf.north - profile_intersection])
-
-        tf.offset = np.linalg.norm(
-            np.dot(profile_vector, station_vector) * profile_vector
-        )
-
-        return tf

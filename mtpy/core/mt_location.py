@@ -9,6 +9,7 @@ Created on Mon Oct  3 15:04:12 2022
 # Imports
 # =============================================================================
 from pyproj import CRS
+import numpy as np
 
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.gis_tools import (
@@ -42,6 +43,7 @@ class MTLocation:
         self.model_east = 0
         self.model_north = 0
         self.model_elevation = 0
+        self.profile_offset = 0
 
         for key, value in kwargs.items():
             if key in [
@@ -319,3 +321,28 @@ class MTLocation:
         self.model_east = self.east - center_location.model_east
         self.model_north = self.north - center_location.model_north
         self.model_elevation = self.elevation - center_location.model_elevation
+
+    def project_onto_profile_line(self, profile_slope, profile_intersection):
+        """
+
+        :param profile_slope: DESCRIPTION
+        :type profile_slope: TYPE
+        :param profile_intersection: DESCRIPTION
+        :type profile_intersection: TYPE
+        :param units: DESCRIPTION, defaults to "deg"
+        :type units: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        profile_vector = np.array([1, profile_slope])
+        profile_vector /= np.linalg.norm(profile_vector)
+
+        station_vector = np.array(
+            [self.east, self.north - profile_intersection]
+        )
+
+        self.profile_offset = np.linalg.norm(
+            np.dot(profile_vector, station_vector) * profile_vector
+        )
