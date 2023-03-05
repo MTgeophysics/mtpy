@@ -28,6 +28,7 @@ class MTDataFrame:
 
     def __init__(self, data=None, n_entries=0, **kwargs):
         self._dtype_list = [
+            ("survey", "U25"),
             ("station", "U25"),
             ("latitude", float),
             ("longitude", float),
@@ -102,6 +103,7 @@ class MTDataFrame:
         else:
             self.dataframe = self._get_initial_df(n_entries)
 
+        self.working_survey = None
         self.working_station = None
 
         for key, value in kwargs.items():
@@ -247,6 +249,24 @@ class MTDataFrame:
 
         if self._has_data():
             return 1.0 / self.dataframe.period
+
+    @property
+    def survey(self):
+        """survey name"""
+        if self._has_data():
+            if self.working_survey is None:
+                self.working_survey = self.dataframe.survey.unique()[0]
+            return self.working_survey
+
+    @survey.setter
+    def survey(self, value):
+        """survey name"""
+        if self._has_data():
+            if self.working_survey in [None, ""]:
+                self.dataframe.loc[
+                    self.dataframe.survey == "", "survey"
+                ] = value
+                self.working_survey = value
 
     @property
     def station(self):

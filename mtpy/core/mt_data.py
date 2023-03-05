@@ -518,7 +518,7 @@ class MTData(OrderedDict, MTStations):
 
         return modem_data.write_data_file(file_name=data_filename)
 
-    def from_modem_data(self, data_filename, **kwargs):
+    def from_modem_data(self, data_filename, file_type="data", **kwargs):
         """
         read in a modem data file
 
@@ -531,7 +531,12 @@ class MTData(OrderedDict, MTStations):
 
         """
         modem_data = Data(**kwargs)
-        self.from_dataframe(modem_data.read_data_file(data_filename))
+        mdf = modem_data.read_data_file(data_filename)
+        if file_type in ["data"]:
+            mdf["survey"] = "data"
+        elif file_type in ["response", "model"]:
+            mdf["survey"] = "model"
+        self.from_dataframe(mdf)
         self.z_model_error = ModelErrors(
             mode="impedance", **modem_data.z_model_error.error_parameters
         )
