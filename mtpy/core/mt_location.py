@@ -93,11 +93,12 @@ class MTLocation:
 
     @datum_epsg.setter
     def datum_epsg(self, value):
-        self.datum_crs = value
+        if value not in ["", None, "None"]:
+            self.datum_crs = value
 
     @datum_crs.setter
     def datum_crs(self, value):
-        if value in [None, "None", "none", "null"]:
+        if value in [None, "None", "none", "null", ""]:
             return
 
         new_crs = CRS.from_user_input(value)
@@ -148,7 +149,8 @@ class MTLocation:
 
     @utm_epsg.setter
     def utm_epsg(self, value):
-        self.utm_crs = value
+        if value not in ["", None, "None"]:
+            self.utm_crs = value
 
     @property
     def utm_zone(self):
@@ -157,7 +159,7 @@ class MTLocation:
 
     @utm_crs.setter
     def utm_crs(self, value):
-        if value in [None, "None", "none", "null"]:
+        if value in [None, "None", "none", "null", ""]:
             return
 
         new_crs = CRS.from_user_input(value)

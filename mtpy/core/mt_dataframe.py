@@ -58,40 +58,40 @@ class MTDataFrame:
             ("tzy", complex),
             ("tzy_error", float),
             ("tzy_model_error", float),
-            ("res_xx", complex),
+            ("res_xx", float),
             ("res_xx_error", float),
             ("res_xx_model_error", float),
-            ("res_xy", complex),
+            ("res_xy", float),
             ("res_xy_error", float),
             ("res_xy_model_error", float),
-            ("res_yx", complex),
+            ("res_yx", float),
             ("res_yx_error", float),
             ("res_yx_model_error", float),
-            ("res_yy", complex),
+            ("res_yy", float),
             ("res_yy_error", float),
             ("res_yy_model_error", float),
-            ("phase_xx", complex),
+            ("phase_xx", float),
             ("phase_xx_error", float),
             ("phase_xx_model_error", float),
-            ("phase_xy", complex),
+            ("phase_xy", float),
             ("phase_xy_error", float),
             ("phase_xy_model_error", float),
-            ("phase_yx", complex),
+            ("phase_yx", float),
             ("phase_yx_error", float),
             ("phase_yx_model_error", float),
-            ("phase_yy", complex),
+            ("phase_yy", float),
             ("phase_yy_error", float),
             ("phase_yy_model_error", float),
-            ("ptxx", complex),
+            ("ptxx", float),
             ("ptxx_error", float),
             ("ptxx_model_error", float),
-            ("ptxy", complex),
+            ("ptxy", float),
             ("ptxy_error", float),
             ("ptxy_model_error", float),
-            ("ptyx", complex),
+            ("ptyx", float),
             ("ptyx_error", float),
             ("ptyx_model_error", float),
-            ("ptyy", complex),
+            ("ptyy", float),
             ("ptyy_error", float),
             ("ptyy_model_error", float),
         ]
@@ -120,6 +120,10 @@ class MTDataFrame:
         else:
             return "MTStationDataFrame()"
 
+    @property
+    def _column_names(self):
+        return [col[0] for col in self._dtype_list]
+
     def __eq__(self, other):
         other = self._validata_data(other)
         return self.dataframe == other
@@ -134,18 +138,20 @@ class MTDataFrame:
 
         """
 
-        if isinstance(data, (dict, np.ndarray)):
+        if isinstance(data, (dict, np.ndarray, pd.DataFrame)):
             df = pd.DataFrame(data)
-
-        elif isinstance(data, pd.DataFrame):
-            df = data
 
         else:
             raise TypeError("Input data must be a pandas.DataFrame")
 
-        for col in ["station", "period", "latitude", "longitude", "elevation"]:
-            if col not in df.columns:
-                raise ValueError(f"Input missing column {col}.")
+        for col in self._dtype_list:
+            if col[0] not in df.columns:
+
+                df[col[0]] = np.zeros(df.shape[0], dtype=col[1])
+
+        # resort to the desired column order
+        if df.columns.to_list() != self._column_names:
+            df = df[self._column_names]
 
         return df
 
@@ -176,7 +182,7 @@ class MTDataFrame:
             if self.working_station is None:
                 self.working_station = self.dataframe.station.unique()[0]
 
-            if self.working_station not in self.dataframe.station:
+            if self.working_station not in self.dataframe.station.values:
                 raise ValueError(
                     f"Could not find station {self.working_station} in dataframe."
                 )
