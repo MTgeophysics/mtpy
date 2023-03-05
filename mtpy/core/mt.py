@@ -454,6 +454,7 @@ class MT(TF, MTLocation):
         n_entries = self.period.size
         mt_df = MTDataFrame(n_entries=n_entries)
 
+        mt_df.survey = self.survey
         mt_df.station = self.station
         mt_df.latitude = self.latitude
         mt_df.longitude = self.longitude
@@ -496,6 +497,7 @@ class MT(TF, MTLocation):
                 raise ValueError(error)
 
         for key in [
+            "survey",
             "station",
             "latitude",
             "longitude",

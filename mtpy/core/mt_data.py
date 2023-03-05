@@ -578,13 +578,26 @@ class MTData(OrderedDict, MTStations):
         if isinstance(station_key, (list, tuple)):
             mt_data = MTData()
             for sk in station_key:
-                mt_data.add_station(self.get_station(station_key=sk))
+                mt_data.add_station(
+                    self.get_station(station_key=sk),
+                    compute_relative_location=False,
+                )
             return PlotMultipleResponses(mt_data, **kwargs)
 
         elif isinstance(station_id, (list, tuple)):
             mt_data = MTData()
-            for sk in station_id:
-                mt_data.add_station(self.get_station(station_id=sk))
+            if isinstance(survey_id, (list, tuple)):
+                if len(survey_id) != len(station_key):
+                    raise ValueError(
+                        "Number of survey must match number of stations"
+                    )
+            elif isinstance(survey_id, (str, type(None))):
+                survey_id = [survey_id] * len(station_id)
+            for survey, station in zip(survey_id, station_id):
+                mt_data.add_station(
+                    self.get_station(station_id=station, survey_id=survey),
+                    compute_relative_location=False,
+                )
             return PlotMultipleResponses(mt_data, **kwargs)
 
         else:
