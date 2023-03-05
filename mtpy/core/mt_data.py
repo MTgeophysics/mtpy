@@ -239,7 +239,7 @@ class MTData(OrderedDict, MTStations):
             sdf = df.loc[df.station == station]
             mt_object = MT()
             mt_object.from_dataframe(sdf)
-            self.add_station(mt_object)
+            self.add_station(mt_object, compute_relative_location=False)
 
     def to_geo_df(self):
         """
