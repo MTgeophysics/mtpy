@@ -462,7 +462,7 @@ class PlotResidualPTMaps(PlotBase):
 
     def _get_ellipse_max(self):
         if self.ellipse_scale is None:
-            return self.rpt_array["phimax"].max()
+            return np.nanmax(self.rpt_array["phimax"])
         else:
             return self.ellipse_scale
 

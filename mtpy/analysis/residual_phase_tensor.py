@@ -102,9 +102,6 @@ class ResidualPhaseTensor:
                             # print 'Setting residual PT to zeros. '
                             self.rpt[idx] = np.zeros((2, 2))
 
-                    self.pt1 = self.pt1
-                    self.pt2 = self.pt2
-
                 else:
                     self.rpt = np.zeros((1, 2, 2))
                     try:
