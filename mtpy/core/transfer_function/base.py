@@ -583,7 +583,7 @@ class TFBase:
         da_dict = {}
         for key in self._dataset.data_vars:
             da_dict[key] = self._dataset[key].interp(
-                period=new_periods, method=method, **kwargs
+                period=new_periods, method=method, kwargs=kwargs
             )
 
         ds = xr.Dataset(da_dict)

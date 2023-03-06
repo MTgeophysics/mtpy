@@ -331,7 +331,7 @@ class MT(TF, MTLocation):
     def interpolate(
         self,
         new_frequency,
-        method="cubic",
+        method="slinear",
         bounds_error=True,
         **kwargs,
     ):
@@ -381,14 +381,25 @@ class MT(TF, MTLocation):
                     "needs to be within the bounds of the old one."
                 )
 
-        new_z = self.Z.interpolate(1.0 / new_frequency, method=method, **kwargs)
-        new_t = self.Tipper.interpolate(
+        new_m = self.clone_empty()
+        new_m.Z = self.Z.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
-
-        new_m = self.clone_empty()
-        new_m.Z = new_z
-        new_m.Tipper = new_t
+        if np.all(np.isnan(new_m.Z.z)):
+            self.logger.warning(
+                "Interpolated Z values are all NaN, consider an alternative "
+                "interpolation method. See scipy.interpolate.interp1d for "
+                "more invormation."
+            )
+        new_m.Tipper = self.Tipper.interpolate(
+            1.0 / new_frequency, method=method, **kwargs
+        )
+        if np.all(np.isnan(new_m.Tipper.tipper)):
+            self.logger.warning(
+                "Interpolated Tipper values are all NaN, consider an "
+                "alternative interpolation method. See "
+                "scipy.interpolate.interp1d for more invormation."
+            )
 
         return new_m
 
