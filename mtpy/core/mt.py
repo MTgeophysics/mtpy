@@ -385,20 +385,21 @@ class MT(TF, MTLocation):
         new_m.Z = self.Z.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
-        if np.all(np.isnan(new_m.Z.z)):
+        if np.all(np.isnan(new_m.Z.z)) and self.has_impedance():
+
             self.logger.warning(
-                "Interpolated Z values are all NaN, consider an alternative "
-                "interpolation method. See scipy.interpolate.interp1d for "
-                "more invormation."
+                f"Station {self.station}: Interpolated Z values are all NaN, "
+                "consider an alternative interpolation method. "
+                "See scipy.interpolate.interp1d for more invormation."
             )
         new_m.Tipper = self.Tipper.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
-        if np.all(np.isnan(new_m.Tipper.tipper)):
+        if np.all(np.isnan(new_m.Tipper.tipper)) and self.has_tipper():
             self.logger.warning(
-                "Interpolated Tipper values are all NaN, consider an "
-                "alternative interpolation method. See "
-                "scipy.interpolate.interp1d for more invormation."
+                f"Station {self.station}: Interpolated T values are all NaN, "
+                "consider an alternative interpolation method. "
+                "See scipy.interpolate.interp1d for more invormation."
             )
 
         return new_m

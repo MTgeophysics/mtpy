@@ -84,43 +84,37 @@ class ResidualPhaseTensor:
                     self.rpt = np.zeros_like(self.pt1.pt)
 
                     for idx in range(len(self.pt1.pt)):
-                        try:
-                            #                                self.rpt[idx] = np.eye(2) - np.dot(np.matrix(self.pt1[idx]).I,
-                            #                                                                   np.matrix(self.pt2[idx]))
-                            self.rpt[idx] = np.eye(2) - 0.5 * (
-                                np.dot(
-                                    np.matrix(self.pt1.pt[idx]).I,
-                                    np.matrix(self.pt2.pt[idx]),
+                        with np.errstate(divide="ignore", invalid="ignore"):
+                            try:
+                                self.rpt[idx] = np.eye(2) - 0.5 * (
+                                    np.dot(
+                                        np.matrix(self.pt1.pt[idx]).I,
+                                        np.matrix(self.pt2.pt[idx]),
+                                    )
+                                    + np.dot(
+                                        np.matrix(self.pt2.pt[idx]),
+                                        np.matrix(self.pt1.pt[idx]).I,
+                                    )
                                 )
-                                + np.dot(
-                                    np.matrix(self.pt2.pt[idx]),
-                                    np.matrix(self.pt1.pt[idx]).I,
-                                )
-                            )
-                        except np.linalg.LinAlgError:
-                            # print 'Singular matrix at index {0}, frequency {1:.5g}'.format(idx, self.frequency[idx])
-                            # print 'Setting residual PT to zeros. '
-                            self.rpt[idx] = np.zeros((2, 2))
+                            except np.linalg.LinAlgError:
+                                self.rpt[idx] = np.zeros((2, 2))
 
                 else:
                     self.rpt = np.zeros((1, 2, 2))
                     try:
-                        #                            self.rpt[0] = np.eye(2)-np.dot(np.matrix(self.pt1).I,
-                        #                                                             np.matrix(self.pt2))
-                        self.rpt[idx] = np.eye(2) - 0.5 * (
-                            np.dot(
-                                np.matrix(self.pt2.pt[idx]).I,
-                                np.matrix(self.pt1.pt[idx]),
+                        with np.errstate(divide="ignore", invalid="ignore"):
+                            self.rpt[idx] = np.eye(2) - 0.5 * (
+                                np.dot(
+                                    np.matrix(self.pt2.pt[idx]).I,
+                                    np.matrix(self.pt1.pt[idx]),
+                                )
+                                + np.dot(
+                                    np.matrix(self.pt1.pt[idx]),
+                                    np.matrix(self.pt2.pt[idx]).I,
+                                )
                             )
-                            + np.dot(
-                                np.matrix(self.pt1.pt[idx]),
-                                np.matrix(self.pt2.pt[idx]).I,
-                            )
-                        )
 
                     except np.linalg.LinAlgError:
-                        # print 'Singular matrix at frequency {0:.5g}'.format(self.frequency)
-                        # print 'Setting residual PT to zeros. '
                         pass
 
             elif self.residual_type == "booker":
@@ -152,16 +146,65 @@ class ResidualPhaseTensor:
                     if len(self.pt1.pt_error.shape) == 3:
                         self.rpt_error = np.zeros((len(self.pt1.pt), 2, 2))
 
-                        for idx in range(len(self.pt1.pt_error)):
-                            matrix1 = self.pt1.pt[idx]
-                            matrix1error = self.pt1.pt_error[idx]
-                            try:
+                        with np.errstate(divide="ignore", invalid="ignore"):
+                            for idx in range(len(self.pt1.pt_error)):
+                                matrix1 = self.pt1.pt[idx]
+                                matrix1error = self.pt1.pt_error[idx]
+                                try:
+                                    (
+                                        matrix2,
+                                        matrix2error,
+                                    ) = MTcc.invertmatrix_incl_errors(
+                                        self.pt2.pt[idx],
+                                        inmatrix_error=self.pt2.pt_error[idx],
+                                    )
+
+                                    (
+                                        summand1,
+                                        error1,
+                                    ) = MTcc.multiplymatrices_incl_errors(
+                                        matrix2,
+                                        matrix1,
+                                        inmatrix1_error=matrix2error,
+                                        inmatrix2_error=matrix1error,
+                                    )
+                                    (
+                                        summand2,
+                                        error2,
+                                    ) = MTcc.multiplymatrices_incl_errors(
+                                        matrix1,
+                                        matrix2,
+                                        inmatrix1_error=matrix1error,
+                                        inmatrix2_error=matrix2error,
+                                    )
+                                    self.rpt_error[idx] = np.sqrt(
+                                        0.25 * error1**2 + 0.25 * error2**2
+                                    )
+                                except ValueError:
+                                    self.rpt_error[idx] = 1e10
+
+                    else:
+                        self.rpt_error = np.zeros((1, 2, 2))
+                        try:
+                            with np.errstate(divide="ignore", invalid="ignore"):
+                                self.rpt_error[0] = np.eye(2) - 0.5 * np.array(
+                                    np.dot(
+                                        np.matrix(self.pt2.pt).I,
+                                        np.matrix(self.pt1.pt),
+                                    )
+                                    + np.dot(
+                                        np.matrix(self.pt1.pt),
+                                        np.matrix(self.pt2.pt).I,
+                                    )
+                                )
+                                matrix1 = self.pt1.pt
+                                matrix1error = self.pt1.pt_error
                                 (
                                     matrix2,
                                     matrix2error,
                                 ) = MTcc.invertmatrix_incl_errors(
-                                    self.pt2.pt[idx],
-                                    inmatrix_error=self.pt2.pt_error[idx],
+                                    self.pt2.pt,
+                                    inmatrix_error=self.pt2.pt_error,
                                 )
 
                                 (
@@ -182,56 +225,10 @@ class ResidualPhaseTensor:
                                     inmatrix1_error=matrix1error,
                                     inmatrix2_error=matrix2error,
                                 )
-                                self.rpt_error[idx] = np.sqrt(
+
+                                self.rpt_error = np.sqrt(
                                     0.25 * error1**2 + 0.25 * error2**2
                                 )
-                            except ValueError:
-                                self.rpt_error[idx] = 1e10
-
-                    else:
-                        self.rpt_error = np.zeros((1, 2, 2))
-                        try:
-                            self.rpt_error[0] = np.eye(2) - 0.5 * np.array(
-                                np.dot(
-                                    np.matrix(self.pt2.pt).I,
-                                    np.matrix(self.pt1.pt),
-                                )
-                                + np.dot(
-                                    np.matrix(self.pt1.pt),
-                                    np.matrix(self.pt2.pt).I,
-                                )
-                            )
-                            matrix1 = self.pt1.pt
-                            matrix1error = self.pt1.pt_error
-                            (
-                                matrix2,
-                                matrix2error,
-                            ) = MTcc.invertmatrix_incl_errors(
-                                self.pt2.pt, inmatrix_error=self.pt2.pt_error
-                            )
-
-                            (
-                                summand1,
-                                error1,
-                            ) = MTcc.multiplymatrices_incl_errors(
-                                matrix2,
-                                matrix1,
-                                inmatrix1_error=matrix2error,
-                                inmatrix2_error=matrix1error,
-                            )
-                            (
-                                summand2,
-                                error2,
-                            ) = MTcc.multiplymatrices_incl_errors(
-                                matrix1,
-                                matrix2,
-                                inmatrix1_error=matrix1error,
-                                inmatrix2_error=matrix2error,
-                            )
-
-                            self.rpt_error = np.sqrt(
-                                0.25 * error1**2 + 0.25 * error2**2
-                            )
                         except ValueError:
                             self.rpt_error[idx] = 1e10
 

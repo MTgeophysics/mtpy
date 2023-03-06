@@ -297,7 +297,8 @@ class PlotResidualPTMaps(PlotBase):
             new_2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
             # compute residual phase tensor
-            rpt = ResidualPhaseTensor(new_1.pt, new_2.pt)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                rpt = ResidualPhaseTensor(new_1.pt, new_2.pt)
 
             # add some attributes to residual phase tensor object
             rpt.station = mt1.station
