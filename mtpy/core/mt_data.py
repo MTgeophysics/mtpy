@@ -31,6 +31,7 @@ from mtpy.imaging import (
     PlotPenetrationDepthMap,
     PlotResPhaseMaps,
     PlotResPhasePseudoSection,
+    PlotResidualPTMaps,
 )
 
 # =============================================================================
@@ -46,7 +47,6 @@ class MTData(OrderedDict, MTStations):
         if mt_list is not None:
             for mt_obj in mt_list:
                 self.add_station(mt_obj, compute_relative_location=False)
-            self.compute_relative_locations()
 
         MTStations.__init__(self, None, None, **kwargs)
 
@@ -95,6 +95,26 @@ class MTData(OrderedDict, MTStations):
     @property
     def mt_list(self):
         return self.values()
+
+    @property
+    def survey_ids(self):
+        return list(set([key.split(".")[0] for key in self.keys()]))
+
+    def get_survey(self, survey_id):
+        """
+        Get a survey from the data set
+
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_list = [
+            mt_obj for key, mt_obj in self.items() if survey_id in key
+        ]
+        return MTData(survey_list)
 
     def add_station(
         self, mt_object, survey=None, compute_relative_location=True
@@ -757,3 +777,20 @@ class MTData(OrderedDict, MTStations):
         """
 
         return PlotResPhasePseudoSection(self, **kwargs)
+
+    def plot_residual_phase_tensor_maps(self, survey_01, survey_02, **kwargs):
+        """
+
+        :param survey_01: DESCRIPTION
+        :type survey_01: TYPE
+        :param survey_02: DESCRIPTION
+        :type survey_02: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_data_01 = self.get_survey(survey_01)
+        survey_data_02 = self.get_survey(survey_02)
+
+        return PlotResidualPTMaps(survey_data_01, survey_data_02, **kwargs)

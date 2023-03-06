@@ -503,7 +503,7 @@ class PlotBaseMaps(PlotBase):
             tf.t_interp_dict = self.get_interp1d_functions_t(tf)
 
         if not tf.has_tipper():
-            return np.array((1, 1, 2), dtype=float)
+            return np.zeros((1, 1, 2), dtype=float)
         if tf.Tipper._has_tf_error():
             return np.nan_to_num(
                 np.array(
@@ -522,7 +522,41 @@ class PlotBaseMaps(PlotBase):
                 )
             ).reshape((1, 1, 2))
         else:
-            return np.array((1, 1, 2), dtype=float)
+            return np.zeros((1, 1, 2), dtype=float)
+
+    def _get_interpolated_t_model_err(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not hasattr(tf, "t_interp_dict"):
+            tf.t_interp_dict = self.get_interp1d_functions_t(tf)
+
+        if not tf.has_tipper():
+            return np.zeros((1, 1, 2), dtype=float)
+        if tf.Tipper._has_tf_error():
+            return np.nan_to_num(
+                np.array(
+                    [
+                        [
+                            [
+                                tf.t_interp_dict["tzx"]["model_err"](
+                                    1.0 / self.plot_period
+                                )[0],
+                                tf.t_interp_dict["tzy"]["model_err"](
+                                    1.0 / self.plot_period
+                                )[0],
+                            ]
+                        ]
+                    ]
+                )
+            ).reshape((1, 1, 2))
+        else:
+            return np.zeros((1, 1, 2), dtype=float)
 
     def add_raster(self, ax, raster_fn, add_colorbar=True, **kwargs):
         """
@@ -655,6 +689,8 @@ class PlotBaseProfile(PlotBase):
         :rtype: TYPE
 
         """
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
         return np.nan_to_num(
             np.array(
                 [
@@ -695,21 +731,31 @@ class PlotBaseProfile(PlotBase):
         :rtype: TYPE
 
         """
-
-        return np.nan_to_num(
-            np.array(
-                [
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
+        if tf.z_interp_dict["zxy"]["err"] is not None:
+            return np.nan_to_num(
+                np.array(
                     [
-                        tf.z_interp_dict["zxx"]["err"](1.0 / self.plot_period),
-                        tf.z_interp_dict["zxy"]["err"](1.0 / self.plot_period),
-                    ],
-                    [
-                        tf.z_interp_dict["zyx"]["err"](1.0 / self.plot_period),
-                        tf.z_interp_dict["zyy"]["err"](1.0 / self.plot_period),
-                    ],
-                ]
+                        [
+                            tf.z_interp_dict["zxx"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                            tf.z_interp_dict["zxy"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                        ],
+                        [
+                            tf.z_interp_dict["zyx"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                            tf.z_interp_dict["zyy"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                        ],
+                    ]
+                )
             )
-        )
 
     def _get_interpolated_t(self, tf):
         """
