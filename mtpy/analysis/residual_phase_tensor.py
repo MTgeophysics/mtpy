@@ -249,11 +249,12 @@ class ResidualPhaseTensor:
             )
 
         # --> make a pt object that is the residual phase tensor
-        self.residual_pt = PhaseTensor(
-            pt=self.rpt,
-            pt_error=self.rpt_error,
-            frequency=self.frequency,
-        )
+        with np.errstate(divide="ignore", invalid="ignore"):
+            self.residual_pt = PhaseTensor(
+                pt=self.rpt,
+                pt_error=self.rpt_error,
+                frequency=self.frequency,
+            )
 
     def read_pts(self, pt1, pt2, pt1_error=None, pt2error=None):
         """
