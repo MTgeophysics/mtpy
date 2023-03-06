@@ -52,7 +52,7 @@ class MTStations:
                 ("utm_epsg", "U6"),
                 ("model_east", float),
                 ("model_north", float),
-                ("model_elev", float),
+                ("model_elevation", float),
                 ("profile_offset", float),
             ]
         )
@@ -80,7 +80,7 @@ class MTStations:
                 ("elevation", "<8.2f"),
                 ("model_east", "<13.2f"),
                 ("model_north", "<13.2f"),
-                ("model_elev", "<8.2f"),
+                ("model_elevation", "<8.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
                 ("utm_epsg", "<6"),
@@ -232,7 +232,7 @@ class MTStations:
             entries["utm_epsg"][ii] = mt_obj.utm_epsg
             entries["model_east"][ii] = mt_obj.model_east
             entries["model_north"][ii] = mt_obj.model_north
-            entries["model_elev"][ii] = mt_obj.model_elevation
+            entries["model_elevation"][ii] = mt_obj.model_elevation
             entries["profile_offset"][ii] = mt_obj.profile_offset
 
         station_df = pd.DataFrame(entries)
@@ -423,8 +423,6 @@ class MTStations:
         """
 
         # find index of each station on grid
-        station_index_x = []
-        station_index_y = []
         for mt_obj in self.mt_list:
             # relative locations of stations
             sx = mt_obj.model_east
@@ -472,12 +470,10 @@ class MTStations:
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
 
-            station_index_x.append(sxi)
-            station_index_y.append(syi)
-
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            mt_obj.model_elev = topoval + 0.001
+            mt_obj.model_elevation = topoval + 0.001
+            print(f"{mt_obj.station}: {mt_obj.model_elevation:.2f}")
 
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
