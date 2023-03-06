@@ -231,11 +231,13 @@ class PlotResidualPTMaps(PlotBase):
         two_found = []
         for key, mt1 in one.items():
             station_find = False
+            station_id = key.split(".")[1]
             try:
-                mt2 = two[key]
+                mt2 = two.get_station(station_id=station_id)
                 matches.append([mt1, mt2])
                 station_find = True
                 two_found.append(mt2.tf_id)
+
             except KeyError:
                 for mt2 in two.values():
                     if mt2.tf_id in two_found:
@@ -294,11 +296,11 @@ class PlotResidualPTMaps(PlotBase):
             mt1 = match[0]
             mt2 = match[1]
 
-            new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
-            new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
+            new_1 = mt1.interpolate(self.freq_list, bounds_error=False)
+            new_2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
             # compute residual phase tensor
-            rpt = ResidualPhaseTensor(new_z1.pt, new_z2.pt)
+            rpt = ResidualPhaseTensor(new_1.pt, new_2.pt)
 
             # add some attributes to residual phase tensor object
             rpt.station = mt1.station

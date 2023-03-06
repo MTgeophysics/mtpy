@@ -514,6 +514,8 @@ class MT(TF, MTLocation):
             except KeyError:
                 continue
 
+        self.tf_id = self.station
+
         self.Z = mt_df.to_z_object()
         self.Tipper = mt_df.to_t_object()
 

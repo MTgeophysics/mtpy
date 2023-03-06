@@ -926,6 +926,8 @@ class Data:
         line_dict[f"{comp}_real"] = line_dict.pop("real")
         line_dict[f"{comp}_imag"] = line_dict.pop("imag")
         line_dict[f"{comp}_model_error"] = line_dict.pop("error")
+        if line_dict[f"{comp}_model_error"] > 1e10:
+            line_dict[f"{comp}_model_error"] = np.nan
 
         return line_dict
 

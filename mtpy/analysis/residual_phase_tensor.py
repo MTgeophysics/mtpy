@@ -52,10 +52,8 @@ class ResidualPhaseTensor:
                     "of the PhaseTensor class"
                 )
 
-            self.pt1 = pt_object1.pt
-            self.pt2 = pt_object2.pt
-            self.pt1_error = pt_object1.pt_error
-            self.pt2_error = pt_object2.pt_error
+            self.pt1 = pt_object1
+            self.pt2 = pt_object2
 
             self.frequency = self.pt1.frequency
             self.compute_residual_pt()
@@ -69,30 +67,30 @@ class ResidualPhaseTensor:
 
         # --> compute residual phase tensor
         if self.pt1 is not None and self.pt2 is not None:
-            if self.pt1.dtype not in [float, int]:
+            if self.pt1.pt.dtype not in [float, int]:
                 raise ValueError
-            if self.pt2.dtype not in [float, int]:
+            if self.pt2.pt.dtype not in [float, int]:
                 raise ValueError
-            if not self.pt1.shape == self.pt2.shape:
+            if not self.pt1.pt.shape == self.pt2.pt.shape:
                 raise TypeError("PT arrays not the same shape")
-            if not len(self.pt1.shape) in [2, 3]:
+            if not len(self.pt1.pt.shape) in [2, 3]:
                 raise TypeError("PT array is not a valid shape")
             if self.residual_type == "heise":
-                if len(self.pt1.shape) == 3:
-                    self.rpt = np.zeros_like(self.pt1)
+                if len(self.pt1.pt.shape) == 3:
+                    self.rpt = np.zeros_like(self.pt1.pt)
 
-                    for idx in range(len(self.pt1)):
+                    for idx in range(len(self.pt1.pt)):
                         try:
                             #                                self.rpt[idx] = np.eye(2) - np.dot(np.matrix(self.pt1[idx]).I,
                             #                                                                   np.matrix(self.pt2[idx]))
                             self.rpt[idx] = np.eye(2) - 0.5 * (
                                 np.dot(
-                                    np.matrix(self.pt1[idx]).I,
-                                    np.matrix(self.pt2[idx]),
+                                    np.matrix(self.pt1.pt[idx]).I,
+                                    np.matrix(self.pt2.pt[idx]),
                                 )
                                 + np.dot(
-                                    np.matrix(self.pt2[idx]),
-                                    np.matrix(self.pt1[idx]).I,
+                                    np.matrix(self.pt2.pt[idx]),
+                                    np.matrix(self.pt1.pt[idx]).I,
                                 )
                             )
                         except np.linalg.LinAlgError:
@@ -110,12 +108,12 @@ class ResidualPhaseTensor:
                         #                                                             np.matrix(self.pt2))
                         self.rpt[idx] = np.eye(2) - 0.5 * (
                             np.dot(
-                                np.matrix(self.pt2[idx]).I,
-                                np.matrix(self.pt1[idx]),
+                                np.matrix(self.pt2.pt[idx]).I,
+                                np.matrix(self.pt1.pt[idx]),
                             )
                             + np.dot(
-                                np.matrix(self.pt1[idx]),
-                                np.matrix(self.pt2[idx]).I,
+                                np.matrix(self.pt1.pt[idx]),
+                                np.matrix(self.pt2.pt[idx]).I,
                             )
                         )
 
@@ -124,12 +122,8 @@ class ResidualPhaseTensor:
                         # print 'Setting residual PT to zeros. '
                         pass
 
-                    self.pt1 = np.zeros((1, 2, 2))
-                    self.pt1[0] = self.pt1
-                    self.pt2 = np.zeros((1, 2, 2))
-                    self.pt2[0] = self.pt2
             elif self.residual_type == "booker":
-                self.rpt = self.pt1 - self.pt2
+                self.rpt = self.pt1.pt - self.pt2.pt
 
         else:
             self.logger.warning(
@@ -139,34 +133,34 @@ class ResidualPhaseTensor:
 
         # --> compute residual erroror
 
-        if self.pt1_error is not None and self.pt2_error is not None:
+        if self.pt1.pt.pt_error is not None and self.pt2.pt_error is not None:
             self.rpt_error = np.zeros(self.rpt.shape)
             try:
-                if (self.pt1_error.dtype not in [float, int]) or (
-                    self.pt2_error.dtype not in [float, int]
+                if (self.pt1.pt_error.dtype not in [float, int]) or (
+                    self.pt2.pt_error.dtype not in [float, int]
                 ):
                     raise ValueError
-                if not self.pt1_error.shape == self.pt2_error.shape:
+                if not self.pt1.pt_error.shape == self.pt2.pt_error.shape:
                     raise ValueError
-                if not len(self.pt1_error.shape) in [2, 3]:
+                if not len(self.pt1.pt_error.shape) in [2, 3]:
                     raise ValueError
                 if self.rpt_error is not None:
-                    if self.rpt_error.shape != self.pt1_error.shape:
+                    if self.rpt_error.shape != self.pt1.pt_error.shape:
                         raise ValueError
                 if self.residual_type == "heise":
-                    if len(self.pt1_error.shape) == 3:
+                    if len(self.pt1.pt_error.shape) == 3:
                         self.rpt_error = np.zeros((len(self.pt1), 2, 2))
 
-                        for idx in range(len(self.pt1_error)):
+                        for idx in range(len(self.pt1.pt_error)):
                             matrix1 = self.pt1[idx]
-                            matrix1error = self.pt1_error[idx]
+                            matrix1error = self.pt1.pt_error[idx]
                             try:
                                 (
                                     matrix2,
                                     matrix2error,
                                 ) = MTcc.invertmatrix_incl_errorors(
                                     self.pt2[idx],
-                                    inmatrix_error=self.pt2_error[idx],
+                                    inmatrix_error=self.pt2.pt_error[idx],
                                 )
 
                                 (
@@ -193,27 +187,26 @@ class ResidualPhaseTensor:
                             except ValueError:
                                 self.rpt_error[idx] = 1e10
 
-                        self._pt_error1 = self.pt1_error
-                        self._pt_error2 = self.pt2_error
-
                     else:
                         self.rpt_error = np.zeros((1, 2, 2))
                         try:
                             self.rpt_error[0] = np.eye(2) - 0.5 * np.array(
                                 np.dot(
-                                    np.matrix(self.pt2).I, np.matrix(self.pt1)
+                                    np.matrix(self.pt2.pt).I,
+                                    np.matrix(self.pt1.pt),
                                 )
                                 + np.dot(
-                                    np.matrix(self.pt1), np.matrix(self.pt2).I
+                                    np.matrix(self.pt1.pt),
+                                    np.matrix(self.pt2.pt).I,
                                 )
                             )
-                            matrix1 = self.pt1
-                            matrix1error = self.pt1_error
+                            matrix1 = self.pt1.pt
+                            matrix1error = self.pt1.pt_error
                             (
                                 matrix2,
                                 matrix2error,
                             ) = MTcc.invertmatrix_incl_errorors(
-                                self.pt2, inmatrix_error=self.pt2_error
+                                self.pt2.pt, inmatrix_error=self.pt2.pt_error
                             )
 
                             (
@@ -241,12 +234,8 @@ class ResidualPhaseTensor:
                         except ValueError:
                             self.rpt_error[idx] = 1e10
 
-                        self.pt1_error = np.zeros((1, 2, 2))
-                        self.pt1_error[0] = self.pt1_error
-                        self.pt2_error = np.zeros((1, 2, 2))
-                        self.pt2_error[0] = self.pt2_error
                 elif self.residual_type == "booker":
-                    self.rpt_error = self.pt1_error + self.pt2_error
+                    self.rpt_error = self.pt1.pt_error + self.pt2.pt_error
 
             except ValueError:
                 raise TypeError(
