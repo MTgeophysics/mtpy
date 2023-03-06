@@ -12,6 +12,7 @@ import numpy as np
 
 from mtpy.core.transfer_function.pt import PhaseTensor
 import mtpy.utils.calculator as MTcc
+from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
 class ResidualPhaseTensor:
@@ -28,6 +29,9 @@ class ResidualPhaseTensor:
         pt_object2 : instance of the PhaseTensor class
         Initialise the attributes with None
         """
+        self.logger = get_mtpy_logger(
+            f"{self.__class__}.{self.__class__.__name__}"
+        )
 
         self.residual_pt = None
         self.rpt = None
@@ -131,9 +135,9 @@ class ResidualPhaseTensor:
                 "contain PT arrays of the same shape"
             )
 
-        # --> compute residual erroror
+        # --> compute residual error
 
-        if self.pt1.pt.pt_error is not None and self.pt2.pt_error is not None:
+        if self.pt1.pt_error is not None and self.pt2.pt_error is not None:
             self.rpt_error = np.zeros(self.rpt.shape)
             try:
                 if (self.pt1.pt_error.dtype not in [float, int]) or (
@@ -149,24 +153,24 @@ class ResidualPhaseTensor:
                         raise ValueError
                 if self.residual_type == "heise":
                     if len(self.pt1.pt_error.shape) == 3:
-                        self.rpt_error = np.zeros((len(self.pt1), 2, 2))
+                        self.rpt_error = np.zeros((len(self.pt1.pt), 2, 2))
 
                         for idx in range(len(self.pt1.pt_error)):
-                            matrix1 = self.pt1[idx]
+                            matrix1 = self.pt1.pt[idx]
                             matrix1error = self.pt1.pt_error[idx]
                             try:
                                 (
                                     matrix2,
                                     matrix2error,
-                                ) = MTcc.invertmatrix_incl_errorors(
-                                    self.pt2[idx],
+                                ) = MTcc.invertmatrix_incl_errors(
+                                    self.pt2.pt[idx],
                                     inmatrix_error=self.pt2.pt_error[idx],
                                 )
 
                                 (
                                     summand1,
                                     error1,
-                                ) = MTcc.multiplymatrices_incl_errorors(
+                                ) = MTcc.multiplymatrices_incl_errors(
                                     matrix2,
                                     matrix1,
                                     inmatrix1_error=matrix2error,
@@ -175,7 +179,7 @@ class ResidualPhaseTensor:
                                 (
                                     summand2,
                                     error2,
-                                ) = MTcc.multiplymatrices_incl_errorors(
+                                ) = MTcc.multiplymatrices_incl_errors(
                                     matrix1,
                                     matrix2,
                                     inmatrix1_error=matrix1error,
@@ -205,14 +209,14 @@ class ResidualPhaseTensor:
                             (
                                 matrix2,
                                 matrix2error,
-                            ) = MTcc.invertmatrix_incl_errorors(
+                            ) = MTcc.invertmatrix_incl_errors(
                                 self.pt2.pt, inmatrix_error=self.pt2.pt_error
                             )
 
                             (
                                 summand1,
                                 error1,
-                            ) = MTcc.multiplymatrices_incl_errorors(
+                            ) = MTcc.multiplymatrices_incl_errors(
                                 matrix2,
                                 matrix1,
                                 inmatrix1_error=matrix2error,
@@ -221,7 +225,7 @@ class ResidualPhaseTensor:
                             (
                                 summand2,
                                 error2,
-                            ) = MTcc.multiplymatrices_incl_errorors(
+                            ) = MTcc.multiplymatrices_incl_errors(
                                 matrix1,
                                 matrix2,
                                 inmatrix1_error=matrix1error,
@@ -246,15 +250,15 @@ class ResidualPhaseTensor:
         else:
             self.logger.warning(
                 "Could not determine Residual PT uncertainties - both"
-                " PhaseTensor objects must contain PT-erroror arrays of the"
+                " PhaseTensor objects must contain PT-error arrays of the"
                 "same shape"
             )
 
         # --> make a pt object that is the residual phase tensor
         self.residual_pt = PhaseTensor(
-            pt_array=self.rpt,
-            pt_error_array=self.rpt_error,
-            freq=self.frequency,
+            pt=self.rpt,
+            pt_error=self.rpt_error,
+            frequency=self.frequency,
         )
 
     def read_pts(self, pt1, pt2, pt1_error=None, pt2error=None):

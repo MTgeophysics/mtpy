@@ -161,22 +161,24 @@ def make_log_increasing_array(
     return log_z
 
 
-def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
+def invertmatrix_incl_errors(inmatrix, inmatrix_error=None):
 
     if inmatrix is None:
         raise MTex.MTpyError_input_arguments("Matrix must be defined")
 
-    if (inmatrix_err is not None) and (inmatrix.shape != inmatrix_err.shape):
+    if (inmatrix_error is not None) and (
+        inmatrix.shape != inmatrix_error.shape
+    ):
         raise MTex.MTpyError_input_arguments(
             "Matrix and err-matrix shapes do not match: %s - %s"
-            % (str(inmatrix.shape), str(inmatrix_err.shape))
+            % (str(inmatrix.shape), str(inmatrix_error.shape))
         )
 
     if inmatrix.shape[-2] != inmatrix.shape[-1]:
         raise MTex.MTpyError_input_arguments("Matrices must be square!")
 
-    if (inmatrix_err is not None) and (
-        inmatrix_err.shape[-2] != inmatrix_err.shape[-1]
+    if (inmatrix_error is not None) and (
+        inmatrix_error.shape[-2] != inmatrix_error.shape[-1]
     ):
         raise MTex.MTpyError_input_arguments("Matrices must be square!")
 
@@ -198,9 +200,9 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
 
     inv_matrix_err = None
 
-    if inmatrix_err is not None:
-        inmatrix_err = np.real(inmatrix_err)
-        inv_matrix_err = np.zeros_like(inmatrix_err)
+    if inmatrix_error is not None:
+        inmatrix_error = np.real(inmatrix_error)
+        inv_matrix_err = np.zeros_like(inmatrix_error)
 
         for i in range(2):
             for j in range(2):
@@ -213,7 +215,7 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err=None):
                         err += np.abs(
                             -inv_matrix[i, k]
                             * inv_matrix[l, j]
-                            * inmatrix_err[k, l]
+                            * inmatrix_error[k, l]
                         )
 
                 inv_matrix_err[i, j] = err
@@ -683,7 +685,7 @@ def rotate_vector_with_errors(in_vector, angle, error=None):
 
 
 def multiplymatrices_incl_errors(
-    inmatrix1, inmatrix2, inmatrix1_err=None, inmatrix2_err=None
+    inmatrix1, inmatrix2, inmatrix1_error=None, inmatrix2_error=None
 ):
 
     if inmatrix1 is None or inmatrix2 is None:
@@ -698,33 +700,33 @@ def multiplymatrices_incl_errors(
 
     prod = np.array(np.dot(np.matrix(inmatrix1), np.matrix(inmatrix2)))
 
-    if (inmatrix1_err is None) or (inmatrix1_err is None):
+    if (inmatrix1_error is None) or (inmatrix1_error is None):
         return prod, None
 
     var = np.zeros((2, 2))
     var[0, 0] = (
-        (inmatrix1_err[0, 0] * inmatrix2[0, 0]) ** 2
-        + (inmatrix1_err[0, 1] * inmatrix2[1, 0]) ** 2
-        + (inmatrix2_err[0, 0] * inmatrix1[0, 0]) ** 2
-        + (inmatrix2_err[1, 0] * inmatrix1[0, 1]) ** 2
+        (inmatrix1_error[0, 0] * inmatrix2[0, 0]) ** 2
+        + (inmatrix1_error[0, 1] * inmatrix2[1, 0]) ** 2
+        + (inmatrix2_error[0, 0] * inmatrix1[0, 0]) ** 2
+        + (inmatrix2_error[1, 0] * inmatrix1[0, 1]) ** 2
     )
     var[0, 1] = (
-        (inmatrix1_err[0, 0] * inmatrix2[0, 1]) ** 2
-        + (inmatrix1_err[0, 1] * inmatrix2[1, 1]) ** 2
-        + (inmatrix2_err[0, 1] * inmatrix1[0, 0]) ** 2
-        + (inmatrix2_err[1, 1] * inmatrix1[0, 1]) ** 2
+        (inmatrix1_error[0, 0] * inmatrix2[0, 1]) ** 2
+        + (inmatrix1_error[0, 1] * inmatrix2[1, 1]) ** 2
+        + (inmatrix2_error[0, 1] * inmatrix1[0, 0]) ** 2
+        + (inmatrix2_error[1, 1] * inmatrix1[0, 1]) ** 2
     )
     var[1, 0] = (
-        (inmatrix1_err[1, 0] * inmatrix2[0, 0]) ** 2
-        + (inmatrix1_err[1, 1] * inmatrix2[1, 0]) ** 2
-        + (inmatrix2_err[0, 0] * inmatrix1[1, 0]) ** 2
-        + (inmatrix2_err[1, 0] * inmatrix1[1, 1]) ** 2
+        (inmatrix1_error[1, 0] * inmatrix2[0, 0]) ** 2
+        + (inmatrix1_error[1, 1] * inmatrix2[1, 0]) ** 2
+        + (inmatrix2_error[0, 0] * inmatrix1[1, 0]) ** 2
+        + (inmatrix2_error[1, 0] * inmatrix1[1, 1]) ** 2
     )
     var[1, 1] = (
-        (inmatrix1_err[1, 0] * inmatrix2[0, 1]) ** 2
-        + (inmatrix1_err[1, 1] * inmatrix2[1, 1]) ** 2
-        + (inmatrix2_err[0, 1] * inmatrix1[1, 0]) ** 2
-        + (inmatrix2_err[1, 1] * inmatrix1[1, 1]) ** 2
+        (inmatrix1_error[1, 0] * inmatrix2[0, 1]) ** 2
+        + (inmatrix1_error[1, 1] * inmatrix2[1, 1]) ** 2
+        + (inmatrix2_error[0, 1] * inmatrix1[1, 0]) ** 2
+        + (inmatrix2_error[1, 1] * inmatrix1[1, 1]) ** 2
     )
 
     return prod, np.sqrt(var)
