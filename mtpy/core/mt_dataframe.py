@@ -140,11 +140,19 @@ class MTDataFrame:
 
         """
 
+        if data is None:
+            return
+
         if isinstance(data, (dict, np.ndarray, pd.DataFrame)):
             df = pd.DataFrame(data)
 
+        elif isinstance(data, (MTDataFrame)):
+            df = data.dataframe
+
         else:
-            raise TypeError("Input data must be a pandas.DataFrame")
+            raise TypeError(
+                f"Input data must be a pandas.DataFrame not {type(data)}"
+            )
 
         for col in self._dtype_list:
             if col[0] not in df.columns:
@@ -579,7 +587,9 @@ class MTDataFrame:
                 if t_object._has_tf_model_error():
                     self.dataframe.loc[
                         self.dataframe.station == self.station, key
-                    ] = t_object.tipper_model_error[:, index["ii"], index["jj"]]
+                    ] = t_object.tipper_model_error[
+                        :, index["ii"], index["jj"]
+                    ]
 
     def to_z_object(self):
         """
@@ -645,7 +655,9 @@ class MTDataFrame:
                 "res_yx_model_error",
                 "res_yy_model_error",
             ]:
-                res_model_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
+                res_model_err[
+                    :, index["ii"], index["jj"]
+                ] = self.dataframe.loc[
                     self.dataframe.station == self.station, key
                 ]
 

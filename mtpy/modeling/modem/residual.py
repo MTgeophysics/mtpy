@@ -84,7 +84,18 @@ class Residual(Data):
         self.rms_tip = None
         self.rms_z = None
 
-        super().__init__(self, **kwargs)
+        super().__init__(**kwargs)
+
+        self.color_dict = {
+            "rms_z": (0, 162 / 255, 255 / 255),
+            "rms_t": (255 / 255, 162 / 255, 0),
+            "rms_zxx": (84 / 255, 215 / 255, 193 / 255),
+            "rms_zxy": (84 / 255, 189 / 255, 215 / 255),
+            "rms_zyx": (136 / 255, 84 / 255, 215 / 255),
+            "rms_zyy": (206 / 255, 84 / 255, 215 / 255),
+            "rms_tzx": (215 / 255, 210 / 255, 84 / 255),
+            "rms_tzy": (215 / 255, 154 / 255, 84 / 255),
+        }
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -118,7 +129,11 @@ class Residual(Data):
                 )
 
     @property
-    def rms_by_period_all(self):
+    def rms_per_period_all(self):
+        """
+        RMS per period
+        """
+
         if self.dataframe is not None:
             rms_list = []
             for period in self.dataframe.period.unique():
@@ -129,211 +144,83 @@ class Residual(Data):
                 t_df = self.dataframe.loc[
                     self.dataframe.period == period, ["rms_tzx", "rms_tzy"]
                 ]
+
                 rms_list.append(
                     {
                         "period": period,
-                        "z_rms": np.nanmean(z_df),
-                        "t_rms": np.nanmean(t_df),
+                        "rms_z": z_df.mean().mean(),
+                        "rms_t": t_df.mean().mean(),
                     }
                 )
 
-            return pd.DataFrame(rms_list)
+            df = pd.DataFrame(rms_list)
+            df = df.set_index("period")
 
-    def get_rms(self, residual_fn=None):
+            return df
 
-        if residual_fn is None:
-            residual_fn = self.residual_fn
+    @property
+    def rms_per_period_per_component(self):
+        """
+        RMS per period by component
 
-        if self.residual_array is None:
-            self.read_residual_file(residual_fn)
-        if self.residual_array is None:
-            return
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-        rms_z_comp = np.zeros((len(self.rms_array), 2, 2))
-        rms_tip_comp = np.zeros((len(self.rms_array), 2))
-        rms_value_list_all = np.zeros(0)
-        rms_value_list_z = np.zeros(0)
-        rms_value_list_tip = np.zeros(0)
+        """
 
-        for station_name in self.rms_array["station"]:
-            rms_value_list = []
-            rms_value_list_ztip = np.zeros(
-                (self.residual_array["z"].shape[1], 6)
-            )
-            sta_ind = np.where(self.rms_array["station"] == station_name)[0][0]
-            sta_indd = np.where(self.residual_array["station"] == station_name)[
-                0
-            ][0]
-            res_vals = self.residual_array[sta_indd]
-            z_norm, tip_norm = None, None
-            if np.amax(np.abs(res_vals["z"])) > 0:
-                # sum over absolute value of z
-                # need to divide by sqrt(2) to normalise (ModEM data file has one error for real and imag components)
-                z_norm = np.abs(res_vals["z"]) / (
-                    np.real(res_vals["z_err"]) * 2.0**0.5
-                )
-                rms_value_list_ztip[:, :4] = z_norm.reshape(z_norm.shape[0], 4)
+        rms_list = []
+        for period in self.dataframe.period.unique():
+            comp_df = self.dataframe.loc[
+                self.dataframe.period == period,
+                [
+                    "rms_zxx",
+                    "rms_zxy",
+                    "rms_zyx",
+                    "rms_zyy",
+                    "rms_tzx",
+                    "rms_tzy",
+                ],
+            ]
 
-                # count number of values for tipper, all
-                count_z = np.count_nonzero(
-                    np.nan_to_num(z_norm.reshape(z_norm.shape[0], 4)), axis=1
-                ).astype(float)
-                #                count_z = count_z.reshape(count_z.shape[0],1)
+            mean_dict = {"period": period}
+            for comp in comp_df.columns:
+                mean_dict[comp] = comp_df.loc[:, comp].mean()
 
-                # normalized error split by period
-                self.rms_array["rms_z_period"][sta_ind] = (
-                    np.sum(z_norm.reshape(z_norm.shape[0], 4) ** 2, axis=1)
-                    / count_z
-                ) ** 0.5
+            rms_list.append(mean_dict)
 
-                z_norm_nz = z_norm[np.all(np.isfinite(z_norm), axis=(1, 2))]
+        df = pd.DataFrame(rms_list)
+        df = df.set_index("period")
 
-                # append individual normalised errors to a master list for all stations
-                rms_value_list_all = np.append(
-                    rms_value_list_all, z_norm_nz.flatten()
-                )
-                rms_value_list_z = np.append(
-                    rms_value_list_z, z_norm_nz.flatten()
-                )
+        return df
 
-                # normalised error for separate components
-                rms_z_comp[sta_ind] = (
-                    ((z_norm_nz**2.0).sum(axis=0)) / (z_norm_nz.shape[0])
-                ) ** 0.5
-                rms_value_list.append(rms_z_comp[sta_ind])
+    def plot_rms_per_period(self, plot_type="all", **kwargs):
+        """
 
-            if np.amax(np.abs(res_vals["tip"])) > 0:
-                # sum over absolute value of tipper
-                # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                tip_norm = np.abs(res_vals["tip"]) / (
-                    np.real(res_vals["tip_err"]) * 2.0**0.5
-                )
-                rms_value_list_ztip[:, 4:] = tip_norm.reshape(
-                    tip_norm.shape[0], 2
-                )
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-                # count number of values for tipper, all
-                count_tip = np.count_nonzero(
-                    np.nan_to_num(tip_norm.reshape(tip_norm.shape[0], 2)),
-                    axis=1,
-                ).astype(float)
+        """
 
-                # normalized error split by period
-                self.rms_array["rms_tip_period"][sta_ind] = (
-                    np.nansum(
-                        tip_norm.reshape(tip_norm.shape[0], 2) ** 2, axis=1
-                    )
-                    / count_tip
-                ) ** 0.5
+        if plot_type == "all":
+            df = self.rms_per_period_all.copy()
+        elif plot_type == "comp":
+            df = self.rms_per_period_per_component.copy()
 
-                tip_norm_nz = tip_norm[
-                    np.all(np.isfinite(tip_norm), axis=(1, 2))
-                ]
+        plot_list = []
+        color_list = []
+        for comp in df.columns:
+            if not np.all(np.isnan(df[comp])):
+                plot_list.append(comp)
+                color_list.append(self.color_dict[comp])
 
-                # append individual normalised errors to a master list for all stations
-                rms_value_list_all = np.append(
-                    rms_value_list_all, tip_norm_nz.flatten()
-                )
-                rms_value_list_tip = np.append(
-                    rms_value_list_tip, tip_norm_nz.flatten()
-                )
+        ax = df.plot.bar(
+            y=plot_list,
+            color=color_list,
+            xlabel="Period (s)",
+            ylabel="normalized RMS",
+            **kwargs,
+        )
 
-                # normalised error for separate components
-                rms_tip_comp[sta_ind] = (
-                    ((tip_norm_nz**2.0).sum(axis=0)) / len(tip_norm_nz)
-                ) ** 0.5
-                rms_value_list.append(rms_tip_comp[sta_ind])
-
-            # compute overall rms by period
-            count_ztip = np.count_nonzero(
-                np.nan_to_num(rms_value_list_ztip), axis=1
-            ).astype(float)
-            self.rms_array["rms_period"][sta_ind] = (
-                np.nansum(rms_value_list_ztip**2, axis=1) / count_ztip
-            ) ** 0.5
-
-            rms_value_list = np.vstack(rms_value_list).flatten()
-
-            rms_value = (
-                (rms_value_list**2.0).sum() / rms_value_list.size
-            ) ** 0.5
-
-            self.rms_array[sta_ind]["rms"] = rms_value
-
-            if z_norm is not None:
-                self.rms_array[sta_ind]["rms_z"] = (
-                    (rms_z_comp[sta_ind] ** 2.0).sum()
-                    / rms_z_comp[sta_ind].size
-                ) ** 0.5
-            if tip_norm is not None:
-                self.rms_array[sta_ind]["rms_tip"] = (
-                    (rms_tip_comp[sta_ind] ** 2.0).sum()
-                    / rms_z_comp[sta_ind].size
-                ) ** 0.5
-
-        self.rms = np.mean(rms_value_list_all**2.0) ** 0.5
-        self.rms_z = np.mean(rms_value_list_z**2.0) ** 0.5
-        self.rms_tip = np.mean(rms_value_list_tip**2.0) ** 0.5
-
-        # by component
-        for cpt in ["z", "tip"]:
-            # normalised residuals
-            res_vals_cpt = np.abs(self.residual_array[cpt]) / (
-                np.real(self.residual_array[cpt + "_err"]) * 2.0**0.5
-            )
-            ijvals = res_vals_cpt.shape[2:]
-            for i in range(ijvals[0]):
-                for j in range(ijvals[1]):
-                    self.rms_array["rms_{}_component".format(cpt)][:, i, j] = (
-                        np.nansum(res_vals_cpt[:, :, i, j] ** 2.0, axis=1)
-                        / np.nansum(
-                            np.isfinite(res_vals_cpt[:, :, i, j]), axis=1
-                        )
-                    ) ** 0.5
-                    self.rms_array["rms_{}_component_period".format(cpt)][
-                        :, :, i, j
-                    ] = (
-                        res_vals_cpt[:, :, i, j] ** 2
-                        / np.isfinite(res_vals_cpt[:, :, i, j])
-                    ) ** 0.5
-
-    # def write_rms_to_file(self):
-    #     """
-    #     write rms station data to file
-    #     """
-
-    #     fn = op.join(self.work_dir, "rms_values.dat")
-
-    #     if not hasattr(self, "rms"):
-    #         self.get_rms()
-
-    #     header_list = [
-    #         "station",
-    #         "lon",
-    #         "lat",
-    #         "rel_east",
-    #         "rel_north",
-    #         "rms",
-    #         "rms_z",
-    #         "rms_tip",
-    #     ]
-
-    #     dtype = []
-    #     for val in header_list:
-    #         if val == "station":
-    #             dtype.append((val, "S10"))
-    #         else:
-    #             dtype.append((val, np.float))
-
-    #     save_list = np.zeros(len(self.rms_array), dtype=dtype)
-    #     for val in header_list:
-    #         save_list[val] = self.rms_array[val]
-
-    #     header = " ".join(header_list)
-
-    #     np.savetxt(
-    #         fn,
-    #         save_list,
-    #         header=header,
-    #         fmt=["%s", "%.6f", "%.6f", "%.1f", "%.1f", "%.3f", "%.3f", "%.3f"],
-    #     )
+        return ax

@@ -309,7 +309,9 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(new_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    new_mt_obj, compute_relative_location=False
+                )
 
         if not inplace:
             return mt_data
@@ -333,7 +335,9 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    rot_mt_obj, compute_relative_location=False
+                )
             else:
                 mt_obj.rotation_angle = rotation_angle
 
@@ -432,8 +436,12 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
-            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
+            mt_obj.compute_model_z_errors(
+                **self.z_model_error.error_parameters
+            )
+            mt_obj.compute_model_t_errors(
+                **self.t_model_error.error_parameters
+            )
 
     def estimate_starting_rho(self):
         """
@@ -553,10 +561,10 @@ class MTData(OrderedDict, MTStations):
         modem_data = Data(**kwargs)
         mdf = modem_data.read_data_file(data_filename)
         if file_type in ["data"]:
-            mdf["survey"] = "data"
+            mdf._mt_dataframe.dataframe["survey"] = "data"
         elif file_type in ["response", "model"]:
-            mdf["survey"] = "model"
-        self.from_dataframe(mdf)
+            mdf._mt_dataframe.dataframe["survey"] = "model"
+        self.from_dataframe(mdf.dataframe)
         self.z_model_error = ModelErrors(
             mode="impedance", **modem_data.z_model_error.error_parameters
         )
