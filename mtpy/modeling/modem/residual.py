@@ -15,6 +15,7 @@ revised by AK 2017 to bring across functionality from ak branch
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from .data import Data
 
@@ -113,126 +114,30 @@ class Residual(Data):
         for col in ["zxx", "zxy", "zyx", "zyy", "tzx", "tzy"]:
             with np.errstate(divide="ignore", invalid="ignore"):
                 self.dataframe[f"rms_{col}"] = np.abs(self.dataframe[col]) / (
-                    np.real(self.dataframe[f"{col}_error"]) * np.sqrt(2)
+                    np.real(self.dataframe[f"{col}_model_error"]) * np.sqrt(2)
                 )
 
-    def calculate_residual_from_data(
-        self, data_fn=None, resp_fn=None, save_fn_basename=None, save=True
-    ):
-        """
-        created by ak on 26/09/2017
+    @property
+    def rms_by_period_all(self):
+        if self.dataframe is not None:
+            rms_list = []
+            for period in self.dataframe.period.unique():
+                z_df = self.dataframe.loc[
+                    self.dataframe.period == period,
+                    ["rms_zxx", "rms_zxy", "rms_zyx", "rms_zyy"],
+                ]
+                t_df = self.dataframe.loc[
+                    self.dataframe.period == period, ["rms_tzx", "rms_tzy"]
+                ]
+                rms_list.append(
+                    {
+                        "period": period,
+                        "z_rms": np.nanmean(z_df),
+                        "t_rms": np.nanmean(t_df),
+                    }
+                )
 
-        :param data_fn:
-        :param resp_fn:
-        :return:
-        """
-
-        data_obj = self._read_data_file(data_fn=data_fn)
-        resp_obj = self._read_resp_file(resp_fn=resp_fn)
-
-        # inherit station locations object
-        self.station_locations = data_obj.station_locations
-
-        for comp in ["z", "tip"]:
-            data_obj.data_array[comp] = (
-                data_obj.data_array[comp] - resp_obj.data_array[comp]
-            )
-
-        self._make_blank_residual_array(data_obj.data_array)
-
-        self._make_blank_rms_array(data_obj.data_array)
-        self.get_rms()
-
-        if save:
-            if save_fn_basename is None:
-                save_fn_basename = data_obj.fn_basename[:-3] + ".res"
-            print("writing to file", save_fn_basename)
-            data_obj.write_data_file(
-                fill=False, compute_error=False, fn_basename=save_fn_basename
-            )
-
-    def _make_blank_rms_array(self, data_array):
-
-        r_shape = data_array["z"].shape[1:2]
-
-        rdtype = [
-            ("station", "|U10"),
-            ("lat", np.float),
-            ("lon", np.float),
-            ("elev", np.float),
-            ("rel_east", np.float),
-            ("rel_north", np.float),
-            ("east", np.float),
-            ("north", np.float),
-            ("zone", "|S4"),
-            ("rms", np.float),
-            ("rms_z", np.float),
-            ("rms_tip", np.float),
-            ("rms_period", (np.float, r_shape)),
-            ("rms_z_period", (np.float, r_shape)),
-            ("rms_tip_period", (np.float, r_shape)),
-            ("rms_z_component", (np.float, (2, 2))),
-            ("rms_tip_component", (np.float, (1, 2))),
-            ("rms_z_component_period", (np.float, (r_shape[0], 2, 2))),
-            ("rms_tip_component_period", (np.float, (r_shape[0], 1, 2))),
-        ]
-
-        self.rms_array = np.zeros(data_array.shape[0], dtype=rdtype)
-
-        for name in self.rms_array.dtype.names:
-            if name in data_array.dtype.names:
-                self.rms_array[name] = data_array[name]
-
-    def _make_blank_residual_array(self, data_array):
-
-        self.residual_array = data_array.copy()
-
-    def _read_data_file(self, data_fn=None):
-        """
-        created by ak on 26/09/2017
-
-        :param data_fn:
-        :return:
-        """
-        if data_fn is not None:
-            self.data_fn = data_fn
-            data_obj = Data()
-            data_obj.read_data_file(self.data_fn)
-        else:
-            raise Exception("Cannot read data, please provide data_fn")
-
-        # pass relevant arguments through residual object
-        for att in [
-            "center_position_EN",
-            "data_period_list",
-            "wave_sign_impedance",
-            "wave_sign_tipper",
-        ]:
-            if hasattr(data_obj, att):
-                setattr(self, att, getattr(data_obj, att))
-
-        return data_obj
-
-    def _read_resp_file(self, resp_fn=None):
-        if resp_fn is not None:
-            self.resp_fn = resp_fn
-            resp_obj = Data()
-            resp_obj.read_data_file(self.resp_fn)
-        else:
-            print("Cannot read data, please provide data_fn")
-            return
-
-        # pass relevant arguments through residual object
-        for att in [
-            "center_position_EN",
-            "data_period_list",
-            "wave_sign_impedance",
-            "wave_sign_tipper",
-        ]:
-            if hasattr(resp_obj, att):
-                setattr(self, att, getattr(resp_obj, att))
-
-        return resp_obj
+            return pd.DataFrame(rms_list)
 
     def get_rms(self, residual_fn=None):
 
@@ -392,43 +297,43 @@ class Residual(Data):
                         / np.isfinite(res_vals_cpt[:, :, i, j])
                     ) ** 0.5
 
-    def write_rms_to_file(self):
-        """
-        write rms station data to file
-        """
+    # def write_rms_to_file(self):
+    #     """
+    #     write rms station data to file
+    #     """
 
-        fn = op.join(self.work_dir, "rms_values.dat")
+    #     fn = op.join(self.work_dir, "rms_values.dat")
 
-        if not hasattr(self, "rms"):
-            self.get_rms()
+    #     if not hasattr(self, "rms"):
+    #         self.get_rms()
 
-        header_list = [
-            "station",
-            "lon",
-            "lat",
-            "rel_east",
-            "rel_north",
-            "rms",
-            "rms_z",
-            "rms_tip",
-        ]
+    #     header_list = [
+    #         "station",
+    #         "lon",
+    #         "lat",
+    #         "rel_east",
+    #         "rel_north",
+    #         "rms",
+    #         "rms_z",
+    #         "rms_tip",
+    #     ]
 
-        dtype = []
-        for val in header_list:
-            if val == "station":
-                dtype.append((val, "S10"))
-            else:
-                dtype.append((val, np.float))
+    #     dtype = []
+    #     for val in header_list:
+    #         if val == "station":
+    #             dtype.append((val, "S10"))
+    #         else:
+    #             dtype.append((val, np.float))
 
-        save_list = np.zeros(len(self.rms_array), dtype=dtype)
-        for val in header_list:
-            save_list[val] = self.rms_array[val]
+    #     save_list = np.zeros(len(self.rms_array), dtype=dtype)
+    #     for val in header_list:
+    #         save_list[val] = self.rms_array[val]
 
-        header = " ".join(header_list)
+    #     header = " ".join(header_list)
 
-        np.savetxt(
-            fn,
-            save_list,
-            header=header,
-            fmt=["%s", "%.6f", "%.6f", "%.1f", "%.1f", "%.3f", "%.3f", "%.3f"],
-        )
+    #     np.savetxt(
+    #         fn,
+    #         save_list,
+    #         header=header,
+    #         fmt=["%s", "%.6f", "%.6f", "%.1f", "%.1f", "%.3f", "%.3f", "%.3f"],
+    #     )
