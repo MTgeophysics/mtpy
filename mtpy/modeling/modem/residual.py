@@ -89,7 +89,7 @@ class Residual(Data):
         self.color_dict = {
             "rms_z": (0, 162 / 255, 255 / 255),
             "rms_t": (255 / 255, 162 / 255, 0),
-            "rms_zxx": (84 / 255, 215 / 255, 193 / 255),
+            "rms_zxx": (136 / 255, 235 / 255, 193 / 255),
             "rms_zxy": (84 / 255, 189 / 255, 215 / 255),
             "rms_zyx": (136 / 255, 84 / 255, 215 / 255),
             "rms_zyy": (206 / 255, 84 / 255, 215 / 255),
@@ -220,7 +220,9 @@ class Residual(Data):
             color=color_list,
             xlabel="Period (s)",
             ylabel="normalized RMS",
+            grid=True,
             **kwargs,
         )
+        ax.set_axisbelow(True)
 
         return ax

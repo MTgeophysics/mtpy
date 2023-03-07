@@ -95,6 +95,12 @@ class MTDataFrame:
             ("ptyy", float),
             ("ptyy_error", float),
             ("ptyy_model_error", float),
+            ("rms_zxx", float),
+            ("rms_zxy", float),
+            ("rms_zyx", float),
+            ("rms_zyy", float),
+            ("rms_tzx", float),
+            ("rms_tzy", float),
         ]
 
         if data is not None:
