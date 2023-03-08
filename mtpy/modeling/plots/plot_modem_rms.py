@@ -19,6 +19,7 @@ from matplotlib import colors as colors
 from matplotlib import colorbar as mcb
 from matplotlib import cm
 from matplotlib import gridspec
+from matplotlib import ticker
 
 try:
     import contextily as cx
@@ -38,7 +39,7 @@ class PlotRMS(PlotBaseMaps):
         super().__init__(**kwargs)
 
         self.dataframe = dataframe
-        self.dx = 0.0075
+        self.dx = 0.035
         self.rms_min = 0
         self.rms_max = 5
         self.rms_step = 0.5
@@ -230,6 +231,7 @@ class PlotRMS(PlotBaseMaps):
 
             df = pd.DataFrame(rms_list)
             df = df.set_index("period")
+            df = df.sort_index()
 
             return df
 
@@ -260,6 +262,7 @@ class PlotRMS(PlotBaseMaps):
 
             df = pd.DataFrame(rms_list)
             df = df.set_index("station")
+            df = df.sort_index()
 
             return df
 
@@ -293,6 +296,10 @@ class PlotRMS(PlotBaseMaps):
         ax.set_xticklabels(
             [f"{float(x.get_text()):.4g}" for x in ax.get_xticklabels()]
         )
+        ax.tick_params(left=True)
+        # ticks_loc = ax.get_yticks().tolist()
+        # ax.yaxis.set_major_locator(ticker.FixedLocator(ticks_loc))
+        # ax.set_yticklabels([f"{x:.1f}" for x in ticks_loc])
 
         return ax
 
@@ -321,6 +328,12 @@ class PlotRMS(PlotBaseMaps):
             grid=True,
             ax=self.ax3,
         )
+
+        ax.tick_params(left=True)
+        # ticks_loc = ax.get_yticks().tolist()
+        # ax.yaxis.set_major_locator(ticker.FixedLocator(ticks_loc))
+        # ax.set_yticklabels([f"{x:.1f}" for x in ticks_loc])
+
         ax.set_axisbelow(True)
 
         return ax
