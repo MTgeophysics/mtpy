@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from pyproj import CRS
 import geopandas as gpd
+from scipy import stats
 
 from mtpy.core.mt_location import MTLocation
 from mtpy.utils.mtpy_logger import get_mtpy_logger
@@ -621,6 +622,82 @@ class MTStations:
 
         self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
         return vtk_fn
+
+    def _generate_profile(self, units="deg"):
+        """
+        Estimate a profile from the data
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if units == "deg":
+            x = self.station_locations.longitude
+            y = self.station_locations.latitude
+
+        elif units == "m":
+            if self.utm_crs is not None:
+                x = self.station_locations.east
+                y = self.station_locations.north
+            else:
+                raise ValueError("Must input a UTM CRS or EPSG")
+
+        # check regression for 2 profile orientations:
+        # horizontal (N=N(E)) or vertical(E=E(N))
+        # use the one with the lower standard deviation
+        profile1 = stats.linregress(x, y)
+        profile2 = stats.linregress(y, x)
+        # if the profile is rather E=E(N), the parameters have to converted
+        # into N=N(E) form:
+        if profile2.stderr < profile1.stderr:
+            profile_line = {
+                "slope": 1.0 / profile2.slope,
+                "intercept": -profile2.intercept / profile2.slope,
+            }
+        else:
+            profile_line = {
+                "slope": profile_line[0],
+                "intercept": profile_line[1],
+            }
+
+        x1 = x.min()
+        x2 = x.max()
+        y1 = profile_line["slope"] * x1 + profile_line["intercept"]
+        y2 = profile_line["slope"] * x2 + profile_line["intercept"]
+
+        return x1, y1, x2, y2, profile_line
+
+    def _generate_profile_from_strike(self, strike, units="deg"):
+        """
+        Estimate a profile line from a given geoelectric strike
+
+        :param units: DESCRIPTION, defaults to "deg"
+        :type units: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if units == "deg":
+            x = self.station_locations.longitude
+            y = self.station_locations.latitude
+
+        elif units == "m":
+            if self.utm_crs is not None:
+                x = self.station_locations.east
+                y = self.station_locations.north
+            else:
+                raise ValueError("Must input a UTM CRS or EPSG")
+
+        profile_line = {"slope": strike}
+        profile_line["intercept"] = y.min() - profile_line["slope"] * x.min()
+
+        x1 = x.min()
+        x2 = x.max()
+        y1 = profile_line["slope"] * x1 + profile_line["intercept"]
+        y2 = profile_line["slope"] * x2 + profile_line["intercept"]
+
+        return x1, y1, x2, y2, profile_line
 
     def _extract_profile(self, x1, y1, x2, y2, radius):
         """
