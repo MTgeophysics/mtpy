@@ -17,6 +17,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colors as colors
 from matplotlib import colorbar as mcb
+from matplotlib import cm
 from matplotlib import gridspec
 
 try:
@@ -37,7 +38,13 @@ class PlotRMS(PlotBaseMaps):
         super().__init__(**kwargs)
 
         self.dataframe = dataframe
-        self.dx = 0.00180
+        self.dx = 0.0075
+        self.rms_min = 0
+        self.rms_max = 5
+        self.rms_step = 0.5
+        self.plot_station = True
+        self.station_id = None
+        self.stack_bottom = False
 
         self.comp_list = [
             "rms_zxx",
@@ -48,12 +55,12 @@ class PlotRMS(PlotBaseMaps):
             "rms_tzy",
         ]
         self.distance_multiplier = [
-            (0, 0),
-            (0, 1),
-            (1, 0),
-            (1, 1),
-            (2, 0),
-            (2, 1),
+            (-0.5, 1),
+            (0.5, 1),
+            (-0.5, 0),
+            (0.5, 0),
+            (-0.5, -1),
+            (0.5, -1),
         ]
 
         self.color_dict = {
@@ -78,19 +85,14 @@ class PlotRMS(PlotBaseMaps):
             "rms_tzy": "T_{zy}$",
         }
 
-        rms_cmap_dict = {
-            "red": ((0.0, 1.0, 1.0), (0.2, 1.0, 1.0), (1.0, 0.0, 0.0)),
-            "green": ((0.0, 0.0, 0.0), (0.2, 1.0, 1.0), (1.0, 0.0, 0.0)),
-            "blue": ((0.0, 0.0, 0.0), (0.2, 1.0, 1.0), (1.0, 0.0, 0.0)),
-        }
-        self.rms_cmap = colors.LinearSegmentedColormap(
-            "rms_cmap", rms_cmap_dict, 256
-        )
+        self.rms_cmap = "jet"
 
         self.subplot_left = 0.05
         self.subplot_right = 0.99
         self.subplot_bottom = 0.09
         self.subplot_top = 0.99
+
+        self.box_size = 30
 
         self.cx_source = None
         self.cx_zoom = None
@@ -126,6 +128,21 @@ class PlotRMS(PlotBaseMaps):
                 f"Input must be a dataframe or MTDataFrame object not {type(df)}"
             )
 
+    @property
+    def rms_cmap(self):
+        return self._rms_cmap
+
+    @rms_cmap.setter
+    def rms_cmap(self, value):
+        if isinstance(value, str):
+            self._rms_cmap = cm.get_cmap(value)
+
+        elif isinstance(value, colors.LinearSegmentedColormap):
+            self._rms_cmap = value
+
+        else:
+            self._rms_cmap = cm.get_cmap("jet")
+
     def _plot_rms_map(self):
         """
         plot rms map
@@ -135,21 +152,36 @@ class PlotRMS(PlotBaseMaps):
 
         """
 
+        cb_norm = colors.BoundaryNorm(
+            np.arange(
+                self.rms_min, self.rms_max + self.rms_step, self.rms_step
+            ),
+            self.rms_cmap.N,
+        )
+
         for dm, comp in zip(self.distance_multiplier, self.comp_list):
             for station in self.dataframe.station.unique():
 
                 sdf = self._mt_dataframe.get_station_df(station)
                 rms = sdf[comp].mean()
                 self.ax1.scatter(
-                    sdf.longitude.iloc[0] + (self.dx * (dm[0])),
-                    sdf.latitude.iloc[0] + (self.dx * (dm[1])),
+                    sdf.longitude.iloc[0] + (self.dx / 2) * dm[0],
+                    sdf.latitude.iloc[0] + (self.dx / 2) * dm[1],
                     c=rms,
                     marker="s",
-                    s=30,
+                    s=self.box_size,
                     edgecolors=(0, 0, 0),
                     cmap=self.rms_cmap,
-                    norm=colors.Normalize(vmin=0, vmax=5),
+                    norm=cb_norm,
                 )
+                if self.plot_station:
+                    self.ax1.text(
+                        sdf.longitude.iloc[0],
+                        sdf.latitude.iloc[0] + self.dx,
+                        station,
+                        ha="center",
+                        va="baseline",
+                    )
 
         if has_cx:
             if has_cx:
@@ -165,6 +197,9 @@ class PlotRMS(PlotBaseMaps):
                     self.logger.warning(
                         f"Could not add base map because {error}"
                     )
+
+        cb_ax, _ = mcb.make_axes(self.ax1, shrink=0.5)
+        cb = mcb.ColorbarBase(cb_ax, cmap=self.rms_cmap, norm=cb_norm)
 
     @property
     def rms_per_period_all(self):
@@ -255,6 +290,10 @@ class PlotRMS(PlotBaseMaps):
         )
         ax.set_axisbelow(True)
 
+        ax.set_xticklabels(
+            [f"{float(x.get_text()):.4g}" for x in ax.get_xticklabels()]
+        )
+
         return ax
 
     def _plot_by_station(self):
@@ -287,16 +326,19 @@ class PlotRMS(PlotBaseMaps):
         return ax
 
     def _get_subplots(self, fig):
-        gs1 = gridspec.GridSpec(2, 2, hspace=0.25, wspace=0.075)
-        gs2 = gridspec.GridSpecFromSubplotSpec(
-            4, 1, subplot_spec=gs1[1, 0], hspace=0.01, wspace=0.01
-        )
-        gs3 = gridspec.GridSpecFromSubplotSpec(
-            4, 1, subplot_spec=gs1[1, 1], hspace=0.01, wspace=0.01
-        )
-        self.ax1 = fig.add_subplot(gs1[0, :], aspect="equal")
-        self.ax2 = fig.add_subplot(gs1[1, 0])
-        self.ax3 = fig.add_subplot(gs1[1, 1], sharey=self.ax2)
+
+        if self.stack_bottom:
+            gs1 = gridspec.GridSpec(2, 2, hspace=0.25, wspace=0.075)
+
+            self.ax1 = fig.add_subplot(gs1[0, :], aspect="equal")
+            self.ax2 = fig.add_subplot(gs1[1, 0])
+            self.ax3 = fig.add_subplot(gs1[1, 1], sharey=self.ax2)
+        else:
+            gs1 = gridspec.GridSpec(2, 2, hspace=0.35, wspace=0.075)
+
+            self.ax1 = fig.add_subplot(gs1[:, 0], aspect="equal")
+            self.ax2 = fig.add_subplot(gs1[0, 1])
+            self.ax3 = fig.add_subplot(gs1[1, 1], sharey=self.ax2)
 
     def plot(self, **kwargs):
         """
