@@ -96,6 +96,7 @@ class PlotMultipleResponses(PlotBase):
         self.arrow_head_length = 0.03
         self.arrow_head_width = 0.03
         self.arrow_lw = 0.5
+        self.plot_model_error = None
 
         # ellipse_properties
         self.ellipse_size = 0.25
@@ -560,9 +561,12 @@ class PlotMultipleResponses(PlotBase):
         cyx = [(1, float(cc) / ns, 0) for cc in range(ns)]
         cdet = [(0, 1 - float(cc) / ns, 0) for cc in range(ns)]
         ctipr = [
-            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns) for cc in range(ns)
+            (0.75 * cc / ns, 0.75 * cc / ns, 0.75 * cc / ns)
+            for cc in range(ns)
         ]
-        ctipi = [(float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)]
+        ctipi = [
+            (float(cc) / ns, 1 - float(cc) / ns, 0.25) for cc in range(ns)
+        ]
 
         # make marker lists for the different components
         mxy = ["s", "D", "x", "+", "*", "1", "3", "4"] * ns
@@ -768,6 +772,7 @@ class PlotMultipleResponses(PlotBase):
         plot the apparent resistivity and phase
         """
 
+        plt.clf()
         self.subplot_right = 0.98
         self._set_subplot_params()
 
