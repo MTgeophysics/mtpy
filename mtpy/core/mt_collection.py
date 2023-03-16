@@ -317,7 +317,7 @@ class MTCollection:
                 f"filename must be a string or Path not {type(filename)}"
             )
         mt_object = MT(filename)
-        mt_object.read_tf_file()
+        mt_object.read()
 
         self._from_mt_object(mt_object)
 
