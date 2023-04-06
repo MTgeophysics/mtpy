@@ -729,6 +729,9 @@ class MTStations:
             x2 = point_2.east
             y2 = point_2.north
 
+        if radius is None:
+            radius = 1e12
+
         def distance(x, y):
             return np.abs(
                 (x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y1)
