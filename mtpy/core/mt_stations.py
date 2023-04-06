@@ -623,7 +623,7 @@ class MTStations:
         self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
         return vtk_fn
 
-    def _generate_profile(self, units="deg"):
+    def generate_profile(self, units="deg"):
         """
         Estimate a profile from the data
         :return: DESCRIPTION
@@ -656,8 +656,8 @@ class MTStations:
             }
         else:
             profile_line = {
-                "slope": profile_line[0],
-                "intercept": profile_line[1],
+                "slope": profile1.slope,
+                "intercept": profile1.intercept,
             }
 
         x1 = x.min()
@@ -667,7 +667,7 @@ class MTStations:
 
         return x1, y1, x2, y2, profile_line
 
-    def _generate_profile_from_strike(self, strike, units="deg"):
+    def generate_profile_from_strike(self, strike, units="deg"):
         """
         Estimate a profile line from a given geoelectric strike
 
@@ -689,7 +689,7 @@ class MTStations:
             else:
                 raise ValueError("Must input a UTM CRS or EPSG")
 
-        profile_line = {"slope": strike}
+        profile_line = {"slope": np.arctan(np.deg2rad(90 - strike))}
         profile_line["intercept"] = y.min() - profile_line["slope"] * x.min()
 
         x1 = x.min()
