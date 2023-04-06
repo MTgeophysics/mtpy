@@ -40,6 +40,7 @@ class MTDataFrame:
             ("model_east", float),
             ("model_north", float),
             ("model_elevation", float),
+            ("profile_offset", float),
             ("period", float),
             ("zxx", complex),
             ("zxx_error", float),
@@ -461,6 +462,23 @@ class MTDataFrame:
                 "model_elevation",
             ] = value
 
+    @property
+    def profile_offset(self):
+        """profile_offset"""
+        if self._has_data():
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "profile_offset"
+            ].unique()[0]
+
+    @profile_offset.setter
+    def profile_offset(self, value):
+        """profile_offset"""
+        if self._has_data():
+            self.dataframe.loc[
+                self.dataframe.station == self.station,
+                "profile_offset",
+            ] = value
+
     def from_z_object(self, z_object):
         """
         Fill impedance
@@ -593,9 +611,7 @@ class MTDataFrame:
                 if t_object._has_tf_model_error():
                     self.dataframe.loc[
                         self.dataframe.station == self.station, key
-                    ] = t_object.tipper_model_error[
-                        :, index["ii"], index["jj"]
-                    ]
+                    ] = t_object.tipper_model_error[:, index["ii"], index["jj"]]
 
     def to_z_object(self):
         """
@@ -661,9 +677,7 @@ class MTDataFrame:
                 "res_yx_model_error",
                 "res_yy_model_error",
             ]:
-                res_model_err[
-                    :, index["ii"], index["jj"]
-                ] = self.dataframe.loc[
+                res_model_err[:, index["ii"], index["jj"]] = self.dataframe.loc[
                     self.dataframe.station == self.station, key
                 ]
 

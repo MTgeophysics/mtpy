@@ -27,6 +27,7 @@ for edi_fn in edi_list:
 
     md.add_station(mt_obj)
 
+md.utm_epsg = 32611
 
 ## generate a profile based on station locations
 x1, y1, x2, y2, profile_from_stations = md.generate_profile()
@@ -42,3 +43,18 @@ x1, y1, x2, y2, profile_from_strike = profile_md.generate_profile_from_strike(
 
 ## get stations
 strike_md = profile_md.get_profile(x1, y1, x2, y2, None)
+
+## rotate data to geoelectric strike
+strike_md.rotate(70)
+
+## compute model errors
+strike_md.compute_model_errors(
+    z_error_value=5,
+    z_error_type="row",
+    z_floor=True,
+    t_error_value=0.05,
+    t_error_type="abs",
+    t_floor=True,
+)
+
+df = strike_md.to_dataframe()

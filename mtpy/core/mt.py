@@ -93,16 +93,22 @@ class MT(TF, MTLocation):
         """
 
         if inplace:
-            self.Z = self.Z.rotate(theta_r)
-            self.Tipper = self.Tipper.rotate(theta_r)
+            if self.has_impedance():
+                self.Z = self.Z.rotate(theta_r)
+            if self.has_tipper():
+                self.Tipper = self.Tipper.rotate(theta_r)
+
+            self._rotation_angle = theta_r
 
             self.logger.info(
                 f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
             )
         else:
             new_m = self.clone_empty()
-            new_m.Z = self.Z.rotate(theta_r)
-            new_m.Tipper = self.Tipper.rotate(theta_r)
+            if self.has_impedance():
+                new_m.Z = self.Z.rotate(theta_r)
+            if self.has_tipper():
+                new_m.Tipper = self.Tipper.rotate(theta_r)
             new_m._rotation_angle = self._rotation_angle
             return new_m
 
@@ -478,6 +484,7 @@ class MT(TF, MTLocation):
         mt_df.model_east = self.model_east
         mt_df.model_north = self.model_north
         mt_df.model_elevation = self.model_elevation
+        mt_df.profile_offset = self.profile_offset
 
         mt_df.dataframe.loc[:, "period"] = self.period
         if self.has_impedance():
@@ -520,6 +527,7 @@ class MT(TF, MTLocation):
             "model_north",
             "model_east",
             "model_elevation",
+            "profile_offset",
         ]:
             try:
                 setattr(self, key, getattr(mt_df, key))
