@@ -16,7 +16,7 @@ with open("HISTORY.rst") as history_file:
 requirements = [
     "numpy",
     "scipy",
-    "matplotlib",
+    "matplotlib<=3.5.3",
     "pyyaml",
     "pyproj",
     "configparser",
@@ -25,7 +25,7 @@ requirements = [
     "pandas",
     "geopandas",
     "contextily",
-    "pyevtk"
+    "pyevtk",
 ]
 
 setup_requirements = [
@@ -68,4 +68,3 @@ setup(
     zip_safe=False,
     package_data={"": ["mtpy/utils/epsg.npy"]},
 )
-
