@@ -345,30 +345,32 @@ class PlotBaseMaps(PlotBase):
             np.array(
                 [
                     [
-                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zxx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zxy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
                         * tf.z_interp_dict["zxy"]["imag"](
                             1.0 / self.plot_period
                         )[0],
                     ],
                     [
-                        tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zyx"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
                         * tf.z_interp_dict["zyx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zyy"]["real"](
+                            1.0 / self.plot_period
+                        )[0]
                         + 1j
                         * tf.z_interp_dict["zyy"]["imag"](
                             1.0 / self.plot_period
@@ -630,6 +632,7 @@ class PlotBaseProfile(PlotBase):
         """
 
         if np.any(self.mt_data.station_locations.profile_offset != 0):
+            print("already has offsets")
             return
 
         if x is None and y is None:
@@ -639,6 +642,7 @@ class PlotBaseProfile(PlotBase):
             for ii, tf in enumerate(self.mt_data.values()):
                 x[ii] = tf.longitude
                 y[ii] = tf.latitude
+            print(x, y)
 
         elif x is None or y is None:
             raise ValueError("get_profile")

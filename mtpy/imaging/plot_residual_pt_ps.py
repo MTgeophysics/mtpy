@@ -105,6 +105,7 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
         self.freq_list = frequencies
         self.mt_data_01 = mt_data_01
         self.mt_data_02 = mt_data_02
+        self.mt_data = mt_data_01
 
         self.ellipse_range = (0, 25)
         self.ellipse_cmap = "mt_yl2rd"
@@ -222,11 +223,11 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
             mt1 = match[0]
             mt2 = match[1]
 
-            new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
-            new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
+            new_mt1 = mt1.interpolate(self.freq_list, bounds_error=False)
+            new_mt2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
             # compute residual phase tensor
-            rpt = ResidualPhaseTensor(new_z1.pt, new_z2.pt)
+            rpt = ResidualPhaseTensor(new_mt1.pt, new_mt2.pt)
 
             # add some attributes to residual phase tensor object
             rpt.station = mt1.station
@@ -277,24 +278,28 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
                         self.logger.info("-" * 50)
                         self.logger.info(mt1.station)
                         self.logger.info(f"freq_index for 1:  {f_index}")
-                        self.logger.info(f"frequency looking for:  {frequency}")
+                        self.logger.info(
+                            f"frequency looking for:  {frequency}"
+                        )
                         self.logger.info(f"index in big    :  {aa}")
                         self.logger.info(f"index in 1      :  {rr}")
                         self.logger.info(
                             f"len_1 = {len(mt1.frequency)}, len_2 = {len(mt2.frequency)}"
                         )
-                        self.logger.info(f"len rpt_freq = {len(rpt.frequency)}")
+                        self.logger.info(
+                            f"len rpt_freq = {len(rpt.frequency)}"
+                        )
                 except KeyError:
                     self.logger.info(
                         f"Station {mt1.station} does not have {frequency:.5f}Hz"
                     )
 
         # get profile line
-        self._get_profile_line(x=self.rpt_array["lon"], y=self.rpt_array["lat"])
+        self._get_profile_line()
 
         # get offsets
-        for rpt in self.rpt_array:
-            rpt["offset"] = self._get_offset(x=rpt["lon"], y=rpt["lat"])
+        for rpt, mt_obj in zip(self.rpt_array, self.mt_data.values()):
+            rpt["offset"] = self._get_offset(mt_obj)
 
         # from the data get the relative offsets and sort the data by them
         self.rpt_array.sort(order=["offset"])
@@ -350,7 +355,8 @@ class PlotResidualPTPseudoSection(PlotBaseProfile):
             color_array = rpt_array["phimax"]
 
         elif (
-            self.ellipse_colorby == "skew" or self.ellipse_colorby == "skew_seg"
+            self.ellipse_colorby == "skew"
+            or self.ellipse_colorby == "skew_seg"
         ):
             color_array = rpt_array["skew"]
 
