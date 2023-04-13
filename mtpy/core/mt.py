@@ -17,7 +17,11 @@ from mtpy.core import Z, Tipper
 from mtpy.core.mt_location import MTLocation
 from mtpy.core.mt_dataframe import MTDataFrame
 
-from mtpy.imaging import PlotMTResponse, PlotPhaseTensor, PlotPenetrationDepth1D
+from mtpy.imaging import (
+    PlotMTResponse,
+    PlotPhaseTensor,
+    PlotPenetrationDepth1D,
+)
 from mtpy.modeling.errors import ModelErrors
 
 
@@ -388,25 +392,27 @@ class MT(TF, MTLocation):
                 )
 
         new_m = self.clone_empty()
-        new_m.Z = self.Z.interpolate(
-            1.0 / new_frequency, method=method, **kwargs
-        )
-        if np.all(np.isnan(new_m.Z.z)) and self.has_impedance():
+        if self.has_impedance():
+            new_m.Z = self.Z.interpolate(
+                1.0 / new_frequency, method=method, **kwargs
+            )
+            if np.all(np.isnan(new_m.Z.z)) and self.has_impedance():
 
-            self.logger.warning(
-                f"Station {self.station}: Interpolated Z values are all NaN, "
-                "consider an alternative interpolation method. "
-                "See scipy.interpolate.interp1d for more invormation."
+                self.logger.warning(
+                    f"Station {self.station}: Interpolated Z values are all NaN, "
+                    "consider an alternative interpolation method. "
+                    "See scipy.interpolate.interp1d for more invormation."
+                )
+        if self.has_tipper():
+            new_m.Tipper = self.Tipper.interpolate(
+                1.0 / new_frequency, method=method, **kwargs
             )
-        new_m.Tipper = self.Tipper.interpolate(
-            1.0 / new_frequency, method=method, **kwargs
-        )
-        if np.all(np.isnan(new_m.Tipper.tipper)) and self.has_tipper():
-            self.logger.warning(
-                f"Station {self.station}: Interpolated T values are all NaN, "
-                "consider an alternative interpolation method. "
-                "See scipy.interpolate.interp1d for more invormation."
-            )
+            if np.all(np.isnan(new_m.Tipper.tipper)) and self.has_tipper():
+                self.logger.warning(
+                    f"Station {self.station}: Interpolated T values are all NaN, "
+                    "consider an alternative interpolation method. "
+                    "See scipy.interpolate.interp1d for more invormation."
+                )
 
         return new_m
 
