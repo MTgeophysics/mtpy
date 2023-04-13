@@ -231,11 +231,13 @@ class PlotResidualPTMaps(PlotBase):
         two_found = []
         for key, mt1 in one.items():
             station_find = False
+            station_id = key.split(".")[1]
             try:
-                mt2 = two[key]
+                mt2 = two.get_station(station_id=station_id)
                 matches.append([mt1, mt2])
                 station_find = True
                 two_found.append(mt2.tf_id)
+
             except KeyError:
                 for mt2 in two.values():
                     if mt2.tf_id in two_found:
@@ -286,19 +288,17 @@ class PlotResidualPTMaps(PlotBase):
         )
 
         self.residual_pt_list = []
-        freq_dict = dict(
-            [(np.round(ff, 5), ii) for ii, ff in enumerate(self.freq_list)]
-        )
 
         for mm, match in enumerate(matches):
             mt1 = match[0]
             mt2 = match[1]
 
-            new_z1, new_t1 = mt1.interpolate(self.freq_list, bounds_error=False)
-            new_z2, new_t2 = mt2.interpolate(self.freq_list, bounds_error=False)
+            new_1 = mt1.interpolate(self.freq_list, bounds_error=False)
+            new_2 = mt2.interpolate(self.freq_list, bounds_error=False)
 
             # compute residual phase tensor
-            rpt = ResidualPhaseTensor(new_z1.pt, new_z2.pt)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                rpt = ResidualPhaseTensor(new_1.pt, new_2.pt)
 
             # add some attributes to residual phase tensor object
             rpt.station = mt1.station
@@ -316,51 +316,13 @@ class PlotResidualPTMaps(PlotBase):
             self.rpt_array[mm]["lon"] = mt1.longitude
             self.rpt_array[mm]["elev"] = mt1.elevation
 
-            rpt_fdict = dict(
-                [
-                    (np.round(key, 5), value)
-                    for value, key in enumerate(rpt.frequency)
-                ]
+            self.rpt_array[mm]["phimin"][:] = np.abs(rpt.residual_pt.phimin)
+            self.rpt_array[mm]["phimax"][:] = np.abs(rpt.residual_pt.phimax)
+            self.rpt_array[mm]["skew"][:] = rpt.residual_pt.beta
+            self.rpt_array[mm]["azimuth"][:] = rpt.residual_pt.azimuth
+            self.rpt_array[mm]["geometric_mean"][:] = np.sqrt(
+                np.abs(rpt.residual_pt.phimin * rpt.residual_pt.phimax)
             )
-            for f_index, frequency in enumerate(rpt.frequency):
-                aa = freq_dict[np.round(frequency, 5)]
-                try:
-                    try:
-                        rr = rpt_fdict[np.round(frequency, 5)]
-
-                        self.rpt_array[mm]["phimin"][aa] = abs(
-                            rpt.residual_pt.phimin[rr]
-                        )
-                        self.rpt_array[mm]["phimax"][aa] = abs(
-                            rpt.residual_pt.phimax[rr]
-                        )
-                        self.rpt_array[mm]["skew"][aa] = rpt.residual_pt.beta[
-                            rr
-                        ]
-                        self.rpt_array[mm]["azimuth"][
-                            aa
-                        ] = rpt.residual_pt.azimuth[rr]
-                        self.rpt_array[mm]["geometric_mean"][aa] = np.sqrt(
-                            abs(
-                                rpt.residual_pt.phimin[rr]
-                                * rpt.residual_pt.phimax[rr]
-                            )
-                        )
-                    except IndexError:
-                        self.logger.info("-" * 50)
-                        self.logger.info(mt1.station)
-                        self.logger.info(f"freq_index for 1:  {f_index}")
-                        self.logger.info(f"frequency looking for:  {frequency}")
-                        self.logger.info(f"index in big    :  {aa}")
-                        self.logger.info(f"index in 1      :  {rr}")
-                        self.logger.info(
-                            f"len_1 = {len(mt1.frequency)}, len_2 = {len(mt2.frequency)}"
-                        )
-                        self.logger.info(f"len rpt_freq = {len(rpt.frequency)}")
-                except KeyError:
-                    self.logger.info(
-                        f"Station {mt1.station} does not have {frequency:.5f}Hz"
-                    )
 
         # from the data get the relative offsets and sort the data by them
         self.rpt_array.sort(order=["lon", "lat"])
@@ -460,7 +422,7 @@ class PlotResidualPTMaps(PlotBase):
 
     def _get_ellipse_max(self):
         if self.ellipse_scale is None:
-            return self.rpt_array["phimax"].max()
+            return np.nanmax(self.rpt_array["phimax"])
         else:
             return self.ellipse_scale
 

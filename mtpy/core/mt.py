@@ -48,6 +48,14 @@ class MT(TF, MTLocation):
         new_mt_obj = MT()
         new_mt_obj.survey_metadata.update(self.survey_metadata)
         new_mt_obj.station_metadata.update(self.station_metadata)
+        new_mt_obj._datum_crs = self._datum_crs
+        new_mt_obj._utm_crs = self._utm_crs
+        new_mt_obj._east = self._east
+        new_mt_obj._north = self._north
+        new_mt_obj.model_east = self.model_east
+        new_mt_obj.model_north = self.model_north
+        new_mt_obj.model_elevation = self.model_elevation
+        new_mt_obj._rotation_angle = self._rotation_angle
 
         return new_mt_obj
 
@@ -66,8 +74,9 @@ class MT(TF, MTLocation):
 
         TODO figure this out with xarray
         """
-        self._rotation_angle = theta_r
-        self.rotate(self._rotation_angle)
+
+        self.rotate(theta_r)
+        self._rotation_angle += theta_r
 
     def rotate(self, theta_r, inplace=True):
         """
@@ -84,16 +93,23 @@ class MT(TF, MTLocation):
         """
 
         if inplace:
-            self.Z = self.Z.rotate(theta_r)
-            self.Tipper = self.Tipper.rotate(theta_r)
+            if self.has_impedance():
+                self.Z = self.Z.rotate(theta_r)
+            if self.has_tipper():
+                self.Tipper = self.Tipper.rotate(theta_r)
+
+            self._rotation_angle = theta_r
 
             self.logger.info(
                 f"Rotated transfer function by: {self._rotation_angle:.3f} degrees clockwise"
             )
         else:
             new_m = self.clone_empty()
-            new_m.Z = self.Z.rotate(theta_r)
-            new_m.Tipper = self.Tipper.rotate(theta_r)
+            if self.has_impedance():
+                new_m.Z = self.Z.rotate(theta_r)
+            if self.has_tipper():
+                new_m.Tipper = self.Tipper.rotate(theta_r)
+            new_m._rotation_angle = self._rotation_angle
             return new_m
 
     @property
@@ -321,7 +337,7 @@ class MT(TF, MTLocation):
     def interpolate(
         self,
         new_frequency,
-        method="cubic",
+        method="slinear",
         bounds_error=True,
         **kwargs,
     ):
@@ -371,14 +387,26 @@ class MT(TF, MTLocation):
                     "needs to be within the bounds of the old one."
                 )
 
-        new_z = self.Z.interpolate(1.0 / new_frequency, method=method, **kwargs)
-        new_t = self.Tipper.interpolate(
+        new_m = self.clone_empty()
+        new_m.Z = self.Z.interpolate(
             1.0 / new_frequency, method=method, **kwargs
         )
+        if np.all(np.isnan(new_m.Z.z)) and self.has_impedance():
 
-        new_m = self.clone_empty()
-        new_m.Z = new_z
-        new_m.Tipper = new_t
+            self.logger.warning(
+                f"Station {self.station}: Interpolated Z values are all NaN, "
+                "consider an alternative interpolation method. "
+                "See scipy.interpolate.interp1d for more invormation."
+            )
+        new_m.Tipper = self.Tipper.interpolate(
+            1.0 / new_frequency, method=method, **kwargs
+        )
+        if np.all(np.isnan(new_m.Tipper.tipper)) and self.has_tipper():
+            self.logger.warning(
+                f"Station {self.station}: Interpolated T values are all NaN, "
+                "consider an alternative interpolation method. "
+                "See scipy.interpolate.interp1d for more invormation."
+            )
 
         return new_m
 
@@ -444,6 +472,7 @@ class MT(TF, MTLocation):
         n_entries = self.period.size
         mt_df = MTDataFrame(n_entries=n_entries)
 
+        mt_df.survey = self.survey
         mt_df.station = self.station
         mt_df.latitude = self.latitude
         mt_df.longitude = self.longitude
@@ -455,6 +484,7 @@ class MT(TF, MTLocation):
         mt_df.model_east = self.model_east
         mt_df.model_north = self.model_north
         mt_df.model_elevation = self.model_elevation
+        mt_df.profile_offset = self.profile_offset
 
         mt_df.dataframe.loc[:, "period"] = self.period
         if self.has_impedance():
@@ -486,6 +516,7 @@ class MT(TF, MTLocation):
                 raise ValueError(error)
 
         for key in [
+            "survey",
             "station",
             "latitude",
             "longitude",
@@ -496,11 +527,14 @@ class MT(TF, MTLocation):
             "model_north",
             "model_east",
             "model_elevation",
+            "profile_offset",
         ]:
             try:
                 setattr(self, key, getattr(mt_df, key))
             except KeyError:
                 continue
+
+        self.tf_id = self.station
 
         self.Z = mt_df.to_z_object()
         self.Tipper = mt_df.to_t_object()

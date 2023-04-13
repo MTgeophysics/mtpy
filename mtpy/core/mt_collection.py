@@ -317,7 +317,7 @@ class MTCollection:
                 f"filename must be a string or Path not {type(filename)}"
             )
         mt_object = MT(filename)
-        mt_object.read_tf_file()
+        mt_object.read()
 
         self._from_mt_object(mt_object)
 
@@ -359,9 +359,24 @@ class MTCollection:
         for row in tf_df.itertuples():
             tf = self.get_tf(row.station, survey=row.survey)
 
-            mt_data.add_station(tf)
+            mt_data.add_station(tf, compute_relative_location=False)
+
+        # compute locations at the end
+        mt_data.compute_relative_locations()
 
         return mt_data
+
+    def from_mt_data(self, suffix=None):
+        """
+        TODO
+        From mt data
+        :param suffix: DESCRIPTION, defaults to None
+        :type suffix: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
         """
@@ -571,9 +586,7 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(
-                                f"wrote average file {edi_obj.fn}"
-                            )
+                            self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:

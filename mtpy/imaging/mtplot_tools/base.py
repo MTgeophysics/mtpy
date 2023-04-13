@@ -245,7 +245,6 @@ class PlotBaseMaps(PlotBase):
                 # get the non-zero components
                 z_real = tf.Z.z[nz_index, ii, jj].real
                 z_imag = tf.Z.z[nz_index, ii, jj].imag
-                z_error = tf.Z.z_error[nz_index, ii, jj]
 
                 # get the frequencies of non-zero components
                 f = tf.Z.frequency[nz_index]
@@ -257,9 +256,21 @@ class PlotBaseMaps(PlotBase):
                 interp_dict[comp]["imag"] = interpolate.interp1d(
                     f, z_imag, kind=interp_type
                 )
-                interp_dict[comp]["err"] = interpolate.interp1d(
-                    f, z_error, kind=interp_type
-                )
+
+                if tf.Z._has_tf_error():
+                    z_error = tf.Z.z_error[nz_index, ii, jj]
+                    interp_dict[comp]["err"] = interpolate.interp1d(
+                        f, z_error, kind=interp_type
+                    )
+                else:
+                    interp_dict[comp]["err"] = None
+                if tf.Z._has_tf_model_error():
+                    z_model_error = tf.Z.z_model_error[nz_index, ii, jj]
+                    interp_dict[comp]["model_err"] = interpolate.interp1d(
+                        f, z_model_error, kind=interp_type
+                    )
+                else:
+                    interp_dict[comp]["model_err"] = None
 
         return interp_dict
 
@@ -289,7 +300,6 @@ class PlotBaseMaps(PlotBase):
             # get the non-zero components
             t_real = tf.Tipper.tipper[nz_index, 0, jj].real
             t_imag = tf.Tipper.tipper[nz_index, 0, jj].imag
-            t_err = tf.Tipper.tipper_error[nz_index, 0, jj]
 
             # get the frequencies of non-zero components
             f = tf.Tipper.frequency[nz_index]
@@ -301,9 +311,22 @@ class PlotBaseMaps(PlotBase):
             interp_dict[comp]["imag"] = interpolate.interp1d(
                 f, t_imag, kind=interp_type
             )
-            interp_dict[comp]["err"] = interpolate.interp1d(
-                f, t_err, kind=interp_type
-            )
+
+            if tf.Tipper._has_tf_error():
+                t_err = tf.Tipper.tipper_error[nz_index, 0, jj]
+                interp_dict[comp]["err"] = interpolate.interp1d(
+                    f, t_err, kind=interp_type
+                )
+            else:
+                interp_dict[comp]["err"] = None
+
+            if tf.Tipper._has_tf_model_error():
+                t_model_err = tf.Tipper.tipper_model_error[nz_index, 0, jj]
+                interp_dict[comp]["model_err"] = interpolate.interp1d(
+                    f, t_model_err, kind=interp_type
+                )
+            else:
+                interp_dict[comp]["model_err"] = None
 
         return interp_dict
 
@@ -322,32 +345,30 @@ class PlotBaseMaps(PlotBase):
             np.array(
                 [
                     [
-                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[
-                            0
-                        ]
+                        tf.z_interp_dict["zxx"]["real"](1 / self.plot_period)[0]
                         + 1j
                         * tf.z_interp_dict["zxx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zxy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zxy"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zxy"]["imag"](
                             1.0 / self.plot_period
                         )[0],
                     ],
                     [
-                        tf.z_interp_dict["zyx"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zyx"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zyx"]["imag"](
                             1.0 / self.plot_period
                         )[0],
-                        tf.z_interp_dict["zyy"]["real"](
-                            1.0 / self.plot_period
-                        )[0]
+                        tf.z_interp_dict["zyy"]["real"](1.0 / self.plot_period)[
+                            0
+                        ]
                         + 1j
                         * tf.z_interp_dict["zyy"]["imag"](
                             1.0 / self.plot_period
@@ -368,28 +389,68 @@ class PlotBaseMaps(PlotBase):
         """
         if not hasattr(tf, "z_interp_dict"):
             tf.z_interp_dict = self.get_interp1d_functions_z(tf)
-        return np.nan_to_num(
-            np.array(
-                [
+        if tf.z_interp_dict["zxy"]["err"] is not None:
+            return np.nan_to_num(
+                np.array(
                     [
-                        tf.z_interp_dict["zxx"]["err"](1.0 / self.plot_period)[
-                            0
+                        [
+                            tf.z_interp_dict["zxx"]["err"](
+                                1.0 / self.plot_period
+                            )[0],
+                            tf.z_interp_dict["zxy"]["err"](
+                                1.0 / self.plot_period
+                            )[0],
                         ],
-                        tf.z_interp_dict["zxy"]["err"](1.0 / self.plot_period)[
-                            0
+                        [
+                            tf.z_interp_dict["zyx"]["err"](
+                                1.0 / self.plot_period
+                            )[0],
+                            tf.z_interp_dict["zyy"]["err"](
+                                1.0 / self.plot_period
+                            )[0],
                         ],
-                    ],
+                    ]
+                )
+            ).reshape((1, 2, 2))
+        else:
+            return np.zeros((1, 2, 2), dtype=float)
+
+    def _get_interpolated_z_model_error(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
+        if tf.z_interp_dict["zxy"]["model_err"] is not None:
+            return np.nan_to_num(
+                np.array(
                     [
-                        tf.z_interp_dict["zyx"]["err"](1.0 / self.plot_period)[
-                            0
+                        [
+                            tf.z_interp_dict["zxx"]["model_err"](
+                                1.0 / self.plot_period
+                            )[0],
+                            tf.z_interp_dict["zxy"]["model_err"](
+                                1.0 / self.plot_period
+                            )[0],
                         ],
-                        tf.z_interp_dict["zyy"]["err"](1.0 / self.plot_period)[
-                            0
+                        [
+                            tf.z_interp_dict["zyx"]["model_err"](
+                                1.0 / self.plot_period
+                            )[0],
+                            tf.z_interp_dict["zyy"]["model_err"](
+                                1.0 / self.plot_period
+                            )[0],
                         ],
-                    ],
-                ]
-            )
-        ).reshape((1, 2, 2))
+                    ]
+                )
+            ).reshape((1, 2, 2))
+        else:
+            return np.zeros((1, 2, 2), dtype=float)
 
     def _get_interpolated_t(self, tf):
         """
@@ -442,23 +503,60 @@ class PlotBaseMaps(PlotBase):
             tf.t_interp_dict = self.get_interp1d_functions_t(tf)
 
         if not tf.has_tipper():
-            return np.array((1, 1, 2), dtype=float)
-        return np.nan_to_num(
-            np.array(
-                [
+            return np.zeros((1, 1, 2), dtype=float)
+        if tf.Tipper._has_tf_error():
+            return np.nan_to_num(
+                np.array(
                     [
                         [
-                            tf.t_interp_dict["tzx"]["err"](
-                                1.0 / self.plot_period
-                            )[0],
-                            tf.t_interp_dict["tzy"]["err"](
-                                1.0 / self.plot_period
-                            )[0],
+                            [
+                                tf.t_interp_dict["tzx"]["err"](
+                                    1.0 / self.plot_period
+                                )[0],
+                                tf.t_interp_dict["tzy"]["err"](
+                                    1.0 / self.plot_period
+                                )[0],
+                            ]
                         ]
                     ]
-                ]
-            )
-        ).reshape((1, 1, 2))
+                )
+            ).reshape((1, 1, 2))
+        else:
+            return np.zeros((1, 1, 2), dtype=float)
+
+    def _get_interpolated_t_model_err(self, tf):
+        """
+
+        :param tf: DESCRIPTION
+        :type tf: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not hasattr(tf, "t_interp_dict"):
+            tf.t_interp_dict = self.get_interp1d_functions_t(tf)
+
+        if not tf.has_tipper():
+            return np.zeros((1, 1, 2), dtype=float)
+        if tf.Tipper._has_tf_error():
+            return np.nan_to_num(
+                np.array(
+                    [
+                        [
+                            [
+                                tf.t_interp_dict["tzx"]["model_err"](
+                                    1.0 / self.plot_period
+                                )[0],
+                                tf.t_interp_dict["tzy"]["model_err"](
+                                    1.0 / self.plot_period
+                                )[0],
+                            ]
+                        ]
+                    ]
+                )
+            ).reshape((1, 1, 2))
+        else:
+            return np.zeros((1, 1, 2), dtype=float)
 
     def add_raster(self, ax, raster_fn, add_colorbar=True, **kwargs):
         """
@@ -531,6 +629,9 @@ class PlotBaseProfile(PlotBase):
 
         """
 
+        if np.any(self.mt_data.station_locations.profile_offset != 0):
+            return
+
         if x is None and y is None:
             x = np.zeros(self.mt_data.n_stations)
             y = np.zeros(self.mt_data.n_stations)
@@ -554,17 +655,15 @@ class PlotBaseProfile(PlotBase):
                 1.0 / profile2.slope,
                 -profile2.intercept / profile2.slope,
             )
-            profile = profile2
         else:
             self.profile_line = profile1[:2]
-            profile = profile1
 
-        self.profile_angle = (90 - np.rad2deg(np.arctan(profile.slope))) % 180
+        for mt_obj in self.mt_data.values():
+            mt_obj.project_onto_profile_line(
+                self.profile_line[0], self.profile_line[1]
+            )
 
-        self.profile_vector = np.array([1, profile.slope])
-        self.profile_vector /= np.linalg.norm(self.profile_vector)
-
-    def _get_offset(self, tf=None, x=None, y=None):
+    def _get_offset(self, tf):
         """
         Get approximate offset distance for the station
 
@@ -575,26 +674,11 @@ class PlotBaseProfile(PlotBase):
 
         """
 
-        if tf is not None:
-            station_vector = np.array(
-                [tf.longitude, tf.latitude - self.profile_line[1]]
-            )
-        elif x is not None and y is not None:
-            station_vector = np.array([x, y - self.profile_line[1]])
-        else:
-            raise ValueError(" get_offset needs an input of TF or x and y")
-
         direction = 1
         if self.profile_reverse:
             direction = -1
 
-        return direction * (
-            np.linalg.norm(
-                np.dot(self.profile_vector, station_vector)
-                * self.profile_vector
-            )
-            * self.x_stretch
-        )
+        return direction * tf.profile_offset * self.x_stretch
 
     def _get_interpolated_z(self, tf):
         """
@@ -605,6 +689,8 @@ class PlotBaseProfile(PlotBase):
         :rtype: TYPE
 
         """
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
         return np.nan_to_num(
             np.array(
                 [
@@ -645,21 +731,31 @@ class PlotBaseProfile(PlotBase):
         :rtype: TYPE
 
         """
-
-        return np.nan_to_num(
-            np.array(
-                [
+        if not hasattr(tf, "z_interp_dict"):
+            tf.z_interp_dict = self.get_interp1d_functions_z(tf)
+        if tf.z_interp_dict["zxy"]["err"] is not None:
+            return np.nan_to_num(
+                np.array(
                     [
-                        tf.z_interp_dict["zxx"]["err"](1.0 / self.plot_period),
-                        tf.z_interp_dict["zxy"]["err"](1.0 / self.plot_period),
-                    ],
-                    [
-                        tf.z_interp_dict["zyx"]["err"](1.0 / self.plot_period),
-                        tf.z_interp_dict["zyy"]["err"](1.0 / self.plot_period),
-                    ],
-                ]
+                        [
+                            tf.z_interp_dict["zxx"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                            tf.z_interp_dict["zxy"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                        ],
+                        [
+                            tf.z_interp_dict["zyx"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                            tf.z_interp_dict["zyy"]["err"](
+                                1.0 / self.plot_period
+                            ),
+                        ],
+                    ]
+                )
             )
-        )
 
     def _get_interpolated_t(self, tf):
         """

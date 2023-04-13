@@ -204,10 +204,8 @@ class Data:
 
         self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
 
-        if dataframe is None:
-            self.dataframe = MTDataFrame()
-        else:
-            self.dataframe = dataframe
+        self.dataframe = dataframe
+
         if center_point is None:
             self.center_point = MTLocation()
         else:
@@ -327,6 +325,32 @@ class Data:
         return self.__str__()
 
     @property
+    def dataframe(self):
+        return self._mt_dataframe.dataframe
+
+    @dataframe.setter
+    def dataframe(self, df):
+        """
+        Set dataframe to an MTDataframe
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if df is None:
+            self._mt_dataframe = MTDataFrame()
+
+        elif isinstance(df, (pd.DataFrame, MTDataFrame, np.ndarray)):
+            self._mt_dataframe = MTDataFrame(df)
+
+        else:
+            raise TypeError(
+                f"Input must be a dataframe or MTDataFrame object not {type(df)}"
+            )
+
+    @property
     def model_parameters(self):
         params = {
             "wave_sign_impedance": self.wave_sign_impedance,
@@ -371,10 +395,38 @@ class Data:
     def get_n_stations(self, mode):
         if self.dataframe is not None:
             if "impedance" in mode.lower():
-                gb = ["zxx", "zxy", "zyx", "zyy"]
+                return (
+                    self.dataframe.loc[
+                        (self.dataframe.zxx != 0)
+                        | (self.dataframe.zxy != 0)
+                        | (self.dataframe.zyx != 0)
+                        | (self.dataframe.zyy != 0),
+                        "station",
+                    ]
+                    .unique()
+                    .size
+                )
             elif "vertical" in mode.lower():
-                gb = ["tzx", "tzy"]
-            return self.dataframe.groupby(gb).first().station.unique().size
+                return (
+                    self.dataframe.loc[
+                        (self.dataframe.tzx != 0) | (self.dataframe.tzy != 0),
+                        "station",
+                    ]
+                    .unique()
+                    .size
+                )
+            elif "phase_tensor" in mode.lower():
+                return (
+                    self.dataframe.loc[
+                        (self.dataframe.ptxx != 0)
+                        | (self.dataframe.ptxy != 0)
+                        | (self.dataframe.ptyx != 0)
+                        | (self.dataframe.ptyy != 0),
+                        "station",
+                    ]
+                    .unique()
+                    .size
+                )
 
     @property
     def n_periods(self):
@@ -729,7 +781,8 @@ class Data:
                         self.wave_sign_tipper = hline[hline.find("(") + 1]
 
                 elif (
-                    len(hline[1:].strip().split()) >= 2 and hline.count(".") > 0
+                    len(hline[1:].strip().split()) >= 2
+                    and hline.count(".") > 0
                 ):
                     value_list = [
                         float(value) for value in hline[1:].strip().split()
@@ -898,6 +951,8 @@ class Data:
         line_dict[f"{comp}_real"] = line_dict.pop("real")
         line_dict[f"{comp}_imag"] = line_dict.pop("imag")
         line_dict[f"{comp}_model_error"] = line_dict.pop("error")
+        if line_dict[f"{comp}_model_error"] > 1e10:
+            line_dict[f"{comp}_model_error"] = np.nan
 
         return line_dict
 
@@ -987,7 +1042,7 @@ class Data:
                 [f"{col}_real", f"{col}_imag"], axis=1, inplace=True
             )
 
-        return combined_df
+        return MTDataFrame(combined_df)
 
     def fix_data_file(self, fn=None, n=3):
         """
@@ -1008,7 +1063,9 @@ class Data:
             lines = fid.readlines()
 
         def fix_line(line_list):
-            return " ".join("".join(line_list).replace("\n", "").split()) + "\n"
+            return (
+                " ".join("".join(line_list).replace("\n", "").split()) + "\n"
+            )
 
         h1 = fix_line(lines[0:n])
         h2 = fix_line(lines[n : 2 * n])

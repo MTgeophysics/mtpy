@@ -78,8 +78,8 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
 
         self._rotation_angle = 0
 
-        self.x_stretch = 5000
-        self.y_stretch = 1000
+        self.x_stretch = 1
+        self.y_stretch = 10000
         self.y_scale = "period"
         # --> set plot properties
 
@@ -89,10 +89,10 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
         self.profile_line = None
         self.profile_reverse = False
 
-        self.ellipse_size = 250
-        self.arrow_size = 1000
-        self.arrow_head_width = 25
-        self.arrow_head_length = 40
+        self.ellipse_size = 2000
+        self.arrow_size = 4000
+        self.arrow_head_width = 250
+        self.arrow_head_length = 400
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -111,7 +111,7 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
 
         """
 
-        plot_x = self._get_offset(tf=tf)
+        plot_x = self._get_offset(tf)
         # --> set local variables
 
         pt_obj = tf.pt

@@ -96,6 +96,7 @@ class PlotMultipleResponses(PlotBase):
         self.arrow_head_length = 0.03
         self.arrow_head_width = 0.03
         self.arrow_lw = 0.5
+        self.plot_model_error = None
 
         # ellipse_properties
         self.ellipse_size = 0.25
@@ -117,6 +118,19 @@ class PlotMultipleResponses(PlotBase):
         for tf in self.mt_data:
             tf.rotation_angle = value
         self._rotation_angle = value
+
+    @property
+    def plot_model_error(self):
+        return self._plot_model_error
+
+    @plot_model_error.setter
+    def plot_model_error(self, value):
+        if value:
+            self._error_str = "model_error"
+        else:
+            self._error_str = "error"
+
+        self._plot_model_error = value
 
     def _plot_resistivity(
         self, axr, period, z_obj, mode="od", index=0, axr2=None
@@ -167,7 +181,7 @@ class PlotMultipleResponses(PlotBase):
                 ax,
                 period,
                 getattr(z_obj, f"res_{comp}"),
-                getattr(z_obj, f"res_error_{comp}"),
+                getattr(z_obj, f"res_{self._error_str}_{comp}"),
                 **prop,
             )
             eb_list.append(ebax[0])
@@ -246,7 +260,7 @@ class PlotMultipleResponses(PlotBase):
                     ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_error_{comp}"),
+                    getattr(z_obj, f"phase_{self._error_str}_{comp}"),
                     yx=True,
                     **prop,
                 )
@@ -255,7 +269,7 @@ class PlotMultipleResponses(PlotBase):
                     ax,
                     period,
                     getattr(z_obj, f"phase_{comp}"),
-                    getattr(z_obj, f"phase_error_{comp}"),
+                    getattr(z_obj, f"phase_{self._error_str}_{comp}"),
                     yx=False,
                     **prop,
                 )
@@ -758,6 +772,7 @@ class PlotMultipleResponses(PlotBase):
         plot the apparent resistivity and phase
         """
 
+        plt.clf()
         self.subplot_right = 0.98
         self._set_subplot_params()
 

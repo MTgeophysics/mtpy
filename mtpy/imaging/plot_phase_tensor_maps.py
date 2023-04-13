@@ -209,7 +209,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             try:
                 t = self._get_interpolated_t(tf)
                 t_err = self._get_interpolated_t_err(tf)
-
                 if (t != 0).all():
                     new_t_obj = Tipper(t, t_err, [1.0 / self.plot_period])
             except ValueError:

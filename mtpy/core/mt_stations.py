@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from pyproj import CRS
 import geopandas as gpd
+from scipy import stats
 
 from mtpy.core.mt_location import MTLocation
 from mtpy.utils.mtpy_logger import get_mtpy_logger
@@ -52,7 +53,8 @@ class MTStations:
                 ("utm_epsg", "U6"),
                 ("model_east", float),
                 ("model_north", float),
-                ("model_elev", float),
+                ("model_elevation", float),
+                ("profile_offset", float),
             ]
         )
         self._datum_crs = CRS.from_epsg(4326)
@@ -68,7 +70,7 @@ class MTStations:
                 setattr(self, key, kwargs[key])
 
         if self.mt_list is not None:
-            self.calculate_rel_locations()
+            self.compute_relative_locations()
 
     def __str__(self):
         fmt_dict = dict(
@@ -79,7 +81,7 @@ class MTStations:
                 ("elevation", "<8.2f"),
                 ("model_east", "<13.2f"),
                 ("model_north", "<13.2f"),
-                ("model_elev", "<8.2f"),
+                ("model_elevation", "<8.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
                 ("utm_epsg", "<6"),
@@ -231,7 +233,8 @@ class MTStations:
             entries["utm_epsg"][ii] = mt_obj.utm_epsg
             entries["model_east"][ii] = mt_obj.model_east
             entries["model_north"][ii] = mt_obj.model_north
-            entries["model_elev"][ii] = mt_obj.model_elevation
+            entries["model_elevation"][ii] = mt_obj.model_elevation
+            entries["profile_offset"][ii] = mt_obj.profile_offset
 
         station_df = pd.DataFrame(entries)
         self._validate_station_locations(station_df)
@@ -252,7 +255,7 @@ class MTStations:
             if self.utm_epsg is None:
                 self.utm_epsg = df.utm_epsg.unique()[0]
 
-    def calculate_rel_locations(self, shift_east=0, shift_north=0):
+    def compute_relative_locations(self, shift_east=0, shift_north=0):
         """
         put station in a coordinate system relative to
         (shift_east, shift_north)
@@ -291,18 +294,41 @@ class MTStations:
             return center_location
 
         else:
-            self.logger.debug("locating center from UTM grid")
-            center_location.east = (
-                self.station_locations.east.max()
-                + self.station_locations.east.min()
-            ) / 2
-            center_location.north = (
-                self.station_locations.north.max()
-                + self.station_locations.north.min()
-            ) / 2
-
             center_location.datum_epsg = self.datum_epsg
             center_location.utm_epsg = self.utm_epsg
+            if np.all(self.station_locations.east == 0) or np.all(
+                self.station_locations.north == 0
+            ):
+                if np.all(self.station_locations.latitude != 0) and np.all(
+                    self.station_locations.longitude != 0
+                ):
+                    self.logger.debug(
+                        "locating center from latitude and longitude"
+                    )
+                    center_location.latitude = (
+                        self.station_locations.latitude.max()
+                        + self.station_locations.latitude.min()
+                    ) / 2
+                    center_location.longitude = (
+                        self.station_locations.longitude.max()
+                        + self.station_locations.longitude.min()
+                    ) / 2
+                else:
+                    raise ValueError(
+                        "Station locations are all 0 cannot find center."
+                    )
+
+            else:
+                self.logger.debug("locating center from UTM grid")
+                center_location.east = (
+                    self.station_locations.east.max()
+                    + self.station_locations.east.min()
+                ) / 2
+                center_location.north = (
+                    self.station_locations.north.max()
+                    + self.station_locations.north.min()
+                ) / 2
+
             center_location.model_east = center_location.east
             center_location.model_north = center_location.north
             center_location.model_elevation = self._center_elev
@@ -398,8 +424,6 @@ class MTStations:
         """
 
         # find index of each station on grid
-        station_index_x = []
-        station_index_y = []
         for mt_obj in self.mt_list:
             # relative locations of stations
             sx = mt_obj.model_east
@@ -447,12 +471,10 @@ class MTStations:
             # get relevant grid point elevation
             topoval = model_object.grid_z[szi]
 
-            station_index_x.append(sxi)
-            station_index_y.append(syi)
-
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
-            mt_obj.model_elev = topoval + 0.001
+            mt_obj.model_elevation = topoval + 0.001
+            print(f"{mt_obj.station}: {mt_obj.model_elevation:.2f}")
 
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
@@ -600,3 +622,140 @@ class MTStations:
 
         self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
         return vtk_fn
+
+    def generate_profile(self, units="deg"):
+        """
+        Estimate a profile from the data
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if units == "deg":
+            x = self.station_locations.longitude
+            y = self.station_locations.latitude
+
+        elif units == "m":
+            if self.utm_crs is not None:
+                x = self.station_locations.east
+                y = self.station_locations.north
+            else:
+                raise ValueError("Must input a UTM CRS or EPSG")
+
+        # check regression for 2 profile orientations:
+        # horizontal (N=N(E)) or vertical(E=E(N))
+        # use the one with the lower standard deviation
+        profile1 = stats.linregress(x, y)
+        profile2 = stats.linregress(y, x)
+        # if the profile is rather E=E(N), the parameters have to converted
+        # into N=N(E) form:
+        if profile2.stderr < profile1.stderr:
+            profile_line = {
+                "slope": 1.0 / profile2.slope,
+                "intercept": -profile2.intercept / profile2.slope,
+            }
+        else:
+            profile_line = {
+                "slope": profile1.slope,
+                "intercept": profile1.intercept,
+            }
+
+        x1 = x.min()
+        x2 = x.max()
+        y1 = profile_line["slope"] * x1 + profile_line["intercept"]
+        y2 = profile_line["slope"] * x2 + profile_line["intercept"]
+
+        return x1, y1, x2, y2, profile_line
+
+    def generate_profile_from_strike(self, strike, units="deg"):
+        """
+        Estimate a profile line from a given geoelectric strike
+
+        :param units: DESCRIPTION, defaults to "deg"
+        :type units: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if units == "deg":
+            x = self.station_locations.longitude
+            y = self.station_locations.latitude
+
+        elif units == "m":
+            if self.utm_crs is not None:
+                x = self.station_locations.east
+                y = self.station_locations.north
+            else:
+                raise ValueError("Must input a UTM CRS or EPSG")
+
+        profile_line = {"slope": np.arctan(np.deg2rad(90 - strike))}
+        profile_line["intercept"] = y.min() - profile_line["slope"] * x.min()
+
+        x1 = x.min()
+        x2 = x.max()
+        y1 = profile_line["slope"] * x1 + profile_line["intercept"]
+        y2 = profile_line["slope"] * x2 + profile_line["intercept"]
+
+        return x1, y1, x2, y2, profile_line
+
+    def _extract_profile(self, x1, y1, x2, y2, radius):
+        """
+        extract stations along a profile line that lie with in the given
+        radius
+
+        :param point1: DESCRIPTION
+        :type point1: TYPE
+        :param point2: DESCRIPTION
+        :type point2: TYPE
+        :param radius: DESCRIPTION
+        :type radius: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if np.abs(x2 - x1) < 100:
+            if self.utm_crs is None:
+                raise ValueError("Must input UTM CRS or EPSG.")
+            point_1 = MTLocation(
+                longitude=x1, latitude=y1, utm_crs=self.utm_crs
+            )
+            point_2 = MTLocation(
+                longitude=x2, latitude=y2, utm_crs=self.utm_crs
+            )
+            x1 = point_1.east
+            y1 = point_1.north
+            x2 = point_2.east
+            y2 = point_2.north
+
+        if radius is None:
+            radius = 1e12
+
+        def distance(x, y):
+            return np.abs(
+                (x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y1)
+            ) / np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        slope = (y2 - y1) / (x2 - x1)
+        intersection = y1 - slope * x1
+
+        profile_list = []
+        offsets = []
+        for mt_obj in self.mt_list:
+            d = distance(mt_obj.east, mt_obj.north)
+
+            if d <= radius:
+                mt_obj.project_onto_profile_line(slope, intersection)
+                profile_list.append(mt_obj)
+                offsets.append(mt_obj.profile_offset)
+
+        offsets = np.array(offsets)
+        indexes = np.argsort(offsets)
+
+        sorted_profile_list = []
+        for index in indexes:
+            profile_list[index].profile_offset -= offsets.min()
+            sorted_profile_list.append(profile_list[index])
+
+        return sorted_profile_list

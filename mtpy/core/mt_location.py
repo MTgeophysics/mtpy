@@ -9,6 +9,7 @@ Created on Mon Oct  3 15:04:12 2022
 # Imports
 # =============================================================================
 from pyproj import CRS
+import numpy as np
 
 from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.gis_tools import (
@@ -42,6 +43,7 @@ class MTLocation:
         self.model_east = 0
         self.model_north = 0
         self.model_elevation = 0
+        self.profile_offset = 0
 
         for key, value in kwargs.items():
             if key in [
@@ -91,11 +93,12 @@ class MTLocation:
 
     @datum_epsg.setter
     def datum_epsg(self, value):
-        self.datum_crs = value
+        if value not in ["", None, "None"]:
+            self.datum_crs = value
 
     @datum_crs.setter
     def datum_crs(self, value):
-        if value in [None, "None", "none", "null"]:
+        if value in [None, "None", "none", "null", ""]:
             return
 
         new_crs = CRS.from_user_input(value)
@@ -146,7 +149,8 @@ class MTLocation:
 
     @utm_epsg.setter
     def utm_epsg(self, value):
-        self.utm_crs = value
+        if value not in ["", None, "None"]:
+            self.utm_crs = value
 
     @property
     def utm_zone(self):
@@ -155,7 +159,7 @@ class MTLocation:
 
     @utm_crs.setter
     def utm_crs(self, value):
-        if value in [None, "None", "none", "null"]:
+        if value in [None, "None", "none", "null", ""]:
             return
 
         new_crs = CRS.from_user_input(value)
@@ -205,7 +209,11 @@ class MTLocation:
     def east(self, value):
         """set east"""
         self._east = value
-        if self.datum_crs is not None and self.utm_crs is not None:
+        if (
+            self.datum_crs is not None
+            and self.utm_crs is not None
+            and self._north != 0
+        ):
             self._longitude, self._latitude = project_point(
                 self._east, self._north, self.utm_crs, self.datum_crs
             )
@@ -219,7 +227,11 @@ class MTLocation:
     def north(self, value):
         """set north"""
         self._north = value
-        if self.datum_crs is not None and self.utm_crs is not None:
+        if (
+            self.datum_crs is not None
+            and self.utm_crs is not None
+            and self._east != 0
+        ):
             self._longitude, self._latitude = project_point(
                 self._east, self._north, self.utm_crs, self.datum_crs
             )
@@ -231,7 +243,11 @@ class MTLocation:
     @latitude.setter
     def latitude(self, lat):
         self._latitude = assert_lat_value(lat)
-        if self.utm_crs is not None and self.datum_crs is not None:
+        if (
+            self.utm_crs is not None
+            and self.datum_crs is not None
+            and self._longitude != 0
+        ):
             self._east, self._north = project_point(
                 self._longitude, self._latitude, self.datum_crs, self.utm_crs
             )
@@ -243,7 +259,11 @@ class MTLocation:
     @longitude.setter
     def longitude(self, lon):
         self._longitude = assert_lon_value(lon)
-        if self.utm_crs is not None and self.datum_crs is not None:
+        if (
+            self.utm_crs is not None
+            and self.datum_crs is not None
+            and self._latitude != 0
+        ):
             self._east, self._north = project_point(
                 self._longitude, self._latitude, self.datum_crs, self.utm_crs
             )
@@ -300,6 +320,31 @@ class MTLocation:
 
         """
 
-        self.model_east = self.east - center_location.east
+        self.model_east = self.east - center_location.model_east
         self.model_north = self.north - center_location.model_north
         self.model_elevation = self.elevation - center_location.model_elevation
+
+    def project_onto_profile_line(self, profile_slope, profile_intersection):
+        """
+
+        :param profile_slope: DESCRIPTION
+        :type profile_slope: TYPE
+        :param profile_intersection: DESCRIPTION
+        :type profile_intersection: TYPE
+        :param units: DESCRIPTION, defaults to "deg"
+        :type units: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        profile_vector = np.array([1, profile_slope])
+        profile_vector /= np.linalg.norm(profile_vector)
+
+        station_vector = np.array(
+            [self.east, self.north - profile_intersection]
+        )
+
+        self.profile_offset = np.linalg.norm(
+            np.dot(profile_vector, station_vector) * profile_vector
+        )

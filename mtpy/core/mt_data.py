@@ -28,10 +28,10 @@ from mtpy.imaging import (
     PlotPhaseTensorMaps,
     PlotPhaseTensorPseudoSection,
     PlotStrike,
-    PlotPenetrationDepth1D,
     PlotPenetrationDepthMap,
     PlotResPhaseMaps,
     PlotResPhasePseudoSection,
+    PlotResidualPTMaps,
 )
 
 # =============================================================================
@@ -46,7 +46,7 @@ class MTData(OrderedDict, MTStations):
 
         if mt_list is not None:
             for mt_obj in mt_list:
-                self.add_station(mt_obj)
+                self.add_station(mt_obj, compute_relative_location=False)
 
         MTStations.__init__(self, None, None, **kwargs)
 
@@ -73,11 +73,52 @@ class MTData(OrderedDict, MTStations):
             )
         return mt_obj
 
+    def clone_empty(self):
+        """
+        return an empty copy including properties
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        md = MTData()
+        md.z_model_error = self.z_model_error
+        md.t_model_error = self.t_model_error
+        md._datum_crs = self._datum_crs
+        md._utm_crs = self._utm_crs
+        md.data_rotation_angle = self.data_rotation_angle
+        md.model_parameters = self.model_parameters
+
+        return md
+
     @property
     def mt_list(self):
         return self.values()
 
-    def add_station(self, mt_object, survey=None):
+    @property
+    def survey_ids(self):
+        return list(set([key.split(".")[0] for key in self.keys()]))
+
+    def get_survey(self, survey_id):
+        """
+        Get a survey from the data set
+
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_list = [
+            mt_obj for key, mt_obj in self.items() if survey_id in key
+        ]
+        return MTData(survey_list)
+
+    def add_station(
+        self, mt_object, survey=None, compute_relative_location=True
+    ):
         """
         Add a new station's mt_object
 
@@ -89,9 +130,13 @@ class MTData(OrderedDict, MTStations):
         """
 
         mt_object = self._validate_item(mt_object)
+        if self.utm_crs is not None:
+            mt_object.utm_crs = self.utm_crs
         if survey is not None:
             mt_object.survey = survey
         self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
+        if compute_relative_location:
+            self.compute_relative_locations()
 
     def remove_station(self, station_id, survey_id=None):
         """
@@ -216,7 +261,7 @@ class MTData(OrderedDict, MTStations):
             sdf = df.loc[df.station == station]
             mt_object = MT()
             mt_object.from_dataframe(sdf)
-            self.add_station(mt_object)
+            self.add_station(mt_object, compute_relative_location=False)
 
     def to_geo_df(self):
         """
@@ -246,7 +291,8 @@ class MTData(OrderedDict, MTStations):
         """
 
         if not inplace:
-            mt_data = MTData()
+            mt_data = self.clone_empty()
+
         for mt_obj in self.values():
             interp_periods = new_periods[
                 np.where(
@@ -255,14 +301,7 @@ class MTData(OrderedDict, MTStations):
                 )
             ]
 
-            interp_z, interp_t = mt_obj.interpolate(1.0 / interp_periods)
-
-            new_mt_obj = mt_obj.copy()
-            new_mt_obj._transfer_function = (
-                new_mt_obj._initialize_transfer_function(interp_periods)
-            )
-            new_mt_obj.Z = interp_z
-            new_mt_obj.Tipper = interp_t
+            new_mt_obj = mt_obj.interpolate(1.0 / interp_periods)
 
             if inplace:
                 self.update(
@@ -272,7 +311,7 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(new_mt_obj)
+                mt_data.add_station(new_mt_obj, compute_relative_location=False)
 
         if not inplace:
             return mt_data
@@ -291,17 +330,48 @@ class MTData(OrderedDict, MTStations):
         self.data_rotation_angle = rotation_angle
 
         if not inplace:
-            mt_data = MTData()
+            mt_data = self.clone_empty
         for mt_obj in self.values():
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(rot_mt_obj)
+                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
             else:
                 mt_obj.rotation_angle = rotation_angle
 
         if not inplace:
             return mt_data
+
+    def get_profile(self, x1, y1, x2, y2, radius):
+        """
+        Get stations along a profile line given the (x1, y1) and (x2, y2)
+        coordinates within a given radius (in meters).
+
+        These can be in (longitude, latitude) or (easting, northing).
+        The calculation is done in UTM, therefore a UTM CRS must be input
+
+        :param x1: DESCRIPTION
+        :type x1: TYPE
+        :param y1: DESCRIPTION
+        :type y1: TYPE
+        :param x2: DESCRIPTION
+        :type x2: TYPE
+        :param y2: DESCRIPTION
+        :type y2: TYPE
+        :param radius: DESCRIPTION
+        :type radius: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        profile_stations = self._extract_profile(x1, y1, x2, y2, radius)
+
+        mt_data = self.clone_empty()
+        for mt_obj in profile_stations:
+            mt_data.add_station(mt_obj, compute_relative_location=False)
+
+        return mt_data
 
     def compute_model_errors(
         self,
@@ -452,6 +522,14 @@ class MTData(OrderedDict, MTStations):
         modem_kwargs = dict(self.model_parameters)
         modem_kwargs.update(kwargs)
 
+        if np.all(self.station_locations.model_east == 0):
+            if self.utm_crs is None:
+                raise ValueError(
+                    "Need to input data UTM EPSG or CRS to compute relative "
+                    "station locations"
+                )
+            self.compute_relative_locations()
+
         modem_data = Data(
             dataframe=self.to_dataframe(),
             center_point=self.center_point,
@@ -462,7 +540,7 @@ class MTData(OrderedDict, MTStations):
 
         return modem_data.write_data_file(file_name=data_filename)
 
-    def from_modem_data(self, data_filename, **kwargs):
+    def from_modem_data(self, data_filename, file_type="data", **kwargs):
         """
         read in a modem data file
 
@@ -475,7 +553,12 @@ class MTData(OrderedDict, MTStations):
 
         """
         modem_data = Data(**kwargs)
-        self.from_dataframe(modem_data.read_data_file(data_filename))
+        mdf = modem_data.read_data_file(data_filename)
+        if file_type in ["data"]:
+            mdf._mt_dataframe.dataframe["survey"] = "data"
+        elif file_type in ["response", "model"]:
+            mdf._mt_dataframe.dataframe["survey"] = "model"
+        self.from_dataframe(mdf.dataframe)
         self.z_model_error = ModelErrors(
             mode="impedance", **modem_data.z_model_error.error_parameters
         )
@@ -517,13 +600,26 @@ class MTData(OrderedDict, MTStations):
         if isinstance(station_key, (list, tuple)):
             mt_data = MTData()
             for sk in station_key:
-                mt_data.add_station(self.get_station(station_key=sk))
+                mt_data.add_station(
+                    self.get_station(station_key=sk),
+                    compute_relative_location=False,
+                )
             return PlotMultipleResponses(mt_data, **kwargs)
 
         elif isinstance(station_id, (list, tuple)):
             mt_data = MTData()
-            for sk in station_id:
-                mt_data.add_station(self.get_station(station_id=sk))
+            if isinstance(survey_id, (list, tuple)):
+                if len(survey_id) != len(station_key):
+                    raise ValueError(
+                        "Number of survey must match number of stations"
+                    )
+            elif isinstance(survey_id, (str, type(None))):
+                survey_id = [survey_id] * len(station_id)
+            for survey, station in zip(survey_id, station_id):
+                mt_data.add_station(
+                    self.get_station(station_id=station, survey_id=survey),
+                    compute_relative_location=False,
+                )
             return PlotMultipleResponses(mt_data, **kwargs)
 
         else:
@@ -637,7 +733,7 @@ class MTData(OrderedDict, MTStations):
             station_key=station_key,
         )
 
-        return PlotPenetrationDepth1D(mt_object, **kwargs)
+        return mt_object.plot_depth_of_penetration(**kwargs)
 
     def plot_penetration_depth_map(self, **kwargs):
         """
@@ -683,3 +779,20 @@ class MTData(OrderedDict, MTStations):
         """
 
         return PlotResPhasePseudoSection(self, **kwargs)
+
+    def plot_residual_phase_tensor_maps(self, survey_01, survey_02, **kwargs):
+        """
+
+        :param survey_01: DESCRIPTION
+        :type survey_01: TYPE
+        :param survey_02: DESCRIPTION
+        :type survey_02: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_data_01 = self.get_survey(survey_01)
+        survey_data_02 = self.get_survey(survey_02)
+
+        return PlotResidualPTMaps(survey_data_01, survey_data_02, **kwargs)

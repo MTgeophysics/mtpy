@@ -28,6 +28,7 @@ class MTDataFrame:
 
     def __init__(self, data=None, n_entries=0, **kwargs):
         self._dtype_list = [
+            ("survey", "U25"),
             ("station", "U25"),
             ("latitude", float),
             ("longitude", float),
@@ -39,6 +40,7 @@ class MTDataFrame:
             ("model_east", float),
             ("model_north", float),
             ("model_elevation", float),
+            ("profile_offset", float),
             ("period", float),
             ("zxx", complex),
             ("zxx_error", float),
@@ -58,42 +60,48 @@ class MTDataFrame:
             ("tzy", complex),
             ("tzy_error", float),
             ("tzy_model_error", float),
-            ("res_xx", complex),
+            ("res_xx", float),
             ("res_xx_error", float),
             ("res_xx_model_error", float),
-            ("res_xy", complex),
+            ("res_xy", float),
             ("res_xy_error", float),
             ("res_xy_model_error", float),
-            ("res_yx", complex),
+            ("res_yx", float),
             ("res_yx_error", float),
             ("res_yx_model_error", float),
-            ("res_yy", complex),
+            ("res_yy", float),
             ("res_yy_error", float),
             ("res_yy_model_error", float),
-            ("phase_xx", complex),
+            ("phase_xx", float),
             ("phase_xx_error", float),
             ("phase_xx_model_error", float),
-            ("phase_xy", complex),
+            ("phase_xy", float),
             ("phase_xy_error", float),
             ("phase_xy_model_error", float),
-            ("phase_yx", complex),
+            ("phase_yx", float),
             ("phase_yx_error", float),
             ("phase_yx_model_error", float),
-            ("phase_yy", complex),
+            ("phase_yy", float),
             ("phase_yy_error", float),
             ("phase_yy_model_error", float),
-            ("ptxx", complex),
+            ("ptxx", float),
             ("ptxx_error", float),
             ("ptxx_model_error", float),
-            ("ptxy", complex),
+            ("ptxy", float),
             ("ptxy_error", float),
             ("ptxy_model_error", float),
-            ("ptyx", complex),
+            ("ptyx", float),
             ("ptyx_error", float),
             ("ptyx_model_error", float),
-            ("ptyy", complex),
+            ("ptyy", float),
             ("ptyy_error", float),
             ("ptyy_model_error", float),
+            ("rms_zxx", float),
+            ("rms_zxy", float),
+            ("rms_zyx", float),
+            ("rms_zyy", float),
+            ("rms_tzx", float),
+            ("rms_tzy", float),
         ]
 
         if data is not None:
@@ -102,6 +110,7 @@ class MTDataFrame:
         else:
             self.dataframe = self._get_initial_df(n_entries)
 
+        self.working_survey = None
         self.working_station = None
 
         for key, value in kwargs.items():
@@ -120,6 +129,10 @@ class MTDataFrame:
         else:
             return "MTStationDataFrame()"
 
+    @property
+    def _column_names(self):
+        return [col[0] for col in self._dtype_list]
+
     def __eq__(self, other):
         other = self._validata_data(other)
         return self.dataframe == other
@@ -134,18 +147,28 @@ class MTDataFrame:
 
         """
 
-        if isinstance(data, (dict, np.ndarray)):
+        if data is None:
+            return
+
+        if isinstance(data, (dict, np.ndarray, pd.DataFrame)):
             df = pd.DataFrame(data)
 
-        elif isinstance(data, pd.DataFrame):
-            df = data
+        elif isinstance(data, (MTDataFrame)):
+            df = data.dataframe
 
         else:
-            raise TypeError("Input data must be a pandas.DataFrame")
+            raise TypeError(
+                f"Input data must be a pandas.DataFrame not {type(data)}"
+            )
 
-        for col in ["station", "period", "latitude", "longitude", "elevation"]:
-            if col not in df.columns:
-                raise ValueError(f"Input missing column {col}.")
+        for col in self._dtype_list:
+            if col[0] not in df.columns:
+
+                df[col[0]] = np.zeros(df.shape[0], dtype=col[1])
+
+        # resort to the desired column order
+        if df.columns.to_list() != self._column_names:
+            df = df[self._column_names]
 
         return df
 
@@ -176,7 +199,7 @@ class MTDataFrame:
             if self.working_station is None:
                 self.working_station = self.dataframe.station.unique()[0]
 
-            if self.working_station not in self.dataframe.station:
+            if self.working_station not in self.dataframe.station.values:
                 raise ValueError(
                     f"Could not find station {self.working_station} in dataframe."
                 )
@@ -241,6 +264,24 @@ class MTDataFrame:
 
         if self._has_data():
             return 1.0 / self.dataframe.period
+
+    @property
+    def survey(self):
+        """survey name"""
+        if self._has_data():
+            if self.working_survey is None:
+                self.working_survey = self.dataframe.survey.unique()[0]
+            return self.working_survey
+
+    @survey.setter
+    def survey(self, value):
+        """survey name"""
+        if self._has_data():
+            if self.working_survey in [None, ""]:
+                self.dataframe.loc[
+                    self.dataframe.survey == "", "survey"
+                ] = value
+                self.working_survey = value
 
     @property
     def station(self):
@@ -419,6 +460,23 @@ class MTDataFrame:
             self.dataframe.loc[
                 self.dataframe.station == self.station,
                 "model_elevation",
+            ] = value
+
+    @property
+    def profile_offset(self):
+        """profile_offset"""
+        if self._has_data():
+            return self.dataframe.loc[
+                self.dataframe.station == self.station, "profile_offset"
+            ].unique()[0]
+
+    @profile_offset.setter
+    def profile_offset(self, value):
+        """profile_offset"""
+        if self._has_data():
+            self.dataframe.loc[
+                self.dataframe.station == self.station,
+                "profile_offset",
             ] = value
 
     def from_z_object(self, z_object):

@@ -417,7 +417,7 @@ class Z(TFBase):
     def phase_model_error(self):
         """phase model error of impedance"""
         if self.z is not None and self.z_model_error is not None:
-            with np.errstate(divide="ignore"):
+            with np.errstate(divide="ignore", invalid="ignore"):
                 return np.degrees(
                     np.arctan(self.resistivity_model_error / self.resistivity)
                 )
