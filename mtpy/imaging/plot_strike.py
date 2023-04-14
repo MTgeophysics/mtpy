@@ -9,7 +9,6 @@ Created on Thu May 30 18:28:24 2013
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -267,7 +266,7 @@ class PlotStrike(PlotBase):
 
                 # # subtract 90 because polar plot assumes 0 is on the x an 90 is
                 # on the y
-                tipr = 90 - tip.angle_real
+                tipr = 270 - tip.angle_real
 
                 tipr[np.where(abs(tipr) == 180.0)] = np.nan
                 tipr[np.where(abs(tipr) == 0)] = np.nan
@@ -308,9 +307,11 @@ class PlotStrike(PlotBase):
         """
         get mode from a historgram
         """
-        s_mode = stats.mode(
-            estimate_df.measured_strike[~np.isnan(estimate_df.measured_strike)]
-        ).mode[0]
+
+        bins = np.linspace(-360, 360, 146)
+
+        binned = pd.cut(estimate_df["measured_strike"], bins).value_counts()
+        s_mode = binned.index[np.argmax(binned)].mid
         s_mode %= 360
 
         return s_mode
@@ -759,7 +760,7 @@ class PlotStrike(PlotBase):
                 axh.text(
                     -np.pi / 2,
                     axh.get_ylim()[1] * self.text_y_pad,
-                    f"{st_median:.1f}$^o$",
+                    f"{st_mode:.1f}$^o$",
                     horizontalalignment="center",
                     verticalalignment="baseline",
                     fontdict={"size": self.text_size},
@@ -854,7 +855,7 @@ class PlotStrike(PlotBase):
             axh.text(
                 170 * np.pi / 180,
                 axh.get_ylim()[1] * 0.65,
-                f"{st_median:.1f}$^o$",
+                f"{st_mode:.1f}$^o$",
                 horizontalalignment="center",
                 verticalalignment="baseline",
                 fontdict={"size": self.font_size},
