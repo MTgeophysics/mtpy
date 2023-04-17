@@ -547,7 +547,8 @@ class Model:
         for s_north in sorted(self.station_locations.model_north):
             try:
                 node_index = np.where(
-                    abs(s_north - self.grid_north) < 0.02 * self.cell_size_north
+                    abs(s_north - self.grid_north)
+                    < 0.02 * self.cell_size_north
                 )[0][0]
                 if s_north - self.grid_north[node_index] > 0:
                     self.grid_north[node_index] -= 0.02 * self.cell_size_north
@@ -572,11 +573,15 @@ class Model:
             self.nodes_z, z_grid = self.make_z_mesh()
         else:
             raise NameError(
-                'Z mesh method "{}" is not supported'.format(self.z_mesh_method)
+                'Z mesh method "{}" is not supported'.format(
+                    self.z_mesh_method
+                )
             )
 
         # compute grid center
-        center_east = np.round(self.grid_east.min() - self.grid_east.mean(), -1)
+        center_east = np.round(
+            self.grid_east.min() - self.grid_east.mean(), -1
+        )
         center_north = np.round(
             self.grid_north.min() - self.grid_north.mean(), -1
         )
@@ -624,7 +629,7 @@ class Model:
         # itp = len(z_nodes) - 1
 
         # padding cells in the vertical direction
-        z_0 = np.float(z_nodes[-1])
+        z_0 = float(z_nodes[-1])
         for ii in range(1, self.pad_z + 1):
             pad_d = np.round(z_0 * self.pad_stretch_v**ii, -2)
             z_nodes = np.append(z_nodes, pad_d)
@@ -958,13 +963,13 @@ class Model:
 
         # get nodes
         self.nodes_north = np.array(
-            [np.float(nn) for nn in ilines[2].strip().split()]
+            [float(nn) for nn in ilines[2].strip().split()]
         )
         self.nodes_east = np.array(
-            [np.float(nn) for nn in ilines[3].strip().split()]
+            [float(nn) for nn in ilines[3].strip().split()]
         )
         self.nodes_z = np.array(
-            [np.float(nn) for nn in ilines[4].strip().split()]
+            [float(nn) for nn in ilines[4].strip().split()]
         )
 
         self.res_model = np.zeros((n_north, n_east, n_z))
@@ -1005,10 +1010,10 @@ class Model:
                 ilist = iline.strip().split()
                 # grid center
                 if len(ilist) == 3:
-                    self.grid_center = np.array(ilist, dtype=np.float)
+                    self.grid_center = np.array(ilist, dtype=float)
                 # rotation angle
                 elif len(ilist) == 1:
-                    self.mesh_rotation_angle = np.float(ilist[0])
+                    self.mesh_rotation_angle = float(ilist[0])
                 else:
                     pass
 
@@ -1519,7 +1524,9 @@ class Model:
                 # adjust level to topography min
                 if max_elev is not None:
                     self.grid_z -= max_elev
-                    ztops = np.where(self.surface_dict["topography"] > max_elev)
+                    ztops = np.where(
+                        self.surface_dict["topography"] > max_elev
+                    )
                     self.surface_dict["topography"][ztops] = max_elev
                 else:
                     self.grid_z -= topo_core.max()

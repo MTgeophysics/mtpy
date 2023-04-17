@@ -163,7 +163,7 @@ class ModelManipulator(Model):
             self.set_res_list(
                 np.array(
                     [self._res_sea, 1, 10, 50, 100, 500, 1000, 5000],
-                    dtype=np.float,
+                    dtype=float,
                 )
             )
 

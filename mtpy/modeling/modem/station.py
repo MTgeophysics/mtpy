@@ -38,14 +38,14 @@ class Stations(object):
 
         self.dtype = [
             ("station", "|U50"),
-            ("lat", np.float),
-            ("lon", np.float),
-            ("elev", np.float),
-            ("rel_east", np.float),
-            ("rel_north", np.float),
-            ("rel_elev", np.float),
-            ("east", np.float),
-            ("north", np.float),
+            ("lat", float),
+            ("lon", float),
+            ("elev", float),
+            ("rel_east", float),
+            ("rel_north", float),
+            ("rel_elev", float),
+            ("east", float),
+            ("north", float),
             ("zone", "U4"),
         ]
         self.station_locations = np.zeros(0, dtype=self.dtype)
@@ -311,11 +311,11 @@ class Stations(object):
                                   dtype includes (east, north, zone, lat, lon)
         """
         dtype = [
-            ("lat", np.float),
-            ("lon", np.float),
-            ("east", np.float),
-            ("north", np.float),
-            ("elev", np.float),
+            ("lat", float),
+            ("lon", float),
+            ("east", float),
+            ("north", float),
+            ("elev", float),
             ("zone", "U4"),
         ]
         center_location = np.recarray(1, dtype=dtype)

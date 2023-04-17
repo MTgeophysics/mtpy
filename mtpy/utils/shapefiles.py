@@ -95,7 +95,9 @@ class PTShapeFile(object):
         self.save_path = None  # os.getcwd()
         # self.ellipse_size = 500.0  # maximum ellipse major axis size in
         # metres
-        self.ellipse_size = esize  # 0.002  # maximum ellipse major axis size in metres
+        self.ellipse_size = (
+            esize  # 0.002  # maximum ellipse major axis size in metres
+        )
         # self._theta = np.arange(0, 2 * np.pi, np.pi / 180.)
         self._theta = np.arange(
             0, 2 * np.pi, np.pi / 30.0
@@ -137,7 +139,9 @@ class PTShapeFile(object):
         return self._rotation_angle
 
     rotation_angle = property(
-        _get_rotation_angle, _set_rotation_angle, doc="rotation angle of Z and Tipper"
+        _get_rotation_angle,
+        _set_rotation_angle,
+        doc="rotation angle of Z and Tipper",
     )
 
     def _get_plot_period(self):
@@ -161,7 +165,9 @@ class PTShapeFile(object):
         else:
             if isinstance(self.plot_period, list):
                 pass
-            if isinstance(self.plot_period, int) or isinstance(self.plot_period, float):
+            if isinstance(self.plot_period, int) or isinstance(
+                self.plot_period, float
+            ):
                 self.plot_period = [self.plot_period]
 
     def _get_pt_array(self, pt_obj_list=None, periods=None, residual=False):
@@ -203,14 +209,20 @@ class PTShapeFile(object):
                     p_index = p_index[0]
 
                     if self.projection is None:  # geographic-coord lat lon
-                        east, north, elev = (mt_obj.longitude, mt_obj.latitude, 0)
+                        east, north, elev = (
+                            mt_obj.longitude,
+                            mt_obj.latitude,
+                            0,
+                        )
                         self.utm_cs = osr.SpatialReference()
                         # Set geographic coordinate system to handle lat/lon
                         # self.utm_cs.SetWellKnownGeogCS(self.projection)
                         self.utm_cs.ImportFromEPSG(4326)
                         # create the spatial reference, WGS84=4326
                         # GDA94 = EPSG:4283 See  http://epsg.io/4283
-                    elif self.projection == "WGS84":  # UTM zones coordinate system
+                    elif (
+                        self.projection == "WGS84"
+                    ):  # UTM zones coordinate system
                         edi_proj = "WGS84"
                         east, north, _ = project_point_ll2utm(
                             mt_obj.latitude, mt_obj.longitude, edi_proj
@@ -222,7 +234,9 @@ class PTShapeFile(object):
                         self.utm_cs.SetUTM(zone_number, is_northern)
                         utm_cs_list.append(self.utm_cs.GetAttrValue("projcs"))
                     else:
-                        raise Exception("%s is NOT supported" % self.projection)
+                        raise Exception(
+                            "%s is NOT supported" % self.projection
+                        )
 
                     if pt_obj_list is None:
                         pt_tuple = (
@@ -281,14 +295,14 @@ class PTShapeFile(object):
                     self.pt_dict[plot_per],
                     dtype=[
                         ("station", "|U10"),
-                        ("east", np.float),
-                        ("north", np.float),
-                        ("phimin", np.float),
-                        ("phimax", np.float),
-                        ("azimuth", np.float),
-                        ("skew", np.float),
-                        ("geometric_mean", np.float),
-                        ("skip", np.float),
+                        ("east", float),
+                        ("north", float),
+                        ("phimin", float),
+                        ("phimax", float),
+                        ("azimuth", float),
+                        ("skew", float),
+                        ("geometric_mean", float),
+                        ("skip", float),
                     ],
                 )
 
@@ -297,19 +311,24 @@ class PTShapeFile(object):
                     self.pt_dict[plot_per],
                     dtype=[
                         ("station", "|U10"),
-                        ("east", np.float),
-                        ("north", np.float),
-                        ("phimin", np.float),
-                        ("phimax", np.float),
-                        ("azimuth", np.float),
-                        ("skew", np.float),
-                        ("n_skew", np.float),
-                        ("ellipticity", np.float),
+                        ("east", float),
+                        ("north", float),
+                        ("phimin", float),
+                        ("phimax", float),
+                        ("azimuth", float),
+                        ("skew", float),
+                        ("n_skew", float),
+                        ("ellipticity", float),
                     ],
                 )
         unique_utm_cs = sorted(list(set(utm_cs_list)))
         if len(unique_utm_cs) > 1:
-            print(("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs))
+            print(
+                (
+                    "Warning: Multi-UTM-Zones found in the EDI files",
+                    unique_utm_cs,
+                )
+            )
 
     def write_shape_files(self, periods=None, normalize="all"):
         """
@@ -328,7 +347,8 @@ class PTShapeFile(object):
         for ii, plot_per in enumerate(periods):
             # shape file path
             shape_fn = os.path.join(
-                self.save_path, f"{ii}_PT_{plot_per:.0f}s_{self.projection}.shp"
+                self.save_path,
+                f"{ii}_PT_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over
@@ -359,7 +379,7 @@ class PTShapeFile(object):
                     name = "Name"
                 if len(name) > 10:
                     name = name[0:10]
-                if ndtype[0] in [np.float_]:
+                if ndtype[0] in [float]:
                     ftype = ogr.OFTReal
                 elif ndtype[0] in [np.str_, "U10"]:
                     ftype = ogr.OFTString
@@ -478,7 +498,9 @@ class PTShapeFile(object):
             print("Wrote shape file to {0}".format(shape_fn))
 
     # ===========================
-    def write_data_pt_shape_files_modem(self, modem_data_fn, rotation_angle=0.0):
+    def write_data_pt_shape_files_modem(
+        self, modem_data_fn, rotation_angle=0.0
+    ):
         """
         write pt files from a modem data file.
 
@@ -540,7 +562,8 @@ class PTShapeFile(object):
 
         self.plot_period = modem_data_obj.period_list.copy()
         self.mt_obj_list = [
-            modem_data_obj.mt_dict[key] for key in list(modem_data_obj.mt_dict.keys())
+            modem_data_obj.mt_dict[key]
+            for key in list(modem_data_obj.mt_dict.keys())
         ]
         # self._get_pt_array()
 
@@ -552,7 +575,9 @@ class PTShapeFile(object):
         # rotate model response
         if self.rotation_angle != 0.0:
             for r_key in list(modem_resp_obj.mt_dict.keys()):
-                modem_resp_obj.mt_dict[r_key].rotation_angle = float(rotation_angle)
+                modem_resp_obj.mt_dict[r_key].rotation_angle = float(
+                    rotation_angle
+                )
 
         residual_pt_list = []
         for key in list(modem_data_obj.mt_dict.keys()):
@@ -561,14 +586,18 @@ class PTShapeFile(object):
                 dpt = modem_data_obj.mt_dict[key].pt
                 mpt = modem_resp_obj.mt_dict[key].pt
             except KeyError:
-                print("No information found for {0} in {1}").format(key, modem_resp_fn)
+                print("No information found for {0} in {1}").format(
+                    key, modem_resp_fn
+                )
                 continue
 
             # calculate the residual pt
             try:
 
                 residual_pt_list.append(
-                    mtpt.ResidualPhaseTensor(pt_object1=dpt, pt_object2=mpt).residual_pt
+                    mtpt.ResidualPhaseTensor(
+                        pt_object1=dpt, pt_object2=mpt
+                    ).residual_pt
                 )
 
             except mtpt.MTex.MTpyError_PT:
@@ -686,7 +715,9 @@ class TipperShapeFile(object):
         return self._rotation_angle
 
     rotation_angle = property(
-        _get_rotation_angle, _set_rotation_angle, doc="rotation angle of Z and Tipper"
+        _get_rotation_angle,
+        _set_rotation_angle,
+        doc="rotation angle of Z and Tipper",
     )
 
     def _get_plot_period(self):
@@ -709,7 +740,9 @@ class TipperShapeFile(object):
         else:
             if isinstance(self.plot_period, list):
                 pass
-            if isinstance(self.plot_period, int) or isinstance(self.plot_period, float):
+            if isinstance(self.plot_period, int) or isinstance(
+                self.plot_period, float
+            ):
                 self.plot_period = [self.plot_period]
 
     def _get_tip_array(self):
@@ -736,7 +769,11 @@ class TipperShapeFile(object):
                         and (f2 < plot_per * (1 + self.ptol))
                     ][0]
                     if self.projection is None:  # geographic-coord lat lon
-                        east, north, elev = (mt_obj.longitude, mt_obj.latitude, 0)
+                        east, north, elev = (
+                            mt_obj.longitude,
+                            mt_obj.latitude,
+                            0,
+                        )
                         self.utm_cs = osr.SpatialReference()
                         # Set geographic coordinate system to handle lat/lon
                         # self.utm_cs.SetWellKnownGeogCS(self.projection)
@@ -768,7 +805,15 @@ class TipperShapeFile(object):
                             )
                             self.tip_dict[plot_per].append(tp_tuple)
                         else:
-                            tp_tuple = (mt_obj.station, east, north, 0, 0, 0, 0)
+                            tp_tuple = (
+                                mt_obj.station,
+                                east,
+                                north,
+                                0,
+                                0,
+                                0,
+                                0,
+                            )
                             self.tip_dict[plot_per].append(tp_tuple)
 
                 except IndexError:
@@ -778,18 +823,23 @@ class TipperShapeFile(object):
                 self.tip_dict[plot_per],
                 dtype=[
                     ("station", "|S15"),
-                    ("east", np.float),
-                    ("north", np.float),
-                    ("mag_real", np.float),
-                    ("mag_imag", np.float),
-                    ("ang_real", np.float),
-                    ("ang_imag", np.float),
+                    ("east", float),
+                    ("north", float),
+                    ("mag_real", float),
+                    ("mag_imag", float),
+                    ("ang_real", float),
+                    ("ang_imag", float),
                 ],
             )
 
         unique_utm_cs = sorted(list(set(utm_cs_list)))
         if len(unique_utm_cs) > 1:
-            print(("Warning: Multi-UTM-Zones found in the EDI files", unique_utm_cs))
+            print(
+                (
+                    "Warning: Multi-UTM-Zones found in the EDI files",
+                    unique_utm_cs,
+                )
+            )
 
     def write_real_shape_files(self):
         """
@@ -801,7 +851,8 @@ class TipperShapeFile(object):
         for ii, plot_per in enumerate(self.plot_period):
             # shape file path
             shape_fn = os.path.join(
-                self.save_path, f"{ii}_TIP_REAL_{plot_per:.0f}s_{self.projection}.shp",
+                self.save_path,
+                f"{ii}_TIP_REAL_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over
@@ -824,7 +875,9 @@ class TipperShapeFile(object):
             # spatial_ref.ImportFromEPSG(self._proj_dict[self.projection])
 
             # create a layer to put the ellipses onto
-            layer = data_source.CreateLayer("TIPPER", self.utm_cs, ogr.wkbPolygon)
+            layer = data_source.CreateLayer(
+                "TIPPER", self.utm_cs, ogr.wkbPolygon
+            )
 
             # make field names
             field_name = ogr.FieldDefn("Name", ogr.OFTString)
@@ -941,7 +994,8 @@ class TipperShapeFile(object):
         for ii, plot_per in enumerate(self.plot_period):
             # shape file path
             shape_fn = os.path.join(
-                self.save_path, f"{ii}_TIP_IMAG_{plot_per:.0f}s_{self.projection}.shp",
+                self.save_path,
+                f"{ii}_TIP_IMAG_{plot_per:.0f}s_{self.projection}.shp",
             )
 
             # remove the shape file if it already exists, has trouble over
@@ -964,7 +1018,9 @@ class TipperShapeFile(object):
             # spatial_ref.ImportFromEPSG(self._proj_dict[self.projection])
 
             # create a layer to put the ellipses onto
-            layer = data_source.CreateLayer("TIPPER", self.utm_cs, ogr.wkbPolygon)
+            layer = data_source.CreateLayer(
+                "TIPPER", self.utm_cs, ogr.wkbPolygon
+            )
 
             # make field names
             field_name = ogr.FieldDefn("Name", ogr.OFTString)
@@ -1151,7 +1207,9 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj="WGS84"):
     if os.path.exists(outputShapefile):
         driver.DeleteDataSource(outputShapefile)
     outDataSet = driver.CreateDataSource(outputShapefile)
-    outLayer = outDataSet.CreateLayer("basemap_4326", geom_type=ogr.wkbMultiPolygon)
+    outLayer = outDataSet.CreateLayer(
+        "basemap_4326", geom_type=ogr.wkbMultiPolygon
+    )
 
     # add fields
     inLayerDefn = inLayer.GetLayerDefn()
@@ -1175,7 +1233,8 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj="WGS84"):
         outFeature.SetGeometry(geom)
         for i in range(0, outLayerDefn.GetFieldCount()):
             outFeature.SetField(
-                outLayerDefn.GetFieldDefn(i).GetNameRef(), inFeature.GetField(i)
+                outLayerDefn.GetFieldDefn(i).GetNameRef(),
+                inFeature.GetField(i),
             )
         # add the feature to the shapefile
         outLayer.CreateFeature(outFeature)
@@ -1202,7 +1261,9 @@ def array2raster(newRasterfn, rasterOrigin, pixelWidth, pixelHeight, array):
 
     driver = gdal.GetDriverByName("GTiff")
     outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
-    outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+    outRaster.SetGeoTransform(
+        (originX, pixelWidth, 0, originY, 0, pixelHeight)
+    )
     outband = outRaster.GetRasterBand(1)
     outband.WriteArray(array)
     outRasterSRS = osr.SpatialReference()
@@ -1274,7 +1335,12 @@ def modem_to_shapefiles(mfndat, save_dir):
 
 
 def create_phase_tensor_shpfiles(
-    edi_dir, save_dir, proj="WGS84", ellipse_size=1000, every_site=1, period_list=None
+    edi_dir,
+    save_dir,
+    proj="WGS84",
+    ellipse_size=1000,
+    every_site=1,
+    period_list=None,
 ):
     """
     generate shape file for a folder of edi files, and save the shape files a dir.
@@ -1354,7 +1420,9 @@ if __name__ == "__main__d":
     import sys
 
     if len(sys.argv) < 3:
-        print(("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0]))
+        print(
+            ("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0])
+        )
         sys.exit(1)
 
     src_file_dir = sys.argv[1]  # A modem data file  OR edi-folder
@@ -1397,13 +1465,23 @@ if __name__ == "__main__d":
     default="examples/data/edi_files",
     help="input edsi files dir  or Modem dat file examples/data/MoDEM_files/Modular_MPI_NLCG_028.dat",
 )
-@click.option("-o", "--output", type=str, default="temp", help="Output directory")
+@click.option(
+    "-o", "--output", type=str, default="temp", help="Output directory"
+)
 def generate_shape_files(input, output):
-    print("=======================================================================")
-    print("Generating Shapes File requires following inputs edsi files directory")
+    print(
+        "======================================================================="
+    )
+    print(
+        "Generating Shapes File requires following inputs edsi files directory"
+    )
     print("                                              or MoDEM input file")
-    print("Default output is in temp directory                                     ")
-    print("=======================================================================")
+    print(
+        "Default output is in temp directory                                     "
+    )
+    print(
+        "======================================================================="
+    )
     if not os.path.isdir(output):
         os.mkdir(output)
     print(("input = {}".format(input)))

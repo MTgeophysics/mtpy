@@ -20,8 +20,12 @@ except ImportError:
     raise ImportError("This version needs PyQt5")
 
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvasQTAgg as FigureCanvas,
+)
+from matplotlib.backends.backend_qt5agg import (
+    NavigationToolbar2QT as NavigationToolbar,
+)
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 from matplotlib.colors import Normalize
@@ -50,8 +54,9 @@ try:
     _encoding = QtWidgets.QApplication.UnicodeUTF8
 
     def _translate(context, text, disambig):
-        return QtWidgets.QApplication.translate(context, text, disambig, _encoding)
-
+        return QtWidgets.QApplication.translate(
+            context, text, disambig, _encoding
+        )
 
 except AttributeError:
 
@@ -290,7 +295,7 @@ class ModEMPlotPTMap(
     def get_data_fn(self):
         """
         get the filename from a file dialogue
-        
+
         """
 
         fn_dialog = QtWidgets.QFileDialog()
@@ -331,7 +336,7 @@ class ModEMPlotPTMap(
     def get_model_fn(self):
         """
         get the filename from a file dialogue
-        
+
         """
 
         fn_dialog = QtWidgets.QFileDialog()
@@ -351,7 +356,7 @@ class ModEMPlotPTMap(
 
     def get_period(self, widget_item):
         """
-        get the station name from the clicked station 
+        get the station name from the clicked station
         """
         self.plot_period = "{0:.5f}".format(float(str(widget_item.text())))
         self.plot()
@@ -413,49 +418,49 @@ class ModEMPlotPTMap(
         data_pt_arr = np.zeros(
             (nf, ns),
             dtype=[
-                ("phimin", np.float),
-                ("phimax", np.float),
-                ("skew", np.float),
-                ("azimuth", np.float),
-                ("east", np.float),
-                ("north", np.float),
-                ("txr", np.float),
-                ("tyr", np.float),
-                ("txi", np.float),
-                ("tyi", np.float),
+                ("phimin", float),
+                ("phimax", float),
+                ("skew", float),
+                ("azimuth", float),
+                ("east", float),
+                ("north", float),
+                ("txr", float),
+                ("tyr", float),
+                ("txi", float),
+                ("tyi", float),
             ],
         )
         if self.modem_resp_fn is not None:
             model_pt_arr = np.zeros(
                 (nf, ns),
                 dtype=[
-                    ("phimin", np.float),
-                    ("phimax", np.float),
-                    ("skew", np.float),
-                    ("azimuth", np.float),
-                    ("east", np.float),
-                    ("north", np.float),
-                    ("txr", np.float),
-                    ("tyr", np.float),
-                    ("txi", np.float),
-                    ("tyi", np.float),
+                    ("phimin", float),
+                    ("phimax", float),
+                    ("skew", float),
+                    ("azimuth", float),
+                    ("east", float),
+                    ("north", float),
+                    ("txr", float),
+                    ("tyr", float),
+                    ("txi", float),
+                    ("tyi", float),
                 ],
             )
 
             res_pt_arr = np.zeros(
                 (nf, ns),
                 dtype=[
-                    ("phimin", np.float),
-                    ("phimax", np.float),
-                    ("skew", np.float),
-                    ("azimuth", np.float),
-                    ("east", np.float),
-                    ("north", np.float),
-                    ("geometric_mean", np.float),
-                    ("txr", np.float),
-                    ("tyr", np.float),
-                    ("txi", np.float),
-                    ("tyi", np.float),
+                    ("phimin", float),
+                    ("phimax", float),
+                    ("skew", float),
+                    ("azimuth", float),
+                    ("east", float),
+                    ("north", float),
+                    ("geometric_mean", float),
+                    ("txr", float),
+                    ("tyr", float),
+                    ("txi", float),
+                    ("tyi", float),
                 ],
             )
 
@@ -512,7 +517,9 @@ class ModEMPlotPTMap(
                     np.deg2rad(mtip.angle_imag)
                 )
                 try:
-                    rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt, pt_object2=mpt)
+                    rpt = mtpt.ResidualPhaseTensor(
+                        pt_object1=dpt, pt_object2=mpt
+                    )
                     rpt = rpt.residual_pt
 
                     res_pt_arr[:, ii]["phimin"] = rpt.phimin
@@ -524,7 +531,9 @@ class ModEMPlotPTMap(
                     )
 
                 except mtex.MTpyError_PT:
-                    print("Could not calculate residual PT for {0}".format(key))
+                    print(
+                        "Could not calculate residual PT for {0}".format(key)
+                    )
 
                 res_pt_arr[:, ii]["east"] = east
                 res_pt_arr[:, ii]["north"] = north
@@ -552,7 +561,7 @@ class ModEMPlotPTMap(
     def get_depth_array(self):
         """
         estimate a niblett-bostick depth from the impedance tensors
-        
+
         find the average depth for each station at each period
         """
         if self.modem_data.mt_dict is None:
@@ -600,10 +609,10 @@ class ModEMPlotPTMap(
     def plot(self):
         """
         plot phase tensor maps for data and or response, each figure is of a
-        different period.  If response is input a third column is added which is 
-        the residual phase tensor showing where the model is not fitting the data 
+        different period.  If response is input a third column is added which is
+        the residual phase tensor showing where the model is not fitting the data
         well.  The data is plotted in km.
-        
+
         """
 
         plt.rcParams["font.size"] = self.font_size
@@ -693,7 +702,9 @@ class ModEMPlotPTMap(
                         )
                     )
 
-                    self.depth_text.setText("{0:.5g}".format(self.depth_array[data_ii]))
+                    self.depth_text.setText(
+                        "{0:.5g}".format(self.depth_array[data_ii])
+                    )
 
                 except IndexError:
                     print(
@@ -715,7 +726,9 @@ class ModEMPlotPTMap(
             )
 
             for ax in ax_list:
-                plot_res = np.log10(self.modem_model.res_model[:, :, d_index].T)
+                plot_res = np.log10(
+                    self.modem_model.res_model[:, :, d_index].T
+                )
                 ax.pcolormesh(
                     self.mesh_east,
                     self.mesh_north,
@@ -815,7 +828,9 @@ class ModEMPlotPTMap(
         if self.modem_resp_fn is not None:
             rcmin = np.floor(self.pt_resid_arr["geometric_mean"].min())
             rcmax = np.floor(self.pt_resid_arr["geometric_mean"].max())
-            for mpt, rpt in zip(self.pt_resp_arr[data_ii], self.pt_resid_arr[data_ii]):
+            for mpt, rpt in zip(
+                self.pt_resp_arr[data_ii], self.pt_resid_arr[data_ii]
+            ):
                 if mpt["phimin"] == 0 and mpt["phimax"] == 0:
                     pass
                 else:
@@ -864,8 +879,12 @@ class ModEMPlotPTMap(
 
                 # -----------Plot Induction Arrows---------------------------
                 if mpt["txr"] != 0.0:
-                    real_mag = np.sqrt(abs(mpt["txr"]) ** 2 + abs(mpt["tyr"]) ** 2)
-                    imag_mag = np.sqrt(abs(mpt["txi"]) ** 2 + abs(mpt["tyi"]) ** 2)
+                    real_mag = np.sqrt(
+                        abs(mpt["txr"]) ** 2 + abs(mpt["tyr"]) ** 2
+                    )
+                    imag_mag = np.sqrt(
+                        abs(mpt["txi"]) ** 2 + abs(mpt["tyi"]) ** 2
+                    )
                     # plot real tipper
                     if real_mag <= self.arrow_threshold:
                         axm.arrow(
@@ -950,8 +969,12 @@ class ModEMPlotPTMap(
 
                 # -----------Plot Induction Arrows---------------------------
                 if rpt["txr"] != 0.0:
-                    real_mag = np.sqrt(abs(rpt["txr"]) ** 2 + abs(rpt["tyr"]) ** 2)
-                    imag_mag = np.sqrt(abs(rpt["txi"]) ** 2 + abs(rpt["tyi"]) ** 2)
+                    real_mag = np.sqrt(
+                        abs(rpt["txr"]) ** 2 + abs(rpt["tyr"]) ** 2
+                    )
+                    imag_mag = np.sqrt(
+                        abs(rpt["txi"]) ** 2 + abs(rpt["tyi"]) ** 2
+                    )
                     # plot real tipper
                     if real_mag <= self.arrow_threshold:
                         axr.arrow(
@@ -991,8 +1014,12 @@ class ModEMPlotPTMap(
         axd.set_xlim(self.ew_limits)
         axd.set_ylim(self.ns_limits)
 
-        axd.set_xlabel("Easting ({0})".format(self.map_scale), fontdict=font_dict)
-        axd.set_ylabel("Northing ({0})".format(self.map_scale), fontdict=font_dict)
+        axd.set_xlabel(
+            "Easting ({0})".format(self.map_scale), fontdict=font_dict
+        )
+        axd.set_ylabel(
+            "Northing ({0})".format(self.map_scale), fontdict=font_dict
+        )
         # make a colorbar for phase tensors
         # bb = axd.axes.get_position().bounds
         bb = axd.get_position().bounds
@@ -1012,8 +1039,12 @@ class ModEMPlotPTMap(
         if self.ellipse_cmap == "mt_seg_bl2wh2rd":
             # make a color list
             clist = [
-                (cc, cc, 1) for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
-            ] + [(1, cc, cc) for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))]
+                (cc, cc, 1)
+                for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
+            ] + [
+                (1, cc, cc)
+                for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
+            ]
 
             # make segmented colormap
             mt_seg_bl2wh2rd = colors.ListedColormap(clist)
@@ -1081,17 +1112,23 @@ class ModEMPlotPTMap(
                         # make a color list
                         clist = [
                             (cc, cc, 1)
-                            for cc in np.arange(0, 1 + 1.0 / (nseg), 1.0 / (nseg))
+                            for cc in np.arange(
+                                0, 1 + 1.0 / (nseg), 1.0 / (nseg)
+                            )
                         ] + [
                             (1, cc, cc)
-                            for cc in np.arange(1, -1.0 / (nseg), -1.0 / (nseg))
+                            for cc in np.arange(
+                                1, -1.0 / (nseg), -1.0 / (nseg)
+                            )
                         ]
 
                         # make segmented colormap
                         mt_seg_bl2wh2rd = colors.ListedColormap(clist)
 
                         # make bounds so that the middle is white
-                        bounds = np.arange(ckmin - ckstep, ckmax + 2 * ckstep, ckstep)
+                        bounds = np.arange(
+                            ckmin - ckstep, ckmax + 2 * ckstep, ckstep
+                        )
 
                         # normalize the colors
                         norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
@@ -1115,7 +1152,9 @@ class ModEMPlotPTMap(
                     cb_ptr.ax.xaxis.set_label_coords(0.5, 1.75)
                     cb_ptr.set_label(mtplottools.ckdict[self.ellipse_colorby])
                     cb_ptr.set_ticks(
-                        np.arange(ckmin, ckmax + self.cb_tick_step, self.cb_tick_step)
+                        np.arange(
+                            ckmin, ckmax + self.cb_tick_step, self.cb_tick_step
+                        )
                     )
                     ax.text(
                         self.ew_limits[0] * 0.95,
@@ -1166,21 +1205,29 @@ class ModEMPlotPTMap(
                 cb_res = mcb.ColorbarBase(
                     cbax,
                     cmap=cm.get_cmap(self.res_cmap),
-                    norm=Normalize(vmin=self.res_limits[0], vmax=self.res_limits[1]),
+                    norm=Normalize(
+                        vmin=self.res_limits[0], vmax=self.res_limits[1]
+                    ),
                     orientation="horizontal",
                 )
                 cb_res.ax.xaxis.set_label_position("top")
                 cb_res.ax.xaxis.set_label_coords(0.5, 1.5)
                 cb_res.set_label("Resistivity ($\Omega \cdot$m)")
                 cb_ticks = np.arange(
-                    np.floor(self.res_limits[0]), np.ceil(self.res_limits[1] + 1), 1
+                    np.floor(self.res_limits[0]),
+                    np.ceil(self.res_limits[1] + 1),
+                    1,
                 )
                 cb_res.set_ticks(cb_ticks)
-                cb_res.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
+                cb_res.set_ticklabels(
+                    [mtplottools.labeldict[ctk] for ctk in cb_ticks]
+                )
 
         if self.plot_stations == True:
             for ax in ax_list:
-                for s_arr in self.modem_data.station_locations.station_locations:
+                for (
+                    s_arr
+                ) in self.modem_data.station_locations.station_locations:
                     ax.text(
                         s_arr["rel_east"] / self.dscale,
                         s_arr["rel_north"] / self.dscale,
@@ -1319,11 +1366,15 @@ class PlotSettings(QtWidgets.QWidget):
         ellipse_size_edit.setText("{0:.2f}".format(self.ellipse_size))
         ellipse_size_edit.textChanged[str].connect(self.set_ellipse_size)
 
-        ellipse_range_label = QtWidgets.QLabel("Ellipse Range (min, max, step)")
+        ellipse_range_label = QtWidgets.QLabel(
+            "Ellipse Range (min, max, step)"
+        )
 
         ellipse_range_edit_min = QtWidgets.QLineEdit()
         try:
-            ellipse_range_edit_min.setText("{0:.2f}".format(self.ellipse_range[0]))
+            ellipse_range_edit_min.setText(
+                "{0:.2f}".format(self.ellipse_range[0])
+            )
         except IndexError:
             if self.ellipse_colorby == "skew":
                 ellipse_range_edit_min.setText("{0:.2f}".format(-9))
@@ -1331,11 +1382,15 @@ class PlotSettings(QtWidgets.QWidget):
             else:
                 ellipse_range_edit_min.setText("{0:.2f}".format(0))
                 self.ellipse_range = [0]
-        ellipse_range_edit_min.textChanged[str].connect(self.set_ellipse_range_min)
+        ellipse_range_edit_min.textChanged[str].connect(
+            self.set_ellipse_range_min
+        )
 
         ellipse_range_edit_max = QtWidgets.QLineEdit()
         try:
-            ellipse_range_edit_max.setText("{0:.2f}".format(self.ellipse_range[1]))
+            ellipse_range_edit_max.setText(
+                "{0:.2f}".format(self.ellipse_range[1])
+            )
         except IndexError:
             if self.ellipse_colorby == "skew":
                 ellipse_range_edit_max.setText("{0:.2f}".format(9))
@@ -1343,11 +1398,15 @@ class PlotSettings(QtWidgets.QWidget):
             else:
                 ellipse_range_edit_max.setText("{0:.2f}".format(90))
                 self.ellipse_range.append(90.0)
-        ellipse_range_edit_max.textChanged[str].connect(self.set_ellipse_range_max)
+        ellipse_range_edit_max.textChanged[str].connect(
+            self.set_ellipse_range_max
+        )
 
         ellipse_range_edit_step = QtWidgets.QLineEdit()
         try:
-            ellipse_range_edit_step.setText("{0:.2f}".format(self.ellipse_range[2]))
+            ellipse_range_edit_step.setText(
+                "{0:.2f}".format(self.ellipse_range[2])
+            )
         except IndexError:
             if self.ellipse_colorby == "skew":
                 ellipse_range_edit_step.setText("{0:.2f}".format(3))
@@ -1355,7 +1414,9 @@ class PlotSettings(QtWidgets.QWidget):
             else:
                 ellipse_range_edit_step.setText("{0:.2f}".format(5))
                 self.ellipse_range.append(5)
-        ellipse_range_edit_step.textChanged[str].connect(self.set_ellipse_range_step)
+        ellipse_range_edit_step.textChanged[str].connect(
+            self.set_ellipse_range_step
+        )
 
         range_grid = QtWidgets.QGridLayout()
         range_grid.setSpacing(5)
@@ -1409,13 +1470,19 @@ class PlotSettings(QtWidgets.QWidget):
 
         arrow_head_length_label = QtWidgets.QLabel("Arrow Head Size")
         arrow_head_length_edit = QtWidgets.QLineEdit()
-        arrow_head_length_edit.setText("{0:.2f}".format(self.arrow_head_length))
-        arrow_head_length_edit.textChanged[str].connect(self.set_arrow_head_length)
+        arrow_head_length_edit.setText(
+            "{0:.2f}".format(self.arrow_head_length)
+        )
+        arrow_head_length_edit.textChanged[str].connect(
+            self.set_arrow_head_length
+        )
 
         arrow_head_width_label = QtWidgets.QLabel("Arrow Head Width")
         arrow_head_width_edit = QtWidgets.QLineEdit()
         arrow_head_width_edit.setText("{0:.2f}".format(self.arrow_head_width))
-        arrow_head_width_edit.textChanged[str].connect(self.set_arrow_head_width)
+        arrow_head_width_edit.textChanged[str].connect(
+            self.set_arrow_head_width
+        )
 
         arrow_direction_label = QtWidgets.QLabel("Arrow Direction")
         arrow_direction_combo = QtWidgets.QComboBox()

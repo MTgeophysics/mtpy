@@ -269,8 +269,8 @@ class WSData(object):
         z_shape = (n_periods, 2, 2)
         data_dtype = [
             ("station", "|S10"),
-            ("east", np.float),
-            ("north", np.float),
+            ("east", float),
+            ("north", float),
             ("z_data", (np.complex, z_shape)),
             ("z_data_err", (np.complex, z_shape)),
             ("z_err_map", (np.complex, z_shape)),
@@ -550,8 +550,8 @@ class WSData(object):
         z_shape = (n_periods, 2, 2)
         data_dtype = [
             ("station", "|S10"),
-            ("east", np.float),
-            ("north", np.float),
+            ("east", float),
+            ("north", float),
             ("z_data", (np.complex, z_shape)),
             ("z_data_err", (np.complex, z_shape)),
             ("z_err_map", (np.complex, z_shape)),
@@ -636,7 +636,7 @@ class WSData(object):
 
             else:
                 if dkey == "z_err_map":
-                    zline = np.array(dl.strip().split(), dtype=np.float)
+                    zline = np.array(dl.strip().split(), dtype=float)
                     self.data[st][dkey][per - 1, :] = np.array(
                         [
                             [
@@ -650,9 +650,7 @@ class WSData(object):
                         ]
                     )
                 else:
-                    zline = (
-                        np.array(dl.strip().split(), dtype=np.float) * zconv
-                    )
+                    zline = np.array(dl.strip().split(), dtype=float) * zconv
                     self.data[st][dkey][per - 1, :] = np.array(
                         [
                             [
@@ -682,10 +680,10 @@ class WSData(object):
             len(self.station_east),
             dtype=[
                 ("station", "|S10"),
-                ("east", np.float),
-                ("north", np.float),
-                ("east_c", np.float),
-                ("north_c", np.float),
+                ("east", float),
+                ("north", float),
+                ("east_c", float),
+                ("north_c", float),
             ],
         )
         self.station_locations["east"] = self.data["east"]
@@ -850,9 +848,9 @@ class WSStation(object):
             skiprows=1,
             dtype=[
                 ("station", "|S10"),
-                ("east_c", np.float),
-                ("north_c", np.float),
-                ("elev", np.float),
+                ("east_c", float),
+                ("north_c", float),
+                ("elev", float),
             ],
         )
 
@@ -1088,11 +1086,11 @@ class WSMesh(object):
                 n_stations,
                 dtype=[
                     ("station", "|S10"),
-                    ("east", np.float),
-                    ("north", np.float),
-                    ("east_c", np.float),
-                    ("north_c", np.float),
-                    ("elev", np.float),
+                    ("east", float),
+                    ("north", float),
+                    ("east_c", float),
+                    ("north_c", float),
+                    ("elev", float),
                 ],
             )
             # get station locations in meters
@@ -2315,9 +2313,7 @@ class WSModelManipulator(object):
         self.res_list = kwargs.pop("res_list", None)
         if self.res_list is None:
             self.set_res_list(
-                np.array(
-                    [0.3, 1, 10, 50, 100, 500, 1000, 5000], dtype=np.float
-                )
+                np.array([0.3, 1, 10, 50, 100, 500, 1000, 5000], dtype=float)
             )
 
         else:
@@ -3111,8 +3107,8 @@ class WSResponse(object):
         z_shape = (n_periods, 2, 2)
         resp_dtype = [
             ("station", "|S10"),
-            ("east", np.float),
-            ("north", np.float),
+            ("east", float),
+            ("north", float),
             ("z_resp", (np.complex, z_shape)),
             ("z_resp_err", (np.complex, z_shape)),
         ]
@@ -3178,9 +3174,7 @@ class WSResponse(object):
             elif dl.lower().find("#iteration") >= 0:
                 break
             else:
-                zline = (
-                    np.array(dl.strip().split(), dtype=np.float) * self._zconv
-                )
+                zline = np.array(dl.strip().split(), dtype=float) * self._zconv
                 self.resp[st][dkey][per - 1, :] = np.array(
                     [
                         [zline[0] - 1j * zline[1], zline[2] - 1j * zline[3]],

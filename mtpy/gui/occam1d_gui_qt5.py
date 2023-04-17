@@ -21,8 +21,12 @@ except ImportError:
     raise ImportError("This version needs PyQt5")
 
 import mtpy.modeling.occam1d as occam1d
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import (
+    FigureCanvasQTAgg as FigureCanvas,
+)
+from matplotlib.backends.backend_qt4agg import (
+    NavigationToolbar2QT as NavigationToolbar,
+)
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
@@ -156,7 +160,9 @@ class Occam1D_GUI(QtWidgets.QMainWindow):
 
         help_string = "\n".join(ll)
 
-        QtWidgets.QMessageBox.information(self.central_widget, "Help", help_string)
+        QtWidgets.QMessageBox.information(
+            self.central_widget, "Help", help_string
+        )
 
     def get_data_file(self):
         fn_dialog = QtWidgets.QFileDialog()
@@ -296,12 +302,16 @@ class OccamWidget(QtWidgets.QWidget):
 
         self.z_target_label = QtWidgets.QLabel("Target Depth (m)")
         self.z_target_edit = QtWidgets.QLineEdit()
-        self.z_target_edit.setText("{0:.2f}".format(self.occam_model.target_depth))
+        self.z_target_edit.setText(
+            "{0:.2f}".format(self.occam_model.target_depth)
+        )
         self.z_target_edit.editingFinished.connect(self.set_z_target)
 
         self.z_bottom_label = QtWidgets.QLabel("Bottom of the Model (m)")
         self.z_bottom_edit = QtWidgets.QLineEdit()
-        self.z_bottom_edit.setText("{0:.2f}".format(self.occam_model.bottom_layer))
+        self.z_bottom_edit.setText(
+            "{0:.2f}".format(self.occam_model.bottom_layer)
+        )
         self.z_bottom_edit.editingFinished.connect(self.set_z_bottom)
 
         # starting resistivity
@@ -310,17 +320,23 @@ class OccamWidget(QtWidgets.QWidget):
 
         self.start_rho_label = QtWidgets.QLabel("Starting rho (Ohmm)")
         self.start_rho_edit = QtWidgets.QLineEdit()
-        self.start_rho_edit.setText("{0:.2f}".format(self.occam_startup.start_rho))
+        self.start_rho_edit.setText(
+            "{0:.2f}".format(self.occam_startup.start_rho)
+        )
         self.start_rho_edit.editingFinished.connect(self.set_rho)
 
         self.max_iter_label = QtWidgets.QLabel("Num of Iterations")
         self.max_iter_edit = QtWidgets.QLineEdit()
-        self.max_iter_edit.setText("{0:.0f}".format(self.occam_startup.max_iter))
+        self.max_iter_edit.setText(
+            "{0:.0f}".format(self.occam_startup.max_iter)
+        )
         self.max_iter_edit.editingFinished.connect(self.set_max_iter)
 
         self.target_rms_label = QtWidgets.QLabel("Target RMS")
         self.target_rms_edit = QtWidgets.QLineEdit()
-        self.target_rms_edit.setText("{0:.2f}".format(self.occam_startup.target_rms))
+        self.target_rms_edit.setText(
+            "{0:.2f}".format(self.occam_startup.target_rms)
+        )
         self.target_rms_edit.editingFinished.connect(self.set_target_rms)
 
         self.start_roughness_label = QtWidgets.QLabel("Starting Roughness")
@@ -335,13 +351,17 @@ class OccamWidget(QtWidgets.QWidget):
         self.start_lagrange_edit.setText(
             "{0:.2f}".format(self.occam_startup.start_lagrange)
         )
-        self.start_lagrange_edit.editingFinished.connect(self.set_start_lagrange)
+        self.start_lagrange_edit.editingFinished.connect(
+            self.set_start_lagrange
+        )
 
         self.iter_combo_label = QtWidgets.QLabel("Plot Iteration")
         self.iter_combo_edit = QtWidgets.QComboBox()
         self.iter_combo_edit.addItem("1")
         self.iter_combo_edit.activated[str].connect(self.set_iteration)
-        self.iter_combo_edit.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.iter_combo_edit.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.AdjustToContents
+        )
         self.iter_combo_edit.setMinimumWidth(50)
 
         self.output_box = QtWidgets.QTextEdit()
@@ -457,7 +477,9 @@ class OccamWidget(QtWidgets.QWidget):
 
         occam_path_dialog = QtWidgets.QFileDialog()
         fn = str(
-            occam_path_dialog.getOpenFileName(caption="Locate Occam1D executable")[0]
+            occam_path_dialog.getOpenFileName(
+                caption="Locate Occam1D executable"
+            )[0]
         )
 
         self.occam_exec = os.path.abspath(fn)
@@ -472,13 +494,17 @@ class OccamWidget(QtWidgets.QWidget):
             edi_dialog = QtWidgets.QFileDialog()
             fn = str(
                 edi_dialog.getOpenFileName(
-                    caption="Pick .edi file", filter="*.edi", directory=edi_path
+                    caption="Pick .edi file",
+                    filter="*.edi",
+                    directory=edi_path,
                 )[0]
             )
         else:
             edi_dialog = QtWidgets.QFileDialog()
             fn = str(
-                edi_dialog.getOpenFileName(caption="Pick .edi file", filter="*.edi")[0]
+                edi_dialog.getOpenFileName(
+                    caption="Pick .edi file", filter="*.edi"
+                )[0]
             )
         self.edi_fn = fn
         self.get_edi_edit.setText(self.edi_fn)
@@ -561,31 +587,47 @@ class OccamWidget(QtWidgets.QWidget):
 
     def set_z_target(self):
         self.occam_model.target_depth = float(str(self.z_target_edit.text()))
-        self.z_target_edit.setText("{0:.2f}".format(self.occam_model.target_depth))
+        self.z_target_edit.setText(
+            "{0:.2f}".format(self.occam_model.target_depth)
+        )
         self.mpl_widget.depth_limits = (0, self.occam_model.target_depth)
 
     def set_z_bottom(self):
         self.occam_model.bottom_layer = float(str(self.z_bottom_edit.text()))
-        self.z_bottom_edit.setText("{0:.2f}".format(self.occam_model.bottom_layer))
+        self.z_bottom_edit.setText(
+            "{0:.2f}".format(self.occam_model.bottom_layer)
+        )
 
     def set_rho(self):
         self.occam_startup.start_rho = float(str(self.start_rho_edit.text()))
-        self.start_rho_edit.setText("{0:.2f}".format(self.occam_startup.start_rho))
+        self.start_rho_edit.setText(
+            "{0:.2f}".format(self.occam_startup.start_rho)
+        )
 
     def set_max_iter(self):
         self.occam_startup.max_iter = int(str(self.max_iter_edit.text()))
-        self.max_iter_edit.setText("{0:.0f}".format(self.occam_startup.max_iter))
+        self.max_iter_edit.setText(
+            "{0:.0f}".format(self.occam_startup.max_iter)
+        )
 
     def set_target_rms(self):
         self.occam_startup.target_rms = float(str(self.target_rms_edit.text()))
-        self.target_rms_edit.setText("{0:.2f}".format(self.occam_startup.target_rms))
+        self.target_rms_edit.setText(
+            "{0:.2f}".format(self.occam_startup.target_rms)
+        )
 
     def set_start_rough(self):
-        self.occam_startup.start_rough = float(str(self.start_roughness_edit.text()))
-        self.start_rough_edit.setText("{0:.2f}".format(self.occam_startup.start_rough))
+        self.occam_startup.start_rough = float(
+            str(self.start_roughness_edit.text())
+        )
+        self.start_rough_edit.setText(
+            "{0:.2f}".format(self.occam_startup.start_rough)
+        )
 
     def set_start_lagrange(self):
-        self.occam_startup.start_lagrange = float(str(self.start_lagrange_edit.text()))
+        self.occam_startup.start_lagrange = float(
+            str(self.start_lagrange_edit.text())
+        )
         self.start_lagrange_edit.setText(
             "{0:.2f}".format(self.occam_startup.start_lagrange)
         )
@@ -609,7 +651,9 @@ class OccamWidget(QtWidgets.QWidget):
 
             if self.occam_data.data_fn is None:
                 self.save_dir = os.path.join(
-                    self.station_dir, self.data_mode, "Inv_{0:02}".format(inv_num)
+                    self.station_dir,
+                    self.data_mode,
+                    "Inv_{0:02}".format(inv_num),
                 )
 
     def run_occam(self):
@@ -935,7 +979,9 @@ class OccamPlot(QtWidgets.QWidget):
 
         self.mpl_widget.updateGeometry()
 
-    def plot_data(self, data_fn=None, resp_fn=None, model_fn=None, iter_fn=None):
+    def plot_data(
+        self, data_fn=None, resp_fn=None, model_fn=None, iter_fn=None
+    ):
         """
         plot response and depth model
         """
@@ -1134,7 +1180,10 @@ class OccamPlot(QtWidgets.QWidget):
             # --> TE mode Data
             if len(rxy) > 0:
                 rte = self.axr.errorbar(
-                    1.0 / r1.freq[rxy], r1.res_te[2][rxy], yerr=None, **r_kwargs
+                    1.0 / r1.freq[rxy],
+                    r1.res_te[2][rxy],
+                    yerr=None,
+                    **r_kwargs
                 )
             self.resp_obj = occam1d.Data()
             self.resp_obj.read_resp_file(resp_fn, data_fn=data_fn)
@@ -1215,7 +1264,9 @@ class OccamPlot(QtWidgets.QWidget):
         )
         # plt.suptitle(self.title_str,fontsize=self.font_size+2,fontweight='bold')
         for ax in [self.axr, self.axp, self.axm]:
-            ax.tick_params(axis="both", which="major", labelsize=self.font_size - 2)
+            ax.tick_params(
+                axis="both", which="major", labelsize=self.font_size - 2
+            )
 
         # --> plot depth model--------------------------------------------------
         if model_fn is not None:
@@ -1231,7 +1282,11 @@ class OccamPlot(QtWidgets.QWidget):
             plot_model = abs(10 ** self.model_obj.model_res[1:, 1])
 
             self.axm.semilogx(
-                plot_model[::-1], plot_depth[::-1], ls="steps-", color="b", lw=self.lw
+                plot_model[::-1],
+                plot_depth[::-1],
+                ls="steps-",
+                color="b",
+                lw=self.lw,
             )
 
             if self.depth_limits == None:
@@ -1260,7 +1315,8 @@ class OccamPlot(QtWidgets.QWidget):
                     )
                 else:
                     self.axm.set_ylim(
-                        ymin=max(self.depth_limits), ymax=min(self.depth_limits)
+                        ymin=max(self.depth_limits),
+                        ymax=min(self.depth_limits),
                     )
 
         if self.depth_scale == "log":
@@ -1331,11 +1387,19 @@ class OccamPlot(QtWidgets.QWidget):
                     )
 
                 # make error bar array
-                eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
+                eb = (
+                    self._err_list[self._ax_index][2]
+                    .get_paths()[p_index]
+                    .vertices
+                )
 
                 # make ecap array
-                ecap_l = self._err_list[self._ax_index][0].get_data()[1][p_index]
-                ecap_u = self._err_list[self._ax_index][1].get_data()[1][p_index]
+                ecap_l = self._err_list[self._ax_index][0].get_data()[1][
+                    p_index
+                ]
+                ecap_u = self._err_list[self._ax_index][1].get_data()[1][
+                    p_index
+                ]
 
                 # change apparent resistivity error
                 neb_u = eb[0, 1] - 0.1 * abs(eb[0, 1])
@@ -1356,7 +1420,9 @@ class OccamPlot(QtWidgets.QWidget):
                 # set the values
                 self._err_list[self._ax_index][0].set_data(ncap_l)
                 self._err_list[self._ax_index][1].set_data(ncap_u)
-                self._err_list[self._ax_index][2].get_paths()[p_index].vertices = eb
+                self._err_list[self._ax_index][2].get_paths()[
+                    p_index
+                ].vertices = eb
 
             if self._ax_index == 1:
                 te_err = self.data_obj.phase_te[1, p_index]
@@ -1378,11 +1444,19 @@ class OccamPlot(QtWidgets.QWidget):
                         )
                     )
                 # make error bar array
-                eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
+                eb = (
+                    self._err_list[self._ax_index][2]
+                    .get_paths()[p_index]
+                    .vertices
+                )
 
                 # make ecap array
-                ecap_l = self._err_list[self._ax_index][0].get_data()[1][p_index]
-                ecap_u = self._err_list[self._ax_index][1].get_data()[1][p_index]
+                ecap_l = self._err_list[self._ax_index][0].get_data()[1][
+                    p_index
+                ]
+                ecap_u = self._err_list[self._ax_index][1].get_data()[1][
+                    p_index
+                ]
 
                 # change apparent phase error
                 neb_u = eb[0, 1] - 0.025 * abs(eb[0, 1])
@@ -1403,7 +1477,9 @@ class OccamPlot(QtWidgets.QWidget):
                 # set the values
                 self._err_list[self._ax_index][0].set_data(ncap_l)
                 self._err_list[self._ax_index][1].set_data(ncap_u)
-                self._err_list[self._ax_index][2].get_paths()[p_index].vertices = eb
+                self._err_list[self._ax_index][2].get_paths()[
+                    p_index
+                ].vertices = eb
 
         # be sure to draw the adjustments
         self._ax.figure.canvas.draw()
@@ -1504,7 +1580,7 @@ class PlotL2(QtWidgets.QWidget):
         self.rms_arr = np.zeros(
             len(iter_list),
             dtype=np.dtype(
-                [("iteration", np.int), ("rms", np.float), ("roughness", np.float)]
+                [("iteration", np.int), ("rms", float), ("roughness", float)]
             ),
         )
         for ii, fn in enumerate(iter_list):
@@ -1612,7 +1688,8 @@ class PlotL2(QtWidgets.QWidget):
             "RMS", fontdict={"size": self.font_size + 2, "weight": "bold"}
         )
         self.ax1.set_xlabel(
-            "Iteration", fontdict={"size": self.font_size + 2, "weight": "bold"}
+            "Iteration",
+            fontdict={"size": self.font_size + 2, "weight": "bold"},
         )
         self.ax1.grid(alpha=0.25, which="both", lw=self.rough_lw)
         self.ax2.set_ylabel(

@@ -207,7 +207,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         self._read_ellipse_dict(self._ellipse_dict)
 
-        self.ellipse_size = kwargs.pop("ellipse_size", self._ellipse_dict["size"])
+        self.ellipse_size = kwargs.pop(
+            "ellipse_size", self._ellipse_dict["size"]
+        )
 
         self.normalise_ellipses = kwargs.pop("normalise_ellipses", False)
 
@@ -289,7 +291,10 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 self.plot_period_list = [self.plot_period_list]
 
         self.period_dict = dict(
-            [(key, value) for value, key in enumerate(self.data_obj.period_list)]
+            [
+                (key, value)
+                for value, key in enumerate(self.data_obj.period_list)
+            ]
         )
 
     def _get_pt(self):
@@ -303,14 +308,14 @@ class PlotPTMaps(mtplottools.MTEllipse):
         data_pt_arr = np.zeros(
             (nf, ns),
             dtype=[
-                ("phimin", np.float),
-                ("phimax", np.float),
-                ("skew", np.float),
-                ("azimuth", np.float),
-                ("east", np.float),
-                ("north", np.float),
-                ("lon", np.float),
-                ("lat", np.float),
+                ("phimin", float),
+                ("phimax", float),
+                ("skew", float),
+                ("azimuth", float),
+                ("east", float),
+                ("north", float),
+                ("lon", float),
+                ("lat", float),
                 ("station", "S10"),
             ],
         )
@@ -318,14 +323,14 @@ class PlotPTMaps(mtplottools.MTEllipse):
             model_pt_arr = np.zeros(
                 (nf, ns),
                 dtype=[
-                    ("phimin", np.float),
-                    ("phimax", np.float),
-                    ("skew", np.float),
-                    ("azimuth", np.float),
-                    ("east", np.float),
-                    ("north", np.float),
-                    ("lon", np.float),
-                    ("lat", np.float),
+                    ("phimin", float),
+                    ("phimax", float),
+                    ("skew", float),
+                    ("azimuth", float),
+                    ("east", float),
+                    ("north", float),
+                    ("lon", float),
+                    ("lat", float),
                     ("station", "S10"),
                 ],
             )
@@ -333,15 +338,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
             res_pt_arr = np.zeros(
                 (nf, ns),
                 dtype=[
-                    ("phimin", np.float),
-                    ("phimax", np.float),
-                    ("skew", np.float),
-                    ("azimuth", np.float),
-                    ("east", np.float),
-                    ("north", np.float),
-                    ("lon", np.float),
-                    ("lat", np.float),
-                    ("geometric_mean", np.float),
+                    ("phimin", float),
+                    ("phimax", float),
+                    ("skew", float),
+                    ("azimuth", float),
+                    ("east", float),
+                    ("north", float),
+                    ("lon", float),
+                    ("lat", float),
+                    ("geometric_mean", float),
                     ("station", "S10"),
                 ],
             )
@@ -378,7 +383,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]["phimax"] = rpt.phimax
                     res_pt_arr[:, ii]["azimuth"] = rpt.azimuth
                     res_pt_arr[:, ii]["skew"] = rpt.beta
-                    res_pt_arr[:, ii]["station"] = self.data_obj.mt_dict[key].station
+                    res_pt_arr[:, ii]["station"] = self.data_obj.mt_dict[
+                        key
+                    ].station
                     res_pt_arr[:, ii]["geometric_mean"] = np.sqrt(
                         np.abs(rpt.phimin) * np.abs(rpt.phimax)
                     )
@@ -393,7 +400,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 model_pt_arr[:, ii]["phimax"] = mpt.phimax
                 model_pt_arr[:, ii]["azimuth"] = mpt.azimuth
                 model_pt_arr[:, ii]["skew"] = mpt.beta
-                model_pt_arr[:, ii]["station"] = self.data_obj.mt_dict[key].station
+                model_pt_arr[:, ii]["station"] = self.data_obj.mt_dict[
+                    key
+                ].station
 
         # make these attributes
         self.pt_data_arr = data_pt_arr
@@ -503,7 +512,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
     # end func
 
     def plot(self, period=None, periodIdx=0, save2file=None, **kwargs):
-        """ Plot phase tensor maps for data and or response, each figure is of a
+        """Plot phase tensor maps for data and or response, each figure is of a
         different period.  If response is input a third column is added which is
         the residual phase tensor showing where the model is not fitting the data
         well.  The data is plotted in km.
@@ -548,13 +557,21 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         # set plot limits to be the station area
         if self.ew_limits is None:
-            east_min = self.data_obj.data_array["rel_east"].min() - self.pad_east
-            east_max = self.data_obj.data_array["rel_east"].max() + self.pad_east
+            east_min = (
+                self.data_obj.data_array["rel_east"].min() - self.pad_east
+            )
+            east_max = (
+                self.data_obj.data_array["rel_east"].max() + self.pad_east
+            )
             self.ew_limits = (east_min / self.dscale, east_max / self.dscale)
 
         if self.ns_limits is None:
-            north_min = self.data_obj.data_array["rel_north"].min() - self.pad_north
-            north_max = self.data_obj.data_array["rel_north"].max() + self.pad_north
+            north_min = (
+                self.data_obj.data_array["rel_north"].min() - self.pad_north
+            )
+            north_max = (
+                self.data_obj.data_array["rel_north"].max() + self.pad_north
+            )
             self.ns_limits = (north_min / self.dscale, north_max / self.dscale)
 
         # -------------plot phase tensors------------------------------------
@@ -593,7 +610,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
             # plot model below the phase tensors
             if self.model_fn is not None:
                 gridzcentre = np.mean(
-                    [self.model_obj.grid_z[1:], self.model_obj.grid_z[:-1]], axis=0
+                    [self.model_obj.grid_z[1:], self.model_obj.grid_z[:-1]],
+                    axis=0,
                 )
                 if self.d_index is not None:
                     approx_depth, d_index = ws.estimate_skin_depth(
@@ -610,13 +628,15 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 # all is plotted see pcolor for details.
                 plot_east = (
                     np.append(
-                        self.model_obj.grid_east, self.model_obj.grid_east[-1] * 1.25
+                        self.model_obj.grid_east,
+                        self.model_obj.grid_east[-1] * 1.25,
                     )
                     / self.dscale
                 )
                 plot_north = (
                     np.append(
-                        self.model_obj.grid_north, self.model_obj.grid_north[-1] * 1.25
+                        self.model_obj.grid_north,
+                        self.model_obj.grid_north[-1] * 1.25,
                     )
                     / self.dscale
                 )
@@ -633,7 +653,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     ]
 
                 for ax in ax_list:
-                    plot_res = np.log10(self.model_obj.res_model[:, :, d_index].T)
+                    plot_res = np.log10(
+                        self.model_obj.res_model[:, :, d_index].T
+                    )
                     ax.pcolormesh(
                         self.mesh_east,
                         self.mesh_north,
@@ -791,8 +813,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             # data
             axd.set_xlim(self.ew_limits)
             axd.set_ylim(self.ns_limits)
-            axd.set_xlabel("Easting ({0})".format(self.map_scale), fontdict=font_dict)
-            axd.set_ylabel("Northing ({0})".format(self.map_scale), fontdict=font_dict)
+            axd.set_xlabel(
+                "Easting ({0})".format(self.map_scale), fontdict=font_dict
+            )
+            axd.set_ylabel(
+                "Northing ({0})".format(self.map_scale), fontdict=font_dict
+            )
             # make a colorbar for phase tensors
             # bb = axd.axes.get_position().bounds
             bb = axd.get_position().bounds
@@ -841,7 +867,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     ax.set_xlim(self.ew_limits)
                     ax.set_ylim(self.ns_limits)
                     ax.set_xlabel(
-                        "Easting ({0})".format(self.map_scale), fontdict=font_dict
+                        "Easting ({0})".format(self.map_scale),
+                        fontdict=font_dict,
                     )
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                     # make a colorbar ontop of axis
@@ -870,7 +897,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                         cb.set_label(mtplottools.ckdict[self.ellipse_colorby])
                         cb.set_ticks(
                             np.arange(
-                                ckmin, ckmax + self.cb_tick_step, self.cb_tick_step
+                                ckmin,
+                                ckmax + self.cb_tick_step,
+                                self.cb_tick_step,
                             )
                         )
                         ax.text(
@@ -932,10 +961,14 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     cb.ax.xaxis.set_label_coords(0.5, 1.5)
                     cb.set_label("Resistivity ($\Omega \cdot$m)")
                     cb_ticks = np.arange(
-                        np.floor(self.res_limits[0]), np.ceil(self.res_limits[1] + 1), 1
+                        np.floor(self.res_limits[0]),
+                        np.ceil(self.res_limits[1] + 1),
+                        1,
                     )
                     cb.set_ticks(cb_ticks)
-                    cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
+                    cb.set_ticklabels(
+                        [mtplottools.labeldict[ctk] for ctk in cb_ticks]
+                    )
 
             if save2file is not None:
                 fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches="tight")
@@ -1023,7 +1056,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
     def _get_pt_data_list(self, attribute, xykeys=["east", "north"]):
 
         headerlist = (
-            ["period", "station"] + xykeys + ["azimuth", "phimin", "phimax", "skew"]
+            ["period", "station"]
+            + xykeys
+            + ["azimuth", "phimin", "phimax", "skew"]
         )
         data = getattr(self, attribute).T.copy()
         indices = np.argsort(data["station"][:, 0])
@@ -1034,7 +1069,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             if val == "station":
                 dtype.append((val, "S10"))
             else:
-                dtype.append((val, np.float))
+                dtype.append((val, float))
 
         data_to_write = np.zeros(np.product(data.shape), dtype=dtype)
         data_to_write["period"] = np.vstack(
@@ -1109,7 +1144,16 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     filename,
                     data_to_write,
                     header=header,
-                    fmt=["%.4e", "%s", "%.2f", "%.2f", "%.2f", "%.2f", "%.2f", "%.3f"],
+                    fmt=[
+                        "%.4e",
+                        "%s",
+                        "%.2f",
+                        "%.2f",
+                        "%.2f",
+                        "%.2f",
+                        "%.2f",
+                        "%.3f",
+                    ],
                 )
 
     def write_pt_data_to_gmt(
@@ -1176,7 +1220,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         else:
             nzeros = np.abs(np.int(np.floor(np.log10(period))))
             fmt = "%0" + str(nzeros + 1) + "i"
-            suffix = fmt % (period * 10 ** nzeros)
+            suffix = fmt % (period * 10**nzeros)
 
         filename = "ellipse_" + attribute + "." + suffix
 
@@ -1231,7 +1275,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
         scalebarlat = int(round(ymax + ymin) / 2.0)
         if clim is None:
             cr = int(np.ceil(-np.log10(np.amax(gmtdata[:, 2]))))
-            clim = np.round([gmtdata[:, 2].min(), gmtdata[:, 2].max()], cr).astype(int)
+            clim = np.round(
+                [gmtdata[:, 2].min(), gmtdata[:, 2].max()], cr
+            ).astype(int)
 
         gmtlines = [
             line + "\n"
@@ -1252,7 +1298,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 "gmtset MAP_FRAME_TYPE fancy",
                 "",
                 "# make colour palette",
-                "makecpt -Cpolar -T{}/{} -Z > {}.cpt".format(clim[0], clim[1], colorby),
+                "makecpt -Cpolar -T{}/{} -Z > {}.cpt".format(
+                    clim[0], clim[1], colorby
+                ),
                 "",
                 "# draw coastline",
                 "pscoast -R$wesn -JM18c -W0.5p -Ba1f1/a1f1WSen -Gwhite -Slightgrey -Lfx14c/1c/{}/{}+u -Df -P -K >> $PS".format(
