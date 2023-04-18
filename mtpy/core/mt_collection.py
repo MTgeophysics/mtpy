@@ -317,7 +317,7 @@ class MTCollection:
                 f"filename must be a string or Path not {type(filename)}"
             )
         mt_object = MT(filename)
-        mt_object.read()
+        mt_object.read_tf_file()
 
         self._from_mt_object(mt_object)
 
@@ -586,7 +586,9 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(f"wrote average file {edi_obj.fn}")
+                            self.logger.info(
+                                f"wrote average file {edi_obj.fn}"
+                            )
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:
@@ -730,7 +732,9 @@ class MTCollection:
             return PlotResidualPTMaps(mt_data_01, mt_data_02, **kwargs)
 
         if plot_type in ["pseudosection", "ps"]:
-            return PlotResidualPTPseudoSection(mt_data_01, mt_data_02, **kwargs)
+            return PlotResidualPTPseudoSection(
+                mt_data_01, mt_data_02, **kwargs
+            )
 
     def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
         """

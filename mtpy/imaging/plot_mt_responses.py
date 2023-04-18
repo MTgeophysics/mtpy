@@ -288,6 +288,8 @@ class PlotMultipleResponses(PlotBase):
                 lw=0.25,
             )
             ax.set_xscale("log", nonpositive="clip")
+            if "y" not in self.plot_tipper and not self.plot_pt:
+                ax.set_xlabel("Period (s)", self.font_dict)
         # --> set axes properties
         if index == 0:
             axp.set_ylabel("Phase (deg)", self.font_dict)
