@@ -24,7 +24,6 @@ import mtpy.utils.calculator as mtcc
 import mtpy.utils.filehandling as mtfh
 
 from mtpy.utils.mtpy_logger import get_mtpy_logger
-from .exception import ModelError
 from mtpy.utils.gis_tools import project_point
 from mtpy.modeling.plots.plot_mesh import PlotMesh
 from mtpy.core.mt_location import MTLocation
@@ -39,7 +38,7 @@ except ImportError:
 # =============================================================================
 
 
-class Model:
+class StructuredGrid3D:
     """
     make and read a FE mesh grid
 
@@ -868,7 +867,7 @@ class Model:
             elif self.res_scale.lower() == "linear":
                 write_res_model = self.res_model[::-1, :, :]
             else:
-                raise ModelError(
+                raise ValueError(
                     'resistivity scale "{}" is not supported.'.format(
                         self.res_scale
                     )
@@ -960,10 +959,10 @@ class Model:
             self.model_fn = model_fn
 
         if self.model_fn is None:
-            raise ModelError("model_fn is None, input a model file name")
+            raise ValueError("model_fn is None, input a model file name")
 
         if not self.model_fn.exists():
-            raise ModelError(f"Cannot find {self.model_fn}, check path")
+            raise ValueError(f"Cannot find {self.model_fn}, check path")
 
         with open(self.model_fn, "r") as ifid:
             ilines = ifid.readlines()

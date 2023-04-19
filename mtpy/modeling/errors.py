@@ -188,7 +188,8 @@ class ModelErrors:
         :rtype: TYPE
 
         """
-
+        dshape = data.shape
+        data = np.nan_to_num(data).reshape(dshape)
         return np.ma.masked_equal(data, 0)
 
     def resize_output(self, error_array):
@@ -336,8 +337,14 @@ class ModelErrors:
             err = self.error_value * np.abs(np.linalg.eigvals(data)).mean(
                 axis=1
             )
-        except np.Exception:
-            err = self.error_value * np.abs(np.linalg.eigvals(data)).mean()
+        except Exception:
+            data_shape = data.shape
+            err = (
+                self.error_value
+                * np.abs(
+                    np.linalg.eigvals(np.nan_to_num(data).reshape(data_shape))
+                ).mean()
+            )
 
         if np.atleast_1d(err).sum(axis=0) == 0:
             err = self.error_value * data[np.nonzero(data)].mean()

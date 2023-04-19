@@ -52,7 +52,7 @@ class PlotMesh(PlotBase):
             vmin=min(
                 [
                     np.round(
-                        self.model_obj.surface_dict["topography"].max(), -2
+                        self.model_obj.surface_dict["topography"].min(), -2
                     ),
                     0,
                 ]
