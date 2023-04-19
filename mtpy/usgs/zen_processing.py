@@ -968,6 +968,7 @@ class Z3D2EDI(object):
         birrp_output_path = Path(birrp_output_path)
         j_file = list(Path(birrp_output_path).glob("*.j"))[0]
         tf_obj = TF(j_file)
+        tf_obj.read_tf_file()
 
         tf_obj.station = birrp_output_path.parent.parent.parent.stem
         df = self.station_df[self.station_df.station == self.station_df.station.iloc[0]]
