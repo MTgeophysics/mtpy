@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Collection of MT stations
-
+Collection of MT sp[][]
 Created on Mon Jan 11 15:36:38 2021
 
 :copyright: 
@@ -49,11 +48,11 @@ class MTCollection:
 
     def __repr__(self):
         return self.__str__()
-    
+
     @property
     def dataframe(self):
         return self._dataframe
-    
+
     @dataframe.setter
     def dataframe(self, value):
         if value is None:
@@ -104,11 +103,9 @@ class MTCollection:
         if self.mt_path is None:
             self.logger.info("MT file path is None, returning None.")
             return None
-
         fn_list = []
         for ext in file_types:
             fn_list += list(self.mt_path.glob(f"*.{ext}"))
-
         return fn_list
 
     def make_dataframe_from_file_list(self, mt_file_list=None, move_duplicates=True):
@@ -125,7 +122,6 @@ class MTCollection:
 
         if mt_file_list is None:
             mt_file_list = self.make_mt_file_list()
-
         station_list = []
         for fn in mt_file_list:
             m = mt.MT(fn)
@@ -149,17 +145,15 @@ class MTCollection:
 
             # add entry to list to put into data frame
             station_list.append(entry)
-
         dataframe = pd.DataFrame(station_list)
         if move_duplicates:
             dataframe = self._check_for_duplicates(dataframe)
-
         return dataframe
 
     def add_stations_from_file_list(self, fn_list, remove_duplicates=True):
         """
         Add stations from a list of files
-        
+
         :param fn_list: DESCRIPTION
         :type fn_list: TYPE
         :param remove_duplicates: DESCRIPTION, defaults to True
@@ -173,7 +167,6 @@ class MTCollection:
         self.dataframe = self.dataframe.append(new_df, ignore_index=True)
         if remove_duplicates:
             self.dataframe = self._check_for_duplicates(self.dataframe)
-
 
     def _check_for_duplicates(self, dataframe, locate="location"):
         """
@@ -203,13 +196,15 @@ class MTCollection:
                     fn.rename(new_fn)
                 except FileNotFoundError:
                     self.logger.debug(f"Could not find {fn} --> skipping")
-        dataframe = dataframe.drop_duplicates(subset=["latitude", "longitude"], keep="first")
+        dataframe = dataframe.drop_duplicates(
+            subset=["latitude", "longitude"], keep="first"
+        )
 
         return dataframe
 
     def from_csv(self, csv_fn):
         """
-        Read in a csv of 
+        Read in a csv of
         :param csv_fn: DESCRIPTION
         :type csv_fn: TYPE
         :return: DESCRIPTION
@@ -261,19 +256,19 @@ class MTCollection:
                 f"lat_max = {y_max:.6g}"
             )
             self.logger.debug(msg)
-    
-            return MTCollection(dataframe=self.dataframe.loc[
+
+            return MTCollection(
+                dataframe=self.dataframe.loc[
                     (self.dataframe.longitude >= x_min)
                     & (self.dataframe.longitude <= x_max)
                     & (self.dataframe.latitude >= y_min)
                     & (self.dataframe.latitude <= y_max)
                 ],
-                mt_path=self.mt_path)
-        
+                mt_path=self.mt_path,
+            )
         elif units in ["m"]:
             if utm_zone is None:
                 raise ValueError("UTM Zone must be input")
-                
             msg = (
                 "Applying bounding box: "
                 f"east_min = {x_min:.6g}, "
@@ -283,18 +278,20 @@ class MTCollection:
                 f"utm_zone = {utm_zone}"
             )
             self.logger.debug(msg)
-    
-            return  MTCollection(self.dataframe[self.dataframe.utm_zone == utm_zone].loc[
+
+            return MTCollection(
+                self.dataframe[self.dataframe.utm_zone == utm_zone].loc[
                     (self.dataframe.easting >= x_min)
                     & (self.dataframe.easting <= x_max)
                     & (self.dataframe.northing >= y_min)
                     & (self.dataframe.northing <= y_max)
-                ], 
-                mt_path=self.mt_path)
-        
+                ],
+                mt_path=self.mt_path,
+            )
+
     def to_shp(self, filename, bounding_box=None, epsg=4326):
         """
-        
+
         :param filename: DESCRIPTION
         :type filename: TYPE
         :return: DESCRIPTION
@@ -308,18 +305,27 @@ class MTCollection:
             self.dataframe = self.make_dataframe_from_file_list()
         for ii, row in self.dataframe.iterrows():
             geometry_list.append(Point(row.longitude, row.latitude))
-        
-        gdf = gpd.GeoDataFrame(self.dataframe, crs=coordinate_system, geometry=geometry_list)
+        gdf = gpd.GeoDataFrame(
+            self.dataframe, crs=coordinate_system, geometry=geometry_list
+        )
         gdf.fn = gdf.fn.astype("str")
         gdf.to_file(self.mt_path.joinpath(filename))
-        
+
         return gdf
-        
-    def average_stations(self, cell_size_m, bounding_box=None, save_dir=None,
-                         units="degrees", utm_zone=None, count=1, n_periods=48):
+
+    def average_stations(
+        self,
+        cell_size_m,
+        bounding_box=None,
+        save_dir=None,
+        units="degrees",
+        utm_zone=None,
+        count=1,
+        n_periods=48,
+    ):
         """
         Average nearby stations to make it easier to invert
-        
+
         :param cell_size_m: DESCRIPTION
         :type cell_size_m: TYPE
         :param bounding_box: DESCRIPTION, defaults to None
@@ -333,19 +339,17 @@ class MTCollection:
         if save_dir is None:
             save_dir = self.mt_path
         r = cell_size_m
-        
+
         if bounding_box:
             df = self.apply_bbox(*bounding_box, units=units, utm_zone=utm_zone)
-        
         else:
             df = self.dataframe
-            
         new_fn_list = []
-        for ee in np.arange(df.easting.min() - r/2, df.easting.max() + r, r):
-            for nn in np.arange(df.northing.min() - r/2, df.northing.max() + r, r):
+        for ee in np.arange(df.easting.min() - r / 2, df.easting.max() + r, r):
+            for nn in np.arange(df.northing.min() - r / 2, df.northing.max() + r, r):
                 bbox = (ee, ee + r, nn, nn + r)
                 avg_mc = self.apply_bbox(*bbox, units="m", utm_zone=utm_zone)
-    
+
                 if len(avg_mc.dataframe) > 1:
                     m_list = [mt.MT(row.fn) for row in avg_mc.dataframe.itertuples()]
                     # interpolate onto a similar period range
@@ -360,45 +364,43 @@ class MTCollection:
                     avg_z_err = np.array([m.Z.z_err for m in m_list])
                     avg_t = np.array([m.Tipper.tipper for m in m_list])
                     avg_t_err = np.array([m.Tipper.tipper_err for m in m_list])
-                    
-                    avg_z[np.where(avg_z==0 + 0j)] = np.nan + 1j * np.nan
-                    avg_z_err[np.where(avg_z_err==0)] = np.nan
-                    avg_t[np.where(avg_t==0 + 0j)] = np.nan + 1j * np.nan
-                    avg_t_err[np.where(avg_t_err==0 + 0j)] = np.nan
-                    
+
+                    avg_z[np.where(avg_z == 0 + 0j)] = np.nan + 1j * np.nan
+                    avg_z_err[np.where(avg_z_err == 0)] = np.nan
+                    avg_t[np.where(avg_t == 0 + 0j)] = np.nan + 1j * np.nan
+                    avg_t_err[np.where(avg_t_err == 0 + 0j)] = np.nan
+
                     avg_z = np.nanmean(avg_z, axis=0)
                     avg_z_err = np.nanmean(avg_z_err, axis=0)
                     avg_t = np.nanmean(avg_t, axis=0)
                     avg_t_err = np.nanmean(avg_t_err, axis=0)
-                    
+
                     mt_avg = mt.MT()
                     mt_avg.Z.freq = f
                     mt_avg.Z.z = avg_z
                     mt_avg.Z.z_err = avg_z_err
-                    
+
                     mt_avg.Tipper.freq = f
                     mt_avg.Tipper.tipper = avg_t
                     mt_avg.Tipper.tipper_err = avg_t_err
-                    
+
                     mt_avg.latitude = np.mean(np.array([m.latitude for m in m_list]))
                     mt_avg.longitude = np.mean(np.array([m.longitude for m in m_list]))
                     mt_avg.elevation = np.mean(np.array([m.elevation for m in m_list]))
                     mt_avg.station = f"AVG{count:03}"
                     mt_avg.station_metadata.comments = (
                         "avgeraged_stations = " + ",".join([m.station for m in m_list])
-                        )
-                    
+                    )
+
                     try:
                         edi_obj = mt_avg.write_mt_file(save_dir=save_dir)
                         self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
-                        count += 1 
-            
-  
+                        count += 1
                     except Exception as error:
-                        self.logger.exception("Failed to average files %s", error)        
+                        self.logger.exception("Failed to average files %s", error)
                 else:
                     continue
-        
-        return MTCollection(self.make_dataframe_from_file_list(new_fn_list),
-                            self.mt_path)
+        return MTCollection(
+            self.make_dataframe_from_file_list(new_fn_list), self.mt_path
+        )
