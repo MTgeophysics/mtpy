@@ -179,6 +179,7 @@ class Model:
 
         if center_point is not None:
             self.center_point = center_point
+            self.model_epsg = self.center_point.utm_epsg
 
         # size of cells within station area in meters
         self.cell_size_east = 500

@@ -246,7 +246,6 @@ def interpolate_elevation_to_grid(
     dense compared to surface points then choose 'linear' or 'cubic'
     """
     # read the surface data in from ascii if surface not provided
-    print(surface_file)
     if surface_file:
         lon, lat, elev = mtfh.read_surface_ascii(surface_file)
     elif surface:
@@ -281,6 +280,7 @@ def interpolate_elevation_to_grid(
         m_lon_max, m_lat_max = project_point(
             grid_east.max(), grid_north.max(), utm_epsg, datum_epsg
         )
+
         survey_index = (
             (lon >= m_lon_min - buffer)
             & (lon <= m_lon_max + buffer)
@@ -291,7 +291,6 @@ def interpolate_elevation_to_grid(
         lat = lat[survey_index]
         elev = elev[survey_index]
 
-    print(lat, lon)
     easting, northing = project_point(lon, lat, datum_epsg, utm_epsg)
 
     # elevation in model grid
