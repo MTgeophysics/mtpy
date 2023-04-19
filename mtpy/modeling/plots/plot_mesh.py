@@ -201,7 +201,9 @@ class PlotMesh(PlotBase):
 
         # ---------------------------------------
         # plot depth view along the east direction
-        self.ax2 = self.fig.add_subplot(1, 2, 2, aspect="auto", sharex=self.ax1)
+        self.ax2 = self.fig.add_subplot(
+            1, 2, 2, aspect="auto", sharex=self.ax1
+        )
 
         # plot the grid
         east_line_xlist = []
@@ -224,7 +226,10 @@ class PlotMesh(PlotBase):
         z_line_ylist = []
         for zz in self.model_obj.grid_z:
             z_line_xlist.extend(
-                [self.model_obj.grid_east.min(), self.model_obj.grid_east.max()]
+                [
+                    self.model_obj.grid_east.min(),
+                    self.model_obj.grid_east.max(),
+                ]
             )
             z_line_xlist.append(None)
             z_line_ylist.extend([zz, zz])
@@ -236,7 +241,7 @@ class PlotMesh(PlotBase):
         # --> plot stations
         self.ax2.scatter(
             plot_east,
-            self.model_obj.station_locations.model_elev,
+            self.model_obj.station_locations.model_elevation,
             marker=self.marker,
             c=self.marker_color,
             s=self.marker_size,
@@ -244,7 +249,8 @@ class PlotMesh(PlotBase):
 
         if self.z_limits is None:
             self.ax2.set_ylim(
-                self.model_obj.z_target_depth, self.model_obj.grid_z.min() - 200
+                self.model_obj.z_target_depth,
+                self.model_obj.grid_z.min() - 200,
             )
         else:
             self.ax2.set_ylim(self.z_limits)

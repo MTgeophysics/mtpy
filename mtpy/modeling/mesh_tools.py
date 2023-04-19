@@ -246,6 +246,7 @@ def interpolate_elevation_to_grid(
     dense compared to surface points then choose 'linear' or 'cubic'
     """
     # read the surface data in from ascii if surface not provided
+    print(surface_file)
     if surface_file:
         lon, lat, elev = mtfh.read_surface_ascii(surface_file)
     elif surface:
@@ -290,6 +291,7 @@ def interpolate_elevation_to_grid(
         lat = lat[survey_index]
         elev = elev[survey_index]
 
+    print(lat, lon)
     easting, northing = project_point(lon, lat, datum_epsg, utm_epsg)
 
     # elevation in model grid
@@ -413,7 +415,8 @@ def get_padding_from_stretch(cell_width, pad_stretch, num_cells):
 
     """
     nodes = np.around(
-        cell_width * (np.ones(num_cells) * pad_stretch) ** np.arange(num_cells),
+        cell_width
+        * (np.ones(num_cells) * pad_stretch) ** np.arange(num_cells),
         get_rounding(cell_width),
     )
 

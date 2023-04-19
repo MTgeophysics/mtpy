@@ -279,6 +279,7 @@ class Model:
         lines.append(f"\t\tpad_num:           {self.pad_num}")
         lines.append(f"\t\tz1_layer:          {self.z1_layer}")
         lines.append(f"\t\tz_target_depth:    {self.z_target_depth}")
+        lines.append(f"\t\tn_layers:          {self.n_layers}")
         lines.append(f"\t\tres_initial_value: {self.res_initial_value}")
         lines.append("\tDimensions: ")
         lines.append(f"\t\te-w: {self.grid_east.size}")

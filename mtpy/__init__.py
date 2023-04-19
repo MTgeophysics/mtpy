@@ -23,6 +23,8 @@ matplotlib_logger = get_mtpy_logger(
 # Commonly used objects
 # =============================================================================
 from mtpy.core.mt import MT
+from mtpy.core.mt_data import MTData
 from mtpy.core.mt_collection import MTCollection
 
-__all__ = ["MT", "MTCollection"]
+
+__all__ = ["MT", "MTData", "MTCollection"]
