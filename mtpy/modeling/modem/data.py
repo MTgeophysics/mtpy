@@ -384,8 +384,11 @@ class Data:
     def data_filename(self, value):
         if value is not None:
             value = Path(value)
-            self.save_path = value.parent
-            self.fn_basename = value.name
+            if value.parent == Path("."):
+                self.fn_basename = value.name
+            else:
+                self.save_path = value.parent
+                self.fn_basename = value.name
 
     @property
     def period(self):
@@ -643,6 +646,70 @@ class Data:
                 ]
             )
 
+    def _check_for_errors_of_zero(self):
+        """
+        Need to check for any zeros in the error values which can prevent
+        ModEM from running.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ## check for zeros in model error
+        for comp in ["zxx", "zxy", "zyx", "zyy", "tzx", "tzy"]:
+            find_zeros = np.where(self.dataframe[f"{comp}_model_error"] == 0)[
+                0
+            ]
+            if find_zeros.shape[0] > 0:
+                if "z" in comp:
+                    error_percent = self.z_model_error.error_value
+                elif "t" in comp:
+                    error_percent = self.t_model_error.error_value
+
+                self.logger.warning(
+                    f"Found errors with values of 0 in {comp} "
+                    f"{len(find_zeros)} times. Setting error as {comp} x "
+                    f"{error_percent}."
+                )
+
+                self.dataframe[f"{comp}_model_error"].iloc[
+                    list(find_zeros)
+                ] = (
+                    abs(self.dataframe[f"{comp}"].iloc[list(find_zeros)])
+                    * error_percent
+                )
+
+    def _check_for_too_small_errors(self, tol=0.02):
+        """
+        Check for too small of errors relative to the error floor
+        """
+
+        for comp in ["zxx", "zxy", "zyx", "zyy", "tzx", "tzy"]:
+            find_small = np.where(
+                self.dataframe[f"{comp}_model_error"]
+                / abs(self.dataframe[comp])
+                < tol
+            )[0]
+            if find_small.shape[0] > 0:
+
+                if "z" in comp:
+                    error_percent = self.z_model_error.error_value
+                elif "t" in comp:
+                    error_percent = self.t_model_error.error_value
+
+                self.logger.warning(
+                    f"Found errors with values less than {tol} in {comp} "
+                    f"{len(find_small)} times. Setting error as {comp} x "
+                    f"{error_percent}."
+                )
+                self.dataframe[f"{comp}_model_error"].iloc[
+                    list(find_small)
+                ] = (
+                    abs(self.dataframe[f"{comp}"].iloc[list(find_small)])
+                    * error_percent
+                )
+
     def write_data_file(
         self,
         file_name=None,
@@ -692,6 +759,9 @@ class Data:
             self.save_path = Path(save_path)
         if fn_basename is not None:
             self.data_filename = fn_basename
+
+        self._check_for_errors_of_zero()
+        self._check_for_too_small_errors()
 
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
             if "impedance" in inv_mode.lower():
