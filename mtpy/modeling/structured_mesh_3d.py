@@ -562,8 +562,7 @@ class StructuredGrid3D:
         for s_north in sorted(self.station_locations.model_north):
             try:
                 node_index = np.where(
-                    abs(s_north - self.grid_north)
-                    < 0.02 * self.cell_size_north
+                    abs(s_north - self.grid_north) < 0.02 * self.cell_size_north
                 )[0][0]
                 if s_north - self.grid_north[node_index] > 0:
                     self.grid_north[node_index] -= 0.02 * self.cell_size_north
@@ -588,15 +587,11 @@ class StructuredGrid3D:
             self.nodes_z, z_grid = self.make_z_mesh()
         else:
             raise NameError(
-                'Z mesh method "{}" is not supported'.format(
-                    self.z_mesh_method
-                )
+                'Z mesh method "{}" is not supported'.format(self.z_mesh_method)
             )
 
         # compute grid center
-        center_east = np.round(
-            self.grid_east.min() - self.grid_east.mean(), -1
-        )
+        center_east = np.round(self.grid_east.min() - self.grid_east.mean(), -1)
         center_north = np.round(
             self.grid_north.min() - self.grid_north.mean(), -1
         )
@@ -738,7 +733,7 @@ class StructuredGrid3D:
                 )[0]
                 self.res_model[j, i, ii] = resistivity_value
 
-    def write_model_file(self, **kwargs):
+    def write_modem_file(self, **kwargs):
         """
         will write an initial file for ModEM.
 
@@ -909,7 +904,7 @@ class StructuredGrid3D:
 
         self._logger.info("Wrote file to: {0}".format(self.model_fn))
 
-    def read_model_file(self, model_fn=None):
+    def read_modem_file(self, model_fn=None):
         """
         read an initial file and return the pertinent information including
         grid positions in coordinates relative to the center point (0,0) and
@@ -983,9 +978,7 @@ class StructuredGrid3D:
         self.nodes_east = np.array(
             [float(nn) for nn in ilines[3].strip().split()]
         )
-        self.nodes_z = np.array(
-            [float(nn) for nn in ilines[4].strip().split()]
-        )
+        self.nodes_z = np.array([float(nn) for nn in ilines[4].strip().split()])
 
         self.res_model = np.zeros((n_north, n_east, n_z))
 
@@ -1539,9 +1532,7 @@ class StructuredGrid3D:
                 # adjust level to topography min
                 if max_elev is not None:
                     self.grid_z -= max_elev
-                    ztops = np.where(
-                        self.surface_dict["topography"] > max_elev
-                    )
+                    ztops = np.where(self.surface_dict["topography"] > max_elev)
                     self.surface_dict["topography"][ztops] = max_elev
                 else:
                     self.grid_z -= topo_core.max()
@@ -1847,7 +1838,7 @@ class StructuredGrid3D:
 
         self._logger.info("Wrote model file to {}".format(vtk_fn))
 
-    def write_geosoft_xyz(
+    def write_geosoft_xyz_file(
         self,
         save_fn,
         c_east=0,
