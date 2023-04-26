@@ -232,7 +232,7 @@ class StructuredGrid3D:
             self.n_layers = len(self.grid_z)
             self.z_mesh_method = "custom"
         else:
-            self.z_mesh_method = "new"
+            self.z_mesh_method = "default"
         if "z_mesh_method" in list(kwargs.keys()):
             self.z_mesh_method = kwargs["z_mesh_method"]
 
@@ -437,12 +437,23 @@ class StructuredGrid3D:
         create finite element mesh according to user-input parameters.
 
         The mesh is built by:
+
             1. Making a regular grid within the station area.
-            2. Adding pad_num of cell_width cells outside of station area
+              - Uses `cell_size_east` and `cell_size_north` for dimensions
+            2. Adding `pad_num` of cell_width cells outside of station area
             3. Adding padding cells to given extension and number of padding
                cells.
+               - `extent1` - stretch to a given distance with `pad_east` or
+                `pad_north` number of cells.
+               - `extent2` - stretch to a given distance with `pad_east` or
+                `pad_north` number of cells.
+               - `stretch` stretches from station area using
+                `pad_north` and `pad_east` times `pad_stretch_h`
             4. Making vertical cells starting with z1_layer increasing
                logarithmically (base 10) to z_target_depth and num_layers.
+               - `default` creates a vertical mesh that increases
+                logarithmically down.  See `make_z_mesh`.
+               - `custom` input your own vertical mesh.
             5. Add vertical padding cells to desired extension.
             6. Check to make sure none of the stations lie on a node.
                If they do then move the node by .02*cell_width
@@ -573,7 +584,7 @@ class StructuredGrid3D:
 
         if self.z_mesh_method == "custom":
             if self.grid_z is None:
-                self.z_mesh_method = "new"
+                self.z_mesh_method = "default"
                 self._logger.warn(
                     "No grid_z provided, creating new z mesh using default method"
                 )
@@ -583,11 +594,11 @@ class StructuredGrid3D:
                 self.grid_z[1:] - self.grid_z[:-1],
                 self.grid_z,
             )
-        elif self.z_mesh_method == "new":
+        elif self.z_mesh_method == "default":
             self.nodes_z, z_grid = self.make_z_mesh()
         else:
             raise NameError(
-                'Z mesh method "{}" is not supported'.format(self.z_mesh_method)
+                f'Z mesh method "{self.z_mesh_method}" is not supported'
             )
 
         # compute grid center
