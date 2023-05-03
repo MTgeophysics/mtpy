@@ -968,7 +968,7 @@ class Z3D2EDI(object):
         birrp_output_path = Path(birrp_output_path)
         j_file = list(Path(birrp_output_path).glob("*.j"))[0]
         tf_obj = TF(j_file)
-        tf_obj.read_tf_file()
+        tf_obj.read()
 
         tf_obj.station = birrp_output_path.parent.parent.parent.stem
         df = self.station_df[self.station_df.station == self.station_df.station.iloc[0]]
@@ -1014,7 +1014,7 @@ class Z3D2EDI(object):
             tf_obj.station_metadata.runs[0].hz.measurement_azimuth = df[
                 df.component == "hz"
             ].azimuth.mean()
-        edi_obj = tf_obj.write_tf_file(save_dir=birrp_output_path)
+        edi_obj = tf_obj.write(save_dir=birrp_output_path)
         return edi_obj.fn
 
         # if self.survey_config_fn is not None:
