@@ -459,101 +459,103 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
         pt_obj, t_obj = self._get_pt(tf)
         plot_x, plot_y = self._get_location(tf)
+        has_ellipse = False
+        if pt_obj is not None:
 
-        # --> set local variables
-        phimin = np.nan_to_num(pt_obj.phimin)[0]
-        phimax = np.nan_to_num(pt_obj.phimax)[0]
-        eangle = np.nan_to_num(pt_obj.azimuth)[0]
+            # --> set local variables
+            phimin = np.nan_to_num(pt_obj.phimin)[0]
+            phimax = np.nan_to_num(pt_obj.phimax)[0]
+            eangle = np.nan_to_num(pt_obj.azimuth)[0]
 
-        has_ellipse = True
-        w1 = patches.Wedge(
-            (plot_x, plot_y),
-            self.ellipse_size,
-            90 - eangle - self.wedge_width,
-            90 - eangle + self.wedge_width,
-            color=mtcolors.get_plot_color(
-                phimax,
-                "phimax",
-                self.ellipse_cmap,
-                self.phase_limits[0],
-                self.phase_limits[1],
-            ),
-        )
-        w2 = patches.Wedge(
-            (plot_x, plot_y),
-            self.ellipse_size,
-            270 - eangle - self.wedge_width,
-            270 - eangle + self.wedge_width,
-            color=mtcolors.get_plot_color(
-                phimax,
-                "phimax",
-                self.ellipse_cmap,
-                self.phase_limits[0],
-                self.phase_limits[1],
-            ),
-        )
-
-        w3 = patches.Wedge(
-            (plot_x, plot_y),
-            self.ellipse_size * phimin / phimax,
-            -1 * eangle - self.wedge_width,
-            -1 * eangle + self.wedge_width,
-            color=mtcolors.get_plot_color(
-                phimin,
-                "phimin",
-                self.ellipse_cmap,
-                self.phase_limits[0],
-                self.phase_limits[1],
-            ),
-        )
-        w4 = patches.Wedge(
-            (plot_x, plot_y),
-            self.ellipse_size * phimin / phimax,
-            180 - eangle - self.wedge_width,
-            180 - eangle + self.wedge_width,
-            color=mtcolors.get_plot_color(
-                phimin,
-                "phimin",
-                self.ellipse_cmap,
-                self.phase_limits[0],
-                self.phase_limits[1],
-            ),
-        )
-
-        # make an ellipse
-        e1 = patches.Ellipse(
-            (plot_x, plot_y),
-            width=2 * self.ellipse_size,
-            height=2 * self.ellipse_size * phimin / phimax,
-            angle=90 - eangle,
-        )
-
-        # geometric mean of phimin and phimax
-        gm = np.sqrt(abs(phimin) * abs(phimax))
-        e1.set_facecolor(
-            mtcolors.get_plot_color(
-                gm,
-                "geometric_mean",
-                self.ellipse_cmap,
-                self.phase_limits[0],
-                self.phase_limits[1],
+            has_ellipse = True
+            w1 = patches.Wedge(
+                (plot_x, plot_y),
+                self.ellipse_size,
+                90 - eangle - self.wedge_width,
+                90 - eangle + self.wedge_width,
+                color=mtcolors.get_plot_color(
+                    phimax,
+                    "phimax",
+                    self.ellipse_cmap,
+                    self.phase_limits[0],
+                    self.phase_limits[1],
+                ),
             )
-        )
-        e1.set_edgecolor(
-            mtcolors.get_plot_color(
-                pt_obj.skew,
-                "skew_seg",
-                self.skew_cmap,
-                self.skew_limits[0],
-                self.skew_limits[1],
-                self.skew_cmap_bounds,
+            w2 = patches.Wedge(
+                (plot_x, plot_y),
+                self.ellipse_size,
+                270 - eangle - self.wedge_width,
+                270 - eangle + self.wedge_width,
+                color=mtcolors.get_plot_color(
+                    phimax,
+                    "phimax",
+                    self.ellipse_cmap,
+                    self.phase_limits[0],
+                    self.phase_limits[1],
+                ),
             )
-        )
-        e1.set_linewidth(self.skew_lw)
-        e1.set_alpha(self.ellipse_alpha)
-        ### add patches
-        for patch in [e1, w1, w2, w3, w4]:
-            self.ax.add_patch(patch)
+
+            w3 = patches.Wedge(
+                (plot_x, plot_y),
+                self.ellipse_size * phimin / phimax,
+                -1 * eangle - self.wedge_width,
+                -1 * eangle + self.wedge_width,
+                color=mtcolors.get_plot_color(
+                    phimin,
+                    "phimin",
+                    self.ellipse_cmap,
+                    self.phase_limits[0],
+                    self.phase_limits[1],
+                ),
+            )
+            w4 = patches.Wedge(
+                (plot_x, plot_y),
+                self.ellipse_size * phimin / phimax,
+                180 - eangle - self.wedge_width,
+                180 - eangle + self.wedge_width,
+                color=mtcolors.get_plot_color(
+                    phimin,
+                    "phimin",
+                    self.ellipse_cmap,
+                    self.phase_limits[0],
+                    self.phase_limits[1],
+                ),
+            )
+
+            # make an ellipse
+            e1 = patches.Ellipse(
+                (plot_x, plot_y),
+                width=2 * self.ellipse_size,
+                height=2 * self.ellipse_size * phimin / phimax,
+                angle=90 - eangle,
+            )
+
+            # geometric mean of phimin and phimax
+            gm = np.sqrt(abs(phimin) * abs(phimax))
+            e1.set_facecolor(
+                mtcolors.get_plot_color(
+                    gm,
+                    "geometric_mean",
+                    self.ellipse_cmap,
+                    self.phase_limits[0],
+                    self.phase_limits[1],
+                )
+            )
+            e1.set_edgecolor(
+                mtcolors.get_plot_color(
+                    np.nan_to_num(pt_obj.skew),
+                    "skew_seg",
+                    self.skew_cmap,
+                    self.skew_limits[0],
+                    self.skew_limits[1],
+                    self.skew_cmap_bounds,
+                )
+            )
+            e1.set_linewidth(self.skew_lw)
+            e1.set_alpha(self.ellipse_alpha)
+            ### add patches
+            for patch in [e1, w1, w2, w3, w4]:
+                self.ax.add_patch(patch)
 
         has_tipper = self._get_tipper_patch(plot_x, plot_y, t_obj)
 
@@ -680,7 +682,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 )
 
             elif "skew" in key:
-                norms = colors.BoundaryNorm(self.skew_cmap_bounds, cmap_input.N)
+                norms = colors.BoundaryNorm(
+                    self.skew_cmap_bounds, cmap_input.N
+                )
                 cb = mcb.ColorbarBase(
                     ax,
                     cmap=cmap_input,

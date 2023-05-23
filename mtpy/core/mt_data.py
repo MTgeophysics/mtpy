@@ -8,7 +8,7 @@ Created on Mon Oct 10 11:58:56 2022
 # =============================================================================
 # Imports
 # =============================================================================
-
+from pathlib import Path
 from collections import OrderedDict
 
 import numpy as np
@@ -67,7 +67,12 @@ class MTData(OrderedDict, MTStations):
         self.model_parameters = {}
 
     def _validate_item(self, mt_obj):
-        if not isinstance(mt_obj, MT):
+        if isinstance(mt_obj, (str, Path)):
+            m = MT()
+            m.read(mt_obj)
+            return m
+
+        elif not isinstance(mt_obj, MT):
             raise TypeError(
                 f"entry must be a mtpy.core.MT object not type({type(mt_obj)})"
             )
@@ -117,7 +122,11 @@ class MTData(OrderedDict, MTStations):
         return MTData(survey_list)
 
     def add_station(
-        self, mt_object, survey=None, compute_relative_location=True
+        self,
+        mt_object,
+        survey=None,
+        compute_relative_location=True,
+        interpolate_periods=None,
     ):
         """
         Add a new station's mt_object
@@ -129,12 +138,26 @@ class MTData(OrderedDict, MTStations):
 
         """
 
-        mt_object = self._validate_item(mt_object)
-        if self.utm_crs is not None:
-            mt_object.utm_crs = self.utm_crs
-        if survey is not None:
-            mt_object.survey = survey
-        self.__setitem__(f"{mt_object.survey}.{mt_object.station}", mt_object)
+        if not isinstance(mt_object, (list, tuple)):
+            mt_object = [mt_object]
+
+        for m in mt_object:
+            m = self._validate_item(m)
+            if self.utm_crs is not None:
+                m.utm_crs = self.utm_crs
+            if survey is not None:
+                m.survey = survey
+
+            if interpolate_periods is not None:
+                if not isinstance(interpolate_periods, np.ndarray):
+                    interpolate_periods = np.array(interpolate_periods)
+
+                m = m.interpolate(
+                    1.0 / interpolate_periods, bounds_error=False
+                )
+
+            self.__setitem__(f"{m.survey}.{m.station}", m)
+
         if compute_relative_location:
             self.compute_relative_locations()
 

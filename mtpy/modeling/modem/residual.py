@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 from .data import Data
+from mtpy.modeling.plots import PlotRMS
 
 # =============================================================================
 
@@ -226,3 +227,18 @@ class Residual(Data):
         ax.set_axisbelow(True)
 
         return ax
+
+    def plot_rms(self, **kwargs):
+        """
+        plot RMS in different views
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        plot_rms = PlotRMS(self.dataframe, **kwargs)
+        plot_rms.plot()
+
+        return plot_rms

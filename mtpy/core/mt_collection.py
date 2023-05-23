@@ -614,14 +614,13 @@ class MTCollection:
                         + ",".join([m.station for m in m_list])
                     )
                     mt_avg.survey_metadata.id = "averaged"
-                    return mt_avg
                     self.add_tf(mt_avg)
 
                     try:
 
                         if new_file:
-                            edi_obj = mt_avg.write_mt_file(
-                                save_dir=self.working_directory()
+                            edi_obj = mt_avg.write(
+                                save_dir=self.working_directory
                             )
                             self.logger.info(
                                 f"wrote average file {edi_obj.fn}"

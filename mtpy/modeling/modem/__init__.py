@@ -4,7 +4,7 @@ from .exception import ModEMError, DataError
 from .data import Data
 from .model import Model
 
-# from .residual import Residual
+from .residual import Residual
 from .control_inv import ControlInv
 from .control_fwd import ControlFwd
 
@@ -28,7 +28,7 @@ __all__ = [
     "DataError",
     "Data",
     "Model",
-    #     "Residual",
+    "Residual",
     "ControlInv",
     "ControlFwd",
     "Covariance",

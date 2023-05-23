@@ -182,6 +182,7 @@ class PlotRMS(PlotBaseMaps):
                         station,
                         ha="center",
                         va="baseline",
+                        clip_on=True,
                     )
 
         if has_cx:
@@ -266,6 +267,32 @@ class PlotRMS(PlotBaseMaps):
 
             return df
 
+    def print_suspect_stations(self, rms_threshold=4):
+        """
+        print stations that are suspect
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        red_begin = "\033[1;31;48m"
+        red_end = "\033[1;37;0m"
+
+        df = self.rms_per_station
+        max_len = max([len(ii) for ii in df.index])
+
+        for row in df.itertuples():
+            if row.rms_z > rms_threshold or row.rms_t > rms_threshold:
+                if row.rms_z > rms_threshold:
+                    z_value = f"{red_begin}Z = {row.rms_z:<6.2f}{red_end}"
+                else:
+                    z_value = f"Z = {row.rms_z:<6.2f}"
+
+                if row.rms_t > rms_threshold:
+                    t_value = f"{red_begin}T = {row.rms_t:<6.2f}{red_end}"
+                else:
+                    t_value = f"T = {row.rms_t:<6.2f}"
+                print(f"{row.Index:<{max_len}} {z_value} {t_value}")
+
     def _plot_by_period(self):
         """
         plot by period
@@ -345,13 +372,13 @@ class PlotRMS(PlotBaseMaps):
 
             self.ax1 = fig.add_subplot(gs1[0, :], aspect="equal")
             self.ax2 = fig.add_subplot(gs1[1, 0])
-            self.ax3 = fig.add_subplot(gs1[1, 1], sharey=self.ax2)
+            self.ax3 = fig.add_subplot(gs1[1, 1])
         else:
             gs1 = gridspec.GridSpec(2, 2, hspace=0.35, wspace=0.075)
 
             self.ax1 = fig.add_subplot(gs1[:, 0], aspect="equal")
             self.ax2 = fig.add_subplot(gs1[0, 1])
-            self.ax3 = fig.add_subplot(gs1[1, 1], sharey=self.ax2)
+            self.ax3 = fig.add_subplot(gs1[1, 1])
 
     def plot(self, **kwargs):
         """
