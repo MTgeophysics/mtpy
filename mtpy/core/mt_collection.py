@@ -147,7 +147,7 @@ class MTCollection:
             return self.master_dataframe
         elif isinstance(self.working_dataframe, pd.DataFrame):
             if self.working_dataframe.empty:
-                return self.master_dataframe
+                return None
             else:
                 return self.working_dataframe
         return self.working_dataframe
@@ -516,9 +516,10 @@ class MTCollection:
         r = cell_size_m / 111000.0
 
         if bounding_box:
-            df = self.apply_bbox(*bounding_box)
-        else:
+            self.apply_bbox(*bounding_box)
             df = self.dataframe
+        else:
+            df = self.master_dataframe
         new_fn_list = []
         for ee in np.arange(
             df.longitude.min() - r / 2, df.longitude.max() + r, r
@@ -528,6 +529,8 @@ class MTCollection:
             ):
                 bbox = (ee, ee + r, nn, nn + r)
                 self.apply_bbox(*bbox)
+                if self.dataframe is None:
+                    continue
 
                 if len(self.dataframe) > 1:
                     m_list = [
@@ -537,17 +540,46 @@ class MTCollection:
                     # interpolate onto a similar period range
                     f_list = []
                     for m in m_list:
-                        f_list += m.Z.period.tolist()
+                        f_list += m.period.tolist()
                     f = np.unique(np.array(f_list))
                     f = np.logspace(
                         np.log10(f.min()), np.log10(f.max()), n_periods
                     )
+
+                    m_list_interp = []
                     for m in m_list:
-                        m = m.interpolate(f, bounds_error=False)
-                    avg_z = np.array([m.Z.z for m in m_list])
-                    avg_z_err = np.array([m.Z.z_err for m in m_list])
-                    avg_t = np.array([m.Tipper.tipper for m in m_list])
-                    avg_t_err = np.array([m.Tipper.tipper_err for m in m_list])
+                        m_list_interp.append(
+                            m.interpolate(f, bounds_error=False)
+                        )
+                    avg_z = np.array(
+                        [
+                            m.impedance.data
+                            for m in m_list_interp
+                            if m.has_impedance()
+                        ]
+                    )
+
+                    avg_z_err = np.array(
+                        [
+                            m.impedance_error.data
+                            for m in m_list_interp
+                            if m.has_impedance()
+                        ]
+                    )
+                    avg_t = np.array(
+                        [
+                            m.tipper.data
+                            for m in m_list_interp
+                            if m.has_tipper()
+                        ]
+                    )
+                    avg_t_err = np.array(
+                        [
+                            m.tipper_error.data
+                            for m in m_list_interp
+                            if m.has_tipper()
+                        ]
+                    )
 
                     avg_z[np.where(avg_z == 0 + 0j)] = np.nan + 1j * np.nan
                     avg_z_err[np.where(avg_z_err == 0)] = np.nan
@@ -560,13 +592,12 @@ class MTCollection:
                     avg_t_err = np.nanmean(avg_t_err, axis=0)
 
                     mt_avg = MT()
-                    mt_avg.Z.freq = f
-                    mt_avg.Z.z = avg_z
-                    mt_avg.Z.z_err = avg_z_err
+                    mt_avg.frequency = f
+                    mt_avg.impedance = avg_z
+                    mt_avg.impedance_error = avg_z_err
 
-                    mt_avg.Tipper.freq = f
-                    mt_avg.Tipper.tipper = avg_t
-                    mt_avg.Tipper.tipper_err = avg_t_err
+                    mt_avg.tipper = avg_t
+                    mt_avg.tipper_error = avg_t_err
 
                     mt_avg.latitude = np.mean(
                         np.array([m.latitude for m in m_list])
@@ -583,6 +614,7 @@ class MTCollection:
                         + ",".join([m.station for m in m_list])
                     )
                     mt_avg.survey_metadata.id = "averaged"
+                    return mt_avg
                     self.add_tf(mt_avg)
 
                     try:
@@ -591,7 +623,9 @@ class MTCollection:
                             edi_obj = mt_avg.write_mt_file(
                                 save_dir=self.working_directory()
                             )
-                            self.logger.info(f"wrote average file {edi_obj.fn}")
+                            self.logger.info(
+                                f"wrote average file {edi_obj.fn}"
+                            )
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:
@@ -735,7 +769,9 @@ class MTCollection:
             return PlotResidualPTMaps(mt_data_01, mt_data_02, **kwargs)
 
         if plot_type in ["pseudosection", "ps"]:
-            return PlotResidualPTPseudoSection(mt_data_01, mt_data_02, **kwargs)
+            return PlotResidualPTPseudoSection(
+                mt_data_01, mt_data_02, **kwargs
+            )
 
     def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
         """
