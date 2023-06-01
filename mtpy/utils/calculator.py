@@ -316,7 +316,7 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     if x_error >= np.abs(x) and y_error >= np.abs(y):
         origin_in_box = True
 
-    lo_polar_points = [ cmath.polar(np.complex(*i)) for i in lo_points ]
+    lo_polar_points = [ cmath.polar(complex(*i)) for i in lo_points ]
 
     lo_rho = [i[0] for i in lo_polar_points ]
     lo_phi = [math.degrees(i[1])%360 for i in lo_polar_points ]
@@ -337,7 +337,6 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     if origin_in_box is True:
         #largest rho:
         rho_err = 2*rho_err + min(lo_rho)
-        #maximum angle uncertainty:
         phi_err = 180.
 
     return rho_err, phi_err
