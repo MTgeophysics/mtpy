@@ -1846,9 +1846,9 @@ class Plot1DResponse(object):
                 pass
 
         # --> set axis properties-----------------------------------------------
-        self.axr.set_xscale('log', nonposx='clip')
-        self.axp.set_xscale('log', nonposx='clip')
-        self.axr.set_yscale('log', nonposy='clip')
+        self.axr.set_xscale('log')#, nonposx='clip'
+        self.axp.set_xscale('log')#, nonposx='clip'
+        self.axr.set_yscale('log')#, nonposy='clip'
         self.axr.grid(True, alpha=self.grid_alpha, which='both',
                       color=self.grid_color)
         plt.setp(self.axr.xaxis.get_ticklabels(), visible=False)
@@ -1929,7 +1929,7 @@ class Plot1DResponse(object):
                 plot_model = abs(10 ** m1.model_res[1:, 1])
                 self.axm.semilogx(plot_model[::-1],
                                   plot_depth[::-1],
-                                  ls='steps-',
+                                  ls='-',
                                   color=cyx,
                                   lw=self.lw)
 

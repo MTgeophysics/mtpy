@@ -26,7 +26,7 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.analysis.pt as MTpt
 from mtpy.utils.mtpylog import MtPyLog
-from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
+# from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
 
 _logger = MtPyLog.get_mtpy_logger(__name__)
 

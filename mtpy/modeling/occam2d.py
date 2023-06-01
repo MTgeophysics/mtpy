@@ -251,6 +251,7 @@ class Mesh():
         # right hand station to reduce the effect of a large neighboring cell.
         self.x_grid = np.array([self.rel_station_locations[0] - self.cell_width * \
                                 self.x_pad_multiplier])
+        
         for ii, offset in enumerate(self.rel_station_locations[:-1]):
             dx = self.rel_station_locations[ii + 1] - offset
             num_cells = int(np.floor(dx / self.cell_width))
@@ -277,18 +278,22 @@ class Mesh():
                     pass
 
         self.x_grid = np.append(self.x_grid, self.rel_station_locations[-1])
+        # add small cells
+        for nn in range(int(self.num_x_pad_small_cells*2)):
+            self.x_grid = np.append(self.x_grid,
+                                    self.x_grid[-1]+self.cell_width)
+            self.x_grid = np.insert(self.x_grid, 1, self.x_grid[1]-self.cell_width)
+            self.x_grid[0] -= self.cell_width
         # add a cell on the right hand side of the station area to reduce 
         # effect of a large cell next to it       
         self.x_grid = np.append(self.x_grid,
-                                self.rel_station_locations[-1] + self.cell_width * \
+                                self.x_grid[-1] + self.cell_width * \
                                 self.x_pad_multiplier)
-        
         # add an extra cell if there is an uneven number of cells
         if len(self.x_grid) % 2 == 0:
             self.x_grid = np.append(self.x_grid,
                                 self.x_grid[-1] + self.cell_width * \
-                                self.x_pad_multiplier)                                
-        
+                                self.x_pad_multiplier)
         # --> pad the mesh with exponentially increasing horizontal cells
         #    such that the edge of the mesh can be estimated with a 1D model
 
@@ -999,6 +1004,7 @@ class Profile():
         # Assume start of profile is minimum easting
         if start is None:
             start = min(coords_list, key=lambda x: x[0])
+        print("start",start)
         pass_by = coords_list
         path = [start]
         pass_by.remove(start)
@@ -1080,13 +1086,12 @@ class Profile():
         easts = np.zeros(self.num_edi)
         norths = np.zeros(self.num_edi)
         utm_zones = np.zeros(self.num_edi)
-        
+
         if self.model_epsg is None:
             latlist = np.array([mtObj.lat for mtObj in self.edi_list])
             lonlist = np.array([mtObj.lon for mtObj in self.edi_list])
             lonc,latc = mtcc.centre_point(lonlist,latlist)
             self.model_epsg = gis_tools.get_epsg(latc,lonc)
-
         for ii, edi in enumerate(self.edi_list):
             # find strike angles for each station if a strike angle is not given
             if self.geoelectric_strike is None:
@@ -1098,7 +1103,6 @@ class Profile():
                     strike_angles[ii] = np.median(gstrike)
                 except:
                     pass
-
             if self.model_epsg is not None:
                 edi.east,edi.north,edi.utm_zone = \
                 gis_tools.project_point_ll2utm(edi.lat,
@@ -1247,7 +1251,8 @@ class Profile():
                                            for ii in index_sort])
         if self.estimate_elevation == True:
             self.project_elevation()
-
+        print(np.array([mtObj.lat for mtObj in self.edi_list]))
+        print([mtObj.lon for mtObj in self.edi_list])
         self._profile_generated = True
 
     def project_elevation(self, elevation_model=None):
@@ -2622,15 +2627,22 @@ class Data(Profile):
 
                     # get error
                     if self.tipper_err is not None:
-                        self.data[s_index]['re_tip'][1, freq_num] = \
-                            self.tipper_err / 100.
-                        self.data[s_index]['im_tip'][1, freq_num] = \
-                            self.tipper_err / 100.
+                        if self.error_type == 'floor':
+                            self.data[s_index]['re_tip'][1, freq_num] = \
+                                max(self.tipper_err / 100., tipper_err[f_index, 0, 1])
+                            self.data[s_index]['im_tip'][1, freq_num] = \
+                                max(self.tipper_err / 100., tipper_err[f_index, 0, 1])
+                        else:
+                            
+                            self.data[s_index]['re_tip'][1, freq_num] = \
+                                self.tipper_err / 100.
+                            self.data[s_index]['im_tip'][1, freq_num] = \
+                                self.tipper_err / 100.
                     else:
                         self.data[s_index]['re_tip'][1, freq_num] = \
-                            tipper[f_index, 0, 1].real / tipper_err[f_index, 0, 1]
+                            tipper_err[f_index, 0, 1] #tipper[f_index, 0, 1].real / 
                         self.data[s_index]['im_tip'][1, freq_num] = \
-                            tipper[f_index, 0, 1].imag / tipper_err[f_index, 0, 1]
+                            tipper_err[f_index, 0, 1] #tipper[f_index, 0, 1].imag / 
 
     def _get_data_list(self):
         """
@@ -4711,7 +4723,7 @@ class PlotModel(Model):
                 ny2 = ny1 + self.model_rows[ii][0]
 
                 # make the list of amalgamated columns an array for ease
-                lc = np.array(self.model_cols[ii])
+                lc = np.array(self.model_columns[ii])
                 yline = ax.plot([self.plot_x[0] / df, self.plot_x[-1] / df],
                                 [self.plot_z[-ny1] / df,
                                  self.plot_z[-ny1] / df],
@@ -4721,7 +4733,7 @@ class PlotModel(Model):
                 line_list.append(yline)
 
                 # loop over the number of amalgamated blocks
-                for jj in range(len(self.model_cols[ii])):
+                for jj in range(len(self.model_columns[ii])):
                     # get first in index in the horizontal direction
                     nx1 = lc[:jj].sum()
 

@@ -709,7 +709,7 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
             projected_point['elev'][ii] = point[2]
 
         projected_point['utm_zone'][ii] = utm_zone
-
+        
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array
     if len(projected_point) == 1:

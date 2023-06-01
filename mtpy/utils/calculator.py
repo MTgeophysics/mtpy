@@ -250,7 +250,7 @@ def compute_determinant_error(z_array, z_err_array, method = 'theoretical', repe
                     representing the error in the (determinant of Z)**0.5
     
     """
-    if method == 'stochatic':
+    if method == 'stochastic':
         arraylist = []
         
         for r in range(repeats):

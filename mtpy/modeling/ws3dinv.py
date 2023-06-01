@@ -353,7 +353,8 @@ class WSData(object):
             if self.z_err == 'data':
                 pass
             elif self.z_err_floor is None and type(self.z_err) is float:
-                d_arr['z_data_err'][:] = d_arr['z_data'][:]*self.z_err
+                d_arr['z_data_err'][:] = np.abs(d_arr['z_data'][:])*self.z_err+\
+                    1j*np.abs(d_arr['z_data'][:])*self.z_err
             elif self.z_err_floor is not None:
                 ef_idx = np.where(d_arr['z_data_err'] < self.z_err_floor)
                 d_arr['z_data_err'][ef_idx] = d_arr['z_data'][ef_idx]*self.z_err_floor
@@ -789,7 +790,7 @@ class WSStation(object):
         self.save_path = os.path.dirname(self.station_fn)
 
         self.station_locations = np.loadtxt(self.station_fn, skiprows=1,
-                                            dtype=[('station', '|S10'),
+                                            dtype=[('station', '<U50'),
                                                    ('east_c', np.float),
                                                   ('north_c', np.float),
                                                   ('elev', np.float)])
@@ -1559,7 +1560,7 @@ class WSMesh(object):
         if nr > 0:
             for ff in self.res_list:
                 ifid.write('{0:.1f} '.format(ff))
-            ifid.write('\n')
+                ifid.write('\n')
         else:
             pass
 
@@ -1635,7 +1636,7 @@ class WSMesh(object):
 
         """
         self.initial_fn = initial_fn
-        ifid = file(self.initial_fn, 'r')
+        ifid = open(self.initial_fn, 'r')
         ilines = ifid.readlines()
         ifid.close()
 

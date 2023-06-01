@@ -9,7 +9,6 @@ get dimensionality/strike angle from an edi file
 """
 import os.path as op
 import os
-os.chdir(r'C:\mtpywin\mtpy') # change to path where mtpy is installed
 import numpy as np
 
 from mtpy.core.mt import MT
@@ -17,7 +16,7 @@ from mtpy.analysis.geometry import dimensionality,strike_angle
 
 
 # directory containing edis
-edi_path = r'C:\mtpywin\mtpy\examples\data\edi_files_2'
+edi_path = r'C:\git\mtpy\examples\data\edi_files_2'
 
 # edi file name
 edi_file = os.path.join(edi_path,'Synth00.edi')
@@ -31,4 +30,4 @@ dim = dimensionality(z_object=mtObj.Z,
                      eccentricity_threshold=0.1 # threshold in phase ellipse eccentricity to determine if data are 2d (vs 1d)
                      )
 
-print dim
+print(dim)
