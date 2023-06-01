@@ -103,8 +103,8 @@ class ResPhase(object):
                                                 0, self._z)
         self._phase = np.rad2deg(np.angle(self._z))
 
-        self._resistivity_err = np.zeros_like(self._resistivity, dtype=np.float)
-        self._phase_err = np.zeros_like(self._phase, dtype=np.float)
+        self._resistivity_err = np.zeros_like(self._resistivity, dtype=float)
+        self._phase_err = np.zeros_like(self._phase, dtype=float)
 
         # calculate resistivity and phase
         if self._z_err is not None:
@@ -173,7 +173,7 @@ class ResPhase(object):
         abs_z = np.sqrt(5.0 * self.freq * (self.resistivity.T)).T
         self._z = abs_z * np.exp(1j * np.radians(self.phase))
 
-        self._z_err = np.zeros_like(self._z, dtype=np.float)
+        self._z_err = np.zeros_like(self._z, dtype=float)
         # ---------------------------
         # error propagation:
         if self._resistivity_err is None or self._phase_err is None:
@@ -270,7 +270,7 @@ class ResPhase(object):
         if self._z_err is not None:
             return np.array([abs(np.linalg.det(zzv)) ** .5 for zzv in self._z_err])
         else:
-            return np.ones_like(self._zdet, dtype=np.float)
+            return np.ones_like(self._zdet, dtype=float)
 
     @property
     def phase_det(self):
@@ -908,7 +908,7 @@ class Z(ResPhase):
 
         tr_err = None
         if self.z_err is not None:
-            tr_err = np.zeros_like(self.trace, dtype=np.float)
+            tr_err = np.zeros_like(self.trace, dtype=float)
             tr_err[:] = self.z_err[:, 0, 0] + self.z_err[:, 1, 1]
 
         return tr_err
@@ -942,7 +942,7 @@ class Z(ResPhase):
 
         skew_err = None
         if self.z_err is not None:
-            skew_err = np.zeros_like(self.skew, dtype=np.float)
+            skew_err = np.zeros_like(self.skew, dtype=float)
             skew_err[:] = self.z_err[:, 0, 1] + self.z_err[:, 1, 0]
 
         return skew_err
@@ -970,7 +970,7 @@ class Z(ResPhase):
         """
         det_Z_err = None
         if self.z_err is not None:
-            det_Z_err = np.zeros_like(self.det, dtype=np.float)
+            det_Z_err = np.zeros_like(self.det, dtype=float)
             # components of the impedance tensor are not independent variables
             # so can't use standard error propagation
             # calculate manually:
@@ -1008,7 +1008,7 @@ class Z(ResPhase):
         norm_err = None
 
         if self.z_err is not None:
-            norm_err = np.zeros_like(self.norm, dtype=np.float)
+            norm_err = np.zeros_like(self.norm, dtype=float)
             for idx, z_tmp in enumerate(self.z):
                 value = self.norm[idx]
                 error_matrix = self.z_err[idx]
