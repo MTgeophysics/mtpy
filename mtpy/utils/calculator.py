@@ -429,7 +429,7 @@ def old_z_error2r_phi_error(x,x_error,y, y_error):
     if x_error >= np.abs(x) and y_error >= np.abs(y):
         origin_in_box = True
 
-    lo_polar_points = [ cmath.polar(np.complex(*i)) for i in lo_points ]
+    lo_polar_points = [ cmath.polar(complex(*i)) for i in lo_points ]
 
     lo_rho = [i[0] for i in lo_polar_points ]
     lo_phi = [math.degrees(i[1])%360 for i in lo_polar_points ]
@@ -437,7 +437,7 @@ def old_z_error2r_phi_error(x,x_error,y, y_error):
     #uncertainty in amplitude is defined by half the diameter of the box around x,y
     rho_err = 0.5*(max(lo_rho) - min(lo_rho) )
 
-    rho = cmath.polar(np.complex(x,y))[0] 
+    rho = cmath.polar(complex(x,y))[0] 
     try:
         rel_error_rho = rho_err/rho
     except:
