@@ -483,14 +483,14 @@ def validate_input_values(values, location_type=None):
 
     """
     if isinstance(values, (int, float)):
-        values = np.array([values], dtype=np.float)
+        values = np.array([values], dtype=float)
     elif isinstance(values, (list, tuple)):
-        values = np.array(values, dtype=np.float)
+        values = np.array(values, dtype=float)
     elif isinstance(values, str):
         values = [ss.strip() for ss in values.strip().split(',')]
         values = np.array(values)
     elif isinstance(values, np.ndarray):
-        values = values.astype(np.float)
+        values = values.astype(float)
 
     # Flatten to 1D
     values = values.flatten()
@@ -502,7 +502,7 @@ def validate_input_values(values, location_type=None):
             except GISError as error:
                 raise GISError('{0}\n Bad input value at index {1}'.format(
                                error, ii))
-        values = values.astype(np.float)
+        values = values.astype(float)
 
     if location_type in ['lon', 'longitude']:
         for ii, value in enumerate(values):
@@ -511,7 +511,7 @@ def validate_input_values(values, location_type=None):
             except GISError as error:
                 raise GISError('{0}\n Bad input value at index {1}'.format(
                                error, ii))
-        values = values.astype(np.float)
+        values = values.astype(float)
 
     return values
 
@@ -692,9 +692,9 @@ def project_point_ll2utm(lat, lon, datum='WGS84', utm_zone=None, epsg=None):
         ll2utm = _get_pyproj_projection(datum, utm_zone, epsg)
 
     # return different results depending on if lat/lon are iterable
-    projected_point = np.zeros_like(lat, dtype=[('easting', np.float),
-                                                ('northing', np.float),
-                                                ('elev', np.float),
+    projected_point = np.zeros_like(lat, dtype=[('easting', float),
+                                                ('northing', float),
+                                                ('elev', float),
                                                 ('utm_zone', 'U3')])
 
     for ii in range(lat.size):
@@ -777,8 +777,8 @@ def project_point_utm2ll(easting, northing, utm_zone, datum='WGS84', epsg=None):
 
     # return different results depending on if lat/lon are iterable
     projected_point = np.zeros_like(easting,
-                                    dtype=[('latitude', np.float),
-                                           ('longitude', np.float)])
+                                    dtype=[('latitude', float),
+                                           ('longitude', float)])
     for ii in range(easting.size):
         if HAS_GDAL:
             point = utm2ll(easting[ii], northing[ii], 0.0)
