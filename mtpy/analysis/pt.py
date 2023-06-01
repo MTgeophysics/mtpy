@@ -269,8 +269,8 @@ class PhaseTensor(object):
         self._z = z_object.z
         self._z_err = z_object.z_err
         self._freq = z_object.freq
-        self._pt = np.zeros_like(self._z, dtype=np.float)
-        self._pt_err = np.zeros_like(self._z, dtype=np.float)
+        self._pt = np.zeros_like(self._z, dtype=float)
+        self._pt_err = np.zeros_like(self._z, dtype=float)
 
         if self._z_err is not None:
             for idx_f in range(len(self._z)):
@@ -318,8 +318,8 @@ class PhaseTensor(object):
         """
 
         self._z = z_array
-        self._pt = np.zeros_like(self._z, dtype=np.float)
-        self._pt_err = np.zeros_like(self._z, dtype=np.float)
+        self._pt = np.zeros_like(self._z, dtype=float)
+        self._pt_err = np.zeros_like(self._z, dtype=float)
 
         if self._z_err is not None and self._z is not None:
             for idx_f in range(len(self._z)):
@@ -364,8 +364,8 @@ class PhaseTensor(object):
             print('z and z_err are not the not the same shape, setting ' + \
                   'z_err to None')
 
-        self._pt = np.zeros_like(self._z, dtype=np.float)
-        self._pt_err = np.zeros_like(self._z, dtype=np.float)
+        self._pt = np.zeros_like(self._z, dtype=float)
+        self._pt_err = np.zeros_like(self._z, dtype=float)
 
         if self._z_err is not None:
             for idx_f in range(len(self._z)):
