@@ -273,9 +273,9 @@ class Edi(object):
                 data_dict[key] += d_lines
 
         # fill useful arrays
-        freq_arr = np.array(data_dict['freq'], dtype=np.float)
+        freq_arr = np.array(data_dict['freq'], dtype=float)
         z_arr = np.zeros((freq_arr.size, 2, 2), dtype=complex)
-        z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
+        z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=float)
 
         # fill impedance tensor
         if 'zxxr' in data_dict.keys():
@@ -320,7 +320,7 @@ class Edi(object):
 
         # fill tipper data if there it exists
         tipper_arr = np.zeros((freq_arr.size, 1, 2), dtype=complex)
-        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float)
+        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=float)
 
         try:
             self.Tipper.rotation_angle = np.array(data_dict['trot'])
