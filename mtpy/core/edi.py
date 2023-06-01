@@ -273,9 +273,9 @@ class Edi(object):
                 data_dict[key] += d_lines
 
         # fill useful arrays
-        freq_arr = np.array(data_dict['freq'], dtype=float)
-        z_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.complex)
-        z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=float)
+        freq_arr = np.array(data_dict['freq'], dtype=np.float)
+        z_arr = np.zeros((freq_arr.size, 2, 2), dtype=complex)
+        z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
 
         # fill impedance tensor
         if 'zxxr' in data_dict.keys():
@@ -319,8 +319,8 @@ class Edi(object):
         self.Z.compute_resistivity_phase()
 
         # fill tipper data if there it exists
-        tipper_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.complex)
-        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=float)
+        tipper_arr = np.zeros((freq_arr.size, 1, 2), dtype=complex)
+        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float)
 
         try:
             self.Tipper.rotation_angle = np.array(data_dict['trot'])
@@ -396,8 +396,8 @@ class Edi(object):
 
         freq_arr = np.array(sorted(list(data_dict.keys()), reverse=True))
 
-        z_arr = np.zeros((len(list(data_dict.keys())), 2, 2), dtype=np.complex)
-        t_arr = np.zeros((len(list(data_dict.keys())), 1, 2), dtype=np.complex)
+        z_arr = np.zeros((len(list(data_dict.keys())), 2, 2), dtype=complex)
+        t_arr = np.zeros((len(list(data_dict.keys())), 1, 2), dtype=complex)
 
         z_err_arr = np.zeros_like(z_arr, dtype=float)
         t_err_arr = np.zeros_like(t_arr, dtype=float)
@@ -407,7 +407,7 @@ class Edi(object):
                                      (len(comp_list), len(comp_list)))
 
             # compute cross powers
-            s_arr = np.zeros_like(spectra_arr, dtype=np.complex)
+            s_arr = np.zeros_like(spectra_arr, dtype=complex)
             for ii in range(s_arr.shape[0]):
                 for jj in range(ii, s_arr.shape[0]):
                     if ii == jj:
