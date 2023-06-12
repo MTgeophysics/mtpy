@@ -205,7 +205,7 @@ class PlotSettings(MTArrows, MTEllipse):
                         )
                     ),
                 ]
-            except ValueError:
+            except (ValueError, TypeError):
                 limits = [0.1, 10000]
         elif mode == "d":
             try:
@@ -239,7 +239,7 @@ class PlotSettings(MTArrows, MTEllipse):
                         )
                     ),
                 ]
-            except ValueError:
+            except (ValueError, TypeError):
                 limits = [0.1, 10000]
         elif mode in ["det", "det_only"]:
             try:
@@ -248,7 +248,7 @@ class PlotSettings(MTArrows, MTEllipse):
                     10 ** (np.floor(np.log10(np.nanmin(resistivity[nz])))),
                     10 ** (np.ceil(np.log10(np.nanmax(resistivity[nz])))),
                 ]
-            except ValueError:
+            except (ValueError, TypeError):
                 limits = [0.1, 10000]
         if scale == "log":
             if limits[0] == 0:
@@ -282,7 +282,7 @@ class PlotSettings(MTArrows, MTEllipse):
                 else:
                     ph_max = round(ph_max / 5) * 5
                 return (ph_min, ph_max)
-            except ValueError:
+            except (ValueError, TypeError):
                 return [0, 90]
 
         elif mode == "d":
@@ -302,7 +302,7 @@ class PlotSettings(MTArrows, MTEllipse):
                     phase_limits[1] = 180
                 return phase_limits
 
-            except ValueError:
+            except (ValueError, TypeError):
                 return [-180, 180]
 
     @property
