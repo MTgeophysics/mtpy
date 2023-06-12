@@ -489,7 +489,8 @@ class MTStations:
         gdf = gpd.GeoDataFrame(
             self.station_locations,
             geometry=gpd.points_from_xy(
-                self.station_locations.lon, self.station_locations.lat
+                self.station_locations.longitude,
+                self.station_locations.latitude,
             ),
             crs=self.center_point.datum_crs,
         )
