@@ -42,8 +42,16 @@ class PlotMesh(PlotBase):
         """
 
         if not "topography" in self.model_obj.surface_dict.keys():
-            self.logger.warning("Cannot find topography information, skipping")
-            return
+
+            topo = self.model_obj._get_topography_from_model()
+            if topo is not None:
+                self.model_obj.surface_dict["topography"] = topo
+
+            else:
+                self.logger.warning(
+                    "Cannot find topography information, skipping"
+                )
+                return
 
         x, y = np.meshgrid(self.model_obj.grid_east, self.model_obj.grid_north)
         norm = FixPointNormalize(
@@ -201,7 +209,9 @@ class PlotMesh(PlotBase):
 
         # ---------------------------------------
         # plot depth view along the east direction
-        self.ax2 = self.fig.add_subplot(1, 2, 2, aspect="auto", sharex=self.ax1)
+        self.ax2 = self.fig.add_subplot(
+            1, 2, 2, aspect="auto", sharex=self.ax1
+        )
 
         # plot the grid
         east_line_xlist = []
