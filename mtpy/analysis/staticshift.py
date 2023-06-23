@@ -17,7 +17,6 @@ import os
 import numpy as np
 
 import mtpy.core.mt as mt
-import mtpy.imaging.mtplot as mtplot
 
 
 # ==============================================================================
@@ -110,7 +109,9 @@ def estimate_static_spatial_median(
     res_array = np.zeros((len(mt_obj_list), num_freq, 2, 2))
     print("These stations are within the given {0} m radius:".format(radius))
     for kk, mt_obj_kk in enumerate(mt_obj_list):
-        print("\t{0} --> {1:.1f} m".format(mt_obj_kk.station, mt_obj_kk.delta_d))
+        print(
+            "\t{0} --> {1:.1f} m".format(mt_obj_kk.station, mt_obj_kk.delta_d)
+        )
         interp_idx = np.where(
             (interp_freq >= mt_obj_kk.Z.freq.min())
             & (interp_freq <= mt_obj_kk.Z.freq.max())
@@ -204,23 +205,31 @@ def remove_static_shift_spatial_filter(
     """
 
     ss_x, ss_y = estimate_static_spatial_median(
-        edi_fn, radius=radius, num_freq=num_freq, freq_skip=freq_skip, shift_tol=0.15
+        edi_fn,
+        radius=radius,
+        num_freq=num_freq,
+        freq_skip=freq_skip,
+        shift_tol=0.15,
     )
     mt_obj = mt.MT(edi_fn)
 
-    s, z_ss = mt_obj.Z.no_ss(reduce_res_factor_x=ss_x, reduce_res_factor_y=ss_y)
+    s, z_ss = mt_obj.Z.no_ss(
+        reduce_res_factor_x=ss_x, reduce_res_factor_y=ss_y
+    )
     edi_path = os.path.dirname(edi_fn)
 
     mt_obj.Z.z = z_ss
-    new_edi_fn = os.path.join(edi_path, "SS", "{0}_ss.edi".format(mt_obj.station))
+    new_edi_fn = os.path.join(
+        edi_path, "SS", "{0}_ss.edi".format(mt_obj.station)
+    )
     if not os.path.exists(os.path.dirname(new_edi_fn)):
         os.mkdir(os.path.dirname(new_edi_fn))
     mt_obj.write_edi_file(new_fn=new_edi_fn)
 
-    if plot == True:
-        rpm = mtplot.plot_multiple_mt_responses(
-            fn_list=[edi_fn, new_edi_fn], plot_style="compare"
-        )
-        return new_edi_fn, s[0], rpm
-    else:
-        return new_edi_fn, s[0], None
+    # if plot == True:
+    #     rpm = mtplot.plot_multiple_mt_responses(
+    #         fn_list=[edi_fn, new_edi_fn], plot_style="compare"
+    #     )
+    #     return new_edi_fn, s[0], rpm
+    # else:
+    return new_edi_fn, s[0], None

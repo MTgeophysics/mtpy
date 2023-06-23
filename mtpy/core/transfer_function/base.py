@@ -154,7 +154,9 @@ class TFBase:
             tf_error = np.zeros_like(
                 tf_model_error, dtype=self._tf_dtypes["tf_error"]
             )
-            periods = self._validate_frequency(periods, tf_model_error.shape[0])
+            periods = self._validate_frequency(
+                periods, tf_model_error.shape[0]
+            )
 
         else:
             periods = self._validate_frequency(periods)
@@ -236,7 +238,9 @@ class TFBase:
 
     def _has_tf_error(self):
         if not self._is_empty():
-            return not (self._dataset.transfer_function_error.values == 0).all()
+            return not (
+                self._dataset.transfer_function_error.values == 0
+            ).all()
         return False
 
     def _has_tf_model_error(self):
@@ -284,7 +288,9 @@ class TFBase:
                 frequency, n_frequencies=self._dataset.period.shape[0]
             )
 
-        self._dataset = self._dataset.assign_coords({"period": 1.0 / frequency})
+        self._dataset = self._dataset.assign_coords(
+            {"period": 1.0 / frequency}
+        )
 
     @property
     def period(self):
@@ -582,7 +588,12 @@ class TFBase:
 
         da_dict = {}
         for key in self._dataset.data_vars:
-            da_dict[key] = self._dataset[key].interp(
+            # need to interpolate over nans first, if use dropna loose a lot
+            # of data.  going to interpolate anyway.
+            da_drop_nan = self._dataset[key].interpolate_na(
+                dim="period", method=method
+            )
+            da_dict[key] = da_drop_nan.interp(
                 period=new_periods, method=method, kwargs=kwargs
             )
 

@@ -11,7 +11,7 @@ Created on Mon Mar 28 15:04:27 2016
 
 import copy
 import sys
-import os
+from pathlib import Path
 
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets
@@ -20,17 +20,23 @@ except ImportError:
 
 import numpy as np
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvasQTAgg as FigureCanvas,
+)
+from matplotlib.backends.backend_qt5agg import (
+    NavigationToolbar2QT as NavigationToolbar,
+)
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.widgets as mplwidgets
+from matplotlib.lines import Line2D
+from matplotlib.collections import LineCollection
 
-import mtpy.core.mt as mt
-import mtpy.imaging.plotstrike2d as plotstrike2d
+from mtpy import MT, MTData
 import mtpy.analysis.staticshift as staticshift
-import mtpy.imaging.mtplottools as mtplt
+from mtpy.imaging.mtplot_tools import plotters
+from mtpy.imaging.mtplot_tools.utils import period_label_dict
 
 
 # ==============================================================================
@@ -51,11 +57,14 @@ class MyStream(QtCore.QObject):
     def write(self, message):
         self.message.emit(str(message))
 
+    def flush(self):
+        pass
 
-class EDI_Editor_Window(QtWidgets.QMainWindow):
+
+class MTEditorWindow(QtWidgets.QMainWindow):
     """
-    This is the main window for editing an edi file.
-    
+    This is the main window for editing an mt file.
+
     Includes:
         * Editing points by removing them
         * Adjusting for static shift
@@ -65,14 +74,26 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
     """
 
     def __init__(self):
-        super(EDI_Editor_Window, self).__init__()
+        self.file_types = ";;".join(
+            [
+                "*.edi",
+                "*.mt",
+                "*.zmm",
+                "*.zrr",
+                "*.zss",
+                "*.avg",
+                "*.j",
+                "*.xml",
+            ]
+        )
+        super(MTEditorWindow, self).__init__()
 
     def ui_setup(self):
         """
         set up the user interface
         """
 
-        self.setWindowTitle("EDI Editor")
+        self.setWindowTitle("MT Editor")
         #        self.resize(1920, 1080)
         self.setWindowState(QtCore.Qt.WindowMaximized)
 
@@ -82,13 +103,13 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         self.menu_file = self.menuBar().addMenu("&File")
 
         self.action_open_file = self.menu_file.addAction("&Open")
-        self.action_open_file.triggered.connect(self.get_edi_file)
+        self.action_open_file.triggered.connect(self.get_mt_file)
 
         self.action_close_file = self.menu_file.addAction("C&lose")
-        self.action_close_file.triggered.connect(self.close_edi_file)
+        self.action_close_file.triggered.connect(self.close_mt_file)
 
         self.action_save_file = self.menu_file.addAction("&Save")
-        self.action_save_file.triggered.connect(self.save_edi_file)
+        self.action_save_file.triggered.connect(self.save_mt_file)
 
         self.menu_plot_properties = self.menuBar().addMenu("Plot Properties")
         self.action_edit_plot = self.menu_plot_properties.addAction("Edit")
@@ -105,54 +126,59 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
 
         QtCore.QMetaObject.connectSlotsByName(self)
 
-    def get_edi_file(self):
+    def get_mt_file(self):
         """
-        get edi file
+        get mt file
         """
 
         print("=" * 35)
         fn_dialog = QtWidgets.QFileDialog()
-        fn = str(
-            fn_dialog.getOpenFileName(
-                caption="Choose EDI file",
-                directory=self.plot_widget.dir_path,
-                filter="*.edi",
-            )[0]
+        fn = Path(
+            str(
+                fn_dialog.getOpenFileNames(
+                    caption="Choose MT file",
+                    directory=self.plot_widget.dir_path.as_posix(),
+                    filter=self.file_types,
+                )[0][0]
+            )
         )
 
-        fn = os.path.abspath(fn)
-        self.plot_widget.dir_path = os.path.dirname(fn)
+        self.plot_widget.dir_path = fn.parent
 
-        self.plot_widget.mt_obj = mt.MT(fn)
+        self.plot_widget.mt_obj = MT(fn)
+        self.plot_widget.mt_obj.read()
         if self.plot_widget.mt_obj.elevation is None:
             self.plot_widget.mt_obj.elevation = 0.0
-        self.plot_widget._mt_obj = mt.MT(fn)
+        self.plot_widget._mt_obj = MT(fn)
+        self.plot_widget._mt_obj.read()
         self.plot_widget.fill_metadata()
         self.plot_widget.reset_parameters()
         self.plot_widget.plot_properties = PlotSettings(None)
         self.plot_widget.plot()
 
-    def close_edi_file(self):
+    def close_mt_file(self):
         pass
 
-    def save_edi_file(self):
+    def save_mt_file(self):
         save_fn_dialog = QtWidgets.QFileDialog()
-        save_fn = str(
-            save_fn_dialog.getSaveFileName(
-                caption="Choose EDI File",
-                directory=self.plot_widget.dir_path,
-                filter="*.edi",
-            )[0]
+        save_fn = Path(
+            str(
+                save_fn_dialog.getSaveFileName(
+                    caption="Choose MT File",
+                    directory=self.plot_widget.dir_path,
+                    filter=self.file_types,
+                )[0]
+            )
         )
 
-        self.mt_obj.write_mt_file(
-            save_dir=os.path.dirname(save_fn), fn_basename=os.path.basename(save_fn)
-        )
+        self.mt_obj.write(fn=save_fn)
 
     def edit_plot_properties(self):
         self.plot_widget.plot_properties.setup_ui()
         self.plot_widget.plot_properties.show()
-        self.plot_widget.plot_properties.settings_updated.connect(self.update_plot)
+        self.plot_widget.plot_properties.settings_updated.connect(
+            self.update_plot
+        )
 
     def update_plot(self):
 
@@ -165,11 +191,11 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
         self.plot_widget.redraw_plot()
 
     def edit_metadata(self):
-        self.edi_text_editor = EDITextEditor(self.plot_widget.mt_obj)
-        self.edi_text_editor.metadata_updated.connect(self.update_edi_metadata)
+        self.mt_text_editor = MTTextEditor(self.plot_widget.mt_obj)
+        self.mt_text_editor.metadata_updated.connect(self.update_mt_metadata)
 
-    def update_edi_metadata(self):
-        self.plot_widget.mt_obj = copy.deepcopy(self.edi_text_editor.mt_obj)
+    def update_mt_metadata(self):
+        self.plot_widget.mt_obj = copy.deepcopy(self.mt_text_editor.mt_obj)
         self.plot_widget.fill_metadata()
 
 
@@ -179,25 +205,24 @@ class EDI_Editor_Window(QtWidgets.QMainWindow):
 class PlotWidget(QtWidgets.QWidget):
     """
     matplotlib plot of the data
-    
+
     """
 
     def __init__(self):
         super(PlotWidget, self).__init__()
 
-        self.mt_obj = mt.MT()
-        self._mt_obj = mt.MT()
+        self.mt_obj = MT()
+        self._mt_obj = MT()
         self.static_shift_x = 1.0
         self.static_shift_y = 1.0
-        self.rotate_z_angle = 0
-        self.rotate_tip_angle = 0
+        self.rotate_angle = 0
         self.plot_properties = PlotSettings(None)
         self._edited_ss = False
         self._edited_dist = False
         self._edited_rot = False
         self._edited_mask = False
         self._ax = None
-        self.dir_path = os.getcwd()
+        self.dir_path = Path().cwd()
         self.edits_mode = "Both"
 
         self.interp_period_min = 0.001
@@ -223,6 +248,23 @@ class PlotWidget(QtWidgets.QWidget):
             "cubic",
         ]
 
+        self.file_types = ";;".join(
+            [
+                "*.edi",
+                "*.mt",
+                "*.zmm",
+                "*.zrr",
+                "*.zss",
+                "*.avg",
+                "*.j",
+                "*.xml",
+            ]
+        )
+
+        self._z_output_dict = {0: "ex", 1: "ey"}
+        self._input_dict = {0: "hx", 1: "hy"}
+        self._t_output_dict = {0: "hz"}
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -237,7 +279,7 @@ class PlotWidget(QtWidgets.QWidget):
         # this will set the minimum width of the mpl plot, important to
         # resize everything
         screen = QtWidgets.QDesktopWidget().screenGeometry()
-        self.mpl_widget.setMinimumWidth(screen.width() * (1600.0 / 1920))
+        self.mpl_widget.setMinimumWidth(screen.width() * 0.83)
 
         # be able to edit the data
         self.mpl_widget.mpl_connect("pick_event", self.on_pick)
@@ -267,11 +309,15 @@ class PlotWidget(QtWidgets.QWidget):
         self.metadata_label.setFont(header_font)
 
         self.meta_station_name_label = QtWidgets.QLabel("Station")
-        self.meta_station_name_edit = QtWidgets.QLineEdit(str(self.mt_obj.station))
-        self.meta_station_name_edit.editingFinished.connect(self.meta_edit_station)
+        self.meta_station_name_edit = QtWidgets.QLineEdit(
+            str(self.mt_obj.station)
+        )
+        self.meta_station_name_edit.editingFinished.connect(
+            self.meta_edit_station
+        )
 
         # sets up with an empty mt object so we can set values to 0
-        # once a edi is read in then the metadata will be filled.
+        # once a mt is read in then the metadata will be filled.
         self.meta_lat_label = QtWidgets.QLabel("Lat (deg)")
         self.meta_lat_edit = QtWidgets.QLineEdit("{0:.6f}".format(0.0))
         self.meta_lat_edit.editingFinished.connect(self.meta_edit_lat)
@@ -304,31 +350,41 @@ class PlotWidget(QtWidgets.QWidget):
         self.static_shift_x_edit = QtWidgets.QLineEdit(
             "{0:.3f}".format(self.static_shift_x)
         )
-        self.static_shift_x_edit.editingFinished.connect(self.static_shift_set_x)
+        self.static_shift_x_edit.editingFinished.connect(
+            self.static_shift_set_x
+        )
 
         self.static_shift_y_label = QtWidgets.QLabel("Shift Y")
         self.static_shift_y_edit = QtWidgets.QLineEdit(
             "{0:.3f}".format(self.static_shift_y)
         )
-        self.static_shift_y_edit.editingFinished.connect(self.static_shift_set_y)
+        self.static_shift_y_edit.editingFinished.connect(
+            self.static_shift_set_y
+        )
 
         self.static_shift_apply_button = QtWidgets.QPushButton()
         self.static_shift_apply_button.setText("Apply Static Shift")
         self.static_shift_apply_button.setFont(button_font)
-        self.static_shift_apply_button.setStyleSheet("background-color: #c75e4d")
+        self.static_shift_apply_button.setStyleSheet(
+            "background-color: #c75e4d"
+        )
         self.static_shift_apply_button.pressed.connect(self.static_shift_apply)
 
         self.static_shift_med_filt_button = QtWidgets.QPushButton()
         self.static_shift_med_filt_button.setText(
-            "Estimate Spatial Median Static Shift"
+            "Estimate Spatial Mmtan Static Shift"
         )
         self.static_shift_med_filt_button.setFont(button_font)
-        self.static_shift_med_filt_button.setStyleSheet("background-color: #f9d7db")
+        self.static_shift_med_filt_button.setStyleSheet(
+            "background-color: #f9d7db"
+        )
         self.static_shift_med_filt_button.pressed.connect(
             self.static_shift_med_filt_estimate
         )
 
-        self.static_shift_med_rad_label = QtWidgets.QLabel("Spatial Radius (m)")
+        self.static_shift_med_rad_label = QtWidgets.QLabel(
+            "Spatial Radius (m)"
+        )
         self.static_shift_med_rad_edit = QtWidgets.QLineEdit(
             "{0:.2f}".format(self.static_shift_med_rad)
         )
@@ -336,7 +392,9 @@ class PlotWidget(QtWidgets.QWidget):
             self.static_shift_med_rad_set
         )
 
-        self.static_shift_med_num_freq_label = QtWidgets.QLabel("Number of Frequencies")
+        self.static_shift_med_num_freq_label = QtWidgets.QLabel(
+            "Number of Frequencies"
+        )
         self.static_shift_med_num_freq_edit = QtWidgets.QLineEdit()
         self.static_shift_med_num_freq_edit.setText(
             "{0}".format(self.static_shift_med_num_freq)
@@ -350,18 +408,24 @@ class PlotWidget(QtWidgets.QWidget):
         self.remove_distortion_label.setFont(header_font)
 
         self.remove_distortion_button = QtWidgets.QPushButton()
-        self.remove_distortion_button.setText("Remove Distortion [Bibby et al., 2005]")
-        self.remove_distortion_button.setStyleSheet("background-color: #b8c3f5")
+        self.remove_distortion_button.setText(
+            "Remove Distortion [Bibby et al., 2005]"
+        )
+        self.remove_distortion_button.setStyleSheet(
+            "background-color: #b8c3f5"
+        )
         self.remove_distortion_button.setFont(button_font)
-        self.remove_distortion_button.pressed.connect(self.remove_distortion_apply)
+        self.remove_distortion_button.pressed.connect(
+            self.remove_distortion_apply
+        )
 
         self.remove_distortion_num_freq_label = QtWidgets.QLabel(
             "Number of Frequencies"
         )
         self.remove_distortion_num_freq_edit = QtWidgets.QLineEdit()
-        if self.mt_obj.Z.freq is not None:
+        if self.mt_obj.frequency is not None:
             self.remove_distortion_num_freq_edit.setText(
-                "{0:.0f}".format(self.mt_obj.Z.freq.size)
+                "{0:.0f}".format(self.mt_obj.frequency.size)
             )
         self.remove_distortion_num_freq_edit.editingFinished.connect(
             self.remove_distortion_set_num_freq
@@ -373,25 +437,23 @@ class PlotWidget(QtWidgets.QWidget):
         self.rotate_explanation = QtWidgets.QLabel(
             "Always rotating original data, assuming: N = 0, E = 90."
         )
-        self.rotate_angle_z_label = QtWidgets.QLabel("Rotate Z (deg)")
-        self.rotate_angle_z_edit = QtWidgets.QLineEdit(
-            "{0:.4g}".format(self.rotate_z_angle)
+        self.rotate_angle_label = QtWidgets.QLabel("Rotate (deg)")
+        self.rotate_angle_edit = QtWidgets.QLineEdit(
+            f"{self.rotate_angle:.4g}"
         )
-        self.rotate_angle_z_edit.editingFinished.connect(self.rotate_set_z_angle)
-
-        self.rotate_angle_t_label = QtWidgets.QLabel("Rotate Tipper (deg)")
-        self.rotate_angle_t_edit = QtWidgets.QLineEdit(
-            "{0:.4g}".format(self.rotate_tip_angle)
-        )
-        self.rotate_angle_t_edit.editingFinished.connect(self.rotate_set_t_angle)
+        self.rotate_angle_edit.editingFinished.connect(self.rotate_set_angle)
 
         self.rotate_angle_button = QtWidgets.QPushButton("Apply Rotation")
         self.rotate_angle_button.setStyleSheet("background-color: #7dd4d0")
         self.rotate_angle_button.setFont(button_font)
         self.rotate_angle_button.pressed.connect(self.rotate_data_apply)
 
-        self.rotate_estimate_strike_button = QtWidgets.QPushButton("Estimate Strike")
-        self.rotate_estimate_strike_button.pressed.connect(self.rotate_estimate_strike)
+        self.rotate_estimate_strike_button = QtWidgets.QPushButton(
+            "Estimate Strike"
+        )
+        self.rotate_estimate_strike_button.pressed.connect(
+            self.rotate_estimate_strike
+        )
 
         ## interpolate data
         self.interp_label = QtWidgets.QLabel("Interpolate Periods")
@@ -425,7 +487,9 @@ class PlotWidget(QtWidgets.QWidget):
         self.interp_type_combo = QtWidgets.QComboBox()
         self.interp_type_combo.addItems(self._interp_types)
         self.interp_type_combo.setCurrentIndex(3)
-        self.interp_type_combo.currentIndexChanged.connect(self.interp_set_type)
+        self.interp_type_combo.currentIndexChanged.connect(
+            self.interp_set_type
+        )
 
         ## tools label
         self.tools_label = QtWidgets.QLabel("Editing Tools")
@@ -454,10 +518,10 @@ class PlotWidget(QtWidgets.QWidget):
 
         ## save edits button
         self.save_edits_button = QtWidgets.QPushButton()
-        self.save_edits_button.setText("Save Edits to new EDI file")
+        self.save_edits_button.setText("Save Edits to new MT file")
         self.save_edits_button.setStyleSheet("background-color: #d9c59b")
         self.save_edits_button.setFont(button_font)
-        self.save_edits_button.pressed.connect(self.save_edi_file)
+        self.save_edits_button.pressed.connect(self.save_mt_file)
 
         ## horizontal line
         h_line_01 = QtWidgets.QFrame(self)
@@ -482,7 +546,10 @@ class PlotWidget(QtWidgets.QWidget):
 
         ## vertical spacer
         v_space = QtWidgets.QSpacerItem(
-            20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum
+            20,
+            20,
+            QtWidgets.QSizePolicy.Minimum,
+            QtWidgets.QSizePolicy.Maximum,
         )
         ###--> layout ---------------------------------------------
         ## mpl plot --> right panel
@@ -539,10 +606,8 @@ class PlotWidget(QtWidgets.QWidget):
         rot_title.addWidget(self.rotate_angle_button)
 
         rot_ang = QtWidgets.QHBoxLayout()
-        rot_ang.addWidget(self.rotate_angle_z_label)
-        rot_ang.addWidget(self.rotate_angle_z_edit)
-        rot_ang.addWidget(self.rotate_angle_t_label)
-        rot_ang.addWidget(self.rotate_angle_t_edit)
+        rot_ang.addWidget(self.rotate_angle_label)
+        rot_ang.addWidget(self.rotate_angle_edit)
 
         rot_layout = QtWidgets.QVBoxLayout()
         rot_layout.addLayout(rot_title)
@@ -625,7 +690,9 @@ class PlotWidget(QtWidgets.QWidget):
         self.meta_elev_edit.setText("{0:.6f}".format(self.mt_obj.elevation))
 
     def meta_edit_loc(self):
-        self.mt_obj.station_metadata.geographic_name = str(self.meta_loc_edit.text())
+        self.mt_obj.station_metadata.geographic_name = str(
+            self.meta_loc_edit.text()
+        )
         self.meta_loc_edit.setText(
             "{0}".format(self.mt_obj.station_metadata.geographic_name)
         )
@@ -639,18 +706,26 @@ class PlotWidget(QtWidgets.QWidget):
         )
 
     def meta_edit_acq(self):
-        self.mt_obj.station_metadata.acquired_by.author = str(self.meta_acq_edit.text())
-        self.meta_acq_edit.setText(self.mt_obj.station_metadata.acquired_by.author)
+        self.mt_obj.station_metadata.acquired_by.author = str(
+            self.meta_acq_edit.text()
+        )
+        self.meta_acq_edit.setText(
+            self.mt_obj.station_metadata.acquired_by.author
+        )
 
     def fill_metadata(self):
         self.meta_station_name_edit.setText(self.mt_obj.station)
         self.meta_lat_edit.setText("{0:.6f}".format(self.mt_obj.latitude))
         self.meta_lon_edit.setText("{0:.6f}".format(self.mt_obj.longitude))
         try:
-            self.meta_elev_edit.setText("{0:.6f}".format(self.mt_obj.elevation))
+            self.meta_elev_edit.setText(
+                "{0:.6f}".format(self.mt_obj.elevation)
+            )
         except ValueError:
             self.mt_obj.elevation = 0.0
-            self.meta_elev_edit.setText("{0:.6f}".format(self.mt_obj.elevation))
+            self.meta_elev_edit.setText(
+                "{0:.6f}".format(self.mt_obj.elevation)
+            )
         self.meta_date_edit.setText(
             "{0}".format(self.mt_obj.station_metadata.provenance.creation_time)
         )
@@ -661,7 +736,7 @@ class PlotWidget(QtWidgets.QWidget):
             "{0}".format(self.mt_obj.station_metadata.acquired_by.author)
         )
         self.remove_distortion_num_freq_edit.setText(
-            "{0:.0f}".format(self.mt_obj.Z.freq.size)
+            "{0:.0f}".format(self.mt_obj.frequency.size)
         )
 
     def static_shift_set_x(self):
@@ -682,13 +757,13 @@ class PlotWidget(QtWidgets.QWidget):
             and self._edited_mask == False
         ):
             # be sure to apply the static shift to the original data
-            new_z_obj = self._mt_obj.remove_static_shift(
+            self.mt_obj = self._mt_obj.remove_static_shift(
                 ss_x=self.static_shift_x, ss_y=self.static_shift_y
             )
             # print the static shift applied
             print("\n    Static shift applied to original data:")
         else:
-            new_z_obj = self.mt_obj.remove_static_shift(
+            self.mt_obj = self.mt_obj.remove_static_shift(
                 ss_x=self.static_shift_x, ss_y=self.static_shift_y
             )
             # print the static shift applied
@@ -702,11 +777,12 @@ class PlotWidget(QtWidgets.QWidget):
         )
         self._edited_ss = True
 
-        self.mt_obj.Z = new_z_obj
         self.redraw_plot()
 
     def static_shift_med_rad_set(self):
-        self.static_shift_med_rad = float(str(self.static_shift_med_rad_edit.text()))
+        self.static_shift_med_rad = float(
+            str(self.static_shift_med_rad_edit.text())
+        )
         self.static_shift_med_rad_edit.setText(
             "{0:.2f}".format(self.static_shift_med_rad)
         )
@@ -721,7 +797,7 @@ class PlotWidget(QtWidgets.QWidget):
 
     def static_shift_med_filt_estimate(self):
 
-        ss_x, ss_y = staticshift.estimate_static_spatial_median(
+        ss_x, ss_y = staticshift.estimate_static_spatial_mmtan(
             self.mt_obj.fn,
             radius=self.static_shift_med_rad,
             num_freq=self.static_shift_med_num_freq,
@@ -739,7 +815,9 @@ class PlotWidget(QtWidgets.QWidget):
         """
 
         try:
-            self.num_freq = int(str(self.remove_distortion_num_freq_edit.text()))
+            self.num_freq = int(
+                str(self.remove_distortion_num_freq_edit.text())
+            )
             self.remove_distortion_num_freq_edit.setText(
                 "{0:.0f}".format(self.num_freq)
             )
@@ -757,70 +835,42 @@ class PlotWidget(QtWidgets.QWidget):
             and self._edited_ss == False
         ):
             # remove distortion from original data
-            distortion, new_z_object = self._mt_obj.remove_distortion(
+            self.mt_obj = self._mt_obj.remove_distortion(
                 num_freq=self.num_freq
             )
             print("\n    - Removed distortion from original data")
 
         else:
             # remove distortion from edited data
-            distortion, new_z_object = self.mt_obj.remove_distortion(
-                num_freq=self.num_freq
+            self.mt_obj = self.mt_obj.remove_distortion(
+                n_frequencies=self.num_freq
             )
             print("\n    - Removed distortion from edited data")
 
         self._edited_dist = True
-        self.mt_obj.Z = new_z_object
-
-        print("       Distortion matrix:")
-        print(
-            "          | {0:+8.5g}  {1:+8.5g} |".format(
-                distortion[0, 0], distortion[0, 1]
-            )
-        )
-        print(
-            "          | {0:+8.5g}  {1:+8.5g} |".format(
-                distortion[1, 0], distortion[1, 1]
-            )
-        )
 
         self.redraw_plot()
 
-    def rotate_set_z_angle(self):
+    def rotate_set_angle(self):
         """
         set z rotation angle
-        
+
         Always rotate original data otherwiswe can get messy
         """
-        self.rotate_z_angle = float(str(self.rotate_angle_z_edit.text()))
-        self.rotate_angle_z_edit.setText("{0:.4f}".format(self.rotate_z_angle))
+        self.rotate_z_angle = float(str(self.rotate_angle_edit.text()))
+        self.rotate_angle_z_edit.setText("{0:.4f}".format(self.rotate_angle))
 
         self.rotate_tip_angle = float(self.rotate_z_angle)
-        self.rotate_angle_t_edit.setText("{0:.4f}".format(self.rotate_tip_angle))
-
-    def rotate_set_t_angle(self):
-        """
-        rotate tipper data assuming North is 0 and E is 90
-        
-        Always rotate original data otherwiswe can get messy
-        """
-        self.rotate_tip_angle = float(str(self.rotate_angle_t_edit.text()))
-        self.rotate_angle_t_edit.setText("{0:.4f}".format(self.rotate_tip_angle))
+        self.rotate_angle_t_edit.setText(
+            "{0:.4f}".format(self.rotate_tip_angle)
+        )
 
     def rotate_data_apply(self):
         """
         rotate both Z and tipper original data by the input angles
         """
 
-        rot_z_obj = copy.deepcopy(self._mt_obj.Z)
-        rot_z_obj.rotate(self.rotate_z_angle)
-
-        self.mt_obj.Z = rot_z_obj
-
-        rot_t_obj = copy.deepcopy(self._mt_obj.Tipper)
-        rot_t_obj.rotate(self.rotate_tip_angle)
-
-        self.mt_obj.Tipper = rot_t_obj
+        self.mt_obj = self._mt_obj.rotate(self.rotate_angle)
 
         if self._edited_ss == True:
             self.static_shift_apply()
@@ -832,48 +882,36 @@ class PlotWidget(QtWidgets.QWidget):
 
         self._edited_rot = True
 
-        print("\n   Rotated orginal data clockwise by:")
-        print("      Z = {0:.3g}".format(self.rotate_z_angle))
-        print("      T = {0:.3g}".format(self.rotate_tip_angle))
+        print(f"\n   Rotated orginal data clockwise by: {self.rotate_angle}")
 
     def rotate_estimate_strike(self):
         """
-        estimate strike from the invariants, phase tensor, and tipper if 
+        estimate strike from the invariants, phase tensor, and tipper if
         measured.
         """
-        z_list = [copy.deepcopy(self.mt_obj.Z)]
-        t_list = [copy.deepcopy(self.mt_obj.Tipper)]
-        strike_plot = plotstrike2d.PlotStrike2D(
-            z_object_list=z_list, tipper_object_list=t_list, plot_yn="n"
-        )
-        strike_plot.plot_type = 1
-        if np.any(self.mt_obj.Tipper.tipper == 0) == True:
-            strike_plot.plot_tipper = "n"
-        elif np.any(self.mt_obj.Tipper.tipper == 0) == False:
-            strike_plot.plot_tipper = "y"
+        md = MTData()
+        md.add_station(self.mt_obj)
 
-        strike_plot.fold = False
-        strike_plot.plot_range = "data"
-        strike_plot.plot()
+        md.plot_strike(plot_type=1)
 
     def interp_set_min(self):
         self.interp_period_min = float(str(self.interp_min_edit.text()))
-        self.interp_min_edit.setText("{0:.4e}".format(self.interp_period_min))
+        self.interp_min_edit.setText(f"{self.interp_period_min:.4e}")
 
     def interp_set_max(self):
         self.interp_period_max = float(str(self.interp_max_edit.text()))
-        self.interp_max_edit.setText("{0:.4e}".format(self.interp_period_max))
+        self.interp_max_edit.setText(f"{self.interp_period_max:.4e}")
 
     def interp_set_num(self):
         self.interp_period_num = int(str(self.interp_num_edit.text()))
-        self.interp_num_edit.setText("{0:.0f}".format(self.interp_period_num))
+        self.interp_num_edit.setText(f"{self.interp_period_num:.0f}")
 
     def interp_set_type(self, selected_item):
         self.interp_type = self._interp_types[selected_item]
 
     def interp_apply(self):
         """
-        interpolate data on to a new period list that is equally spaced in 
+        interpolate data on to a new period list that is equally spaced in
         log space.
         """
 
@@ -884,8 +922,8 @@ class PlotWidget(QtWidgets.QWidget):
         )
         interp_freq = 1.0 / new_period
         interp_idx = np.where(
-            (interp_freq >= self.mt_obj.Z.freq.min())
-            & (interp_freq <= self.mt_obj.Z.freq.max())
+            (interp_freq >= self.mt_obj.frequency.min())
+            & (interp_freq <= self.mt_obj.frequency.max())
         )
 
         interp_freq = interp_freq[interp_idx]
@@ -893,21 +931,18 @@ class PlotWidget(QtWidgets.QWidget):
 
             info = [
                 "Cannot interpolate over periods not represented in the data.",
-                "Data min = {0:<8.3e} s".format(1.0 / self.mt_obj.Z.freq.max()),
-                "Data max = {0:<8.3e} s".format(1.0 / self.mt_obj.Z.freq.min()),
+                f"Data min = {1.0 / self.mt_obj.frequency.max():<8.3e} s",
+                f"Data max = {1.0 / self.mt_obj.frequency.min():<8.3e} s",
                 "",
                 "Given period range:",
-                "     min = {0:<8.3e} s".format(new_period.min()),
-                "     max = {0:<8.3e} s".format(new_period.max()),
+                f"     min = {new_period.min():<8.3e} s",
+                f"     max = {new_period.max():<8.3e} s",
                 "",
                 "Setting interpolation frequency bounds to:",
-                "     min = {0:<8.3e} s".format(1.0 / interp_freq.max()),
-                "     max = {0:<8.3e} s".format(1.0 / interp_freq.min()),
+                f"     min = {1.0 / interp_freq.max():<8.3e} s",
+                f"     max = {1.0 / interp_freq.min():<8.3e} s",
             ]
-            # msg_box = QtWidgets.QMessageBox()
-            # msg_box.setText('\n'.join(info))
-            # msg_box.setWindowTitle('Interpolation Bounds')
-            # msg_box.exec_()
+
             print("\n".join(info))
 
         if (
@@ -916,24 +951,16 @@ class PlotWidget(QtWidgets.QWidget):
             or self._edited_rot == True
             or self._edited_ss == True
         ):
-            new_z, new_tip = self.mt_obj.interpolate(
-                interp_freq, interp_type=self.interp_type
+            self.mt_obj = self.mt_obj.interpolate(
+                interp_freq, method=self.interp_type
             )
-            self.mt_obj.Z = new_z
-            self.mt_obj.Tipper = new_tip
 
         else:
-            new_z, new_tip = self._mt_obj.interpolate(
-                interp_freq, interp_type=self.interp_type
+            self.mt_obj = self._mt_obj.interpolate(
+                interp_freq, method=self.interp_type
             )
-            self.mt_obj.Z = new_z
-            self.mt_obj.Tipper = new_tip
 
         self.redraw_plot()
-
-        # print('Interpolated data onto periods:')
-        # for ff in interp_freq:
-        #    print('    {0:.6e}'.format(1./ff))
 
     def edits_set(self, selected_item):
         modes_list = ["Both", "X", "Y"]
@@ -950,10 +977,11 @@ class PlotWidget(QtWidgets.QWidget):
     def revert_back(self):
         """
         revert back to original data
-        
+
         """
 
-        self.mt_obj = mt.MT(self.mt_obj.fn)
+        self.mt_obj = MT(self._mt_obj.fn)
+        self.mt_obj.read()
         self.reset_parameters()
         self.redraw_plot()
 
@@ -965,33 +993,32 @@ class PlotWidget(QtWidgets.QWidget):
     def reset_parameters(self):
         self.static_shift_x = 1.0
         self.static_shift_y = 1.0
-        self.static_shift_x_edit.setText("{0:.4g}".format(self.static_shift_x))
-        self.static_shift_y_edit.setText("{0:.4g}".format(self.static_shift_y))
+        self.static_shift_x_edit.setText(f"{self.static_shift_x:.4g}")
+        self.static_shift_y_edit.setText(f"{self.static_shift_y:.4g}")
         self.rotate_z_angle = 0.0
         self.rotate_tip_angle = 0.0
-        self.rotate_angle_z_edit.setText("{0:.4g}".format(self.rotate_z_angle))
-        self.rotate_angle_t_edit.setText("{0:.4g}".format(self.rotate_tip_angle))
+        self.rotate_angle_edit.setText(f"{self.rotate_angle:.4g}")
 
         self._edited_ss = False
         self._edited_dist = False
         self._edited_rot = False
 
-    def save_edi_file(self):
+    def save_mt_file(self):
         """
-        save edited edi file to the chosen file name.
+        save edited mt file to the chosen file name.
         """
 
         save_dialog = QtWidgets.QFileDialog()
-        save_fn = str(
-            save_dialog.getSaveFileName(
-                caption="Choose EDI file",
-                directory=self.mt_obj.fn.as_posix(),
-                filter="*.edi",
-            )[0]
+        save_fn = Path(
+            str(
+                save_dialog.getSaveFileName(
+                    caption="Choose MT file",
+                    directory=self._mt_obj.fn.parent.as_posix(),
+                    filter=self.file_types,
+                )[0]
+            )
         )
-        self.mt_obj.write_mt_file(
-            save_dir=os.path.dirname(save_fn), fn_basename=os.path.basename(save_fn)
-        )
+        self.mt_obj.write(save_fn)
 
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
@@ -1001,7 +1028,7 @@ class PlotWidget(QtWidgets.QWidget):
     def plot(self):
         """
         plot the response
-        
+
         will have original data below the editable data
         """
 
@@ -1014,10 +1041,10 @@ class PlotWidget(QtWidgets.QWidget):
 
         # make some useful internal variabls
         font_dict = {"size": self.plot_properties.fs + 2, "weight": "bold"}
-        plot_period = 1.0 / self.mt_obj.Z.freq
-        plot_period_o = 1.0 / self._mt_obj.Z.freq
+        plot_period = self.mt_obj.period
+        plot_period_o = self._mt_obj.period
 
-        if np.all(self.mt_obj.Tipper.tipper == 0) == True:
+        if not self.mt_obj.has_tipper():
             print("No Tipper data for station {0}".format(self.mt_obj.station))
             self.plot_tipper = False
         else:
@@ -1032,45 +1059,53 @@ class PlotWidget(QtWidgets.QWidget):
         # --> make key word dictionaries for plotting
         kw_xx = {
             "color": self.plot_properties.cted,
+            "mec": self.plot_properties.cted,
+            "ecolor": self.plot_properties.cted,
             "marker": self.plot_properties.mted,
             "ms": self.plot_properties.ms,
             "ls": ":",
             "lw": self.plot_properties.lw,
-            "e_capsize": self.plot_properties.e_capsize,
-            "e_capthick": self.plot_properties.e_capthick,
+            "capsize": self.plot_properties.e_capsize,
+            "capthick": self.plot_properties.e_capthick,
             "picker": 3,
         }
 
         kw_yy = {
             "color": self.plot_properties.ctmd,
+            "mec": self.plot_properties.ctmd,
+            "ecolor": self.plot_properties.ctmd,
             "marker": self.plot_properties.mtmd,
             "ms": self.plot_properties.ms,
             "ls": ":",
             "lw": self.plot_properties.lw,
-            "e_capsize": self.plot_properties.e_capsize,
-            "e_capthick": self.plot_properties.e_capthick,
+            "capsize": self.plot_properties.e_capsize,
+            "capthick": self.plot_properties.e_capthick,
             "picker": 3,
         }
 
         kw_xx_o = {
             "color": self.plot_properties.cteo,
+            "mec": self.plot_properties.cteo,
+            "ecolor": self.plot_properties.cteo,
             "marker": self.plot_properties.mted,
             "ms": self.plot_properties.ms,
             "ls": ":",
             "lw": self.plot_properties.lw,
-            "e_capsize": self.plot_properties.e_capsize,
-            "e_capthick": self.plot_properties.e_capthick,
+            "capsize": self.plot_properties.e_capsize,
+            "capthick": self.plot_properties.e_capthick,
             "picker": None,
         }
 
         kw_yy_o = {
             "color": self.plot_properties.ctmo,
+            "mec": self.plot_properties.ctmo,
+            "ecolor": self.plot_properties.ctmo,
             "marker": self.plot_properties.mtmd,
             "ms": self.plot_properties.ms,
             "ls": ":",
             "lw": self.plot_properties.lw,
-            "e_capsize": self.plot_properties.e_capsize,
-            "e_capthick": self.plot_properties.e_capthick,
+            "capsize": self.plot_properties.e_capsize,
+            "capthick": self.plot_properties.e_capthick,
             "picker": None,
         }
 
@@ -1099,14 +1134,24 @@ class PlotWidget(QtWidgets.QWidget):
 
         # make axis od = off-diagonal, d = diagonal, share x axis across plots
         self.ax_res_od = self.figure.add_subplot(gs[0, 0])
-        self.ax_res_d = self.figure.add_subplot(gs[0, 1], sharex=self.ax_res_od)
+        self.ax_res_d = self.figure.add_subplot(
+            gs[0, 1], sharex=self.ax_res_od
+        )
 
-        self.ax_phase_od = self.figure.add_subplot(gs[1, 0], sharex=self.ax_res_od)
-        self.ax_phase_d = self.figure.add_subplot(gs[1, 1], sharex=self.ax_res_od)
+        self.ax_phase_od = self.figure.add_subplot(
+            gs[1, 0], sharex=self.ax_res_od
+        )
+        self.ax_phase_d = self.figure.add_subplot(
+            gs[1, 1], sharex=self.ax_res_od
+        )
 
         # include tipper, r = real, i = imaginary
-        self.ax_tip_x = self.figure.add_subplot(gs[2, 0], sharex=self.ax_res_od)
-        self.ax_tip_y = self.figure.add_subplot(gs[2, 1], sharex=self.ax_res_od)
+        self.ax_tip_x = self.figure.add_subplot(
+            gs[2, 0], sharex=self.ax_res_od
+        )
+        self.ax_tip_y = self.figure.add_subplot(
+            gs[2, 1], sharex=self.ax_res_od
+        )
 
         self.ax_list = [
             self.ax_res_od,
@@ -1122,92 +1167,92 @@ class PlotWidget(QtWidgets.QWidget):
         ## --> plot apparent resistivity, phase and tipper
         ## plot orginal apparent resistivity
         if self.plot_properties.plot_original_data == True:
-            orxx = mtplt.plot_errorbar(
+            orxx = plotters.plot_errorbar(
                 self.ax_res_d,
                 plot_period_o[nzxx_o],
                 self._mt_obj.Z.resistivity[nzxx_o, 0, 0],
-                self._mt_obj.Z.resistivity_err[nzxx_o, 0, 0],
-                **kw_xx_o
+                self._mt_obj.Z.resistivity_error[nzxx_o, 0, 0],
+                **kw_xx_o,
             )
-            orxy = mtplt.plot_errorbar(
+            orxy = plotters.plot_errorbar(
                 self.ax_res_od,
                 plot_period_o[nzxy_o],
                 self._mt_obj.Z.resistivity[nzxy_o, 0, 1],
-                self._mt_obj.Z.resistivity_err[nzxy_o, 0, 1],
-                **kw_xx_o
+                self._mt_obj.Z.resistivity_error[nzxy_o, 0, 1],
+                **kw_xx_o,
             )
-            oryx = mtplt.plot_errorbar(
+            oryx = plotters.plot_errorbar(
                 self.ax_res_od,
                 plot_period_o[nzyx_o],
                 self._mt_obj.Z.resistivity[nzyx_o, 1, 0],
-                self._mt_obj.Z.resistivity_err[nzyx_o, 1, 0],
-                **kw_yy_o
+                self._mt_obj.Z.resistivity_error[nzyx_o, 1, 0],
+                **kw_yy_o,
             )
-            oryy = mtplt.plot_errorbar(
+            oryy = plotters.plot_errorbar(
                 self.ax_res_d,
                 plot_period_o[nzyy_o],
                 self._mt_obj.Z.resistivity[nzyy_o, 1, 1],
-                self._mt_obj.Z.resistivity_err[nzyy_o, 1, 1],
-                **kw_yy_o
+                self._mt_obj.Z.resistivity_error[nzyy_o, 1, 1],
+                **kw_yy_o,
             )
             # plot original phase
-            epxx = mtplt.plot_errorbar(
+            epxx = plotters.plot_errorbar(
                 self.ax_phase_d,
                 plot_period_o[nzxx_o],
                 self._mt_obj.Z.phase[nzxx_o, 0, 0],
-                self._mt_obj.Z.phase_err[nzxx_o, 0, 0],
-                **kw_xx_o
+                self._mt_obj.Z.phase_error[nzxx_o, 0, 0],
+                **kw_xx_o,
             )
-            epxy = mtplt.plot_errorbar(
+            epxy = plotters.plot_errorbar(
                 self.ax_phase_od,
                 plot_period_o[nzxy_o],
                 self._mt_obj.Z.phase[nzxy_o, 0, 1],
-                self._mt_obj.Z.phase_err[nzxy_o, 0, 1],
-                **kw_xx_o
+                self._mt_obj.Z.phase_error[nzxy_o, 0, 1],
+                **kw_xx_o,
             )
-            epyx = mtplt.plot_errorbar(
+            epyx = plotters.plot_errorbar(
                 self.ax_phase_od,
                 plot_period_o[nzyx_o],
                 self._mt_obj.Z.phase[nzyx_o, 1, 0] + 180,
-                self._mt_obj.Z.phase_err[nzyx_o, 1, 0],
-                **kw_yy_o
+                self._mt_obj.Z.phase_error[nzyx_o, 1, 0],
+                **kw_yy_o,
             )
-            epyy = mtplt.plot_errorbar(
+            epyy = plotters.plot_errorbar(
                 self.ax_phase_d,
                 plot_period_o[nzyy_o],
                 self._mt_obj.Z.phase[nzyy_o, 1, 1],
-                self._mt_obj.Z.phase_err[nzyy_o, 1, 1],
-                **kw_yy_o
+                self._mt_obj.Z.phase_error[nzyy_o, 1, 1],
+                **kw_yy_o,
             )
 
         # plot manipulated data apparent resistivity
-        erxx = mtplt.plot_errorbar(
+        erxx = plotters.plot_errorbar(
             self.ax_res_d,
             plot_period[nzxx],
             self.mt_obj.Z.resistivity[nzxx, 0, 0],
-            self.mt_obj.Z.resistivity_err[nzxx, 0, 0],
-            **kw_xx
+            self.mt_obj.Z.resistivity_error[nzxx, 0, 0],
+            **kw_xx,
         )
-        erxy = mtplt.plot_errorbar(
+        erxy = plotters.plot_errorbar(
             self.ax_res_od,
             plot_period[nzxy],
             self.mt_obj.Z.resistivity[nzxy, 0, 1],
-            self.mt_obj.Z.resistivity_err[nzxy, 0, 1],
-            **kw_xx
+            self.mt_obj.Z.resistivity_error[nzxy, 0, 1],
+            **kw_xx,
         )
-        eryx = mtplt.plot_errorbar(
+        eryx = plotters.plot_errorbar(
             self.ax_res_od,
             plot_period[nzyx],
             self.mt_obj.Z.resistivity[nzyx, 1, 0],
-            self.mt_obj.Z.resistivity_err[nzyx, 1, 0],
-            **kw_yy
+            self.mt_obj.Z.resistivity_error[nzyx, 1, 0],
+            **kw_yy,
         )
-        eryy = mtplt.plot_errorbar(
+        eryy = plotters.plot_errorbar(
             self.ax_res_d,
             plot_period[nzyy],
             self.mt_obj.Z.resistivity[nzyy, 1, 1],
-            self.mt_obj.Z.resistivity_err[nzyy, 1, 1],
-            **kw_yy
+            self.mt_obj.Z.resistivity_error[nzyy, 1, 1],
+            **kw_yy,
         )
 
         # --> set axes properties for apparent resistivity
@@ -1221,11 +1266,17 @@ class PlotWidget(QtWidgets.QWidget):
                 ax.set_ylabel(
                     "App. Res. ($\mathbf{\Omega \cdot m}$)", fontdict=font_dict
                 )
-            ax.set_yscale("log", nonposy="clip")
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_yscale("log", nonpositive="clip")
+            ax.set_xscale("log", nonpositive="clip")
             ax.set_xlim(self.plot_properties.xlimits)
 
-            ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+            ax.grid(
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
+            )
             # make the plot cleaner by removing the bottom x label
             ylim = ax.get_ylim()
             ylimits = (
@@ -1234,7 +1285,7 @@ class PlotWidget(QtWidgets.QWidget):
             )
             ax.set_ylim(ylimits)
             ylabels = [" ", " "] + [
-                mtplt.labeldict[ii]
+                period_label_dict[ii]
                 for ii in np.arange(
                     np.log10(ylimits[0]) + 1, np.log10(ylimits[1]) + 1, 1
                 )
@@ -1264,33 +1315,33 @@ class PlotWidget(QtWidgets.QWidget):
 
         ##--> plot phase
         # plot manipulated data
-        epxx = mtplt.plot_errorbar(
+        epxx = plotters.plot_errorbar(
             self.ax_phase_d,
             plot_period[nzxx],
             self.mt_obj.Z.phase[nzxx, 0, 0],
-            self.mt_obj.Z.phase_err[nzxx, 0, 0],
-            **kw_xx
+            self.mt_obj.Z.phase_error[nzxx, 0, 0],
+            **kw_xx,
         )
-        epxy = mtplt.plot_errorbar(
+        epxy = plotters.plot_errorbar(
             self.ax_phase_od,
             plot_period[nzxy],
             self.mt_obj.Z.phase[nzxy, 0, 1],
-            self.mt_obj.Z.phase_err[nzxy, 0, 1],
-            **kw_xx
+            self.mt_obj.Z.phase_error[nzxy, 0, 1],
+            **kw_xx,
         )
-        epyx = mtplt.plot_errorbar(
+        epyx = plotters.plot_errorbar(
             self.ax_phase_od,
             plot_period[nzyx],
             self.mt_obj.Z.phase[nzyx, 1, 0] + 180,
-            self.mt_obj.Z.phase_err[nzyx, 1, 0],
-            **kw_yy
+            self.mt_obj.Z.phase_error[nzyx, 1, 0],
+            **kw_yy,
         )
-        epyy = mtplt.plot_errorbar(
+        epyy = plotters.plot_errorbar(
             self.ax_phase_d,
             plot_period[nzyy],
             self.mt_obj.Z.phase[nzyy, 1, 1],
-            self.mt_obj.Z.phase_err[nzyy, 1, 1],
-            **kw_yy
+            self.mt_obj.Z.phase_error[nzyy, 1, 1],
+            **kw_yy,
         )
 
         # --> set axes properties
@@ -1302,12 +1353,18 @@ class PlotWidget(QtWidgets.QWidget):
             self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
         for aa, ax in enumerate([self.ax_phase_od, self.ax_phase_d]):
             ax.set_xlabel("Period (s)", font_dict)
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_xscale("log", nonpositive="clip")
             if aa == 0:
                 ax.set_ylabel("Phase (deg)", font_dict)
                 # ax.yaxis.set_major_locator(MultipleLocator(15))
                 # ax.yaxis.set_minor_locator(MultipleLocator(5))
-            ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+            ax.grid(
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
+            )
 
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_phase_od, self.ax_phase_d]:
@@ -1336,37 +1393,37 @@ class PlotWidget(QtWidgets.QWidget):
 
             # plot magnitude of real and imaginary induction vectors
             if self.plot_properties.plot_original_data == True:
-                etxo = mtplt.plot_errorbar(
+                etxo = plotters.plot_errorbar(
                     self.ax_tip_x,
                     plot_period_o[ntx_o],
                     self._mt_obj.Tipper.amplitude[ntx_o, 0, 0],
-                    self._mt_obj.Tipper.amplitude_err[ntx_o, 0, 0],
-                    **kw_xx_o
+                    self._mt_obj.Tipper.amplitude_error[ntx_o, 0, 0],
+                    **kw_xx_o,
                 )
 
-                etyo = mtplt.plot_errorbar(
+                etyo = plotters.plot_errorbar(
                     self.ax_tip_y,
                     plot_period_o[nty_o],
                     self._mt_obj.Tipper.amplitude[nty_o, 0, 1],
-                    self._mt_obj.Tipper.amplitude_err[nty_o, 0, 1],
-                    **kw_yy_o
+                    self._mt_obj.Tipper.amplitude_error[nty_o, 0, 1],
+                    **kw_yy_o,
                 )
 
             # plot magnitude of edited induction vectors
-            etx = mtplt.plot_errorbar(
+            etx = plotters.plot_errorbar(
                 self.ax_tip_x,
                 plot_period[ntx],
                 self.mt_obj.Tipper.amplitude[ntx, 0, 0],
-                self.mt_obj.Tipper.amplitude_err[ntx, 0, 0],
-                **kw_tx
+                self.mt_obj.Tipper.amplitude_error[ntx, 0, 0],
+                **kw_tx,
             )
 
-            ety = mtplt.plot_errorbar(
+            ety = plotters.plot_errorbar(
                 self.ax_tip_y,
                 plot_period[nty],
                 self.mt_obj.Tipper.amplitude[nty, 0, 1],
-                self.mt_obj.Tipper.amplitude_err[nty, 0, 1],
-                **kw_ty
+                self.mt_obj.Tipper.amplitude_error[nty, 0, 1],
+                **kw_ty,
             )
 
             self.ax_tip_x.legend(
@@ -1401,8 +1458,14 @@ class PlotWidget(QtWidgets.QWidget):
             if aa == 0:
                 ax.set_ylabel("Magnitude", fontdict=font_dict)
 
-            ax.set_xscale("log", nonposx="clip")
-            ax.grid(True, alpha=0.25, which="both", color=(0.25, 0.25, 0.25), lw=0.25)
+            ax.set_xscale("log", nonpositive="clip")
+            ax.grid(
+                True,
+                alpha=0.25,
+                which="both",
+                color=(0.25, 0.25, 0.25),
+                lw=0.25,
+            )
 
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_tip_x, self.ax_tip_y]:
@@ -1415,7 +1478,6 @@ class PlotWidget(QtWidgets.QWidget):
         self.rs_od_res = mplwidgets.RectangleSelector(
             self.ax_res_od,
             self.rect_onselect_od,
-            drawtype="box",
             useblit=True,
             interactive=True,
             button=[1],
@@ -1423,7 +1485,6 @@ class PlotWidget(QtWidgets.QWidget):
         self.rs_d_res = mplwidgets.RectangleSelector(
             self.ax_res_d,
             self.rect_onselect_d,
-            drawtype="box",
             useblit=True,
             interactive=True,
             button=[1],
@@ -1431,7 +1492,6 @@ class PlotWidget(QtWidgets.QWidget):
         self.rs_od_phs = mplwidgets.RectangleSelector(
             self.ax_phase_od,
             self.rect_onselect_od,
-            drawtype="box",
             useblit=True,
             interactive=True,
             button=[1],
@@ -1439,7 +1499,6 @@ class PlotWidget(QtWidgets.QWidget):
         self.rs_d_phs = mplwidgets.RectangleSelector(
             self.ax_phase_d,
             self.rect_onselect_d,
-            drawtype="box",
             useblit=True,
             interactive=True,
             button=[1],
@@ -1447,7 +1506,6 @@ class PlotWidget(QtWidgets.QWidget):
         self.rs_tr = mplwidgets.RectangleSelector(
             self.ax_tip_x,
             self.rect_onselect_tr,
-            drawtype="box",
             useblit=True,
             interactive=True,
             button=[1],
@@ -1455,7 +1513,6 @@ class PlotWidget(QtWidgets.QWidget):
         self.rs_ti = mplwidgets.RectangleSelector(
             self.ax_tip_y,
             self.rect_onselect_ti,
-            drawtype="box",
             useblit=True,
             interactive=True,
             button=[1],
@@ -1469,34 +1526,41 @@ class PlotWidget(QtWidgets.QWidget):
 
     def on_pick(self, event):
         """
-        mask a data point when it is clicked on.  
+        mask a data point when it is clicked on.
         """
 
-        data_point = event.artist
-        data_period = data_point.get_xdata()[event.ind]
-        data_value = data_point.get_ydata()[event.ind]
+        if isinstance(event.artist, Line2D):
+            # line_collection = event.artist
+            data_point = event.artist
+            data_period = data_point.get_xdata()[event.ind]
+            data_value = data_point.get_ydata()[event.ind]
+
+        elif isinstance(event.artist, LineCollection):
+            data_period = event.mouseevent.xdata
+            data_value = event.mouseevent.ydata
+
+        else:
+            print(
+                "Picked something other than a Line2D or LineCollection -- SKIPPING"
+            )
+            print(type(event.artist))
+            return
 
         # modify Z
         if event.mouseevent.button == 3:
             self._edited_mask = True
+            self._ax.plot(data_period, data_value, **self.mask_kw)
+            f_index = np.where(np.isclose(self.mt_obj.period, data_period))
             if self._ax_index == 0 or self._ax_index == 1:
-                d_index = np.where(self.mt_obj.Z.resistivity == data_value)
+                d_index = np.where(
+                    np.isclose(self.mt_obj.Z.resistivity, data_value)
+                )
                 try:
-                    d_index[0][0]
-                except IndexError:
-                    f_index = np.where(self.mt_obj.Z.freq == 1.0 / data_period)
-                    d_index = (f_index, np.array([1]), np.array([0]))
-                    print("***Picked Invalid Point***", d_index)
+                    comp_jj = d_index[1][0]
+                    comp_kk = d_index[2][0]
+                except IndexError as error:
+                    # print("resistivity", error, d_index)
                     return
-
-                comp_jj = d_index[1][0]
-                comp_kk = d_index[2][0]
-
-                # mask point in impedance object
-                self.mt_obj.Z.z[d_index] = 0.0 + 0.0 * 1j
-                self.mt_obj.Z.z_err[d_index] = 0.0
-
-                self._ax.plot(data_period, data_value, **self.mask_kw)
 
                 # mask phase as well
                 if self._ax_index == 0:
@@ -1505,49 +1569,95 @@ class PlotWidget(QtWidgets.QWidget):
                             self.ax_phase_od.plot(
                                 data_period,
                                 self.mt_obj.Z.phase[d_index] + 180,
-                                **self.mask_kw
+                                **self.mask_kw,
                             )
-                        except ValueError:
-                            print("***Picked Invalid Point***", d_index)
+                        except ValueError as error:
+                            pass
+                            # print("no yx phase", error)
                     else:
                         try:
                             self.ax_phase_od.plot(
                                 data_period,
                                 self.mt_obj.Z.phase[d_index],
-                                **self.mask_kw
+                                **self.mask_kw,
                             )
-                        except ValueError:
-                            print("***Picked Invalid Point***", d_index)
+                        except ValueError as error:
+                            # print("no phase", error)
+                            pass
+
                 elif self._ax_index == 1:
                     try:
                         self.ax_phase_d.plot(
-                            data_period, self.mt_obj.Z.phase[d_index], **self.mask_kw
+                            data_period,
+                            self.mt_obj.Z.phase[d_index],
+                            **self.mask_kw,
                         )
-                    except ValueError:
-                        print(data_period, d_index)
+                    except ValueError as error:
+                        # print("no diagonal phase", error)
+                        pass
+
+                self.mt_obj._transfer_function.transfer_function.loc[
+                    {
+                        "output": self._z_output_dict[comp_jj],
+                        "input": self._input_dict[comp_kk],
+                    }
+                ][f_index] = (
+                    np.nan + 1j * np.nan
+                )
+                self.mt_obj._transfer_function.transfer_function_error.loc[
+                    {
+                        "output": self._z_output_dict[comp_jj],
+                        "input": self._input_dict[comp_kk],
+                    }
+                ][f_index] = np.nan
 
             # mask phase points
             elif self._ax_index == 2 or self._ax_index == 3:
-                d_index = np.where(self.mt_obj.Z.phase == data_value)
+                print("picked ", data_period, data_value)
                 try:
-                    d_index[0][0]
+                    d_index = np.where(
+                        np.isclose(self.mt_obj.Z.phase, data_value, rtol=0.005)
+                    )
+                    print(d_index)
+                    for ii in d_index[0]:
+                        if d_index == f_index:
+                            break
+                    comp_jj = d_index[1][ii]
+                    comp_kk = d_index[2][ii]
                 except IndexError:
-                    d_index = np.where(self.mt_obj.Z.phase - 180 == data_value)
                     try:
-                        d_index[0][0]
-                    except IndexError:
-                        f_index = np.where(self.mt_obj.Z.freq == 1.0 / data_period)
-                        d_index = (f_index, np.array([1]), np.array([0]))
-                        print("***Picked Invalid Point***", d_index)
-                #                        print 'Did not pick a valid point'
-                #                        return
+                        d_index = np.where(
+                            np.isclose(
+                                self.mt_obj.Z.phase,
+                                data_value - 180,
+                                rtol=0.005,
+                            )
+                        )
+                        print(d_index)
+                        for ii in d_index[0]:
+                            if d_index == f_index:
+                                break
+                        comp_jj = d_index[1][ii]
+                        comp_kk = d_index[2][ii]
 
-                # mask point in impedance object
-                self.mt_obj.Z.z[d_index] = 0.0 + 0.0 * 1j
-                self.mt_obj.Z.z_err[d_index] = 0.0
+                    except IndexError as error:
+                        print("no phase axis", error)
+                        return
 
-                # mask the point in the axis selected
-                self._ax.plot(data_period, data_value, **self.mask_kw)
+                self.mt_obj._transfer_function.transfer_function.loc[
+                    {
+                        "output": self._z_output_dict[comp_jj],
+                        "input": self._input_dict[comp_kk],
+                    }
+                ][f_index] = (
+                    np.nan + 1j * np.nan
+                )
+                self.mt_obj._transfer_function.transfer_function_error.loc[
+                    {
+                        "output": self._z_output_dict[comp_jj],
+                        "input": self._input_dict[comp_kk],
+                    }
+                ][f_index] = np.nan
 
                 # mask resistivity as well
                 if self._ax_index == 2:
@@ -1555,43 +1665,56 @@ class PlotWidget(QtWidgets.QWidget):
                         self.ax_res_od.plot(
                             data_period,
                             self.mt_obj.Z.resistivity[d_index],
-                            **self.mask_kw
+                            **self.mask_kw,
                         )
-                    except ValueError:
-                        print("***Picked Invalid Point***", d_index)
+                    except ValueError as error:
+                        print("no resistivity xy", error)
+                        # print("***Picked Invalid Point***", d_index)
+                        pass
 
                 elif self._ax_index == 3:
                     try:
                         self.ax_res_d.plot(
                             data_period,
                             self.mt_obj.Z.resistivity[d_index],
-                            **self.mask_kw
+                            **self.mask_kw,
                         )
-                    except ValueError:
-                        print("***Picked Invalid Point***", d_index)
+                    except ValueError as error:
+                        print("no resistivity yy", error)
+                        pass
 
             # mask tipper Tx
             elif self._ax_index == 4 or self._ax_index == 5:
                 data_value = np.round(data_value, 8)
                 d_index = np.where(
-                    np.round(self.mt_obj.Tipper.amplitude, 8) == data_value
+                    np.isclose(self.mt_obj.Tipper.amplitude, data_value)
                 )
-
-                # mask point
                 try:
-                    self._ax.plot(data_period, data_value, **self.mask_kw)
-                except ValueError:
-                    print("***Picked Invalid Point***", d_index)
+                    comp_jj = d_index[1][0]
+                    comp_kk = d_index[2][0]
+                except IndexError as error:
+                    # print("no tipper", error)
+                    return
+
+                self.mt_obj._transfer_function.transfer_function.loc[
+                    {
+                        "output": self._t_output_dict[comp_jj],
+                        "input": self._input_dict[comp_kk],
+                    }
+                ][f_index] = (
+                    np.nan + 1j * np.nan
+                )
+                self.mt_obj._transfer_function.transfer_function_error.loc[
+                    {
+                        "output": self._t_output_dict[comp_jj],
+                        "input": self._input_dict[comp_kk],
+                    }
+                ][f_index] = np.nan
 
                 # set tipper data to 0
                 self.mt_obj.Tipper.tipper[d_index] = 0.0 + 0.0j
-                self.mt_obj.Tipper.tipper_err[d_index] = 0.0
+                self.mt_obj.Tipper.tipper_error[d_index] = 0.0
 
-                self.mt_obj.Tipper.compute_amp_phase()
-
-            #            self._ax.figure.canvas.repaint()
-            #            self._ax.figure.canvas.update()
-            #            self._ax.figure.canvas.flush_events()
             self._ax.figure.canvas.draw()
 
     def in_axes(self, event):
@@ -1610,7 +1733,9 @@ class PlotWidget(QtWidgets.QWidget):
 
         fmin = min([1.0 / period_01, 1.0 / period_02])
         fmax = max([1.0 / period_01, 1.0 / period_02])
-        prange = np.where((self.mt_obj.Z.freq >= fmin) & (self.mt_obj.Z.freq <= fmax))
+        prange = np.where(
+            (self.mt_obj.frequency >= fmin) & (self.mt_obj.frequency <= fmax)
+        )
 
         return prange
 
@@ -1621,28 +1746,34 @@ class PlotWidget(QtWidgets.QWidget):
         f_idx = self._get_frequency_range(x1, x2)
 
         for ff in f_idx:
-            data_period = 1.0 / self.mt_obj.Z.freq[ff]
+            data_period = 1.0 / self.mt_obj.frequency[ff]
             if self.edits_mode == "Both" or self.edits_mode == "X":
                 self.ax_res_od.plot(
-                    data_period, self.mt_obj.Z.resistivity[ff, 0, 1], **self.mask_kw
+                    data_period,
+                    self.mt_obj.Z.resistivity[ff, 0, 1],
+                    **self.mask_kw,
                 )
                 self.ax_phase_od.plot(
                     data_period, self.mt_obj.Z.phase[ff, 0, 1], **self.mask_kw
                 )
                 self.mt_obj.Z.z[ff, 0, 1] = 0.0 + 0.0 * 1j
-                self.mt_obj.Z.z_err[ff, 0, 1] = 0.0
+                self.mt_obj.Z.z_error[ff, 0, 1] = 0.0
 
             if self.edits_mode == "Both" or self.edits_mode == "Y":
                 self.ax_res_od.plot(
-                    data_period, self.mt_obj.Z.resistivity[ff, 1, 0], **self.mask_kw
+                    data_period,
+                    self.mt_obj.Z.resistivity[ff, 1, 0],
+                    **self.mask_kw,
                 )
 
                 self.ax_phase_od.plot(
-                    data_period, self.mt_obj.Z.phase[ff, 1, 0] + 180, **self.mask_kw
+                    data_period,
+                    self.mt_obj.Z.phase[ff, 1, 0] + 180,
+                    **self.mask_kw,
                 )
 
                 self.mt_obj.Z.z[ff, 1, 0] = 0.0 + 0.0 * 1j
-                self.mt_obj.Z.z_err[ff, 1, 0] = 0.0
+                self.mt_obj.Z.z_error[ff, 1, 0] = 0.0
 
         self.ax_res_od.figure.canvas.draw()
         self.ax_phase_od.figure.canvas.draw()
@@ -1654,20 +1785,24 @@ class PlotWidget(QtWidgets.QWidget):
         f_idx = self._get_frequency_range(x1, x2)
 
         for ff in f_idx:
-            data_period = 1.0 / self.mt_obj.Z.freq[ff]
+            data_period = 1.0 / self.mt_obj.frequency[ff]
             if self.edits_mode == "Both" or self.edits_mode == "X":
                 self.ax_res_d.plot(
-                    data_period, self.mt_obj.Z.resistivity[ff, 0, 0], **self.mask_kw
+                    data_period,
+                    self.mt_obj.Z.resistivity[ff, 0, 0],
+                    **self.mask_kw,
                 )
                 self.ax_phase_d.plot(
                     data_period, self.mt_obj.Z.phase[ff, 0, 0], **self.mask_kw
                 )
                 self.mt_obj.Z.z[ff, 0, 0] = 0.0 + 0.0 * 1j
-                self.mt_obj.Z.z_err[ff, 0, 0] = 0.0
+                self.mt_obj.Z.z_error[ff, 0, 0] = 0.0
 
             if self.edits_mode == "Both" or self.edits_mode == "Y":
                 self.ax_res_d.plot(
-                    data_period, self.mt_obj.Z.resistivity[ff, 1, 1], **self.mask_kw
+                    data_period,
+                    self.mt_obj.Z.resistivity[ff, 1, 1],
+                    **self.mask_kw,
                 )
 
                 self.ax_phase_d.plot(
@@ -1675,7 +1810,7 @@ class PlotWidget(QtWidgets.QWidget):
                 )
 
                 self.mt_obj.Z.z[ff, 1, 1] = 0.0 + 0.0 * 1j
-                self.mt_obj.Z.z_err[ff, 1, 1] = 0.0
+                self.mt_obj.Z.z_error[ff, 1, 1] = 0.0
 
         self.ax_res_od.figure.canvas.draw()
         self.ax_phase_od.figure.canvas.draw()
@@ -1691,13 +1826,15 @@ class PlotWidget(QtWidgets.QWidget):
             return
 
         for ff in f_idx:
-            data_period = 1.0 / self.mt_obj.Z.freq[ff]
+            data_period = 1.0 / self.mt_obj.frequency[ff]
             self.ax_tip_x.plot(
-                data_period, self.mt_obj.Tipper.amplitude[ff, 0, 0], **self.mask_kw
+                data_period,
+                self.mt_obj.Tipper.amplitude[ff, 0, 0],
+                **self.mask_kw,
             )
 
             self.mt_obj.Tipper.tipper[ff, 0, 0] = 0.0 + 0.0 * 1j
-            self.mt_obj.Tipper.tipper_err[ff, 0, 0] = 0.0
+            self.mt_obj.Tipper.tipper_error[ff, 0, 0] = 0.0
 
         self.mt_obj.Tipper.compute_amp_phase()
 
@@ -1710,13 +1847,15 @@ class PlotWidget(QtWidgets.QWidget):
         f_idx = self._get_frequency_range(x1, x2)
 
         for ff in f_idx:
-            data_period = 1.0 / self.mt_obj.Z.freq[ff]
+            data_period = 1.0 / self.mt_obj.frequency[ff]
             self.ax_tip_y.plot(
-                data_period, self.mt_obj.Tipper.amplitude[ff, 0, 1], **self.mask_kw
+                data_period,
+                self.mt_obj.Tipper.amplitude[ff, 0, 1],
+                **self.mask_kw,
             )
 
             self.mt_obj.Tipper.tipper[ff, 0, 1] = 0.0 + 0.0 * 1j
-            self.mt_obj.Tipper.tipper_err[ff, 0, 1] = 0.0
+            self.mt_obj.Tipper.tipper_error[ff, 0, 1] = 0.0
 
         self.mt_obj.Tipper.compute_amp_phase()
 
@@ -1854,11 +1993,15 @@ class PlotSettings(QtWidgets.QWidget):
         self.mtmd_combo.activated[str].connect(self.set_mtmd)
 
         self.e_capsize_label = QtWidgets.QLabel("Error bar cap size")
-        self.e_capsize_edit = QtWidgets.QLineEdit("{0:.2f}".format(self.e_capsize))
+        self.e_capsize_edit = QtWidgets.QLineEdit(
+            "{0:.2f}".format(self.e_capsize)
+        )
         self.e_capsize_edit.editingFinished.connect(self.set_e_capsize)
 
         self.e_capthick_label = QtWidgets.QLabel("Error bar cap thickness")
-        self.e_capthick_edit = QtWidgets.QLineEdit("{0:.2f}".format(self.e_capthick))
+        self.e_capthick_edit = QtWidgets.QLineEdit(
+            "{0:.2f}".format(self.e_capthick)
+        )
         self.e_capthick_edit.editingFinished.connect(self.set_e_capthick)
 
         self.cted_button = QtWidgets.QPushButton("Set Z_xi Color")
@@ -1889,7 +2032,9 @@ class PlotSettings(QtWidgets.QWidget):
         self.resod_limits_max_edit = QtWidgets.QLineEdit()
         self.resod_limits_max_edit.editingFinished.connect(self.set_resod_max)
 
-        self.resd_limits_label = QtWidgets.QLabel("Diagonal Res. Limits (min, max)")
+        self.resd_limits_label = QtWidgets.QLabel(
+            "Diagonal Res. Limits (min, max)"
+        )
 
         self.resd_limits_min_edit = QtWidgets.QLineEdit()
         self.resd_limits_min_edit.editingFinished.connect(self.set_resd_min)
@@ -1902,18 +2047,28 @@ class PlotSettings(QtWidgets.QWidget):
         )
 
         self.phaseod_limits_min_edit = QtWidgets.QLineEdit()
-        self.phaseod_limits_min_edit.editingFinished.connect(self.set_phaseod_min)
+        self.phaseod_limits_min_edit.editingFinished.connect(
+            self.set_phaseod_min
+        )
 
         self.phaseod_limits_max_edit = QtWidgets.QLineEdit()
-        self.phaseod_limits_max_edit.editingFinished.connect(self.set_phaseod_max)
+        self.phaseod_limits_max_edit.editingFinished.connect(
+            self.set_phaseod_max
+        )
 
-        self.phased_limits_label = QtWidgets.QLabel("Diagonal phase. Limits (min, max)")
+        self.phased_limits_label = QtWidgets.QLabel(
+            "Diagonal phase. Limits (min, max)"
+        )
 
         self.phased_limits_min_edit = QtWidgets.QLineEdit()
-        self.phased_limits_min_edit.editingFinished.connect(self.set_phased_min)
+        self.phased_limits_min_edit.editingFinished.connect(
+            self.set_phased_min
+        )
 
         self.phased_limits_max_edit = QtWidgets.QLineEdit()
-        self.phased_limits_max_edit.editingFinished.connect(self.set_phased_max)
+        self.phased_limits_max_edit.editingFinished.connect(
+            self.set_phased_max
+        )
 
         self.tip_x_limits_label = QtWidgets.QLabel("T_x limits (min, max)")
 
@@ -2015,73 +2170,97 @@ class PlotSettings(QtWidgets.QWidget):
 
     def set_resod_min(self):
         try:
-            self._res_limits_od_min = float(str(self.resod_limits_min_edit.text()))
+            self._res_limits_od_min = float(
+                str(self.resod_limits_min_edit.text())
+            )
         except ValueError:
             self._res_limits_od_min = None
 
     def set_resod_max(self):
         try:
-            self._res_limits_od_max = float(str(self.resod_limits_max_edit.text()))
+            self._res_limits_od_max = float(
+                str(self.resod_limits_max_edit.text())
+            )
         except ValueError:
             self._res_limits_od_max = None
 
     def set_resd_min(self):
         try:
-            self._res_limits_d_min = float(str(self.resd_limits_min_edit.text()))
+            self._res_limits_d_min = float(
+                str(self.resd_limits_min_edit.text())
+            )
         except ValueError:
             self._res_limits_d_min = None
 
     def set_resd_max(self):
         try:
-            self._res_limits_d_max = float(str(self.resd_limits_max_edit.text()))
+            self._res_limits_d_max = float(
+                str(self.resd_limits_max_edit.text())
+            )
         except ValueError:
             self._res_limits_d_max = None
 
     def set_phaseod_min(self):
         try:
-            self._phase_limits_od_min = float(str(self.phaseod_limits_min_edit.text()))
+            self._phase_limits_od_min = float(
+                str(self.phaseod_limits_min_edit.text())
+            )
         except ValueError:
             self._phase_limits_od_min = None
 
     def set_phaseod_max(self):
         try:
-            self._phase_limits_od_max = float(str(self.phaseod_limits_max_edit.text()))
+            self._phase_limits_od_max = float(
+                str(self.phaseod_limits_max_edit.text())
+            )
         except ValueError:
             self._phase_limits_od_max = None
 
     def set_phased_min(self):
         try:
-            self._phase_limits_d_min = float(str(self.phased_limits_min_edit.text()))
+            self._phase_limits_d_min = float(
+                str(self.phased_limits_min_edit.text())
+            )
         except ValueError:
             self._phase_limits_d_min = None
 
     def set_phased_max(self):
         try:
-            self._phase_limits_d_max = float(str(self.phased_limits_max_edit.text()))
+            self._phase_limits_d_max = float(
+                str(self.phased_limits_max_edit.text())
+            )
         except ValueError:
             self._phase_limits_d_max = None
 
     def set_tip_x_min(self):
         try:
-            self._tip_x_limits_min = float(str(self.tip_x_limits_min_edit.text()))
+            self._tip_x_limits_min = float(
+                str(self.tip_x_limits_min_edit.text())
+            )
         except ValueError:
             self._tip_x_limits_min = None
 
     def set_tip_x_max(self):
         try:
-            self._tip_x_limits_max = float(str(self.tip_x_limits_max_edit.text()))
+            self._tip_x_limits_max = float(
+                str(self.tip_x_limits_max_edit.text())
+            )
         except ValueError:
             self._tip_x_limits_max = None
 
     def set_tip_y_min(self):
         try:
-            self._tip_y_limits_min = float(str(self.tip_y_limits_min_edit.text()))
+            self._tip_y_limits_min = float(
+                str(self.tip_y_limits_min_edit.text())
+            )
         except ValueError:
             self._tip_y_limits_min = None
 
     def set_tip_y_max(self):
         try:
-            self._tip_y_limits_max = float(str(self.tip_y_limits_max_edit.text()))
+            self._tip_y_limits_max = float(
+                str(self.tip_y_limits_max_edit.text())
+            )
         except ValueError:
             self._tip_y_limits_max = None
 
@@ -2135,16 +2314,25 @@ class PlotSettings(QtWidgets.QWidget):
 
     def update_settings(self):
         if self._res_limits_od_min != None and self._res_limits_od_max != None:
-            self.res_limits_od = (self._res_limits_od_min, self._res_limits_od_max)
+            self.res_limits_od = (
+                self._res_limits_od_min,
+                self._res_limits_od_max,
+            )
         else:
             self.res_limits_od = None
 
         if self._res_limits_d_min != None and self._res_limits_d_max != None:
-            self.res_limits_d = (self._res_limits_d_min, self._res_limits_d_max)
+            self.res_limits_d = (
+                self._res_limits_d_min,
+                self._res_limits_d_max,
+            )
         else:
             self.res_limits_d = None
 
-        if self._phase_limits_od_min != None and self._phase_limits_od_max != None:
+        if (
+            self._phase_limits_od_min != None
+            and self._phase_limits_od_max != None
+        ):
             self.phase_limits_od = (
                 self._phase_limits_od_min,
                 self._phase_limits_od_max,
@@ -2152,18 +2340,30 @@ class PlotSettings(QtWidgets.QWidget):
         else:
             self.phase_limits_od = None
 
-        if self._phase_limits_d_min != None and self._phase_limits_d_max != None:
-            self.phase_limits_d = (self._phase_limits_d_min, self._phase_limits_d_max)
+        if (
+            self._phase_limits_d_min != None
+            and self._phase_limits_d_max != None
+        ):
+            self.phase_limits_d = (
+                self._phase_limits_d_min,
+                self._phase_limits_d_max,
+            )
         else:
             self.phase_limits_d = None
 
         if self._tip_x_limits_min != None and self._tip_x_limits_max != None:
-            self.tipper_x_limits = (self._tip_x_limits_min, self._tip_x_limits_max)
+            self.tipper_x_limits = (
+                self._tip_x_limits_min,
+                self._tip_x_limits_max,
+            )
         else:
             self.tipper_x_limits = None
 
         if self._tip_y_limits_min != None and self._tip_y_limits_max != None:
-            self.tipper_y_limits = (self._tip_y_limits_min, self._tip_y_limits_max)
+            self.tipper_y_limits = (
+                self._tip_y_limits_min,
+                self._tip_y_limits_max,
+            )
         else:
             self.tipper_y_limits = None
 
@@ -2171,25 +2371,25 @@ class PlotSettings(QtWidgets.QWidget):
 
 
 # ==============================================================================
-# edi text editor
+# mt text editor
 # ==============================================================================
-class EDITextEditor(QtWidgets.QWidget):
+class MTTextEditor(QtWidgets.QWidget):
     """
-    class to edit the text of an .edi file
+    class to edit the text of an .mt file
     """
 
     metadata_updated = QtCore.pyqtSignal()
 
-    def __init__(self, edi_object):
-        super(EDITextEditor, self).__init__()
+    def __init__(self, mt_object):
+        super(MTTextEditor, self).__init__()
 
-        self.mt_obj = edi_object
+        self.mt_obj = mt_object
 
         self.setup_ui()
 
     def setup_ui(self):
 
-        self.setWindowTitle("EDI Text Editor")
+        self.setWindowTitle("MT Text Editor")
 
         # header label font
         header_font = QtGui.QFont()
@@ -2201,67 +2401,89 @@ class EDITextEditor(QtWidgets.QWidget):
         self.header_label.setFont(header_font)
 
         self.header_acqby_label = QtWidgets.QLabel("Acquired By")
-        self.header_acqby_edit = QtWidgets.QLineEdit(self.edi_obj.Header.acqby)
+        self.header_acqby_edit = QtWidgets.QLineEdit(self.mt_obj.Header.acqby)
         self.header_acqby_edit.editingFinished.connect(self.header_set_acqby)
 
-        self.header_acqdate_label = QtWidgets.QLabel("Acquired Date (YYYY-MM-DD)")
-        self.header_acqdate_edit = QtWidgets.QLineEdit(self.edi_obj.Header.acqdate)
-        self.header_acqdate_edit.editingFinished.connect(self.header_set_acqdate)
+        self.header_acqdate_label = QtWidgets.QLabel(
+            "Acquired Date (YYYY-MM-DD)"
+        )
+        self.header_acqdate_edit = QtWidgets.QLineEdit(
+            self.mt_obj.Header.acqdate
+        )
+        self.header_acqdate_edit.editingFinished.connect(
+            self.header_set_acqdate
+        )
 
         self.header_dataid_label = QtWidgets.QLabel("Station Name")
-        self.header_dataid_edit = QtWidgets.QLineEdit(self.edi_obj.Header.dataid)
+        self.header_dataid_edit = QtWidgets.QLineEdit(
+            self.mt_obj.Header.dataid
+        )
         self.header_dataid_edit.editingFinished.connect(self.header_set_dataid)
 
         self.header_elev_label = QtWidgets.QLabel("Elevation (m)")
         self.header_elev_edit = QtWidgets.QLineEdit()
-        if self.edi_obj.elev is None:
+        if self.mt_obj.elev is None:
             self.header_elev_edit.setText("0.0")
         else:
-            self.header_elev_edit.setText("{0:.1f}".format(self.edi_obj.elev))
+            self.header_elev_edit.setText("{0:.1f}".format(self.mt_obj.elev))
 
         self.header_elev_edit.editingFinished.connect(self.header_set_elev)
 
         self.header_empty_label = QtWidgets.QLabel("Empty Value")
         self.header_empty_edit = QtWidgets.QLineEdit(
-            "{0}".format(self.edi_obj.Header.empty)
+            "{0}".format(self.mt_obj.Header.empty)
         )
         self.header_empty_edit.editingFinished.connect(self.header_set_empty)
 
         self.header_fileby_label = QtWidgets.QLabel("File By")
-        self.header_fileby_edit = QtWidgets.QLineEdit(self.edi_obj.Header.fileby)
+        self.header_fileby_edit = QtWidgets.QLineEdit(
+            self.mt_obj.Header.fileby
+        )
         self.header_fileby_edit.editingFinished.connect(self.header_set_fileby)
 
         self.header_filedate_label = QtWidgets.QLabel("File Date (YYY-MM-DD)")
-        self.header_filedate_edit = QtWidgets.QLineEdit(self.edi_obj.Header.filedate)
-        self.header_filedate_edit.editingFinished.connect(self.header_set_filedate)
+        self.header_filedate_edit = QtWidgets.QLineEdit(
+            self.mt_obj.Header.filedate
+        )
+        self.header_filedate_edit.editingFinished.connect(
+            self.header_set_filedate
+        )
 
         self.header_lat_label = QtWidgets.QLabel("Latitude (decimal degrees)")
         self.header_lat_edit = QtWidgets.QLineEdit()
-        if self.edi_obj.lat is None:
+        if self.mt_obj.lat is None:
             self.header_lat_edit.setText("0.000000")
         else:
-            self.header_lat_edit.setText("{0:.5f}".format(self.edi_obj.lat))
+            self.header_lat_edit.setText("{0:.5f}".format(self.mt_obj.lat))
         self.header_lat_edit.editingFinished.connect(self.header_set_lat)
 
         self.header_lon_label = QtWidgets.QLabel("Longitude (decimal degrees)")
         self.header_lon_edit = QtWidgets.QLineEdit()
-        if self.edi_obj.lon is None:
+        if self.mt_obj.lon is None:
             self.header_lon_edit.setText("0.000000")
         else:
-            self.header_lon_edit.setText("{0:.5f}".format(self.edi_obj.lon))
+            self.header_lon_edit.setText("{0:.5f}".format(self.mt_obj.lon))
         self.header_lon_edit.editingFinished.connect(self.header_set_lon)
 
         self.header_loc_label = QtWidgets.QLabel("Location")
-        self.header_loc_edit = QtWidgets.QLineEdit(self.edi_obj.Header.loc)
+        self.header_loc_edit = QtWidgets.QLineEdit(self.mt_obj.Header.loc)
         self.header_loc_edit.editingFinished.connect(self.header_set_loc)
 
         self.header_progdate_label = QtWidgets.QLabel("Program Date")
-        self.header_progdate_edit = QtWidgets.QLineEdit(self.edi_obj.Header.progdate)
-        self.header_progdate_edit.editingFinished.connect(self.header_set_progdate)
+        self.header_progdate_edit = QtWidgets.QLineEdit(
+            self.mt_obj.Header.progdate
+        )
+        self.header_progdate_edit.editingFinished.connect(
+            self.header_set_progdate
+        )
 
         self.header_progvers_label = QtWidgets.QLabel("Program Version")
-        self.header_progvers_edit = QtWidgets.QLineEdit(self.edi_obj.Header.progvers)
-        self.header_progvers_edit.editingFinished.connect(self.header_set_progvers)
+        self.header_progvers_edit = QtWidgets.QLineEdit(
+            self.mt_obj.Header.progvers
+        )
+        self.header_progvers_edit.editingFinished.connect(
+            self.header_set_progvers
+        )
 
         ##--> Info
         self.info_label = QtWidgets.QLabel("Information Section")
@@ -2270,7 +2492,7 @@ class EDITextEditor(QtWidgets.QWidget):
         self.info_edit = QtWidgets.QTextEdit()
         self.info_edit.setMinimumWidth(500)
         try:
-            info_str = "".join(self.edi_obj.Info.write_info())
+            info_str = "".join(self.mt_obj.Info.write_info())
         except TypeError:
             info_str = ""
         self.info_edit.setText(info_str)
@@ -2282,65 +2504,77 @@ class EDITextEditor(QtWidgets.QWidget):
 
         self.define_maxchan_label = QtWidgets.QLabel("Maximum Channels")
         self.define_maxchan_edit = QtWidgets.QLineEdit(
-            "{0}".format(self.edi_obj.Define_measurement.maxchan)
+            "{0}".format(self.mt_obj.Define_measurement.maxchan)
         )
-        self.define_maxchan_edit.editingFinished.connect(self.define_set_maxchan)
+        self.define_maxchan_edit.editingFinished.connect(
+            self.define_set_maxchan
+        )
 
         self.define_maxrun_label = QtWidgets.QLabel("Maximum Runs")
         self.define_maxrun_edit = QtWidgets.QLineEdit(
-            "{0}".format(self.edi_obj.Define_measurement.maxrun)
+            "{0}".format(self.mt_obj.Define_measurement.maxrun)
         )
         self.define_maxrun_edit.editingFinished.connect(self.define_set_maxrun)
 
         self.define_maxmeas_label = QtWidgets.QLabel("Maximum Measurements")
         self.define_maxmeas_edit = QtWidgets.QLineEdit(
-            "{0}".format(self.edi_obj.Define_measurement.maxmeas)
+            "{0}".format(self.mt_obj.Define_measurement.maxmeas)
         )
-        self.define_maxmeas_edit.editingFinished.connect(self.define_set_maxmeas)
+        self.define_maxmeas_edit.editingFinished.connect(
+            self.define_set_maxmeas
+        )
 
         self.define_refelev_label = QtWidgets.QLabel("Reference Elevation (m)")
         self.define_refelev_edit = QtWidgets.QLineEdit()
-        if self.edi_obj.Define_measurement.refelev is None:
+        if self.mt_obj.Define_measurement.refelev is None:
             self.define_refelev_edit.setText("0.0")
         else:
             self.define_refelev_edit.setText(
-                "{0:.5f}".format(self.edi_obj.Define_measurement.refelev)
+                "{0:.5f}".format(self.mt_obj.Define_measurement.refelev)
             )
-        self.define_refelev_edit.editingFinished.connect(self.define_set_refelev)
+        self.define_refelev_edit.editingFinished.connect(
+            self.define_set_refelev
+        )
 
-        self.define_reflat_label = QtWidgets.QLabel("Reference Latitude (dec. deg)")
+        self.define_reflat_label = QtWidgets.QLabel(
+            "Reference Latitude (dec. deg)"
+        )
         self.define_reflat_edit = QtWidgets.QLineEdit()
-        if self.edi_obj.Define_measurement.refelev is None:
+        if self.mt_obj.Define_measurement.refelev is None:
             self.define_reflat_edit.setText("0.0000000")
         else:
             self.define_reflat_edit.setText(
-                "{0:.5f}".format(self.edi_obj.Define_measurement.reflat)
+                "{0:.5f}".format(self.mt_obj.Define_measurement.reflat)
             )
         self.define_reflat_edit.editingFinished.connect(self.define_set_reflat)
 
-        self.define_reflon_label = QtWidgets.QLabel("Reference Longitude (dec. deg)")
+        self.define_reflon_label = QtWidgets.QLabel(
+            "Reference Longitude (dec. deg)"
+        )
         self.define_reflon_edit = QtWidgets.QLineEdit()
-        if self.edi_obj.Define_measurement.reflon is None:
+        if self.mt_obj.Define_measurement.reflon is None:
             self.define_reflon_edit.setText("0.000000")
         else:
             self.define_reflon_edit.setText(
-                "{0:.5f}".format(self.edi_obj.Define_measurement.reflon)
+                "{0:.5f}".format(self.mt_obj.Define_measurement.reflon)
             )
         self.define_reflon_edit.editingFinished.connect(self.define_set_reflon)
 
         # self.define_refloc_label = QtWidgets.QLabel('Reference Location')
-        # self.define_refloc_edit = QtWidgets.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.refloc))
+        # self.define_refloc_edit = QtWidgets.QLineEdit('{0}'.format(self.mt_obj.Define_measurement.refloc))
         # self.define_refloc_edit.editingFinished.connect(self.define_set_refloc)
 
         self.define_reftype_label = QtWidgets.QLabel("Reference Type")
         self.define_reftype_edit = QtWidgets.QLineEdit(
-            "{0}".format(self.edi_obj.Define_measurement.reftype)
+            "{0}".format(self.mt_obj.Define_measurement.reftype)
         )
-        self.define_reftype_edit.editingFinished.connect(self.define_set_reftype)
+        self.define_reftype_edit.editingFinished.connect(
+            self.define_set_reftype
+        )
 
         self.define_units_label = QtWidgets.QLabel("Distance Units")
         self.define_units_edit = QtWidgets.QLineEdit(
-            "{0}".format(self.edi_obj.Define_measurement.units)
+            "{0}".format(self.mt_obj.Define_measurement.units)
         )
         self.define_units_edit.editingFinished.connect(self.define_set_units)
 
@@ -2658,282 +2892,297 @@ class EDITextEditor(QtWidgets.QWidget):
         self.move(widget_size.topLeft())
 
     def header_set_acqby(self):
-        self.edi_obj.Header.acqby = str(self.header_acqby_edit.text())
-        self.header_acqby_edit.setText(self.edi_obj.Header.acqby)
+        self.mt_obj.Header.acqby = str(self.header_acqby_edit.text())
+        self.header_acqby_edit.setText(self.mt_obj.Header.acqby)
 
     def header_set_acqdate(self):
-        self.edi_obj.Header.acqdate = str(self.header_acqdate_edit.text())
-        self.header_acqdate_edit.setText(self.edi_obj.Header.acqdate)
+        self.mt_obj.Header.acqdate = str(self.header_acqdate_edit.text())
+        self.header_acqdate_edit.setText(self.mt_obj.Header.acqdate)
 
     def header_set_dataid(self):
-        self.edi_obj.Header.dataid = str(self.header_dataid_edit.text())
-        self.header_dataid_edit.setText(self.edi_obj.Header.dataid)
+        self.mt_obj.Header.dataid = str(self.header_dataid_edit.text())
+        self.header_dataid_edit.setText(self.mt_obj.Header.dataid)
 
     def header_set_elev(self):
-        self.edi_obj.elev = float(str(self.header_elev_edit.text()))
-        self.header_elev_edit.setText("{0:.1f}".format(self.edi_obj.elev))
+        self.mt_obj.elev = float(str(self.header_elev_edit.text()))
+        self.header_elev_edit.setText("{0:.1f}".format(self.mt_obj.elev))
 
     def header_set_empty(self):
-        self.edi_obj.Header.empty = float(str(self.header_empty_edit.text()))
-        self.header_empty_edit.setText("{0:.2e}".format(self.edi_obj.Header.empty))
+        self.mt_obj.Header.empty = float(str(self.header_empty_edit.text()))
+        self.header_empty_edit.setText(
+            "{0:.2e}".format(self.mt_obj.Header.empty)
+        )
 
     def header_set_fileby(self):
-        self.edi_obj.Header.fileby = str(self.header_fileby_edit.text())
-        self.header_fileby_edit.setText("{0}".format(self.edi_obj.Header.fileby))
+        self.mt_obj.Header.fileby = str(self.header_fileby_edit.text())
+        self.header_fileby_edit.setText(
+            "{0}".format(self.mt_obj.Header.fileby)
+        )
 
     def header_set_filedate(self):
-        self.edi_obj.Header.filedate = str(self.header_filedate_edit.text())
-        self.header_filedate_edit.setText("{0}".format(self.edi_obj.Header.filedate))
+        self.mt_obj.Header.filedate = str(self.header_filedate_edit.text())
+        self.header_filedate_edit.setText(
+            "{0}".format(self.mt_obj.Header.filedate)
+        )
 
     def header_set_lat(self):
-        self.edi_obj.lat = str(self.header_lat_edit.text())
-        self.header_lat_edit.setText("{0:.5f}".format(self.edi_obj.lat))
+        self.mt_obj.lat = str(self.header_lat_edit.text())
+        self.header_lat_edit.setText("{0:.5f}".format(self.mt_obj.lat))
 
     def header_set_lon(self):
-        self.edi_obj.lon = str(self.header_lon_edit.text())
-        self.header_lon_edit.setText("{0:.5f}".format(self.edi_obj.lon))
+        self.mt_obj.lon = str(self.header_lon_edit.text())
+        self.header_lon_edit.setText("{0:.5f}".format(self.mt_obj.lon))
 
     def header_set_loc(self):
-        self.edi_obj.Header.loc = str(self.header_loc_edit.text())
-        self.header_loc_edit.setText("{0}".format(self.edi_obj.Header.loc))
+        self.mt_obj.Header.loc = str(self.header_loc_edit.text())
+        self.header_loc_edit.setText("{0}".format(self.mt_obj.Header.loc))
 
     def header_set_progdate(self):
-        self.edi_obj.Header.progdate = str(self.header_progdate_edit.text())
-        self.header_progdate_edit.setText("{0}".format(self.edi_obj.Header.progdate))
+        self.mt_obj.Header.progdate = str(self.header_progdate_edit.text())
+        self.header_progdate_edit.setText(
+            "{0}".format(self.mt_obj.Header.progdate)
+        )
 
     def header_set_progvers(self):
-        self.edi_obj.Header.progvers = str(self.header_progvers_edit.text())
-        self.header_progvers_edit.setText("{0}".format(self.edi_obj.Header.progvers))
+        self.mt_obj.Header.progvers = str(self.header_progvers_edit.text())
+        self.header_progvers_edit.setText(
+            "{0}".format(self.mt_obj.Header.progvers)
+        )
 
     def info_set_text(self):
         new_info_str = self.info_edit.toPlainText()
         new_info_list = [str(nn) for nn in new_info_str.split("\n")]
-        self.edi_obj.Info.info_list = self.edi_obj.Info._validate_info_list(
+        self.mt_obj.Info.info_list = self.mt_obj.Info._validate_info_list(
             new_info_list
         )
 
     def define_set_maxchan(self):
-        self.edi_obj.Define_measurement.maxchan = int(
+        self.mt_obj.Define_measurement.maxchan = int(
             str(self.define_maxchan_edit.text())
         )
         self.define_maxchan_edit.setText(
-            "{0}".format(self.edi_obj.Define_measurement.maxchan)
+            "{0}".format(self.mt_obj.Define_measurement.maxchan)
         )
 
     def define_set_maxrun(self):
-        self.edi_obj.Define_measurement.maxrun = int(
+        self.mt_obj.Define_measurement.maxrun = int(
             str(self.define_maxrun_edit.text())
         )
         self.define_maxrun_edit.setText(
-            "{0}".format(self.edi_obj.Define_measurement.maxrun)
+            "{0}".format(self.mt_obj.Define_measurement.maxrun)
         )
 
     def define_set_maxmeas(self):
-        self.edi_obj.Define_measurement.maxmeas = int(
+        self.mt_obj.Define_measurement.maxmeas = int(
             str(self.define_maxmeas_edit.text())
         )
         self.define_maxmeas_edit.setText(
-            "{0}".format(self.edi_obj.Define_measurement.maxmeas)
+            "{0}".format(self.mt_obj.Define_measurement.maxmeas)
         )
 
-    def define_set_refelev(self):
-        value = mt.MTedi.MTft._assert_position_format(
-            "elev", str(self.define_refelev_edit.text())
-        )
-        self.edi_obj.Define_measurement.refelev = value
-        self.define_refelev_edit.setText("{0:.2f}".format(value))
-
-    def define_set_reflat(self):
-        value = mt.MTedi.MTft._assert_position_format(
-            "lat", str(self.define_reflat_edit.text())
-        )
-        self.edi_obj.Define_measurement.reflat = value
-        self.define_reflat_edit.setText("{0:.5f}".format(value))
-
-    def define_set_reflon(self):
-        value = mt.MTedi.MTft._assert_position_format(
-            "lon", str(self.define_reflon_edit.text())
-        )
-        self.edi_obj.Define_measurement.reflon = value
-        self.define_reflon_edit.setText("{0:.5f}".format(value))
-
-    #    def define_set_refloc(self):
-    #        self.edi_obj.Define_measurement.refloc = str(self.define_refloc_edit.text())
-    #        self.define_refloc_edit.setText('{0}'.format(self.edi_obj.Define_measurement.refloc))
-    #
     def define_set_reftype(self):
-        self.edi_obj.Define_measurement.reftype = str(self.define_reftype_edit.text())
+        self.mt_obj.Define_measurement.reftype = str(
+            self.define_reftype_edit.text()
+        )
         self.define_reftype_edit.setText(
-            "{0}".format(self.edi_obj.Define_measurement.reftype)
+            "{0}".format(self.mt_obj.Define_measurement.reftype)
         )
 
     def define_set_units(self):
-        self.edi_obj.Define_measurement.units = str(self.define_units_edit.text())
+        self.mt_obj.Define_measurement.units = str(
+            self.define_units_edit.text()
+        )
         self.define_units_edit.setText(
-            "{0}".format(self.edi_obj.Define_measurement.units)
+            "{0}".format(self.mt_obj.Define_measurement.units)
         )
 
     def fill_meas(self):
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_hx"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_hx"):
             self.meas_h01_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_hx.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_hx.id)
             )
             self.meas_h01_azm_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hx.azm)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_hx.azm
+                    )
                 )
             )
             self.meas_h01_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hx.x)
+                    self._check_float(self.mt_obj.Define_measurement.meas_hx.x)
                 )
             )
             self.meas_h01_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hx.y)
+                    self._check_float(self.mt_obj.Define_measurement.meas_hx.y)
                 )
             )
             self.meas_h01_ct_combo.setCurrentIndex(0)
             self.meas_h01_acqchn_combo.setCurrentIndex(0)
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_hy"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_hy"):
             self.meas_h02_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_hy.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_hy.id)
             )
             self.meas_h02_azm_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hy.azm)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_hy.azm
+                    )
                 )
             )
             self.meas_h02_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hy.x)
+                    self._check_float(self.mt_obj.Define_measurement.meas_hy.x)
                 )
             )
             self.meas_h02_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hy.y)
+                    self._check_float(self.mt_obj.Define_measurement.meas_hy.y)
                 )
             )
             self.meas_h02_ct_combo.setCurrentIndex(1)
             self.meas_h02_acqchn_combo.setCurrentIndex(1)
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_hz"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_hz"):
             self.meas_h03_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_hz.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_hz.id)
             )
             self.meas_h03_azm_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hz.azm)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_hz.azm
+                    )
                 )
             )
             self.meas_h03_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hz.x)
+                    self._check_float(self.mt_obj.Define_measurement.meas_hz.x)
                 )
             )
             self.meas_h03_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_hz.y)
+                    self._check_float(self.mt_obj.Define_measurement.meas_hz.y)
                 )
             )
             self.meas_h03_ct_combo.setCurrentIndex(2)
             self.meas_h03_acqchn_combo.setCurrentIndex(2)
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_rhx"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_rhx"):
             self.meas_hr1_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_rhx.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_rhx.id)
             )
             self.meas_hr1_azm_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_rhx.azm)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_rhx.azm
+                    )
                 )
             )
             self.meas_hr1_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_rhx.x)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_rhx.x
+                    )
                 )
             )
             self.meas_hr1_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_rhx.y)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_rhx.y
+                    )
                 )
             )
             self.meas_hr1_ct_combo.setCurrentIndex(3)
             self.meas_hr1_acqchn_combo.setCurrentIndex(3)
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_rhy"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_rhy"):
             self.meas_hr2_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_rhy.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_rhy.id)
             )
             self.meas_hr2_azm_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_rhy.azm)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_rhy.azm
+                    )
                 )
             )
             self.meas_hr2_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_rhy.x)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_rhy.x
+                    )
                 )
             )
             self.meas_hr2_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_rhy.y)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_rhy.y
+                    )
                 )
             )
             self.meas_hr2_ct_combo.setCurrentIndex(4)
             self.meas_hr2_acqchn_combo.setCurrentIndex(4)
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_ex"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_ex"):
             self.meas_e01_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_ex.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_ex.id)
             )
             self.meas_e01_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ex.x)
+                    self._check_float(self.mt_obj.Define_measurement.meas_ex.x)
                 )
             )
             self.meas_e01_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ex.y)
+                    self._check_float(self.mt_obj.Define_measurement.meas_ex.y)
                 )
             )
             self.meas_e01_x2_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ex.x2)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_ex.x2
+                    )
                 )
             )
             self.meas_e01_y2_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ex.y2)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_ex.y2
+                    )
                 )
             )
             self.meas_e01_ct_combo.setCurrentIndex(0)
             self.meas_e01_acqchn_combo.setCurrentIndex(0)
 
-        if hasattr(self.edi_obj.Define_measurement, "meas_ey"):
+        if hasattr(self.mt_obj.Define_measurement, "meas_ey"):
             self.meas_e02_id_edit.setText(
-                "{0}".format(self.edi_obj.Define_measurement.meas_ey.id)
+                "{0}".format(self.mt_obj.Define_measurement.meas_ey.id)
             )
             self.meas_e02_x_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ey.x)
+                    self._check_float(self.mt_obj.Define_measurement.meas_ey.x)
                 )
             )
             self.meas_e02_y_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ey.y)
+                    self._check_float(self.mt_obj.Define_measurement.meas_ey.y)
                 )
             )
             self.meas_e02_x2_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ey.x2)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_ey.x2
+                    )
                 )
             )
             self.meas_e02_y2_edit.setText(
                 "{0:.2f}".format(
-                    self._check_float(self.edi_obj.Define_measurement.meas_ey.y2)
+                    self._check_float(
+                        self.mt_obj.Define_measurement.meas_ey.y2
+                    )
                 )
             )
             self.meas_e02_ct_combo.setCurrentIndex(1)
@@ -2957,7 +3206,7 @@ class EDITextEditor(QtWidgets.QWidget):
 # ==============================================================================
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    ui = EDI_Editor_Window()
+    ui = MTEditorWindow()
     ui.ui_setup()
     ui.show()
     sys.exit(app.exec_())

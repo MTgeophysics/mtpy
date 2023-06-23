@@ -52,6 +52,7 @@ class MT(TF, MTLocation):
         new_mt_obj = MT()
         new_mt_obj.survey_metadata.update(self.survey_metadata)
         new_mt_obj.station_metadata.update(self.station_metadata)
+        new_mt_obj.station_metadata.runs = self.station_metadata.runs
         new_mt_obj._datum_crs = self._datum_crs
         new_mt_obj._utm_crs = self._utm_crs
         new_mt_obj._east = self._east
@@ -401,7 +402,7 @@ class MT(TF, MTLocation):
                 self.logger.warning(
                     f"Station {self.station}: Interpolated Z values are all NaN, "
                     "consider an alternative interpolation method. "
-                    "See scipy.interpolate.interp1d for more invormation."
+                    "See scipy.interpolate.interp1d for more information."
                 )
         if self.has_tipper():
             new_m.Tipper = self.Tipper.interpolate(
@@ -411,7 +412,7 @@ class MT(TF, MTLocation):
                 self.logger.warning(
                     f"Station {self.station}: Interpolated T values are all NaN, "
                     "consider an alternative interpolation method. "
-                    "See scipy.interpolate.interp1d for more invormation."
+                    "See scipy.interpolate.interp1d for more information."
                 )
 
         return new_m
