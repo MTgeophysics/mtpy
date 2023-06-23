@@ -1550,7 +1550,13 @@ class PlotWidget(QtWidgets.QWidget):
         if event.mouseevent.button == 3:
             self._edited_mask = True
             self._ax.plot(data_period, data_value, **self.mask_kw)
-            f_index = np.where(np.isclose(self.mt_obj.period, data_period))
+            try:
+                f_index = np.where(
+                    np.isclose(self.mt_obj.period, data_period, rtol=0.009)
+                )[0][0]
+            except IndexError:
+                print(f"Could not locate period {data_period}")
+                return
             if self._ax_index == 0 or self._ax_index == 1:
                 d_index = np.where(
                     np.isclose(self.mt_obj.Z.resistivity, data_value)
@@ -1613,15 +1619,16 @@ class PlotWidget(QtWidgets.QWidget):
 
             # mask phase points
             elif self._ax_index == 2 or self._ax_index == 3:
-                print("picked ", data_period, data_value)
                 try:
                     d_index = np.where(
-                        np.isclose(self.mt_obj.Z.phase, data_value, rtol=0.005)
+                        np.isclose(self.mt_obj.Z.phase, data_value, rtol=0.01)
                     )
-                    print(d_index)
-                    for ii in d_index[0]:
-                        if d_index == f_index:
-                            break
+                    if len(d_index[0]) > 1:
+                        for ii, index in enumerate(d_index[0]):
+                            if index == f_index:
+                                break
+                    else:
+                        ii = 0
                     comp_jj = d_index[1][ii]
                     comp_kk = d_index[2][ii]
                 except IndexError:
@@ -1630,13 +1637,16 @@ class PlotWidget(QtWidgets.QWidget):
                             np.isclose(
                                 self.mt_obj.Z.phase,
                                 data_value - 180,
-                                rtol=0.005,
+                                rtol=0.01,
                             )
                         )
-                        print(d_index)
-                        for ii in d_index[0]:
-                            if d_index == f_index:
-                                break
+                        if len(d_index[0]) > 1:
+                            for ii, index in enumerate(d_index[0]):
+                                if index == f_index:
+                                    break
+                        else:
+                            ii = 0
+                        print(f_index, ii)
                         comp_jj = d_index[1][ii]
                         comp_kk = d_index[2][ii]
 
@@ -1664,7 +1674,9 @@ class PlotWidget(QtWidgets.QWidget):
                     try:
                         self.ax_res_od.plot(
                             data_period,
-                            self.mt_obj.Z.resistivity[d_index],
+                            self.mt_obj.Z.resistivity[
+                                f_index, comp_jj, comp_kk
+                            ],
                             **self.mask_kw,
                         )
                     except ValueError as error:
@@ -1676,7 +1688,9 @@ class PlotWidget(QtWidgets.QWidget):
                     try:
                         self.ax_res_d.plot(
                             data_period,
-                            self.mt_obj.Z.resistivity[d_index],
+                            self.mt_obj.Z.resistivity[
+                                f_index, comp_jj, comp_kk
+                            ],
                             **self.mask_kw,
                         )
                     except ValueError as error:
