@@ -68,6 +68,7 @@ class TestMTSetImpedance(unittest.TestCase):
         self.pt_skew_error = np.array([0.40923428])
 
         self.mt = MT()
+        self.mt.station = "mt001"
         self.mt.impedance = self.z
         self.mt.impedance_error = self.z_err
         self.mt.impedance_model_error = self.z_err
@@ -223,7 +224,7 @@ class TestMT2DataFrame(unittest.TestCase):
     def setUpClass(self):
 
         self.m1 = MT(TF_EDI_CGG)
-        self.m1.read_tf_file()
+        self.m1.read()
 
         self.mt_df = self.m1.to_dataframe()
 
