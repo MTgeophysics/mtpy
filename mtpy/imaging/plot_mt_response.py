@@ -462,7 +462,7 @@ class PlotMTResponse(PlotBase):
                 fontdict={"size": self.font_size},
             )
 
-    def plot(self, show=True):
+    def plot(self):
         """
         plotResPhase(filename,fig_num) will plot the apparent resistivity and
         phase for a single station.
@@ -506,5 +506,5 @@ class PlotMTResponse(PlotBase):
         self.fig.suptitle(self.plot_title, fontdict=self.font_dict)
 
         # be sure to show
-        if show:
+        if self.show_plot:
             plt.show()
