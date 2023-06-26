@@ -20,14 +20,17 @@ except ImportError:
 
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import (
+    NavigationToolbar2QT as NavigationToolbar,
+)
 import matplotlib.widgets as widgets
 from matplotlib.figure import Figure
 
 import numpy as np
 from scipy import signal
 
-import mtpy.modeling.modem as modem
+from mtpy import MTData
+from mtpy.modeling import StructuredGrid3D
 
 # ==============================================================================
 # Main Window
@@ -139,7 +142,10 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         self.res_popup.res_changed.connect(self.set_res)
 
     def set_res(self):
-        self.model_widget.res_limits = (self.res_popup.res_min, self.res_popup.res_max)
+        self.model_widget.res_limits = (
+            self.res_popup.res_min,
+            self.res_popup.res_max,
+        )
 
     def pad_fill(self):
         self.model_widget.set_fill_params()
@@ -407,7 +413,9 @@ class ModelWidget(QtWidgets.QWidget):
         )
         self.map_toolbar = NavigationToolbar(self.map_canvas, self)
 
-        self.map_copy_down_button = QtWidgets.QPushButton("Copy Down (N layers)")
+        self.map_copy_down_button = QtWidgets.QPushButton(
+            "Copy Down (N layers)"
+        )
         self.map_copy_down_button.pressed.connect(self.map_copy_down)
 
         self.map_copy_up_button = QtWidgets.QPushButton("Copy Up (N layers)")
@@ -437,16 +445,24 @@ class ModelWidget(QtWidgets.QWidget):
         )
         self.east_toolbar = NavigationToolbar(self.east_canvas, self)
 
-        self.east_copy_west_button = QtWidgets.QPushButton("Copy West (N layers)")
+        self.east_copy_west_button = QtWidgets.QPushButton(
+            "Copy West (N layers)"
+        )
         self.east_copy_west_button.pressed.connect(self.east_copy_west)
 
-        self.east_copy_east_button = QtWidgets.QPushButton("Copy East (N layers)")
+        self.east_copy_east_button = QtWidgets.QPushButton(
+            "Copy East (N layers)"
+        )
         self.east_copy_east_button.pressed.connect(self.east_copy_east)
 
         self.east_copy_number_edit = QtWidgets.QLineEdit()
-        self.east_copy_number_edit.setText("{0:0.0f}".format(self.east_copy_num))
+        self.east_copy_number_edit.setText(
+            "{0:0.0f}".format(self.east_copy_num)
+        )
         self.east_copy_number_edit.setMaximumWidth(35)
-        self.east_copy_number_edit.editingFinished.connect(self.set_east_copy_num)
+        self.east_copy_number_edit.editingFinished.connect(
+            self.set_east_copy_num
+        )
         self.east_copy_number_label = QtWidgets.QLabel("N")
 
         self.east_label = QtWidgets.QLabel(
@@ -467,16 +483,24 @@ class ModelWidget(QtWidgets.QWidget):
         )
         self.north_toolbar = NavigationToolbar(self.north_canvas, self)
 
-        self.north_copy_south_button = QtWidgets.QPushButton("Copy South (N layers)")
+        self.north_copy_south_button = QtWidgets.QPushButton(
+            "Copy South (N layers)"
+        )
         self.north_copy_south_button.pressed.connect(self.north_copy_south)
 
-        self.north_copy_north_button = QtWidgets.QPushButton("Copy North (N layers)")
+        self.north_copy_north_button = QtWidgets.QPushButton(
+            "Copy North (N layers)"
+        )
         self.north_copy_north_button.pressed.connect(self.north_copy_north)
 
         self.north_copy_number_edit = QtWidgets.QLineEdit()
-        self.north_copy_number_edit.setText("{0:0.0f}".format(self.north_copy_num))
+        self.north_copy_number_edit.setText(
+            "{0:0.0f}".format(self.north_copy_num)
+        )
         self.north_copy_number_edit.setMaximumWidth(35)
-        self.north_copy_number_edit.editingFinished.connect(self.set_north_copy_num)
+        self.north_copy_number_edit.editingFinished.connect(
+            self.set_north_copy_num
+        )
         self.north_copy_number_label = QtWidgets.QLabel("N")
 
         self.north_label = QtWidgets.QLabel(
@@ -522,7 +546,9 @@ class ModelWidget(QtWidgets.QWidget):
         self.cb_ax.set_yticklabels(
             [
                 "{0:.4g}".format(np.round(ii, 0))
-                for ii in np.logspace(self._res_limits[0], self._res_limits[1], num=10)
+                for ii in np.logspace(
+                    self._res_limits[0], self._res_limits[1], num=10
+                )
             ]
         )
 
@@ -643,8 +669,11 @@ class ModelWidget(QtWidgets.QWidget):
     def data_fn(self, data_fn):
         self._data_fn = data_fn
 
-        self.data_obj = modem.Data()
-        self.data_obj.read_data_file(self._data_fn)
+        self.data_obj = MTData()
+        self.data_obj.from_modem_data(self._data_fn)
+        # dataframe of station locations
+        self.station_locations = self.data_obj.station_locations
+
         if self.map_ax is not None:
             self.redraw_plots()
 
@@ -659,8 +688,8 @@ class ModelWidget(QtWidgets.QWidget):
     @model_fn.setter
     def model_fn(self, model_fn):
         self._model_fn = model_fn
-        self.model_obj = modem.Model()
-        self.model_obj.read_model_file(self._model_fn)
+        self.model_obj = StructuredGrid3D()
+        self.model_obj.read_modem_file(self._model_fn)
         ## make a copy of the resistivity model to manipulate
         self.new_res_model = self.model_obj.res_model.copy()
 
@@ -684,19 +713,33 @@ class ModelWidget(QtWidgets.QWidget):
         self.map_ax.set_ylabel("Northing {0}".format(self.units))
         self.map_ax.set_aspect("equal")
         self.map_ax.plot(
-            self.map_east_line_xlist, self.map_east_line_ylist, lw=0.25, color="k"
+            self.map_east_line_xlist,
+            self.map_east_line_ylist,
+            lw=0.25,
+            color="k",
         )
         self.map_ax.plot(
-            self.map_north_line_xlist, self.map_north_line_ylist, lw=0.25, color="k"
+            self.map_north_line_xlist,
+            self.map_north_line_ylist,
+            lw=0.25,
+            color="k",
         )
 
         self.redraw_map()
 
         ## --> make EW cross section axes
-        self.north_ax = self.north_figure.add_subplot(1, 1, 1, sharex=self.map_ax,)
+        self.north_ax = self.north_figure.add_subplot(
+            1,
+            1,
+            1,
+            sharex=self.map_ax,
+        )
         # aspect='equal')
         self.north_ax.plot(
-            self.north_east_line_xlist, self.north_east_line_ylist, lw=0.25, color="k"
+            self.north_east_line_xlist,
+            self.north_east_line_ylist,
+            lw=0.25,
+            color="k",
         )
         self.north_ax.plot(
             self.north_z_line_xlist, self.north_z_line_ylist, lw=0.25, color="k"
@@ -721,7 +764,10 @@ class ModelWidget(QtWidgets.QWidget):
         )
         ## --> plot the mesh lines, this way only do it once
         self.east_ax.plot(
-            self.east_north_line_xlist, self.east_north_line_ylist, lw=0.25, color="k"
+            self.east_north_line_xlist,
+            self.east_north_line_ylist,
+            lw=0.25,
+            color="k",
         )
         self.east_ax.plot(
             self.east_z_line_xlist, self.east_z_line_ylist, lw=0.25, color="k"
@@ -732,7 +778,9 @@ class ModelWidget(QtWidgets.QWidget):
         self.redraw_east()
 
         ## plot the location grid
-        self.location_ax = self.location_figure.add_subplot(1, 1, 1, aspect="equal")
+        self.location_ax = self.location_figure.add_subplot(
+            1, 1, 1, aspect="equal"
+        )
         self.location_ax.set_xlabel("Easting {0}".format(self.units))
         self.location_ax.set_ylabel("Northing {0}".format(self.units))
         self.location_ax.set_aspect("equal")
@@ -759,8 +807,10 @@ class ModelWidget(QtWidgets.QWidget):
         )
         self.location_ax.set_ylim(
             (
-                self.model_obj.grid_north[self.model_obj.pad_north] / self.scale,
-                self.model_obj.grid_north[-self.model_obj.pad_north] / self.scale,
+                self.model_obj.grid_north[self.model_obj.pad_north]
+                / self.scale,
+                self.model_obj.grid_north[-self.model_obj.pad_north]
+                / self.scale,
             )
         )
 
@@ -791,22 +841,22 @@ class ModelWidget(QtWidgets.QWidget):
         )[0]
         if self.data_fn is not None:
             self.location_ax.scatter(
-                self.data_obj.station_locations.rel_east / self.scale,
-                self.data_obj.station_locations.rel_north / self.scale,
+                self.station_locations.model_east / self.scale,
+                self.station_locations.model_north / self.scale,
                 marker="v",
                 c="k",
                 s=10,
             )
             self.location_ax.set_xlim(
                 (
-                    self.data_obj.station_locations.rel_east.min() / self.scale - 1,
-                    self.data_obj.station_locations.rel_east.max() / self.scale + 1,
+                    self.station_locations.model_east.min() / self.scale - 1,
+                    self.station_locations.model_east.max() / self.scale + 1,
                 )
             )
             self.location_ax.set_ylim(
                 (
-                    self.data_obj.station_locations.rel_north.min() / self.scale - 1,
-                    self.data_obj.station_locations.rel_north.max() / self.scale + 1,
+                    self.station_locations.model_north.min() / self.scale - 1,
+                    self.station_locations.model_north.max() / self.scale + 1,
                 )
             )
 
@@ -883,7 +933,9 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_north_line_xlist = []
         self.east_north_line_ylist = []
         for xx in self.model_obj.grid_north:
-            self.east_north_line_xlist.extend([xx / self.scale, xx / self.scale])
+            self.east_north_line_xlist.extend(
+                [xx / self.scale, xx / self.scale]
+            )
             self.east_north_line_xlist.append(None)
             self.east_north_line_ylist.extend(
                 [
@@ -910,7 +962,9 @@ class ModelWidget(QtWidgets.QWidget):
         self.north_east_line_xlist = []
         self.north_east_line_ylist = []
         for xx in self.model_obj.grid_east:
-            self.north_east_line_xlist.extend([xx / self.scale, xx / self.scale])
+            self.north_east_line_xlist.extend(
+                [xx / self.scale, xx / self.scale]
+            )
             self.north_east_line_xlist.append(None)
             self.north_east_line_ylist.extend(
                 [
@@ -945,13 +999,15 @@ class ModelWidget(QtWidgets.QWidget):
 
     def on_res_pick(self, event):
         try:
-            y_data = 10 ** event.ydata
-            y_data = np.log10(np.round(y_data, -int(np.floor(np.log10(y_data)))))
+            y_data = 10**event.ydata
+            y_data = np.log10(
+                np.round(y_data, -int(np.floor(np.log10(y_data))))
+            )
 
             self.res_line.set_xdata([0, 1])
             self.res_line.set_ydata([y_data, y_data])
             self.cb_canvas.draw()
-            self.res_value = 10 ** y_data
+            self.res_value = 10**y_data
 
             self.cb_line_edit.setText("{0:.2f}".format(self.res_value))
 
@@ -960,14 +1016,18 @@ class ModelWidget(QtWidgets.QWidget):
 
     def set_res_value(self):
         self.res_value = float(self.cb_line_edit.text())
-        self.res_line.set_ydata([np.log10(self.res_value), np.log10(self.res_value)])
+        self.res_line.set_ydata(
+            [np.log10(self.res_value), np.log10(self.res_value)]
+        )
         self.cb_canvas.draw()
         self.cb_line_edit.setText("{0:.2f}".format(self.res_value))
 
     def set_map_index(self):
         self.map_index = int(self.map_slider.value())
         depth = self.model_obj.grid_z[self.map_index] / self.scale
-        self.map_depth_label.setText("Depth {0:>10.2f} {1}".format(depth, self.units))
+        self.map_depth_label.setText(
+            "Depth {0:>10.2f} {1}".format(depth, self.units)
+        )
 
         self.redraw_map()
 
@@ -985,8 +1045,8 @@ class ModelWidget(QtWidgets.QWidget):
         )
         if self.data_fn is not None:
             self.map_ax.scatter(
-                self.data_obj.station_locations.rel_east / self.scale,
-                self.data_obj.station_locations.rel_north / self.scale,
+                self.station_locations.model_east / self.scale,
+                self.station_locations.model_north / self.scale,
                 marker="v",
                 c="k",
                 s=10,
@@ -997,7 +1057,9 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_index = int(self.east_slider.value())
         easting = self.model_obj.grid_east[self.east_index] / self.scale
 
-        self.east_label.setText("Easting {0:>10.2f} {1}".format(easting, self.units))
+        self.east_label.setText(
+            "Easting {0:>10.2f} {1}".format(easting, self.units)
+        )
         self.redraw_east()
         self.redraw_location()
 
@@ -1010,7 +1072,10 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.east_ax.cla()
         self.east_ax.plot(
-            self.east_north_line_xlist, self.east_north_line_ylist, lw=0.25, color="k"
+            self.east_north_line_xlist,
+            self.east_north_line_ylist,
+            lw=0.25,
+            color="k",
         )
         self.east_ax.plot(
             self.east_z_line_xlist, self.east_z_line_ylist, lw=0.25, color="k"
@@ -1027,8 +1092,8 @@ class ModelWidget(QtWidgets.QWidget):
         line = self.get_stations_east()
         if line is not None:
             self.east_ax.scatter(
-                line["rel_north"] / self.scale,
-                line["rel_elev"] / self.scale,
+                line.model_north / self.scale,
+                line.model_elevation / self.scale,
                 marker="v",
                 c="cyan",
                 s=50,
@@ -1036,8 +1101,8 @@ class ModelWidget(QtWidgets.QWidget):
             )
 
             self.location_ax.scatter(
-                line["rel_east"] / self.scale,
-                line["rel_north"] / self.scale,
+                line.model_east / self.scale,
+                line.model_north / self.scale,
                 marker="v",
                 c="k",
                 s=30,
@@ -1045,11 +1110,11 @@ class ModelWidget(QtWidgets.QWidget):
             )
             self.location_canvas.draw()
 
-            for ss in line:
+            for ss in line.itertuples():
                 self.east_ax.text(
-                    ss["rel_north"] / self.scale,
-                    ss["rel_elev"] / self.scale - 0.2,
-                    ss["station"],
+                    ss.model_north / self.scale,
+                    ss.model_elevation / self.scale - 0.2,
+                    ss.station,
                     va="bottom",
                     ha="center",
                     fontdict={"weight": "bold", "size": 10},
@@ -1116,15 +1181,17 @@ class ModelWidget(QtWidgets.QWidget):
         )
         self.location_ax.set_ylim(
             (
-                self.model_obj.grid_north[self.model_obj.pad_north] / self.scale,
-                self.model_obj.grid_north[-self.model_obj.pad_north] / self.scale,
+                self.model_obj.grid_north[self.model_obj.pad_north]
+                / self.scale,
+                self.model_obj.grid_north[-self.model_obj.pad_north]
+                / self.scale,
             )
         )
 
         if self.data_fn is not None:
             self.location_ax.scatter(
-                self.data_obj.station_locations.rel_east / self.scale,
-                self.data_obj.station_locations.rel_north / self.scale,
+                self.station_locations.model_east / self.scale,
+                self.station_locations.model_north / self.scale,
                 marker="v",
                 c="k",
                 edgecolors="k",
@@ -1132,14 +1199,14 @@ class ModelWidget(QtWidgets.QWidget):
             )
             self.location_ax.set_xlim(
                 (
-                    self.data_obj.station_locations.rel_east.min() / self.scale - 1,
-                    self.data_obj.station_locations.rel_east.max() / self.scale + 1,
+                    self.station_locations.model_east.min() / self.scale - 1,
+                    self.station_locations.model_east.max() / self.scale + 1,
                 )
             )
             self.location_ax.set_ylim(
                 (
-                    self.data_obj.station_locations.rel_north.min() / self.scale - 1,
-                    self.data_obj.station_locations.rel_north.max() / self.scale + 1,
+                    self.station_locations.model_north.min() / self.scale - 1,
+                    self.station_locations.model_north.max() / self.scale + 1,
                 )
             )
 
@@ -1151,7 +1218,9 @@ class ModelWidget(QtWidgets.QWidget):
     def set_north_index(self):
         self.north_index = int(self.north_slider.value())
         northing = self.model_obj.grid_north[self.north_index] / self.scale
-        self.north_label.setText("Northing {0:>10.2f} {1}".format(northing, self.units))
+        self.north_label.setText(
+            "Northing {0:>10.2f} {1}".format(northing, self.units)
+        )
 
         self.redraw_north()
         self.redraw_location()
@@ -1164,7 +1233,10 @@ class ModelWidget(QtWidgets.QWidget):
         xlim = self.north_ax.get_xlim()
         self.north_ax.cla()
         self.north_ax.plot(
-            self.north_east_line_xlist, self.north_east_line_ylist, lw=0.25, color="k"
+            self.north_east_line_xlist,
+            self.north_east_line_ylist,
+            lw=0.25,
+            color="k",
         )
         self.north_ax.plot(
             self.north_z_line_xlist, self.north_z_line_ylist, lw=0.25, color="k"
@@ -1182,16 +1254,16 @@ class ModelWidget(QtWidgets.QWidget):
 
         if line is not None:
             self.north_ax.scatter(
-                line["rel_east"] / self.scale,
-                line["rel_elev"] / self.scale,
+                line.model_east / self.scale,
+                line.model_elevation / self.scale,
                 marker="v",
                 c="cyan",
                 s=50,
                 edgecolors="k",
             )
             self.location_ax.scatter(
-                line["rel_east"] / self.scale,
-                line["rel_north"] / self.scale,
+                line.model_east / self.scale,
+                line.model_north / self.scale,
                 marker="v",
                 c="k",
                 s=30,
@@ -1199,11 +1271,11 @@ class ModelWidget(QtWidgets.QWidget):
             )
             self.location_canvas.draw()
 
-            for ss in line:
+            for ss in line.itertuples():
                 self.north_ax.text(
-                    ss["rel_east"] / self.scale,
-                    ss["rel_elev"] / self.scale - 0.2,
-                    ss["station"],
+                    ss.model_east / self.scale,
+                    ss.model_elevation / self.scale - 0.2,
+                    ss.station,
                     va="bottom",
                     ha="center",
                     fontdict={"weight": "bold", "size": 10},
@@ -1226,17 +1298,18 @@ class ModelWidget(QtWidgets.QWidget):
 
         """
         ymin = (
-            self.model_obj.grid_north[self.north_index] - self.model_obj.cell_size_north
+            self.model_obj.grid_north[self.north_index]
+            - self.model_obj.cell_size_north
         )
         ymax = (
-            self.model_obj.grid_north[self.north_index] + self.model_obj.cell_size_north
+            self.model_obj.grid_north[self.north_index]
+            + self.model_obj.cell_size_north
         )
         if self.data_fn is not None:
-            s_find = np.where(
-                (self.data_obj.data_array["rel_north"] >= ymin)
-                & (self.data_obj.data_array["rel_north"] <= ymax)
-            )
-            return self.data_obj.data_array[s_find[0]]
+            return self.station_locations.loc[
+                (self.station_locations.model_north >= ymin)
+                & (self.station_locations.model_north <= ymax)
+            ]
 
         else:
             return None
@@ -1249,14 +1322,19 @@ class ModelWidget(QtWidgets.QWidget):
         None.
 
         """
-        ymin = self.model_obj.grid_east[self.east_index] - self.model_obj.cell_size_east
-        ymax = self.model_obj.grid_east[self.east_index] + self.model_obj.cell_size_east
+        xmin = (
+            self.model_obj.grid_east[self.east_index]
+            - self.model_obj.cell_size_east
+        )
+        xmax = (
+            self.model_obj.grid_east[self.east_index]
+            + self.model_obj.cell_size_east
+        )
         if self.data_fn is not None:
-            s_find = np.where(
-                (self.data_obj.data_array["rel_east"] >= ymin)
-                & (self.data_obj.data_array["rel_east"] <= ymax)
-            )
-            return self.data_obj.data_array[s_find[0]]
+            return self.station_locations.loc[
+                (self.station_locations.model_east >= xmin)
+                & (self.station_locations.model_east <= xmax)
+            ]
 
         else:
             return None
@@ -1287,7 +1365,9 @@ class ModelWidget(QtWidgets.QWidget):
         self.cb_ax.set_yticklabels(
             [
                 "{0:.4g}".format(np.round(ii, 0))
-                for ii in np.logspace(self._res_limits[0], self._res_limits[1], num=10)
+                for ii in np.logspace(
+                    self._res_limits[0], self._res_limits[1], num=10
+                )
             ]
         )
         (self.res_line,) = self.cb_ax.plot(
@@ -1349,7 +1429,9 @@ class ModelWidget(QtWidgets.QWidget):
         for xx in x_change:
             for yy in y_change:
                 if self.model_obj.res_model[self.north_index, xx, yy] < 1e10:
-                    self.new_res_model[self.north_index, xx, yy] = self.res_value
+                    self.new_res_model[
+                        self.north_index, xx, yy
+                    ] = self.res_value
 
         self.redraw_plots()
 
@@ -1412,10 +1494,12 @@ class ModelWidget(QtWidgets.QWidget):
             except IndexError:
                 return
             dx = np.abs(
-                data_point.xdata - self.model_obj.grid_east[x_index] / self.scale
+                data_point.xdata
+                - self.model_obj.grid_east[x_index] / self.scale
             )
             dy = np.abs(
-                data_point.ydata - self.model_obj.grid_north[y_index] / self.scale
+                data_point.ydata
+                - self.model_obj.grid_north[y_index] / self.scale
             )
 
             if dx < dy:
@@ -1427,18 +1511,24 @@ class ModelWidget(QtWidgets.QWidget):
                     ]
                 )
                 self.east_slider.setValue(self.east_index)
-                self.east_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
+                self.east_slider.triggerAction(
+                    QtWidgets.QAbstractSlider.SliderMove
+                )
 
             elif dx > dy:
                 self.north_index = y_index
                 self.north_line.set_ydata(
                     [
-                        self.model_obj.grid_north[self.north_index] / self.scale,
-                        self.model_obj.grid_north[self.north_index] / self.scale,
+                        self.model_obj.grid_north[self.north_index]
+                        / self.scale,
+                        self.model_obj.grid_north[self.north_index]
+                        / self.scale,
                     ]
                 )
                 self.north_slider.setValue(self.north_index)
-                self.north_slider.triggerAction(QtWidgets.QAbstractSlider.SliderMove)
+                self.north_slider.triggerAction(
+                    QtWidgets.QAbstractSlider.SliderMove
+                )
 
     def set_fill_params(self):
         """
@@ -1468,16 +1558,24 @@ class ModelWidget(QtWidgets.QWidget):
                 [
                     np.median(self.new_res_model[x_index, y_index, zz]),
                     np.median(
-                        self.new_res_model[avg_range:-avg_range, 0:avg_range, zz]
+                        self.new_res_model[
+                            avg_range:-avg_range, 0:avg_range, zz
+                        ]
                     ),
                     np.median(
-                        self.new_res_model[avg_range:-avg_range, -avg_range:, zz]
+                        self.new_res_model[
+                            avg_range:-avg_range, -avg_range:, zz
+                        ]
                     ),
                     np.median(
-                        self.new_res_model[0:avg_range, avg_range:-avg_range, zz]
+                        self.new_res_model[
+                            0:avg_range, avg_range:-avg_range, zz
+                        ]
                     ),
                     np.median(
-                        self.new_res_model[-avg_range:, avg_range:-avg_range, zz]
+                        self.new_res_model[
+                            -avg_range:, avg_range:-avg_range, zz
+                        ]
                     ),
                 ]
             )
@@ -1515,12 +1613,12 @@ class ModelWidget(QtWidgets.QWidget):
         smooth model with 2D gaussian filter
         """
         radius = self.smooth_widget.radius
-        sigma = self.smooth_widget.sigma ** 2
+        sigma = self.smooth_widget.sigma**2
 
         gx, gy = np.mgrid[-radius : radius + 1, -radius : radius + 1]
 
         gauss = (1.0 / (2 * np.pi * sigma)) * np.exp(
-            -((gx ** 2) + (gy ** 2)) / (2 * sigma)
+            -((gx**2) + (gy**2)) / (2 * sigma)
         )
 
         for zz in range(self.new_res_model.shape[2]):
@@ -1560,9 +1658,9 @@ class ModelWidget(QtWidgets.QWidget):
         #            self.new_res_model[nax] =
         #        na_index = np.where(self.new_res_model[:, :, self.map_index] < 1E10)
         #        print(na_index)
-        self.new_res_model[:, :, self.map_index : copy_index] = self.new_res_model[
-            :, :, self.map_index
-        ].reshape(o_shape)
+        self.new_res_model[
+            :, :, self.map_index : copy_index
+        ] = self.new_res_model[:, :, self.map_index].reshape(o_shape)
 
         # self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
 
@@ -1577,9 +1675,9 @@ class ModelWidget(QtWidgets.QWidget):
         copy_index = self.map_index - (self.map_copy_num + 1)
         if copy_index < 0:
             copy_index = 0
-        self.new_res_model[:, :, copy_index : self.map_index] = self.new_res_model[
-            :, :, self.map_index
-        ].reshape(o_shape)
+        self.new_res_model[
+            :, :, copy_index : self.map_index
+        ] = self.new_res_model[:, :, self.map_index].reshape(o_shape)
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
         self.redraw_map()
@@ -1588,7 +1686,9 @@ class ModelWidget(QtWidgets.QWidget):
         """
         set number of layers to copy
         """
-        self.map_copy_num = int(round(float(str(self.map_copy_number_edit.text()))))
+        self.map_copy_num = int(
+            round(float(str(self.map_copy_number_edit.text())))
+        )
         self.map_copy_number_edit.setText("{0:.0f}".format(self.map_copy_num))
 
     def east_copy_east(self):
@@ -1601,9 +1701,9 @@ class ModelWidget(QtWidgets.QWidget):
         if copy_index > self.new_res_model.shape[1]:
             copy_index = self.new_res_model.shape[1]
 
-        self.new_res_model[:, self.east_index : copy_index, :] = self.new_res_model[
-            :, self.east_index, :
-        ].reshape(o_shape)
+        self.new_res_model[
+            :, self.east_index : copy_index, :
+        ] = self.new_res_model[:, self.east_index, :].reshape(o_shape)
 
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
@@ -1619,9 +1719,9 @@ class ModelWidget(QtWidgets.QWidget):
         if copy_index < 0:
             copy_index = 0
 
-        self.new_res_model[:, copy_index : self.east_index, :] = self.new_res_model[
-            :, self.east_index, :
-        ].reshape(o_shape)
+        self.new_res_model[
+            :, copy_index : self.east_index, :
+        ] = self.new_res_model[:, self.east_index, :].reshape(o_shape)
 
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
@@ -1631,7 +1731,9 @@ class ModelWidget(QtWidgets.QWidget):
         """
         set the number of layers to copy in the east direction
         """
-        self.east_copy_num = int(round(float(str(self.east_copy_number_edit.text()))))
+        self.east_copy_num = int(
+            round(float(str(self.east_copy_number_edit.text())))
+        )
         self.east_copy_number_edit.setText("{0:.0f}".format(self.east_copy_num))
 
     def north_copy_south(self):
@@ -1644,9 +1746,9 @@ class ModelWidget(QtWidgets.QWidget):
         if copy_index > self.new_res_model.shape[0]:
             copy_index = self.new_res_model.shape[0]
 
-        self.new_res_model[copy_index : self.north_index, :, :] = self.new_res_model[
-            self.north_index, :, :
-        ].reshape(o_shape)
+        self.new_res_model[
+            copy_index : self.north_index, :, :
+        ] = self.new_res_model[self.north_index, :, :].reshape(o_shape)
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
         self.redraw_north()
@@ -1661,9 +1763,9 @@ class ModelWidget(QtWidgets.QWidget):
         if copy_index > self.new_res_model.shape[0]:
             copy_index = self.new_res_model.shape[0]
 
-        self.new_res_model[self.north_index : copy_index :, :, :] = self.new_res_model[
-            self.north_index, :, :
-        ].reshape(o_shape)
+        self.new_res_model[
+            self.north_index : copy_index :, :, :
+        ] = self.new_res_model[self.north_index, :, :].reshape(o_shape)
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
         self.redraw_north()
@@ -1672,8 +1774,12 @@ class ModelWidget(QtWidgets.QWidget):
         """
         set the number of layers to copy in the north direction
         """
-        self.north_copy_num = int(round(float(str(self.north_copy_number_edit.text()))))
-        self.north_copy_number_edit.setText("{0:.0f}".format(self.north_copy_num))
+        self.north_copy_num = int(
+            round(float(str(self.north_copy_number_edit.text())))
+        )
+        self.north_copy_number_edit.setText(
+            "{0:.0f}".format(self.north_copy_num)
+        )
 
 
 # ==============================================================================
