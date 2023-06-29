@@ -9,7 +9,7 @@ Created on Fri Sep 02 12:20:42 2016
 # ==============================================================================
 # Imports
 # ==============================================================================
-import os
+from pathlib import Path
 import sys
 
 # from PyQt5 import QtCore, QtWidgets
@@ -116,17 +116,16 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         """
 
         fn_dialog = QtWidgets.QFileDialog()
-        save_fn = str(
-            fn_dialog.getSaveFileName(
-                caption="Choose ModEM model file", filter="*.rho"
-            )[0]
+        save_fn = Path(
+            str(
+                fn_dialog.getSaveFileName(
+                    caption="Choose ModEM model file", filter="*.rho"
+                )[0]
+            )
         )
 
-        sv_path = os.path.dirname(save_fn)
-        sv_basename = os.path.basename(save_fn)
-        self.model_widget.model_obj.write_model_file(
-            save_path=sv_path,
-            model_fn_basename=sv_basename,
+        self.model_widget.model_obj.write_modem_file(
+            model_fn=save_fn,
             res_model=self.model_widget.new_res_model,
         )
 
@@ -864,13 +863,13 @@ class ModelWidget(QtWidgets.QWidget):
 
         # make a rectangular selector
         self.map_selector = widgets.RectangleSelector(
-            self.map_ax, self.map_on_pick, drawtype="box", useblit=True
+            self.map_ax, self.map_on_pick, useblit=True
         )
         self.east_selector = widgets.RectangleSelector(
-            self.east_ax, self.east_on_pick, drawtype="box", useblit=True
+            self.east_ax, self.east_on_pick, useblit=True
         )
         self.north_selector = widgets.RectangleSelector(
-            self.north_ax, self.north_on_pick, drawtype="box", useblit=True
+            self.north_ax, self.north_on_pick, useblit=True
         )
 
     def undo(self):
@@ -1626,8 +1625,10 @@ class ModelWidget(QtWidgets.QWidget):
             self.new_res_model[:, :, zz] = self.mask_elevation_cells(
                 self.new_res_model[:, :, zz]
             )
-            self.new_res_model[:, :, zz] = signal.convolve(
-                self.new_res_model[:, :, zz], gauss, mode="same"
+            self.new_res_model[:, :, zz] = np.exp(
+                signal.convolve(
+                    np.log(self.new_res_model[:, :, zz]), gauss, mode="same"
+                )
             )
         ### need to elevation
         elev_index = np.where(self.model_obj.res_model > 1e10)
@@ -1664,7 +1665,7 @@ class ModelWidget(QtWidgets.QWidget):
 
         # self.new_res_model[np.where(self.model_obj.res_model > 1E10)] = 1E12
 
-        self.redraw_map()
+        self.redraw_plots()
 
     def map_copy_up(self):
         """
@@ -1680,7 +1681,7 @@ class ModelWidget(QtWidgets.QWidget):
         ] = self.new_res_model[:, :, self.map_index].reshape(o_shape)
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
-        self.redraw_map()
+        self.redraw_plots()
 
     def set_map_copy_num(self):
         """
@@ -1707,7 +1708,7 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
-        self.redraw_east()
+        self.redraw_plots()
 
     def east_copy_west(self):
         """
@@ -1725,7 +1726,7 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
-        self.redraw_east()
+        self.redraw_plots()
 
     def set_east_copy_num(self):
         """
@@ -1751,7 +1752,7 @@ class ModelWidget(QtWidgets.QWidget):
         ] = self.new_res_model[self.north_index, :, :].reshape(o_shape)
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
-        self.redraw_north()
+        self.redraw_plots()
 
     def north_copy_north(self):
         """
@@ -1768,7 +1769,7 @@ class ModelWidget(QtWidgets.QWidget):
         ] = self.new_res_model[self.north_index, :, :].reshape(o_shape)
         self.new_res_model[np.where(self.model_obj.res_model > 1e10)] = 1e12
 
-        self.redraw_north()
+        self.redraw_plots()
 
     def set_north_copy_num(self):
         """

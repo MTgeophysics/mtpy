@@ -847,3 +847,61 @@ class MT(TF, MTLocation):
             self.Z = z_obj
         if t_change:
             self.Tipper = t_obj
+
+    def add_white_noise(self, value, inplace=True):
+        """
+        Add white noise to the data, useful for synthetic tests.
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :param inplace: DESCRIPTION, defaults to True
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if value > 1:
+            value = value / 100.0
+
+        if not inplace:
+            new_mt_obj = self.clone_empty()
+
+        tf_shape = self._transfer_function.transfer_function.shape
+        noise_real = 1 + np.random.random(tf_shape) * value * (-1) ** (
+            np.random.randint(0, 3, tf_shape)
+        )
+        noise_imag = 1 + np.random.random(tf_shape) * value * (-1) ** (
+            np.random.randint(0, 3, tf_shape)
+        )
+
+        if inplace:
+            self._transfer_function[
+                "transfer_function"
+            ] = self._transfer_function.transfer_function.real * (
+                noise_real
+            ) + (
+                1j
+                * self._transfer_function.transfer_function.imag
+                * noise_imag
+            )
+
+            self._transfer_function["transfer_function_error"] = (
+                self._transfer_function.transfer_function_error + value
+            )
+
+        else:
+            new_mt_obj._transfer_function = self._transfer_function.copy()
+            new_mt_obj._transfer_function[
+                "transfer_function"
+            ] = self._transfer_function.transfer_function.real * (
+                noise_real
+            ) + (
+                1j
+                * self._transfer_function.transfer_function.imag
+                * noise_imag
+            )
+
+            self._transfer_function["transfer_function_error"] = (
+                self._transfer_function.transfer_function_error + value
+            )
+            return new_mt_obj

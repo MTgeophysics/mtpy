@@ -610,6 +610,36 @@ class MTData(OrderedDict, MTStations):
             ]
         )
 
+    def add_white_noise(self, value, inplace=True):
+        """
+        Add white noise to the data, useful for synthetic tests.
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :param inplace: DESCRIPTION, defaults to True
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if value > 1:
+            value = value / 100.0
+
+        if not inplace:
+            mt_list = []
+
+        for station, mt_obj in self.items():
+            if inplace:
+                mt_obj.add_white_noise(value)
+
+            else:
+                mt_list.append(mt_obj.add_white_noise(value, inplace=False))
+
+        if not inplace:
+            return_data = self.clone_empty()
+            return_data.add_station(mt_list)
+            return return_data
+
     def plot_mt_response(
         self, station_key=None, station_id=None, survey_id=None, **kwargs
     ):
