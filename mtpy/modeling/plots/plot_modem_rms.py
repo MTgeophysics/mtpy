@@ -78,12 +78,12 @@ class PlotRMS(PlotBaseMaps):
         self.label_dict = {
             "rms_z": "Z",
             "rms_t": "Tipper",
-            "rms_zxx": "Z_{xx}$",
-            "rms_zxy": "Z_{xy}$",
-            "rms_zyx": "Z_{yx}$",
-            "rms_zyy": "Z_{yy}$",
-            "rms_tzx": "T_{zx}$",
-            "rms_tzy": "T_{zy}$",
+            "rms_zxx": "$Z_{xx}$",
+            "rms_zxy": "$Z_{xy}$",
+            "rms_zyx": "$Z_{yx}$",
+            "rms_zyy": "$Z_{yy}$",
+            "rms_tzx": "$T_{zx}$",
+            "rms_tzy": "$T_{zy}$",
         }
 
         self.rms_cmap = "jet"
@@ -266,6 +266,93 @@ class PlotRMS(PlotBaseMaps):
             df = df.sort_index()
 
             return df
+
+    @property
+    def rms_array(self):
+        """
+        arrays for color maps
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        period_dict = dict(
+            [
+                (f"{ff:.4g}", ii)
+                for ii, ff in enumerate(self.dataframe.period.unique())
+            ]
+        )
+
+        station_dict = dict(
+            [(ss, ii) for ii, ss in enumerate(self.dataframe.station.unique())]
+        )
+
+        rms_array = np.zeros(
+            (
+                self.dataframe.station.unique().size,
+                self.dataframe.period.unique().size,
+                6,
+            )
+        )
+
+        for row in self.dataframe.itertuples():
+            p_index = period_dict[f"{row.period:.4g}"]
+            s_index = station_dict[row.station]
+
+            for ii, comp in enumerate(
+                ["zxx", "zxy", "zyx", "zyy", "tzx", "tzy"]
+            ):
+                rms_array[s_index, p_index, ii] = getattr(row, f"rms_{comp}")
+
+        return rms_array
+
+    def _plot_colormesh(self):
+        """
+        plot as color maps
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        x = self.dataframe.period.unique()
+        y = np.arange(self.dataframe.station.unique().size)
+        xg, yg = np.meshgrid(x, y)
+
+        rms_array = self.rms_array.copy()
+
+        fig = plt.figure()
+        fig.subplotpars.hspace = 0.15
+        fig.subplotpars.vspace = 0.15
+
+        ax_list = []
+        for ii in range(6):
+            if ii == 0:
+                ax = fig.add_subplot(3, 2, ii + 1)
+            else:
+                ax = fig.add_subplot(3, 2, ii + 1, sharex=ax_list[0])
+
+            ax.pcolormesh(
+                xg, yg, rms_array[:, :, ii], cmap=self.rms_cmap, vmin=0, vmax=5
+            )
+            ax.text(
+                x[0],
+                y[-3],
+                self.label_dict[self.comp_list[ii]],
+                ha="left",
+                va="bottom",
+                bbox={"facecolor": "w"},
+            )
+            ax.set_xscale("log")
+
+            ax_list.append(ax)
+
+        for ax in ax_list[-2:]:
+            ax.set_xlabel("Period (s)")
+
+        plt.show()
+        return fig, ax_list
 
     def print_suspect_stations(self, rms_threshold=4):
         """
