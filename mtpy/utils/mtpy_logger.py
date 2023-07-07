@@ -35,6 +35,7 @@ LOG_PATH = CONF_PATH.parent.parent.joinpath("logs")
 if not LOG_PATH.exists():
     LOG_PATH.mkdir()
 
+
 class EvictQueue(queue.Queue):
     def __init__(self, maxsize):
         self.discarded = 0
@@ -56,7 +57,9 @@ def speed_up_logs():
     rootLogger = logging.getLogger()
     log_que = EvictQueue(1000)
     queue_handler = logging.handlers.QueueHandler(log_que)
-    queue_listener = logging.handlers.QueueListener(log_que, *rootLogger.handlers)
+    queue_listener = logging.handlers.QueueListener(
+        log_que, *rootLogger.handlers
+    )
     queue_listener.start()
     rootLogger.handlers = [queue_handler]
 
@@ -78,6 +81,7 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
     """
 
     logger = logging.getLogger(logger_name)
+    logger.setLevel(LEVEL_DICT[level.lower()])
 
     # if there is a file name create file in logs directory
     if fn is not None:
@@ -104,13 +108,17 @@ def get_mtpy_logger(logger_name, fn=None, level="debug"):
         if fn.exists():
             exists = True
 
-        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2 ** 16, backupCount=2)
+        fn_handler = ConcurrentRotatingFileHandler(
+            fn, maxBytes=2**16, backupCount=2
+        )
         # fn_handler = logging.handlers.RotatingFileHandler(fn, maxBytes=2*21)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
-            logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
+            logger.info(
+                f"Logging file can be found {logger.handlers[-1].baseFilename}"
+            )
 
     # speed_up_logs()
     return logger
