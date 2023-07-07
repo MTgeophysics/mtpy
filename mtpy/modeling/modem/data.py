@@ -350,6 +350,8 @@ class Data:
                 f"Input must be a dataframe or MTDataFrame object not {type(df)}"
             )
 
+        self._mt_dataframe.dataframe.reset_index(drop=True, inplace=True)
+
     @property
     def model_parameters(self):
         params = {
@@ -673,8 +675,8 @@ class Data:
                     f"{error_percent}."
                 )
 
-                self.dataframe[f"{comp}_model_error"].iloc[
-                    list(find_zeros)
+                self.dataframe.loc[
+                    find_zeros.tolist(), f"{comp}_model_error"
                 ] = (
                     abs(self.dataframe[f"{comp}"].iloc[list(find_zeros)])
                     * error_percent
@@ -703,8 +705,8 @@ class Data:
                     f"{len(find_small)} times. Setting error as {comp} x "
                     f"{error_percent}."
                 )
-                self.dataframe[f"{comp}_model_error"].iloc[
-                    list(find_small)
+                self.dataframe.loc[
+                    find_small.tolist(), f"{comp}_model_error"
                 ] = (
                     abs(self.dataframe[f"{comp}"].iloc[list(find_small)])
                     * error_percent

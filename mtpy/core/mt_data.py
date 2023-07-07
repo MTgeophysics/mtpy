@@ -267,7 +267,9 @@ class MTData(OrderedDict, MTStations):
             for mt_obj in self.values()
         ]
 
-        return pd.concat(df_list)
+        df = pd.concat(df_list)
+        df.reset_index(drop=True, inplace=True)
+        return df
 
     def from_dataframe(self, df):
         """

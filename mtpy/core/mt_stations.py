@@ -474,7 +474,6 @@ class MTStations:
             # update elevation in station locations and data array, +1 m as
             # data elevation needs to be below the topography (as advised by Naser)
             mt_obj.model_elevation = topoval + 0.001
-            print(f"{mt_obj.station}: {mt_obj.model_elevation:.2f}")
 
         # BM: After applying topography, center point of grid becomes
         #  highest point of surface model.
