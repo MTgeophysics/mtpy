@@ -152,9 +152,7 @@ class MTData(OrderedDict, MTStations):
                 if not isinstance(interpolate_periods, np.ndarray):
                     interpolate_periods = np.array(interpolate_periods)
 
-                m = m.interpolate(
-                    1.0 / interpolate_periods, bounds_error=False
-                )
+                m = m.interpolate(1.0 / interpolate_periods, bounds_error=False)
 
             self.__setitem__(f"{m.survey}.{m.station}", m)
 
@@ -336,9 +334,7 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(
-                    new_mt_obj, compute_relative_location=False
-                )
+                mt_data.add_station(new_mt_obj, compute_relative_location=False)
 
         if not inplace:
             return mt_data
@@ -362,9 +358,7 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(
-                    rot_mt_obj, compute_relative_location=False
-                )
+                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
             else:
                 mt_obj.rotation_angle = rotation_angle
 
@@ -463,12 +457,8 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(
-                **self.z_model_error.error_parameters
-            )
-            mt_obj.compute_model_t_errors(
-                **self.t_model_error.error_parameters
-            )
+            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
+            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
 
     def estimate_starting_rho(self):
         """
@@ -539,7 +529,7 @@ class MTData(OrderedDict, MTStations):
 
         plt.show()
 
-    def to_modem_data(self, data_filename, **kwargs):
+    def to_modem_data(self, data_filename=None, **kwargs):
         """
         Create a modem data file
 
@@ -570,8 +560,10 @@ class MTData(OrderedDict, MTStations):
         )
         modem_data.z_model_error = self.z_model_error
         modem_data.t_model_error = self.t_model_error
+        if data_filename is not None:
+            modem_data.write_data_file(file_name=data_filename)
 
-        return modem_data.write_data_file(file_name=data_filename)
+        return modem_data
 
     def from_modem_data(self, data_filename, file_type="data", **kwargs):
         """
