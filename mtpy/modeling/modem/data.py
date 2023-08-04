@@ -288,7 +288,15 @@ class Data:
     def __str__(self):
         lines = ["ModEM Data Object:"]
         if self.dataframe is not None:
-            lines += [f"\tNumber of stations: {self.n_stations}"]
+            lines += [
+                f"\tNumber of impedance stations: {self.get_n_stations('impedance')}"
+            ]
+            lines += [
+                f"\tNumber of tipper stations: {self.get_n_stations('vertical')}"
+            ]
+            lines += [
+                f"\tNumber of phase tensor stations: {self.get_n_stations('phase_tensor')}"
+            ]
             lines += [f"\tNumber of periods:  {self.n_periods}"]
             lines += ["\tPeriod range (s):  "]
             lines += [f"\t\tMin: {self.period.min():.5g}"]
@@ -660,11 +668,9 @@ class Data:
 
         ## check for zeros in model error
         for comp in ["zxx", "zxy", "zyx", "zyy", "tzx", "tzy"]:
-            find_zeros = np.where(self.dataframe[f"{comp}_model_error"] == 0)[
-                0
-            ]
+            find_zeros = np.where(self.dataframe[f"{comp}_model_error"] == 0)[0]
             if find_zeros.shape[0] > 0:
-                if "z" in comp:
+                if comp in ["zxx", "zxy", "zyx", "zyy"]:
                     error_percent = self.z_model_error.error_value
                 elif "t" in comp:
                     error_percent = self.t_model_error.error_value
@@ -853,8 +859,7 @@ class Data:
                         self.wave_sign_tipper = hline[hline.find("(") + 1]
 
                 elif (
-                    len(hline[1:].strip().split()) >= 2
-                    and hline.count(".") > 0
+                    len(hline[1:].strip().split()) >= 2 and hline.count(".") > 0
                 ):
                     value_list = [
                         float(value) for value in hline[1:].strip().split()
@@ -1135,9 +1140,7 @@ class Data:
             lines = fid.readlines()
 
         def fix_line(line_list):
-            return (
-                " ".join("".join(line_list).replace("\n", "").split()) + "\n"
-            )
+            return " ".join("".join(line_list).replace("\n", "").split()) + "\n"
 
         h1 = fix_line(lines[0:n])
         h2 = fix_line(lines[n : 2 * n])
