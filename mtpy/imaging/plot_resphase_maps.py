@@ -129,7 +129,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
         if self.show_plot:
             self.plot()
 
@@ -171,7 +170,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
         for cc in ["xx", "xy", "yx", "yy", "det"]:
             if getattr(self, f"plot_{cc}"):
                 n += 1
-
         return n
 
     def _get_n_subplots(self):
@@ -200,13 +198,11 @@ class PlotResPhaseMaps(PlotBaseMaps):
                 if getattr(self, f"plot_{cc}"):
                     plot_num += 1
                     subplot_dict[f"res_{cc}"] = (nr, nc, plot_num)
-
         for cc in ["xx", "xy", "yx", "yy", "det"]:
             if self.plot_phase:
                 if getattr(self, f"plot_{cc}"):
                     plot_num += 1
                     subplot_dict[f"phase_{cc}"] = (nr, nc, plot_num)
-
         return subplot_dict
 
     def _get_subplots(self):
@@ -227,21 +223,18 @@ class PlotResPhaseMaps(PlotBaseMaps):
                     ax_dict[comp] = self.fig.add_subplot(
                         *subplot_dict[comp], aspect="equal"
                     )
-
             if self.plot_phase:
                 comp = f"phase_{cc}"
                 if getattr(self, f"plot_{cc}"):
                     ax_dict[comp] = self.fig.add_subplot(
                         *subplot_dict[comp], aspect="equal"
                     )
-
         share = [ax for comp, ax in ax_dict.items() if ax is not None]
 
         # share x and y across all subplots for easier zooming
         for ax in share[1:]:
             ax.sharex(share[0])
             ax.sharey(share[0])
-
         return ax_dict
 
     def _get_data_array(self):
@@ -270,7 +263,13 @@ class PlotResPhaseMaps(PlotBaseMaps):
         )
 
         for ii, tf in enumerate(self.mt_data.values()):
-            z = self._get_interpolated_z(tf)
+            try:
+                z = self._get_interpolated_z(tf)
+            except ValueError:
+                self.logger.warning(
+                    f"Could not interpolate period {self.plot_period} for station {tf.station}"
+                )
+                continue
             z_object = Z(z, frequency=[1.0 / self.plot_period])
 
             plot_array["station"][ii] = tf.station
@@ -278,7 +277,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
             plot_array["longitude"][ii] = tf.longitude
             if tf.elevation is not None:
                 plot_array["elevation"][ii] = tf.elevation * self.scale
-
             plot_array["res_xx"][ii] = z_object.res_xx[0]
             plot_array["res_xy"][ii] = z_object.res_xy[0]
             plot_array["res_yx"][ii] = z_object.res_yx[0]
@@ -291,7 +289,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
                 plot_array["phase_yx"][ii] = z_object.phase_yx[0] + 180
             plot_array["phase_yy"][ii] = z_object.phase_yy[0]
             plot_array["phase_det"][ii] = z_object.phase_det[0]
-
         return plot_array
 
     def _get_cmap(self, component):
@@ -302,7 +299,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
             cmap = self.res_cmap
         elif "phase" in component:
             cmap = self.phase_cmap
-
         return cmap
 
     def _get_colorbar(self, ax, im_mappable, component):
@@ -336,16 +332,10 @@ class PlotResPhaseMaps(PlotBaseMaps):
                 )
             ]
             cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
-
         elif "phase" in component:
             cb = plt.colorbar(im_mappable, ax=ax, shrink=0.6, extend="both")
-
-        cb.ax.tick_params(
-            axis="both", which="major", labelsize=self.font_size - 1
-        )
-        cb.ax.tick_params(
-            axis="both", which="minor", labelsize=self.font_size - 1
-        )
+        cb.ax.tick_params(axis="both", which="major", labelsize=self.font_size - 1)
+        cb.ax.tick_params(axis="both", which="minor", labelsize=self.font_size - 1)
 
         return cb
 
@@ -359,9 +349,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
         self._set_subplot_params()
 
         # make figure instance
-        self.fig = plt.figure(
-            self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi
-        )
+        self.fig = plt.figure(self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi)
 
         # clear the figure if there is already one up
         plt.clf()
@@ -408,7 +396,6 @@ class PlotResPhaseMaps(PlotBaseMaps):
                     extend="both",
                     cmap=cmap,
                 )
-
             self._get_colorbar(ax, im, comp)
 
             # show stations
@@ -440,6 +427,5 @@ class PlotResPhaseMaps(PlotBaseMaps):
             elif subplot_numbers[comp][0] == 2:
                 if subplot_numbers[comp][2] > (subplot_numbers[comp][1]):
                     ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
-
         # Plot title
         self.fig.suptitle(f"Plot Period: {self.plot_period:.5g} s", y=0.985)

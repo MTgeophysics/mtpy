@@ -33,7 +33,6 @@ try:
     has_cx = True
 except ModuleNotFoundError:
     has_cx = False
-
 from mtpy.imaging.mtplot_tools import PlotBaseMaps, add_raster
 from mtpy.core import Tipper
 from mtpy.imaging import mtcolors
@@ -96,7 +95,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self.cx_zoom = None
         if has_cx:
             self.cx_source = cx.providers.USGS.USTopo
-
         # station labels
         self.station_id = (0, 2)
         self.station_pad = 0.0005
@@ -106,7 +104,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
         # --> plot if desired ------------------------
         if self.show_plot:
             self.plot()
@@ -140,7 +137,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.tickstrfmt = "%.3f"
             self.y_label = "Latitude (deg)"
             self.x_label = "Longitude (deg)"
-
         elif self._map_scale == "m":
             self.xpad = 1000
             self.ypad = 1000
@@ -152,7 +148,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (m)"
             self.y_label = "Northing (m)"
-
         elif self._map_scale == "km":
             self.xpad = 1
             self.ypad = 1
@@ -164,7 +159,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.tickstrfmt = "%.0f"
             self.x_label = "Easting (km)"
             self.y_label = "Northing (km)"
-
         else:
             raise ValueError(f"map scale {map_scale} is not supported.")
 
@@ -197,13 +191,13 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             z_error = self._get_interpolated_z_error(tf)
 
             pt_obj = PhaseTensor(z=z, z_error=z_error)
-        except ValueError:
+        except ValueError as error:
             self.logger.warning(
                 f"Could not estimate phase tensor for {tf.station} at period "
                 f"{self.plot_period} s."
             )
+            self.logger.error(error)
             pt_obj = None
-
         new_t_obj = None
         if tf.has_tipper():
             try:
@@ -216,7 +210,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     f"Could not estimate tipper for {tf.station} at period "
                     f"{self.plot_period} s."
                 )
-
         return pt_obj, new_t_obj
 
     def _get_tick_format(self):
@@ -282,9 +275,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             plot_y = tf.latitude - self.reference_point[1]
         # if map scale is in meters easting and northing
         elif self.map_scale in ["m", "km"]:
-            tf.project_point_ll2utm(
-                epsg=self.map_epsg, utm_zone=self.map_utm_zone
-            )
+            tf.project_point_ll2utm(epsg=self.map_epsg, utm_zone=self.map_utm_zone)
 
             plot_x = tf.east - self.reference_point[0]
             plot_y = tf.north - self.reference_point[1]
@@ -293,7 +284,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 plot_y /= 1000.0
         else:
             raise NameError("mapscale not recognized")
-
         return plot_x, plot_y
 
     def _get_patch_ellipse(self, tf):
@@ -313,7 +303,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             return (0, 0)
         if pt_obj is None:
             has_ellipse = False
-
         if pt_obj is not None:
             plot_x, plot_y = self._get_location(tf)
 
@@ -336,7 +325,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 eheight = 0.0000001
                 ewidth = 0.0000001
                 has_ellipse = False
-
             else:
                 scaling = self.ellipse_size / phimax
                 eheight = phimin * scaling
@@ -363,7 +351,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 )
 
                 self.ax.add_artist(ellipd)
-
         has_tipper = self._get_tipper_patch(plot_x, plot_y, t_obj)
 
         if has_ellipse or has_tipper:
@@ -416,7 +403,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     )
                 else:
                     pass
-
             # plot imaginary tipper
             if "i" in self.plot_tipper:
                 if t_obj.mag_imag[0] <= self.arrow_threshold:
@@ -556,7 +542,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             ### add patches
             for patch in [e1, w1, w2, w3, w4]:
                 self.ax.add_patch(patch)
-
         has_tipper = self._get_tipper_patch(plot_x, plot_y, t_obj)
 
         if has_ellipse or has_tipper:
@@ -577,16 +562,13 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.ax2, kw = mcb.make_axes(
                 self.ax, orientation=self.cb_orientation, shrink=0.35
             )
-
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
-
         # make the colorbar
         if self.ellipse_cmap in list(mtcolors.cmapdict.keys()):
             cmap_input = mtcolors.cmapdict[self.ellipse_cmap]
         else:
             cmap_input = mtcolors.cm.get_cmap(self.ellipse_cmap)
-
         if "seg" in self.ellipse_cmap:
             norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
             self.cb = mcb.ColorbarBase(
@@ -605,7 +587,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 ),
                 orientation=self.cb_orientation,
             )
-
         # label the color bar accordingly
         self.cb.set_label(
             self.cb_label_dict[self.ellipse_colorby],
@@ -643,7 +624,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             x3_pos = (pos.x0, pos.y0 - 0.175, pos.width, pos.height)
 
             self.ax3 = self.fig.add_axes(x3_pos)
-
         elif self.cb_orientation == "horizontal":
             self.ax2, kw = mcb.make_axes(
                 self.ax,
@@ -655,7 +635,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             x3_pos = (pos.x0 + 0.175, pos.y0, pos.width, pos.height)
 
             self.ax3 = self.fig.add_axes(x3_pos)
-
         # make the colorbar
         for key, ax in zip(["ellipse", "skew"], [self.ax2, self.ax3]):
             dict_key = f"{key}_cmap"
@@ -667,12 +646,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     cmap_input = mtcolors.cmapdict[cmap]
             else:
                 cmap_input = mtcolors.cm.get_cmap(cmap)
-
             if "seg" in cmap and "ellipse" in key:
 
-                norms = colors.BoundaryNorm(
-                    self.ellipse_cmap_bounds, cmap_input.N
-                )
+                norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
                 self.cb = mcb.ColorbarBase(
                     ax,
                     cmap=cmap_input,
@@ -680,11 +656,8 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     orientation=self.cb_orientation,
                     ticks=self.ellipse_cmap_bounds,
                 )
-
             elif "skew" in key:
-                norms = colors.BoundaryNorm(
-                    self.skew_cmap_bounds, cmap_input.N
-                )
+                norms = colors.BoundaryNorm(self.skew_cmap_bounds, cmap_input.N)
                 cb = mcb.ColorbarBase(
                     ax,
                     cmap=cmap_input,
@@ -692,7 +665,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     orientation=self.cb_orientation,
                     ticks=self.skew_cmap_bounds,
                 )
-
             else:
                 cb = mcb.ColorbarBase(
                     ax,
@@ -702,13 +674,11 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     ),
                     orientation=self.cb_orientation,
                 )
-
             # label the color bar accordingly
             if key == "ellipse":
                 label = "Phase (deg)"
             else:
                 label = "Skew (deg)"
-
             cb.set_label(
                 label,
                 fontdict={"size": self.font_size, "weight": "bold"},
@@ -747,9 +717,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self._set_subplot_params()
 
         # make figure instance
-        self.fig = plt.figure(
-            self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi
-        )
+        self.fig = plt.figure(self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi)
 
         # clear the figure if there is already one up
         plt.clf()
@@ -783,7 +751,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     verticalalignment="baseline",
                     fontdict=self.station_font_dict,
                 )
-
         self._set_axis_labels()
         # --> set plot limits
         #    need to exclude zero values from the calculation of min/max!!!!
@@ -806,7 +773,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.raster_ax, self.raster_cb = add_raster(
                 self.ax, raster_file, **raster_kwargs
             )
-
         else:
             if has_cx:
                 try:
@@ -818,10 +784,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         **cx_kwargs,
                     )
                 except Exception as error:
-                    self.logger.warning(
-                        f"Could not add base map because {error}"
-                    )
-
+                    self.logger.warning(f"Could not add base map because {error}")
         # --> set title in period or frequency
         titlefreq = "{0:.5g} (s)".format(self.plot_period)
 
@@ -837,11 +800,8 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 fontsize=self.font_size + 2,
                 fontweight="bold",
             )
-
         # make a grid with color lines
-        self.ax.grid(
-            True, alpha=0.3, which="major", color=(0.5, 0.5, 0.5), lw=0.75
-        )
+        self.ax.grid(True, alpha=0.3, which="major", color=(0.5, 0.5, 0.5), lw=0.75)
         self.ax.grid(
             True,
             alpha=0.3,
@@ -852,7 +812,6 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         )
         if self.minorticks_on:
             plt.minorticks_on()  # turn on minor ticks automatically
-
         self.ax.set_axisbelow(True)
 
         if self.pt_type == "ellipses":
