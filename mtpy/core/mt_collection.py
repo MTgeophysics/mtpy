@@ -293,7 +293,9 @@ class MTCollection:
                 ]
                 find_df = find_df.iloc[0]
             except IndexError:
-                raise ValueError(f"Could not find {survey} in collection.")
+                raise ValueError(
+                    f"Could not find {survey}.{tf_id} in collection."
+                )
 
         ref = find_df.hdf5_reference
 
@@ -355,14 +357,12 @@ class MTCollection:
         """
 
         if bounding_box is not None:
-            tf_df = self.apply_bbox(*bounding_box)
-        else:
-            tf_df = self.dataframe
+            self.apply_bbox(*bounding_box)
 
         mt_data = MTData()
 
-        for row in tf_df.itertuples():
-            tf = self.get_tf(row.station, survey=row.survey)
+        for row in self.working_dataframe.itertuples():
+            tf = self.get_tf(row.tf_id, survey=row.survey)
 
             mt_data.add_station(tf, compute_relative_location=False)
 
@@ -567,11 +567,7 @@ class MTCollection:
                         ]
                     )
                     avg_t = np.array(
-                        [
-                            m.tipper.data
-                            for m in m_list_interp
-                            if m.has_tipper()
-                        ]
+                        [m.tipper.data for m in m_list_interp if m.has_tipper()]
                     )
                     avg_t_err = np.array(
                         [
@@ -622,9 +618,7 @@ class MTCollection:
                             edi_obj = mt_avg.write(
                                 save_dir=self.working_directory
                             )
-                            self.logger.info(
-                                f"wrote average file {edi_obj.fn}"
-                            )
+                            self.logger.info(f"wrote average file {edi_obj.fn}")
                         new_fn_list.append(edi_obj.fn)
                         count += 1
                     except Exception as error:
@@ -768,9 +762,7 @@ class MTCollection:
             return PlotResidualPTMaps(mt_data_01, mt_data_02, **kwargs)
 
         if plot_type in ["pseudosection", "ps"]:
-            return PlotResidualPTPseudoSection(
-                mt_data_01, mt_data_02, **kwargs
-            )
+            return PlotResidualPTPseudoSection(mt_data_01, mt_data_02, **kwargs)
 
     def plot_penetration_depth_1d(self, tf_id, survey=None, **kwargs):
         """
