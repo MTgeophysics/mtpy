@@ -320,7 +320,7 @@ class PlotSlices(object):
             Compute Euclidean distance
             """
 
-            return ((P1[0] - P2[0])**2 + (P1[1] - P2[1])**2) ** 0.5
+            return np.sqrt(np.power(P1[0] - P2[0], 2.) + np.power(P1[1] - P2[1], 2.))
         # end func
 
         def optimized_path(coords, start=None):
@@ -389,7 +389,7 @@ class PlotSlices(object):
 
             dx = xx[:-1] - xx[1:]
             dy = yy[:-1] - yy[1:]
-            dst = np.cumsum(np.sqrt(dx ** 2 + dy ** 2))
+            dst = np.cumsum(np.sqrt(np.power(dx, 2.) + np.power(dy, 2.)))
             dst = np.insert(dst, 0, 0)
 
             xio = interp1d(dst, xx)
