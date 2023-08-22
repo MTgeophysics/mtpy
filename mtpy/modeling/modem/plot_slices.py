@@ -271,7 +271,7 @@ class PlotSlices(object):
 
     def get_slice(self, option='STA', coords=[], nsteps=-1, nn=1, p=4,
                   absolute_query_locations = False,
-                  extrapolate=True):
+                  extrapolate=True, reorder_coordinates=False):
         """
 
         :param option: can be either of 'STA', 'XY' or 'XYZ'. For 'STA' or 'XY', a vertical
@@ -304,6 +304,8 @@ class PlotSlices(object):
         :param extrapolate: Extrapolates values (default), which can be particularly useful
                             for extracting values at nodes, since the field values are given
                             for cell-centres.
+        :param reorder_coordinates: attempts to reorder coordinates (when option is 'STA' or 'XY')
+                                    to form a continuous line.
         :return: 1: when option is 'STA' or 'XY'
                     gd, gz, gv : where gd, gz and gv are 2D grids of distance (along profile),
                     depth and interpolated values, respectively. The shape of the 2D grids
@@ -366,7 +368,6 @@ class PlotSlices(object):
         if(option == 'STA' or option == 'XY'):
             if(nsteps > -1): assert nsteps > 2, 'Must have more than 2 grid points in the ' \
                                               'horizontal direction. Aborting..'
-
             x = None
             y = None
             d = None
@@ -381,11 +382,15 @@ class PlotSlices(object):
 
                 if(nsteps==-1): nsteps = len(x)
             # end if
-
-            xy = [[a, b] for a, b in zip(x,y)]
-            ordered_xy = np.array(optimized_path(xy))
-            xx = ordered_xy[:, 0]
-            yy = ordered_xy[:, 1]
+            
+            xx = x
+            yy = y
+            if(reorder_coordinates):
+                xy = [[a, b] for a, b in zip(x,y)]
+                ordered_xy = np.array(optimized_path(xy))
+                xx = ordered_xy[:, 0]
+                yy = ordered_xy[:, 1]
+            # end if
 
             dx = xx[:-1] - xx[1:]
             dy = yy[:-1] - yy[1:]
