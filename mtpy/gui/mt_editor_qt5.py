@@ -857,20 +857,15 @@ class PlotWidget(QtWidgets.QWidget):
 
         Always rotate original data otherwiswe can get messy
         """
-        self.rotate_z_angle = float(str(self.rotate_angle_edit.text()))
-        self.rotate_angle_z_edit.setText("{0:.4f}".format(self.rotate_angle))
-
-        self.rotate_tip_angle = float(self.rotate_z_angle)
-        self.rotate_angle_t_edit.setText(
-            "{0:.4f}".format(self.rotate_tip_angle)
-        )
+        self.rotate_angle = float(str(self.rotate_angle_edit.text()))
+        self.rotate_angle_edit.setText("{0:.4f}".format(self.rotate_angle))
 
     def rotate_data_apply(self):
         """
         rotate both Z and tipper original data by the input angles
         """
 
-        self.mt_obj = self._mt_obj.rotate(self.rotate_angle)
+        self.mt_obj = self._mt_obj.rotate(self.rotate_angle, inplace=False)
 
         if self._edited_ss == True:
             self.static_shift_apply()

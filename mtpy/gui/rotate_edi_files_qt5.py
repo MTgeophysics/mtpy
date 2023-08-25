@@ -11,7 +11,7 @@ Gui to rotate edi files
 # Imports
 # ==============================================================================
 # standard packages
-import os
+from pathlib import Path
 import sys
 
 # 3rd party packages
@@ -21,20 +21,18 @@ except ImportError:
     raise ImportError("This version needs PyQt5")
 
 from mtpy.gui.my_stream import MyStream
-import mtpy.core.mt as mt
+from mtpy import MT
 
 # ==============================================================================
 class Rotate_EDI_Files(QtWidgets.QWidget):
-    """
-    
-    """
+    """ """
 
     def __init__(self):
         super(Rotate_EDI_Files, self).__init__()
 
         self.edi_list = None
         self.rotation_angle = 0
-        self.cwd = os.getcwd()
+        self.cwd = Path().cwd()
         self.save_dir = None
 
         self.setup_ui()
@@ -57,7 +55,9 @@ class Rotate_EDI_Files(QtWidgets.QWidget):
 
         self.rotation_label = QtWidgets.QLabel("Rotation Angle (deg)")
         self.rotation_help = QtWidgets.QLabel("Angle is assuming N=0, E=90")
-        self.rotation_edit = QtWidgets.QLineEdit("{0:.2f}".format(self.rotation_angle))
+        self.rotation_edit = QtWidgets.QLineEdit(
+            "{0:.2f}".format(self.rotation_angle)
+        )
         self.rotation_edit.editingFinished.connect(self.set_rotation_angle)
 
         self.rotate_button = QtWidgets.QPushButton("Rotate")
@@ -102,64 +102,67 @@ class Rotate_EDI_Files(QtWidgets.QWidget):
         self.setLayout(final_layout)
 
     def make_save_path(self):
-        rot_str = "Rotated_{0:.0f}_deg".format(self.rotation_angle)
-        return os.path.join(self.cwd, rot_str.replace("-", "m"))
+        rot_str = f"Rotated_{self.rotation_angle:.0f}_deg"
+        return self.cwd.joinpath(rot_str.replace("-", "m"))
 
     def get_cwd(self):
         dir_dialog = QtWidgets.QFileDialog()
-        self.cwd = os.path.abspath(
-            str(dir_dialog.getExistingDirectory(caption="Choose EDI Directory"))
+        self.cwd = Path(
+            str(
+                dir_dialog.getExistingDirectory(caption="Choose EDI Directory")
+            )
         )
-        self.cwd_edit.setText(self.cwd)
+        self.cwd_edit.setText(self.cwd.as_posix())
         self.set_edi_list()
         self.save_dir = self.make_save_path()
-        self.save_dir_edit.setText(self.save_dir)
+        self.save_dir_edit.setText(self.save_dir.as_posix())
 
     def set_cwd(self):
-        self.cwd = os.path.abspath(str(self.cwd_edit.text()))
-        if not os.path.exists(self.cwd):
-            print(("Path does not exist {0}".format(self.cwd)))
+        self.cwd = Path(str(self.cwd_edit.text()))
+        if not self.cwd.exists():
+            print(f"Path does not exist {self.cwd}")
 
     def get_save_path(self):
         dir_dialog = QtWidgets.QFileDialog()
-        self.save_dir = os.path.abspath(
-            str(dir_dialog.getExistingDirectory(caption="Choose EDI Save Directory"))
+        self.save_dir = Path(
+            str(
+                dir_dialog.getExistingDirectory(
+                    caption="Choose EDI Save Directory"
+                )
+            )
         )
-        self.save_dir_edit.setText(self.save_dir)
-        if not os.path.exists(self.save_dir):
-            os.mkdir(self.save_dir)
+        self.save_dir_edit.setText(self.save_dir.as_posix())
+        if not self.save_dir.exists():
+            self.save_dir.mkdir()
 
     def set_save_path(self):
-        self.save_dir = os.path.abspath(str(self.save_dir_edit.text()))
-        if not os.path.exists(self.save_dir):
-            os.mkdir(self.save_dir)
+        self.save_dir = Path(str(self.save_dir_edit.text()))
+        if not self.save_dir.exists():
+            self.save_dir.mkdir()
 
     def set_edi_list(self):
         self.edi_list_box.clear()
-        self.edi_list = [
-            edi[:-4] for edi in os.listdir(self.cwd) if edi.endswith(".edi")
-        ]
+        self.edi_list = [edi.stem for edi in self.cwd.glob("*.edi")]
         self.edi_list_box.addItems(self.edi_list)
 
     def set_rotation_angle(self):
         self.rotation_angle = float(str(self.rotation_edit.text()))
-        self.rotation_edit.setText("{0:.2f}".format(self.rotation_angle))
+        self.rotation_edit.setText(f"{self.rotation_angle:.2f}")
         self.save_dir = self.make_save_path()
-        self.save_dir_edit.setText(self.save_dir)
+        self.save_dir_edit.setText(self.save_dir.as_posix())
 
     def rotate_edi_files(self):
-        if not os.path.exists(self.save_dir):
-            os.mkdir(self.save_dir)
-            print("Made directory {0}".format(self.save_dir))
+        if not self.save_dir.exists():
+            self.save_dir.mkdir()
+            print(f"Made directory {self.save_dir}")
 
         for edi in self.edi_list:
             print("=" * 40)
-            edi_fn = os.path.join(self.cwd, "{0}.edi".format(edi))
-            mt_obj = mt.MT(fn=edi_fn)
-            mt_obj.rotation_angle = self.rotation_angle
-            mt_obj.write_mt_file(
-                save_dir=self.save_dir, fn_basename="{0}.edi".format(edi)
-            )
+            edi_fn = self.cwd.joinpath(f"{edi}.edi")
+            mt_obj = MT(fn=edi_fn)
+            mt_obj.read()
+            mt_obj.rotate(self.rotation_angle, inplace=True)
+            mt_obj.write(fn=self.save_dir.joinpath(f"{edi}.edi"))
 
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
