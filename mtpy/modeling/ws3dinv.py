@@ -267,7 +267,7 @@ class WSData(object):
 
         #make a structured array to keep things in for convenience
         z_shape = (n_periods, 2, 2)
-        data_dtype = [('station', '|S10'),
+        data_dtype = [('station', '|U10'),
                       ('east', np.float),
                       ('north', np.float),
                       ('z_data', (np.complex, z_shape)),
@@ -518,7 +518,7 @@ class WSData(object):
 
         self.save_path = os.path.dirname(self.data_fn)
 
-        dfid = file(self.data_fn, 'r')
+        dfid = open(self.data_fn, 'r')
         dlines = dfid.readlines()
 
         #get size number of stations, number of frequencies,
@@ -530,7 +530,7 @@ class WSData(object):
         self.n_z = nz
         #make a structured array to keep things in for convenience
         z_shape = (n_periods, 2, 2)
-        data_dtype = [('station', '|S10'),
+        data_dtype = [('station', '|U10'),
                       ('east', np.float),
                       ('north', np.float),
                       ('z_data', (np.complex, z_shape)),
@@ -614,6 +614,7 @@ class WSData(object):
 
                 #print '-'*20+dkey+'-'*20
                 per += 1
+                
 
             else:
                 if dkey == 'z_err_map':
@@ -624,10 +625,21 @@ class WSData(object):
                                                         zline[6]-1j*zline[7]]])
                 else:
                     zline = np.array(dl.strip().split(), dtype=np.float)*zconv
-                    self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
-                                                        zline[2]-1j*zline[3]],
-                                                        [zline[4]-1j*zline[5],
-                                                        zline[6]-1j*zline[7]]])
+                    if dkey == 'z_data':
+                        zmult = -1
+                    elif dkey == 'z_data_err':
+                        zmult = 1
+                        
+                    self.data[st][dkey][per-1,:] = np.array([[zline[0] + zmult*1j*zline[1],
+                                                              zline[2] + zmult*1j*zline[3]],
+                                                        [zline[4] + zmult*1j*zline[5],
+                                                        zline[6] + zmult*1j*zline[7]]])  
+                    # zline = np.array(dl.strip().split(), dtype=np.float)
+                    # self.data[st][dkey][per-1,:] = np.array([[zline[0]+1j*zline[1],
+                    #                                     zline[2]+1j*zline[3]],
+                    #                                     [zline[4]+1j*zline[5],
+                    #                                     zline[6]+1j*zline[7]]])
+
                 st += 1
 
 
@@ -642,7 +654,7 @@ class WSData(object):
 
         #make station_locations structure array
         self.station_locations = np.zeros(len(self.station_east),
-                                          dtype=[('station','|S10'),
+                                          dtype=[('station','|U10'),
                                                  ('east', np.float),
                                                  ('north', np.float),
                                                  ('east_c', np.float),
@@ -1018,7 +1030,7 @@ class WSMesh(object):
 
             #make a structured array to put station location information into
             self.station_locations = np.zeros(n_stations,
-                                              dtype=[('station','|S10'),
+                                              dtype=[('station','|U10'),
                                                      ('east', np.float),
                                                      ('north', np.float),
                                                      ('east_c', np.float),
@@ -1681,24 +1693,30 @@ class WSMesh(object):
                 count_z += 1
             line_index += 1
 
-        #put the grids into coordinates relative to the center of the grid
-        self.grid_north = self.nodes_north.copy()
-        self.grid_north[:int(n_north/2)] =\
-                        -np.array([self.nodes_north[ii:int(n_north/2)].sum()
-                                   for ii in range(int(n_north/2))])
-        self.grid_north[int(n_north/2):] = \
-                        np.array([self.nodes_north[int(n_north/2):ii+1].sum()
-                                 for ii in range(int(n_north/2), n_north)])-\
-                                 self.nodes_north[int(n_north/2)]
+        # #put the grids into coordinates relative to the center of the grid
+        # self.grid_north = self.nodes_north.copy()
+        # self.grid_north[:int(n_north/2)] =\
+        #                 -np.array([self.nodes_north[ii:int(n_north/2)].sum()
+        #                            for ii in range(int(n_north/2))])
+        # self.grid_north[int(n_north/2):] = \
+        #                 np.array([self.nodes_north[int(n_north/2):ii+1].sum()
+        #                          for ii in range(int(n_north/2), n_north)])-\
+        #                          self.nodes_north[int(n_north/2)]
 
-        self.grid_east = self.nodes_east.copy()
-        self.grid_east[:int(n_east/2)] = \
-                            -np.array([self.nodes_east[ii:int(n_east/2)].sum()
-                                       for ii in range(int(n_east/2))])
-        self.grid_east[int(n_east/2):] = \
-                            np.array([self.nodes_east[int(n_east/2):ii+1].sum()
-                                     for ii in range(int(n_east/2),n_east)])-\
-                                     self.nodes_east[int(n_east/2)]
+        # self.grid_east = self.nodes_east.copy()
+        # self.grid_east[:int(n_east/2)] = \
+        #                     -np.array([self.nodes_east[ii:int(n_east/2)].sum()
+        #                                for ii in range(int(n_east/2))])
+        # self.grid_east[int(n_east/2):] = \
+        #                     np.array([self.nodes_east[int(n_east/2):ii+1].sum()
+        #                              for ii in range(int(n_east/2),n_east)])-\
+        #                              self.nodes_east[int(n_east/2)]
+
+        self.grid_north = np.insert(np.cumsum(self.nodes_north),0,0)
+        self.grid_north -= (self.grid_north[-1]/2.)
+        self.grid_east = np.insert(np.cumsum(self.nodes_east),0,0)
+        self.grid_east -= (self.grid_east[-1]/2.)
+
 
         self.grid_z = np.array([self.nodes_z[:ii+1].sum() for ii in range(n_z)])
 
@@ -1862,26 +1880,32 @@ class WSModel(object):
                 count_z += 1
             line_index += 1
 
-        #put the grids into coordinates relative to the center of the grid
-        self.grid_north = self.nodes_north.copy()
-        self.grid_north[:int(n_north/2)] =\
-                        -np.array([self.nodes_north[ii:int(n_north/2)].sum()
-                                   for ii in range(int(n_north/2))])
-        self.grid_north[int(n_north/2):] = \
-                        np.array([self.nodes_north[int(n_north/2):ii+1].sum()
-                                 for ii in range(int(n_north/2), n_north)])-\
-                                 self.nodes_north[int(n_north/2)]
+        self.grid_north = np.insert(np.cumsum(self.nodes_north),0,0)
+        self.grid_north -= (self.nodes_north[-1]/2.)
+        self.grid_east = np.insert(np.cumsum(self.nodes_east),0,0)
+        self.grid_east -= (self.nodes_east[-1]/2.)
 
-        self.grid_east = self.nodes_east.copy()
-        self.grid_east[:int(n_east/2)] = \
-                            -np.array([self.nodes_east[ii:int(n_east/2)].sum()
-                                       for ii in range(int(n_east/2))])
-        self.grid_east[int(n_east/2):] = \
-                            np.array([self.nodes_east[int(n_east/2):ii+1].sum()
-                                     for ii in range(int(n_east/2),n_east)])-\
-                                     self.nodes_east[int(n_east/2)]
 
-        self.grid_z = np.array([self.nodes_z[:ii+1].sum() for ii in range(n_z)])
+        # # put the grids into coordinates relative to the center of the grid
+        # self.grid_north = self.nodes_north.copy()
+        # self.grid_north[:int(n_north/2)] =\
+        #                 -np.array([self.nodes_north[ii:int(n_north/2)].sum()
+        #                             for ii in range(int(n_north/2))])
+        # self.grid_north[int(n_north/2):] = \
+        #                 np.array([self.nodes_north[int(n_north/2):ii+1].sum()
+        #                           for ii in range(int(n_north/2), n_north)])-\
+        #                           self.nodes_north[int(n_north/2)]
+
+        # self.grid_east = self.nodes_east.copy()
+        # self.grid_east[:int(n_east/2)] = \
+        #                     -np.array([self.nodes_east[ii:int(n_east/2)].sum()
+        #                                 for ii in range(int(n_east/2))])
+        # self.grid_east[int(n_east/2):] = \
+        #                     np.array([self.nodes_east[int(n_east/2):ii+1].sum()
+        #                               for ii in range(int(n_east/2),n_east)])-\
+        #                               self.nodes_east[int(n_east/2)]
+
+        # self.grid_z = np.array([self.nodes_z[:ii+1].sum() for ii in range(n_z)])
 
         #--> get resistivity values
         #need to read in the north backwards so that the first index is
@@ -2750,7 +2774,7 @@ class WSResponse(object):
         if not os.path.isfile(self.resp_fn):
             raise WSInputError('Cannot find {0}, check path'.format(self.resp_fn))
 
-        dfid = file(self.resp_fn, 'r')
+        dfid = open(self.resp_fn, 'r')
         dlines = dfid.readlines()
 
         #get size number of stations, number of frequencies,
@@ -2762,7 +2786,7 @@ class WSResponse(object):
         self.n_z = nz
         #make a structured array to keep things in for convenience
         z_shape = (n_periods, 2, 2)
-        resp_dtype = [('station', '|S10'),
+        resp_dtype = [('station', '|U10'),
                       ('east', np.float),
                       ('north', np.float),
                       ('z_resp', (np.complex, z_shape)),
@@ -2819,7 +2843,10 @@ class WSResponse(object):
 
         #get resp
         per = 0
+        newline = True
         for ii, dl in enumerate(dlines[findlist[2]:]):
+            if newline:
+                zline_alldata = []
             if dl.lower().find('period') > 0:
                 st = 0
                 if dl.lower().find('data') == 0:
@@ -2830,12 +2857,19 @@ class WSResponse(object):
             elif dl.lower().find('#iteration') >= 0:
                 break
             else:
-                zline = np.array(dl.strip().split(),dtype=np.float)*self._zconv
-                self.resp[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
-                                                         zline[2]-1j*zline[3]],
-                                                         [zline[4]-1j*zline[5],
-                                                         zline[6]-1j*zline[7]]])
-                st += 1
+                zline_alldata += dl.strip().split()
+                if len(zline_alldata) == self.n_z:
+                    newline = True
+                    zline = np.array(zline_alldata,dtype=np.float)*self._zconv
+                    
+                    
+                    self.resp[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                             zline[2]-1j*zline[3]],
+                                                             [zline[4]-1j*zline[5],
+                                                             zline[6]-1j*zline[7]]])
+                    st += 1
+                else:
+                    newline = False
 
         self.station_east = self.resp['east']
         self.station_north = self.resp['north']
