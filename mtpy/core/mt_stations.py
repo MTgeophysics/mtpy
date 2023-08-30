@@ -524,8 +524,9 @@ class MTStations:
             use_columns.remove("geometry")
         sdf.to_csv(csv_fn, index=False, columns=use_columns)
 
-    def write_vtk_station_file(
+    def to_vtk(
         self,
+        vtk_fn=None,
         vtk_save_path=None,
         vtk_fn_basename="ModEM_stations",
         geographic=False,
@@ -584,9 +585,9 @@ class MTStations:
         elif isinstance(units, (int, float)):
             scale = units
 
-        if vtk_save_path is None:
-            vtk_fn = self.save_path.joinpath(vtk_fn_basename)
-        else:
+        if vtk_fn is None:
+            if vtk_save_path is None:
+                raise ValueError("Need to input vtk_save_path")
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
 
         sdf = self.station_locations.copy()
@@ -595,32 +596,36 @@ class MTStations:
             if coordinate_system == "nez+":
                 vtk_x = (sdf.model_north + shift_north) * scale
                 vtk_y = (sdf.model_east + shift_east) * scale
-                vtk_z = (sdf.model_elev + shift_elev) * scale
-                extra = (sdf.model_elev + shift_elev) * scale
+                vtk_z = (sdf.model_elevation + shift_elev) * scale
+                extra = (sdf.model_elevation + shift_elev) * scale
             elif coordinate_system == "enz-":
                 vtk_x = (sdf.model_north + shift_north) * scale
                 vtk_y = (sdf.model_east + shift_east) * scale
-                vtk_z = (sdf.model_elev + shift_elev) * scale
-                extra = (sdf.model_elev + shift_elev) * scale
+                vtk_z = (sdf.model_elevation + shift_elev) * scale
+                extra = (sdf.model_elevation + shift_elev) * scale
 
         else:
             if coordinate_system == "nez+":
                 vtk_y = (sdf.north + shift_north) * scale
                 vtk_x = (sdf.east + shift_east) * scale
-                vtk_z = -1 * (sdf.elev + shift_elev) * scale
-                extra = -1 * (sdf.elev + shift_elev)
+                vtk_z = -1 * (sdf.elevation + shift_elev) * scale
+                extra = -1 * (sdf.elevation + shift_elev)
             elif coordinate_system == "enz-":
                 vtk_y = (sdf.north + shift_north) * scale
                 vtk_x = (sdf.east + shift_east) * scale
-                vtk_z = -1 * (sdf.elev + shift_elev) * scale
-                extra = -1 * (sdf.elev + shift_elev)
+                vtk_z = -1 * (sdf.elevation + shift_elev) * scale
+                extra = -1 * (sdf.elevation + shift_elev)
 
         # write file
         pointsToVTK(
-            vtk_fn.as_posix(), vtk_x, vtk_y, vtk_z, data={"elevation": extra}
+            vtk_fn.as_posix(),
+            vtk_x.to_numpy(),
+            vtk_y.to_numpy(),
+            vtk_z.to_numpy(),
+            data={"elevation": extra.to_numpy()},
         )
 
-        self.logger.info("Wrote station VTK file to {0}".format(vtk_fn))
+        self.logger.info(f"Wrote station VTK file to {vtk_fn}.vtu")
         return vtk_fn
 
     def generate_profile(self, units="deg"):

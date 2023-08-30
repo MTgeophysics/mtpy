@@ -24,6 +24,7 @@ import calendar
 import time
 import fnmatch
 import shutil
+from pathlib import Path
 
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
@@ -49,6 +50,37 @@ lo_headerelements = [
 ]
 
 # =================================================================
+
+
+def get_filename(fn, save_path, fn_basename):
+    """
+    Get file name from inputs
+
+    :param fn: DESCRIPTION
+    :type fn: TYPE
+    :param save_path: DESCRIPTION
+    :type save_path: TYPE
+    :param fn_basename: DESCRIPTION
+    :type fn_basename: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    if fn is not None:
+        return Path(fn)
+
+    else:
+        if save_path is None:
+            raise ValueError("Must input save_path")
+        else:
+            save_path = Path(save_path)
+            if not save_path.exists():
+                raise IOError(f"Could not find directory {save_path}")
+            if fn_basename is None:
+                raise ValueError("Must input fn_basename")
+            else:
+                return save_path.joinpath(fn_basename)
 
 
 def read_surface_ascii(ascii_fn):
@@ -650,7 +682,9 @@ def EDL_make_Nhour_files(
                 # append current data
                 # if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    block_data[arrayindex : arrayindex + len(data_in)] = data_in
+                    block_data[
+                        arrayindex : arrayindex + len(data_in)
+                    ] = data_in
                     # outfile_data.extend(data_in.tolist())
                 # otherwise assuming that the first column is time, so just take the second one
                 else:
@@ -1603,7 +1637,8 @@ def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
                         (header_y["station"].upper() == sta.upper())
                         and (header_y["channel"].lower()[0] == sensor)
                         and (
-                            float(header_y["t_min"]) == float(header_x["t_min"])
+                            float(header_y["t_min"])
+                            == float(header_x["t_min"])
                         )
                     ):
                         if header_y["channel"].lower()[1] == "y":
@@ -1669,6 +1704,8 @@ def reorient_files(lo_files, configfile, lo_stations=None, outdir=None):
                 if z_file is not None:
                     shutil.copyfile(z_file, z_outfn)
                     written_files.append(z_outfn)
-                print("\tSuccessfullly written files {0}".format(written_files))
+                print(
+                    "\tSuccessfullly written files {0}".format(written_files)
+                )
 
     return 0
