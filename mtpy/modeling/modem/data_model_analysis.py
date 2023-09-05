@@ -14,11 +14,14 @@ Developer:      fei.zhang@ga.gov.au
 
 LastUpdate:     15/09/2017   FZ
 """
-
+# =============================================================================
+# Imports
+# =============================================================================
 import csv
 import glob
 import os
 import sys
+from loguru import logger
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,9 +29,8 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from mtpy.modeling.modem import Data, Model
-from mtpy.utils.mtpylog import MtPyLog
 
-logger = MtPyLog.get_mtpy_logger(__name__)
+# =============================================================================
 
 
 class DataModelAnalysis(object):
@@ -163,7 +165,9 @@ class DataModelAnalysis(object):
         """
 
         # get grid centres (finite element cells centres)
-        gcz = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
+        gcz = np.mean(
+            [self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0
+        )
         gceast, gcnorth = [
             np.mean([arr[:-1], arr[1:]], axis=0)
             for arr in [self.modObj.grid_east, self.modObj.grid_north]
@@ -205,7 +209,10 @@ class DataModelAnalysis(object):
                 np.log10(self.modObj.res_model[sno, :, :].T),
             )
             ss = np.where(
-                np.abs(self.datObj.station_locations["rel_north"] - np.median(gcnorth))
+                np.abs(
+                    self.datObj.station_locations["rel_north"]
+                    - np.median(gcnorth)
+                )
                 < self.station_dist
             )[0]
 
@@ -227,7 +234,10 @@ class DataModelAnalysis(object):
             )
             # indices for selecting stations close to profile
             ss = np.where(
-                np.abs(self.datObj.station_locations["rel_east"] - np.median(gceast))
+                np.abs(
+                    self.datObj.station_locations["rel_east"]
+                    - np.median(gceast)
+                )
                 < self.station_dist
             )[0]
 
@@ -294,9 +304,17 @@ class DataModelAnalysis(object):
 
         csvrows = []
         for zslice in z_cell_centres:
-            (X, Y, res, sX, sY, xlim, ylim, title, Z_location) = self.get_slice_data(
-                zslice
-            )
+            (
+                X,
+                Y,
+                res,
+                sX,
+                sY,
+                xlim,
+                ylim,
+                title,
+                Z_location,
+            ) = self.get_slice_data(zslice)
 
             # print (X,Y,res)
             # print(sX,sY)
@@ -334,13 +352,21 @@ class DataModelAnalysis(object):
         return csvfile
 
     def plot_a_slice(self, slice_location=1000):
-        """ create a plot based on the input data and parameters
+        """create a plot based on the input data and parameters
         :return:
         """
 
-        (X, Y, res, sX, sY, xlim, ylim, title, actual_location) = self.get_slice_data(
-            slice_location
-        )
+        (
+            X,
+            Y,
+            res,
+            sX,
+            sY,
+            xlim,
+            ylim,
+            title,
+            actual_location,
+        ) = self.get_slice_data(slice_location)
 
         # make the plot
 
@@ -374,10 +400,16 @@ class DataModelAnalysis(object):
 
         # FZ: fix miss-placed colorbar
         ax = plt.gca()
-        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks))  # /self.dscale
-        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks))  # /self.dscale
+        ax.xaxis.set_minor_locator(
+            MultipleLocator(self.xminorticks)
+        )  # /self.dscale
+        ax.yaxis.set_minor_locator(
+            MultipleLocator(self.yminorticks)
+        )  # /self.dscale
         ax.tick_params(axis="both", which="minor", width=2, length=5)
-        ax.tick_params(axis="both", which="major", width=3, length=15, labelsize=20)
+        ax.tick_params(
+            axis="both", which="major", width=3, length=15, labelsize=20
+        )
         for axis in ["top", "bottom", "left", "right"]:
             ax.spines[axis].set_linewidth(self.border_linewidth)
         # ax.tick_params(axis='both', which='major', labelsize=20)
@@ -428,11 +460,13 @@ class DataModelAnalysis(object):
                 # slice_locs = np.linspace(self.ns_lim[0], self.ns_lim[1], num=slice_number
                 # It's better to use cell centres
                 slice_locs = np.mean(
-                    [self.modObj.grid_north[:-1], self.modObj.grid_north[1:]], axis=0
+                    [self.modObj.grid_north[:-1], self.modObj.grid_north[1:]],
+                    axis=0,
                 )
             if self.plot_orientation == "ew":
                 slice_locs = np.mean(
-                    [self.modObj.grid_east[:-1], self.modObj.grid_east[1:]], axis=0
+                    [self.modObj.grid_east[:-1], self.modObj.grid_east[1:]],
+                    axis=0,
                 )
             if self.plot_orientation == "z":
                 slice_locs = np.mean(
@@ -448,7 +482,9 @@ class DataModelAnalysis(object):
             sdist = int(dist)
 
             print(("**** The user-input slice location is: ****", sdist))
-            print("**** The actual location will be at the nearest cell centre ****")
+            print(
+                "**** The actual location will be at the nearest cell centre ****"
+            )
 
             # plot resistivity image at slices in three orientations at a given slice_location=sdist
 

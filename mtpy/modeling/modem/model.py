@@ -17,24 +17,19 @@ ModEM
 from pathlib import Path
 import numpy as np
 from scipy import stats as stats
+from loguru import logger
 
 import mtpy.modeling.mesh_tools as mtmesh
 import mtpy.modeling.gocad as mtgocad
 import mtpy.utils.calculator as mtcc
 import mtpy.utils.filehandling as mtfh
 
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 from .exception import ModelError
 from mtpy.utils.gis_tools import project_point
 from mtpy.modeling.plots.plot_mesh import PlotMesh
 from mtpy.core.mt_location import MTLocation
 
-try:
-    from pyevtk.hl import gridToVTK
-except ImportError:
-    print(
-        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
-    )
+from pyevtk.hl import gridToVTK
 
 # =============================================================================
 
@@ -169,7 +164,7 @@ class Model:
     """
 
     def __init__(self, station_locations=None, center_point=None, **kwargs):
-        self._logger = get_mtpy_logger(self.__class__.__name__)
+        self._logger = logger
 
         self.station_locations = None
         self.center_point = MTLocation()
