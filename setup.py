@@ -26,6 +26,7 @@ requirements = [
     "geopandas",
     "contextily",
     "pyevtk",
+    "loguru",
 ]
 
 setup_requirements = [
@@ -38,7 +39,7 @@ test_requirements = [
 
 
 setup(
-    author="Jared Peacock,Alison Kirkby,Fei Zhang,,Rakib Hassan, Jinming Duan",
+    author="Jared Peacock, Alison Kirkby, Fei Zhang, Rakib Hassan, Lars Krieger, Stephan Thiel",
     author_email="jpeacock@usgs.gov",
     python_requires=">=3.5",
     classifiers=[
@@ -47,9 +48,10 @@ setup(
         "License :: OSI Approved :: GNU GENERAL PUBLIC License v3",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     description="Python toolkit for standard magnetotelluric data processing.",
     install_requires=requirements,
