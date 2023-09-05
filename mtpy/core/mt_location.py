@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Might think about adding declination
+
 Created on Mon Oct  3 15:04:12 2022
 
 @author: jpeacock
@@ -18,6 +20,7 @@ from mtpy.utils.gis_tools import (
     assert_elevation_value,
     project_point,
 )
+from mt_metadata.transfer_functions.io.tools import get_nm_elev
 
 # =============================================================================
 
@@ -78,6 +81,11 @@ class MTLocation:
         lines.append(f"  Easting (m):      {self.east:.3f}")
         lines.append(f"  Northing (m):     {self.north:.3f}")
         lines.append(f"  UTM crs:          {self.utm_crs}")
+        lines.append("")
+        lines.append(f"  Model Easting (m):      {self.model_east:.3f}")
+        lines.append(f"  Model Northing (m):     {self.model_north:.3f}")
+        lines.append(f"  Model Elevation (m):    {self.model_elevation:.3f}")
+        lines.append(f"  Profile Offset (m):     {self.profile_offset:.3f}")
 
         return "\n".join(lines)
 
@@ -355,7 +363,7 @@ class MTLocation:
                 "utm_crs is None, cannot project onto profile line."
             )
 
-        profile_vector = np.array([1, profile_slope])
+        profile_vector = np.array([1, profile_slope], dtype=float)
         profile_vector /= np.linalg.norm(profile_vector)
 
         station_vector = np.array(
@@ -365,3 +373,23 @@ class MTLocation:
         self.profile_offset = np.linalg.norm(
             np.dot(profile_vector, station_vector) * profile_vector
         )
+
+    def get_elevation_from_national_map(self):
+        """
+        Get elevation from DEM data of the US National Map.  Plan to extend
+        this to the globe.
+
+        Pulls data from the USGS national map DEM
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        elev = get_nm_elev(self.latitude, self.longitude)
+        if elev != 0:
+            self.elevation = elev
+        else:
+            self.logger.warning(
+                "Could not get elevation data, not setting elevation"
+            )

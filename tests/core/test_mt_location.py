@@ -20,8 +20,8 @@ class TestMTLocation(unittest.TestCase):
         self.loc = MTLocation()
         self.true_lat = 40.0
         self.true_lon = -120.0
-        self.true_elevation = 1200.0
         self.utm_epsg = 32611
+        self.utm_zone = "11N"
         self.true_east = 243900.352029723
         self.true_north = 4432069.056898517
 
@@ -74,6 +74,7 @@ class TestMTLocation(unittest.TestCase):
 
         with self.subTest("east"):
             self.assertAlmostEqual(self.loc.east, self.true_east)
+
         with self.subTest("north"):
             self.assertAlmostEqual(self.loc.north, self.true_north)
 
@@ -91,8 +92,86 @@ class TestMTLocation(unittest.TestCase):
 
         with self.subTest("latitude"):
             self.assertAlmostEqual(self.loc.latitude, self.true_lat)
+
         with self.subTest("longitude"):
             self.assertAlmostEqual(self.loc.longitude, self.true_lon)
+
+        with self.subTest("utm zone"):
+            self.assertEqual(self.loc.utm_zone, self.utm_zone)
+
+
+class TestMTLocationModelLocation(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.true_lat = 40.0
+        self.true_lon = -120.0
+        self.utm_epsg = 32611
+        self.true_elevation = 1899.181396484
+
+        self.loc = MTLocation(
+            latitude=self.true_lat,
+            longitude=self.true_lon,
+            utm_epsg=self.utm_epsg,
+        )
+        self.center = MTLocation(
+            latitude=self.true_lat,
+            longitude=self.true_lon,
+            utm_epsg=self.utm_epsg,
+        )
+
+        self.center.model_east = self.center.east
+        self.center.model_north = self.center.north
+
+        self.loc.compute_model_location(self.center)
+
+    def test_model_location_east(self):
+        self.assertEqual(self.loc.model_east, 0)
+
+    def test_model_location_north(self):
+        self.assertEqual(self.loc.model_north, 0)
+
+    def test_get_elevation_from_national_map(self):
+        self.loc.get_elevation_from_national_map()
+
+        self.assertAlmostEqual(self.true_elevation, self.loc.elevation)
+
+
+class TestMTLocationModelLocation2(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.true_lat = 40.0
+        self.true_lon = -120.0
+        self.utm_epsg = 32611
+
+        self.model_east = -431703.01876173366
+        self.model_north = 224366.6894259695
+
+        self.loc = MTLocation(
+            latitude=self.true_lat,
+            longitude=self.true_lon,
+            utm_epsg=self.utm_epsg,
+        )
+        self.center = MTLocation(
+            latitude=38,
+            longitude=-115,
+            utm_epsg=self.utm_epsg,
+        )
+
+        self.center.model_east = self.center.east
+        self.center.model_north = self.center.north
+
+        self.loc.compute_model_location(self.center)
+
+    def test_model_location_east(self):
+        self.assertAlmostEqual(self.loc.model_east, self.model_east)
+
+    def test_model_location_north(self):
+        self.assertAlmostEqual(self.loc.model_north, self.model_north)
+
+    def test_project_onto_profile(self):
+        self.loc.project_onto_profile_line(1, 240000)
+
+        self.assertAlmostEqual(self.loc.profile_offset, 3136704.0501892385)
 
 
 # =============================================================================
