@@ -17,12 +17,12 @@ import copy
 
 import numpy as np
 import xarray as xr
+from loguru import logger
 
 from mtpy.utils.calculator import (
     rotate_matrix_with_errors,
     rotate_vector_with_errors,
 )
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # ==============================================================================
 # Impedance Tensor Class
@@ -44,7 +44,7 @@ class TFBase:
         **kwargs,
     ):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.rotation_angle = 0.0
         self.inputs = ["x", "y"]
         self.outputs = ["x", "y"]
