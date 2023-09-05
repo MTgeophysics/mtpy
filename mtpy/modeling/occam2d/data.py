@@ -11,11 +11,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 from mtpy.core.mt_dataframe import MTDataFrame
-from mtpy.core.mt_location import MTLocation
-from mtpy.utils.mtpy_logger import get_mtpy_logger
-from mtpy.modeling.errors import ModelErrors
 
 # =============================================================================
 
@@ -147,7 +145,7 @@ class Data:
 
     def __init__(self, dataframe=None, center_point=None, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.dataframe = dataframe
         self.data_fn = None
         self.fn_basename = "OccamDataFile.dat"

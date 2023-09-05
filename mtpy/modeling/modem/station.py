@@ -11,13 +11,13 @@ ModEM
 """
 from pathlib import Path
 import numpy as np
+from loguru import logger
 
 import geopandas as gpd
 from shapely.geometry import Point
 
 from mtpy.core import mt as mt
 from mtpy.utils import gis_tools as gis_tools
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 
 # in module imports
@@ -34,7 +34,7 @@ class Stations(object):
 
     def __init__(self, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         self.dtype = [
             ("station", "|U50"),

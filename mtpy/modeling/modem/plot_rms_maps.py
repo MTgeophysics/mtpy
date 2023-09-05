@@ -16,8 +16,12 @@ Revision History:
           impedance, tippers or both
         - Allow selection of period by providing period in seconds
 """
-import os
+# =============================================================================
+# Imports
+# =============================================================================
 
+import os
+from loguru import logger
 import numpy as np
 import geopandas as gpd
 from shapely.geometry import Point
@@ -26,12 +30,11 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mtpy.utils import basemap_tools
 from mtpy.utils.plot_geotiff_imshow import plot_geotiff_on_axes
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.gis_tools import epsg_project
 from mtpy.modeling.modem import Residual
 
 __all__ = ["PlotRMSMaps"]
-_logger = get_mtpy_logger(__name__)
+# =============================================================================
 
 
 class PlotRMSMaps(object):
@@ -95,9 +98,9 @@ class PlotRMSMaps(object):
                         limits/5
     bimg                path to a geotiff to display as background of
                         plotted maps
-    bimg_band           band of bimg to plot. *default* is None, which 
+    bimg_band           band of bimg to plot. *default* is None, which
                         will plot all available bands
-    bimg_cmap           cmap for bimg. *default* is 'viridis'. Ignored 
+    bimg_cmap           cmap for bimg. *default* is 'viridis'. Ignored
                         if bimg is RBG/A
     =================== =======================================================
 
@@ -132,13 +135,15 @@ class PlotRMSMaps(object):
         self.model_epsg = kwargs.pop("model_epsg", None)
         self.read_residual_fn()
 
-        self.save_path = kwargs.pop("save_path", os.path.dirname(self.residual_fn))
+        self.save_path = kwargs.pop(
+            "save_path", os.path.dirname(self.residual_fn)
+        )
 
         self.period = kwargs.pop("period", None)
         if self.period is not None:
             # Get period index closest to provided period
             index = np.argmin(np.fabs(self.residual.period_list - self.period))
-            _logger.info(
+            logger.info(
                 "Plotting nearest available period ({}s) for selected period ({}s)".format(
                     self.residual.period_list[index], self.period
                 )
@@ -178,7 +183,7 @@ class PlotRMSMaps(object):
 
         self.bimg = kwargs.pop("bimg", None)
         if self.bimg and self.model_epsg is None:
-            _logger.warning(
+            logger.warning(
                 "You have provided a geotiff as a background image but model_epsg is "
                 "not set. It's assumed that the CRS of the model and the CRS of the "
                 "geotiff are the same. If this is not the case, please provide "
@@ -246,7 +251,9 @@ class PlotRMSMaps(object):
             title = "period = {0:.5g} (s)".format(
                 self.residual.period_list[self.period_index]
             )
-        self.fig.suptitle(title, fontdict={"size": font_size, "weight": font_weight})
+        self.fig.suptitle(
+            title, fontdict={"size": font_size, "weight": font_weight}
+        )
 
     def _calculate_rms(self, plot_dict):
         ii = plot_dict["index"][0]
@@ -269,10 +276,12 @@ class PlotRMSMaps(object):
                     :, self.period_index, ii, jj
                 ]
 
-        filt = np.nan_to_num(rms).astype(bool)  # .reshape(self.residual.rms_array.size)
+        filt = np.nan_to_num(rms).astype(
+            bool
+        )  # .reshape(self.residual.rms_array.size)
 
         if len(rms[filt]) == 0:
-            _logger.warning(
+            logger.warning(
                 "No RMS available for component {}".format(
                     self._normalize_label(plot_dict["label"])
                 )
@@ -282,7 +291,12 @@ class PlotRMSMaps(object):
 
     @staticmethod
     def _normalize_label(label):
-        return label.replace("$", "").replace("{", "").replace("}", "").replace("_", "")
+        return (
+            label.replace("$", "")
+            .replace("{", "")
+            .replace("}", "")
+            .replace("_", "")
+        )
 
     def read_residual_fn(self):
         if self.residual is None:
@@ -297,10 +311,10 @@ class PlotRMSMaps(object):
     def create_shapefiles(self, dst_epsg, save_path=None):
         """
         Creates RMS map elements as shapefiles which can displayed in a
-        GIS viewer. Intended to be called as part of the 'plot' 
+        GIS viewer. Intended to be called as part of the 'plot'
         function.
 
-        The points to plot defined by `lons` and `lats` are the centre 
+        The points to plot defined by `lons` and `lats` are the centre
         of the rectangular markers.
 
         If `model_epsg` hasn't been set on class, then 4326 is assumed.
@@ -320,7 +334,7 @@ class PlotRMSMaps(object):
         lon = self.residual.residual_array["lon"]
         lat = self.residual.residual_array["lat"]
         if self.model_epsg is None:
-            _logger.warning(
+            logger.warning(
                 "model_epsg has not been provided. Model EPSG is assumed to be 4326. "
                 "If this is not correct, please provide model_epsg to PlotRMSMaps. "
                 "Otherwise, shapefiles may have projection errors."
@@ -336,7 +350,9 @@ class PlotRMSMaps(object):
                 markers.append(Point(x, y))
 
             df = gpd.GeoDataFrame(
-                {"lon": lon, "lat": lat, "rms": rms}, crs=src_epsg, geometry=markers
+                {"lon": lon, "lat": lat, "rms": rms},
+                crs=src_epsg,
+                geometry=markers,
             )
             df.to_crs(epsg=dst_epsg, inplace=True)
 
@@ -430,7 +446,12 @@ class PlotRMSMaps(object):
             if not np.all(filt):
                 filt2 = (1 - filt).astype(bool)
                 plt.plot(
-                    lon[filt2], lat[filt2], ".", ms=0.1, mec=(0, 0, 0), mfc=(1, 1, 1)
+                    lon[filt2],
+                    lat[filt2],
+                    ".",
+                    ms=0.1,
+                    mec=(0, 0, 0),
+                    mfc=(1, 1, 1),
                 )
 
             # Hide y-ticks on subplots in column 2.
@@ -482,7 +503,9 @@ class PlotRMSMaps(object):
             ax.xaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
 
-        cb_ax = self.fig.add_axes([self.subplot_right + 0.02, 0.225, 0.02, 0.45])
+        cb_ax = self.fig.add_axes(
+            [self.subplot_right + 0.02, 0.225, 0.02, 0.45]
+        )
         color_bar = mcb.ColorbarBase(
             cb_ax,
             cmap=self.rms_cmap,
@@ -647,7 +670,9 @@ class PlotRMSMaps(object):
             ax.grid(zorder=0, color=(0.75, 0.75, 0.75), lw=0.75)
 
         # cb_ax = mcb.make_axes(ax, orientation='vertical', fraction=.1)
-        cb_ax = self.fig.add_axes([self.subplot_right + 0.02, 0.225, 0.02, 0.45])
+        cb_ax = self.fig.add_axes(
+            [self.subplot_right + 0.02, 0.225, 0.02, 0.45]
+        )
         color_bar = mcb.ColorbarBase(
             cb_ax,
             cmap=self.rms_map_cmap,
@@ -676,19 +701,19 @@ class PlotRMSMaps(object):
 
         :param datatype: type of data to plot misfit for, either 'z', 'tip', or
                          'all' to plot overall RMS
-        :param tick_interval: tick interval on map in degrees, if None it is 
+        :param tick_interval: tick interval on map in degrees, if None it is
                               calculated from the data extent
         :param save: True/False, whether or not to save and close figure
-        :param savepath: full path of file to save to, if None, saves to 
+        :param savepath: full path of file to save to, if None, saves to
                          self.save_path
         :new_figure: True/False, whether or not to initiate a new figure for
                      the plot
-        :param mesh_rotation_angle: rotation angle of mesh, in degrees 
+        :param mesh_rotation_angle: rotation angle of mesh, in degrees
                                     clockwise from north
         :param show_topography: True/False, option to show the topograpy in the
                                 background
-        :param **basemap_kwargs: provide any valid arguments to Basemap 
-                                 instance (e.g. projection etc - see 
+        :param **basemap_kwargs: provide any valid arguments to Basemap
+                                 instance (e.g. projection etc - see
                                  https://basemaptutorial.readthedocs.io/en/latest/basemap.html)
                                  and these will be passed to the map.
 
@@ -705,7 +730,9 @@ class PlotRMSMaps(object):
         # rotate stations
         if mesh_rotation_angle != 0:
             if hasattr(self, "mesh_rotation_angle"):
-                angle_to_rotate = self.mesh_rotation_angle - mesh_rotation_angle
+                angle_to_rotate = (
+                    self.mesh_rotation_angle - mesh_rotation_angle
+                )
             else:
                 angle_to_rotate = -mesh_rotation_angle
 
@@ -741,14 +768,16 @@ class PlotRMSMaps(object):
             if self.period_index == "all":
                 rms = self.residual.rms_array["rms"]
             else:
-                rms = self.residual.rms_array["rms_period"][:, self.period_index]
+                rms = self.residual.rms_array["rms_period"][
+                    :, self.period_index
+                ]
         elif datatype in ["z", "tip"]:
             if self.period_index == "all":
                 rms = self.residual.rms_array["rms_{}".format(datatype)]
             else:
-                rms = self.residual.rms_array["rms_{}_period".format(datatype)][
-                    :, self.period_index
-                ]
+                rms = self.residual.rms_array[
+                    "rms_{}_period".format(datatype)
+                ][:, self.period_index]
 
         filt = np.nan_to_num(rms).astype(bool)
 
@@ -778,7 +807,9 @@ class PlotRMSMaps(object):
         title_dict = {"all": "Z + Tipper", "z": "Z", "tip": "Tipper"}
 
         if self.period_index == "all":
-            plt.title("RMS misfit over all periods for " + title_dict[datatype])
+            plt.title(
+                "RMS misfit over all periods for " + title_dict[datatype]
+            )
         else:
             plt.title(
                 "RMS misfit for period = {0:.5g} (s)".format(
