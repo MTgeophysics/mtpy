@@ -57,8 +57,16 @@ class MTLocation:
                 "model_elevation",
                 "datum_crs",
                 "utm_crs",
+                "datum_epsg",
+                "utm_epsg",
             ]:
                 setattr(self, key, value)
+
+        if self.east != 0 and self.north != None:
+            if self.utm_crs is None:
+                raise ValueError(
+                    "Need to input UTM CRS if only setting east and north"
+                )
 
     def __str__(self):
         lines = ["MT Location: ", "-" * 20]
