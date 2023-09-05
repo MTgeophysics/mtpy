@@ -10,8 +10,8 @@ Created on Mon Oct  3 15:04:12 2022
 # =============================================================================
 from pyproj import CRS
 import numpy as np
+from loguru import logger
 
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.utils.gis_tools import (
     assert_lat_value,
     assert_lon_value,
@@ -30,7 +30,7 @@ class MTLocation:
 
     def __init__(self, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         self._latitude = 0
         self._longitude = 0

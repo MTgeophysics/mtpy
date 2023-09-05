@@ -1,20 +1,20 @@
 import functools
 import inspect
 import os
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from loguru import logger
 
 
 class deprecated(object):
     """
-        Description:
-            used to mark functions, methods and classes deprecated, and prints warning message when it called
-            decorators based on https://stackoverflow.com/a/40301488
+    Description:
+        used to mark functions, methods and classes deprecated, and prints warning message when it called
+        decorators based on https://stackoverflow.com/a/40301488
 
-        Usage:
-            todo: write usage
+    Usage:
+        todo: write usage
 
-        Author: YingzhiGou
-        Date: 20/06/2017
+    Author: YingzhiGou
+    Date: 20/06/2017
     """
 
     def __init__(self, reason):  # pragma: no cover
@@ -46,11 +46,18 @@ class deprecated(object):
         def new_func(*args, **kwargs):  # pragma: no cover
             import warnings
 
-            warnings.simplefilter("always", DeprecationWarning)  # turn off filter
+            warnings.simplefilter(
+                "always", DeprecationWarning
+            )  # turn off filter
             warnings.warn_explicit(
-                msg, category=DeprecationWarning, filename=filename, lineno=lineno
+                msg,
+                category=DeprecationWarning,
+                filename=filename,
+                lineno=lineno,
             )
-            warnings.simplefilter("default", DeprecationWarning)  # reset filter
+            warnings.simplefilter(
+                "default", DeprecationWarning
+            )  # reset filter
             return cls_or_func(*args, **kwargs)
 
         return new_func
@@ -59,7 +66,7 @@ class deprecated(object):
 class gdal_data_check(object):
     _has_checked = False
     _gdal_data_found = False
-    _logger = get_mtpy_logger(__name__)
+    _logger = logger
 
     def __init__(self, func, raise_error=False):
         """
@@ -104,7 +111,9 @@ class gdal_data_check(object):
                 output = output.strip()
                 if exit_code == 0 and os.path.exists(output):
                     os.environ["GDAL_DATA"] = output
-                    self._logger.info("Found gdal-data path: {}".format(output))
+                    self._logger.info(
+                        "Found gdal-data path: {}".format(output)
+                    )
                     return True
                 else:
                     self._logger.error(

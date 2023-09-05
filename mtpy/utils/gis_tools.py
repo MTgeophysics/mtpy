@@ -31,10 +31,8 @@ Revised: 5/2020 JP
 # Imports
 # ==============================================================================
 import numpy as np
-from mtpy.utils.mtpy_logger import get_mtpy_logger
+from loguru import logger
 from pyproj import Transformer, CRS
-
-logger = get_mtpy_logger(__name__)
 
 # =============================================================================
 # GIS Error container
@@ -187,7 +185,9 @@ def assert_elevation_value(elevation):
     try:
         elev_value = float(elevation)
     except (ValueError, TypeError):
-        msg = "Could not convert {0} to a number setting to 0".format(elevation)
+        msg = "Could not convert {0} to a number setting to 0".format(
+            elevation
+        )
         logger.debug(msg)
         elev_value = 0.0
 
@@ -480,6 +480,9 @@ def project_point_utm2ll(easting, northing, utm_epsg, datum_epsg=4326):
     # if just projecting one point, then return as a tuple so as not to break
     # anything.  In the future we should adapt to just return a record array
     if len(projected_point) == 1:
-        return (projected_point["latitude"][0], projected_point["longitude"][0])
+        return (
+            projected_point["latitude"][0],
+            projected_point["longitude"][0],
+        )
     else:
         return np.rec.array(projected_point)
