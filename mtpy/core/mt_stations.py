@@ -18,9 +18,9 @@ import pandas as pd
 from pyproj import CRS
 import geopandas as gpd
 from scipy import stats
+from loguru import logger
 
 from mtpy.core.mt_location import MTLocation
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 try:
     from pyevtk.hl import pointsToVTK
@@ -39,7 +39,7 @@ class MTStations:
 
     def __init__(self, utm_epsg, datum_epsg=None, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         self.dtype = dict(
             [
