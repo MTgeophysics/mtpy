@@ -16,18 +16,12 @@ ModEM
 from pathlib import Path
 
 import numpy as np
+from loguru import logger
 
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 from .exception import CovarianceError
 from .model import Model
 
-try:
-    from pyevtk.hl import gridToVTK
-except ImportError:
-    print(
-        "If you want to write a vtk file for 3d viewing, you need to "
-        "install pyevtk"
-    )
+from pyevtk.hl import gridToVTK
 
 # =============================================================================
 
@@ -39,7 +33,7 @@ class Covariance(object):
     """
 
     def __init__(self, grid_dimensions=None, **kwargs):
-        self._logger = get_mtpy_logger(self.__class__.__name__)
+        self._logger = logger
 
         self.grid_dimensions = grid_dimensions
         self.smoothing_east = 0.3
@@ -272,7 +266,9 @@ class Covariance(object):
                     line_list = np.array(line_list, dtype=np.int)
                     line_list = line_list.reshape((ny, 1))
 
-                    self.mask_arr[count, :, index_00 : index_01 + 1] = line_list
+                    self.mask_arr[
+                        count, :, index_00 : index_01 + 1
+                    ] = line_list
                     count += 1
 
     def get_parameters(self):

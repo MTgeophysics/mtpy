@@ -9,11 +9,11 @@ mtplot_tools contains helper functions and classes for plotting
 # ==============================================================================
 from pathlib import Path
 import numpy as np
+from loguru import logger
 
 import matplotlib.pyplot as plt
 
 from . import PlotSettings
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
 # Global Parameters
@@ -43,9 +43,7 @@ class PlotBase(PlotSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.logger = get_mtpy_logger(
-            f"{self.__class__.__module__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
         self._basename = self.__class__.__name__.lower()
 
