@@ -13,7 +13,7 @@ Updated 11/2020 for logging and formating (J. Peacock).
 # =============================================================================
 # Imports
 # =============================================================================
-import copy
+from copy import deepcopy
 
 import numpy as np
 import xarray as xr
@@ -107,7 +107,13 @@ class TFBase:
         return True
 
     def copy(self):
-        return copy.deepcopy(self)
+        try:
+            return deepcopy(self)
+        except TypeError:
+            delattr(self, "logger")
+            deep_copy = deepcopy(self)
+            self.logger = logger
+            return deep_copy
 
     def _initialize(
         self, periods=[1], tf=None, tf_error=None, tf_model_error=None
