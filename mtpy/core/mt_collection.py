@@ -15,14 +15,13 @@ Created on Mon Jan 11 15:36:38 2021
 # =============================================================================
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
-
 import pandas as pd
 import geopandas as gpd
 
 from mtpy import MT
 from mtpy.core.mt_data import MTData
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.imaging import (
     PlotStations,
     PlotMultipleResponses,
@@ -73,9 +72,7 @@ class MTCollection:
 
         self._added = False
 
-        self.logger = get_mtpy_logger(
-            f"{__name__}.{self.__class__.__name__}", fn="mt_collection"
-        )
+        self.logger = logger
 
     def __str__(self):
         lines = [f"Working Directory: {self.working_directory}"]
