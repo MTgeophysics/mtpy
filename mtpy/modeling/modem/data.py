@@ -17,10 +17,10 @@ ModEM
 import numpy as np
 from pathlib import Path
 import pandas as pd
+from loguru import logger
 
 from mtpy.core.mt_dataframe import MTDataFrame
 from mtpy.core.mt_location import MTLocation
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 from mtpy.modeling.errors import ModelErrors
 
 # =============================================================================
@@ -202,7 +202,7 @@ class Data:
 
     def __init__(self, dataframe=None, center_point=None, **kwargs):
 
-        self.logger = get_mtpy_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         self.dataframe = dataframe
 
@@ -668,7 +668,9 @@ class Data:
 
         ## check for zeros in model error
         for comp in ["zxx", "zxy", "zyx", "zyy", "tzx", "tzy"]:
-            find_zeros = np.where(self.dataframe[f"{comp}_model_error"] == 0)[0]
+            find_zeros = np.where(self.dataframe[f"{comp}_model_error"] == 0)[
+                0
+            ]
             if find_zeros.shape[0] > 0:
                 if comp in ["zxx", "zxy", "zyx", "zyy"]:
                     error_percent = self.z_model_error.error_value
@@ -859,7 +861,8 @@ class Data:
                         self.wave_sign_tipper = hline[hline.find("(") + 1]
 
                 elif (
-                    len(hline[1:].strip().split()) >= 2 and hline.count(".") > 0
+                    len(hline[1:].strip().split()) >= 2
+                    and hline.count(".") > 0
                 ):
                     value_list = [
                         float(value) for value in hline[1:].strip().split()
@@ -1140,7 +1143,9 @@ class Data:
             lines = fid.readlines()
 
         def fix_line(line_list):
-            return " ".join("".join(line_list).replace("\n", "").split()) + "\n"
+            return (
+                " ".join("".join(line_list).replace("\n", "").split()) + "\n"
+            )
 
         h1 = fix_line(lines[0:n])
         h2 = fix_line(lines[n : 2 * n])
