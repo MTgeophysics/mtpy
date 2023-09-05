@@ -9,10 +9,10 @@ Created on Wed Feb 22 14:13:57 2023
 # Imports
 # =============================================================================
 import numpy as np
+from loguru import logger
 
 from mtpy.core.transfer_function.pt import PhaseTensor
 import mtpy.utils.calculator as MTcc
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
 class ResidualPhaseTensor:
@@ -21,7 +21,9 @@ class ResidualPhaseTensor:
     DeltaPhi = 1 - Phi1^-1*Phi2
     """
 
-    def __init__(self, pt_object1=None, pt_object2=None, residual_type="heise"):
+    def __init__(
+        self, pt_object1=None, pt_object2=None, residual_type="heise"
+    ):
         """
         Initialise an instance of the ResidualPhaseTensor class.
         Optional input:
@@ -29,9 +31,7 @@ class ResidualPhaseTensor:
         pt_object2 : instance of the PhaseTensor class
         Initialise the attributes with None
         """
-        self.logger = get_mtpy_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
         self.residual_pt = None
         self.rpt = None
@@ -186,7 +186,9 @@ class ResidualPhaseTensor:
                     else:
                         self.rpt_error = np.zeros((1, 2, 2))
                         try:
-                            with np.errstate(divide="ignore", invalid="ignore"):
+                            with np.errstate(
+                                divide="ignore", invalid="ignore"
+                            ):
                                 self.rpt_error[0] = np.eye(2) - 0.5 * np.array(
                                     np.dot(
                                         np.matrix(self.pt2.pt).I,
