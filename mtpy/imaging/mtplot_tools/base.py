@@ -11,13 +11,13 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 from scipy import interpolate
+from loguru import logger
 
 import matplotlib.pyplot as plt
 
 from .plot_settings import PlotSettings
 from .plotters import add_raster
 from .map_interpolation_tools import interpolate_to_map
-from mtpy.utils.mtpy_logger import get_mtpy_logger
 
 # =============================================================================
 # Base
@@ -33,9 +33,7 @@ class PlotBase(PlotSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.logger = get_mtpy_logger(
-            f"{self.__class__.__module__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
         self._basename = self.__class__.__name__.lower()
 
