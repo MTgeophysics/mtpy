@@ -22,12 +22,8 @@ from loguru import logger
 
 from mtpy.core.mt_location import MTLocation
 
-try:
-    from pyevtk.hl import pointsToVTK
-except ImportError:
-    print(
-        "If you want to write a vtk file for 3d viewing, you need to install pyevtk"
-    )
+from pyevtk.hl import pointsToVTK
+
 # =============================================================================
 
 
@@ -64,6 +60,7 @@ class MTStations:
         self._center_elev = 0.0
         self.shift_east = 0
         self.shift_north = 0
+        self.mt_list = None
 
         for key in list(kwargs.keys()):
             if hasattr(self, key):
@@ -73,6 +70,9 @@ class MTStations:
             self.compute_relative_locations()
 
     def __str__(self):
+        if self.mt_list is None:
+            return ""
+
         fmt_dict = dict(
             [
                 ("station", "<8"),
@@ -82,6 +82,7 @@ class MTStations:
                 ("model_east", "<13.2f"),
                 ("model_north", "<13.2f"),
                 ("model_elevation", "<8.2f"),
+                ("profile_offset", "<8.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
                 ("utm_epsg", "<6"),
@@ -215,6 +216,9 @@ class MTStations:
         """
 
         # make a structured array to put station location information into
+        if self.mt_list is None:
+            return
+
         entries = dict(
             [
                 (col, np.zeros(len(self.mt_list), dtype))

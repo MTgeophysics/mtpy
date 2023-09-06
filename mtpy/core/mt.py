@@ -26,7 +26,7 @@ from mtpy.modeling.errors import ModelErrors
 
 
 # =============================================================================
-class MT(TF, MTLocation):
+class MT(MTLocation, TF):
     """
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
@@ -35,14 +35,20 @@ class MT(TF, MTLocation):
     """
 
     def __init__(self, fn=None, **kwargs):
-        TF.__init__(self, fn=fn, **kwargs)
-        MTLocation.__init__(self, **kwargs)
+        MTLocation.__init__(self)
+        TF.__init__(self)
+
+        self.fn = fn
 
         self._Z = Z()
         self._Tipper = Tipper()
         self._rotation_angle = 0
 
         self.save_dir = Path.cwd()
+
+        for key, value in kwargs.items():
+            print(f"setting: {key}")
+            setattr(self, key, value)
 
     def clone_empty(self):
         """
