@@ -185,7 +185,7 @@ class TestMTLocationEqual(unittest.TestCase):
     def test_equal(self):
         self.assertTrue(self.loc_01 == self.loc_02)
 
-    def test_equal(self):
+    def test_not_equal(self):
         loc_02 = MTLocation(
             east=263900.352029723, north=4432069.056898517, utm_epsg=32611
         )
