@@ -14,12 +14,9 @@ from pyproj import CRS
 import numpy as np
 from loguru import logger
 
-from mtpy.utils.gis_tools import (
-    assert_lat_value,
-    assert_lon_value,
-    assert_elevation_value,
-    project_point,
-)
+from mtpy.utils.gis_tools import project_point
+
+from mt_metadata.transfer_functions.tf import Station, Survey
 from mt_metadata.transfer_functions.io.tools import get_nm_elev
 
 # =============================================================================
@@ -34,10 +31,9 @@ class MTLocation:
     def __init__(self, **kwargs):
 
         self.logger = logger
+        self._survey_metadata = Survey()
+        self._survey_metadata.add_station(Station())
 
-        self._latitude = 0
-        self._longitude = 0
-        self._elevation = 0
         self._east = 0
         self._north = 0
         self._datum_crs = CRS.from_epsg(4326)
@@ -125,7 +121,10 @@ class MTLocation:
                 and self.latitude != 0
                 and self.longitude != 0
             ):
-                self._longitude, self._latitude = project_point(
+                (
+                    self._survey_metadata.stations[0].location.longitude,
+                    self._survey_metadata.stations[0].location.latitude,
+                ) = project_point(
                     self.longitude, self.latitude, self._datum_crs, new_crs
                 )
 
@@ -140,7 +139,10 @@ class MTLocation:
                 and self.latitude == 0
                 and self.longitude == 0
             ):
-                self._longitude, self._latitude = project_point(
+                (
+                    self._survey_metadata.stations[0].location.longitude,
+                    self._survey_metadata.stations[0].location.latitude,
+                ) = project_point(
                     self.east,
                     self.north,
                     self.utm_crs,
@@ -196,7 +198,10 @@ class MTLocation:
                 and self.north != 0
             ):
                 # reproject lat and lon base on new UTM datum
-                self._longitude, self._latitude = project_point(
+                (
+                    self._survey_metadata.stations[0].location.longitude,
+                    self._survey_metadata.stations[0].location.latitude,
+                ) = project_point(
                     self.east,
                     self.north,
                     new_crs,
@@ -234,7 +239,10 @@ class MTLocation:
             and self.utm_crs is not None
             and self._north != 0
         ):
-            self._longitude, self._latitude = project_point(
+            (
+                self._survey_metadata.stations[0].location.longitude,
+                self._survey_metadata.stations[0].location.latitude,
+            ) = project_point(
                 self._east, self._north, self.utm_crs, self.datum_crs
             )
 
@@ -252,49 +260,58 @@ class MTLocation:
             and self.utm_crs is not None
             and self._east != 0
         ):
-            self._longitude, self._latitude = project_point(
+            (
+                self._survey_metadata.stations[0].location.longitude,
+                self._survey_metadata.stations[0].location.latitude,
+            ) = project_point(
                 self._east, self._north, self.utm_crs, self.datum_crs
             )
 
     @property
     def latitude(self):
-        return self._latitude
+        return self._survey_metadata.stations[0].location.latitude
 
     @latitude.setter
     def latitude(self, lat):
-        self._latitude = assert_lat_value(lat)
+        self._survey_metadata.stations[0].location.latitude = lat
         if (
             self.utm_crs is not None
             and self.datum_crs is not None
-            and self._longitude != 0
+            and self._survey_metadata.stations[0].location.longitude != 0
         ):
             self._east, self._north = project_point(
-                self._longitude, self._latitude, self.datum_crs, self.utm_crs
+                self._survey_metadata.stations[0].location.longitude,
+                self._survey_metadata.stations[0].location.latitude,
+                self.datum_crs,
+                self.utm_crs,
             )
 
     @property
     def longitude(self):
-        return self._longitude
+        return self._survey_metadata.stations[0].location.longitude
 
     @longitude.setter
     def longitude(self, lon):
-        self._longitude = assert_lon_value(lon)
+        self._survey_metadata.stations[0].location.longitude = lon
         if (
             self.utm_crs is not None
             and self.datum_crs is not None
-            and self._latitude != 0
+            and self._survey_metadata.stations[0].location.latitude != 0
         ):
             self._east, self._north = project_point(
-                self._longitude, self._latitude, self.datum_crs, self.utm_crs
+                self._survey_metadata.stations[0].location.longitude,
+                self._survey_metadata.stations[0].location.latitude,
+                self.datum_crs,
+                self.utm_crs,
             )
 
     @property
     def elevation(self):
-        return self._elevation
+        return self._survey_metadata.stations[0].location.elevation
 
     @elevation.setter
     def elevation(self, elev):
-        self._elevation = assert_elevation_value(elev)
+        self._survey_metadata.stations[0].location.elevation = elev
 
     @property
     def model_east(self):
