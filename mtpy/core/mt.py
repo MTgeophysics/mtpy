@@ -47,7 +47,6 @@ class MT(MTLocation, TF):
         self.save_dir = Path.cwd()
 
         for key, value in kwargs.items():
-            print(f"setting: {key}")
             setattr(self, key, value)
 
     def clone_empty(self):
