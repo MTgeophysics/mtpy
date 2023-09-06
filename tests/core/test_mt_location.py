@@ -174,6 +174,24 @@ class TestMTLocationModelLocation2(unittest.TestCase):
         self.assertAlmostEqual(self.loc.profile_offset, 3136704.0501892385)
 
 
+class TestMTLocationEqual(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.loc_01 = MTLocation(latitude=40, longitude=-120, utm_epsg=32611)
+        self.loc_02 = MTLocation(
+            east=243900.352029723, north=4432069.056898517, utm_epsg=32611
+        )
+
+    def test_equal(self):
+        self.assertTrue(self.loc_01 == self.loc_02)
+
+    def test_equal(self):
+        loc_02 = MTLocation(
+            east=263900.352029723, north=4432069.056898517, utm_epsg=32611
+        )
+        self.assertFalse(self.loc_01 == loc_02)
+
+
 # =============================================================================
 #
 # =============================================================================

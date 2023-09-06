@@ -88,6 +88,49 @@ class MTLocation:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        """
+        equals
+        :param other: DESCRIPTION
+        :type other: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(other, MTLocation):
+            raise TypeError(f"Can not compare MTLocation with {type(other)}")
+
+        for key in [
+            "latitude",
+            "longitude",
+            "elevation",
+            "east",
+            "north",
+            "model_east",
+            "model_north",
+            "model_elevation",
+            "datum_crs",
+            "utm_crs",
+            "profile_offset",
+        ]:
+            og_value = getattr(self, key)
+            other_value = getattr(other, key)
+
+            if isinstance(og_value, float):
+                if not np.isclose(og_value, other_value):
+                    self.logger.info(
+                        f"{key} not qual {og_value} != {other_value}"
+                    )
+                    return False
+            else:
+                if not og_value == other_value:
+                    self.logger.info(
+                        f"{key} not qual {og_value} != {other_value}"
+                    )
+                    return False
+        return True
+
     @property
     def datum_crs(self):
         if self._datum_crs is not None:
