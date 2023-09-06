@@ -120,13 +120,13 @@ class MTLocation:
             if isinstance(og_value, float):
                 if not np.isclose(og_value, other_value):
                     self.logger.info(
-                        f"{key} not qual {og_value} != {other_value}"
+                        f"{key} not equal {og_value} != {other_value}"
                     )
                     return False
             else:
                 if not og_value == other_value:
                     self.logger.info(
-                        f"{key} not qual {og_value} != {other_value}"
+                        f"{key} not equal {og_value} != {other_value}"
                     )
                     return False
         return True
