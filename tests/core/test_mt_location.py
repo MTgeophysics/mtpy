@@ -135,6 +135,10 @@ class TestMTLocationModelLocation(unittest.TestCase):
 
         self.assertAlmostEqual(self.true_elevation, self.loc.elevation)
 
+    def test_copy(self):
+        loc_copy = self.loc.copy()
+        self.assertEqual(loc_copy, self.loc)
+
 
 class TestMTLocationModelLocation2(unittest.TestCase):
     @classmethod

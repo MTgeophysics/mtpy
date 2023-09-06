@@ -10,6 +10,7 @@ Created on Mon Oct  3 15:04:12 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from copy import deepcopy
 from pyproj import CRS
 import numpy as np
 from loguru import logger
@@ -44,21 +45,24 @@ class MTLocation:
         self.model_elevation = 0
         self.profile_offset = 0
 
+        self._key_attrs = [
+            "latitude",
+            "longitude",
+            "elevation",
+            "east",
+            "north",
+            "model_east",
+            "model_north",
+            "model_elevation",
+            "datum_crs",
+            "utm_crs",
+            "datum_epsg",
+            "utm_epsg",
+            "profile_offset",
+        ]
+
         for key, value in kwargs.items():
-            if key in [
-                "latitude",
-                "longitude",
-                "elevation",
-                "east",
-                "north",
-                "model_east",
-                "model_north",
-                "model_elevation",
-                "datum_crs",
-                "utm_crs",
-                "datum_epsg",
-                "utm_epsg",
-            ]:
+            if key in self._key_attrs:
                 setattr(self, key, value)
 
         if self.east != 0 and self.north != None:
@@ -101,19 +105,7 @@ class MTLocation:
         if not isinstance(other, MTLocation):
             raise TypeError(f"Can not compare MTLocation with {type(other)}")
 
-        for key in [
-            "latitude",
-            "longitude",
-            "elevation",
-            "east",
-            "north",
-            "model_east",
-            "model_north",
-            "model_elevation",
-            "datum_crs",
-            "utm_crs",
-            "profile_offset",
-        ]:
+        for key in self._key_attrs:
             og_value = getattr(self, key)
             other_value = getattr(other, key)
 
@@ -130,6 +122,17 @@ class MTLocation:
                     )
                     return False
         return True
+
+    def copy(self):
+        copied = type(self)()
+        copied._survey_metadata = self._survey_metadata.copy()
+        # not sure why this is needed, survey metadata copies fine, but here
+        # it does not.
+        copied._survey_metadata.add_station(self._survey_metadata.stations[0])
+        for key in self._key_attrs:
+            setattr(copied, key, deepcopy(getattr(self, key)))
+
+        return copied
 
     @property
     def datum_crs(self):

@@ -13,6 +13,7 @@ ModEM
 # Imports
 # =============================================================================
 from pathlib import Path
+from copy import deepcopy
 import numpy as np
 import pandas as pd
 from pyproj import CRS
@@ -125,6 +126,15 @@ class MTStations:
 
     def __repr__(self):
         return self.__str__()
+
+    def copy(self):
+        try:
+            return deepcopy(self)
+        except TypeError:
+            delattr(self, "logger")
+            deep_copy = deepcopy(self)
+            self.logger = logger
+            return deep_copy
 
     @property
     def model_epsg(self):
