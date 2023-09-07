@@ -706,7 +706,7 @@ class TestMTStationGrid(unittest.TestCase):
         )
 
     def test_station_len(self):
-        self.assertEqual(25, self.stations.station_locations.shape[0])
+        self.assertEqual(25, len(self.stations))
 
     def test_center_point(self):
         self.assertEqual(self.center, self.stations.center_point)
@@ -733,6 +733,76 @@ class TestMTStationGrid(unittest.TestCase):
             )
         with self.subTest("rotation_angle"):
             self.assertEqual(s.rotation_angle, 45)
+
+
+class TestMTStationProfile(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.east = 243900.352
+        self.north = 4432069.056898517
+        self.utm_epsg = 32611
+        self.center = MTLocation(
+            latitude=42.212595,
+            longitude=-120.078305,
+            utm_epsg=32611,
+            model_east=245900.352,
+            model_north=4677969.409,
+        )
+        slope = 1
+        count = 1
+        dx = 1000
+        mt_list = []
+        for ii in range(5):
+            x = self.east + ii * dx
+            mt_obj = MT(
+                east=x,
+                north=slope * x + self.north,
+                utm_epsg=self.utm_epsg,
+                station=f"mt{count:02}",
+            )
+            count += 1
+            mt_list.append(mt_obj)
+
+        self.stations = MTStations(self.utm_epsg, mt_list=mt_list)
+
+        self.profile_deg = (
+            -120.10161927978938,
+            42.19396005306167,
+            -120.05497729522492,
+            42.23123311383864,
+            {"slope": 0.7991311074137044, "intercept": 138.17090007029887},
+        )
+
+        self.profile_m = (
+            243900.352,
+            4675969.408898517,
+            247900.352,
+            4679969.408898517,
+            {"slope": 1.0, "intercept": 4432069.056898517},
+        )
+
+    def test_station_len(self):
+        self.assertEqual(5, len(self.stations))
+
+    def test_generate_profile_deg(self):
+        self.assertTupleEqual(
+            self.profile_deg, self.stations.generate_profile(units="deg")
+        )
+
+    def test_generate_profile_m(self):
+        self.assertTupleEqual(
+            self.profile_m, self.stations.generate_profile(units="m")
+        )
+
+    def test_center_point(self):
+        self.assertEqual(self.center, self.stations.center_point)
+
+    def test_extract_profile(self):
+        d = self.stations._extract_profile(
+            243900.352, 4675969.408898517, 247900.352, 4679969.408898517, 1000
+        )
+        d_names = [xx.station for xx in d]
+        self.assertListEqual(["mt01", "mt02", "mt03", "mt04", "mt05"], d_names)
 
 
 # =============================================================================

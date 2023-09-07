@@ -134,6 +134,12 @@ class MTStations:
 
         return True
 
+    def __len__(self):
+        if self.mt_list is None:
+            return 0
+        else:
+            return len(self.mt_list)
+
     def copy(self):
 
         if self.mt_list is not None:

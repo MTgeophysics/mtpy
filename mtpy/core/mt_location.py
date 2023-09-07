@@ -128,7 +128,10 @@ class MTLocation:
         copied._survey_metadata = self._survey_metadata.copy()
         # not sure why this is needed, survey metadata copies fine, but here
         # it does not.
-        copied._survey_metadata.add_station(self._survey_metadata.stations[0])
+        if len(copied._survey_metadata.stations) == 0:
+            copied._survey_metadata.add_station(
+                self._survey_metadata.stations[0]
+            )
         for key in self._key_attrs:
             setattr(copied, key, deepcopy(getattr(self, key)))
 
