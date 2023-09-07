@@ -8,6 +8,7 @@
 
 # ==============================================================================
 from pathlib import Path
+from copy import deepcopy
 
 import numpy as np
 
@@ -26,7 +27,7 @@ from mtpy.modeling.errors import ModelErrors
 
 
 # =============================================================================
-class MT(MTLocation, TF):
+class MT(TF, MTLocation):
     """
     Basic MT container to hold all information necessary for a MT station
     including the following parameters.
@@ -35,8 +36,11 @@ class MT(MTLocation, TF):
     """
 
     def __init__(self, fn=None, **kwargs):
-        MTLocation.__init__(self)
         TF.__init__(self)
+        MTLocation.__init__(self, survey_metadata=self._survey_metadata)
+
+        # MTLocation.__init__(self)
+        # TF.__init__(self)
 
         self.fn = fn
 
@@ -68,6 +72,20 @@ class MT(MTLocation, TF):
         new_mt_obj._rotation_angle = self._rotation_angle
 
         return new_mt_obj
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k in ["logger"]:
+                continue
+
+            setattr(result, k, deepcopy(v, memo))
+        return result
+
+    def copy(self):
+        return deepcopy(self)
 
     @property
     def rotation_angle(self):

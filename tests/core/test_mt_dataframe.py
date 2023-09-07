@@ -106,15 +106,6 @@ class TestMTDataFrameValidation(unittest.TestCase):
         with self.subTest("size"):
             self.assertTrue(df.size == 2)
 
-    # def test_from_dict_fail(self):
-    #     d = {
-    #         "station": "a",
-    #         "period": [0, 1],
-    #         "latitude": 10,
-    #     }
-
-    #     self.assertRaises(ValueError, self.sdf._validate_data, d)
-
 
 # =============================================================================
 # Run

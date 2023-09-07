@@ -17,7 +17,7 @@ from loguru import logger
 
 from mtpy.utils.gis_tools import project_point
 
-from mt_metadata.transfer_functions.tf import Station, Survey
+from mt_metadata.transfer_functions.tf import Station, Survey, Run
 from mt_metadata.transfer_functions.io.tools import get_nm_elev
 
 # =============================================================================
@@ -29,11 +29,13 @@ class MTLocation:
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, survey_metadata=None, **kwargs):
 
         self.logger = logger
-        self._survey_metadata = Survey()
-        self._survey_metadata.add_station(Station())
+        if survey_metadata is None:
+            self._survey_metadata = self._initiate_metadata()
+        else:
+            self._survey_metadata = self._validate_metadata(survey_metadata)
 
         self._east = 0
         self._north = 0
@@ -70,6 +72,28 @@ class MTLocation:
                 raise ValueError(
                     "Need to input UTM CRS if only setting east and north"
                 )
+
+    def _initiate_metadata(self):
+        survey_metadata = Survey(id=0)
+        survey_metadata.add_station(Station(id=0))
+        survey_metadata.stations[0].add_run(Run(id=0))
+
+        return survey_metadata
+
+    def _validate_metadata(self, survey_metadata):
+        if not isinstance(survey_metadata, Survey):
+            raise TypeError(
+                "Input metadata must be type "
+                "mt_metadata.transfer_functions.tf.Survey, "
+                f"not {type(survey_metadata)}."
+            )
+        if len(survey_metadata.stations) < 1:
+            survey_metadata.add_station(Station(id=0))
+
+        if len(survey_metadata.stations[0].runs) < 1:
+            survey_metadata.stations[0].add_run(Run(id=0))
+
+        return survey_metadata
 
     def __str__(self):
         lines = ["MT Location: ", "-" * 20]
