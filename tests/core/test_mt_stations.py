@@ -8,7 +8,6 @@ Created on Tue Sep  5 16:27:01 2023
 # Imports
 # =============================================================================
 import unittest
-from copy import deepcopy
 
 import pandas as pd
 from mtpy.core import MTStations, MTLocation

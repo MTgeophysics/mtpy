@@ -30,7 +30,13 @@ from pyevtk.hl import pointsToVTK
 
 class MTStations:
     """
-    station locations class
+    Object to deal with station location and geographic projection.
+
+    Geographic projections are done using pyproj.CRS objects.
+
+    Takes in a list of :class:`mtpy.core.mt.MT` objects which are inherit
+    :class:`mtpy.core.mt_location.MTLocation` objects, which deal with
+    transformation of point data using pyproj.
 
     """
 
@@ -141,6 +147,16 @@ class MTStations:
             return len(self.mt_list)
 
     def copy(self):
+        """
+        create a deep copy of the MTStations object.
+
+        .. note:: At the moment this is very slow because it is making a lot
+         of deep copies.  Use sparingly.
+
+        :return: deep copy of MTStation object
+        :rtype: :class:`mtpy.core.mt_stations.MTStations`
+
+        """
 
         if self.mt_list is not None:
             mt_list_copy = [m.copy() for m in self.mt_list]
@@ -163,38 +179,86 @@ class MTStations:
 
     @property
     def model_epsg(self):
+        """
+
+        :return: model epsg number from the model_crs object
+        :rtype: int
+
+        """
         return self.utm_epsg
 
     @model_epsg.setter
     def model_epsg(self, value):
+        """
+
+        :param value: EPSG number for the model
+        :type value: integer or string
+
+        """
         self.utm_epsg = value
 
     @property
     def utm_crs(self):
+        """
+
+        :return: UTM CRS object
+        :rtype: :class:`pyproj.CRS`
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs
 
     @property
     def utm_name(self):
+        """
+
+        :return: UTM CRS name
+        :rtype: string
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs.name
 
     @property
     def utm_epsg(self):
+        """
+
+        :return: UTM EPSG number
+        :rtype: int
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs.to_epsg()
 
     @utm_epsg.setter
     def utm_epsg(self, value):
+        """
+
+        :param value: EPSG number
+        :type value: int or str
+
+        """
         self.utm_crs = value
 
     @property
     def utm_zone(self):
+        """
+
+        :return: UTM Zone number
+        :rtype: str
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs.utm_zone
 
     @utm_crs.setter
     def utm_crs(self, value):
+        """
+
+        :param value: UTM CRS object, EPSG number, proj4 string
+        :type value: :class:`pyproj.CRS`, int, str
+
+        """
         if value in [None, "None", "none", "null"]:
             return
 
@@ -205,27 +269,54 @@ class MTStations:
 
     @property
     def datum_crs(self):
+        """
+
+        :return: Datum CRS object
+        :rtype: :class:`pyproj.CRS`
+
+        """
         if self._datum_crs is not None:
             return self._datum_crs
 
     @property
     def datum_name(self):
+        """
+
+        :return: Datum well known name
+        :rtype: str
+
+        """
         if self._datum_crs is not None:
             return self._datum_crs.name
 
     @property
     def datum_epsg(self):
+        """
+
+        :return: Datum EPSG number
+        :rtype: int
+
+        """
         if self._datum_crs is not None:
             return self._datum_crs.to_epsg()
 
     @datum_epsg.setter
     def datum_epsg(self, value):
+        """
+
+        :param value: Datum EPSG number
+        :type value: int or str
+
+        """
         self.datum_crs = value
 
     @datum_crs.setter
     def datum_crs(self, value):
         """
         set the model epsg number an project east, north
+
+        :param value: Datum CRS object, EPSG number, proj4 string
+        :type value: :class:`pyproj.CRS`, int, str
         """
         if value in [None, "None", "none", "null"]:
             return
@@ -238,17 +329,9 @@ class MTStations:
     @property
     def station_locations(self):
         """
-        get station locations from a list of edi files
 
-        Arguments
-        -------------
-            **input_list** : list
-                             list of edi file names, or mt_objects
-
-
-        Returns
-        ------------
-            * fills station_locations array
+        :return: Dataframe of station location information
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -278,23 +361,29 @@ class MTStations:
             entries["profile_offset"][ii] = mt_obj.profile_offset
 
         station_df = pd.DataFrame(entries)
-        self._validate_station_locations(station_df)
+        self.datum_epsg = self._validate_epsg(station_df, key="datum")
+        self.utm_epsg = self._validate_epsg(station_df, key="utm")
 
         return station_df
 
-    def _validate_station_locations(self, df):
+    def _validate_epsg(self, df, key="datum"):
+        """
+        Make sure that there is only one EPSG number for each of the Datum
+        and UTM.  If there are more than one use the median value or the
+        first in a unique list of EPSG numbers
 
-        if len(df.datum_epsg.unique()) > 1:
-            self.datum_epsg = df.datum_epsg.median()
+        :param df: station_location dataframe
+        :type df: :class:`pandas.DataFrame`
+        :return: EPSG number
+        :rtype: int
+
+        """
+
+        if len(df[f"{key}_epsg"].unique()) > 1:
+            return df.datum_epsg.median()
         else:
             if self.datum_epsg is None:
-                self.datum_epsg = df.datum_epsg.unique()[0]
-
-        if len(df.utm_epsg.unique()) > 1:
-            self.utm_epsg = df.utm_epsg.median()
-        else:
-            if self.utm_epsg is None:
-                self.utm_epsg = df.utm_epsg.unique()[0]
+                return df[f"{key}_epsg"].unique()[0]
 
     def compute_relative_locations(self, shift_east=0, shift_north=0):
         """
@@ -633,6 +722,11 @@ class MTStations:
             if vtk_save_path is None:
                 raise ValueError("Need to input vtk_save_path")
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
+        else:
+            vtk_fn = Path(vtk_fn)
+
+        if vtk_fn.suffix != "":
+            vtk_fn = vtk_fn.parent.joinpath(vtk_fn.stem)
 
         sdf = self.station_locations.copy()
 
@@ -645,8 +739,8 @@ class MTStations:
             elif coordinate_system == "enz-":
                 vtk_x = (sdf.model_north + shift_north) * scale
                 vtk_y = (sdf.model_east + shift_east) * scale
-                vtk_z = (sdf.model_elevation + shift_elev) * scale
-                extra = (sdf.model_elevation + shift_elev) * scale
+                vtk_z = -1 * (sdf.model_elevation + shift_elev) * scale
+                extra = -1 * (sdf.model_elevation + shift_elev) * scale
 
         else:
             if coordinate_system == "nez+":
@@ -657,8 +751,8 @@ class MTStations:
             elif coordinate_system == "enz-":
                 vtk_y = (sdf.north + shift_north) * scale
                 vtk_x = (sdf.east + shift_east) * scale
-                vtk_z = -1 * (sdf.elevation + shift_elev) * scale
-                extra = -1 * (sdf.elevation + shift_elev)
+                vtk_z = (sdf.elevation + shift_elev) * scale
+                extra = sdf.elevation + shift_elev
 
         # write file
         pointsToVTK(
