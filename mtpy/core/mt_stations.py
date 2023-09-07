@@ -61,6 +61,7 @@ class MTStations:
         self._center_elev = 0.0
         self.shift_east = 0
         self.shift_north = 0
+        self.rotation_angle = 0.0
         self.mt_list = None
 
         for key in list(kwargs.keys()):
@@ -82,26 +83,20 @@ class MTStations:
                 ("elevation", "<8.2f"),
                 ("model_east", "<13.2f"),
                 ("model_north", "<13.2f"),
-                ("model_elevation", "<8.2f"),
-                ("profile_offset", "<8.2f"),
+                ("model_elevation", "<13.2f"),
+                ("profile_offset", "<13.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
                 ("utm_epsg", "<6"),
+                ("datum_epsg", "<6"),
             ]
         )
-        lines = [
-            "".join(
-                [
-                    f"{n.capitalize():<10}"
-                    for n in self.station_locations.dtype.names
-                ]
-            )
-        ]
+        lines = ["  ".join([n for n in self.station_locations.columns])]
         lines.append("-" * 72)
-        for ss in self.station_locations:
+        for row in self.station_locations.itertuples():
             l = []
-            for k in self.station_locations.dtype.names:
-                l.append(f"{ss[k]:{fmt_dict[k]}}")
+            for key in self.station_locations.columns:
+                l.append(f"{getattr(row, key):{fmt_dict[key]}}")
             lines.append("".join(l))
 
         lines.append("\nModel Center:")
@@ -114,7 +109,7 @@ class MTStations:
             "north",
             "utm_epsg",
         ]:
-            l.append(f"{self.center_point[n][0]:{fmt_dict[n]}}")
+            l.append(f"{getattr(self.center_point, n):{fmt_dict[n]}}")
         lines.append("".join(l))
 
         lines.append("\nMean Values:")
@@ -127,14 +122,38 @@ class MTStations:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if not isinstance(other, MTStations):
+            raise TypeError(f"Can not compare {type(other)} to MTStations")
+
+        if not (self.station_locations == other.station_locations).all().all():
+            return False
+
+        if not self.center_point == other.center_point:
+            return False
+
+        return True
+
     def copy(self):
-        try:
-            return deepcopy(self)
-        except TypeError:
-            delattr(self, "logger")
-            deep_copy = deepcopy(self)
-            self.logger = logger
-            return deep_copy
+
+        if self.mt_list is not None:
+            mt_list_copy = [m.copy() for m in self.mt_list]
+        else:
+            mt_list_copy = None
+        copied = MTStations(None, mt_list=mt_list_copy)
+        for key in [
+            "utm_crs",
+            "datum_crs",
+            "_center_lat",
+            "_center_lon",
+            "_center_elev",
+            "shift_east",
+            "shift_north",
+            "rotation_angle",
+        ]:
+            setattr(copied, key, deepcopy(getattr(self, key)))
+
+        return copied
 
     @property
     def model_epsg(self):
@@ -174,8 +193,9 @@ class MTStations:
             return
 
         self._utm_crs = CRS.from_user_input(value)
-        for mt_obj in self.mt_list:
-            mt_obj.utm_crs = value
+        if self.mt_list is not None:
+            for mt_obj in self.mt_list:
+                mt_obj.utm_crs = value
 
     @property
     def datum_crs(self):
@@ -205,8 +225,9 @@ class MTStations:
             return
 
         self._datum_crs = CRS.from_user_input(value)
-        for mt_obj in self.mt_list:
-            mt_obj.datum_crs = value
+        if self.mt_list is not None:
+            for mt_obj in self.mt_list:
+                mt_obj.datum_crs = value
 
     @property
     def station_locations(self):
@@ -384,8 +405,11 @@ class MTStations:
             mt_obj.model_east = new_coords[0]
             mt_obj.model_north = new_coords[1]
 
+        self.rotation_angle += rotation_angle
+
         self.logger.info(
-            f"Rotated stations by {rotation_angle:.1f} deg clockwise from N"
+            f"Rotated stations by {rotation_angle:.1f} deg clockwise from N. "
+            f"Total rotation = {self.rotation_angle:.1f} deg."
         )
 
     def center_stations(self, model_obj):

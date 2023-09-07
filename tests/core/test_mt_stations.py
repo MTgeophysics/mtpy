@@ -718,12 +718,14 @@ class TestMTStationGrid(unittest.TestCase):
             .all()
         )
 
-    def test_station_locations(self):
-        self.assertTrue(
-            (self.station_locations == self.stations.station_locations)
-            .all()
-            .all()
-        )
+    def test_copy(self):
+        sc = self.stations.copy()
+        self.assertEqual(self.stations, sc)
+
+    def test_station_locations_rotated(self):
+        s = self.stations.copy()
+        s.rotate_stations(45)
+        self.assertTrue((s == self.rotated_station_locations).all().all())
 
 
 # =============================================================================
