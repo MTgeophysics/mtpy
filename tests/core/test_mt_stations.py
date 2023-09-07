@@ -804,6 +804,19 @@ class TestMTStationProfile(unittest.TestCase):
         self.assertListEqual(["mt01", "mt02", "mt03", "mt04", "mt05"], d_names)
 
 
+class TestMTStationMoreThanOneEPSG(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        m1 = MT(latitude=40, longitude=-120, utm_epsg=32611, station="mt01")
+        m2 = MT(latitude=20, longitude=-100, utm_epsg=32613, station="mt02")
+        m3 = MT(latitude=42, longitude=-118, utm_epsg=32611, station="mt03")
+
+        self.stations = MTStations(32613, mt_list=[m1, m2, m3])
+
+    def test_utm_epsg(self):
+        self.assertEqual(self.stations.utm_epsg, 32611)
+
+
 # =============================================================================
 # run
 # =============================================================================

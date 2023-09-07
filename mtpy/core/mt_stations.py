@@ -77,6 +77,7 @@ class MTStations:
 
         if self.mt_list is not None:
             self.compute_relative_locations()
+            self.station_locations
 
     def __str__(self):
         if self.mt_list is None:
@@ -382,7 +383,11 @@ class MTStations:
 
         key = f"{key}_epsg"
         if len(df[key].unique()) > 1:
-            return df.datum_epsg.median()
+            epsg = int(df[key].median())
+            self.logger.warning(
+                f"Found more than one {key} number, using median EPSG number {epsg}"
+            )
+            return epsg
         else:
             if getattr(self, key) is None:
                 return df[key].unique()[0]
