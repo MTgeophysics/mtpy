@@ -725,7 +725,14 @@ class TestMTStationGrid(unittest.TestCase):
     def test_station_locations_rotated(self):
         s = self.stations.copy()
         s.rotate_stations(45)
-        self.assertTrue((s == self.rotated_station_locations).all().all())
+        with self.subTest("rotated df"):
+            self.assertTrue(
+                (s.station_locations == self.rotated_station_locations)
+                .all()
+                .all()
+            )
+        with self.subTest("rotation_angle"):
+            self.assertEqual(s.rotation_angle, 45)
 
 
 # =============================================================================
