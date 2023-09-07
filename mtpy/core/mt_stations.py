@@ -69,6 +69,7 @@ class MTStations:
         self.shift_north = 0
         self.rotation_angle = 0.0
         self.mt_list = None
+        self.utm_epsg = utm_epsg
 
         for key in list(kwargs.keys()):
             if hasattr(self, key):
@@ -379,11 +380,12 @@ class MTStations:
 
         """
 
-        if len(df[f"{key}_epsg"].unique()) > 1:
+        key = f"{key}_epsg"
+        if len(df[key].unique()) > 1:
             return df.datum_epsg.median()
         else:
-            if self.datum_epsg is None:
-                return df[f"{key}_epsg"].unique()[0]
+            if getattr(self, key) is None:
+                return df[key].unique()[0]
 
     def compute_relative_locations(self, shift_east=0, shift_north=0):
         """
