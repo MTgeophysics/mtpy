@@ -363,7 +363,7 @@ class MTCollection:
 
         mt_data = MTData()
 
-        for row in self.working_dataframe.itertuples():
+        for row in self.dataframe.itertuples():
             tf = self.get_tf(row.tf_id, survey=row.survey)
 
             mt_data.add_station(tf, compute_relative_location=False)
