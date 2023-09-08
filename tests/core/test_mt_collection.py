@@ -390,9 +390,7 @@ class TestMTCollection(unittest.TestCase):
             original.survey_metadata.hdf5_reference = (
                 h5_tf.survey_metadata.hdf5_reference
             )
-            original.survey_metadata.mth5_type = (
-                h5_tf.survey_metadata.mth5_type
-            )
+            original.survey_metadata.mth5_type = h5_tf.survey_metadata.mth5_type
             original.station_metadata.acquired_by.author = (
                 h5_tf.station_metadata.acquired_by.author
             )
@@ -433,7 +431,7 @@ class TestMTCollection(unittest.TestCase):
             original = MT(tf_fn)
             original.read()
             mt_data_02.add_station(original, compute_relative_location=False)
-        mt_data_02.compute_relative_location()
+        mt_data_02.compute_relative_locations()
 
         self.assertEqual(mt_data_01, mt_data_02)
 

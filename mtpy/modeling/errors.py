@@ -59,6 +59,18 @@ class ModelErrors:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if not isinstance(other, ModelErrors):
+            raise TypeError(f"Cannot compare ModelErrors to type {type(other)}")
+
+        for key in ["error_value", "error_type", "floor", "mode"]:
+            value_og = getattr(self, key)
+            value_other = getattr(other, key)
+
+            if value_og != value_other:
+                return False
+        return True
+
     def validate_percent(self, value):
         """
         Make sure the percent is a decimal

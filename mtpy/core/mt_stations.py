@@ -413,11 +413,14 @@ class MTStations:
         """
         calculate the center point from the given station locations
 
-        Returns
-        -------------
-            **center_location** : np.ndarray
-                                  structured array of length 1
-                                  dtype includes (east, north, zone, lat, lon)
+        If _center attributes are set, that is returned as the center point.
+
+        Otherwise, looks for non-zero locations in E-N first, then Lat/Lon and
+        estimates the center point as (max - min) / 2.
+
+        :return: Center point
+        :rtype: :class:`mtpy.core.MTLocation`
+
         """
 
         center_location = MTLocation()
@@ -436,37 +439,34 @@ class MTStations:
         else:
             center_location.datum_epsg = self.datum_epsg
             center_location.utm_epsg = self.utm_epsg
-            if np.all(self.station_locations.east == 0) or np.all(
-                self.station_locations.north == 0
-            ):
-                if np.all(self.station_locations.latitude != 0) and np.all(
-                    self.station_locations.longitude != 0
-                ):
-                    self.logger.debug(
-                        "locating center from latitude and longitude"
-                    )
-                    center_location.latitude = (
-                        self.station_locations.latitude.max()
-                        + self.station_locations.latitude.min()
-                    ) / 2
-                    center_location.longitude = (
-                        self.station_locations.longitude.max()
-                        + self.station_locations.longitude.min()
-                    ) / 2
-                else:
+            st_df = self.station_locations.copy()
+
+            st_en = st_df.loc[(st_df.east != 0) & (st_df.north != 0)]
+            if st_en.empty:
+                st_ll = st_df.loc[
+                    (st_df.latitude != 0) & (st_df.longitude != 0)
+                ]
+                if st_ll.empty:
                     raise ValueError(
                         "Station locations are all 0 cannot find center."
                     )
 
+                else:
+                    self.logger.debug(
+                        "locating center from latitude and longitude"
+                    )
+                    center_location.latitude = (
+                        st_ll.latitude.max() + st_ll.latitude.min()
+                    ) / 2
+                    center_location.longitude = (
+                        st_ll.longitude.max() + st_ll.longitude.min()
+                    ) / 2
+
             else:
                 self.logger.debug("locating center from UTM grid")
-                center_location.east = (
-                    self.station_locations.east.max()
-                    + self.station_locations.east.min()
-                ) / 2
+                center_location.east = (st_en.east.max() + st_en.east.min()) / 2
                 center_location.north = (
-                    self.station_locations.north.max()
-                    + self.station_locations.north.min()
+                    st_en.north.max() + st_en.north.min()
                 ) / 2
 
             center_location.model_east = center_location.east
@@ -477,18 +477,18 @@ class MTStations:
 
     def rotate_stations(self, rotation_angle):
         """
-        Rotate stations assuming N is 0
+        Rotate stations model postions only assuming N is 0 and east is 90.
 
-        Arguments
-        -------------
-            **rotation_angle** : float
-                                 angle in degrees assuming N is 0
+        .. note:: Computes in place and rotates according to already set
+         rotation angle.  Therefore if the station locations have already been
+         rotated the function will rotate the already rotate stations.  For
+         example if you rotate the stations 15 degrees, then again by 20 degrees
+         the resulting station locations will be 35 degrees rotated from the
+         original locations.
 
-        Returns
-        -------------
-            * refils rel_east and rel_north in station_locations.  Does this
-              because you will still need the original locations for plotting
-              later.
+        :param rotation_angle: rotation angle in degrees assuming N=0, E=90.
+         Positive clockwise.
+        :type rotation_angle: float
 
         """
 
@@ -626,6 +626,9 @@ class MTStations:
         """
         create a geopandas dataframe
 
+        :return: Geopandas DataFrame with points from latitude and longitude
+        :rtype: :class:`geopandas.DataFrame`
+
         """
 
         gdf = gpd.GeoDataFrame(
@@ -651,6 +654,7 @@ class MTStations:
         sdf = self.to_geopd()
 
         sdf.to_file(shp_fn)
+        return shp_fn
 
     def to_csv(self, csv_fn, geometry=False):
         """

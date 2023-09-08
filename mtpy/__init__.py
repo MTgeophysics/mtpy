@@ -29,7 +29,10 @@ config = {
             "sink": sys.stdout,
             "level": "INFO",
             "colorize": True,
-            "format": "<level>{time} | {level: <3} | {name} | {function} | {message}</level>",
+            "format": (
+                "<level>{time:YY:MM:DDTHH:mm:ss} | {level: <3} | line:{line} |"
+                "{name} | {function} | {message}</level>"
+            ),
         },
     ],
     "extra": {"user": "someone"},
