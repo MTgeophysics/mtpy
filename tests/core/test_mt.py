@@ -20,14 +20,15 @@ from mt_metadata import TF_EDI_CGG
 
 
 class TestMT(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.mt = MT()
-
-    def test_clone_empty(self):
         self.mt.station = "test_01"
         self.mt.survey = "big"
         self.mt.latitude = 10
         self.mt.longitude = 20
+
+    def test_clone_empty(self):
         new_mt = self.mt.clone_empty()
 
         for attr in ["survey", "station", "latitude", "longitude"]:
@@ -36,6 +37,11 @@ class TestMT(unittest.TestCase):
 
         with self.subTest("tf is empty"):
             self.assertFalse(new_mt.has_transfer_function())
+
+    def test_copy(self):
+        mt_copy = self.mt.copy()
+
+        self.assertEqual(self.mt, mt_copy)
 
 
 class TestMTFromKWARGS(unittest.TestCase):
