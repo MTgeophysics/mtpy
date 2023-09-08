@@ -17,7 +17,7 @@ import unittest
 
 import pandas as pd
 
-from mtpy import MT, MTCollection
+from mtpy import MT, MTCollection, MTData
 
 import mt_metadata
 from mth5.helpers import validate_name
@@ -424,6 +424,11 @@ class TestMTCollection(unittest.TestCase):
 
             with self.subTest(f"{original.tf_id} data"):
                 self.assertTrue((original.dataset == h5_tf.dataset).all())
+
+    def test_to_mt_data(self):
+        mt_data_01 = self.mc.to_mt_data()
+
+        mt_data_02 = MTData()
 
     @classmethod
     def tearDownClass(self):

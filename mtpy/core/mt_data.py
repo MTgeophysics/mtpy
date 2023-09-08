@@ -10,6 +10,8 @@ Created on Mon Oct 10 11:58:56 2022
 # =============================================================================
 from pathlib import Path
 from collections import OrderedDict
+from copy import deepcopy
+
 
 import numpy as np
 import pandas as pd
@@ -66,6 +68,15 @@ class MTData(OrderedDict, MTStations):
 
         self.model_parameters = {}
 
+        self._copy_attrs = [
+            "z_model_error",
+            "t_model_error",
+            "_datum_crs",
+            "utm_crs",
+            "data_rotation_angle",
+            "model_parameters",
+        ]
+
     def _validate_item(self, mt_obj):
         if isinstance(mt_obj, (str, Path)):
             m = MT()
@@ -78,6 +89,56 @@ class MTData(OrderedDict, MTStations):
             )
         return mt_obj
 
+    def __eq__(self, other):
+        """
+        test for other is equal
+
+        :param other: DESCRIPTION
+        :type other: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(other, MTData):
+            raise TypeError(f"Can not compare MTData to {type(other)}.")
+
+        for attr in self._copy_attrs:
+            value_og = getattr(self, attr)
+            value_other = getattr(other, attr)
+
+            if value_og != value_other:
+                self.logger.info(
+                    f"Attribute {attr}: {value_og} != {value_other}"
+                )
+                return False
+        if len(self) == len(other):
+            for mt1, mt2 in zip(self.values(), other.values()):
+                if mt1 != mt2:
+                    return False
+        else:
+            self.logger.info(
+                f"Length of MTData not the same {len(self)} != {len(other)}"
+            )
+            return False
+        return True
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for key in self._copy_attrs:
+            value = getattr(self, key)
+            setattr(result, key, deepcopy(value, memo))
+
+        for mt_obj in self.values():
+            result.add_station(mt_obj.copy(), compute_relative_location=False)
+
+        return result
+
+    def copy(self):
+        return deepcopy(self)
+
     def clone_empty(self):
         """
         return an empty copy including properties
@@ -88,12 +149,8 @@ class MTData(OrderedDict, MTStations):
         """
 
         md = MTData()
-        md.z_model_error = self.z_model_error
-        md.t_model_error = self.t_model_error
-        md._datum_crs = self._datum_crs
-        md._utm_crs = self._utm_crs
-        md.data_rotation_angle = self.data_rotation_angle
-        md.model_parameters = self.model_parameters
+        for attr in self._copy_attrs:
+            setattr(self, attr, deepcopy(getattr(self, attr)))
 
         return md
 
@@ -152,7 +209,9 @@ class MTData(OrderedDict, MTStations):
                 if not isinstance(interpolate_periods, np.ndarray):
                     interpolate_periods = np.array(interpolate_periods)
 
-                m = m.interpolate(1.0 / interpolate_periods, bounds_error=False)
+                m = m.interpolate(
+                    1.0 / interpolate_periods, bounds_error=False
+                )
 
             self.__setitem__(f"{m.survey}.{m.station}", m)
 
@@ -334,7 +393,9 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(new_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    new_mt_obj, compute_relative_location=False
+                )
 
         if not inplace:
             return mt_data
@@ -358,7 +419,9 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    rot_mt_obj, compute_relative_location=False
+                )
             else:
                 mt_obj.rotation_angle = rotation_angle
 
@@ -457,8 +520,12 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
-            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
+            mt_obj.compute_model_z_errors(
+                **self.z_model_error.error_parameters
+            )
+            mt_obj.compute_model_t_errors(
+                **self.t_model_error.error_parameters
+            )
 
     def estimate_starting_rho(self):
         """
