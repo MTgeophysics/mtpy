@@ -429,6 +429,13 @@ class TestMTCollection(unittest.TestCase):
         mt_data_01 = self.mc.to_mt_data()
 
         mt_data_02 = MTData()
+        for tf_fn in self.fn_list:
+            original = MT(tf_fn)
+            original.read()
+            mt_data_02.add_station(original, compute_relative_location=False)
+        mt_data_02.compute_relative_location()
+
+        self.assertEqual(mt_data_01, mt_data_02)
 
     @classmethod
     def tearDownClass(self):

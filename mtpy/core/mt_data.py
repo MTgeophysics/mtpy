@@ -158,6 +158,10 @@ class MTData(OrderedDict, MTStations):
     def mt_list(self):
         return self.values()
 
+    @mt_list.setter
+    def mt_list(self, value):
+        pass
+
     @property
     def survey_ids(self):
         return list(set([key.split(".")[0] for key in self.keys()]))

@@ -76,11 +76,14 @@ class MTStations:
                 setattr(self, key, kwargs[key])
 
         if self.mt_list is not None:
-            self.compute_relative_locations()
-            self.station_locations
+            if len(self.mt_list) > 0:
+                self.compute_relative_locations()
+                self.station_locations
 
     def __str__(self):
         if self.mt_list is None:
+            return ""
+        elif len(self.mt_list) == 0:
             return ""
 
         fmt_dict = dict(
