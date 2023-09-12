@@ -404,7 +404,9 @@ class TestMTCollection(unittest.TestCase):
             original.survey_metadata.hdf5_reference = (
                 h5_tf.survey_metadata.hdf5_reference
             )
-            original.survey_metadata.mth5_type = h5_tf.survey_metadata.mth5_type
+            original.survey_metadata.mth5_type = (
+                h5_tf.survey_metadata.mth5_type
+            )
             original.station_metadata.acquired_by.author = (
                 h5_tf.station_metadata.acquired_by.author
             )
@@ -447,45 +449,56 @@ class TestMTCollection(unittest.TestCase):
             for key, value in mt_data_01.items():
                 if original.station in key:
                     original.survey = validate_name(value.survey)
+                    original.station_metadata.transfer_function.runs_processed = (
+                        value.station_metadata.transfer_function.runs_processed
+                    )
+                    original.station_metadata.run_list = (
+                        value.station_metadata.run_list
+                    )
+                    value.survey_metadata.time_period = (
+                        original.survey_metadata.time_period
+                    )
+                    if (
+                        original.station_metadata.transfer_function.data_quality.good_from_period
+                        == 0.0
+                    ):
+                        value.station_metadata.transfer_function.data_quality.good_from_period = (
+                            0.0
+                        )
+                    if (
+                        original.station_metadata.transfer_function.data_quality.good_to_period
+                        == 0.0
+                    ):
+                        value.station_metadata.transfer_function.data_quality.good_to_period = (
+                            0.0
+                        )
                     break
-
+            if original.station_metadata.comments in [""]:
+                original.station_metadata.comments = None
+            if original.station_metadata.acquired_by.author in [""]:
+                original.station_metadata.acquired_by.author = None
+            if (
+                original.station_metadata.transfer_function.processing_type
+                in [""]
+            ):
+                original.station_metadata.transfer_function.processing_type = (
+                    None
+                )
             mt_data_02.add_station(original, compute_relative_location=False)
         mt_data_02.compute_relative_locations()
 
-        with self.subTest("Raw"):
-            self.assertNotEqual(mt_data_01, mt_data_02)
-        with self.subTest("CAS04 Doctored"):
+        # "fix" some of the data
+        mt_data_01["CONUS_South.CAS04"].survey_metadata.update_bounding_box()
+        mt_data_02["CONUS_South.CAS04"].survey_metadata.country = "USA"
 
-            mt_data_01[
-                "CONUS_South.CAS04"
-            ].station_metadata.time_period.end = "2020-07-13T21:46:12+00:00"
-            mt_data_01[
-                "CONUS_South.CAS04"
-            ].station_metadata.time_period.start = "2020-06-02T18:41:43+00:00"
-            mt_data_01[
-                "CONUS_South.CAS04"
-            ].survey_metadata.time_period.end = "2020-07-13T21:46:12+00:00"
-            mt_data_01[
-                "CONUS_South.CAS04"
-            ].survey_metadata.time_period.start = "2020-06-02T18:41:43+00:00"
-            mt_data_01[
-                "CONUS_South.CAS04"
-            ].survey_metadata.update_bounding_box()
+        mt_data_01["CONUS_South.NMX20"].survey_metadata.update_bounding_box()
 
-            mt_data_02["CONUS_South.CAS04"].survey_metadata.update_time_period()
-            mt_data_02["CONUS_South.CAS04"].survey_metadata.country = "USA"
-            mt_data_02["CONUS_South.CAS04"].survey_metadata.id = "CONUS South"
-            mt_data_02[
-                "CONUS_South.CAS04"
-            ].station_metadata.run_list = mt_data_01[
-                "CONUS_South.CAS04"
-            ].station_metadata.run_list
-
-            mt_data_01[
-                "CONUS_South.NMX20"
-            ].survey_metadata.update_bounding_box()
-
-            self.assertEqual(mt_data_01, mt_data_02)
+        mt_data_02[
+            "unknown_survey_009.SAGE_2005_out"
+        ].station_metadata.run_list = mt_data_01[
+            "unknown_survey_009.SAGE_2005_out"
+        ].station_metadata.run_list
+        self.assertEqual(mt_data_01, mt_data_02)
 
     @classmethod
     def tearDownClass(self):

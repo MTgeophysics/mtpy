@@ -134,6 +134,7 @@ class MTData(OrderedDict, MTStations):
                     f"Attribute {attr}: {value_og} != {value_other}"
                 )
                 return False
+        fail = False
         if len(self) == len(other):
             for key in self.keys():
                 mt1 = self[key]
@@ -141,10 +142,12 @@ class MTData(OrderedDict, MTStations):
                     mt2 = other[key]
                     if mt1 != mt2:
                         self.logger.info(f"Station {key} is not equal.")
-                        return False
+                        fail = True
                 except KeyError:
                     self.logger.info(f"Could not find {key} in other.")
-                    return False
+                    fail = True
+            if fail:
+                return False
         else:
             self.logger.info(
                 f"Length of MTData not the same {len(self)} != {len(other)}"
@@ -281,7 +284,9 @@ class MTData(OrderedDict, MTStations):
                 if not isinstance(interpolate_periods, np.ndarray):
                     interpolate_periods = np.array(interpolate_periods)
 
-                m = m.interpolate(1.0 / interpolate_periods, bounds_error=False)
+                m = m.interpolate(
+                    1.0 / interpolate_periods, bounds_error=False
+                )
 
             self.__setitem__(f"{validate_name(m.survey)}.{m.station}", m)
 
@@ -483,7 +488,9 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(new_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    new_mt_obj, compute_relative_location=False
+                )
 
         if not inplace:
             return mt_data
@@ -507,7 +514,9 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    rot_mt_obj, compute_relative_location=False
+                )
             else:
                 mt_obj.rotation_angle = rotation_angle
 
@@ -606,8 +615,12 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
-            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
+            mt_obj.compute_model_z_errors(
+                **self.z_model_error.error_parameters
+            )
+            mt_obj.compute_model_t_errors(
+                **self.t_model_error.error_parameters
+            )
 
     def estimate_starting_rho(self):
         """

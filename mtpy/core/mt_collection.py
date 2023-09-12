@@ -305,6 +305,8 @@ class MTCollection:
         tf_object = self.mth5_collection.from_reference(ref)
 
         mt_object.__dict__.update(tf_object.__dict__)
+        mt_object.station_metadata.update_time_period()
+        mt_object.survey_metadata.update_time_period()
 
         return mt_object
 
