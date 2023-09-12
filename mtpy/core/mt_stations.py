@@ -395,12 +395,14 @@ class MTStations:
             if getattr(self, key) is None:
                 return df[key].unique()[0]
 
-    def compute_relative_locations(self, shift_east=0, shift_north=0):
+    def compute_relative_locations(self):
         """
-        put station in a coordinate system relative to
-        (shift_east, shift_north)
-        (+) shift right or up
-        (-) shift left or down
+        Calculate model station locations relative to the center point in meters.
+
+        Uses `mtpy.core.MTLocation.compute_model_location` to calculate the
+        relative distance.
+
+        Computes inplace.
 
         """
 
@@ -523,7 +525,7 @@ class MTStations:
         topography cause it reduces edge effects of stations close to cell edges.
         Recalculates rel_east, rel_north to center of model cell.
 
-        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :param model_obj: :class:`mtpy.modeling.Structured` object of the model
         :type model_obj: :class:`mtpy.modeling.modem.Model`
 
 

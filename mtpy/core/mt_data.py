@@ -36,12 +36,23 @@ from mtpy.imaging import (
     PlotResidualPTMaps,
 )
 
+from mth5.helpers import validate_name
+
 # =============================================================================
 
 
 class MTData(OrderedDict, MTStations):
     """
-    keys are formatted as survey_id.station_id
+    Collection of MT objects as an OrderedDict where keys are formatted as
+    `survey_id.station_id`.  Has all functionality of an OrderedDict for
+    example can iterate of `.keys()`, `.values()` or `.items`.  Values are
+    a list of MT objects.
+
+    Inherits :class:`mtpyt.core.MTStations` to deal with geographic locations
+    of stations.
+
+    Is not optimized yet for speed, works fine for smaller surveys, but for
+    large can be slow.  Might try using a dataframe as the base.
     """
 
     def __init__(self, mt_list=None, **kwargs):
@@ -78,6 +89,17 @@ class MTData(OrderedDict, MTStations):
         ]
 
     def _validate_item(self, mt_obj):
+        """
+        Make sure intpu is an MT object.  If the input is a string assume
+        its a file path.
+
+        :param mt_obj: Input MT object
+        :type mt_obj: :class:`mtpy.MT`, str, :class:`pathlib.Path`
+        :raises TypeError: If not any of the input types
+        :return: MT object
+        :rtype: :class:`mtpy.MT`
+
+        """
         if isinstance(mt_obj, (str, Path)):
             m = MT()
             m.read(mt_obj)
@@ -93,10 +115,10 @@ class MTData(OrderedDict, MTStations):
         """
         test for other is equal
 
-        :param other: DESCRIPTION
-        :type other: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param other: Other MTData object
+        :type other: :class:`mtpy.MTData`
+        :return: True if equal, False if not equal
+        :rtype: bool
 
         """
 
@@ -118,6 +140,7 @@ class MTData(OrderedDict, MTStations):
                 try:
                     mt2 = other[key]
                     if mt1 != mt2:
+                        self.logger.info(f"Station {key} is not equal.")
                         return False
                 except KeyError:
                     self.logger.info(f"Could not find {key} in other.")
@@ -130,6 +153,14 @@ class MTData(OrderedDict, MTStations):
         return True
 
     def __deepcopy__(self, memo):
+        """
+        Deep copy overwrite to make sure that logger is skipped.
+        :param memo: DESCRIPTION
+        :type memo: TYPE
+        :return: Deep copy of original MTData
+        :rtype: :class:`mtpy.MTData`
+
+        """
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -143,14 +174,23 @@ class MTData(OrderedDict, MTStations):
         return result
 
     def copy(self):
+        """
+        Deep copy of original MTData object
+
+        :param memo: DESCRIPTION
+        :type memo: TYPE
+        :return: Deep copy of original MTData
+        :rtype: :class:`mtpy.MTData`
+
+        """
         return deepcopy(self)
 
     def clone_empty(self):
         """
-        return an empty copy including properties
+        Return a copy of MTData excluding MT objects.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: Copy of MTData object excluding MT objects
+        :rtype: :class:`mtpy.MTData`
 
         """
 
@@ -162,24 +202,40 @@ class MTData(OrderedDict, MTStations):
 
     @property
     def mt_list(self):
+        """
+
+        :return: List of MT objects
+        :rtype: list
+
+        """
         return self.values()
 
     @mt_list.setter
     def mt_list(self, value):
+        """
+        At this point not implemented, mainly here for inheritance of MTStations
+        """
         pass
 
     @property
     def survey_ids(self):
+        """
+        Survey IDs for all MT objects
+
+        :return: list of survey IDs
+        :rtype: list
+
+        """
         return list(set([key.split(".")[0] for key in self.keys()]))
 
     def get_survey(self, survey_id):
         """
-        Get a survey from the data set
+        Get all MT objects that belong to the 'survey_id' from the data set.
 
-        :param survey_id: DESCRIPTION
-        :type survey_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param survey_id: survey ID
+        :type survey_id: str
+        :return: MTData object including only those with the desired 'survey_id'
+        :rtype: :class:`mtpy.MTData`
 
         """
 
@@ -196,12 +252,18 @@ class MTData(OrderedDict, MTStations):
         interpolate_periods=None,
     ):
         """
-        Add a new station's mt_object
+        Add a MT object
 
-        :param mt_object: DESCRIPTION
-        :type mt_object: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param mt_object: MT object for a single station
+        :type mt_object: :class:`mtpy.MT`
+        :param survey: new survey name, defaults to None
+        :type survey: str, optional
+        :param compute_relative_location: Compute relative location,
+         can be slow if adding single stations in a loop.  If looping over
+         station set to False and compute at the end, defaults to True
+        :type compute_relative_location: bool, optional
+        :param interpolate_periods: periods to interpolate onto, defaults to None
+        :type interpolate_periods: np.array, optional
 
         """
 
@@ -221,19 +283,37 @@ class MTData(OrderedDict, MTStations):
 
                 m = m.interpolate(1.0 / interpolate_periods, bounds_error=False)
 
-            self.__setitem__(f"{m.survey}.{m.station}", m)
+            self.__setitem__(f"{validate_name(m.survey)}.{m.station}", m)
 
         if compute_relative_location:
             self.compute_relative_locations()
 
+    def add_tf(self, tf, **kwargs):
+        """
+        Add a MT object
+
+        :param mt_object: MT object for a single station
+        :type mt_object: :class:`mtpy.MT`
+        :param survey: new survey name, defaults to None
+        :type survey: str, optional
+        :param compute_relative_location: Compute relative location,
+         can be slow if adding single stations in a loop.  If looping over
+         station set to False and compute at the end, defaults to True
+        :type compute_relative_location: bool, optional
+        :param interpolate_periods: periods to interpolate onto, defaults to None
+        :type interpolate_periods: np.array, optional
+
+        """
+        self.add_station(tf, **kwargs)
+
     def remove_station(self, station_id, survey_id=None):
         """
-        remove a station from the dictionary
+        remove a station from the dictionary based on the key
 
-        :param station_id: DESCRIPTION
-        :type station_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param station_id: station ID
+        :type station_id: str
+        :param survey_id: survey ID
+        :type survey_id: str
 
         """
 
@@ -245,10 +325,10 @@ class MTData(OrderedDict, MTStations):
         """
         get station key from station id and survey id
 
-        :param station_id: DESCRIPTION
-        :type station_id: TYPE
-        :param survey_id: DESCRIPTION
-        :type survey_id: TYPE
+        :param station_id: station ID
+        :type station_id: str
+        :param survey_id: survey ID
+        :type survey_id: str
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -256,7 +336,7 @@ class MTData(OrderedDict, MTStations):
 
         if station_id is not None:
             if survey_id is not None:
-                return f"{survey_id}.{station_id}"
+                return f"{validate_name(survey_id)}.{station_id}"
             else:
                 for key in self.keys():
                     if station_id in key:
@@ -283,7 +363,9 @@ class MTData(OrderedDict, MTStations):
         if station_key is not None:
             station_key = station_key
         else:
-            station_key = self._get_station_key(station_id, survey_id)
+            station_key = self._get_station_key(
+                station_id, validate_name(survey_id)
+            )
 
         try:
             return self[station_key]
