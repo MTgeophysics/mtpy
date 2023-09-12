@@ -481,6 +481,10 @@ class TestMTCollection(unittest.TestCase):
                 "CONUS_South.CAS04"
             ].station_metadata.run_list
 
+            mt_data_01[
+                "CONUS_South.NMX20"
+            ].survey_metadata.update_bounding_box()
+
             self.assertEqual(mt_data_01, mt_data_02)
 
     @classmethod
