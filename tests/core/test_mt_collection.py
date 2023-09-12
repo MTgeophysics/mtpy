@@ -495,9 +495,9 @@ class TestMTCollection(unittest.TestCase):
 
         mt_data_02[
             "unknown_survey_009.SAGE_2005_out"
-        ].station_metadata.run_list = mt_data_01[
+        ].station_metadata.runs = mt_data_01[
             "unknown_survey_009.SAGE_2005_out"
-        ].station_metadata.run_list
+        ].station_metadata.runs
         self.assertEqual(mt_data_01, mt_data_02)
 
     @classmethod
