@@ -334,8 +334,8 @@ class MTData(OrderedDict, MTStations):
         :type station_id: str
         :param survey_id: survey ID
         :type survey_id: str
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: station key
+        :rtype: str
 
         """
 
@@ -354,15 +354,19 @@ class MTData(OrderedDict, MTStations):
     def get_station(self, station_id=None, survey_id=None, station_key=None):
         """
 
-        :param station_key: DESCRIPTION, defaults to None
-        :type station_key: TYPE, optional
-        :param station_id: DESCRIPTION, defaults to None
-        :type station_id: TYPE, optional
-        :param survey_id: DESCRIPTION, defaults to None
-        :type survey_id: TYPE, optional
-        :raises KeyError: DESCRIPTION
-        :return: DESCRIPTION
-        :rtype: TYPE
+        if 'station_key' is None, tries to find key from `station_id` and
+        'survey_id' using MTData._get_station_key()
+
+        :param station_key: full station key {survey_id}.{station_id},
+         defaults to None
+        :type station_key: str, optional
+        :param station_id: station ID, defaults to None
+        :type station_id: str, optional
+        :param survey_id: survey ID, defaults to None
+        :type survey_id: str, optional
+        :raises KeyError: If cannot find station_key
+        :return: MT object
+        :rtype: :class:`mtpy.MT`
 
         """
         if station_key is not None:
@@ -382,10 +386,10 @@ class MTData(OrderedDict, MTStations):
         get a subset of the data from a list of stations, could be station_id
         or station_keys
 
-        :param station_list: DESCRIPTION
-        :type station_list: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param station_list: list of station keys as {survey_id}.{station_id}
+        :type station_list: list
+        :return: Returns just those stations within station_list
+        :rtype: :class:`mtpy.MTData`
 
         """
         mt_data = MTData()
@@ -399,6 +403,8 @@ class MTData(OrderedDict, MTStations):
 
     @property
     def n_stations(self):
+        """number of stations in MT data"""
+
         if self.mt_list is not None:
             return len(self.mt_list)
 
