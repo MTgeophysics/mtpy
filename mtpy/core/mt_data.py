@@ -401,9 +401,15 @@ class MTData(OrderedDict, MTStations):
         mt_data = MTData()
         for station in station_list:
             if station.count(".") > 0:
-                mt_data.add_station(self.get_station(station_key=station))
+                mt_data.add_station(
+                    self.get_station(station_key=station),
+                    compute_relative_location=False,
+                )
             else:
-                mt_data.add_station(self.get_station(station_id=station))
+                mt_data.add_station(
+                    self.get_station(station_id=station),
+                    compute_relative_location=False,
+                )
 
         return mt_data
 
@@ -665,7 +671,7 @@ class MTData(OrderedDict, MTStations):
         ]
 
     def estimate_spatial_static_shift(
-        self, station_key, radius, period_min, period_max
+        self, station_key, radius, period_min, period_max, radius_units="m"
     ):
         """
         Estimate static shift for a station by estimating the median resistivity
@@ -684,25 +690,27 @@ class MTData(OrderedDict, MTStations):
         :rtype: TYPE
 
         """
+        md = self.get_subset(
+            self.get_nearby_stations(station_key, radius, radius_units)
+        )
+        if len(md) == 0:
+            self.logger.warning(
+                f"Could not find any nearby stations for {station_key}."
+            )
+            return 1.0, 1.0
 
-        md = self.copy()
+        local_site = self.get_station(station_key)
 
-        # get the local station
-        local_station = md.get_station(station_key=station_key)
+        interp_periods = local_site.period[
+            np.where(
+                (local_site.period >= period_min)
+                & (local_site.period <= period_max)
+            )
+        ]
 
-        md._center_lat = local_station.latitude
-        md._center_lon = local_station.longitude
-        md.compute_relative_locations()
+        md.interpolate(interp_periods)
 
-        station_list = []
-        for row in md.station_locations.loc[
-            (md.station_locations.model_east < radius)
-            & (md.station_locations.model_north < radius)
-        ].itertuples():
-            if np.sqrt(row.model_east**2 + row.model_north**2) <= radius:
-                station_list.append(f"{row.survey}.{row.station}")
-
-        md.get_subset(station_list)
+        res_array_x = []
 
         return md
 
