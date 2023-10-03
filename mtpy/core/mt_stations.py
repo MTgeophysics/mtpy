@@ -46,6 +46,7 @@ class MTStations:
 
         self.dtype = dict(
             [
+                ("survey", "U50"),
                 ("station", "U50"),
                 ("latitude", float),
                 ("longitude", float),
@@ -88,6 +89,7 @@ class MTStations:
 
         fmt_dict = dict(
             [
+                ("survey", "<8"),
                 ("station", "<8"),
                 ("latitude", "<10.4f"),
                 ("longitude", "<10.4f"),
@@ -352,6 +354,7 @@ class MTStations:
         )
         # get station locations in meters
         for ii, mt_obj in enumerate(self.mt_list):
+            entries["survey"][ii] = mt_obj.survey
             entries["station"][ii] = mt_obj.station
             entries["latitude"][ii] = mt_obj.latitude
             entries["longitude"][ii] = mt_obj.longitude

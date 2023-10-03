@@ -626,7 +626,7 @@ class MTData(OrderedDict, MTStations):
             mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
             mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
 
-    def get_nearby_stations(self, station_key, radius):
+    def get_nearby_stations(self, station_key, radius, radius_units="m"):
         """
         get stations close to a given station
 
@@ -642,14 +642,27 @@ class MTData(OrderedDict, MTStations):
         local_station = self.get_station(station_key=station_key)
 
         sdf = self.station_locations.copy()
-        sdf["radius"] = np.sqrt(
-            (local_station.east - sdf.east) ** 2
-            + (local_station.north - sdf.north)
-        )
+        if radius_units in ["m", "meters", "metres"]:
+            if self.utm_crs is None:
+                raise ValueError(
+                    "Cannot estimate distances in meters without a UTM CRS. Set 'utm_crs' first."
+                )
+            sdf["radius"] = np.sqrt(
+                (local_station.east - sdf.east) ** 2
+                + (local_station.north - sdf.north)
+            )
+        elif radius_units in ["deg", "degrees"]:
+            sdf["radius"] = np.sqrt(
+                (local_station.longitude - sdf.longitude) ** 2
+                + (local_station.latitude - sdf.latitude)
+            )
 
-        station_list = sdf.loc[sdf.radius <= radius, "station"].to_list()
-        station_list.remove(local_station.station)
-        return station_list
+        return [
+            f"{row.survey}.{row.station}"
+            for row in sdf.loc[
+                (sdf.radius <= radius) & (sdf.radius > 0)
+            ].itertuples()
+        ]
 
     def estimate_spatial_static_shift(
         self, station_key, radius, period_min, period_max
