@@ -82,8 +82,14 @@ class MTData(OrderedDict, MTStations):
         self._copy_attrs = [
             "z_model_error",
             "t_model_error",
-            "_datum_crs",
             "utm_crs",
+            "datum_crs",
+            "_center_lat",
+            "_center_lon",
+            "_center_elev",
+            "shift_east",
+            "shift_north",
+            "rotation_angle",
             "data_rotation_angle",
             "model_parameters",
         ]
@@ -186,7 +192,9 @@ class MTData(OrderedDict, MTStations):
         :rtype: :class:`mtpy.MTData`
 
         """
-        return deepcopy(self)
+        copied = deepcopy(self)
+        copied.logger = self.logger
+        return copied
 
     def clone_empty(self):
         """
@@ -284,9 +292,7 @@ class MTData(OrderedDict, MTStations):
                 if not isinstance(interpolate_periods, np.ndarray):
                     interpolate_periods = np.array(interpolate_periods)
 
-                m = m.interpolate(
-                    1.0 / interpolate_periods, bounds_error=False
-                )
+                m = m.interpolate(1.0 / interpolate_periods, bounds_error=False)
 
             self.__setitem__(f"{validate_name(m.survey)}.{m.station}", m)
 
@@ -494,9 +500,7 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(
-                    new_mt_obj, compute_relative_location=False
-                )
+                mt_data.add_station(new_mt_obj, compute_relative_location=False)
 
         if not inplace:
             return mt_data
@@ -520,9 +524,7 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(
-                    rot_mt_obj, compute_relative_location=False
-                )
+                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
             else:
                 mt_obj.rotation_angle = rotation_angle
 
@@ -621,12 +623,75 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(
-                **self.z_model_error.error_parameters
-            )
-            mt_obj.compute_model_t_errors(
-                **self.t_model_error.error_parameters
-            )
+            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
+            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
+
+    def get_nearby_stations(self, station_key, radius):
+        """
+        get stations close to a given station
+
+        :param station_key: DESCRIPTION
+        :type station_key: TYPE
+        :param radius: DESCRIPTION
+        :type radius: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        # get the local station
+        local_station = self.get_station(station_key=station_key)
+
+        sdf = self.station_locations.copy()
+        sdf["radius"] = np.sqrt(
+            (local_station.east - sdf.east) ** 2
+            + (local_station.north - sdf.north)
+        )
+
+        station_list = sdf.loc[sdf.radius <= radius, "station"].to_list()
+        station_list.remove(local_station.station)
+        return station_list
+
+    def estimate_spatial_static_shift(
+        self, station_key, radius, period_min, period_max
+    ):
+        """
+        Estimate static shift for a station by estimating the median resistivity
+        values for nearby stations within a radius given.  Can set the period
+        range to estimate the resistivity values.
+
+        :param station_key: DESCRIPTION
+        :type station_key: TYPE
+        :param radius: DESCRIPTION
+        :type radius: TYPE
+        :param period_min: DESCRIPTION
+        :type period_min: TYPE
+        :param period_max: DESCRIPTION
+        :type period_max: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        md = self.copy()
+
+        # get the local station
+        local_station = md.get_station(station_key=station_key)
+
+        md._center_lat = local_station.latitude
+        md._center_lon = local_station.longitude
+        md.compute_relative_locations()
+
+        station_list = []
+        for row in md.station_locations.loc[
+            (md.station_locations.model_east < radius)
+            & (md.station_locations.model_north < radius)
+        ].itertuples():
+            if np.sqrt(row.model_east**2 + row.model_north**2) <= radius:
+                station_list.append(f"{row.survey}.{row.station}")
+
+        md.get_subset(station_list)
+
+        return md
 
     def estimate_starting_rho(self):
         """

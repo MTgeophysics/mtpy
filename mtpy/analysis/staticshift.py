@@ -15,6 +15,7 @@ Created on Mon Aug 19 10:06:21 2013
 import os
 
 import numpy as np
+from loguru import logger
 
 import mtpy.core.mt as mt
 
@@ -102,16 +103,14 @@ def estimate_static_spatial_median(
             mt_obj_list.append(mt_obj_2)
 
     if len(mt_obj_list) == 0:
-        print("No stations found within given radius {0:.2f} m".format(radius))
+        logger.warning(f"No stations found within given radius {radius:.2f} m")
         return 1.0, 1.0
 
     # extract the resistivity values from the near by stations
     res_array = np.zeros((len(mt_obj_list), num_freq, 2, 2))
-    print("These stations are within the given {0} m radius:".format(radius))
+    logger.info("These stations are within the given {radius} m radius:")
     for kk, mt_obj_kk in enumerate(mt_obj_list):
-        print(
-            "\t{0} --> {1:.1f} m".format(mt_obj_kk.station, mt_obj_kk.delta_d)
-        )
+        logger.info("{mt_obj_kk.station} --> {mt_obj_kk.delta_d:.1f} m")
         interp_idx = np.where(
             (interp_freq >= mt_obj_kk.Z.freq.min())
             & (interp_freq <= mt_obj_kk.Z.freq.max())
@@ -213,9 +212,7 @@ def remove_static_shift_spatial_filter(
     )
     mt_obj = mt.MT(edi_fn)
 
-    s, z_ss = mt_obj.Z.no_ss(
-        reduce_res_factor_x=ss_x, reduce_res_factor_y=ss_y
-    )
+    s, z_ss = mt_obj.Z.no_ss(reduce_res_factor_x=ss_x, reduce_res_factor_y=ss_y)
     edi_path = os.path.dirname(edi_fn)
 
     mt_obj.Z.z = z_ss
