@@ -275,7 +275,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             plot_y = tf.latitude - self.reference_point[1]
         # if map scale is in meters easting and northing
         elif self.map_scale in ["m", "km"]:
-            tf.project_point_ll2utm(epsg=self.map_epsg, utm_zone=self.map_utm_zone)
+            tf.project_point_ll2utm(
+                epsg=self.map_epsg, utm_zone=self.map_utm_zone
+            )
 
             plot_x = tf.east - self.reference_point[0]
             plot_y = tf.north - self.reference_point[1]
@@ -639,16 +641,12 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         for key, ax in zip(["ellipse", "skew"], [self.ax2, self.ax3]):
             dict_key = f"{key}_cmap"
             cmap = getattr(self, dict_key)
-            if cmap in list(mtcolors.cmapdict.keys()):
-                if "ellipse" in key:
-                    cmap_input = mtcolors.cmapdict[cmap]
-                else:
-                    cmap_input = mtcolors.cmapdict[cmap]
-            else:
-                cmap_input = mtcolors.cm.get_cmap(cmap)
+            cmap_input = mtcolors.cm.get_cmap(cmap)
             if "seg" in cmap and "ellipse" in key:
 
-                norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)
+                norms = colors.BoundaryNorm(
+                    self.ellipse_cmap_bounds, cmap_input.N
+                )
                 self.cb = mcb.ColorbarBase(
                     ax,
                     cmap=cmap_input,
@@ -657,7 +655,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                     ticks=self.ellipse_cmap_bounds,
                 )
             elif "skew" in key:
-                norms = colors.BoundaryNorm(self.skew_cmap_bounds, cmap_input.N)
+                norms = colors.BoundaryNorm(
+                    self.skew_cmap_bounds, cmap_input.N
+                )
                 cb = mcb.ColorbarBase(
                     ax,
                     cmap=cmap_input,
@@ -717,7 +717,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         self._set_subplot_params()
 
         # make figure instance
-        self.fig = plt.figure(self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi)
+        self.fig = plt.figure(
+            self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi
+        )
 
         # clear the figure if there is already one up
         plt.clf()
@@ -784,7 +786,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                         **cx_kwargs,
                     )
                 except Exception as error:
-                    self.logger.warning(f"Could not add base map because {error}")
+                    self.logger.warning(
+                        f"Could not add base map because {error}"
+                    )
         # --> set title in period or frequency
         titlefreq = "{0:.5g} (s)".format(self.plot_period)
 
@@ -801,7 +805,9 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
                 fontweight="bold",
             )
         # make a grid with color lines
-        self.ax.grid(True, alpha=0.3, which="major", color=(0.5, 0.5, 0.5), lw=0.75)
+        self.ax.grid(
+            True, alpha=0.3, which="major", color=(0.5, 0.5, 0.5), lw=0.75
+        )
         self.ax.grid(
             True,
             alpha=0.3,

@@ -16,8 +16,9 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 from matplotlib.lines import Line2D
+from matplotlib import pyplot as plt
 
-import mtpy.imaging.mtcolors as mtcl
+from mtpy.imaging.mtcolors import get_plot_color
 from .utils import (
     period_label_dict,
     get_period_limits,
@@ -248,7 +249,7 @@ def plot_pt_lateral(
 
         # get ellipse color
         ellipd.set_facecolor(
-            mtcl.get_plot_color(
+            get_plot_color(
                 color_array[ii],
                 ellipse_properties["colorby"],
                 ellipse_properties["cmap"],
@@ -288,7 +289,7 @@ def plot_pt_lateral(
         else:
             cbpt = mcb.ColorbarBase(
                 cbax,
-                cmap=mtcl.cmapdict[ellipse_properties["cmap"]],
+                cmap=plt.get_cmap(ellipse_properties["cmap"]),
                 norm=colors.Normalize(
                     vmin=ellipse_properties["range"][0],
                     vmax=ellipse_properties["range"][1],
