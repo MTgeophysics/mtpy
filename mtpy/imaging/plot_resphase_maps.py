@@ -334,8 +334,12 @@ class PlotResPhaseMaps(PlotBaseMaps):
             cb.ax.yaxis.set_major_formatter(ticker.FixedFormatter(labels))
         elif "phase" in component:
             cb = plt.colorbar(im_mappable, ax=ax, shrink=0.6, extend="both")
-        cb.ax.tick_params(axis="both", which="major", labelsize=self.font_size - 1)
-        cb.ax.tick_params(axis="both", which="minor", labelsize=self.font_size - 1)
+        cb.ax.tick_params(
+            axis="both", which="major", labelsize=self.font_size - 1
+        )
+        cb.ax.tick_params(
+            axis="both", which="minor", labelsize=self.font_size - 1
+        )
 
         return cb
 
@@ -349,7 +353,9 @@ class PlotResPhaseMaps(PlotBaseMaps):
         self._set_subplot_params()
 
         # make figure instance
-        self.fig = plt.figure(self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi)
+        self.fig = plt.figure(
+            self.fig_num, figsize=self.fig_size, dpi=self.fig_dpi
+        )
 
         # clear the figure if there is already one up
         plt.clf()
@@ -387,7 +393,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
                 im = ax.tricontourf(
                     triangulation,
                     image,
-                    mask=indices,
+                    # mask=indices,
                     levels=np.linspace(
                         self.cmap_limits[comp][0],
                         self.cmap_limits[comp][1],
