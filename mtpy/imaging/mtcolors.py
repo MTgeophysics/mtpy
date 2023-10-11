@@ -265,6 +265,19 @@ rdylbu_data = {
 
 mt_rdylbu = colors.LinearSegmentedColormap("mt_rdylbu", rdylbu_data, 256)
 
+# Combine the lower and upper range of the terrain colormap with a gap in the middle
+# to let the coastline appear more prominently.
+# inspired by https://stackoverflow.com/questions/31051488/combining-two-matplotlib-colormaps
+colors_undersea = cm.terrain(np.linspace(0, 0.17, 56))
+colors_land = cm.terrain(np.linspace(0.25, 1, 200))
+
+
+# combine them and build a new colormap
+color_list = np.vstack((colors_undersea, colors_land))
+cut_terrain_map = colors.LinearSegmentedColormap.from_list(
+    "cut_terrain", color_list
+)
+
 MT_CMAP_DICT = {
     "mt_yl2rd": mt_yl2rd,
     "mt_bl2yl2rd": mt_bl2yl2rd,
@@ -278,6 +291,7 @@ MT_CMAP_DICT = {
     "mt_rd2wh2bl": mt_rd2wh2bl,
     "mt_rd2wh2bl_r": mt_rd2wh2bl_r,
     "mt_rdylbu": mt_rdylbu,
+    "cut_terrain": cut_terrain_map,
 }
 
 
@@ -323,10 +337,8 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         return get_color(cvar, cmap)
         """
         norm = colors.Normalize(ckmin, ckmax)
-        if cmap in list(MT_CMAP_DICT.keys()):
-            return MT_CMAP_DICT[cmap](norm(colorx))
-        else:
-            return cm.get_cmap(cmap)(norm(colorx))
+        return cm.get_cmap(cmap)(norm(colorx))
+
     elif comp == "skew" or comp == "normalized_skew":
         """
         cvar = 2*colorx/(ckmax-ckmin)
@@ -334,10 +346,8 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         """
 
         norm = colors.Normalize(ckmin, ckmax)
-        if cmap in list(MT_CMAP_DICT.keys()):
-            return MT_CMAP_DICT[cmap](norm(colorx))
-        else:
-            return cm.get_cmap(cmap)(norm(colorx))
+        return cm.get_cmap(cmap)(norm(colorx))
+
     elif comp == "skew_seg" or comp == "normalized_skew_seg":
         if bounds is None:
             raise IOError("Need to input bounds for segmented colormap")
@@ -375,10 +385,7 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
                     / step
                 )
             )
-        if cmap in list(MT_CMAP_DICT.keys()):
-            return MT_CMAP_DICT[cmap](norm(colorx))
-        else:
-            return cm.get_cmap(cmap)(norm(colorx))
+        return cm.get_cmap(cmap)(norm(colorx))
     else:
         raise NameError("color key " + comp + " not supported")
 
@@ -429,17 +436,3 @@ class FixPointNormalize(colors.Normalize):
     def __call__(self, value, clip=None):
         x, y = [self.vmin, self.sealevel, self.vmax], [0, self.col_val, 1]
         return np.ma.masked_array(np.interp(value, x, y))
-
-
-# Combine the lower and upper range of the terrain colormap with a gap in the middle
-# to let the coastline appear more prominently.
-# inspired by https://stackoverflow.com/questions/31051488/combining-two-matplotlib-colormaps
-colors_undersea = cm.terrain(np.linspace(0, 0.17, 56))
-colors_land = cm.terrain(np.linspace(0.25, 1, 200))
-
-
-# combine them and build a new colormap
-color_list = np.vstack((colors_undersea, colors_land))
-cut_terrain_map = colors.LinearSegmentedColormap.from_list(
-    "cut_terrain", color_list
-)

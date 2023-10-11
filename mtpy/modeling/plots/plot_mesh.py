@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from mtpy.imaging.mtplot_tools import PlotBase
-from mtpy.imaging.mtcolors import FixPointNormalize, cut_terrain_map
+from mtpy.imaging.mtcolors import FixPointNormalize
 
 # =============================================================================
 
@@ -70,7 +70,7 @@ class PlotMesh(PlotBase):
             x,
             y,
             self.model_obj.surface_dict["topography"],
-            cmap=cut_terrain_map,
+            cmap=plt.get_cmap("cut_terrain"),
             norm=norm,
         )
         divider = make_axes_locatable(self.ax1)
@@ -115,26 +115,27 @@ class PlotMesh(PlotBase):
             self._plot_topography()
 
         # plot station locations
-        plot_east = self.model_obj.station_locations.model_east
-        plot_north = self.model_obj.station_locations.model_north
+        if self.model_obj.station_locations is not None:
+            plot_east = self.model_obj.station_locations.model_east
+            plot_north = self.model_obj.station_locations.model_north
 
-        # plot stations
-        self.ax1.scatter(
-            plot_east,
-            plot_north,
-            marker=self.marker,
-            c=self.marker_color,
-            s=self.marker_size,
-        )
-        if self.plot_station_id:
-            for row in self.model_obj.station_locations.itertuples():
-                self.ax1.annotate(
-                    row.station,
-                    (row.model_east, row.model_north + 0.05),
-                    ha="center",
-                    va="baseline",
-                    clip_on=True,
-                )
+            # plot stations
+            self.ax1.scatter(
+                plot_east,
+                plot_north,
+                marker=self.marker,
+                c=self.marker_color,
+                s=self.marker_size,
+            )
+            if self.plot_station_id:
+                for row in self.model_obj.station_locations.itertuples():
+                    self.ax1.annotate(
+                        row.station,
+                        (row.model_east, row.model_north + 0.05),
+                        ha="center",
+                        va="baseline",
+                        clip_on=True,
+                    )
 
         east_line_xlist = []
         east_line_ylist = []
@@ -247,13 +248,14 @@ class PlotMesh(PlotBase):
         )
 
         # --> plot stations
-        self.ax2.scatter(
-            plot_east,
-            self.model_obj.station_locations.model_elevation,
-            marker=self.marker,
-            c=self.marker_color,
-            s=self.marker_size,
-        )
+        if self.model_obj.station_locations is not None:
+            self.ax2.scatter(
+                plot_east,
+                self.model_obj.station_locations.model_elevation,
+                marker=self.marker,
+                c=self.marker_color,
+                s=self.marker_size,
+            )
 
         if self.z_limits is None:
             self.ax2.set_ylim(
