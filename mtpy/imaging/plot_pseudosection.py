@@ -21,7 +21,6 @@ from mtpy.imaging.mtplot_tools import (
     griddata_interpolate,
     triangulate_interpolation,
 )
-import mtpy.imaging.mtcolors as mtcl
 
 # ==============================================================================
 
@@ -99,8 +98,8 @@ class PlotResPhasePseudoSection(PlotBaseProfile):
         }
 
         # --> set colormaps Note only mtcolors is supported
-        self.res_cmap = mtcl.cmapdict["mt_rd2gr2bl"]
-        self.phase_cmap = mtcl.cmapdict["mt_bl2gr2rd"]
+        self.res_cmap = plt.get_cmap("mt_rd2gr2bl")
+        self.phase_cmap = plt.get_cmap("mt_bl2gr2rd")
 
         for key, value in kwargs.items():
             setattr(self, key, value)

@@ -272,7 +272,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                     im = ax.tricontourf(
                         triangulation,
                         image,
-                        mask=indices,
+                        # mask=indices,
                         levels=levels,
                         extend="both",
                         cmap=self.depth_cmap,
@@ -282,7 +282,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                         triangulation,
                         image,
                         levels=50,
-                        mask=indices,
+                        # mask=indices,
                         extend="both",
                         cmap=self.depth_cmap,
                     )
