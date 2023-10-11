@@ -4,9 +4,13 @@ Created on Tue May 14 18:05:59 2013
 
 @author: jpeacock-pr
 """
-
-import matplotlib.colors as colors
+# =============================================================================
+# Imports
+# =============================================================================
+from matplotlib import pyplot as plt
+from matplotlib import colors
 from matplotlib import cm
+
 import numpy as np
 
 # ==============================================================================
@@ -23,9 +27,24 @@ mt_yl2rd = colors.LinearSegmentedColormap("mt_yl2rd", ptcmapdict, 256)
 
 # blue to yellow to red
 skcmapdict = {
-    "red": ((0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (0.5, 0.0, 1.0), (1.0, 1.0, 1.0)),
-    "green": ((0.0, 1.0, 0.0), (0.5, 1.0, 0.0), (0.5, 0.0, 1.0), (1.0, 0.0, 1.0)),
-    "blue": ((0.0, 0.0, 1.0), (0.5, 0.0, 1.0), (0.5, 0.1, 0.1), (1.0, 0.1, 0.1)),
+    "red": (
+        (0.0, 0.0, 0.0),
+        (0.5, 1.0, 1.0),
+        (0.5, 0.0, 1.0),
+        (1.0, 1.0, 1.0),
+    ),
+    "green": (
+        (0.0, 1.0, 0.0),
+        (0.5, 1.0, 0.0),
+        (0.5, 0.0, 1.0),
+        (1.0, 0.0, 1.0),
+    ),
+    "blue": (
+        (0.0, 0.0, 1.0),
+        (0.5, 0.0, 1.0),
+        (0.5, 0.1, 0.1),
+        (1.0, 0.1, 0.1),
+    ),
 }
 
 mt_bl2yl2rd = colors.LinearSegmentedColormap("mt_bl2yl2rd", skcmapdict, 256)
@@ -149,26 +168,6 @@ ptcmapdict4 = {
 }
 mt_rd2gr2bl = colors.LinearSegmentedColormap("mt_rd2gr2bl", ptcmapdict4, 256)
 
-# mtcmapdict2 = {'red':  ((0.0, 0.5, 0.2),
-#                        (0.25, 1.0, 1.0),
-#                        (0.50, 1.0, 1.0),
-#                        (0.55, 0.9, 0.9),
-#                        (1.0, 0.0, 0.0),
-#                        (1.0, 0.2, 0.2)),
-#
-#               'green': ((0.0, 0.0, 0.0),
-#                         (0.25, 0.3, 0.3),
-#                         (0.50, 1.0, 1.0),
-#                         (0.55, 0.9, 0.9),
-#                         (1.0, 0.0, 0.0),
-#                         (1.0, 0.3, 0.3)),
-#
-#               'blue':  ((0.0, 0.0, 0.0),
-#                         (0.25, 0.0, 0.0),
-#                         (0.50, 0.9, 0.9),
-#                         (0.55, 1.0, 1.0),
-#                         (1.0, 0.50, 0.50),
-#                         (1.0, 0.4, 0.75))}
 mtcmapdict2 = {
     "red": (
         (0.0, 0.4, 0.2),
@@ -218,7 +217,9 @@ mtcmapdict3 = {
     ),
 }
 
-mt_rd2wh2bl_r = colors.LinearSegmentedColormap("mt_rd2wh2bl_r", mtcmapdict3, 256)
+mt_rd2wh2bl_r = colors.LinearSegmentedColormap(
+    "mt_rd2wh2bl_r", mtcmapdict3, 256
+)
 
 rdylbu_data = {
     "blue": [
@@ -264,8 +265,7 @@ rdylbu_data = {
 
 mt_rdylbu = colors.LinearSegmentedColormap("mt_rdylbu", rdylbu_data, 256)
 
-
-cmapdict = {
+MT_CMAP_DICT = {
     "mt_yl2rd": mt_yl2rd,
     "mt_bl2yl2rd": mt_bl2yl2rd,
     "mt_wh2bl": mt_wh2bl,
@@ -279,211 +279,19 @@ cmapdict = {
     "mt_rd2wh2bl_r": mt_rd2wh2bl_r,
     "mt_rdylbu": mt_rdylbu,
 }
-# add matplotlib built-in colormaps
-# should use register_cmap and then use get_cmap to remove deprication warning
-cmapdict.update(cm.cmap_d)
 
-# make functions for getting the color from each map according to the variable
-# cvar
+
+def register_cmaps(cmap_dict):
+    for key, value in cmap_dict.items():
+        plt.register_cmap(key, value)
 
 
 def get_color(cvar, cmap):
     """
     gets the color to plot for the given color map
-    
-    """
-    if cmap == "mt_yl2rd":
-        plot_color = get_mt_yl2rd(cvar)
-        return plot_color
-    elif cmap == "mt_wh2bl":
-        plot_color = get_mt_wh2bl(cvar)
-        return plot_color
-    elif cmap == "mt_bl2wh2rd" or cmap == "mt_seg_bl2wh2rd":
-        plot_color = get_mt_bl2wh2rd(cvar)
-        return plot_color
-    elif cmap == "mt_bl2yl2rd":
-        plot_color = get_mt_bl2yl2rd(cvar)
-        return plot_color
-    elif cmap == "mt_bl2gr2rd":
-        plot_color = get_mt_bl2gr2rd(cvar)
-        return plot_color
-    elif cmap == "mt_rd2gr2bl":
-        plot_color = get_mt_rd2gr2bl(cvar)
-        return plot_color
-    elif cmap == "mt_wh2or":
-        plot_color = get_mt_wh2or(cvar)
-        return plot_color
-    elif cmap == "mt_rd2wh2bl":
-        plot_color = get_mt_rd2wh2bl(cvar)
-        return plot_color
-    elif cmap == "mt_rd2wh2bl_r":
-        plot_color = get_mt_rd2wh2bl_r(cvar)
-        return plot_color
-    else:
-        try:
-            return get_matplotlib_cval(cmap, cvar)
-        except:
-            print("Color map: {0} is not supported yet.".format(cmap))
 
-
-def get_matplotlib_cval(cmap, cvar):
-    """
-    gets the color for any matplotlib colormaps
-    
     """
     return cm.get_cmap(cmap)(cvar)
-
-
-def get_mt_yl2rd(cvar):
-    """
-    gets color for the color map that goes from yellow to red
-    
-    """
-
-    if cvar >= 1:
-        plot_color = (1, 0, 0)
-    elif cvar <= 0:
-        plot_color = (1, 1, 0)
-    else:
-        plot_color = (1, 1 - abs(cvar), 0.1)
-    return plot_color
-
-
-def get_mt_wh2bl(cvar):
-    """
-    gets color for the color map that goes from white to blue
-    
-    """
-
-    if cvar >= 1:
-        plot_color = (0, 0, 1)
-    elif cvar <= 0:
-        plot_color = (1, 1, 1)
-    else:
-        plot_color = (1 - abs(cvar), 1 - abs(cvar), 1)
-    return plot_color
-
-
-def get_mt_wh2or(cvar):
-    """
-    gets color for the color map that goes from white to orange
-    
-    """
-
-    if cvar >= 1:
-        plot_color = (1, 0.5, 0)
-    elif cvar <= 0:
-        plot_color = (1, 1, 1)
-    else:
-        plot_color = (1, abs(cvar) * 0.5 + 0.5, abs(cvar))
-    return plot_color
-
-
-def get_mt_bl2wh2rd(cvar):
-    """
-    gets color for the color map that goes from blue to white to red
-    
-    """
-
-    if cvar < 0 and cvar > -1:
-        plot_color = (1 + cvar, 1 + cvar, 1)
-    elif cvar <= -1:
-        plot_color = (0, 0, 1)
-    elif cvar >= 0 and cvar < 1:
-        plot_color = (1, 1 - cvar, 1 - cvar)
-    elif cvar >= 1:
-        plot_color = (1, 0, 0)
-    return plot_color
-
-
-def get_mt_bl2yl2rd(cvar):
-    """
-    gets color for the color map that goes from blue to yellow to red
-    
-    """
-
-    if cvar < 0 and cvar > -1:
-        plot_color = (1 + cvar, 1 + cvar, -cvar)
-    elif cvar <= -1:
-        plot_color = (0, 0, 1)
-    elif cvar >= 0 and cvar < 1:
-        plot_color = (1, 1 - cvar, 0.01)
-    elif cvar >= 1:
-        plot_color = (1, 0, 0)
-    return plot_color
-
-
-def get_mt_bl2gr2rd(cvar):
-    """
-    gets color for the color map that goes from blue to greenish to red
-    
-    """
-
-    if cvar < 0 and cvar > -1:
-        plot_color = (1 + cvar, 1 + cvar / 2, 1)
-    elif cvar <= -1:
-        plot_color = (0, 0, 1)
-    elif cvar >= 0 and cvar < 1:
-        plot_color = (1, 1 - cvar / 2, 1 - cvar)
-    elif cvar >= 1:
-        plot_color = (1, 0, 0)
-    return plot_color
-
-
-def get_mt_rd2gr2bl(cvar):
-    """
-    gets color for the color map that goes red to greenish to blue
-    
-    """
-
-    if cvar < 0 and cvar > -1:
-        plot_color = (1, 1 + cvar / 2, 1 + cvar)
-    elif cvar <= -1:
-        plot_color = (1, 0, 0)
-    elif cvar >= 0 and cvar < 1:
-        plot_color = (1 - cvar, 1 - cvar / 2, 1)
-    elif cvar >= 1:
-        plot_color = (0, 0, 1)
-    return plot_color
-
-
-def get_mt_rd2wh2bl(cvar):
-    """
-    gets color for the color map that goes red to white to blue
-    
-    """
-
-    if cvar < 0 and cvar > -1:
-        plot_color = (1, 1 + cvar / 3, 1 + cvar)
-    elif cvar <= -1:
-        plot_color = (1, 0, 0)
-    elif cvar >= 0 and cvar < 1:
-        plot_color = (1 - cvar, 1 - cvar / 3, 1)
-    elif cvar >= 1:
-        plot_color = (0, 0, 1)
-    return plot_color
-
-
-def get_mt_rd2wh2bl_r(cvar):
-    """
-    gets color for the color map that goes red to white to blue
-    
-    """
-    # blue
-    if cvar < -0.5 and cvar > -1:
-        plot_color = (0.2, 0.3, 1.5 + cvar)
-    if cvar < 0 and cvar > -0.5:
-        plot_color = (1.6 * cvar + 1, 1.4 * cvar + 1, 0.5 * cvar + 1)
-    elif cvar <= -1:
-        plot_color = (0.2, 0.3, 0.5)
-    elif cvar >= 0 and cvar < 0.5:
-        plot_color = (1, -1.2 * cvar + 1, -2 * cvar + 1)
-    # red
-    elif cvar >= 0.5 and cvar < 1:
-        plot_color = (-cvar + 1.5, -0.6 * cvar + 0.6, 0)
-    elif cvar >= 1:
-        plot_color = (0.5, 0, 0)
-    return plot_color
 
 
 def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
@@ -515,8 +323,8 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         return get_color(cvar, cmap)
         """
         norm = colors.Normalize(ckmin, ckmax)
-        if cmap in list(cmapdict.keys()):
-            return cmapdict[cmap](norm(colorx))
+        if cmap in list(MT_CMAP_DICT.keys()):
+            return MT_CMAP_DICT[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
     elif comp == "skew" or comp == "normalized_skew":
@@ -526,8 +334,8 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         """
 
         norm = colors.Normalize(ckmin, ckmax)
-        if cmap in list(cmapdict.keys()):
-            return cmapdict[cmap](norm(colorx))
+        if cmap in list(MT_CMAP_DICT.keys()):
+            return MT_CMAP_DICT[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
     elif comp == "skew_seg" or comp == "normalized_skew_seg":
@@ -562,10 +370,13 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         else:
             colorx = int(
                 step
-                * round(float(colorx - np.sign(colorx) * (abs(colorx) % step)) / step)
+                * round(
+                    float(colorx - np.sign(colorx) * (abs(colorx) % step))
+                    / step
+                )
             )
-        if cmap in list(cmapdict.keys()):
-            return cmapdict[cmap](norm(colorx))
+        if cmap in list(MT_CMAP_DICT.keys()):
+            return MT_CMAP_DICT[cmap](norm(colorx))
         else:
             return cm.get_cmap(cmap)(norm(colorx))
     else:
@@ -574,14 +385,14 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
 
 def cmap_discretize(cmap, N):
     """Return a discrete colormap from the continuous colormap cmap.
-      
-         cmap: colormap instance, eg. cm.jet. 
-         N: number of colors.
-     
-     Example
-         x = resize(arange(100), (5,100))
-         djet = cmap_discretize(cm.jet, 5)
-         imshow(x, cmap=djet)
+
+        cmap: colormap instance, eg. cm.jet.
+        N: number of colors.
+
+    Example
+        x = resize(arange(100), (5,100))
+        djet = cmap_discretize(cm.jet, 5)
+        imshow(x, cmap=djet)
     """
 
     colors_i = np.concatenate((np.linspace(0, 1.0, N), (0.0, 0.0, 0.0, 0.0)))
@@ -598,15 +409,17 @@ def cmap_discretize(cmap, N):
 
 
 class FixPointNormalize(colors.Normalize):
-    """ 
+    """
     Inspired by https://stackoverflow.com/questions/20144529/shifted-colorbar-matplotlib
-    Subclassing Normalize to obtain a colormap with a fixpoint 
+    Subclassing Normalize to obtain a colormap with a fixpoint
     somewhere in the middle of the colormap.
-    This may be useful for a `terrain` map, to set the "sea level" 
-    to a color in the blue/turquise range. 
+    This may be useful for a `terrain` map, to set the "sea level"
+    to a color in the blue/turquise range.
     """
 
-    def __init__(self, vmin=None, vmax=None, sealevel=0, col_val=0.21875, clip=False):
+    def __init__(
+        self, vmin=None, vmax=None, sealevel=0, col_val=0.21875, clip=False
+    ):
         # sealevel is the fix point of the colormap (in data units)
         self.sealevel = sealevel
         # col_val is the color value in the range [0,1] that should represent the sealevel.
@@ -627,4 +440,6 @@ colors_land = cm.terrain(np.linspace(0.25, 1, 200))
 
 # combine them and build a new colormap
 color_list = np.vstack((colors_undersea, colors_land))
-cut_terrain_map = colors.LinearSegmentedColormap.from_list("cut_terrain", color_list)
+cut_terrain_map = colors.LinearSegmentedColormap.from_list(
+    "cut_terrain", color_list
+)

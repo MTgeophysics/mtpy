@@ -15,6 +15,7 @@ from loguru import logger
 from mtpy.core.mt import MT
 from mtpy.core.mt_data import MTData
 from mtpy.core.mt_collection import MTCollection
+from mtpy.imaging.mtcolors import MT_CMAP_DICT, register_cmaps
 
 
 __version__ = "2.0.0"
@@ -39,3 +40,6 @@ config = {
 }
 logger.configure(**config)
 # logger.disable("mt_metadata")
+
+# register custom colormaps
+register_cmaps(MT_CMAP_DICT)
