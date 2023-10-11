@@ -1064,14 +1064,22 @@ class StructuredGrid3D:
         self.cell_size_north = stats.mode(self.nodes_north)[0][0]
 
         # get number of padding cells
-        self.pad_east = np.where(
-            self.nodes_east[0 : int(self.nodes_east.size / 2)]
-            != self.cell_size_east
-        )[0].size
-        self.pad_north = np.where(
-            self.nodes_north[0 : int(self.nodes_north.size / 2)]
-            != self.cell_size_north
-        )[0].size
+        half = int(self.nodes_east.size / 2)
+        self.pad_east = (
+            half
+            - np.where(
+                (self.nodes_east[0:half] < self.cell_size_east * 1.1)
+                & (self.nodes_east[0:half] > self.cell_size_east * 0.9)
+            )[0].size
+        )
+        half = int(self.nodes_north.size / 2)
+        self.pad_north = (
+            half
+            - np.where(
+                (self.nodes_north[0:half] < self.cell_size_north * 1.1)
+                & (self.nodes_north[0:half] > self.cell_size_north * 0.9)
+            )[0].size
+        )
 
         topo = self._get_topography_from_model()
         if topo is not None:
