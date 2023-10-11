@@ -699,7 +699,7 @@ class MTData(OrderedDict, MTStations):
             )
             return 1.0, 1.0
 
-        local_site = self.get_station(station_key)
+        local_site = self.get_station(station_key=station_key)
 
         interp_periods = local_site.period[
             np.where(
@@ -710,9 +710,12 @@ class MTData(OrderedDict, MTStations):
 
         md.interpolate(interp_periods)
 
-        res_array_x = []
+        df = md.to_dataframe()
 
-        return md
+        sx = df.res_xy.mean()
+        sy = df.res_yx.mean()
+
+        return sx, sy
 
     def estimate_starting_rho(self):
         """

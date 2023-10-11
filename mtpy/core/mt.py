@@ -420,23 +420,25 @@ class MT(TF, MTLocation):
             new_m.Z = self.Z.interpolate(
                 1.0 / new_frequency, method=method, **kwargs
             )
-            if np.all(np.isnan(new_m.Z.z)) and self.has_impedance():
+            if self.has_impedance():
+                if np.all(np.isnan(new_m.Z.z)):
 
-                self.logger.warning(
-                    f"Station {self.station}: Interpolated Z values are all NaN, "
-                    "consider an alternative interpolation method. "
-                    "See scipy.interpolate.interp1d for more information."
-                )
+                    self.logger.warning(
+                        f"Station {self.station}: Interpolated Z values are all NaN, "
+                        "consider an alternative interpolation method. "
+                        "See scipy.interpolate.interp1d for more information."
+                    )
         if self.has_tipper():
             new_m.Tipper = self.Tipper.interpolate(
                 1.0 / new_frequency, method=method, **kwargs
             )
-            if np.all(np.isnan(new_m.Tipper.tipper)) and self.has_tipper():
-                self.logger.warning(
-                    f"Station {self.station}: Interpolated T values are all NaN, "
-                    "consider an alternative interpolation method. "
-                    "See scipy.interpolate.interp1d for more information."
-                )
+            if self.has_tipper():
+                if np.all(np.isnan(new_m.Tipper.tipper)):
+                    self.logger.warning(
+                        f"Station {self.station}: Interpolated T values are all NaN, "
+                        "consider an alternative interpolation method. "
+                        "See scipy.interpolate.interp1d for more information."
+                    )
 
         return new_m
 
@@ -903,9 +905,7 @@ class MT(TF, MTLocation):
             ] = self._transfer_function.transfer_function.real * (
                 noise_real
             ) + (
-                1j
-                * self._transfer_function.transfer_function.imag
-                * noise_imag
+                1j * self._transfer_function.transfer_function.imag * noise_imag
             )
 
             self._transfer_function["transfer_function_error"] = (
@@ -919,9 +919,7 @@ class MT(TF, MTLocation):
             ] = self._transfer_function.transfer_function.real * (
                 noise_real
             ) + (
-                1j
-                * self._transfer_function.transfer_function.imag
-                * noise_imag
+                1j * self._transfer_function.transfer_function.imag * noise_imag
             )
 
             self._transfer_function["transfer_function_error"] = (
