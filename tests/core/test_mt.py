@@ -20,14 +20,15 @@ from mt_metadata import TF_EDI_CGG
 
 
 class TestMT(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.mt = MT()
-
-    def test_clone_empty(self):
         self.mt.station = "test_01"
         self.mt.survey = "big"
         self.mt.latitude = 10
         self.mt.longitude = 20
+
+    def test_clone_empty(self):
         new_mt = self.mt.clone_empty()
 
         for attr in ["survey", "station", "latitude", "longitude"]:
@@ -36,6 +37,22 @@ class TestMT(unittest.TestCase):
 
         with self.subTest("tf is empty"):
             self.assertFalse(new_mt.has_transfer_function())
+
+    def test_copy(self):
+        mt_copy = self.mt.copy()
+
+        self.assertEqual(self.mt, mt_copy)
+
+
+class TestMTFromKWARGS(unittest.TestCase):
+    def setUp(self):
+        self.mt = MT(east=243900.352, north=4432069.056898517, utm_epsg=32611)
+
+    def test_latitude(self):
+        self.assertAlmostEqual(self.mt.latitude, 40)
+
+    def test_longitude(self):
+        self.assertAlmostEqual(self.mt.longitude, -120)
 
 
 class TestMTSetImpedance(unittest.TestCase):
@@ -58,7 +75,9 @@ class TestMTSetImpedance(unittest.TestCase):
             ]
         )
 
-        self.pt = np.array([[[1.00020002, -0.020002], [-0.020002, 1.00020002]]])
+        self.pt = np.array(
+            [[[1.00020002, -0.020002], [-0.020002, 1.00020002]]]
+        )
         self.pt_error = np.array(
             [[[0.01040308, 0.02020604], [0.02020604, 0.01040308]]]
         )
@@ -72,6 +91,9 @@ class TestMTSetImpedance(unittest.TestCase):
         self.mt.impedance = self.z
         self.mt.impedance_error = self.z_err
         self.mt.impedance_model_error = self.z_err
+
+    def test_period(self):
+        self.assertTrue((np.array([1]) == self.mt.period).all())
 
     def test_impedance(self):
         self.assertTrue((self.mt.impedance == self.z).all())
@@ -174,6 +196,14 @@ class TestMTSetImpedance(unittest.TestCase):
             )
         )
 
+    def test_interpolate_fail_bad_f_type(self):
+        self.assertRaises(
+            ValueError, self.mt.interpolate, [0, 1], f_type="wrong"
+        )
+
+    def test_interpolate_fail_bad_periods(self):
+        self.assertRaises(ValueError, self.mt.interpolate, [0.1, 2])
+
 
 class TestMTComputeModelError(unittest.TestCase):
     @classmethod
@@ -248,6 +278,9 @@ class TestMT2DataFrame(unittest.TestCase):
 
     def test_to_t(self):
         self.assertEqual(self.m1.Tipper, self.mt_df.to_t_object())
+
+    def test_isinstance_mt_dataframe(self):
+        self.assertIsInstance(self.mt_df, MTDataFrame)
 
     def test_from_dataframe(self):
         m2 = MT()

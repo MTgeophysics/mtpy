@@ -13,6 +13,7 @@ ModEM
 # Imports
 # =============================================================================
 from pathlib import Path
+from copy import deepcopy
 import numpy as np
 import pandas as pd
 from pyproj import CRS
@@ -29,7 +30,13 @@ from pyevtk.hl import pointsToVTK
 
 class MTStations:
     """
-    station locations class
+    Object to deal with station location and geographic projection.
+
+    Geographic projections are done using pyproj.CRS objects.
+
+    Takes in a list of :class:`mtpy.core.mt.MT` objects which are inherit
+    :class:`mtpy.core.mt_location.MTLocation` objects, which deal with
+    transformation of point data using pyproj.
 
     """
 
@@ -39,6 +46,7 @@ class MTStations:
 
         self.dtype = dict(
             [
+                ("survey", "U50"),
                 ("station", "U50"),
                 ("latitude", float),
                 ("longitude", float),
@@ -60,47 +68,48 @@ class MTStations:
         self._center_elev = 0.0
         self.shift_east = 0
         self.shift_north = 0
+        self.rotation_angle = 0.0
         self.mt_list = None
+        self.utm_epsg = utm_epsg
 
         for key in list(kwargs.keys()):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
 
         if self.mt_list is not None:
-            self.compute_relative_locations()
+            if len(self.mt_list) > 0:
+                self.compute_relative_locations()
+                self.station_locations
 
     def __str__(self):
         if self.mt_list is None:
             return ""
+        elif len(self.mt_list) == 0:
+            return ""
 
         fmt_dict = dict(
             [
+                ("survey", "<8"),
                 ("station", "<8"),
                 ("latitude", "<10.4f"),
                 ("longitude", "<10.4f"),
                 ("elevation", "<8.2f"),
                 ("model_east", "<13.2f"),
                 ("model_north", "<13.2f"),
-                ("model_elevation", "<8.2f"),
-                ("profile_offset", "<8.2f"),
+                ("model_elevation", "<13.2f"),
+                ("profile_offset", "<13.2f"),
                 ("east", "<12.2f"),
                 ("north", "<12.2f"),
                 ("utm_epsg", "<6"),
+                ("datum_epsg", "<6"),
             ]
         )
-        lines = [
-            "".join(
-                [
-                    f"{n.capitalize():<10}"
-                    for n in self.station_locations.dtype.names
-                ]
-            )
-        ]
+        lines = ["  ".join([n for n in self.station_locations.columns])]
         lines.append("-" * 72)
-        for ss in self.station_locations:
+        for row in self.station_locations.itertuples():
             l = []
-            for k in self.station_locations.dtype.names:
-                l.append(f"{ss[k]:{fmt_dict[k]}}")
+            for key in self.station_locations.columns:
+                l.append(f"{getattr(row, key):{fmt_dict[key]}}")
             lines.append("".join(l))
 
         lines.append("\nModel Center:")
@@ -113,7 +122,7 @@ class MTStations:
             "north",
             "utm_epsg",
         ]:
-            l.append(f"{self.center_point[n][0]:{fmt_dict[n]}}")
+            l.append(f"{getattr(self.center_point, n):{fmt_dict[n]}}")
         lines.append("".join(l))
 
         lines.append("\nMean Values:")
@@ -126,92 +135,210 @@ class MTStations:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if not isinstance(other, MTStations):
+            raise TypeError(f"Can not compare {type(other)} to MTStations")
+
+        if not (self.station_locations == other.station_locations).all().all():
+            return False
+
+        if not self.center_point == other.center_point:
+            return False
+
+        return True
+
+    def __len__(self):
+        if self.mt_list is None:
+            return 0
+        else:
+            return len(self.mt_list)
+
+    def copy(self):
+        """
+        create a deep copy of the MTStations object.
+
+        .. note:: At the moment this is very slow because it is making a lot
+         of deep copies.  Use sparingly.
+
+        :return: deep copy of MTStation object
+        :rtype: :class:`mtpy.core.mt_stations.MTStations`
+
+        """
+
+        if self.mt_list is not None:
+            mt_list_copy = [m.copy() for m in self.mt_list]
+        else:
+            mt_list_copy = None
+        copied = MTStations(None, mt_list=mt_list_copy)
+        for key in [
+            "utm_crs",
+            "datum_crs",
+            "_center_lat",
+            "_center_lon",
+            "_center_elev",
+            "shift_east",
+            "shift_north",
+            "rotation_angle",
+        ]:
+            setattr(copied, key, deepcopy(getattr(self, key)))
+
+        return copied
+
     @property
     def model_epsg(self):
+        """
+
+        :return: model epsg number from the model_crs object
+        :rtype: int
+
+        """
         return self.utm_epsg
 
     @model_epsg.setter
     def model_epsg(self, value):
+        """
+
+        :param value: EPSG number for the model
+        :type value: integer or string
+
+        """
         self.utm_epsg = value
 
     @property
     def utm_crs(self):
+        """
+
+        :return: UTM CRS object
+        :rtype: :class:`pyproj.CRS`
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs
 
     @property
     def utm_name(self):
+        """
+
+        :return: UTM CRS name
+        :rtype: string
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs.name
 
     @property
     def utm_epsg(self):
+        """
+
+        :return: UTM EPSG number
+        :rtype: int
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs.to_epsg()
 
     @utm_epsg.setter
     def utm_epsg(self, value):
+        """
+
+        :param value: EPSG number
+        :type value: int or str
+
+        """
         self.utm_crs = value
 
     @property
     def utm_zone(self):
+        """
+
+        :return: UTM Zone number
+        :rtype: str
+
+        """
         if self._utm_crs is not None:
             return self._utm_crs.utm_zone
 
     @utm_crs.setter
     def utm_crs(self, value):
+        """
+
+        :param value: UTM CRS object, EPSG number, proj4 string
+        :type value: :class:`pyproj.CRS`, int, str
+
+        """
         if value in [None, "None", "none", "null"]:
             return
 
         self._utm_crs = CRS.from_user_input(value)
-        for mt_obj in self.mt_list:
-            mt_obj.utm_crs = value
+        if self.mt_list is not None:
+            for mt_obj in self.mt_list:
+                mt_obj.utm_crs = value
 
     @property
     def datum_crs(self):
+        """
+
+        :return: Datum CRS object
+        :rtype: :class:`pyproj.CRS`
+
+        """
         if self._datum_crs is not None:
             return self._datum_crs
 
     @property
     def datum_name(self):
+        """
+
+        :return: Datum well known name
+        :rtype: str
+
+        """
         if self._datum_crs is not None:
             return self._datum_crs.name
 
     @property
     def datum_epsg(self):
+        """
+
+        :return: Datum EPSG number
+        :rtype: int
+
+        """
         if self._datum_crs is not None:
             return self._datum_crs.to_epsg()
 
     @datum_epsg.setter
     def datum_epsg(self, value):
+        """
+
+        :param value: Datum EPSG number
+        :type value: int or str
+
+        """
         self.datum_crs = value
 
     @datum_crs.setter
     def datum_crs(self, value):
         """
         set the model epsg number an project east, north
+
+        :param value: Datum CRS object, EPSG number, proj4 string
+        :type value: :class:`pyproj.CRS`, int, str
         """
         if value in [None, "None", "none", "null"]:
             return
 
         self._datum_crs = CRS.from_user_input(value)
-        for mt_obj in self.mt_list:
-            mt_obj.datum_crs = value
+        if self.mt_list is not None:
+            for mt_obj in self.mt_list:
+                mt_obj.datum_crs = value
 
     @property
     def station_locations(self):
         """
-        get station locations from a list of edi files
 
-        Arguments
-        -------------
-            **input_list** : list
-                             list of edi file names, or mt_objects
-
-
-        Returns
-        ------------
-            * fills station_locations array
+        :return: Dataframe of station location information
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -227,6 +354,7 @@ class MTStations:
         )
         # get station locations in meters
         for ii, mt_obj in enumerate(self.mt_list):
+            entries["survey"][ii] = mt_obj.survey
             entries["station"][ii] = mt_obj.station
             entries["latitude"][ii] = mt_obj.latitude
             entries["longitude"][ii] = mt_obj.longitude
@@ -241,30 +369,43 @@ class MTStations:
             entries["profile_offset"][ii] = mt_obj.profile_offset
 
         station_df = pd.DataFrame(entries)
-        self._validate_station_locations(station_df)
+        self.datum_epsg = self._validate_epsg(station_df, key="datum")
+        self.utm_epsg = self._validate_epsg(station_df, key="utm")
 
         return station_df
 
-    def _validate_station_locations(self, df):
-
-        if len(df.datum_epsg.unique()) > 1:
-            self.datum_epsg = df.datum_epsg.median()
-        else:
-            if self.datum_epsg is None:
-                self.datum_epsg = df.datum_epsg.unique()[0]
-
-        if len(df.utm_epsg.unique()) > 1:
-            self.utm_epsg = df.utm_epsg.median()
-        else:
-            if self.utm_epsg is None:
-                self.utm_epsg = df.utm_epsg.unique()[0]
-
-    def compute_relative_locations(self, shift_east=0, shift_north=0):
+    def _validate_epsg(self, df, key="datum"):
         """
-        put station in a coordinate system relative to
-        (shift_east, shift_north)
-        (+) shift right or up
-        (-) shift left or down
+        Make sure that there is only one EPSG number for each of the Datum
+        and UTM.  If there are more than one use the median value or the
+        first in a unique list of EPSG numbers
+
+        :param df: station_location dataframe
+        :type df: :class:`pandas.DataFrame`
+        :return: EPSG number
+        :rtype: int
+
+        """
+
+        key = f"{key}_epsg"
+        if len(df[key].unique()) > 1:
+            epsg = int(df[key].median())
+            self.logger.warning(
+                f"Found more than one {key} number, using median EPSG number {epsg}"
+            )
+            return epsg
+        else:
+            if getattr(self, key) is None:
+                return df[key].unique()[0]
+
+    def compute_relative_locations(self):
+        """
+        Calculate model station locations relative to the center point in meters.
+
+        Uses `mtpy.core.MTLocation.compute_model_location` to calculate the
+        relative distance.
+
+        Computes inplace.
 
         """
 
@@ -277,11 +418,14 @@ class MTStations:
         """
         calculate the center point from the given station locations
 
-        Returns
-        -------------
-            **center_location** : np.ndarray
-                                  structured array of length 1
-                                  dtype includes (east, north, zone, lat, lon)
+        If _center attributes are set, that is returned as the center point.
+
+        Otherwise, looks for non-zero locations in E-N first, then Lat/Lon and
+        estimates the center point as (max - min) / 2.
+
+        :return: Center point
+        :rtype: :class:`mtpy.core.MTLocation`
+
         """
 
         center_location = MTLocation()
@@ -300,37 +444,34 @@ class MTStations:
         else:
             center_location.datum_epsg = self.datum_epsg
             center_location.utm_epsg = self.utm_epsg
-            if np.all(self.station_locations.east == 0) or np.all(
-                self.station_locations.north == 0
-            ):
-                if np.all(self.station_locations.latitude != 0) and np.all(
-                    self.station_locations.longitude != 0
-                ):
-                    self.logger.debug(
-                        "locating center from latitude and longitude"
-                    )
-                    center_location.latitude = (
-                        self.station_locations.latitude.max()
-                        + self.station_locations.latitude.min()
-                    ) / 2
-                    center_location.longitude = (
-                        self.station_locations.longitude.max()
-                        + self.station_locations.longitude.min()
-                    ) / 2
-                else:
+            st_df = self.station_locations.copy()
+
+            st_en = st_df.loc[(st_df.east != 0) & (st_df.north != 0)]
+            if st_en.empty:
+                st_ll = st_df.loc[
+                    (st_df.latitude != 0) & (st_df.longitude != 0)
+                ]
+                if st_ll.empty:
                     raise ValueError(
                         "Station locations are all 0 cannot find center."
                     )
 
+                else:
+                    self.logger.debug(
+                        "locating center from latitude and longitude"
+                    )
+                    center_location.latitude = (
+                        st_ll.latitude.max() + st_ll.latitude.min()
+                    ) / 2
+                    center_location.longitude = (
+                        st_ll.longitude.max() + st_ll.longitude.min()
+                    ) / 2
+
             else:
                 self.logger.debug("locating center from UTM grid")
-                center_location.east = (
-                    self.station_locations.east.max()
-                    + self.station_locations.east.min()
-                ) / 2
+                center_location.east = (st_en.east.max() + st_en.east.min()) / 2
                 center_location.north = (
-                    self.station_locations.north.max()
-                    + self.station_locations.north.min()
+                    st_en.north.max() + st_en.north.min()
                 ) / 2
 
             center_location.model_east = center_location.east
@@ -341,18 +482,18 @@ class MTStations:
 
     def rotate_stations(self, rotation_angle):
         """
-        Rotate stations assuming N is 0
+        Rotate stations model postions only assuming N is 0 and east is 90.
 
-        Arguments
-        -------------
-            **rotation_angle** : float
-                                 angle in degrees assuming N is 0
+        .. note:: Computes in place and rotates according to already set
+         rotation angle.  Therefore if the station locations have already been
+         rotated the function will rotate the already rotate stations.  For
+         example if you rotate the stations 15 degrees, then again by 20 degrees
+         the resulting station locations will be 35 degrees rotated from the
+         original locations.
 
-        Returns
-        -------------
-            * refils rel_east and rel_north in station_locations.  Does this
-              because you will still need the original locations for plotting
-              later.
+        :param rotation_angle: rotation angle in degrees assuming N=0, E=90.
+         Positive clockwise.
+        :type rotation_angle: float
 
         """
 
@@ -374,8 +515,11 @@ class MTStations:
             mt_obj.model_east = new_coords[0]
             mt_obj.model_north = new_coords[1]
 
+        self.rotation_angle += rotation_angle
+
         self.logger.info(
-            f"Rotated stations by {rotation_angle:.1f} deg clockwise from N"
+            f"Rotated stations by {rotation_angle:.1f} deg clockwise from N. "
+            f"Total rotation = {self.rotation_angle:.1f} deg."
         )
 
     def center_stations(self, model_obj):
@@ -384,7 +528,7 @@ class MTStations:
         topography cause it reduces edge effects of stations close to cell edges.
         Recalculates rel_east, rel_north to center of model cell.
 
-        :param model_obj: :class:`mtpy.modeling.modem.Model` object of the model
+        :param model_obj: :class:`mtpy.modeling.Structured` object of the model
         :type model_obj: :class:`mtpy.modeling.modem.Model`
 
 
@@ -487,6 +631,9 @@ class MTStations:
         """
         create a geopandas dataframe
 
+        :return: Geopandas DataFrame with points from latitude and longitude
+        :rtype: :class:`geopandas.DataFrame`
+
         """
 
         gdf = gpd.GeoDataFrame(
@@ -512,6 +659,7 @@ class MTStations:
         sdf = self.to_geopd()
 
         sdf.to_file(shp_fn)
+        return shp_fn
 
     def to_csv(self, csv_fn, geometry=False):
         """
@@ -593,6 +741,11 @@ class MTStations:
             if vtk_save_path is None:
                 raise ValueError("Need to input vtk_save_path")
             vtk_fn = Path(vtk_save_path, vtk_fn_basename)
+        else:
+            vtk_fn = Path(vtk_fn)
+
+        if vtk_fn.suffix != "":
+            vtk_fn = vtk_fn.parent.joinpath(vtk_fn.stem)
 
         sdf = self.station_locations.copy()
 
@@ -605,8 +758,8 @@ class MTStations:
             elif coordinate_system == "enz-":
                 vtk_x = (sdf.model_north + shift_north) * scale
                 vtk_y = (sdf.model_east + shift_east) * scale
-                vtk_z = (sdf.model_elevation + shift_elev) * scale
-                extra = (sdf.model_elevation + shift_elev) * scale
+                vtk_z = -1 * (sdf.model_elevation + shift_elev) * scale
+                extra = -1 * (sdf.model_elevation + shift_elev) * scale
 
         else:
             if coordinate_system == "nez+":
@@ -617,8 +770,8 @@ class MTStations:
             elif coordinate_system == "enz-":
                 vtk_y = (sdf.north + shift_north) * scale
                 vtk_x = (sdf.east + shift_east) * scale
-                vtk_z = -1 * (sdf.elevation + shift_elev) * scale
-                extra = -1 * (sdf.elevation + shift_elev)
+                vtk_z = (sdf.elevation + shift_elev) * scale
+                extra = sdf.elevation + shift_elev
 
         # write file
         pointsToVTK(

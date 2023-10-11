@@ -107,8 +107,6 @@ class PlotBase(PlotSettings):
         :Example: ::
 
             >>> # to save plot as jpg
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
             >>> p1.save_plot(r'/home/MT/figures', file_format='jpg')
 
         """
@@ -140,9 +138,6 @@ class PlotBase(PlotSettings):
 
         :Example: ::
 
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
             >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
             >>> p1.update_plot()
 
@@ -157,8 +152,6 @@ class PlotBase(PlotSettings):
         :Example: ::
 
             >>> # change the color and marker of the xy components
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
             >>> p1.xy_color = (.5,.5,.9)
             >>> p1.xy_marker = '*'
             >>> p1.redraw_plot()

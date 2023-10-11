@@ -13,7 +13,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 
-import mtpy.imaging.mtcolors as mtcl
+from mtpy.imaging.mtcolors import get_plot_color
 from mtpy.imaging.mtplot_tools import (
     PlotBaseProfile,
     period_label_dict,
@@ -150,7 +150,7 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
 
             # get ellipse color
             ellipd.set_facecolor(
-                mtcl.get_plot_color(
+                get_plot_color(
                     color_array[index],
                     self.ellipse_colorby,
                     self.ellipse_cmap,
@@ -287,10 +287,7 @@ class PlotPhaseTensorPseudoSection(PlotBaseProfile):
             self.ax2 = self.fig.add_axes(self.cb_position)
 
         # make the colorbar
-        if self.ellipse_cmap in list(mtcl.cmapdict.keys()):
-            cmap_input = mtcl.cmapdict[self.ellipse_cmap]
-        else:
-            cmap_input = mtcl.cm.get_cmap(self.ellipse_cmap)
+        cmap_input = plt.get_cmap(self.ellipse_cmap)
 
         if "seg" in self.ellipse_cmap:
             norms = colors.BoundaryNorm(self.ellipse_cmap_bounds, cmap_input.N)

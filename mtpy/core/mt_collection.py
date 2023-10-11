@@ -249,7 +249,9 @@ class MTCollection:
         :rtype: TYPE
 
         """
-        if not isinstance(transfer_function, (list, tuple, np.ndarray)):
+        if not isinstance(
+            transfer_function, (list, tuple, np.ndarray, MTData)
+        ):
             transfer_function = [transfer_function]
         for item in transfer_function:
             if isinstance(item, MT):
@@ -303,6 +305,8 @@ class MTCollection:
         tf_object = self.mth5_collection.from_reference(ref)
 
         mt_object.__dict__.update(tf_object.__dict__)
+        mt_object.station_metadata.update_time_period()
+        mt_object.survey_metadata.update_time_period()
 
         return mt_object
 
@@ -361,7 +365,7 @@ class MTCollection:
 
         mt_data = MTData()
 
-        for row in self.working_dataframe.itertuples():
+        for row in self.dataframe.itertuples():
             tf = self.get_tf(row.tf_id, survey=row.survey)
 
             mt_data.add_station(tf, compute_relative_location=False)
@@ -371,17 +375,38 @@ class MTCollection:
 
         return mt_data
 
-    def from_mt_data(self, suffix=None):
+    def from_mt_data(self, mt_data, new_survey=None, tf_id_extra=None):
         """
-        TODO
-        From mt data
-        :param suffix: DESCRIPTION, defaults to None
-        :type suffix: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Add data from a MTData object to an MTH5 collection.
+
+        Can use 'new_survey' to create a new survey to load to.
+
+        Can use 'tf_id_extra' to add a string onto the existing 'tf_id',
+        useful if data have been edited or manipulated in some way.  For
+        example could set 'tf_id_extra' = 'rotated' for rotated data. This will
+        help you organize the tf's for each station.
+
+        :param mt_data: MTData object
+        :type mt_data: :class:`mtpy.core.mt_data.MTData`
+        :param new_survey: new survey name, defaults to None
+        :type new_survey: str, optional
+        :param tf_id_extra: additional text onto existing 'tf_id',
+         defaults to None
+        :type tf_id_extra: string, optional
+        :raises IOError: If an MTH5 is not writable raises
 
         """
-        pass
+        if self.mth5_collection.h5_is_write():
+            if new_survey is not None or tf_id_extra is not None:
+                for mt_obj in mt_data:
+                    if new_survey is not None:
+                        mt_obj.survey = new_survey
+                    if tf_id_extra is not None:
+                        mt_obj.tf_id = f"{mt_obj.tf_id}_{tf_id_extra}"
+            self.add_tf(mt_data)
+
+        else:
+            raise IOError("MTH5 is not writeable, use 'open_mth5()'")
 
     def check_for_duplicates(self, locate="location", sig_figs=6):
         """

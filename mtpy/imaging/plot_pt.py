@@ -190,7 +190,7 @@ class PlotPhaseTensor(PlotBase):
         stlabel.append("PT")
 
         if self.strike_limits is None:
-            self.strike_limits = (0, 359.9)
+            self.strike_limits = (0, 359.99)
         self.ax_strike.set_yscale("linear")
         self.ax_strike.set_xscale("log", nonpositive="clip")
         self.ax_strike.set_xlim(xmax=self.x_limits[-1], xmin=self.x_limits[0])

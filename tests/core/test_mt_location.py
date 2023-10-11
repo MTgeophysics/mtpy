@@ -135,6 +135,10 @@ class TestMTLocationModelLocation(unittest.TestCase):
 
         self.assertAlmostEqual(self.true_elevation, self.loc.elevation)
 
+    def test_copy(self):
+        loc_copy = self.loc.copy()
+        self.assertEqual(loc_copy, self.loc)
+
 
 class TestMTLocationModelLocation2(unittest.TestCase):
     @classmethod
@@ -172,6 +176,30 @@ class TestMTLocationModelLocation2(unittest.TestCase):
         self.loc.project_onto_profile_line(1, 240000)
 
         self.assertAlmostEqual(self.loc.profile_offset, 3136704.0501892385)
+
+
+class TestMTLocationEqual(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.loc_01 = MTLocation(latitude=40, longitude=-120, utm_epsg=32611)
+        self.loc_02 = MTLocation(
+            east=243900.352029723, north=4432069.056898517, utm_epsg=32611
+        )
+
+    def test_equal(self):
+        self.assertTrue(self.loc_01 == self.loc_02)
+
+    def test_not_equal(self):
+        loc_02 = MTLocation(
+            east=244000.352029723, north=4432069.056898517, utm_epsg=32611
+        )
+        self.assertFalse(self.loc_01 == loc_02)
+
+    def test_fail_wrong_object(self):
+        def equals(value):
+            return value == self.loc_01
+
+        self.assertRaises(TypeError, equals, 10)
 
 
 # =============================================================================

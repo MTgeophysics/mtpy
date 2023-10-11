@@ -106,14 +106,19 @@ class TFBase:
                 return False
         return True
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k in ["logger"]:
+                continue
+
+            setattr(result, k, deepcopy(v, memo))
+        return result
+
     def copy(self):
-        try:
-            return deepcopy(self)
-        except TypeError:
-            delattr(self, "logger")
-            deep_copy = deepcopy(self)
-            self.logger = logger
-            return deep_copy
+        return deepcopy(self)
 
     def _initialize(
         self, periods=[1], tf=None, tf_error=None, tf_model_error=None
