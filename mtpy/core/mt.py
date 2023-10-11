@@ -364,23 +364,26 @@ class MT(TF, MTLocation):
 
     def interpolate(
         self,
-        new_frequency,
+        new_period,
         method="slinear",
         bounds_error=True,
+        f_type="period",
         **kwargs,
     ):
         """
         Interpolate the impedance tensor onto different frequencies
 
-        :param new_frequency: a 1-d array of frequencies to interpolate on
+        :param new_period: a 1-d array of frequencies to interpolate on
          to.  Must be with in the bounds of the existing frequency range,
          anything outside and an error will occur.
-        :type new_frequency: np.ndarray
+        :type new_period: np.ndarray
         :param method: method to interpolate by, defaults to "cubic"
         :type method: string, optional
         :param bounds_error: check for if input frequencies are within the
          original frequencies, defaults to True
         :type bounds_error: boolean, optional
+        :param f_type: frequency type can be [ 'frequency' | 'period' ]
+        :type f_type: string, defaults to 'period'
         :param **kwargs: key word arguments for `interp`
         :type **kwargs: dictionary
         :raises ValueError: If input frequencies are out of bounds
@@ -391,36 +394,48 @@ class MT(TF, MTLocation):
         .. note:: 'cubic' seems to work the best, the 'slinear' seems to do
          the same as 'linear' when using the `interp` in xarray.
 
+        :Interpolate over frequency: ::
+
+            >>> mt_obj = MT()
+            >>> new_frequency = np.logspace(-3, 3, 20)
+            >>> new_mt_obj = mt_obj.interpolate(new_frequency, f_type="frequency")
+
         """
 
+        if f_type not in ["frequency", "freq", "period", "per"]:
+            raise ValueError(
+                "f_type must be either 'frequency' or 'period' not {f_type}"
+            )
+
         # make sure the input is a numpy array
-        if not isinstance(new_frequency, np.ndarray):
-            new_frequency = np.array(new_frequency)
+        if not isinstance(new_period, np.ndarray):
+            new_period = np.array(new_period)
+
+        if f_type in ["frequency", "freq"]:
+            new_period = 1.0 / new_period
 
         # check the bounds of the new frequency array
         if bounds_error:
 
-            if self.frequency.min() > new_frequency.min():
+            if self.period.min() > new_period.min():
                 raise ValueError(
-                    f"New frequency minimum of {new_frequency.min():.5g} "
-                    "is smaller than old frequency minimum of "
-                    f"{self.frequency.min():.5g}.  The new frequency range "
+                    f"New period minimum of {new_period.min():.5g} "
+                    "is smaller than old period minimum of "
+                    f"{self.period.min():.5g}.  The new period range "
                     "needs to be within the bounds of the old one."
                 )
-            if self.frequency.max() < new_frequency.max():
+            if self.period.max() < new_period.max():
                 raise ValueError(
-                    f"New frequency maximum of {new_frequency.max():.5g} "
+                    f"New period maximum of {new_period.max():.5g} "
                     "is smaller than old frequency maximum of "
-                    f"{self.frequency.max():.5g}.  The new frequency range "
+                    f"{self.period.max():.5g}.  The new period range "
                     "needs to be within the bounds of the old one."
                 )
 
         new_m = self.clone_empty()
         if self.has_impedance():
-            new_m.Z = self.Z.interpolate(
-                1.0 / new_frequency, method=method, **kwargs
-            )
-            if self.has_impedance():
+            new_m.Z = self.Z.interpolate(new_period, method=method, **kwargs)
+            if new_m.has_impedance():
                 if np.all(np.isnan(new_m.Z.z)):
 
                     self.logger.warning(
@@ -430,9 +445,9 @@ class MT(TF, MTLocation):
                     )
         if self.has_tipper():
             new_m.Tipper = self.Tipper.interpolate(
-                1.0 / new_frequency, method=method, **kwargs
+                new_period, method=method, **kwargs
             )
-            if self.has_tipper():
+            if new_m.has_tipper():
                 if np.all(np.isnan(new_m.Tipper.tipper)):
                     self.logger.warning(
                         f"Station {self.station}: Interpolated T values are all NaN, "
@@ -905,7 +920,9 @@ class MT(TF, MTLocation):
             ] = self._transfer_function.transfer_function.real * (
                 noise_real
             ) + (
-                1j * self._transfer_function.transfer_function.imag * noise_imag
+                1j
+                * self._transfer_function.transfer_function.imag
+                * noise_imag
             )
 
             self._transfer_function["transfer_function_error"] = (
@@ -919,7 +936,9 @@ class MT(TF, MTLocation):
             ] = self._transfer_function.transfer_function.real * (
                 noise_real
             ) + (
-                1j * self._transfer_function.transfer_function.imag * noise_imag
+                1j
+                * self._transfer_function.transfer_function.imag
+                * noise_imag
             )
 
             self._transfer_function["transfer_function_error"] = (

@@ -92,6 +92,9 @@ class TestMTSetImpedance(unittest.TestCase):
         self.mt.impedance_error = self.z_err
         self.mt.impedance_model_error = self.z_err
 
+    def test_period(self):
+        self.assertTrue((np.array([1]) == self.mt.period).all())
+
     def test_impedance(self):
         self.assertTrue((self.mt.impedance == self.z).all())
 
@@ -192,6 +195,14 @@ class TestMTSetImpedance(unittest.TestCase):
                 )
             )
         )
+
+    def test_interpolate_fail_bad_f_type(self):
+        self.assertRaises(
+            ValueError, self.mt.interpolate, [0, 1], f_type="wrong"
+        )
+
+    def test_interpolate_fail_bad_periods(self):
+        self.assertRaises(ValueError, self.mt.interpolate, [0.1, 2])
 
 
 class TestMTComputeModelError(unittest.TestCase):

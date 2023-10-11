@@ -292,7 +292,7 @@ class MTData(OrderedDict, MTStations):
                 if not isinstance(interpolate_periods, np.ndarray):
                     interpolate_periods = np.array(interpolate_periods)
 
-                m = m.interpolate(1.0 / interpolate_periods, bounds_error=False)
+                m = m.interpolate(interpolate_periods, bounds_error=False)
 
             self.__setitem__(f"{validate_name(m.survey)}.{m.station}", m)
 
@@ -474,12 +474,14 @@ class MTData(OrderedDict, MTStations):
 
         return gdf
 
-    def interpolate(self, new_periods, inplace=True):
+    def interpolate(self, new_periods, f_type="period", inplace=True):
         """
         Interpolate onto common period range
 
         :param new_periods: DESCRIPTION
         :type new_periods: TYPE
+        :param f_type: frequency type can be [ 'frequency' | 'period' ]
+        :type f_type: string, defaults to 'period'
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -496,7 +498,7 @@ class MTData(OrderedDict, MTStations):
                 )
             ]
 
-            new_mt_obj = mt_obj.interpolate(1.0 / interp_periods)
+            new_mt_obj = mt_obj.interpolate(interp_periods, f_type=f_type)
 
             if inplace:
                 self.update(
@@ -506,7 +508,9 @@ class MTData(OrderedDict, MTStations):
                 )
 
             else:
-                mt_data.add_station(new_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    new_mt_obj, compute_relative_location=False
+                )
 
         if not inplace:
             return mt_data
@@ -530,7 +534,9 @@ class MTData(OrderedDict, MTStations):
             if not inplace:
                 rot_mt_obj = mt_obj.copy()
                 rot_mt_obj.rotation_angle = rotation_angle
-                mt_data.add_station(rot_mt_obj, compute_relative_location=False)
+                mt_data.add_station(
+                    rot_mt_obj, compute_relative_location=False
+                )
             else:
                 mt_obj.rotation_angle = rotation_angle
 
@@ -629,8 +635,12 @@ class MTData(OrderedDict, MTStations):
             self.t_model_error.floor = t_floor
 
         for mt_obj in self.values():
-            mt_obj.compute_model_z_errors(**self.z_model_error.error_parameters)
-            mt_obj.compute_model_t_errors(**self.t_model_error.error_parameters)
+            mt_obj.compute_model_z_errors(
+                **self.z_model_error.error_parameters
+            )
+            mt_obj.compute_model_t_errors(
+                **self.t_model_error.error_parameters
+            )
 
     def get_nearby_stations(self, station_key, radius, radius_units="m"):
         """
@@ -671,7 +681,13 @@ class MTData(OrderedDict, MTStations):
         ]
 
     def estimate_spatial_static_shift(
-        self, station_key, radius, period_min, period_max, radius_units="m"
+        self,
+        station_key,
+        radius,
+        period_min,
+        period_max,
+        radius_units="m",
+        shift_tolerance=0.15,
     ):
         """
         Estimate static shift for a station by estimating the median resistivity
@@ -708,12 +724,20 @@ class MTData(OrderedDict, MTStations):
             )
         ]
 
+        local_site = local_site.interpolate(interp_periods)
         md.interpolate(interp_periods)
 
         df = md.to_dataframe()
 
-        sx = df.res_xy.mean()
-        sy = df.res_yx.mean()
+        sx = np.nanmedian(df.res_xy) / np.nanmedian(local_site.Z.res_xy)
+        sy = np.nanmedian(df.res_yx) / np.nanmedian(local_site.Z.res_yx)
+
+        # check to see if the estimated static shift is within given tolerance
+        if 1 - shift_tolerance < sx and sx < 1 + shift_tolerance:
+            sx = 1.0
+        # check to see if the estimated static shift is within given tolerance
+        if 1 - shift_tolerance < sy and sy < 1 + shift_tolerance:
+            sy = 1.0
 
         return sx, sy
 
