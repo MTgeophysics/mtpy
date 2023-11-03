@@ -2,7 +2,7 @@ MTpy: A Python Toolbox for Magnetotelluric (MT) Data Processing, Analysis, Model
 ==================================
 
 **NOTE**: This repository of `mtpy` is being deprecated and will no longer be supported in the near future (2024). An updated and supported version of mtpy can be found at 
-https://github.com/MTgeophysics/mtpy. 
+https://github.com/MTgeophysics/mtpy-v2
 
 How to Cite
 ===========
